@@ -2,3 +2,4 @@
 *.pyc
 /nosetests.xml
 /motor.egg-info/
+/build/
