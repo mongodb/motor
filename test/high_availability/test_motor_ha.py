@@ -22,19 +22,26 @@ from tornado import gen
 
 from tornado.ioloop import IOLoop
 
-from test.high_availability import ha_tools
+try:
+    # From PyMongo's test suite. Put a checkout of
+    #   https://github.com/mongodb/mongo-python-driver/
+    # on your PYTHONPATH.
+    from high_availability import ha_tools
+except ImportError:
+    from nose.plugins.skip import SkipTest
+    raise SkipTest("Can't import ha_tools, put a checkout of PyMongo on"
+        " your PYTHONPATH")
 
 import pymongo
 from pymongo import ReadPreference
-from pymongo.mongo_replica_set_client import (
-    Member, Monitor, _partition_node)
+from pymongo.mongo_replica_set_client import Member, Monitor, _partition_node
 from pymongo.errors import AutoReconnect, OperationFailure
 
 import motor
 from test.utils import one
-from test import (
-    async_test_engine, AssertEqual, AssertRaises, AssertTrue, AssertFalse)
-from test.motor.motor_high_availability.test_motor_ha_utils import (
+from test import async_test_engine
+from test import AssertEqual, AssertRaises, AssertTrue, AssertFalse
+from test.high_availability.test_motor_ha_utils import (
     assertReadFrom, assertReadFromAll)
 
 # Override default 30-second interval for faster testing
