@@ -1,0 +1,3 @@
+git+https://github.com/mongodb/mongo-python-driver.git@a6755809e08efbb26d8f8720926eeca153f04745
+tornado
+greenlet

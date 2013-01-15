@@ -1,0 +1,5 @@
+include README.rst
+include LICENSE
+recursive-include doc *.rst
+recursive-include doc *.py
+recursive-include test *.py
