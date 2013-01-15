@@ -3,7 +3,7 @@ Motor
 =====
 :Info: Motor is a full-featured, non-blocking MongoDB_ driver for Python
     Tornado_ applications.
-:Author: A. Jesse Jiryu Davis
+:Author: A\. Jesse Jiryu Davis
 
 About
 =====
