@@ -17,6 +17,7 @@
 import functools
 import os
 import time
+import sys
 import types
 import unittest
 
@@ -198,6 +199,26 @@ class MotorTest(unittest.TestCase):
                 socketTimeoutMS=socketTimeoutMS,
                 ssl=False)
 
+        self.is_replica_set = False
+        response = self.sync_cx.admin.command('ismaster')
+        if 'setName' in response:
+            self.is_replica_set = True
+            self.name = str(response['setName'])
+            self.w = len(response['hosts'])
+            self.hosts = set([_partition_node(h) for h in response["hosts"]])
+            self.arbiters = set([
+                _partition_node(h) for h in response.get("arbiters", [])])
+
+            repl_set_status = self.sync_cx.admin.command('replSetGetStatus')
+            primary_info = [
+                m for m in repl_set_status['members']
+                if m['stateStr'] == 'PRIMARY'][0]
+
+            self.primary = _partition_node(primary_info['name'])
+            self.secondaries = [
+                _partition_node(m['name']) for m in repl_set_status['members']
+                if m['stateStr'] == 'SECONDARY']
+            
         self.sync_db = self.sync_cx.pymongo_test
         self.sync_coll = self.sync_db.test_collection
         self.sync_coll.drop()
@@ -205,7 +226,7 @@ class MotorTest(unittest.TestCase):
         # Make some test data
         self.sync_coll.ensure_index([('s', pymongo.ASCENDING)], unique=True)
         self.sync_coll.insert(
-            [{'_id': i, 's': hex(i)} for i in range(200)], safe=True)
+            [{'_id': i, 's': hex(i)} for i in range(200)])
 
         self.open_cursors = self.get_open_cursors()
 
@@ -251,16 +272,23 @@ class MotorTest(unittest.TestCase):
             False)
 
     def tearDown(self):
-        actual_open_cursors = self.get_open_cursors()
-        self.assertEqual(
-            self.open_cursors,
-            actual_open_cursors,
-            "%d open cursors at start of test, %d at end, should be equal" % (
-                self.open_cursors, actual_open_cursors
-                )
-        )
-
         self.sync_coll.drop()
+
+        # Replication cursors come and go, making this check unreliable against
+        # replica sets.
+        if not self.is_replica_set:
+            if 'PyPy' in sys.version:
+                import gc
+                gc.collect()
+                time.sleep(1)
+
+            actual_open_cursors = self.get_open_cursors()
+            self.assertEqual(
+                self.open_cursors,
+                actual_open_cursors,
+                "%d open cursors at start of test, %d at end, should be equal"
+                % (self.open_cursors, actual_open_cursors))
+
         super(MotorTest, self).tearDown()
 
 
@@ -277,28 +305,5 @@ class MotorTestBasic(MotorTest):
 class MotorReplicaSetTestBase(MotorTest):
     def setUp(self):
         super(MotorReplicaSetTestBase, self).setUp()
-
-        # Copied from pymongo's TestConnectionReplicaSetBase
-        conn = MongoClient(host, port)
-        response = conn.admin.command('ismaster')
-        if 'setName' in response:
-            self.name = str(response['setName'])
-            self.w = len(response['hosts'])
-            self.hosts = set([_partition_node(h)
-                              for h in response["hosts"]])
-            self.arbiters = set([_partition_node(h)
-                                 for h in response.get("arbiters", [])])
-
-            repl_set_status = conn.admin.command('replSetGetStatus')
-            primary_info = [
-                m for m in repl_set_status['members']
-                if m['stateStr'] == 'PRIMARY'
-            ][0]
-
-            self.primary = _partition_node(primary_info['name'])
-            self.secondaries = [
-                _partition_node(m['name']) for m in repl_set_status['members']
-                if m['stateStr'] == 'SECONDARY'
-            ]
-        else:
+        if not self.is_replica_set:
             raise SkipTest("Not connected to a replica set")
