@@ -801,7 +801,7 @@ class MotorClient(MotorClientBase):
                 assert (yield motor.Op(c.is_locked)) is False
 
         :Parameters:
-         - `callback`:    function taking parameters (result, error)
+          - `callback`:    function taking parameters (result, error)
 
         .. note:: PyMongo's :attr:`~pymongo.mongo_client.MongoClient.is_locked`
            is a property that synchronously executes the `currentOp` command on
