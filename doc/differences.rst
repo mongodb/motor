@@ -96,17 +96,8 @@ provides :meth:`~motor.MotorCursor.to_list`:
 Acknowledged Writes
 -------------------
 
-PyMongo's default behavior for
-:meth:`~pymongo.collection.Collection.insert`,
-:meth:`~pymongo.collection.Collection.update`,
-:meth:`~pymongo.collection.Collection.save`, and
-:meth:`~pymongo.collection.Collection.remove` is to perform *unacknowledged
-writes*: the driver does not request nor await a response from the server unless
-the method is passed ``safe=True`` or another
-`getLastError option <http://www.mongodb.org/display/DOCS/getLastError+Command>`_.
-Unacknowledged writes are very low-latency but can mask errors.
-
-In Motor, writes are acknowledged (they are "safe writes") if passed a callback:
+In Motor, writes are acknowledged by the server (they are "safe writes") if
+passed a callback:
 
 .. code-block:: python
 
@@ -135,7 +126,7 @@ unacknowledged write:
 In this case the callback is executed as soon as the message has been written to
 the socket connected to MongoDB, but no response is expected from the server.
 Passing a callback and ``safe=False`` can be useful to do fast writes without
-overrunning the output buffer.
+opening an excessive number of connections.
 
 Result Values for Acknowledged and Unacknowledged Writes
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -220,7 +211,7 @@ As in PyMongo, the default ``connectTimeoutMS`` is 20 seconds, and the default
 Requests
 --------
 
-PyMongo provides :doc:`requests </examples/requests>` to ensure that a series
+PyMongo provides "requests" to ensure that a series
 of operations are performed in order by the MongoDB server, even with
 unacknowledged writes. Motor does not support requests, so the only way to
 guarantee order is by doing acknowledged writes. Register a callback
