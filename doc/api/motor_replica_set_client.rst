@@ -27,27 +27,27 @@
      Raises :class:`~pymongo.errors.InvalidOperation` if connection isn't opened yet.
 
   .. autoattribute:: connected
-  .. automotorattribute:: seeds
-  .. automotorattribute:: hosts
-  .. automotorattribute:: arbiters
-  .. automotorattribute:: primary
-  .. automotorattribute:: secondaries
-  .. automotorattribute:: read_preference
-  .. automotorattribute:: tag_sets
-  .. automotorattribute:: secondary_acceptable_latency_ms
-  .. automotorattribute:: max_pool_size
-  .. automotorattribute:: document_class
-  .. automotorattribute:: tz_aware
-  .. automotorattribute:: safe
+  .. autoattribute:: seeds
+  .. autoattribute:: hosts
+  .. autoattribute:: arbiters
+  .. autoattribute:: primary
+  .. autoattribute:: secondaries
+  .. autoattribute:: read_preference
+  .. autoattribute:: tag_sets
+  .. autoattribute:: secondary_acceptable_latency_ms
+  .. autoattribute:: max_pool_size
+  .. autoattribute:: document_class
+  .. autoattribute:: tz_aware
+  .. autoattribute:: safe
   .. method:: sync_client
 
      Get a :class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient`
      with the same configuration as this :class:`MotorReplicaSetClient`
 
-  .. automotormethod:: get_lasterror_options
-  .. automotormethod:: set_lasterror_options
-  .. automotormethod:: unset_lasterror_options
-  .. automotormethod:: database_names
-  .. automotormethod:: drop_database
-  .. automotormethod:: copy_database(from_name, to_name[, from_host=None[, username=None[, password=None[, callback=None]]]])
-  .. automotormethod:: close_cursor
+  .. automethod:: get_lasterror_options
+  .. automethod:: set_lasterror_options
+  .. automethod:: unset_lasterror_options
+  .. automethod:: database_names
+  .. automethod:: drop_database
+  .. automethod:: copy_database(from_name, to_name[, from_host=None[, username=None[, password=None[, callback=None]]]])
+  .. automethod:: close_cursor

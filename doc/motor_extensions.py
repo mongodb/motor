@@ -14,124 +14,16 @@
 
 """Motor specific extensions to Sphinx."""
 
-import inspect
-
 from docutils.nodes import field, list_item, paragraph, title_reference
 from docutils.nodes import field_list, field_body, bullet_list, Text, field_name
 from sphinx.addnodes import desc, desc_content, versionmodified, desc_signature
-from sphinx.addnodes import desc_name
-from sphinx.util.inspect import getargspec, safe_getattr
-from sphinx.ext.autodoc import MethodDocumenter, AttributeDocumenter
+from sphinx.util.inspect import safe_getattr
 
 import motor
 
 
-# TODO: HACK! This is a place to store info while parsing, to be used before
-#   generating
+# This is a place to store info while parsing, to be used before generating.
 motor_info = {}
-
-
-class MotorAttribute(object):
-    def __init__(self, motor_class, name, delegate_property):
-        super(MotorAttribute, self).__init__()
-        self.motor_class = motor_class
-        self.name = name
-        self.delegate_property = delegate_property
-        self.pymongo_attr = getattr(motor_class.__delegate_class__, name)
-
-        # Store some info for process_motor_nodes()
-        full_name = '%s.%s.%s' % (
-            self.motor_class.__module__, self.motor_class.__name__,
-            self.name)
-
-        motor_info[full_name] = {
-            'is_async_method': self.is_async_method(),
-            'requires_callback': self.requires_callback(),
-        }
-
-    def is_async_method(self):
-        return isinstance(self.delegate_property, motor.Async)
-
-    def requires_callback(self):
-        return self.is_async_method() and self.delegate_property.cb_required
-
-    @property
-    def __doc__(self):
-        return self.pymongo_attr.__doc__ or ''
-
-    def getargspec(self):
-        args, varargs, kwargs, defaults = getargspec(self.pymongo_attr)
-
-        # This part is copied from Sphinx's autodoc.py
-        if args and args[0] in ('cls', 'self'):
-            del args[0]
-
-        # Add 'callback=None' argument
-        defaults = defaults or []
-        prop = self.delegate_property
-        if isinstance(prop, motor.Async):
-            args.append('callback')
-            defaults.append(None)
-
-        return (args, varargs, kwargs, defaults)
-
-    def format_args(self):
-        if self.is_async_method():
-            return inspect.formatargspec(*self.getargspec())
-        else:
-            return None
-
-
-def get_pymongo_attr(obj, name, *defargs):
-    """getattr() override for Motor DelegateProperty."""
-    if isinstance(obj, motor.MotorMeta):
-        for cls in inspect.getmro(obj):
-            if name in cls.__dict__:
-                attr = cls.__dict__[name]
-                if isinstance(attr, motor.DelegateProperty):
-                    # 'name' set by MotorMeta
-                    assert attr.get_name() == name, (
-                        "Expected name %s, got %s" % (name, attr.get_name()))
-                    return MotorAttribute(obj, name, attr)
-    return safe_getattr(obj, name, *defargs)
-
-
-class MotorMethodDocumenter(MethodDocumenter):
-    objtype = 'motormethod'
-    directivetype = 'method'
-
-    @staticmethod
-    def get_attr(obj, name, *defargs):
-        return get_pymongo_attr(obj, name, *defargs)
-
-    @classmethod
-    def can_document_member(cls, member, membername, isattr, parent):
-        return isinstance(member, motor.Async)
-
-    def format_args(self):
-        assert isinstance(self.object, MotorAttribute), (
-            "%s is not a motor.Async, just use 'automethod', not"
-            " 'automotormethod'" % self.object)
-        return self.object.format_args()
-
-
-class MotorAttributeDocumenter(AttributeDocumenter):
-    objtype = 'motorattribute'
-    directivetype = 'attribute'
-
-    @staticmethod
-    def get_attr(obj, name, *defargs):
-        return get_pymongo_attr(obj, name, *defargs)
-
-    def import_object(self):
-        # Convince AttributeDocumenter that this is a data descriptor
-        ret = super(MotorAttributeDocumenter, self).import_object()
-        self._datadescriptor = True
-        return ret
-
-    @classmethod
-    def can_document_member(cls, member, membername, isattr, parent):
-        return isinstance(member, motor.DelegateProperty)
 
 
 def find_by_path(root, classes):
@@ -196,6 +88,10 @@ def process_motor_nodes(app, doctree):
     #      a parameter-list from scratch, otherwise we edit PyMongo's list.
     #   2. Remove all version annotations like "New in version 2.0" since
     #      PyMongo's version numbers are meaningless in Motor's docs.
+    #
+    # We do this here, rather than by registering a callback to Sphinx's
+    # 'autodoc-process-signature' event, because it's way easier to handle the
+    # parsed doctree before it's turned into HTML than it is to update the RST.
     for objnode in doctree.traverse(desc):
         if objnode['objtype'] in ('method', 'attribute'):
             signature_node = find_by_path(objnode, [desc_signature])[0]
@@ -224,16 +120,50 @@ def process_motor_nodes(app, doctree):
                         desc_content_node.append(parameters_field_list_node)
 
                     insert_callback(
-                        parameters_node, obj_motor_info['requires_callback'])
+                        parameters_node, obj_motor_info['callback_required'])
 
-                # Remove all "versionadded", "versionchanged" and "deprecated"
-                # directives from the docs we imported from PyMongo
-                version_nodes = find_by_path(desc_content_node, [versionmodified])
-                for version_node in version_nodes:
-                    version_node.parent.remove(version_node)
+                if obj_motor_info['is_pymongo_docstring']:
+                    # Remove all "versionadded", "versionchanged" and
+                    # "deprecated" directives from the docs we imported from
+                    # PyMongo
+                    version_nodes = find_by_path(
+                        desc_content_node, [versionmodified])
+
+                    for version_node in version_nodes:
+                        version_node.parent.remove(version_node)
+
+
+def get_motor_attr(motor_class, name, *defargs):
+    """If any Motor attributes can't be accessed, grab the equivalent PyMongo
+    attribute. While we're at it, store some info about each attribute
+    in the global motor_info dict.
+    """
+    from_pymongo = False
+    try:
+        attr = safe_getattr(motor_class, name, *defargs)
+    except AttributeError:
+        # Typically, this means 'name' is refers not to an async method like
+        # MotorDatabase.command, but to a ReadOnlyProperty, e.g.
+        # MotorClient.close(). The latter can't be accessed directly, but we
+        # can get the docstring and method signature from the equivalent
+        # PyMongo attribute, e.g. pymongo.mongo_client.MongoClient.close().
+        attr = getattr(motor_class.__delegate_class__, name, *defargs)
+        from_pymongo = True
+
+    # Store some info for process_motor_nodes()
+    full_name = '%s.%s.%s' % (
+        motor_class.__module__, motor_class.__name__, name)
+
+    is_async_method = getattr(attr, 'is_async_method', False)
+    motor_info[full_name] = {
+        # These sub-attributes are set in motor.asynchronize()
+        'is_async_method': is_async_method,
+        'callback_required': getattr(attr, 'callback_required', False),
+        'is_pymongo_docstring': from_pymongo or is_async_method}
+
+    return attr
 
 
 def setup(app):
-    app.add_autodocumenter(MotorMethodDocumenter)
-    app.add_autodocumenter(MotorAttributeDocumenter)
+    app.add_autodoc_attrgetter(type(motor.MotorBase), get_motor_attr)
     app.connect("doctree-read", process_motor_nodes)

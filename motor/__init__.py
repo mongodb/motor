@@ -276,7 +276,7 @@ class MotorPool(pymongo.pool.Pool):
         return pymongo.pool.SocketInfo(motor_sock, self.pool_id)
 
 
-def asynchronize(io_loop, sync_method, has_safe_arg, callback_required):
+def asynchronize(sync_method, has_safe_arg, callback_required):
     """
     Decorate `sync_method` so it's run on a child greenlet and executes
     `callback` with (result, error) arguments when greenlet completes.
@@ -288,11 +288,8 @@ def asynchronize(io_loop, sync_method, has_safe_arg, callback_required):
      - `has_safe_arg`:      Whether the method takes a 'safe' argument
      - `callback_required`: If True, raise TypeError if no callback is passed
     """
-    assert isinstance(io_loop, ioloop.IOLoop), (
-        "First argument to asynchronize must be IOLoop, not %s" % repr(io_loop))
-
     @functools.wraps(sync_method)
-    def method(*args, **kwargs):
+    def method(self, *args, **kwargs):
         callback = kwargs.pop('callback', None)
         check_callable(callback, required=callback_required)
 
@@ -303,114 +300,146 @@ def asynchronize(io_loop, sync_method, has_safe_arg, callback_required):
         def call_method():
             result, error = None, None
             try:
-                result = sync_method(*args, **kwargs)
+                result = sync_method(self.delegate, *args, **kwargs)
             except Exception, e:
                 error = e
 
             # Schedule the callback to be run on the main greenlet
             if callback:
-                io_loop.add_callback(
-                    functools.partial(callback, result, error)
-                )
+                self.get_io_loop().add_callback(
+                    functools.partial(callback, result, error))
             elif error:
                 raise error
 
         # Start running the operation on a greenlet
         greenlet.greenlet(call_method).switch()
 
+    # This is for the benefit of motor_extension.py
+    method.is_async_method = True
+    method.has_safe_arg = has_safe_arg
+    method.callback_required = callback_required
     return method
 
 
-class DelegateProperty(object):
-    def __init__(self, name=None):
-        self.name = name
-
+class MotorDelegateProperty(object):
     def set_name(self, name):
-        if not self.name:
-            self.name = name
+        self.name = name
 
     def get_name(self):
         return self.name
 
+    def create_attribute(self, cls):
+        return self
+
+
+class Async(MotorDelegateProperty):
+    def __init__(self, has_safe_arg, callback_required):
+        """
+        A descriptor that wraps a PyMongo method, such as insert or remove, and
+        returns an asynchronous version of the method, which takes a callback.
+
+        :Parameters:
+         - `has_safe_arg`:      Whether the method takes a 'safe' argument
+         - `callback_required`: Whether callback is required or optional
+        """
+        self.has_safe_arg = has_safe_arg
+        self.callback_required = callback_required
+
+    def create_attribute(self, cls):
+        delegate_class = cls.__delegate_class__
+        sync_method = getattr(delegate_class, self.get_name())
+        return asynchronize(
+            sync_method, self.has_safe_arg, self.callback_required)
+
     def wrap(self, original_class):
-        return Wrap(self, original_class)
+        return WrapAsync(self, original_class)
 
     def unwrap(self, motor_class):
-        return Unwrap(self, motor_class)
+        return UnwrapAsync(self, motor_class)
 
 
-class WrapBase(DelegateProperty):
+class WrapBase(MotorDelegateProperty):
     def __init__(self, prop):
-        """Wraps a DelegateProperty for further processing"""
-        DelegateProperty.__init__(self, prop)
+        MotorDelegateProperty.__init__(self)
         self.prop = prop
 
     def set_name(self, name):
         self.prop.set_name(name)
 
     def get_name(self):
-        return self.prop.name
+        return self.prop.get_name()
 
 
-class Wrap(WrapBase):
+class WrapAsync(WrapBase):
     def __init__(self, prop, original_class):
-        """
-        TODO: UPDATE doc
-        A descriptor that wraps a Motor method and wraps its return value in a
-        Motor class. E.g., wrap Motor's map_reduce to return a MotorCollection
-        instead of a PyMongo Collection. Calls the wrap() method on the owner
-        object to do the actual wrapping at invocation time.
+        """Like Async, but before executing callback(result, error), checks if
+        result is a PyMongo class and wraps it in a Motor class. E.g., Motor's
+        map_reduce should pass a MotorCollection instead of a PyMongo
+        Collection to the callback. Uses the wrap() method on the owner object
+        to do the actual wrapping.
         """
         WrapBase.__init__(self, prop)
-        self.prop = prop
         self.original_class = original_class
 
-    def __get__(self, obj, objtype):
-        f = self.prop.__get__(obj, objtype)
+    def create_attribute(self, cls):
+        async_method = self.prop.create_attribute(cls)
         original_class = self.original_class
+        callback_required = self.prop.callback_required
 
-        @functools.wraps(f)
-        def _f(*args, **kwargs):
-            result = f(*args, **kwargs)
-            # Don't call isinstance(), not checking subclasses
-            if result.__class__ is original_class:
-                # Delegate to the current object to wrap the result
-                return obj.wrap(result)
-            return result
+        @functools.wraps(async_method)
+        def wrap(self, *args, **kwargs):
+            callback = kwargs.pop('callback', None)
+            check_callable(callback, callback_required)
+            if callback:
+                def _callback(result, error):
+                    if error:
+                        callback(None, error)
+                        return
 
-        return _f
+                    # Don't call isinstance(), not checking subclasses
+                    if result.__class__ is original_class:
+                        # Delegate to the current object to wrap the result
+                        new_object = self.wrap(result)
+                    else:
+                        new_object = result
+
+                    callback(new_object, None)
+                kwargs['callback'] = _callback
+            async_method(self, *args, **kwargs)
+
+        return wrap
 
 
-class Unwrap(WrapBase):
+class UnwrapAsync(WrapBase):
     def __init__(self, prop, motor_class):
-        """
-        TODO: UPDATE doc
-        A descriptor that wraps a Motor method and unwraps its arguments. E.g.,
-        wrap Motor's drop_database and if a MotorDatabase is passed in, unwrap
-        it and pass in a pymongo.database.Database instead.
+        """Like Async, but checks if arguments are Motor classes and unwraps
+        them. E.g., Motor's drop_database takes a MotorDatabase, unwraps it,
+        and passes a PyMongo Database instead.
         """
         WrapBase.__init__(self, prop)
         self.prop = prop
         self.motor_class = motor_class
 
-    def __get__(self, obj, objtype):
-        f = self.prop.__get__(obj, objtype)
-        if isinstance(self.motor_class, basestring):
-            # Delayed reference - e.g., drop_database is defined before
-            # MotorDatabase is, so it was initialized with
-            # unwrap('MotorDatabase') instead of unwrap(MotorDatabase).
-            motor_class = globals()[self.motor_class]
-        else:
-            motor_class = self.motor_class
+    def create_attribute(self, cls):
+        f = self.prop.create_attribute(cls)
+        motor_class = self.motor_class
+
+        def _unwrap_obj(obj):
+            if isinstance(motor_class, basestring):
+                # Delayed reference - e.g., drop_database is defined before
+                # MotorDatabase is, so it was initialized with
+                # unwrap('MotorDatabase') instead of unwrap(MotorDatabase).
+                actual_motor_class = globals()[motor_class]
+            else:
+                actual_motor_class = motor_class
+            # Don't call isinstance(), not checking subclasses
+            if obj.__class__ is actual_motor_class:
+                return obj.delegate
+            else:
+                return obj
 
         @functools.wraps(f)
         def _f(*args, **kwargs):
-            def _unwrap_obj(obj):
-                # Don't call isinstance(), not checking subclasses
-                if obj.__class__ is motor_class:
-                    return obj.delegate
-                else:
-                    return obj
 
             # Call _unwrap_obj on each arg and kwarg before invoking f
             args = [_unwrap_obj(arg) for arg in args]
@@ -421,147 +450,115 @@ class Unwrap(WrapBase):
         return _f
 
 
-class Async(DelegateProperty):
-    def __init__(self, has_safe_arg, cb_required, name=None):
+class AsyncRead(Async):
+    def __init__(self):
         """
-        A descriptor that wraps a PyMongo method, such as insert or remove, and
-        returns an asynchronous version of the method, which takes a callback.
-
-        :Parameters:
-         - `has_safe_arg`:    Whether the method takes a 'safe' argument
-         - `cb_required`:     Whether callback is required or optional
-         - `name`:            (optional) Name of wrapped method
+        A descriptor that wraps a PyMongo read method like find_one() that
+        requires a callback.
         """
-        DelegateProperty.__init__(self, name)
-        self.has_safe_arg = has_safe_arg
-        self.cb_required = cb_required
+        Async.__init__(self, has_safe_arg=False, callback_required=True)
 
+
+class AsyncWrite(Async):
+    def __init__(self):
+        """
+        A descriptor that wraps a PyMongo write method like update() that
+        accepts optional safe and callback arguments.
+        """
+        Async.__init__(self, has_safe_arg=True, callback_required=False)
+
+
+class AsyncCommand(Async):
+    def __init__(self):
+        """
+        A descriptor that wraps a PyMongo command like copy_database() that
+        has an optional callback and no safe argument.
+        """
+        Async.__init__(self, has_safe_arg=False, callback_required=False)
+
+
+class ReadOnlyProperty(MotorDelegateProperty):
     def __get__(self, obj, objtype):
-        sync_method = getattr(obj.delegate, self.name)
-        return asynchronize(
-            obj.get_io_loop(),
-            sync_method,
-            has_safe_arg=self.has_safe_arg,
-            callback_required=self.cb_required)
+        if not obj.delegate:
+            raise pymongo.errors.InvalidOperation(
+                "Call open() on %s before accessing attribute '%s'" % (
+                    obj.__class__.__name__, self.get_name()))
+        return getattr(obj.delegate, self.get_name())
 
-    def get_cb_required(self):
-        return self.cb_required
+    def __set__(self, obj, val):
+        raise AttributeError
 
     def wrap(self, original_class):
-        return WrapAsync(self, original_class)
-
-    def unwrap(self, motor_class):
-        return UnwrapAsync(self, motor_class)
+        return WrapReadOnlyProperty(self, original_class)
 
 
-class WrapAsync(Async):
+class WrapReadOnlyProperty(object):
     def __init__(self, prop, original_class):
+        """A descriptor that wraps a Motor method and wraps its return value in
+        a Motor class. E.g., MotorCursor.__copy__() calls Cursor.__copy__(),
+        whose return value is wrapped in a new MotorCorsor. Uses the wrap()
+        method on the owner object.
         """
-        TODO: UPDATE doc
-        A descriptor that wraps a Motor method and wraps its return value in a
-        Motor class. E.g., wrap Motor's map_reduce to return a MotorCollection
-        instead of a PyMongo Collection. Calls the wrap() method on the owner
-        object to do the actual wrapping at invocation time.
-        """
-        Async.__init__(self, prop.has_safe_arg, prop.cb_required)
         self.prop = prop
         self.original_class = original_class
+
+    def set_name(self, name):
+        self.prop.set_name(name)
+
+    def get_name(self):
+        return self.prop.get_name()
 
     def __get__(self, obj, objtype):
         f = self.prop.__get__(obj, objtype)
         original_class = self.original_class
 
         @functools.wraps(f)
-        def _f(*args, **kwargs):
-            callback = kwargs.pop('callback', None)
-            check_callable(callback, self.prop.cb_required)
-            if callback:
-                def _callback(result, error):
-                    if error:
-                        callback(None, error)
-                        return
+        def _f(self, *args, **kwargs):
+            result = f(self, *args, **kwargs)
 
-                    # Don't call isinstance(), not checking subclasses
-                    if result.__class__ is original_class:
-                        # Delegate to the current object to wrap the result
-                        new_object = obj.wrap(result)
-                    else:
-                        new_object = result
+            # Don't call isinstance(), not checking subclasses
+            if result.__class__ is original_class:
+                # Delegate to the current object to wrap the result
+                return self.wrap(result)
+            return result
 
-                    callback(new_object, None)
-                kwargs['callback'] = _callback
-            f(*args, **kwargs)
         return _f
 
-    def set_name(self, name):
-        self.prop.set_name(name)
 
-    def get_name(self):
-        return self.prop.name
-
-
-class UnwrapAsync(Unwrap):
-    def __init__(self, prop, motor_class):
-        Unwrap.__init__(self, prop, motor_class)
-
-
-class AsyncRead(Async):
-    def __init__(self, name=None):
-        """
-        A descriptor that wraps a PyMongo read method like find_one() that
-        requires a callback.
-        """
-        Async.__init__(self, has_safe_arg=False, cb_required=True, name=name)
-
-
-class AsyncWrite(Async):
-    def __init__(self, name=None):
-        """
-        A descriptor that wraps a PyMongo write method like update() that
-        accepts optional safe and callback arguments.
-        """
-        Async.__init__(self, has_safe_arg=True, cb_required=False, name=name)
-
-
-class AsyncCommand(Async):
-    def __init__(self, name=None):
-        """
-        A descriptor that wraps a PyMongo command like copy_database()
-        """
-        Async.__init__(self, has_safe_arg=False, cb_required=False, name=name)
-
-
-class ReadOnlyDelegateProperty(DelegateProperty):
-    def __get__(self, obj, objtype):
-        if not obj.delegate:
-            raise pymongo.errors.InvalidOperation(
-                "Call open() on %s before accessing attribute '%s'" % (
-                    obj.__class__.__name__, self.name))
-        return getattr(obj.delegate, self.name)
-
-    def __set__(self, obj, val):
-        raise AttributeError
-
-
-class ReadWriteDelegateProperty(ReadOnlyDelegateProperty):
+class ReadWriteProperty(ReadOnlyProperty):
     def __set__(self, obj, val):
         if not obj.delegate:
             raise pymongo.errors.InvalidOperation(
                 "Call open() on %s before accessing attribute '%s'" % (
-                    obj.__class__.__name__, self.name))
-        setattr(obj.delegate, self.name, val)
+                    obj.__class__.__name__, self.get_name()))
+        setattr(obj.delegate, self.get_name(), val)
 
 
 class MotorMeta(type):
-    def __new__(cls, name, bases, attrs):
+    def __new__(cls, class_name, bases, attrs):
         # Create the class.
-        new_class = type.__new__(cls, name, bases, attrs)
+        new_class = type.__new__(cls, class_name, bases, attrs)
 
-        # Set DelegateProperties' names
-        for name, attr in attrs.items():
-            if isinstance(attr, DelegateProperty):
-                attr.set_name(name)
+        # Turn delegate properties into real methods or descriptors. This code
+        # is executed just once per class at import time, so get as much work
+        # done here as possible, rather than at object-instantiation or
+        # method-access time.
+        def update_attrs(attrs):
+            for name, attr in attrs.items():
+                if isinstance(attr, MotorDelegateProperty):
+                    attr.set_name(name)
 
+                    # If new_class has no __delegate_class__, then it's a base
+                    # like MotorBase; don't try to update its attrs, we'll use
+                    # them for its subclasses like MotorClient.
+                    if getattr(new_class, '__delegate_class__', None):
+                        new_class_attr = attr.create_attribute(new_class)
+                        setattr(new_class, attr.get_name(), new_class_attr)
+
+        for base in reversed(bases):
+            update_attrs(base.__dict__)
+
+        update_attrs(attrs)
         return new_class
 
 
@@ -573,17 +570,17 @@ class MotorBase(object):
             return self.delegate == other.delegate
         return NotImplemented
 
-    get_lasterror_options           = ReadOnlyDelegateProperty()
-    set_lasterror_options           = ReadOnlyDelegateProperty()
-    unset_lasterror_options         = ReadOnlyDelegateProperty()
-    name                            = ReadOnlyDelegateProperty()
-    document_class                  = ReadWriteDelegateProperty()
-    slave_okay                      = ReadWriteDelegateProperty()
-    safe                            = ReadWriteDelegateProperty()
-    read_preference                 = ReadWriteDelegateProperty()
-    tag_sets                        = ReadWriteDelegateProperty()
-    secondary_acceptable_latency_ms = ReadWriteDelegateProperty()
-    write_concern                   = ReadWriteDelegateProperty()
+    get_lasterror_options           = ReadOnlyProperty()
+    set_lasterror_options           = ReadOnlyProperty()
+    unset_lasterror_options         = ReadOnlyProperty()
+    name                            = ReadOnlyProperty()
+    document_class                  = ReadWriteProperty()
+    slave_okay                      = ReadWriteProperty()
+    safe                            = ReadWriteProperty()
+    read_preference                 = ReadWriteProperty()
+    tag_sets                        = ReadWriteProperty()
+    secondary_acceptable_latency_ms = ReadWriteProperty()
+    write_concern                   = ReadWriteProperty()
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, repr(self.delegate))
@@ -669,13 +666,13 @@ class MotorClientBase(MotorOpenable, MotorBase):
     close_cursor   = AsyncCommand()
     copy_database  = AsyncCommand()
     drop_database  = AsyncCommand().unwrap('MotorDatabase')
-    disconnect     = ReadOnlyDelegateProperty()
-    tz_aware       = ReadOnlyDelegateProperty()
-    close          = ReadOnlyDelegateProperty()
-    is_primary     = ReadOnlyDelegateProperty()
-    is_mongos      = ReadOnlyDelegateProperty()
-    max_bson_size  = ReadOnlyDelegateProperty()
-    max_pool_size  = ReadOnlyDelegateProperty()
+    disconnect     = ReadOnlyProperty()
+    tz_aware       = ReadOnlyProperty()
+    close          = ReadOnlyProperty()
+    is_primary     = ReadOnlyProperty()
+    is_mongos      = ReadOnlyProperty()
+    max_bson_size  = ReadOnlyProperty()
+    max_pool_size  = ReadOnlyProperty()
 
     def open_sync(self):
         """Synchronous open(), returning self.
@@ -760,9 +757,9 @@ class MotorClient(MotorClientBase):
     kill_cursors = AsyncCommand()
     fsync        = AsyncCommand()
     unlock       = AsyncCommand()
-    nodes        = ReadOnlyDelegateProperty()
-    host         = ReadOnlyDelegateProperty()
-    port         = ReadOnlyDelegateProperty()
+    nodes        = ReadOnlyProperty()
+    host         = ReadOnlyProperty()
+    port         = ReadOnlyProperty()
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -821,12 +818,12 @@ class MotorClient(MotorClientBase):
 class MotorReplicaSetClient(MotorClientBase):
     __delegate_class__ = pymongo.mongo_replica_set_client.MongoReplicaSetClient
 
-    primary     = ReadOnlyDelegateProperty()
-    secondaries = ReadOnlyDelegateProperty()
-    arbiters    = ReadOnlyDelegateProperty()
-    hosts       = ReadOnlyDelegateProperty()
-    seeds       = ReadOnlyDelegateProperty()
-    close       = ReadOnlyDelegateProperty()
+    primary     = ReadOnlyProperty()
+    secondaries = ReadOnlyProperty()
+    arbiters    = ReadOnlyProperty()
+    hosts       = ReadOnlyProperty()
+    seeds       = ReadOnlyProperty()
+    close       = ReadOnlyProperty()
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a MongoDB replica set.
@@ -928,6 +925,9 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
         self.timeout_obj = self.io_loop.add_timeout(
             time.time() + self._refresh_interval, self.async_refresh)
 
+    async_refresh = asynchronize(
+        refresh, has_safe_arg=False, callback_required=False)
+
     def start(self):
         """No-op: PyMongo thinks this starts the monitor, but Motor starts
            the monitor separately to ensure it uses the right IOLoop"""
@@ -935,11 +935,6 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
 
     def start_motor(self, io_loop):
         self.io_loop = io_loop
-        self.async_refresh = asynchronize(
-            self.io_loop,
-            self.refresh,
-            has_safe_arg=False,
-            callback_required=False)
         self.timeout_obj = self.io_loop.add_timeout(
             time.time() + self._refresh_interval, self.async_refresh)
 
@@ -979,10 +974,10 @@ class MotorDatabase(MotorBase):
     previous_error      = AsyncRead()
     dereference         = AsyncRead()
 
-    incoming_manipulators         = ReadOnlyDelegateProperty()
-    incoming_copying_manipulators = ReadOnlyDelegateProperty()
-    outgoing_manipulators         = ReadOnlyDelegateProperty()
-    outgoing_copying_manipulators = ReadOnlyDelegateProperty()
+    incoming_manipulators         = ReadOnlyProperty()
+    incoming_copying_manipulators = ReadOnlyProperty()
+    outgoing_manipulators         = ReadOnlyProperty()
+    outgoing_copying_manipulators = ReadOnlyProperty()
 
     def __init__(self, connection, name):
         if not isinstance(connection, MotorClientBase):
@@ -1046,8 +1041,8 @@ class MotorCollection(MotorBase):
     inline_map_reduce = AsyncRead()
     find_one          = AsyncRead()
     aggregate         = AsyncRead()
-    uuid_subtype      = ReadWriteDelegateProperty()
-    full_name         = ReadOnlyDelegateProperty()
+    uuid_subtype      = ReadWriteProperty()
+    full_name         = ReadOnlyProperty()
 
     def __init__(self, database, name=None, *args, **kwargs):
         if isinstance(database, Collection):
@@ -1094,9 +1089,10 @@ class MotorCollection(MotorBase):
         return self.database.get_io_loop()
 
 
-class MotorCursorChainingMethod(DelegateProperty):
+# TODO: turn into a MotorAttributeFactory
+class MotorCursorChainingMethod(ReadOnlyProperty):
     def __get__(self, obj, objtype):
-        method = getattr(obj.delegate, self.name)
+        method = getattr(obj.delegate, self.get_name())
 
         @functools.wraps(method)
         def return_clone(*args, **kwargs):
@@ -1113,10 +1109,10 @@ class MotorCursor(MotorBase):
     explain       = AsyncRead()
     _refresh      = AsyncRead()
     close         = AsyncCommand()
-    cursor_id     = ReadOnlyDelegateProperty()
-    alive         = ReadOnlyDelegateProperty()
-    __copy__      = ReadOnlyDelegateProperty().wrap(Cursor)
-    __deepcopy__  = ReadOnlyDelegateProperty().wrap(Cursor)
+    cursor_id     = ReadOnlyProperty()
+    alive         = ReadOnlyProperty()
+    __copy__      = ReadOnlyProperty().wrap(Cursor)
+    __deepcopy__  = ReadOnlyProperty().wrap(Cursor)
     batch_size    = MotorCursorChainingMethod()
     add_option    = MotorCursorChainingMethod()
     remove_option = MotorCursorChainingMethod()
@@ -1595,19 +1591,19 @@ class MotorGridOut(MotorOpenable):
     """
     __delegate_class__ = gridfs.GridOut
 
-    __getattr__     = ReadOnlyDelegateProperty()
-    _id             = ReadOnlyDelegateProperty()
-    filename        = ReadOnlyDelegateProperty()
-    name            = ReadOnlyDelegateProperty()
-    content_type    = ReadOnlyDelegateProperty()
-    length          = ReadOnlyDelegateProperty()
-    chunk_size      = ReadOnlyDelegateProperty()
-    upload_date     = ReadOnlyDelegateProperty()
-    aliases         = ReadOnlyDelegateProperty()
-    metadata        = ReadOnlyDelegateProperty()
-    md5             = ReadOnlyDelegateProperty()
-    tell            = ReadOnlyDelegateProperty()
-    seek            = ReadOnlyDelegateProperty()
+    __getattr__     = ReadOnlyProperty()
+    _id             = ReadOnlyProperty()
+    filename        = ReadOnlyProperty()
+    name            = ReadOnlyProperty()
+    content_type    = ReadOnlyProperty()
+    length          = ReadOnlyProperty()
+    chunk_size      = ReadOnlyProperty()
+    upload_date     = ReadOnlyProperty()
+    aliases         = ReadOnlyProperty()
+    metadata        = ReadOnlyProperty()
+    md5             = ReadOnlyProperty()
+    tell            = ReadOnlyProperty()
+    seek            = ReadOnlyProperty()
     read            = AsyncRead()
     readline        = AsyncRead()
 
@@ -1683,20 +1679,20 @@ class MotorGridOut(MotorOpenable):
 class MotorGridIn(MotorOpenable):
     __delegate_class__ = gridfs.GridIn
 
-    __getattr__     = ReadOnlyDelegateProperty()
-    closed          = ReadOnlyDelegateProperty()
+    __getattr__     = ReadOnlyProperty()
+    closed          = ReadOnlyProperty()
     close           = AsyncCommand()
     write           = AsyncCommand().unwrap(MotorGridOut)
     writelines      = AsyncCommand().unwrap(MotorGridOut)
-    _id             = ReadOnlyDelegateProperty()
-    md5             = ReadOnlyDelegateProperty()
-    filename        = ReadOnlyDelegateProperty()
-    name            = ReadOnlyDelegateProperty()
-    content_type    = ReadOnlyDelegateProperty()
-    length          = ReadOnlyDelegateProperty()
-    chunk_size      = ReadOnlyDelegateProperty()
-    upload_date     = ReadOnlyDelegateProperty()
-    set             = AsyncCommand(name='__setattr__')
+    _id             = ReadOnlyProperty()
+    md5             = ReadOnlyProperty()
+    filename        = ReadOnlyProperty()
+    name            = ReadOnlyProperty()
+    content_type    = ReadOnlyProperty()
+    length          = ReadOnlyProperty()
+    chunk_size      = ReadOnlyProperty()
+    upload_date     = ReadOnlyProperty()
+    set             = asynchronize(gridfs.GridIn.__setattr__, False, False)
 
     def __init__(self, root_collection, **kwargs):
         """

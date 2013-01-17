@@ -12,42 +12,42 @@
      Raises :class:`~pymongo.errors.InvalidName` if an invalid
      collection name is used.
 
-  .. automotorattribute:: full_name
-  .. automotorattribute:: name
+  .. autoattribute:: full_name
+  .. autoattribute:: name
   .. attribute:: database
 
   The :class:`MotorDatabase` that this
   :class:`MotorCollection` is a part of.
 
-  .. automotorattribute:: slave_okay
-  .. automotorattribute:: read_preference
-  .. automotorattribute:: tag_sets
-  .. automotorattribute:: secondary_acceptable_latency_ms
-  .. automotorattribute:: safe
-  .. automotorattribute:: uuid_subtype
-  .. automotormethod:: get_lasterror_options
-  .. automotormethod:: set_lasterror_options
-  .. automotormethod:: unset_lasterror_options
-  .. automotormethod:: insert(doc_or_docs[, manipulate=True[, safe=False[, check_keys=True[, continue_on_error=False[, callback=None [, **kwargs]]]]])
-  .. automotormethod:: save(to_save[, manipulate=True[, safe=False[, callback=None [, **kwargs]]])
-  .. automotormethod:: update(spec, document[, upsert=False[, manipulate=False[, safe=False[, multi=False[, callback=None [, **kwargs]]]]])
-  .. automotormethod:: remove([spec_or_id=None[, safe=False[, callback=None [, **kwargs]]])
-  .. automotormethod:: drop
+  .. autoattribute:: slave_okay
+  .. autoattribute:: read_preference
+  .. autoattribute:: tag_sets
+  .. autoattribute:: secondary_acceptable_latency_ms
+  .. autoattribute:: safe
+  .. autoattribute:: uuid_subtype
+  .. automethod:: get_lasterror_options
+  .. automethod:: set_lasterror_options
+  .. automethod:: unset_lasterror_options
+  .. automethod:: insert(doc_or_docs[, manipulate=True[, safe=False[, check_keys=True[, continue_on_error=False[, callback=None [, **kwargs]]]]])
+  .. automethod:: save(to_save[, manipulate=True[, safe=False[, callback=None [, **kwargs]]])
+  .. automethod:: update(spec, document[, upsert=False[, manipulate=False[, safe=False[, multi=False[, callback=None [, **kwargs]]]]])
+  .. automethod:: remove([spec_or_id=None[, safe=False[, callback=None [, **kwargs]]])
+  .. automethod:: drop
   .. automethod:: find([spec=None[, fields=None[, skip=0[, limit=0[, timeout=True[, snapshot=False[, tailable=False[, sort=None[, max_scan=None[, as_class=None[, slave_okay=False[, await_data=False[, partial=False[, manipulate=True[, read_preference=ReadPreference.PRIMARY[, **kwargs]]]]]]]]]]]]]]]])
-  .. automotormethod:: find_one([spec_or_id=None[, *args[, callback=<function> [, **kwargs]]])
-  .. automotormethod:: count
-  .. automotormethod:: create_index
-  .. automotormethod:: ensure_index
-  .. automotormethod:: drop_index
-  .. automotormethod:: drop_indexes
-  .. automotormethod:: reindex
-  .. automotormethod:: index_information
-  .. automotormethod:: options
-  .. automotormethod:: aggregate
-  .. automotormethod:: group
-  .. automotormethod:: rename
-  .. automotormethod:: distinct
-  .. automotormethod:: map_reduce
-  .. automotormethod:: inline_map_reduce
-  .. automotormethod:: find_and_modify
+  .. automethod:: find_one([spec_or_id=None[, *args[, callback=<function> [, **kwargs]]])
+  .. automethod:: count
+  .. automethod:: create_index
+  .. automethod:: ensure_index
+  .. automethod:: drop_index
+  .. automethod:: drop_indexes
+  .. automethod:: reindex
+  .. automethod:: index_information
+  .. automethod:: options
+  .. automethod:: aggregate
+  .. automethod:: group
+  .. automethod:: rename
+  .. automethod:: distinct
+  .. automethod:: map_reduce
+  .. automethod:: inline_map_reduce
+  .. automethod:: find_and_modify
 

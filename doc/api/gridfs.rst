@@ -12,30 +12,30 @@ Store blobs of data in `GridFS <http://www.mongodb.org/display/DOCS/GridFS>`_.
 .. autoclass:: MotorGridFS
 
   .. automethod:: open
-  .. automotormethod:: new_file
-  .. automotormethod:: get
-  .. automotormethod:: get_version
-  .. automotormethod:: get_last_version
-  .. automotormethod:: list
-  .. automotormethod:: exists
-  .. automotormethod:: put
-  .. automotormethod:: delete
+  .. automethod:: new_file
+  .. automethod:: get
+  .. automethod:: get_version
+  .. automethod:: get_last_version
+  .. automethod:: list
+  .. automethod:: exists
+  .. automethod:: put
+  .. automethod:: delete
 
 
 .. autoclass:: MotorGridIn
 
-  .. automotorattribute:: _id
-  .. automotorattribute:: filename
-  .. automotorattribute:: name
-  .. automotorattribute:: content_type
-  .. automotorattribute:: length
-  .. automotorattribute:: chunk_size
-  .. automotorattribute:: upload_date
-  .. automotorattribute:: md5
-  .. automotorattribute:: closed
+  .. autoattribute:: _id
+  .. autoattribute:: filename
+  .. autoattribute:: name
+  .. autoattribute:: content_type
+  .. autoattribute:: length
+  .. autoattribute:: chunk_size
+  .. autoattribute:: upload_date
+  .. autoattribute:: md5
+  .. autoattribute:: closed
   .. automethod:: open
-  .. automotormethod:: write
-  .. automotormethod:: writelines
+  .. automethod:: write
+  .. automethod:: writelines
   .. method:: set(name, value, callback=None)
 
     Set an arbitrary metadata attribute on the file. Stores value on the server
@@ -52,22 +52,22 @@ Store blobs of data in `GridFS <http://www.mongodb.org/display/DOCS/GridFS>`_.
       - `value`: Value of the attribute
       - `callback`: Optional callback to execute once attribute is set.
 
-  .. automotormethod:: close
+  .. automethod:: close
 
 
 .. autoclass:: MotorGridOut
 
-  .. automotorattribute:: _id
-  .. automotorattribute:: filename
-  .. automotorattribute:: name
-  .. automotorattribute:: content_type
-  .. automotorattribute:: length
-  .. automotorattribute:: chunk_size
-  .. automotorattribute:: upload_date
-  .. automotorattribute:: md5
+  .. autoattribute:: _id
+  .. autoattribute:: filename
+  .. autoattribute:: name
+  .. autoattribute:: content_type
+  .. autoattribute:: length
+  .. autoattribute:: chunk_size
+  .. autoattribute:: upload_date
+  .. autoattribute:: md5
   .. automethod:: open
-  .. automotormethod:: tell
-  .. automotormethod:: seek
-  .. automotormethod:: read
-  .. automotormethod:: readline
+  .. automethod:: tell
+  .. automethod:: seek
+  .. automethod:: read
+  .. automethod:: readline
   .. automethod:: stream_to_handler

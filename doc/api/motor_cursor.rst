@@ -12,22 +12,22 @@
   .. automethod:: tail
   .. automethod:: clone
   .. automethod:: rewind
-  .. automotormethod:: close
-  .. automotormethod:: count
-  .. automotormethod:: distinct
-  .. automotormethod:: explain
-  .. automotormethod:: sort
-  .. automotormethod:: limit
-  .. automotormethod:: skip
-  .. automotormethod:: batch_size
-  .. automotormethod:: add_option
-  .. automotormethod:: remove_option
-  .. automotormethod:: max_scan
-  .. automotormethod:: hint
-  .. automotormethod:: where
+  .. automethod:: close
+  .. automethod:: count
+  .. automethod:: distinct
+  .. automethod:: explain
+  .. automethod:: sort
+  .. automethod:: limit
+  .. automethod:: skip
+  .. automethod:: batch_size
+  .. automethod:: add_option
+  .. automethod:: remove_option
+  .. automethod:: max_scan
+  .. automethod:: hint
+  .. automethod:: where
   .. autoattribute:: buffer_size
-  .. automotorattribute:: alive
-  .. automotorattribute:: cursor_id
+  .. autoattribute:: alive
+  .. autoattribute:: cursor_id
 
   .. describe:: c[index]
 
