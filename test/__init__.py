@@ -63,8 +63,12 @@ class AsyncTestRunner(gen.Runner):
             loop.stop()
 
 
-def async_test_engine(timeout_sec=5, io_loop=None):
-    if not isinstance(timeout_sec, int) and not isinstance(timeout_sec, float):
+def async_test_engine(timeout_sec=None, io_loop=None):
+    if (
+        timeout_sec is not None
+        and not isinstance(timeout_sec, int) and
+        not isinstance(timeout_sec, float)
+    ):
         raise TypeError(
 """Expected int or float, got %s
 Use async_test_engine like:
@@ -73,7 +77,9 @@ or:
     @async_test_engine(timeout_sec=10)""" % (
         repr(timeout_sec)))
 
-    timeout_sec = max(timeout_sec, float(os.environ.get('TIMEOUT_SEC', 0)))
+    if timeout_sec is None:
+        timeout_sec = float(os.environ.get('TIMEOUT_SEC', 5))
+
     is_done = [False]
 
     def decorator(func):
