@@ -17,7 +17,6 @@
 import functools
 import socket
 import time
-import warnings
 
 from tornado import ioloop, iostream, gen
 import greenlet
