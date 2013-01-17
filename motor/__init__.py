@@ -49,8 +49,6 @@ version = '.'.join(map(str, version_tuple))
 # TODO: ensure we're doing
 #   timeouts as efficiently as possible, test performance hit with timeouts
 #   from registering and cancelling timeouts
-# TODO: perhaps remove versionchanged Sphinx annotations from proxied methods,
-#   unless versionchanged >= 2.3 or so -- whenever Motor joins PyMongo
 # TODO: review open_sync(), does it need to disconnect after success to ensure
 #   all IOStreams with old IOLoop are gone?
 # TODO: what do safe=True and other get_last_error options mean when creating
