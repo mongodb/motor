@@ -1795,7 +1795,6 @@ class MotorGridFS(MotorOpenable):
 # TODO: move docstrings from generator_interface.rst to here, include there
 class Op(gen.Task):
     def __init__(self, func, *args, **kwargs):
-        check_callable(func, True)
         super(Op, self).__init__(func, *args, **kwargs)
 
     def get_result(self):
