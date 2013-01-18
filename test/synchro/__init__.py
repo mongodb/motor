@@ -25,7 +25,6 @@ import os
 import sys
 import time
 import traceback
-from tornado import gen
 from tornado.ioloop import IOLoop
 
 import motor
@@ -40,7 +39,7 @@ from pymongo.common import SAFE_OPTIONS
 # thinking it's really pymongo
 from pymongo import (
     ASCENDING, DESCENDING, GEO2D, GEOHAYSTACK, TEXT, ReadPreference,
-    ALL, helpers, OFF, SLOW_ONLY, pool, thread_util
+    ALL, helpers, OFF, SLOW_ONLY, pool, thread_util, MongoClient, Connection
 )
 
 from gridfs.grid_file import DEFAULT_CHUNK_SIZE, _SEEK_CUR, _SEEK_END
@@ -112,11 +111,12 @@ class Sync(object):
             obj.synchronize(async_method, has_safe_arg=self.has_safe_arg)))
 
 
-class WrapOutgoing(motor.DelegateProperty):
+class WrapOutgoing(object):
     def __get__(self, obj, objtype):
         # self.name is set by SynchroMeta
-        motor_method = getattr(obj.delegate, self.name)
+        name = self.name
         def synchro_method(*args, **kwargs):
+            motor_method = getattr(obj.delegate, name)
             return wrap_synchro(motor_method)(*args, **kwargs)
 
         return synchro_method
@@ -174,7 +174,7 @@ class SynchroMeta(type):
                 # this attribute, e.g. Database.add_son_manipulator which is
                 # special-cased. Ignore such attrs.
                 if attrname not in attrs:
-                    if isinstance(delegate_attr, motor.Async):
+                    if getattr(delegate_attr, 'is_async_method', False):
                         # Re-synchronize the method
                         sync_method = Sync(attrname, delegate_attr.has_safe_arg)
                         setattr(new_class, attrname, sync_method)
@@ -183,19 +183,22 @@ class SynchroMeta(type):
                         sync_method = Sync(
                             attrname, delegate_attr.prop.has_safe_arg)
                         setattr(new_class, attrname, sync_method)
-                    elif isinstance(
-                        delegate_attr, motor.MotorCursorChainingMethod):
+                    elif getattr(
+                        delegate_attr, 'is_motorcursor_chaining_method', False):
                         # Wrap MotorCursors in Synchro Cursors
                         wrapper = WrapOutgoing()
                         wrapper.name = attrname
                         setattr(new_class, attrname, wrapper)
-                    elif isinstance(delegate_attr, motor.DelegateProperty):
+                    elif isinstance(delegate_attr, motor.MotorDelegateProperty):
                         # Delegate the property from Synchro to Motor
                         setattr(new_class, attrname, delegate_attr)
 
         # Set DelegateProperties' and SynchroProperties' names
         for name, attr in attrs.items():
-            if isinstance(attr, (motor.DelegateProperty, SynchroProperty)):
+            if isinstance(
+                attr,
+                (motor.MotorDelegateProperty, SynchroProperty, WrapOutgoing)
+            ):
                 attr.name = name
 
         return new_class
@@ -442,15 +445,22 @@ class Cursor(Synchro):
 
     rewind                     = WrapOutgoing()
     clone                      = WrapOutgoing()
-    __clone                    = WrapOutgoing()
-    __copy__                   = WrapOutgoing()
-    __deepcopy__               = WrapOutgoing()
 
     def __init__(self, motor_cursor):
         self.delegate = motor_cursor
 
     def __iter__(self):
         return self
+
+    # These are special cases, they need to be accessed on the class, not just
+    # on instances.
+    @wrap_synchro
+    def __copy__(self):
+        return self.delegate.__copy__()
+
+    @wrap_synchro
+    def __deepcopy__(self, memo):
+        return self.delegate.__deepcopy__(memo)
 
     def next(self):
         cursor = self.delegate

@@ -329,6 +329,10 @@ class MotorDelegateProperty(object):
         return self.name
 
     def create_attribute(self, cls):
+        # The default strategy is to set 'self' as the Motor class's attribute,
+        # and implement __get__ to support property access at run time. Some
+        # subclasses like Async and MotorCursorChainingMethod construct a
+        # method at import time and return it from create_attribute().
         return self
 
 
@@ -513,13 +517,13 @@ class WrapReadOnlyProperty(object):
         original_class = self.original_class
 
         @functools.wraps(f)
-        def _f(self, *args, **kwargs):
-            result = f(self, *args, **kwargs)
+        def _f(*args, **kwargs):
+            result = f(*args, **kwargs)
 
             # Don't call isinstance(), not checking subclasses
             if result.__class__ is original_class:
                 # Delegate to the current object to wrap the result
-                return self.wrap(result)
+                return obj.wrap(result)
             return result
 
         return _f
@@ -554,6 +558,8 @@ class MotorMeta(type):
                     if getattr(new_class, '__delegate_class__', None):
                         new_class_attr = attr.create_attribute(new_class)
                         setattr(new_class, attr.get_name(), new_class_attr)
+                elif isinstance(attr, WrapReadOnlyProperty):
+                    attr.set_name(name)
 
         for base in reversed(bases):
             update_attrs(base.__dict__)
@@ -1089,16 +1095,18 @@ class MotorCollection(MotorBase):
         return self.database.get_io_loop()
 
 
-# TODO: turn into a MotorAttributeFactory
-class MotorCursorChainingMethod(ReadOnlyProperty):
-    def __get__(self, obj, objtype):
-        method = getattr(obj.delegate, self.get_name())
+class MotorCursorChainingMethod(MotorDelegateProperty):
+    def create_attribute(self, cls):
+        delegate_class = cls.__delegate_class__ # delegate_class is Cursor
+        cursor_method = getattr(delegate_class, self.get_name())
 
-        @functools.wraps(method)
-        def return_clone(*args, **kwargs):
-            method(*args, **kwargs)
-            return obj
+        @functools.wraps(cursor_method)
+        def return_clone(self, *args, **kwargs):
+            cursor_method(self.delegate, *args, **kwargs)
+            return self
 
+        # For SynchroMeta
+        return_clone.is_motorcursor_chaining_method = True
         return return_clone
 
 

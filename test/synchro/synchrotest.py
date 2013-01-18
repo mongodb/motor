@@ -25,9 +25,6 @@ Motor operation to complete, default 5 seconds.
 import sys
 from test import synchro
 
-sys.path[0:0] = [""]
-from os import path
-
 import nose
 from nose.config import Config
 from nose.plugins import Plugin
@@ -36,6 +33,11 @@ from nose.plugins.skip import Skip
 from nose.selector import Selector
 
 excluded_modules = [
+    # Depending on PYTHONPATH, Motor's direct tests may be imported - don't
+    # run them now.
+    'test.test_motor_',
+
+    # Exclude some PyMongo tests that can't be applied to Synchro.
     'test.test_threads',
     'test.test_threads_replica_set_connection',
     'test.test_pooling',
@@ -170,18 +172,10 @@ if __name__ == '__main__':
     time_module = synchro.TimeModule()
     sys.modules['time'] = time_module
 
-    # Find our directory
-    this_dir = path.dirname(__file__)
-
-    # Find test dir
-#    print 'Running tests in %s' % test_dir
-
     config = Config(
         plugins=PluginManager(),
     )
 
     nose.main(
         config=config,
-        addplugins=[SynchroNosePlugin(), Skip()],
-#        defaultTest=test_dir,
-    )
+        addplugins=[SynchroNosePlugin(), Skip()])
