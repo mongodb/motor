@@ -61,6 +61,7 @@ class MotorDatabaseTest(MotorTest):
         # Test creating collection, return val is wrapped in MotorCollection,
         # creating it again raises CollectionInvalid.
         db = self.motor_connection(host, port).pymongo_test
+        yield motor.Op(db.drop_collection, 'test_collection2')
         collection = yield motor.Op(db.create_collection, 'test_collection2')
         self.assertTrue(isinstance(collection, motor.MotorCollection))
         self.assertTrue(
