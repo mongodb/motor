@@ -50,8 +50,8 @@ parameters:
 Motor's asynchronous methods return ``None`` immediately, and execute the
 callback, with either a result or an error, when the operation has completed.
 
-For example, one uses
-:meth:`~pymongo.collection.Collection.find_one` in PyMongo like:
+For example,
+:meth:`~pymongo.collection.Collection.find_one` is used in PyMongo like:
 
 .. code-block:: python
 
