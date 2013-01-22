@@ -189,7 +189,7 @@ class SynchroMeta(type):
                         wrapper = WrapOutgoing()
                         wrapper.name = attrname
                         setattr(new_class, attrname, wrapper)
-                    elif isinstance(delegate_attr, motor.MotorDelegateProperty):
+                    elif isinstance(delegate_attr, motor.ReadOnlyPropertyDescriptor):
                         # Delegate the property from Synchro to Motor
                         setattr(new_class, attrname, delegate_attr)
 
@@ -197,7 +197,7 @@ class SynchroMeta(type):
         for name, attr in attrs.items():
             if isinstance(
                 attr,
-                (motor.MotorDelegateProperty, SynchroProperty, WrapOutgoing)
+                (motor.MotorAttributeFactory, SynchroProperty, WrapOutgoing)
             ):
                 attr.name = name
 
