@@ -321,22 +321,12 @@ def asynchronize(sync_method, has_safe_arg, callback_required):
     return method
 
 
-class MotorDelegateProperty(object):
-    def set_name(self, name):
-        self.name = name
-
-    def get_name(self):
-        return self.name
-
-    def create_attribute(self, cls):
-        # The default strategy is to set 'self' as the Motor class's attribute,
-        # and implement __get__ to support property access at run time. Some
-        # subclasses like Async and MotorCursorChainingMethod construct a
-        # method at import time and return it from create_attribute().
-        return self
+class MotorAttributeFactory(object):
+    def create_attribute(self, cls, attr_name):
+        raise NotImplementedError
 
 
-class Async(MotorDelegateProperty):
+class Async(MotorAttributeFactory):
     def __init__(self, has_safe_arg, callback_required):
         """
         A descriptor that wraps a PyMongo method, such as insert or remove, and
@@ -349,11 +339,9 @@ class Async(MotorDelegateProperty):
         self.has_safe_arg = has_safe_arg
         self.callback_required = callback_required
 
-    def create_attribute(self, cls):
-        delegate_class = cls.__delegate_class__
-        sync_method = getattr(delegate_class, self.get_name())
-        return asynchronize(
-            sync_method, self.has_safe_arg, self.callback_required)
+    def create_attribute(self, cls, attr_name):
+        method = getattr(cls.__delegate_class__, attr_name)
+        return asynchronize(method, self.has_safe_arg, self.callback_required)
 
     def wrap(self, original_class):
         return WrapAsync(self, original_class)
@@ -362,16 +350,10 @@ class Async(MotorDelegateProperty):
         return UnwrapAsync(self, motor_class)
 
 
-class WrapBase(MotorDelegateProperty):
+class WrapBase(MotorAttributeFactory):
     def __init__(self, prop):
-        MotorDelegateProperty.__init__(self)
+        MotorAttributeFactory.__init__(self)
         self.prop = prop
-
-    def set_name(self, name):
-        self.prop.set_name(name)
-
-    def get_name(self):
-        return self.prop.get_name()
 
 
 class WrapAsync(WrapBase):
@@ -385,8 +367,8 @@ class WrapAsync(WrapBase):
         WrapBase.__init__(self, prop)
         self.original_class = original_class
 
-    def create_attribute(self, cls):
-        async_method = self.prop.create_attribute(cls)
+    def create_attribute(self, cls, attr_name):
+        async_method = self.prop.create_attribute(cls, attr_name)
         original_class = self.original_class
         callback_required = self.prop.callback_required
 
@@ -424,8 +406,8 @@ class UnwrapAsync(WrapBase):
         self.prop = prop
         self.motor_class = motor_class
 
-    def create_attribute(self, cls):
-        f = self.prop.create_attribute(cls)
+    def create_attribute(self, cls, attr_name):
+        f = self.prop.create_attribute(cls, attr_name)
         motor_class = self.motor_class
 
         def _unwrap_obj(obj):
@@ -456,115 +438,107 @@ class UnwrapAsync(WrapBase):
 
 class AsyncRead(Async):
     def __init__(self):
-        """
-        A descriptor that wraps a PyMongo read method like find_one() that
-        requires a callback.
-        """
+        """A descriptor that wraps a PyMongo read method like find_one() that
+        requires a callback."""
         Async.__init__(self, has_safe_arg=False, callback_required=True)
 
 
 class AsyncWrite(Async):
     def __init__(self):
-        """
-        A descriptor that wraps a PyMongo write method like update() that
-        accepts optional safe and callback arguments.
-        """
+        """A descriptor that wraps a PyMongo write method like update() that
+        accepts optional safe and callback arguments."""
         Async.__init__(self, has_safe_arg=True, callback_required=False)
 
 
 class AsyncCommand(Async):
     def __init__(self):
-        """
-        A descriptor that wraps a PyMongo command like copy_database() that
-        has an optional callback and no safe argument.
-        """
+        """A descriptor that wraps a PyMongo command like copy_database() that
+        has an optional callback and no safe argument."""
         Async.__init__(self, has_safe_arg=False, callback_required=False)
 
 
-class ReadOnlyProperty(MotorDelegateProperty):
+def check_delegate(obj, attr_name):
+    if not obj.delegate:
+        raise pymongo.errors.InvalidOperation(
+            "Call open() on %s before accessing attribute '%s'" % (
+                obj.__class__.__name__, attr_name))
+
+
+class ReadOnlyPropertyDescriptor(object):
+    def __init__(self, attr_name):
+        self.attr_name = attr_name
+
     def __get__(self, obj, objtype):
-        if not obj.delegate:
-            raise pymongo.errors.InvalidOperation(
-                "Call open() on %s before accessing attribute '%s'" % (
-                    obj.__class__.__name__, self.get_name()))
-        return getattr(obj.delegate, self.get_name())
+        check_delegate(obj, self.attr_name)
+        return getattr(obj.delegate, self.attr_name)
 
     def __set__(self, obj, val):
         raise AttributeError
 
-    def wrap(self, original_class):
-        return WrapReadOnlyProperty(self, original_class)
+
+class ReadOnlyProperty(MotorAttributeFactory):
+    def create_attribute(self, cls, attr_name):
+        return ReadOnlyPropertyDescriptor(attr_name)
 
 
-class WrapReadOnlyProperty(object):
-    def __init__(self, prop, original_class):
-        """A descriptor that wraps a Motor method and wraps its return value in
+class WrapReadOnlyPropertyDescriptor(object):
+    def __init__(self, attr_name, original_class):
+        """
+        TODO: update
+
+        A descriptor that wraps a Motor method and wraps its return value in
         a Motor class. E.g., MotorCursor.__copy__() calls Cursor.__copy__(),
         whose return value is wrapped in a new MotorCorsor. Uses the wrap()
         method on the owner object.
         """
-        self.prop = prop
+        self.attr_name = attr_name
         self.original_class = original_class
 
-    def set_name(self, name):
-        self.prop.set_name(name)
-
-    def get_name(self):
-        return self.prop.get_name()
-
     def __get__(self, obj, objtype):
-        f = self.prop.__get__(obj, objtype)
-        original_class = self.original_class
+        check_delegate(obj, self.attr_name)
+        attr = getattr(obj, self.attr_name)
+        # Don't call isinstance(), not checking subclasses
+        if attr.__class__ is self.original_class:
+            # Delegate to the current object to wrap the result
+            return obj.wrap(attr)
 
-        @functools.wraps(f)
-        def _f(*args, **kwargs):
-            result = f(*args, **kwargs)
-
-            # Don't call isinstance(), not checking subclasses
-            if result.__class__ is original_class:
-                # Delegate to the current object to wrap the result
-                return obj.wrap(result)
-            return result
-
-        return _f
+        return attr
 
 
-class ReadWriteProperty(ReadOnlyProperty):
+class WrapReadOnlyProperty(MotorAttributeFactory):
+    def __init__(self, original_class):
+        self.original_class = original_class
+
+    def create_attribute(self, cls, attr_name):
+        return WrapReadOnlyPropertyDescriptor(attr_name, self.original_class)
+
+
+class ReadWritePropertyDescriptor(ReadOnlyPropertyDescriptor):
     def __set__(self, obj, val):
-        if not obj.delegate:
-            raise pymongo.errors.InvalidOperation(
-                "Call open() on %s before accessing attribute '%s'" % (
-                    obj.__class__.__name__, self.get_name()))
-        setattr(obj.delegate, self.get_name(), val)
+        check_delegate(obj, self.attr_name)
+        setattr(obj.delegate, self.attr_name, val)
+
+
+class ReadWriteProperty(MotorAttributeFactory):
+    def create_attribute(self, cls, attr_name):
+        return ReadWritePropertyDescriptor(attr_name)
 
 
 class MotorMeta(type):
     def __new__(cls, class_name, bases, attrs):
-        # Create the class.
         new_class = type.__new__(cls, class_name, bases, attrs)
 
-        # Turn delegate properties into real methods or descriptors. This code
-        # is executed just once per class at import time, so get as much work
-        # done here as possible, rather than at object-instantiation or
-        # method-access time.
-        def update_attrs(attrs):
-            for name, attr in attrs.items():
-                if isinstance(attr, MotorDelegateProperty):
-                    attr.set_name(name)
+        # If new_class has no __delegate_class__, then it's a base like
+        # MotorClientBase; don't try to update its attrs, we'll use them
+        # for its subclasses like MotorClient.
+        if getattr(new_class, '__delegate_class__', None):
+            for base in reversed(inspect.getmro(new_class)):
+                # Turn attribute factories into real methods or descriptors.
+                for name, attr in base.__dict__.items():
+                    if isinstance(attr, MotorAttributeFactory):
+                        new_class_attr = attr.create_attribute(new_class, name)
+                        setattr(new_class, name, new_class_attr)
 
-                    # If new_class has no __delegate_class__, then it's a base
-                    # like MotorBase; don't try to update its attrs, we'll use
-                    # them for its subclasses like MotorClient.
-                    if getattr(new_class, '__delegate_class__', None):
-                        new_class_attr = attr.create_attribute(new_class)
-                        setattr(new_class, attr.get_name(), new_class_attr)
-                elif isinstance(attr, WrapReadOnlyProperty):
-                    attr.set_name(name)
-
-        for base in reversed(bases):
-            update_attrs(base.__dict__)
-
-        update_attrs(attrs)
         return new_class
 
 
@@ -1095,10 +1069,9 @@ class MotorCollection(MotorBase):
         return self.database.get_io_loop()
 
 
-class MotorCursorChainingMethod(MotorDelegateProperty):
-    def create_attribute(self, cls):
-        delegate_class = cls.__delegate_class__ # delegate_class is Cursor
-        cursor_method = getattr(delegate_class, self.get_name())
+class MotorCursorChainingMethod(MotorAttributeFactory):
+    def create_attribute(self, cls, attr_name):
+        cursor_method = getattr(Cursor, attr_name)
 
         @functools.wraps(cursor_method)
         def return_clone(self, *args, **kwargs):
@@ -1119,8 +1092,8 @@ class MotorCursor(MotorBase):
     close         = AsyncCommand()
     cursor_id     = ReadOnlyProperty()
     alive         = ReadOnlyProperty()
-    __copy__      = ReadOnlyProperty().wrap(Cursor)
-    __deepcopy__  = ReadOnlyProperty().wrap(Cursor)
+    __copy__      = WrapReadOnlyProperty(Cursor)
+    __deepcopy__  = WrapReadOnlyProperty(Cursor)
     batch_size    = MotorCursorChainingMethod()
     add_option    = MotorCursorChainingMethod()
     remove_option = MotorCursorChainingMethod()
