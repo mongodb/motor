@@ -1522,11 +1522,12 @@ class MotorCursor(MotorBase):
         return MotorCursor(self.delegate.__deepcopy__(memo), self.collection)
 
     def __del__(self):
-        # This MotorCursor is deleted on whatever greenlet does the last decref,
-        # or (if it's referenced from a cycle) whichever is current when the GC
-        # kicks in. We may need to send the server a killCursors message, but in
-        # Motor only direct children of the main greenlet can do I/O. First, do
-        # a quick check whether the cursor is still alive on the server:
+        # This MotorCursor is deleted on whatever greenlet does the last
+        # decref, or (if it's referenced from a cycle) whichever is current
+        # when the GC kicks in. We may need to send the server a killCursors
+        # message, but in Motor only direct children of the main greenlet can
+        # do I/O. First, do a quick check whether the cursor is still alive on
+        # the server:
         if self.cursor_id and self.alive:
             if greenlet.getcurrent().parent:
                 # We're on a child greenlet, send the message.
@@ -1651,9 +1652,10 @@ class MotorGridIn(MotorOpenable):
     def __init__(self, root_collection, **kwargs):
         """
         Class to write data to GridFS. If instantiating directly, you must call
-        :meth:`open` before using the `MotorGridIn` object. However, application
-        developers should generally not need to instantiate this class - instead
-        see the methods provided by :class:`~motor.MotorGridFS`.
+        :meth:`open` before using the `MotorGridIn` object. However,
+        application developers should generally not need to instantiate this
+        class - instead see the methods provided by
+        :class:`~motor.MotorGridFS`.
 
         Any of the file level options specified in the `GridFS Spec
         <http://dochub.mongodb.org/core/gridfsspec>`_ may be passed as
