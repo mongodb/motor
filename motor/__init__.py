@@ -15,6 +15,7 @@
 """Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import functools
+import inspect
 import socket
 import time
 
@@ -152,9 +153,9 @@ class MotorSocket(object):
         self.use_ssl = use_ssl
         self.timeout = None
         if self.use_ssl:
-           self.stream = iostream.SSLIOStream(sock, io_loop=io_loop)
+            self.stream = iostream.SSLIOStream(sock, io_loop=io_loop)
         else:
-           self.stream = iostream.IOStream(sock, io_loop=io_loop)
+            self.stream = iostream.IOStream(sock, io_loop=io_loop)
 
     def setsockopt(self, *args, **kwargs):
         self.stream.socket.setsockopt(*args, **kwargs)
@@ -186,7 +187,7 @@ class MotorSocket(object):
     def close(self):
         # TODO: examine this, decide if it's correct, and if so explain why
         self.stream.set_close_callback(None)
-        
+
         sock = self.stream.socket
         try:
             try:
@@ -293,7 +294,7 @@ def asynchronize(sync_method, has_safe_arg, callback_required):
         callback = kwargs.pop('callback', None)
         check_callable(callback, required=callback_required)
 
-        # Safe writes if callback is passed and safe=False not passed explicitly
+        # Safe if callback is passed and safe=False not passed explicitly
         if 'safe' not in kwargs and has_safe_arg:
             kwargs['safe'] = bool(callback)
 
@@ -328,9 +329,9 @@ class MotorAttributeFactory(object):
 
 class Async(MotorAttributeFactory):
     def __init__(self, has_safe_arg, callback_required):
-        """
-        A descriptor that wraps a PyMongo method, such as insert or remove, and
-        returns an asynchronous version of the method, which takes a callback.
+        """A descriptor that wraps a PyMongo method, such as insert or remove,
+        and returns an asynchronous version of the method, which takes a
+        callback.
 
         :Parameters:
          - `has_safe_arg`:      Whether the method takes a 'safe' argument
@@ -439,21 +440,24 @@ class UnwrapAsync(WrapBase):
 class AsyncRead(Async):
     def __init__(self):
         """A descriptor that wraps a PyMongo read method like find_one() that
-        requires a callback."""
+        requires a callback.
+        """
         Async.__init__(self, has_safe_arg=False, callback_required=True)
 
 
 class AsyncWrite(Async):
     def __init__(self):
         """A descriptor that wraps a PyMongo write method like update() that
-        accepts optional safe and callback arguments."""
+        accepts optional safe and callback arguments.
+        """
         Async.__init__(self, has_safe_arg=True, callback_required=False)
 
 
 class AsyncCommand(Async):
     def __init__(self):
         """A descriptor that wraps a PyMongo command like copy_database() that
-        has an optional callback and no safe argument."""
+        has an optional callback and no safe argument.
+        """
         Async.__init__(self, has_safe_arg=False, callback_required=False)
 
 
@@ -479,38 +483,6 @@ class ReadOnlyPropertyDescriptor(object):
 class ReadOnlyProperty(MotorAttributeFactory):
     def create_attribute(self, cls, attr_name):
         return ReadOnlyPropertyDescriptor(attr_name)
-
-
-class WrapReadOnlyPropertyDescriptor(object):
-    def __init__(self, attr_name, original_class):
-        """
-        TODO: update
-
-        A descriptor that wraps a Motor method and wraps its return value in
-        a Motor class. E.g., MotorCursor.__copy__() calls Cursor.__copy__(),
-        whose return value is wrapped in a new MotorCorsor. Uses the wrap()
-        method on the owner object.
-        """
-        self.attr_name = attr_name
-        self.original_class = original_class
-
-    def __get__(self, obj, objtype):
-        check_delegate(obj, self.attr_name)
-        attr = getattr(obj, self.attr_name)
-        # Don't call isinstance(), not checking subclasses
-        if attr.__class__ is self.original_class:
-            # Delegate to the current object to wrap the result
-            return obj.wrap(attr)
-
-        return attr
-
-
-class WrapReadOnlyProperty(MotorAttributeFactory):
-    def __init__(self, original_class):
-        self.original_class = original_class
-
-    def create_attribute(self, cls, attr_name):
-        return WrapReadOnlyPropertyDescriptor(attr_name, self.original_class)
 
 
 class ReadWritePropertyDescriptor(ReadOnlyPropertyDescriptor):
@@ -546,7 +518,8 @@ class MotorBase(object):
     __metaclass__ = MotorMeta
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
+        if (isinstance(other, self.__class__) and hasattr(self, 'delegate')
+            and hasattr(other, 'delegate')):
             return self.delegate == other.delegate
         return NotImplemented
 
@@ -669,6 +642,7 @@ class MotorClientBase(MotorOpenable, MotorBase):
         standard_loop, self.io_loop = self.io_loop, private_loop
         try:
             outcome = {}
+
             def callback(connection, error):
                 outcome['error'] = error
                 self.io_loop.stop()
@@ -703,8 +677,7 @@ class MotorClientBase(MotorOpenable, MotorBase):
     def __getattr__(self, name):
         if not self.connected:
             msg = ("Can't access attribute '%s' on %s before calling open()"
-                  " or open_sync()" % (
-                name, self.__class__.__name__))
+                  " or open_sync()" % (name, self.__class__.__name__))
             raise pymongo.errors.InvalidOperation(msg)
 
         return MotorDatabase(self, name)
@@ -1092,8 +1065,6 @@ class MotorCursor(MotorBase):
     close         = AsyncCommand()
     cursor_id     = ReadOnlyProperty()
     alive         = ReadOnlyProperty()
-    __copy__      = WrapReadOnlyProperty(Cursor)
-    __deepcopy__  = WrapReadOnlyProperty(Cursor)
     batch_size    = MotorCursorChainingMethod()
     add_option    = MotorCursorChainingMethod()
     remove_option = MotorCursorChainingMethod()
@@ -1544,9 +1515,11 @@ class MotorCursor(MotorBase):
             # immediately
             return self[self.delegate._Cursor__skip+index:].limit(-1)
 
-    def wrap(self, cursor):
-        # Replace pymongo.cursor.Cursor with MotorCursor
-        return MotorCursor(cursor, self.collection)
+    def __copy__(self):
+        return MotorCursor(self.delegate.__copy__(), self.collection)
+
+    def __deepcopy__(self, memo):
+        return MotorCursor(self.delegate.__deepcopy__(memo), self.collection)
 
     def __del__(self):
         # This MotorCursor is deleted on whatever greenlet does the last decref,
