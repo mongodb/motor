@@ -47,8 +47,11 @@ excluded_modules = [
 ]
 
 excluded_tests = [
-    # Synchro can't simulate requests, so test copy_db in Motor directly.
+    # Synchro can't simulate requests, so test copy_db in Motor directly
     'TestConnection.test_copy_db',
+
+    # use_greenlets is always True with Motor
+    'TestConnection.test_use_greenlets',
 
     # Motor's reprs aren't the same as PyMongo's
     '*.test_repr',
