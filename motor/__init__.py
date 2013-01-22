@@ -176,9 +176,12 @@ class MotorSocket(object):
         """
         self.stream.connect(pair, callback)
 
-    @motor_sock_method
-    def sendall(self, data, callback):
-        self.stream.write(data, callback)
+    def sendall(self, data):
+        assert greenlet.getcurrent().parent, "Should be on child greenlet"
+        self.stream.write(data)
+        if self.stream.closed():
+            # Something went wrong while writing
+            raise socket.error("write error")
 
     @motor_sock_method
     def recv(self, num_bytes, callback):
