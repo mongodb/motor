@@ -186,9 +186,9 @@ class MotorTest(unittest.TestCase):
         super(MotorTest, self).setUp()
 
         # Store a regular synchronous pymongo Connection for convenience while
-        # testing. Low timeouts so we don't hang a test because, say, Mongo
+        # testing. Set a timeout so we don't hang a test because, say, Mongo
         # isn't up or is hung by a long-running $where clause.
-        connectTimeoutMS = socketTimeoutMS = 2000
+        connectTimeoutMS = socketTimeoutMS = 30 * 1000
         if self.ssl:
             if not have_ssl:
                 raise SkipTest("Python compiled without SSL")
