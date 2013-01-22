@@ -229,42 +229,19 @@ class MotorCursorTest(MotorTest):
         yield AssertEqual([], coll.find()[5:5].to_list)
         done()
 
-    def test_cursor_close(self):
-        # The flow here is complex; we're testing that a cursor can be
-        # explicitly closed.
-        # 1. Create a cursor on the server by running find()
-        # 2. In the find() callback, start closing the cursor
-        # 3. Wait a little to make sure the cursor closes
-        # 4. Stop the IOLoop so we can exit test_cursor_close()
-        # 5. In MotorTest.tearDown(), we'll assert all cursors have closed.
+    @async_test_engine()
+    def test_cursor_explicit_close(self, done):
         cx = self.motor_connection(host, port)
-        loop = ioloop.IOLoop.instance()
-
-        def found(result, error):
-            if error:
-                raise error
-
-            self.assertFalse(cursor.delegate._Cursor__killed)
-            cursor.close(callback=closed)
-
-            # Cancel iteration, so the cursor isn't exhausted
-            return False
-
-        def closed(result, error):
-            # Cursor reports it's alive because it has buffered data, even
-            # though it's killed on the server
-            self.assertTrue(cursor.alive)
-            self.assertTrue(cursor.delegate._Cursor__killed)
-            loop.stop()
-            if error:
-                raise error
-
         cursor = cx.pymongo_test.test_collection.find()
-        cursor.each(callback=found)
+        yield cursor.fetch_next
+        self.assertTrue(cursor.alive)
+        yield motor.Op(cursor.close)
 
-        # Start the find(), the callback will close the cursor
-        loop.start()
-        self.assertEqual(self.open_cursors, self.get_open_cursors())
+        # Cursor reports it's alive because it has buffered data, even though
+        # it's killed on the server
+        self.assertTrue(cursor.alive)
+        yield gen.Task(self.wait_for_cursors)
+        done()
 
     @async_test_engine()
     def test_each(self, done):
