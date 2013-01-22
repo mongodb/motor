@@ -1,4 +1,3 @@
-/setup.cfg
 *.pyc
 /nosetests.xml
 /motor.egg-info/
