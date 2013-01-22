@@ -177,7 +177,7 @@ class MotorClientTest(MotorTest):
         self.assertRaises(
             pymongo.errors.InvalidName, cx.copy_database, "foo", "$foo")
 
-    @async_test_engine(timeout_sec=60)
+    @async_test_engine(timeout_sec=600)
     def test_copy_db(self, done):
         # 1. Drop old test DBs
         # 2. Copy a test DB N times at once (we need to do it many times at
