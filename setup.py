@@ -30,7 +30,7 @@ if major >= 3:
     kwargs['use_2to3'] = True
 
 packages = ['motor']
-if "nosetests" in sys.argv:
+if 'test' in sys.argv or 'nosetests' in sys.argv:
     packages.append('test')
 
 setup(name='motor',
@@ -50,7 +50,8 @@ setup(name='motor',
       keywords=[
           "mongo", "mongodb", "pymongo", "gridfs", "bson", "motor", "tornado",
       ],
-      # use python setup.py nosetests to test
+      # use 'python setup.py test' to test
       setup_requires=['nose'],
+      test_suite='nose.main',
       **kwargs
 )

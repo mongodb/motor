@@ -58,7 +58,7 @@ Testing
 =======
 
 The easiest way to run the tests is to install nose_ and run ``nosetests``
-or ``python setup.py nosetests`` in the root of the distribution. Tests are
+or ``python setup.py test`` in the root of the distribution. Tests are
 located in the ``test/`` directory.
 
 .. _PyMongo: http://pypi.python.org/pypi/pymongo/
