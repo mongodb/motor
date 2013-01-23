@@ -38,7 +38,7 @@ from pymongo.common import SAFE_OPTIONS
 # So that synchronous unittests can import these names from Synchro,
 # thinking it's really pymongo
 from pymongo import (
-    ASCENDING, DESCENDING, GEO2D, GEOHAYSTACK, TEXT, ReadPreference,
+    ASCENDING, DESCENDING, GEO2D, GEOHAYSTACK, ReadPreference,
     ALL, helpers, OFF, SLOW_ONLY, pool, thread_util, MongoClient, Connection
 )
 
