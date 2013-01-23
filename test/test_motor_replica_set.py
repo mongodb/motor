@@ -191,7 +191,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         db = cx.pymongo_test
 
         old_write = iostream.IOStream.write
-        iostream.IOStream.write = lambda self, data, callback: self.close()
+        iostream.IOStream.write = lambda self, data: self.close()
 
         try:
             cursor = db.pymongo_test.find(
