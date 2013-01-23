@@ -171,7 +171,7 @@ class MotorGridfsTest(MotorTest):
         self.assertEqual(1, (yield motor.Op(db.alt.files.count)))
         self.assertEqual(1, (yield motor.Op(db.alt.chunks.count)))
 
-        alt.delete(oid)
+        yield motor.Op(alt.delete, oid)
         yield AssertRaises(NoFile, alt.get, oid)
         self.assertEqual(0, (yield motor.Op(db.alt.files.count)))
         self.assertEqual(0, (yield motor.Op(db.alt.chunks.count)))
