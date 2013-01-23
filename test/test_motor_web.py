@@ -111,7 +111,7 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
         ):
             response = self.fetch('/foo', if_modified_since=ims_value)
             self.assertEqual(304, response.code)
-            self.assertEqual('', response.body)
+            self.assertEqual(b(''), response.body)
 
         # If-Modified-Since in the past, get whole response back
         response = self.fetch('/foo',
@@ -122,7 +122,7 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
         # Matching Etag
         response = self.fetch('/foo', headers={'If-None-Match': etag})
         self.assertEqual(304, response.code)
-        self.assertEqual('', response.body)
+        self.assertEqual(b(''), response.body)
 
         # Mismatched Etag
         response = self.fetch('/foo', headers={'If-None-Match': etag + 'a'})
@@ -142,7 +142,7 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
 
         # Test the result
         self.assertEqual(200, response.code)
-        self.assertEqual('', response.body) # Empty body for HEAD request
+        self.assertEqual(b(''), response.body) # Empty body for HEAD request
         self.assertEqual(
             len(self.contents), int(response.headers['Content-Length']))
         self.assertEqual('my type', response.headers['Content-Type'])

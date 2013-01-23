@@ -50,8 +50,8 @@ class MotorGridFileTest(MotorTest):
         f = yield motor.Op(motor.MotorGridIn(db.fs, filename="test").open)
         self.check_callback_handling(partial(f.set, 'name', 'value'), False)
         self.check_callback_handling(f.close, False)
-        self.check_callback_handling(partial(f.write, 'a'), False)
-        self.check_callback_handling(partial(f.writelines, ['a']), False)
+        self.check_callback_handling(partial(f.write, b('a')), False)
+        self.check_callback_handling(partial(f.writelines, [b('a')]), False)
         done()
 
     @async_test_engine()
@@ -365,7 +365,7 @@ class MotorGridFileTest(MotorTest):
         fs = yield motor.Op(motor.MotorGridFS(db).open)
 
         for content_length in (0, 1, 100, 100 * 1000):
-            _id = yield motor.Op(fs.put, 'a' * content_length)
+            _id = yield motor.Op(fs.put, b('a') * content_length)
             gridout = yield motor.Op(fs.get, _id)
             handler = MockRequestHandler()
             yield motor.Op(gridout.stream_to_handler, handler)

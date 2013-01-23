@@ -421,15 +421,17 @@ class MotorCursorTest(MotorTest):
         # test_collection was filled out in setUp() with 200 docs
         coll = cx.pymongo_test.test_collection
 
-        results = []
-        yield_points = [(yield gen.Callback(i)) for i in range(3)]
+        results = set()
+        yield_points = []
+        for i in range(3):
+            yield_points.append((yield gen.Callback(i)))
 
         def each(result, error):
             if error:
                 raise error
 
             if result:
-                results.append(result)
+                results.add(result['_id'])
             else:
                 yield_points.pop()()
 
@@ -441,8 +443,8 @@ class MotorCursorTest(MotorTest):
         # in results.
         coll.find()[1000].each(each)
 
-        yield gen.WaitAll(range(3))
-        self.assertEqual([{'_id': 0}, {'_id': 5}], sorted(results))
+        yield gen.WaitAll(list(range(3)))
+        self.assertEqual(set([0, 5]), results)
         done()
 
     @async_test_engine()

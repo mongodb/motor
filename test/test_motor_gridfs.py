@@ -55,7 +55,7 @@ class MotorGridfsTest(MotorTest):
         # new_file should be an already-open MotorGridIn.
         gin = yield motor.Op(fs.new_file, _id=1, filename='foo')
         self.assertTrue(gin.delegate)
-        yield motor.Op(gin.write, 'a') # No error
+        yield motor.Op(gin.write, b('a')) # No error
         yield motor.Op(gin.close)
 
         # get, get_version, and get_last_version should be already-open
@@ -79,7 +79,7 @@ class MotorGridfsTest(MotorTest):
         self.check_callback_handling(fs.get, True)
         self.check_callback_handling(fs.get_version, True)
         self.check_callback_handling(fs.get_last_version, True)
-        self.check_callback_handling(partial(fs.put, 'a'), False)
+        self.check_callback_handling(partial(fs.put, b('a')), False)
         self.check_callback_handling(partial(fs.delete, 1), False)
         self.check_callback_handling(fs.list, True)
         self.check_callback_handling(fs.exists, True)
@@ -99,27 +99,27 @@ class MotorGridfsTest(MotorTest):
             # Make sure we can do async things with the custom loop
             yield motor.Op(fs.open)
             self.assertTrue(fs.delegate)
-            file_id0 = yield motor.Op(fs.put, 'foo')
+            file_id0 = yield motor.Op(fs.put, b('foo'))
 
             gridin1 = yield motor.Op(fs.new_file)
-            yield motor.Op(gridin1.write, 'bar')
+            yield motor.Op(gridin1.write, b('bar'))
             yield motor.Op(gridin1.close)
             file_id1 = gridin1._id
 
             gridin2 = motor.MotorGridIn(cx.pymongo_test.fs, filename='fn')
             yield motor.Op(gridin2.open)
-            yield motor.Op(gridin2.write, 'baz')
+            yield motor.Op(gridin2.write, b('baz'))
             yield motor.Op(gridin2.close)
 
             gridout0 = yield motor.Op(fs.get, file_id0)
-            yield AssertEqual('foo', gridout0.read)
+            yield AssertEqual(b('foo'), gridout0.read)
 
             gridout1 = motor.MotorGridOut(cx.pymongo_test.fs, file_id1)
             yield motor.Op(gridout1.open)
-            yield AssertEqual('bar', gridout1.read)
+            yield AssertEqual(b('bar'), gridout1.read)
 
             gridout2 = yield motor.Op(fs.get_last_version, 'fn')
-            yield AssertEqual('baz', gridout2.read)
+            yield AssertEqual(b('baz'), gridout2.read)
             done()
 
         test(self)
@@ -205,7 +205,7 @@ class MotorGridfsTest(MotorTest):
         db = self.motor_connection(host, port).open_sync().pymongo_test
         fs = yield motor.Op(motor.MotorGridFS(db).open)
         oid = yield motor.Op(fs.put, b("hello"))
-        yield AssertRaises(FileExists, fs.put, "world", _id=oid)
+        yield AssertRaises(FileExists, fs.put, b("world"), _id=oid)
         done()
 
 
