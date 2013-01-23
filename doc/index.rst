@@ -1,5 +1,5 @@
-:mod:`motor` -- Asynchronous Python driver for Tornado and MongoDB
-==================================================================
+Motor: Asynchronous Python driver for Tornado and MongoDB
+=========================================================
 
 .. image:: _static/motor.png
     :align: center
