@@ -881,8 +881,8 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
         self.timeout_obj = self.io_loop.add_timeout(
             time.time() + self._refresh_interval, self.async_refresh)
 
-    async_refresh = asynchronize(
-        refresh, has_safe_arg=False, callback_required=False)
+    def async_refresh(self):
+        greenlet.greenlet(self.refresh).switch()
 
     def start(self):
         """No-op: PyMongo thinks this starts the monitor, but Motor starts
