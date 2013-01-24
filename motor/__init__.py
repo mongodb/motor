@@ -178,7 +178,12 @@ class MotorSocket(object):
 
     def sendall(self, data):
         assert greenlet.getcurrent().parent, "Should be on child greenlet"
-        self.stream.write(data)
+        try:
+            self.stream.write(data)
+        except IOError, e:
+            # PyMongo is built to handle socket.error here, not IOError
+            raise socket.error(str(e))
+
         if self.stream.closed():
             # Something went wrong while writing
             raise socket.error("write error")
