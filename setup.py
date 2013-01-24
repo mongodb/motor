@@ -42,6 +42,7 @@ setup(name='motor',
       author_email='jesse@10gen.com',
       url='https://github.com/mongodb/motor/',
       install_requires=[
+          'pymongo >= 2.4.2',
           'tornado >= 2.4.0',
           'greenlet >= 0.4.0',
       ],
