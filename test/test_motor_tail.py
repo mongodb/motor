@@ -94,6 +94,7 @@ class MotorTailTest(MotorTest):
             [{'_id': i} for i in range(len(self.tail_pauses))])
 
         t.join()
+        yield gen.Task(self.wait_for_cursors)
         done()
 
     @async_test_engine(timeout_sec=30)
@@ -118,6 +119,7 @@ class MotorTailTest(MotorTest):
             [{'_id': i} for i in range(len(pauses))])
 
         t.join()
+        yield gen.Task(self.wait_for_cursors)
         done()
 
     drop_collection_pauses = (0, 0, 1, 'drop', 1, 0, 0)
@@ -143,6 +145,7 @@ class MotorTailTest(MotorTest):
         self.assertTrue(OperationFailure in results)
         self.assertFalse('cancelled' in results)
         t.join()
+        yield gen.Task(self.wait_for_cursors)
         done()
 
     @async_test_engine()
@@ -176,6 +179,7 @@ class MotorTailTest(MotorTest):
             results)
 
         t.join()
+        yield gen.Task(self.wait_for_cursors)
         done()
 
     @async_test_engine(timeout_sec=30)
@@ -203,6 +207,7 @@ class MotorTailTest(MotorTest):
         t.join()
         self.assertEqual([{'_id': i} for i in range(len(pauses))], results)
         yield motor.Op(cursor.close)
+        yield gen.Task(self.wait_for_cursors)
         done()
 
 

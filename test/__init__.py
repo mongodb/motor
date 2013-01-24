@@ -15,6 +15,7 @@
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import functools
+import datetime
 import os
 import time
 import sys
@@ -245,6 +246,22 @@ class MotorTest(unittest.TestCase):
         # way to track cursors Motor creates and assert they're all closed
         output = self.sync_cx.admin.command('serverStatus')
         return output.get('cursors', {}).get('totalOpen', 0)
+
+    @gen.engine
+    def wait_for_cursors(self, callback):
+        """Ensure any cursors opened during the test have been closed on the
+        server. `yield motor.Op(cursor.close)` is usually simpler.
+        """
+        timeout_sec = float(os.environ.get('TIMEOUT_SEC', 5)) - 1
+        loop = ioloop.IOLoop.instance()
+        start = time.time()
+        while self.get_open_cursors() > self.open_cursors:
+            if time.time() - start > timeout_sec:
+                self.fail("Waited too long for cursors to close")
+
+            yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
+
+        callback()
 
     def motor_connection(self, host, port, *args, **kwargs):
         """Get an open MotorClient. Ignores self.ssl, you must pass 'ssl'

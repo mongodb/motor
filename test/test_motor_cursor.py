@@ -14,9 +14,6 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-import datetime
-import os
-import time
 import unittest
 from functools import partial
 
@@ -30,22 +27,6 @@ from test import host, port, MotorTest, async_test_engine, AssertEqual
 
 
 class MotorCursorTest(MotorTest):
-    @gen.engine
-    def wait_for_cursors(self, callback):
-        """Ensure any cursors opened during the test have been closed on the
-        server. `yield motor.Op(cursor.close)` is usually simpler.
-        """
-        timeout_sec = float(os.environ.get('TIMEOUT_SEC', 5)) - 1
-        loop = ioloop.IOLoop.instance()
-        start = time.time()
-        while self.get_open_cursors() > self.open_cursors:
-            if time.time() - start > timeout_sec:
-                self.fail("Waited too long for cursors to close")
-
-            yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
-
-        callback()
-
     def test_cursor(self):
         cx = self.motor_connection(host, port)
         coll = cx.pymongo_test.test_collection
