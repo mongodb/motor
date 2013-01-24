@@ -97,11 +97,15 @@ or:
             if io_loop:
                 io_loop.install()
 
+            start = time.time()
+
             def on_timeout():
+                print '%s timed out after %.2f seconds' % (
+                    func, time.time() - start)
                 loop.stop()
                 raise AssertionError("%s timed out" % func)
 
-            timeout = loop.add_timeout(time.time() + timeout_sec, on_timeout)
+            timeout = loop.add_timeout(start + timeout_sec, on_timeout)
 
             try:
                 generator = func(self, done)

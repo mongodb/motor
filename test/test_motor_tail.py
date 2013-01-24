@@ -74,7 +74,7 @@ class MotorTailTest(MotorTest):
     tail_pauses = (
         1, 0, 1, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0, 0)
 
-    @async_test_engine(timeout_sec=sum(tail_pauses) + 1)
+    @async_test_engine(timeout_sec=sum(tail_pauses) + 30)
     def test_tail(self, done):
         t = self.start_insertion_thread(self.tail_pauses)
         results = []
@@ -96,7 +96,7 @@ class MotorTailTest(MotorTest):
         t.join()
         done()
 
-    @async_test_engine()
+    @async_test_engine(timeout_sec=30)
     def test_tail_empty(self, done):
         pauses = (0, 1)
         results = []
@@ -122,7 +122,7 @@ class MotorTailTest(MotorTest):
 
     drop_collection_pauses = (0, 0, 1, 'drop', 1, 0, 0)
 
-    @async_test_engine(timeout_sec=10)
+    @async_test_engine(timeout_sec=30)
     def test_tail_drop_collection(self, done):
         # Ensure tail() throws error when its collection is dropped
         t = self.start_insertion_thread(self.drop_collection_pauses)
@@ -156,7 +156,7 @@ class MotorTailTest(MotorTest):
 
         done()
 
-    @async_test_engine()
+    @async_test_engine(timeout_sec=30)
     def test_tail_nonempty_collection(self, done):
         self.sync_db.capped.insert([{'_id': -2}, {'_id': -1}], safe=True)
 
@@ -178,7 +178,7 @@ class MotorTailTest(MotorTest):
         t.join()
         done()
 
-    @async_test_engine()
+    @async_test_engine(timeout_sec=30)
     def test_tail_gen(self, done):
         pauses = (1, 0.5, 1, 0, 0)
         t = self.start_insertion_thread(pauses)
