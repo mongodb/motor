@@ -25,7 +25,7 @@ import pymongo
 import pymongo.errors
 from tornado import gen, ioloop
 from nose.plugins.skip import SkipTest
-from pymongo.mongo_client import MongoClient, _partition_node
+from pymongo.mongo_client import _partition_node
 
 import motor
 
