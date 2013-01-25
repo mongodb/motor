@@ -246,7 +246,6 @@ class MotorPool(pymongo.pool.Pool):
             family = socket.AF_UNSPEC
 
         err = None
-        start = time.time()
         for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
             af, socktype, proto, dummy, sa = res
             motor_sock = None
@@ -255,9 +254,7 @@ class MotorPool(pymongo.pool.Pool):
                 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 motor_sock = MotorSocket(
                     sock, self.io_loop, use_ssl=self.use_ssl)
-                duration = time.time() - start
-                timeout = max((self.conn_timeout or 20.0) - duration, 0.01)
-                motor_sock.settimeout(timeout)
+                motor_sock.settimeout(self.conn_timeout or 20.0)
 
                 # MotorSocket pauses this greenlet and resumes when connected
                 motor_sock.connect(pair or self.pair)
@@ -1105,16 +1102,6 @@ class MotorCursor(MotorBase):
           automatically closed by the client when the :class:`MotorCursor` is
           cleaned up by the garbage collector.
         """
-        if not isinstance(cursor, Cursor):
-            raise TypeError(
-                "cursor must be instance of pymongo.cursor.Cursor, not %s" % (
-                repr(cursor)))
-
-        if not isinstance(collection, MotorCollection):
-            raise TypeError(
-                "collection must be instance of MotorCollection, not %s" % (
-                repr(collection)))
-
         self.delegate = cursor
         self.collection = collection
         self.started = False

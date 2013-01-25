@@ -305,29 +305,22 @@ class MotorClientTest(MotorTest):
 
     @async_test_engine()
     def test_connection_timeout(self, done):
-        exc = None
-        # Note that getaddrinfo() is blocking and has no timeout, so the first
-        # iteration can take a while regardless of timeout. So test the longer
-        # timeout first and then, once GAI is cached, try the short timeout.
-        for connect_timeout_sec in (1, .1):
+        # DNS lookup isn't charged against the timeout, so warm the DNS cache
+        # before testing timeout duration
+        yield AssertRaises(ConnectionFailure, motor.MotorClient(
+            'example.com', port=12345, connectTimeoutMS=1).open)
+
+        for timeout_ms in (1000, 100, 1):
             start = time.time()
-            try:
-                yield motor.Op(motor.MotorClient(
-                    'example.com',
-                    port=12345,
-                    connectTimeoutMS=1000 * connect_timeout_sec
-                ).open)
-            except Exception, e:
-                exc = e
+            yield AssertRaises(ConnectionFailure, motor.MotorClient(
+                'example.com', port=12345, connectTimeoutMS=timeout_ms).open)
 
-            self.assertTrue(isinstance(exc, ConnectionFailure))
-
-            connection_duration = time.time() - start
+            connection_duration_ms = 1000 * (time.time() - start)
             self.assertTrue(
-                abs(connection_duration - connect_timeout_sec) < 0.25, (
-                'Expected connection to timeout after about %s sec, timed out'
+                abs(connection_duration_ms - timeout_ms) < 250, (
+                'Expected connection to timeout after about %s ms, timed out'
                 ' after %s'
-            ) % (connect_timeout_sec, connection_duration))
+            ) % (timeout_ms, connection_duration_ms))
 
         done()
 
