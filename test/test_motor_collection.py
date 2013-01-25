@@ -239,28 +239,14 @@ class MotorCollectionTest(MotorTest):
     @async_test_engine()
     def test_update_bad(self, done):
         # Violate a unique index, make sure we handle error well
-        results = []
-
-        def callback(result, error):
-            self.assertTrue(isinstance(error, DuplicateKeyError))
-            self.assertEqual(None, result)
-            results.append(result)
-
         cx = self.motor_connection(host, port)
 
-        try:
-            # There's already a document with s: hex(4)
-            yield motor.Op(
-                cx.pymongo_test.test_collection.update,
-                {'_id': 5},
-                {'$set': {'s': hex(4)}},
-            )
-        except DuplicateKeyError:
-            pass
-        except Exception, e:
-            self.fail("Expected DuplicateKeyError, got %s" % repr(e))
-        else:
-            self.fail("DuplicateKeyError not raised")
+        # There's already a document with s: hex(4)
+        yield AssertRaises(DuplicateKeyError,
+            cx.pymongo_test.test_collection.update,
+            {'_id': 5},
+            {'$set': {'s': hex(4)}})
+
         done()
 
     def test_update_callback(self):
@@ -390,7 +376,7 @@ class MotorCollectionTest(MotorTest):
         self.check_optional_callback(cx.pymongo_test.test_collection.remove)
 
     @async_test_engine()
-    def test_unsafe_remove(self, done):
+    def test_unacknowledged_remove(self, done):
         # Test that unsafe removes with no callback still work
         def ndocs():
             return self.sync_coll.find(
@@ -398,7 +384,7 @@ class MotorCollectionTest(MotorTest):
 
         self.assertEqual(3, ndocs(), msg="Test setup should have 3 documents")
         coll = self.motor_connection(host, port).pymongo_test.test_collection
-        # Unsafe removes
+        # Unacknowledged removes
         coll.remove({'_id': 115})
         coll.remove({'_id': 116})
         coll.remove({'_id': 117})
@@ -410,31 +396,49 @@ class MotorCollectionTest(MotorTest):
         done()
 
     @async_test_engine()
-    def test_unsafe_insert(self, done):
+    def test_unacknowledged_insert(self, done):
         # Test that unsafe inserts with no callback still work
 
         # id 201 not present
         self.assertEqual(0, self.sync_coll.find({'_id': 201}).count())
 
-        # insert id 201 without a callback or safe=True
-        self.motor_connection(host, port).pymongo_test.test_collection.insert(
-            {'_id': 201})
+        # insert id 201 without a callback or w=1
+        coll = self.motor_connection(host, port).pymongo_test.test_collection
+        coll.insert({'_id': 201})
 
         # the insert is eventually executed
         loop = ioloop.IOLoop.instance()
         while not self.sync_db.test_collection.find({'_id': 201}).count():
             yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
 
+        # DuplicateKeyError not raised
+        coll.insert({'_id': 201})
+        yield motor.Op(coll.insert, {'_id': 201}, w=0)
         done()
 
     @async_test_engine()
-    def test_unsafe_save(self, done):
+    def test_unacknowledged_save(self, done):
         # Test that unsafe saves with no callback still work
-        self.motor_connection(host, port).pymongo_test.test_collection.save(
-            {'_id': 201})
+        coll = self.motor_connection(host, port).pymongo_test.test_collection
+        coll.save({'_id': 201})
 
         loop = ioloop.IOLoop.instance()
         while not self.sync_db.test_collection.find({'_id': 201}).count():
+            yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
+
+        # DuplicateKeyError not raised
+        coll.save({'_id': 201})
+        yield motor.Op(coll.save, {'_id': 201}, w=0)
+        done()
+
+    @async_test_engine()
+    def test_unacknowledged_update(self, done):
+        # Test that unsafe updates with no callback still work
+        coll = self.motor_connection(host, port).pymongo_test.test_collection
+        coll.update({'_id': 100}, {'$set': {'a': 1}})
+
+        loop = ioloop.IOLoop.instance()
+        while not self.sync_db.test_collection.find({'a': 1}).count():
             yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
 
         done()
@@ -551,46 +555,6 @@ class MotorCollectionTest(MotorTest):
 
         result.sort(key=lambda doc: doc['_id'])
         self.assertEqual(expected_result, result)
-        done()
-
-    @async_test_engine()
-    def test_get_last_error_options(self, done):
-        cx = motor.MotorClient(host, port)
-
-        # An implementation quirk of Motor, can't access properties until
-        # connected
-        self.assertRaises(pymongo.errors.InvalidOperation, getattr, cx, 'safe')
-
-        yield motor.Op(cx.open)
-        self.assertTrue(cx.safe)
-        self.assertEqual({}, cx.get_lasterror_options())
-
-        # TODO: once PyMongo 'safe' behavior is fixed, test that
-        # MotorClient's 'safe' is True with a GLE option and safe=False
-        # PYTHON-358
-        for safe, gle_options in [
-            (True,  {}),
-            (True, {'w': 2}),
-            (True, {'wtimeout': 1000}),
-            (True, {'j': True}),
-        ]:
-            cx = motor.MotorClient(host, port, safe=safe, **gle_options)
-            yield motor.Op(cx.open)
-            expected_safe = bool(safe or gle_options)
-            self.assertEqual(expected_safe, cx.safe,
-                "Expected safe %s with safe=%s and options %s" % (
-                    expected_safe, safe, gle_options
-                ))
-            self.assertEqual(gle_options, cx.get_lasterror_options())
-
-            db = cx.pymongo_test
-            self.assertEqual(expected_safe, db.safe)
-            self.assertEqual(gle_options, db.get_lasterror_options())
-
-            test_collection = db.test_collection
-            self.assertEqual(expected_safe, test_collection.safe)
-            self.assertEqual(
-                gle_options, test_collection.get_lasterror_options())
         done()
 
     @async_test_engine()
