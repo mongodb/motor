@@ -306,23 +306,25 @@ class MotorClientTest(MotorTest):
     @async_test_engine()
     def test_connection_timeout(self, done):
         exc = None
-        start = time.time()
-        try:
-            # Assuming asdf.com isn't running an open mongod on this port
-            yield motor.Op(motor.MotorClient(
-                'asdf.com', 8765, connectTimeoutMS=1000).open)
-        except Exception, e:
-            exc = e
+        for connect_timeout_sec in (1, .1):
+            start = time.time()
+            try:
+                yield motor.Op(motor.MotorClient(
+                    'example.com',
+                    port=12345,
+                    connectTimeoutMS=1000 * connect_timeout_sec
+                ).open)
+            except Exception, e:
+                exc = e
 
-        self.assertTrue(isinstance(exc, ConnectionFailure))
+            self.assertTrue(isinstance(exc, ConnectionFailure))
 
-        # TODO: see why this duration is often 1 or 2 seconds longer than
-        #   expected
-        connection_duration = time.time() - start
-#        self.assertTrue(abs(connection_duration - 1) < 0.25, (
-#            'Expected connection to timeout after about 1 sec, timed out'
-#            ' after %s'
-#        ) % connection_duration)
+            connection_duration = time.time() - start
+            self.assertTrue(
+                abs(connection_duration - connect_timeout_sec) < 0.25, (
+                'Expected connection to timeout after about %s sec, timed out'
+                ' after %s'
+            ) % (connect_timeout_sec, connection_duration))
 
         done()
 
