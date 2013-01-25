@@ -36,7 +36,7 @@ class MotorTailTest(MotorTest):
             'capped', capped=True, size=1000, autoIndexId=True)
 
         self.sync_db.uncapped.drop()
-        self.sync_db.uncapped.insert({}, safe=True)
+        self.sync_db.uncapped.insert({})
 
     def start_insertion_thread(self, pauses):
         """A thread that gradually inserts documents into a capped collection
@@ -48,7 +48,7 @@ class MotorTailTest(MotorTest):
                     self.sync_db.capped.drop()
                 else:
                     time.sleep(pause)
-                    self.sync_db.capped.insert({'_id': i}, safe=True)
+                    self.sync_db.capped.insert({'_id': i})
                     i += 1
 
         t = threading.Thread(target=add_docs)
@@ -161,7 +161,7 @@ class MotorTailTest(MotorTest):
 
     @async_test_engine(timeout_sec=30)
     def test_tail_nonempty_collection(self, done):
-        self.sync_db.capped.insert([{'_id': -2}, {'_id': -1}], safe=True)
+        self.sync_db.capped.insert([{'_id': -2}, {'_id': -1}])
 
         pauses = (0, 0, 1, 0, 0)
         t = self.start_insertion_thread(pauses)

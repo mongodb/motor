@@ -120,7 +120,7 @@ class MotorTestDirectConnection(unittest.TestCase):
             # direct connection raises AutoReconnect('not master'), MotorClient
             # should do the same for unacknowledged writes.
             try:
-                yield motor.Op(conn.pymongo_test.test.insert, {}, safe=False)
+                yield motor.Op(conn.pymongo_test.test.insert, {}, w=0)
             except AutoReconnect, e:
                 self.assertEqual('not master', e.args[0])
             else:
@@ -137,7 +137,7 @@ class MotorTestDirectConnection(unittest.TestCase):
 
             # See explanation above
             try:
-                yield motor.Op(conn.pymongo_test.test.insert, {}, safe=False)
+                yield motor.Op(conn.pymongo_test.test.insert, {}, w=0)
             except AutoReconnect, e:
                 self.assertEqual('not master', e.message)
             else:
@@ -469,7 +469,7 @@ class MotorTestReadWithFailover(unittest.TestCase):
 
         db = c.pymongo_test
         w = len(c.secondaries) + 1
-        db.test.remove({}, safe=True, w=w)
+        db.test.remove({}, w=w)
         # Force replication
         yield motor.Op(db.test.insert, [{'foo': i} for i in xrange(10)], w=w)
         yield AssertEqual(10, db.test.count)
@@ -543,9 +543,9 @@ class MotorTestReadPreference(unittest.TestCase):
             self.seed, replicaSet=self.name)
         self.db = self.c.pymongo_test
         self.w = len(self.c.secondaries) + 1
-        self.db.test.remove({}, safe=True, w=self.w)
+        self.db.test.remove({}, w=self.w)
         self.db.test.insert(
-            [{'foo': i} for i in xrange(10)], safe=True, w=self.w)
+            [{'foo': i} for i in xrange(10)], w=self.w)
 
         self.clear_ping_times()
 
@@ -873,7 +873,7 @@ class MotorTestReplicaSetAuth(unittest.TestCase):
         self.assertTrue(res)
         yield motor.Op(db.foo.insert,
             {'foo': 'bar'},
-            safe=True, w=3, wtimeout=1000)
+            w=3, wtimeout=1000)
         yield motor.Op(db.logout)
         yield AssertRaises(OperationFailure, db.foo.find_one)
 

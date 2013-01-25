@@ -101,14 +101,16 @@ def wrap_synchro(fn):
 
 
 class Sync(object):
-    def __init__(self, name, has_safe_arg):
+    def __init__(self, name, has_write_concern):
         self.name = name
-        self.has_safe_arg = has_safe_arg
+        self.has_write_concern = has_write_concern
 
     def __get__(self, obj, objtype):
         async_method = getattr(obj.delegate, self.name)
-        return wrap_synchro(unwrap_synchro(
-            obj.synchronize(async_method, has_safe_arg=self.has_safe_arg)))
+        return wrap_synchro(
+            unwrap_synchro(
+                obj.synchronize(
+                    async_method, has_write_concern=self.has_write_concern)))
 
 
 class WrapOutgoing(object):
@@ -176,12 +178,13 @@ class SynchroMeta(type):
                 if attrname not in attrs:
                     if getattr(delegate_attr, 'is_async_method', False):
                         # Re-synchronize the method
-                        sync_method = Sync(attrname, delegate_attr.has_safe_arg)
+                        sync_method = Sync(
+                            attrname, delegate_attr.has_write_concern)
                         setattr(new_class, attrname, sync_method)
                     elif isinstance(delegate_attr, motor.UnwrapAsync):
                         # Re-synchronize the method
                         sync_method = Sync(
-                            attrname, delegate_attr.prop.has_safe_arg)
+                            attrname, delegate_attr.prop.has_write_concern)
                         setattr(new_class, attrname, sync_method)
                     elif getattr(
                         delegate_attr, 'is_motorcursor_chaining_method', False):
@@ -218,38 +221,41 @@ class Synchro(object):
     _BaseObject__set_slave_okay = SynchroProperty()
     _BaseObject__set_safe       = SynchroProperty()
 
-    def synchronize(self, async_method, has_safe_arg=False):
+    def synchronize(self, async_method, has_write_concern=False):
         """
         @param async_method:        Bound method of a MotorClient,
                                     MotorDatabase, etc.
-        @param has_safe_arg:        Whether the method takes a 'safe' argument
+        @param has_write_concern:   Method accepts getLastError options?
         @return:                    A synchronous wrapper around the method
         """
         @functools.wraps(async_method)
         def synchronized_method(*args, **kwargs):
             assert 'callback' not in kwargs, (
                 "Cannot pass callback to synchronized method")
-    
+
+            # TODO: remove after PYTHON-452 is done
+            safe, opts = False, {}
             try:
-                safe = self.delegate.safe
+                gle_opts = dict([(k, v)
+                    for k, v in kwargs.items()
+                    if k in SAFE_OPTIONS.union(set(['safe']))])
+
+                safe, opts = self.delegate.delegate._get_write_mode(**gle_opts)
             except (AttributeError, InvalidOperation):
-                # delegate not set yet, or no 'safe' attribute
-                safe = False
-    
+                # Delegate not set yet, or no _get_write_mode method.
                 # Since, as of Tornado 2.3, IOStream tries to divine the error
                 # that closed it using sys.exc_info(), it's important here to
                 # clear spurious errors
                 sys.exc_clear()
-    
-            safe = (safe or kwargs.get('safe')
-                or any(opt in kwargs for opt in SAFE_OPTIONS))
-    
-            if not safe and has_safe_arg:
+
+            if not safe and has_write_concern:
                 # By default, Motor passes safe=True if there's a callback, but
-                # we're emulating PyMongo, which defaults safe to False, so we
-                # explicitly override.
-                kwargs['safe'] = False
-    
+                # we're emulating PyMongo's Connection, which defaults safe to
+                # False, so we explicitly override.
+                kwargs['w'] = 0
+
+            kwargs.pop('safe', None)
+
             loop = IOLoop.instance()
             assert not loop.running(), \
                 "Loop already running in method %s" % async_method.func_name
@@ -305,7 +311,7 @@ class Connection(Synchro):
         self.delegate = kwargs.pop('delegate', None)
 
         # TODO: HACK, remove, this is while PyMongo is testing Connection but
-        #   Motor wraps MongoClient
+        #   Motor wraps MongoClient. Remove after PYTHON-452 is done.
         kwargs.setdefault('safe', False)
         network_timeout = kwargs.pop('network_timeout', None)
         if network_timeout is not None:
@@ -367,7 +373,7 @@ class ReplicaSetConnection(Connection):
         kwargs.pop('auto_start_request', None)
 
         # TODO: HACK, remove, this is while PyMongo is testing Connection but
-        #   Motor wraps MongoClient
+        #   Motor wraps MongoClient. Remove after PYTHON-452 is done.
         kwargs.setdefault('safe', False)
         network_timeout = kwargs.pop('network_timeout', None)
         if network_timeout is not None:

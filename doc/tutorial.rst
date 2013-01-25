@@ -25,12 +25,12 @@ Motor Tutorial
   from tornado import gen
   db = motor.MotorClient().open_sync().test_database
   pymongo.MongoClient().test_database.test_collection.insert(
-      [{'i': i} for i in range(2000)], safe=True)
+      [{'i': i} for i in range(2000)])
 
 .. testcleanup:: *
 
   import pymongo
-  pymongo.MongoClient().test_database.test_collection.remove(safe=True)
+  pymongo.MongoClient().test_database.test_collection.remove()
 
 A guide to using **MongoDB** and **Tornado** with **Motor**, the
 non-blocking driver.

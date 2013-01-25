@@ -32,13 +32,13 @@
   .. autoattribute:: arbiters
   .. autoattribute:: primary
   .. autoattribute:: secondaries
+  .. autoattribute:: write_concern
   .. autoattribute:: read_preference
   .. autoattribute:: tag_sets
   .. autoattribute:: secondary_acceptable_latency_ms
   .. autoattribute:: max_pool_size
   .. autoattribute:: document_class
   .. autoattribute:: tz_aware
-  .. autoattribute:: safe
   .. method:: sync_client
 
      Get a :class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient`

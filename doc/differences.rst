@@ -101,32 +101,40 @@ passed a callback:
 
 .. code-block:: python
 
-    def inserted(result, error):
+    def on_inserted(result, error):
         if error:
             print 'error inserting!', error
         else:
             print 'added user'
 
-    db.users.insert({'name': 'Bernie'}, callback=inserted) # Acknowledged
+    db.users.insert({'name': 'Bernie'}, callback=on_inserted) # Acknowledged
 
 On success, the ``result`` parameter to the callback contains the
-client-generated ``_id`` of the document for `insert` or `save`, and MongoDB's
-`getLastError` response for `update` or `remove`. On error, ``result`` is `None`
-and the ``error`` parameter is an Exception.
+client-generated ``_id`` of the document for
+:meth:`~motor.MotorCollection.insert` or :meth:`~motor.MotorCollection.save`,
+and MongoDB's ``getLastError`` response for
+:meth:`~motor.MotorCollection.update` or :meth:`~motor.MotorCollection.remove`.
+On error, ``result`` is ``None`` and the ``error`` parameter is an Exception.
 
 With no callback, Motor does unacknowledged writes.
 
-One can pass ``safe=False`` explicitly, along with a callback, to perform an
+One can pass ``w=0`` explicitly, along with a callback, to perform an
 unacknowledged write:
 
 .. code-block:: python
 
-    db.users.insert({'name': 'Jesse'}, callback=inserted, safe=False)
+    db.users.insert({'name': 'Jesse'}, callback=inserted, w=0)
 
 In this case the callback is executed as soon as the message has been written to
 the socket connected to MongoDB, but no response is expected from the server.
-Passing a callback and ``safe=False`` can be useful to do fast writes without
+Passing a callback and ``w=0`` can be useful to do fast writes without
 opening an excessive number of connections.
+
+Motor supports the same set of `write concerns`_ as PyMongo, but no matter what
+write concern is configured, a write is acknowledged if passed a callback,
+otherwise not.
+
+.. _write concerns: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient.write_concern
 
 Result Values for Acknowledged and Unacknowledged Writes
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -135,11 +143,11 @@ These are the values passed as the `result` parameter to your callback for
 acknowledged and unacknowledged writes with Motor:
 
 +-----------+-------------------------+--------------------------------+
-| Operation | With Callback           | With Callback and `safe=False` |
+| Operation | With Callback           | With Callback and `w=0`        |
 +===========+=========================+================================+
 | insert    | New \_id                | New \_id                       |
 +-----------+-------------------------+--------------------------------+
-| save      | \_id (whether new or existing document, safe or unsafe)  |
+| save      | \_id                    | \_id                           |
 +-----------+-------------------------+--------------------------------+
 | update    | ``{'ok': 1.0, 'n': 1}`` | ``None``                       |
 +-----------+-------------------------+--------------------------------+
@@ -162,7 +170,7 @@ callback and is therefore acknowledged ("safe"):
         yield motor.Op(motor_db.collection.insert, {'name': 'Randall'})
 
 You can override this behavior and do unacknowledged writes by passing
-``safe=False``:
+``w=0``:
 
 .. code-block:: python
 
@@ -171,7 +179,7 @@ You can override this behavior and do unacknowledged writes by passing
     @gen.engine
     def f():
         # Unacknowledged
-        yield motor.Op(motor_db.collection.insert, {'name': 'Ross'}, safe=False)
+        yield motor.Op(motor_db.collection.insert, {'name': 'Ross'}, w=0)
 
 .. _tornado.gen: http://www.tornadoweb.org/documentation/gen.html
 

@@ -33,11 +33,11 @@
   .. autoattribute:: max_pool_size
   .. autoattribute:: document_class
   .. autoattribute:: tz_aware
+  .. autoattribute:: write_concern
   .. autoattribute:: read_preference
   .. autoattribute:: tag_sets
   .. autoattribute:: secondary_acceptable_latency_ms
   .. autoattribute:: slave_okay
-  .. autoattribute:: safe
   .. autoattribute:: is_locked
   .. method:: sync_client
 

@@ -327,6 +327,84 @@ class MotorTestBasic(MotorTest):
         self.assertTrue(repr(db).startswith('MotorDatabase'))
         coll = db.test_collection
         self.assertTrue(repr(coll).startswith('MotorCollection'))
+        cursor = coll.find()
+        self.assertTrue(repr(cursor).startswith('MotorCursor'))
+
+    @async_test_engine()
+    def test_write_concern(self, done):
+        cx = motor.MotorClient(host, port)
+
+        # An implementation quirk of Motor, can't access properties until
+        # connected
+        self.assertRaises(
+            pymongo.errors.InvalidOperation, getattr, cx, 'write_concern')
+
+        yield motor.Op(cx.open)
+
+        # Default empty dict means "w=1"
+        self.assertEqual({}, cx.write_concern)
+
+        for gle_options in [
+            {},
+            {'w': 0},
+            {'w': 1},
+            {'wtimeout': 1000},
+            {'j': True},
+        ]:
+            cx = motor.MotorClient(host, port, **gle_options)
+            yield motor.Op(cx.open)
+            expected_wc = gle_options.copy()
+            self.assertEqual(expected_wc, cx.write_concern)
+
+            db = cx.pymongo_test
+            self.assertEqual(expected_wc, db.write_concern)
+
+            collection = db.test_collection
+            self.assertEqual(expected_wc, collection.write_concern)
+
+            # Call GLE whenever passing a callback, even if
+            # collection.write_concern['w'] == 0
+            yield AssertRaises(pymongo.errors.DuplicateKeyError,
+                collection.insert, {'_id': 0})
+
+            # No error
+            yield motor.Op(collection.insert, {'_id': 0}, w=0)
+
+            # Motor doesn't support 'safe'
+            self.assertRaises(AssertionError, collection.insert, {}, safe=False)
+            self.assertRaises(AssertionError, collection.insert, {}, safe=True)
+
+        collection = cx.pymongo_test.test_collection
+        collection.write_concern['w'] = 2
+
+        # Test write concerns passed to MotorClient, set on collection, or
+        # passed to insert.
+        cxw2 = yield motor.Op(motor.MotorClient(host, port, w=2).open)
+        if self.is_replica_set:
+            yield AssertRaises(pymongo.errors.DuplicateKeyError,
+                cxw2.pymongo_test.test_collection.insert, {'_id': 0})
+
+            yield AssertRaises(pymongo.errors.DuplicateKeyError,
+                collection.insert, {'_id': 0})
+
+            yield AssertRaises(pymongo.errors.DuplicateKeyError,
+                cx.pymongo_test.test_collection.insert, {'_id': 0}, w=2)
+        else:
+            # w > 1 and no replica set
+            yield AssertRaises(pymongo.errors.OperationFailure,
+                cxw2.pymongo_test.test_collection.insert, {'_id': 0})
+
+            yield AssertRaises(pymongo.errors.OperationFailure,
+                collection.insert, {'_id': 0})
+
+            yield AssertRaises(pymongo.errors.OperationFailure,
+                cx.pymongo_test.test_collection.insert, {'_id': 0}, w=2)
+
+        # No error
+        yield motor.Op(collection.insert, {'_id': 0}, w=0)
+        yield motor.Op(
+            cxw2.pymongo_test.test_collection.insert, {'_id': 0}, w=0)
+        done()
 
 
 class MotorReplicaSetTestBase(MotorTest):

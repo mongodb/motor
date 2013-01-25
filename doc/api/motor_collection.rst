@@ -19,19 +19,19 @@
   The :class:`MotorDatabase` that this
   :class:`MotorCollection` is a part of.
 
-  .. autoattribute:: slave_okay
+  .. autoattribute:: write_concern
   .. autoattribute:: read_preference
   .. autoattribute:: tag_sets
   .. autoattribute:: secondary_acceptable_latency_ms
-  .. autoattribute:: safe
+  .. autoattribute:: slave_okay
   .. autoattribute:: uuid_subtype
   .. automethod:: get_lasterror_options
   .. automethod:: set_lasterror_options
   .. automethod:: unset_lasterror_options
-  .. automethod:: insert(doc_or_docs[, manipulate=True[, safe=False[, check_keys=True[, continue_on_error=False[, callback=None [, **kwargs]]]]])
-  .. automethod:: save(to_save[, manipulate=True[, safe=False[, callback=None [, **kwargs]]])
-  .. automethod:: update(spec, document[, upsert=False[, manipulate=False[, safe=False[, multi=False[, callback=None [, **kwargs]]]]])
-  .. automethod:: remove([spec_or_id=None[, safe=False[, callback=None [, **kwargs]]])
+  .. automethod:: insert(doc_or_docs[, manipulate=True[, check_keys=True[, continue_on_error=False[, callback=None [, **kwargs]]]]])
+  .. automethod:: save(to_save[, manipulate=True[, callback=None [, **kwargs]]])
+  .. automethod:: update(spec, document[, upsert=False[, manipulate=False[, multi=False[, callback=None [, **kwargs]]]])
+  .. automethod:: remove([spec_or_id=None[, callback=None [, **kwargs]]])
   .. automethod:: drop
   .. automethod:: find([spec=None[, fields=None[, skip=0[, limit=0[, timeout=True[, snapshot=False[, tailable=False[, sort=None[, max_scan=None[, as_class=None[, slave_okay=False[, await_data=False[, partial=False[, manipulate=True[, read_preference=ReadPreference.PRIMARY[, **kwargs]]]]]]]]]]]]]]]])
   .. automethod:: find_one([spec_or_id=None[, *args[, callback=<function> [, **kwargs]]])

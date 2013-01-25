@@ -36,11 +36,11 @@
   .. autoattribute:: incoming_copying_manipulators
   .. autoattribute:: outgoing_manipulators
   .. autoattribute:: outgoing_copying_manipulators
+  .. autoattribute:: write_concern
   .. autoattribute:: read_preference
   .. autoattribute:: tag_sets
   .. autoattribute:: secondary_acceptable_latency_ms
   .. autoattribute:: slave_okay
-  .. autoattribute:: safe
   .. automethod:: get_lasterror_options
   .. automethod:: set_lasterror_options
   .. automethod:: unset_lasterror_options

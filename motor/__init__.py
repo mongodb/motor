@@ -52,8 +52,6 @@ version = '.'.join(map(str, version_tuple))
 #   from registering and cancelling timeouts
 # TODO: review open_sync(), does it need to disconnect after success to ensure
 #   all IOStreams with old IOLoop are gone?
-# TODO: what do safe=True and other get_last_error options mean when creating
-#   a MotorClient or MotorReplicaSetClient?
 
 
 def check_callable(kallable, required=False):
@@ -287,7 +285,7 @@ class MotorPool(pymongo.pool.Pool):
         return pymongo.pool.SocketInfo(motor_sock, self.pool_id)
 
 
-def asynchronize(sync_method, has_safe_arg, callback_required):
+def asynchronize(sync_method, has_write_concern, callback_required):
     """
     Decorate `sync_method` so it's run on a child greenlet and executes
     `callback` with (result, error) arguments when greenlet completes.
@@ -296,17 +294,21 @@ def asynchronize(sync_method, has_safe_arg, callback_required):
      - `io_loop`:           A Tornado IOLoop
      - `sync_method`:       Bound method of pymongo Collection, Database,
                             MongoClient, or Cursor
-     - `has_safe_arg`:      Whether the method takes a 'safe' argument
+     - `has_write_concern`: Whether the method accepts getLastError options
      - `callback_required`: If True, raise TypeError if no callback is passed
     """
     @functools.wraps(sync_method)
     def method(self, *args, **kwargs):
+        assert 'safe' not in kwargs, "Motor does not support 'safe', use 'w'"
         callback = kwargs.pop('callback', None)
         check_callable(callback, required=callback_required)
 
-        # Safe if callback is passed and safe=False not passed explicitly
-        if 'safe' not in kwargs and has_safe_arg:
-            kwargs['safe'] = bool(callback)
+        if has_write_concern:
+            # Pass w=1 if callback, else w=0, but don't replace e.g. w=4
+            _, gle_opts = self.delegate._get_write_mode(None, **kwargs)
+            if kwargs.get('w') != 0:
+                kwargs.setdefault(
+                    'w', gle_opts.get('w') or 1 if callback else 0)
 
         def call_method():
             result, error = None, None
@@ -327,7 +329,7 @@ def asynchronize(sync_method, has_safe_arg, callback_required):
 
     # This is for the benefit of motor_extension.py
     method.is_async_method = True
-    method.has_safe_arg = has_safe_arg
+    method.has_write_concern = has_write_concern
     method.callback_required = callback_required
     return method
 
@@ -338,21 +340,22 @@ class MotorAttributeFactory(object):
 
 
 class Async(MotorAttributeFactory):
-    def __init__(self, has_safe_arg, callback_required):
+    def __init__(self, has_write_concern, callback_required):
         """A descriptor that wraps a PyMongo method, such as insert or remove,
         and returns an asynchronous version of the method, which takes a
         callback.
 
         :Parameters:
-         - `has_safe_arg`:      Whether the method takes a 'safe' argument
+         - `has_write_concern`: Whether the method accepts getLastError options
          - `callback_required`: Whether callback is required or optional
         """
-        self.has_safe_arg = has_safe_arg
+        self.has_write_concern = has_write_concern
         self.callback_required = callback_required
 
     def create_attribute(self, cls, attr_name):
         method = getattr(cls.__delegate_class__, attr_name)
-        return asynchronize(method, self.has_safe_arg, self.callback_required)
+        return asynchronize(
+            method, self.has_write_concern, self.callback_required)
 
     def wrap(self, original_class):
         return WrapAsync(self, original_class)
@@ -452,23 +455,23 @@ class AsyncRead(Async):
         """A descriptor that wraps a PyMongo read method like find_one() that
         requires a callback.
         """
-        Async.__init__(self, has_safe_arg=False, callback_required=True)
+        Async.__init__(self, has_write_concern=False, callback_required=True)
 
 
 class AsyncWrite(Async):
     def __init__(self):
         """A descriptor that wraps a PyMongo write method like update() that
-        accepts optional safe and callback arguments.
+        accepts a callback and getLastError options.
         """
-        Async.__init__(self, has_safe_arg=True, callback_required=False)
+        Async.__init__(self, has_write_concern=True, callback_required=False)
 
 
 class AsyncCommand(Async):
     def __init__(self):
         """A descriptor that wraps a PyMongo command like copy_database() that
-        has an optional callback and no safe argument.
+        has an optional callback and no getLastError options.
         """
-        Async.__init__(self, has_safe_arg=False, callback_required=False)
+        Async.__init__(self, has_write_concern=False, callback_required=False)
 
 
 def check_delegate(obj, attr_name):
@@ -539,6 +542,8 @@ class MotorBase(object):
     name                            = ReadOnlyProperty()
     document_class                  = ReadWriteProperty()
     slave_okay                      = ReadWriteProperty()
+    # TODO: this is superceded by write_concern, but needed for synchrotest;
+    #   remove after PYTHON-452 is done
     safe                            = ReadWriteProperty()
     read_preference                 = ReadWriteProperty()
     tag_sets                        = ReadWriteProperty()
@@ -1144,7 +1149,7 @@ class MotorCursor(MotorBase):
           import sys
 
           from pymongo.mongo_client import MongoClient
-          MongoClient().test.test_collection.remove(safe=True)
+          MongoClient().test.test_collection.remove()
 
           import motor
           from motor import MotorClient
@@ -1278,7 +1283,7 @@ class MotorCursor(MotorBase):
         .. testsetup:: to_list
 
           from pymongo.mongo_client import MongoClient
-          MongoClient().test.test_collection.remove(safe=True)
+          MongoClient().test.test_collection.remove()
           from motor import MotorClient
           from tornado.ioloop import IOLoop
           from tornado import gen
@@ -1436,7 +1441,7 @@ class MotorCursor(MotorBase):
 
           import sys
           from pymongo.mongo_client import MongoClient
-          MongoClient().test.test_collection.remove(safe=True)
+          MongoClient().test.test_collection.remove()
           from motor import MotorClient
           from tornado.ioloop import IOLoop
           from tornado import gen
