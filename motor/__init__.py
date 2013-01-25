@@ -118,7 +118,7 @@ def motor_sock_method(method):
         try:
             kwargs['callback'] = callback
 
-            # method is MotorSocket.send(), recv(), etc. method() begins a
+            # method is MotorSocket.open(), recv(), etc. method() begins a
             # non-blocking operation on an IOStream and arranges for
             # callback() to be executed on the main greenlet once the
             # operation has completed.
@@ -232,7 +232,7 @@ class MotorPool(pymongo.pool.Pool):
         pymongo.pool.Pool.__init__(self, *args, **kwargs)
 
     def create_connection(self, pair):
-        """Copy of BasePool.connect()
+        """Copy of Pool.connect()
         """
         # TODO: refactor all this with BasePool, use a new hook to wrap the
         #   socket with MotorSocket before attempting connect().
@@ -258,8 +258,7 @@ class MotorPool(pymongo.pool.Pool):
                     sock, self.io_loop, use_ssl=self.use_ssl)
                 motor_sock.settimeout(self.conn_timeout or 20.0)
 
-                # MotorSocket will pause the current greenlet and resume it
-                # when connection has completed
+                # MotorSocket pauses this greenlet and resumes when connected
                 motor_sock.connect(pair or self.pair)
                 return motor_sock
             except socket.error, e:
@@ -271,12 +270,12 @@ class MotorPool(pymongo.pool.Pool):
             raise err
         else:
             # This likely means we tried to connect to an IPv6 only
-            # host with an OS/kernel or Python interpeter that doesn't
+            # host with an OS/kernel or Python interpreter that doesn't
             # support IPv6.
             raise socket.error('getaddrinfo failed')
 
     def connect(self, pair):
-        """Copy of BasePool.connect(), avoiding call to ssl.wrap_socket which
+        """Copy of Pool.connect(), avoiding call to ssl.wrap_socket which
            is inappropriate for Motor.
            TODO: refactor, extra hooks in BasePool
         """
