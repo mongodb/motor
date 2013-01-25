@@ -306,6 +306,9 @@ class MotorClientTest(MotorTest):
     @async_test_engine()
     def test_connection_timeout(self, done):
         exc = None
+        # Note that getaddrinfo() is blocking and has no timeout, so the first
+        # iteration can take a while regardless of timeout. So test the longer
+        # timeout first and then, once GAI is cached, try the short timeout.
         for connect_timeout_sec in (1, .1):
             start = time.time()
             try:
