@@ -226,8 +226,6 @@ class MotorTailTest(MotorTest):
 
             if (yield cursor.fetch_next):
                 results.append(cursor.next_object())
-            else:
-                yield gen.Task(loop.add_timeout, time.time() + 0.1)
 
         t.join()
         self.assertEqual([{'_id': i} for i in range(len(pauses))], results)

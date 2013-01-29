@@ -51,8 +51,6 @@ A cursor can also be tailed using :attr:`~motor.MotorCursor.fetch_next`:
 
             if (yield cursor.fetch_next):
                 results.append(cursor.next_object())
-            else:
-                yield gen.Task(loop.add_timeout, time.time() + 0.1)
 
 .. seealso:: `Tailable cursors <http://www.mongodb.org/display/DOCS/Tailable+Cursors>`_
 
