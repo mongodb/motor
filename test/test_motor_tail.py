@@ -74,8 +74,8 @@ class MotorTailTest(MotorTest):
         callback()
         return False
 
-    # Need a longish pause to ensure tail() recovers when cursor times out and
-    # returns None
+    # Need at least one longish pause to ensure tail() recovers when cursor
+    # times out and returns None
     tail_pauses = (
         1, 0, 1, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0.1, 0.1, 0, 0)
 
