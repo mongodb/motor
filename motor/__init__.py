@@ -1387,6 +1387,10 @@ class MotorCursor(MotorBase):
         tailing is canceled with :meth:`close`, or by returning ``False`` from
         the callback.
 
+        .. seealso:: :doc:`../examples/tailable-cursors`
+
+        .. _capped collection: http://docs.mongodb.org/manual/core/capped-collections/
+
         :Parameters:
          - `callback`: function taking (document, error)
         """

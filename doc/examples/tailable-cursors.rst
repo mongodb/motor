@@ -1,7 +1,7 @@
-Motor Tailable Cursor Example
-=============================
+Motor Tailable Cursor Examples
+==============================
 
-Motor provides a convenience method :meth:`~motor.MotorCursor.tail`
+Motor provides a convenience method :meth:`~motor.MotorCursor.tail`:
 
 .. code-block:: python
 
@@ -35,4 +35,25 @@ Motor provides a convenience method :meth:`~motor.MotorCursor.tail`
 
         assert range(3) == results
 
+A cursor can also be tailed using :attr:`~motor.MotorCursor.fetch_next`:
+
+.. code-block:: python
+
+    @gen.engine
+    def tailable_example_fetch_next():
+        results = []
+        cursor = capped.find(tailable=True, await_data=True)
+        while True:
+            if not cursor.alive:
+                # While collection is empty, tailable cursor dies immediately
+                yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=1))
+                cursor = capped.find(tailable=True, await_data=True)
+
+            if (yield cursor.fetch_next):
+                results.append(cursor.next_object())
+            else:
+                yield gen.Task(loop.add_timeout, time.time() + 0.1)
+
 .. seealso:: `Tailable cursors <http://www.mongodb.org/display/DOCS/Tailable+Cursors>`_
+
+.. _tornado.gen: http://www.tornadoweb.org/documentation/gen.html
