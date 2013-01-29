@@ -197,7 +197,7 @@ class MotorTailTest(MotorTest):
             if not cursor.alive:
                 # While collection is empty, tailable cursor dies immediately
                 yield gen.Task(loop.add_timeout, time.time() + 0.1)
-                cursor = capped.find(tailable=True)
+                cursor = capped.find(tailable=True, await_data=True)
 
             if (yield cursor.fetch_next):
                 results.append(cursor.next_object())
