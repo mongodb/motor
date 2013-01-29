@@ -181,7 +181,7 @@ class MotorTailTest(MotorTest):
         yield gen.Task(self.wait_for_cursors)
         done()
 
-    @async_test_engine(timeout_sec=3)
+    @async_test_engine(timeout_sec=10)
     def test_tail_close(self, done):
         # Make sure closing a cursor stops iteration immediately
         pauses = (0, 0, 1, 0, 0)
