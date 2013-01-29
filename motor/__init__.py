@@ -1415,7 +1415,7 @@ class MotorCursor(MotorBase):
             callback(None, error)
         elif result is not None:
             if callback(result, None) is False:
-                # Callee cancelled tailing
+                # Callee cancelled tailing, we'll cancel the outer each()
                 self.close()
                 return False
 
