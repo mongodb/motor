@@ -37,6 +37,7 @@ class MotorCursorTest(MotorTest):
     @async_test_engine()
     def test_count(self, done):
         coll = self.motor_connection(host, port).pymongo_test.test_collection
+        self.check_required_callback(coll.find().count)
         yield AssertEqual(200, coll.find().count)
         yield AssertEqual(100, coll.find({'_id': {'$gt': 99}}).count)
         where = 'this._id % 2 == 0 && this._id >= 50'
@@ -53,6 +54,7 @@ class MotorCursorTest(MotorTest):
     @async_test_engine()
     def test_distinct(self, done):
         coll = self.motor_connection(host, port).pymongo_test.test_collection
+        self.check_required_callback(coll.find().distinct, '_id')
         self.assertEqual(set(range(10)), set((
             yield motor.Op(coll.find({'_id': {'$lt': 10}}).distinct, '_id'))))
         done()
@@ -119,6 +121,7 @@ class MotorCursorTest(MotorTest):
     @async_test_engine()
     def test_each(self, done):
         coll = self.motor_connection(host, port).pymongo_test.test_collection
+        self.check_required_callback(coll.find().each)
         cursor = coll.find({}, {'_id': 1}).sort([('_id', pymongo.ASCENDING)])
         yield_point = yield gen.Callback(0)
         results = []
@@ -139,7 +142,7 @@ class MotorCursorTest(MotorTest):
     def test_to_list_argument_checking(self):
         coll = self.motor_connection(host, port).pymongo_test.test_collection
         cursor = coll.find()
-        self.check_callback_handling(partial(cursor.to_list, 10), True)
+        self.check_required_callback(cursor.to_list, 10)
 
         cursor = coll.find()
         callback = lambda result, error: None
@@ -189,8 +192,8 @@ class MotorCursorTest(MotorTest):
         cursor = coll.find(tailable=True)
 
         # Can't call to_list on tailable cursor
-        self.assertRaises(
-            InvalidOperation, cursor.to_list, callback=lambda: None)
+        self.assertRaises(InvalidOperation,
+            cursor.to_list, callback=lambda result, error: None)
 
     @async_test_engine()
     def test_limit_zero(self, done):
@@ -213,7 +216,9 @@ class MotorCursorTest(MotorTest):
     @async_test_engine()
     def test_cursor_explicit_close(self, done):
         cx = self.motor_connection(host, port)
-        cursor = cx.pymongo_test.test_collection.find()
+        collection = cx.pymongo_test.test_collection
+        self.check_optional_callback(collection.find().close)
+        cursor = collection.find()
         yield cursor.fetch_next
         self.assertTrue(cursor.alive)
         yield motor.Op(cursor.close)
@@ -222,56 +227,6 @@ class MotorCursorTest(MotorTest):
         # it's killed on the server
         self.assertTrue(cursor.alive)
         yield gen.Task(self.wait_for_cursors)
-        done()
-
-    @async_test_engine()
-    def test_each(self, done):
-        # 1. Open a connection.
-        #
-        # 2. test_collection has docs inserted in setUp(). Query for documents
-        # with _id 0 through 13, in batches of 5: 0-4, 5-9, 10-13.
-        #
-        # 3. For each document, check if the cursor has been closed. I expect
-        # it to remain open until we've retrieved doc with _id 10. Oddly, Mongo
-        # doesn't close the cursor and return cursor_id 0 if the final batch
-        # exactly contains the last document -- the last batch size has to go
-        # at least one *past* the final document in order to close the cursor.
-        connection = self.motor_connection(host, port)
-
-        cursor = connection.pymongo_test.test_collection.find(
-            {'_id': {'$lt':14}},
-            {'s': False}, # exclude 's' field
-            sort=[('_id', 1)],
-        ).batch_size(5)
-
-        each_done = yield gen.Callback('each_done')
-
-        def callback(doc, error):
-            if error:
-                raise error
-
-            if doc:
-                results.append(doc['_id'])
-
-            if doc and doc['_id'] < 10:
-                self.assertEqual(
-                    1 + self.open_cursors,
-                    self.get_open_cursors()
-                )
-            else:
-                self.assertEqual(
-                    self.open_cursors,
-                    self.get_open_cursors()
-                )
-
-            if not doc:
-                # Done
-                each_done()
-
-        results = []
-        cursor.each(callback)
-        yield gen.Wait('each_done')
-        self.assertEqual(range(14), results)
         done()
 
     def test_each_cancel(self):
