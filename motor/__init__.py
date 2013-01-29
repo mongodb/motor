@@ -689,8 +689,9 @@ class MotorClientBase(MotorOpenable, MotorBase):
 
     def __getattr__(self, name):
         if not self.connected:
-            msg = ("Can't access attribute '%s' on %s before calling open()"
-                  " or open_sync()" % (name, self.__class__.__name__))
+            msg = (
+                "Can't access attribute '%s' on %s before calling open()"
+                " or open_sync()" % (name, self.__class__.__name__))
             raise pymongo.errors.InvalidOperation(msg)
 
         return MotorDatabase(self, name)
@@ -863,7 +864,8 @@ class MotorReplicaSetClient(MotorClientBase):
 class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
     def __init__(self, rsc):
         assert isinstance(
-            rsc, pymongo.mongo_replica_set_client.MongoReplicaSetClient), (
+            rsc, pymongo.mongo_replica_set_client.MongoReplicaSetClient
+        ), (
             "First argument to MotorReplicaSetMonitor must be"
             " MongoReplicaSetClient, not %s" % repr(rsc))
 
@@ -1246,7 +1248,7 @@ class MotorCursor(MotorBase):
 
         while self.buffer_size > 0:
             try:
-                doc = self.delegate.next() # decrements self.buffer_size
+                doc = self.delegate.next()  # decrements self.buffer_size
             except StopIteration:
                 # Special case: limit of 0
                 add_callback(functools.partial(callback, None, None))
@@ -1311,7 +1313,7 @@ class MotorCursor(MotorBase):
           ...     yield motor.Op(
           ...         collection.insert, [{'_id': i} for i in range(4, 400)])
           ...     cursor = collection.find().sort([('_id', 1)]).limit(4)
-          ...     # No max length passed to 'to_list', but a limit set on cursor
+          ...     # No max length passed to 'to_list', but limit set on cursor
           ...     docs = yield motor.Op(cursor.to_list)
           ...     print docs
           ...     print 'done'
@@ -1417,6 +1419,7 @@ class MotorCursor(MotorBase):
         if error:
             self.close()
             callback(None, error)
+
         elif result is not None:
             if callback(result, None) is False:
                 # Callee cancelled tailing, we'll cancel the outer each()
@@ -1544,7 +1547,7 @@ class MotorCursor(MotorBase):
 
             # Get one document, force hard limit of 1 so server closes cursor
             # immediately
-            return self[self.delegate._Cursor__skip+index:].limit(-1)
+            return self[self.delegate._Cursor__skip + index:].limit(-1)
 
     def _check_not_started(self):
         if self.started:
@@ -1850,8 +1853,8 @@ class WaitAllOps(gen.WaitAll):
                 {'_id': id_two}, callback=(yield gen.Callback('two')))
 
             try:
-                document_one, document_two = yield motor.WaitAllOps(['one', 'two'])
-                return document_one, document_two
+                doc_one, doc_two = yield motor.WaitAllOps(['one', 'two'])
+                return doc_one, doc_two
             except Exception, e:
                 print e
     """
@@ -1889,7 +1892,7 @@ class FetchNext(gen.YieldPoint):
         # 'result' is _get_more's return value, the number of docs fetched
         self.error = error
         self.ready = True
-        runner, self.runner = self.runner, None # Break cycle
+        runner, self.runner = self.runner, None  # Break cycle
         runner.run()
 
     def is_ready(self):
