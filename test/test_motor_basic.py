@@ -80,9 +80,15 @@ class MotorTestBasic(MotorTest):
         collection = cx.pymongo_test.test_collection
         collection.write_concern['w'] = 2
 
+        # No error
+        yield motor.Op(collection.insert, {'_id': 0}, w=0)
+
+        cxw2 = yield motor.Op(motor.MotorClient(host, port, w=2).open)
+        yield motor.Op(
+            cxw2.pymongo_test.test_collection.insert, {'_id': 0}, w=0)
+
         # Test write concerns passed to MotorClient, set on collection, or
         # passed to insert.
-        cxw2 = yield motor.Op(motor.MotorClient(host, port, w=2).open)
         if self.is_replica_set:
             yield AssertRaises(pymongo.errors.DuplicateKeyError,
                 cxw2.pymongo_test.test_collection.insert, {'_id': 0})
@@ -103,8 +109,7 @@ class MotorTestBasic(MotorTest):
             yield AssertRaises(pymongo.errors.OperationFailure,
                 cx.pymongo_test.test_collection.insert, {'_id': 0}, w=2)
 
-        # No error
-        yield motor.Op(collection.insert, {'_id': 0}, w=0)
-        yield motor.Op(
-            cxw2.pymongo_test.test_collection.insert, {'_id': 0}, w=0)
+        # Important that the last operation on each MotorClient was
+        # acknowledged, so lingering messages aren't delivered in the middle of
+        # the next test
         done()
