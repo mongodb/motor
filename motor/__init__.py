@@ -1419,9 +1419,10 @@ class MotorCursor(MotorBase):
                 self.close()
                 return False
 
-        if not self.alive:
+        if not self.alive and not self.closed:
             # Cursor died because collection was dropped, or we started with
-            # the collection empty. Start over soon.
+            # the collection empty, and a callback hasn't closed us since we
+            # started this method. Start over soon.
             self.rewind()
             self.get_io_loop().add_timeout(
                 time.time() + 0.5,
