@@ -152,11 +152,7 @@ class MotorTailTest(MotorTest):
     def test_tail_uncapped_collection(self, done):
         test_db = self.motor_connection(host, port).pymongo_test
         uncapped = test_db.uncapped
-
-        yield AssertRaises(
-            OperationFailure,
-            uncapped.find().tail)
-
+        yield AssertRaises(OperationFailure, uncapped.find().tail)
         done()
 
     @async_test_engine(timeout_sec=30)
@@ -174,9 +170,8 @@ class MotorTailTest(MotorTest):
         capped = test_db.capped
         capped.find().tail(each)
         yield gen.Wait('done')
-        self.assertEqual(
-            [{'_id': i} for i in range(-2, len(pauses))],
-            results)
+        self.assertEqual([{'_id': i} for i in range(-2, len(pauses))], results)
+
 
         t.join()
         yield gen.Task(self.wait_for_cursors)
