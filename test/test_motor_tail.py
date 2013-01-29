@@ -177,8 +177,33 @@ class MotorTailTest(MotorTest):
         yield gen.Wait('done')
         self.assertEqual([{'_id': i} for i in range(-2, len(pauses))], results)
 
-
         t.join()
+        yield gen.Task(self.wait_for_cursors)
+        done()
+
+    @async_test_engine(timeout_sec=3)
+    def test_tail_close(self, done):
+        # Make sure closing a cursor stops iteration immediately
+        pauses = (0, 0, 1, 0, 0)
+        t = self.start_insertion_thread(pauses)
+
+        results = []
+
+        test_db = self.motor_connection(host, port).pymongo_test
+        cursor = test_db.capped.find()
+
+        def each(result, error):
+            if error:
+                results.append(type(error))
+            elif result:
+                results.append(result)
+                if len(results) == 3:
+                    cursor.close()
+
+        cursor.tail(each)
+        yield gen.Task(ioloop.IOLoop.instance().add_timeout, time.time() + 2)
+        t.join()
+        self.assertEqual([{'_id': i} for i in range(3)], results)
         yield gen.Task(self.wait_for_cursors)
         done()
 

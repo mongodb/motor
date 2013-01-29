@@ -1074,7 +1074,6 @@ class MotorCursor(MotorBase):
     distinct      = AsyncRead()
     explain       = AsyncRead()
     _refresh      = AsyncRead()
-    close         = AsyncCommand()
     cursor_id     = ReadOnlyProperty()
     alive         = ReadOnlyProperty()
     batch_size    = MotorCursorChainingMethod()
@@ -1086,6 +1085,8 @@ class MotorCursor(MotorBase):
     sort          = MotorCursorChainingMethod()
     hint          = MotorCursorChainingMethod()
     where         = MotorCursorChainingMethod()
+
+    _Cursor__die  = AsyncCommand()
 
     def __init__(self, cursor, collection):
         """You will not usually construct a MotorCursor yourself, but acquire
@@ -1105,6 +1106,7 @@ class MotorCursor(MotorBase):
         self.delegate = cursor
         self.collection = collection
         self.started = False
+        self.closed = False
 
     def _get_more(self, callback):
         """
@@ -1376,37 +1378,50 @@ class MotorCursor(MotorBase):
         return self
 
     def tail(self, callback):
-        # TODO: doc, prominently. await_data is always true.
+        """Query a `capped collection`_. The callback is executed once for each
+        existing document that matches the query, and continues to be executed
+        as new matching documents are appended to the collection.
+        :meth:`tail` returns the :class:`MotorCursor`. The cursor is closed and
+        tailing is canceled with :meth:`close`, or by returning ``False`` from
+        the callback.
+
+        :Parameters:
+         - `callback`: function taking (document, error)
+        """
         # TODO: doc that tailing an empty collection is expensive,
         #   consider a failsafe, e.g. timing the interval between getmore
         #   and return, and if it's short and no doc, pause before next
         #   getmore
-        # TODO: doc that cursor is closed if iteration cancelled
         check_callable(callback, True)
-
-        cursor = self.clone()
-
-        cursor.delegate._Cursor__tailable = True
-        cursor.delegate._Cursor__await_data = True
+        self._check_not_started()
+        self.delegate._Cursor__tailable = True
+        self.delegate._Cursor__await_data = True
 
         # Start tailing
-        cursor.each(functools.partial(self._tail_got_more, cursor, callback))
+        self.each(functools.partial(self._tail_got_more, callback))
+        return self
 
-    def _tail_got_more(self, cursor, callback, result, error):
+    def _tail_got_more(self, callback, result, error):
+        if self.closed:
+            # Someone has explicitly called close() to cancel iteration
+            return
+
         if error:
-            cursor.close()
+            self.close()
             callback(None, error)
         elif result is not None:
             if callback(result, None) is False:
                 # Callee cancelled tailing
-                cursor.close()
+                self.close()
                 return False
 
-        if not cursor.alive:
-            # cursor died, start over soon
+        if not self.alive:
+            # Cursor died because collection was dropped, or we started with
+            # the collection empty. Start over soon.
+            self.rewind()
             self.get_io_loop().add_timeout(
                 time.time() + 0.5,
-                functools.partial(cursor.tail, callback))
+                functools.partial(self.tail, callback))
 
     def get_io_loop(self):
         return self.collection.get_io_loop()
@@ -1415,6 +1430,13 @@ class MotorCursor(MotorBase):
     def buffer_size(self):
         # TODO: expose so we don't have to use double-underscore hack
         return len(self.delegate._Cursor__data)
+
+    def close(self, callback=None):
+        """Explicitly kill this cursor on the server, and cease iterating with
+        :meth:`each` or :meth:`tail`.
+        """
+        self.closed = True
+        self._Cursor__die(callback=callback)
 
     def __getitem__(self, index):
         """Get a slice of documents from this cursor.
@@ -1500,9 +1522,7 @@ class MotorCursor(MotorBase):
         :Parameters:
           - `index`: An integer or slice index to be applied to this cursor
         """
-        if self.started:
-            raise pymongo.errors.InvalidOperation("MotorCursor already started")
-
+        self._check_not_started()
         if isinstance(index, slice):
             # Slicing a cursor does no I/O - it just sets skip and limit - so
             # we can slice it immediately.
@@ -1516,6 +1536,11 @@ class MotorCursor(MotorBase):
             # Get one document, force hard limit of 1 so server closes cursor
             # immediately
             return self[self.delegate._Cursor__skip+index:].limit(-1)
+
+    def _check_not_started(self):
+        if self.started:
+            raise pymongo.errors.InvalidOperation(
+                "MotorCursor already started")
 
     def __copy__(self):
         return MotorCursor(self.delegate.__copy__(), self.collection)
