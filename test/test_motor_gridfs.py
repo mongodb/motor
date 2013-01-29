@@ -72,17 +72,17 @@ class MotorGridfsTest(MotorTest):
     def test_gridfs_callback(self, done):
         db = self.motor_connection(host, port).open_sync().pymongo_test
         fs = motor.MotorGridFS(db)
-        self.check_callback_handling(fs.open, False)
+        self.check_optional_callback(fs.open)
 
         fs = yield motor.Op(motor.MotorGridFS(db).open)
-        self.check_callback_handling(fs.new_file, True)
-        self.check_callback_handling(fs.get, True)
-        self.check_callback_handling(fs.get_version, True)
-        self.check_callback_handling(fs.get_last_version, True)
-        self.check_callback_handling(partial(fs.put, b('a')), False)
-        self.check_callback_handling(partial(fs.delete, 1), False)
-        self.check_callback_handling(fs.list, True)
-        self.check_callback_handling(fs.exists, True)
+        self.check_required_callback(fs.new_file)
+        self.check_required_callback(fs.get)
+        self.check_required_callback(fs.get_version)
+        self.check_required_callback(fs.get_last_version)
+        self.check_optional_callback(partial(fs.put, b('a')))
+        self.check_optional_callback(partial(fs.delete, 1))
+        self.check_required_callback(fs.list)
+        self.check_required_callback(fs.exists)
         done()
 
     def test_custom_io_loop(self):
