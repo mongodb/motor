@@ -50,8 +50,6 @@ version = '.'.join(map(str, version_tuple))
 # TODO: ensure we're doing
 #   timeouts as efficiently as possible, test performance hit with timeouts
 #   from registering and cancelling timeouts
-# TODO: review open_sync(), does it need to disconnect after success to ensure
-#   all IOStreams with old IOLoop are gone?
 
 
 def check_callable(kallable, required=False):
