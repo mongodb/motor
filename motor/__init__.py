@@ -1370,9 +1370,11 @@ class MotorCursor(MotorBase):
             callback(the_list, None)
 
     def clone(self):
+        """Get a clone of this cursor."""
         return MotorCursor(self.delegate.clone(), self.collection)
 
     def rewind(self):
+        """Rewind this cursor to its unevaluated state."""
         self.delegate.rewind()
         self.started = False
         return self
