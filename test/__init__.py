@@ -290,13 +290,11 @@ class MotorTest(unittest.TestCase):
 
     def check_required_callback(self, fn, *args, **kwargs):
         self.check_callback_handling(
-            functools.partial(fn, *args, **kwargs),
-            True)
+            functools.partial(fn, *args, **kwargs), True)
 
     def check_optional_callback(self, fn, *args, **kwargs):
         self.check_callback_handling(
-            functools.partial(fn, *args, **kwargs),
-            False)
+            functools.partial(fn, *args, **kwargs), False)
 
     def tearDown(self):
         self.sync_coll.drop()
