@@ -1238,10 +1238,11 @@ class MotorCursor(MotorBase):
         self._each_got_more(callback, None, None)
 
     def _each_got_more(self, callback, batch_size, error):
-        add_callback = self.get_io_loop().add_callback
         if error:
             callback(None, error)
             return
+
+        add_callback = self.get_io_loop().add_callback
 
         while self.buffer_size > 0:
             try:
