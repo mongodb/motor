@@ -118,10 +118,11 @@ documents in memory.
 Using Tornado's generator interface
 -----------------------------------
 
-Motor provides :class:`~motor.Op`, :class:`~motor.WaitOp`, and
+Motor provides the yield points :class:`~motor.Op`, :class:`~motor.WaitOp`, and
 :class:`~motor.WaitAllOps` for convenient use with the
-`tornado.gen module <http://www.tornadoweb.org/documentation/gen.html>`_. To
-use async methods without explicit callbacks:
+`tornado.gen module <http://www.tornadoweb.org/documentation/gen.html>`_.
+These yield points raise any exception passed by Motor, otherwise they return
+the result. To use async methods without explicit callbacks:
 
 .. code-block:: python
 
@@ -161,14 +162,8 @@ use async methods without explicit callbacks:
             self.write('</ul>')
             self.finish()
 
-Or using `to_list` instead of `next_object`:
-
-.. code-block:: python
-
-    cursor = db.messages.find().sort([('_id', -1)]).limit(100)
-    messages = yield motor.Op(cursor.to_list)
-    for message in messages:
-        self.write('<li>%s</li>' % message['msg'])
+As you can see, using Motor's yield points, it is no longer necessary to check
+explicitly if each operation caused an error.
 
 One can also parallelize operations and wait for all to complete. To query for
 two messages at once and wait for both:
