@@ -14,6 +14,7 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+import contextlib
 import datetime
 import unittest
 
@@ -113,33 +114,50 @@ class MotorGenTest(MotorTest):
         cb0 = yield gen.Callback(0)
         cb1 = yield gen.Callback(1)
         cb2 = yield gen.Callback(2)
+        cb3 = yield gen.Callback(3)
 
-        def raise_index_err():
-            cb0(None, IndexError())
+        def raise_value_err():
+            cb0(None, ValueError())
 
-        def null():
+        def foo():
             cb1('foo', None)
 
         def raise_assertion_err():
             cb2(None, AssertionError())
 
+        def bar():
+            cb3('bar', None)
+
         loop = ioloop.IOLoop.instance()
+        loop.add_timeout(datetime.timedelta(seconds=.04), bar)
         loop.add_timeout(datetime.timedelta(seconds=.03), raise_assertion_err)
-        loop.add_timeout(datetime.timedelta(seconds=.02), null)
-        loop.add_timeout(datetime.timedelta(seconds=.01), raise_index_err)
+        loop.add_timeout(datetime.timedelta(seconds=.02), foo)
+        loop.add_timeout(datetime.timedelta(seconds=.01), raise_value_err)
+
+        @contextlib.contextmanager
+        def expect_exc(exc_class):
+            try:
+                yield
+            except Exception, e:
+                self.assertTrue(
+                    isinstance(e, exc_class),
+                    "Expected to throw %s, got %r" % (exc_class, e))
 
         # Check that earliest error is the one raised
-        try:
-            yield motor.WaitAllOps([0, 1, 2])
-        except Exception, e:
-            self.assertTrue(isinstance(e, IndexError))
+        with expect_exc(ValueError):
+            yield motor.WaitAllOps([0, 1, 2, 3])
 
-        # Make sure keys 1 and 2 are still pending
+        # Key 0 is gone from pending callbacks
+        with expect_exc(gen.UnknownKeyError):
+            yield motor.WaitOp(0)
+
+        # Make sure keys 1, 2, and 3 are still pending
         self.assertEqual('foo', (yield motor.WaitOp(1)))
-        try:
-            yield motor.WaitOp(2)
-        except Exception, e:
-            self.assertTrue(isinstance(e, AssertionError))
+
+        with expect_exc(AssertionError):
+            yield motor.WaitAllOps([2, 3])
+
+        self.assertEqual('bar', (yield motor.WaitOp(3)))
         done()
 
 

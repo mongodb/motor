@@ -1859,7 +1859,8 @@ class WaitAllOps(gen.YieldPoint):
                 print e
 
     If an exception is passed to any of the callbacks, waiting is canceled and
-    the exception is raised immediately.
+    the exception is raised immediately. Other callbacks' keys are still
+    pending.
     """
     def __init__(self, keys):
         self.keys = keys
@@ -1867,33 +1868,54 @@ class WaitAllOps(gen.YieldPoint):
     def start(self, runner):
         self.runner = runner
 
-    def is_ready(self):
-        # Return True if all keys are ready, or if any is an error.
-        all_ready = True
+    no_error = object()
+
+    def get_error_key(self):
         for key in self.keys:
             if self.runner.is_ready(key):
-                # Peek at the result without popping it
                 (result, error), _ = self.runner.results[key]
                 if error:
-                    return True
-            else:
-                all_ready = False
+                    return key
 
-        return all_ready
+        return WaitAllOps.no_error
+
+    def peek_error(self):
+        key = self.get_error_key()
+        if key is not WaitAllOps.no_error:
+            # Peek at the result without popping it
+            (result, error), _ = self.runner.results[key]
+            return error
+
+        return None
+
+    def pop_error(self):
+        key = self.get_error_key()
+        if key is not WaitAllOps.no_error:
+            (result, error), _ = self.runner.pop_result(key)
+            return error
+
+        return None
+
+    def is_ready(self):
+        error = self.peek_error()
+        if error:
+            return True
+
+        return all(self.runner.is_ready(key) for key in self.keys)
 
     def get_result(self):
+        error = self.pop_error()
+        if error:
+            raise error
+
         results = []
-
         for key in self.keys:
-            # We can be ready before all our keys are if any callbacks got errs
-            if self.runner.is_ready(key):
-                (result, error), _ = self.runner.pop_result(key)
-                if error:
-                    raise error
-                else:
-                    results.append(result)
+            (result, error), _ = self.runner.pop_result(key)
+            if error:
+                raise error
+            else:
+                results.append(result)
 
-        assert len(results) == len(self.keys)
         return results
 
 
