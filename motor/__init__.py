@@ -1840,7 +1840,7 @@ class WaitOp(gen.Wait):
         return result
 
 
-class WaitAllOps(gen.WaitAll):
+class WaitAllOps(gen.YieldPoint):
     """To wait for multiple Callbacks to complete, yield
     :class:`motor.WaitAllOps`::
 
@@ -1857,17 +1857,43 @@ class WaitAllOps(gen.WaitAll):
                 return doc_one, doc_two
             except Exception, e:
                 print e
+
+    If an exception is passed to any of the callbacks, waiting is canceled and
+    the exception is raised immediately.
     """
-    def get_result(self):
-        super_results = super(WaitAllOps, self).get_result()
+    def __init__(self, keys):
+        self.keys = keys
 
-        results = []
-        for (result, error), _ in super_results:
-            if error:
-                raise error
+    def start(self, runner):
+        self.runner = runner
+
+    def is_ready(self):
+        # Return True if all keys are ready, or if any is an error.
+        all_ready = True
+        for key in self.keys:
+            if self.runner.is_ready(key):
+                # Peek at the result without popping it
+                (result, error), _ = self.runner.results[key]
+                if error:
+                    return True
             else:
-                results.append(result)
+                all_ready = False
 
+        return all_ready
+
+    def get_result(self):
+        results = []
+
+        for key in self.keys:
+            # We can be ready before all our keys are if any callbacks got errs
+            if self.runner.is_ready(key):
+                (result, error), _ = self.runner.pop_result(key)
+                if error:
+                    raise error
+                else:
+                    results.append(result)
+
+        assert len(results) == len(self.keys)
         return results
 
 

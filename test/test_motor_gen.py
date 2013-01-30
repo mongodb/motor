@@ -14,9 +14,10 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+import datetime
 import unittest
 
-from tornado import gen
+from tornado import gen, ioloop
 from pymongo.errors import DuplicateKeyError
 
 import motor
@@ -106,6 +107,41 @@ class MotorGenTest(MotorTest):
 
         self.assertTrue(isinstance(error, DuplicateKeyError))
         done()
+
+    @async_test_engine()
+    def test_wait_all_ops_exc(self, done):
+        cb0 = yield gen.Callback(0)
+        cb1 = yield gen.Callback(1)
+        cb2 = yield gen.Callback(2)
+
+        def raise_index_err():
+            cb0(None, IndexError())
+
+        def null():
+            cb1('foo', None)
+
+        def raise_assertion_err():
+            cb2(None, AssertionError())
+
+        loop = ioloop.IOLoop.instance()
+        loop.add_timeout(datetime.timedelta(seconds=.03), raise_assertion_err)
+        loop.add_timeout(datetime.timedelta(seconds=.02), null)
+        loop.add_timeout(datetime.timedelta(seconds=.01), raise_index_err)
+
+        # Check that earliest error is the one raised
+        try:
+            yield motor.WaitAllOps([0, 1, 2])
+        except Exception, e:
+            self.assertTrue(isinstance(e, IndexError))
+
+        # Make sure keys 1 and 2 are still pending
+        self.assertEqual('foo', (yield motor.WaitOp(1)))
+        try:
+            yield motor.WaitOp(2)
+        except Exception, e:
+            self.assertTrue(isinstance(e, AssertionError))
+        done()
+
 
 if __name__ == '__main__':
     unittest.main()
