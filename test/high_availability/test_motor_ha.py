@@ -979,6 +979,8 @@ class MotorTestAlive(unittest.TestCase):
 
             yield AssertFalse(primary_cx.alive)
             yield AssertTrue(secondary_cx.alive)
+
+            # Sometimes KeyError: https://jira.mongodb.org/browse/PYTHON-467
             yield AssertFalse(rsc.alive)
 
             ha_tools.kill_members([secondary], 2)
