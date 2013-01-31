@@ -65,11 +65,8 @@ def insert_callback(parameters_node, callback_required):
         else:
             kwargs_pos = len(parameter_names)
 
-        doc = (": function taking (result, error), to execute when operation"
-            " completes")
-
-        if not callback_required:
-            doc = " (optional)" + doc
+        doc = (" (%s): function taking (result, error), to execute when operation"
+            " completes" % ("required" if callback_required else "optional"))
 
         new_item = list_item(
             '', paragraph(
