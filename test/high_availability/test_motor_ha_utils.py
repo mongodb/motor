@@ -69,13 +69,15 @@ def assertReadFrom(
       - `secondary_acceptable_latency_ms`: a float
       - `callback`: Function taking (None, error)
     """
+    nsamples = 10
     try:
-        # TODO: could parallelize for speed =)
-        for _ in range(10):
-            used = yield gen.Task(read_from_which_host,
-                rsc, mode, tag_sets, secondary_acceptable_latency_ms)
+        for i in range(nsamples):
+            read_from_which_host(
+                rsc, mode, tag_sets, secondary_acceptable_latency_ms,
+                callback=(yield gen.Callback(i)))
 
-            testcase.assertEqual(member, used)
+        used = yield gen.WaitAll(range(nsamples))
+        testcase.assertEqual([member] * nsamples, used)
     except Exception, e:
         callback(None, e)
     else:
@@ -101,13 +103,15 @@ def assertReadFromAll(
       - `secondary_acceptable_latency_ms` (optional): a float
       - `callback`: Function taking (None, error)
     """
+    nsamples = 100
     members = set(members)
-    used = set()
 
-    # TODO: could parallelize for speed =)
-    for _ in range(100):
-        used.add((yield gen.Task(read_from_which_host,
-            rsc, mode, tag_sets, secondary_acceptable_latency_ms)))
+    for i in range(nsamples):
+        read_from_which_host(
+            rsc, mode, tag_sets, secondary_acceptable_latency_ms,
+            callback=(yield gen.Callback(i)))
+
+    used = set((yield gen.WaitAll(range(nsamples))))
 
     try:
         testcase.assertEqual(members, used)
