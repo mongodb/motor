@@ -1192,8 +1192,6 @@ class MotorCursor(MotorBase):
 
         .. _`large batches`: http://www.mongodb.org/display/DOCS/Queries+and+Cursors#QueriesandCursors-Executionofqueriesinbatches
         """
-        # TODO: prevent concurrent uses of this cursor, as IOStream does, and
-        #   document that and how to avoid it.
         # TODO: optimize, always return same FetchNext instance? Or even make
         #   this cursor a YieldPoint?
         return FetchNext(self)
