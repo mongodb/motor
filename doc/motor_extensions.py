@@ -14,6 +14,8 @@
 
 """Motor specific extensions to Sphinx."""
 
+import inspect
+
 from docutils.nodes import field, list_item, paragraph, title_reference
 from docutils.nodes import field_list, field_body, bullet_list, Text, field_name
 from sphinx.addnodes import desc, desc_content, versionmodified, desc_signature
@@ -136,32 +138,70 @@ def get_motor_attr(motor_class, name, *defargs):
     attribute. While we're at it, store some info about each attribute
     in the global motor_info dict.
     """
-    from_pymongo = False
-    try:
-        attr = safe_getattr(motor_class, name, *defargs)
-    except AttributeError:
-        # Typically, this means 'name' is refers not to an async method like
-        # MotorDatabase.command, but to a ReadOnlyProperty, e.g.
-        # MotorClient.close(). The latter can't be accessed directly, but we
-        # can get the docstring and method signature from the equivalent
-        # PyMongo attribute, e.g. pymongo.mongo_client.MongoClient.close().
-        attr = getattr(motor_class.__delegate_class__, name, *defargs)
-        from_pymongo = True
+    attr = safe_getattr(motor_class, name)
+    method_class = safe_getattr(attr, 'im_class', None)
+    from_pymongo = not safe_getattr(
+        method_class, '__module__', '').startswith('motor')
 
     # Store some info for process_motor_nodes()
     full_name = '%s.%s.%s' % (
         motor_class.__module__, motor_class.__name__, name)
 
     is_async_method = getattr(attr, 'is_async_method', False)
+    is_cursor_method = getattr(attr, 'is_motorcursor_chaining_method', False)
+    if is_async_method or is_cursor_method:
+        pymongo_method = getattr(
+            motor_class.__delegate_class__, attr.pymongo_method_name)
+    else:
+        pymongo_method = None
+
+    is_pymongo_docstring = from_pymongo or is_async_method or is_cursor_method
+
     motor_info[full_name] = {
         # These sub-attributes are set in motor.asynchronize()
         'is_async_method': is_async_method,
         'callback_required': getattr(attr, 'callback_required', False),
-        'is_pymongo_docstring': from_pymongo or is_async_method}
+        'is_pymongo_docstring': is_pymongo_docstring,
+        'pymongo_method': pymongo_method }
 
     return attr
 
 
+def get_motor_argspec(pymongo_method, is_async_method):
+    args, varargs, kwargs, defaults = inspect.getargspec(pymongo_method)
+
+    # This part is copied from Sphinx's autodoc.py
+    if args and args[0] in ('cls', 'self'):
+        del args[0]
+
+    defaults = list(defaults) if defaults else []
+
+    if is_async_method:
+        # Add 'callback=None' argument
+        args.append('callback')
+        defaults.append(None)
+
+    return (args, varargs, kwargs, defaults)
+
+
+# Adapted from MethodDocumenter.format_args
+def format_motor_args(pymongo_method, is_async_method):
+    argspec = get_motor_argspec(pymongo_method, is_async_method)
+    formatted_argspec = inspect.formatargspec(*argspec)
+    # escape backslashes for reST
+    return formatted_argspec.replace('\\', '\\\\')
+
+
+def process_motor_signature(app, what, name, obj, options, signature, return_annotation):
+    if name in motor_info and motor_info[name].get('pymongo_method'):
+        # Real sig obscured by decorator, reconstruct it
+        pymongo_method = motor_info[name]['pymongo_method']
+        is_async_method = motor_info[name]['is_async_method']
+        args = format_motor_args(pymongo_method, is_async_method)
+        return (args, return_annotation)
+
+
 def setup(app):
     app.add_autodoc_attrgetter(type(motor.MotorBase), get_motor_attr)
+    app.connect('autodoc-process-signature', process_motor_signature)
     app.connect("doctree-read", process_motor_nodes)

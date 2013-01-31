@@ -162,9 +162,9 @@ multiple subprocesses, you must create the connection object **after** calling
     application.settings['db'] = db
     tornado.ioloop.IOLoop.instance().start()
 
-.. warning:: It is a common mistake to create a new connection object for every
-  request; this comes at a dire performance cost. Create the connection
-  when your application starts and reuse that one connection for the lifetime
+.. warning:: It is a common mistake to create a new client object for every
+  request; this comes at a dire performance cost. Create the client
+  when your application starts and reuse that one client for the lifetime
   of the process, as shown in these examples.
 
 .. _start() method: http://www.tornadoweb.org/documentation/netutil.html#tornado.netutil.TCPServer.start

@@ -286,6 +286,8 @@ hides some complexity involved in tailing a cursor on a capped collection.
 
 .. seealso:: `Tailable cursors <http://www.mongodb.org/display/DOCS/Tailable+Cursors>`_
 
+.. _gridfs-differences:
+
 GridFS
 ------
 

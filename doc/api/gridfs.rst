@@ -5,37 +5,19 @@ Motor GridFS Classes
 
 Store blobs of data in `GridFS <http://www.mongodb.org/display/DOCS/GridFS>`_.
 
+.. seealso:: :ref:`Differences between PyMongo's and Motor's GridFS APIs
+  <gridfs-differences>`.
+
 .. seealso:: :ref:`gridfs-handler`
 
-.. TODO: doc all the differences, link from differences.rst
-
 .. autoclass:: MotorGridFS
-
-  .. automethod:: open
-  .. automethod:: new_file
-  .. automethod:: get
-  .. automethod:: get_version
-  .. automethod:: get_last_version
-  .. automethod:: list
-  .. automethod:: exists
-  .. automethod:: put
-  .. automethod:: delete
+  :members:
 
 
 .. autoclass:: MotorGridIn
+  :members:
 
   .. autoattribute:: _id
-  .. autoattribute:: filename
-  .. autoattribute:: name
-  .. autoattribute:: content_type
-  .. autoattribute:: length
-  .. autoattribute:: chunk_size
-  .. autoattribute:: upload_date
-  .. autoattribute:: md5
-  .. autoattribute:: closed
-  .. automethod:: open
-  .. automethod:: write
-  .. automethod:: writelines
   .. method:: set(name, value, callback=None)
 
     Set an arbitrary metadata attribute on the file. Stores value on the server
@@ -52,22 +34,8 @@ Store blobs of data in `GridFS <http://www.mongodb.org/display/DOCS/GridFS>`_.
       - `value`: Value of the attribute
       - `callback`: Optional callback to execute once attribute is set.
 
-  .. automethod:: close
-
 
 .. autoclass:: MotorGridOut
+  :members:
 
   .. autoattribute:: _id
-  .. autoattribute:: filename
-  .. autoattribute:: name
-  .. autoattribute:: content_type
-  .. autoattribute:: length
-  .. autoattribute:: chunk_size
-  .. autoattribute:: upload_date
-  .. autoattribute:: md5
-  .. automethod:: open
-  .. automethod:: tell
-  .. automethod:: seek
-  .. automethod:: read
-  .. automethod:: readline
-  .. automethod:: stream_to_handler

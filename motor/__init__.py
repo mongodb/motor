@@ -322,10 +322,15 @@ def asynchronize(sync_method, has_write_concern, callback_required):
         # Start running the operation on a greenlet
         greenlet.greenlet(call_method).switch()
 
-    # This is for the benefit of motor_extension.py
+    # This is for the benefit of motor_extensions.py
     method.is_async_method = True
     method.has_write_concern = has_write_concern
     method.callback_required = callback_required
+    name = sync_method.__name__
+    if name.startswith('__') and not name.endswith("__"):
+        # Mangle, e.g. Cursor.__die -> Cursor._Cursor__die
+        name = '_%s%s' % (sync_method.im_class.__name__, name)
+    method.pymongo_method_name = name
     return method
 
 
@@ -481,8 +486,13 @@ class ReadOnlyPropertyDescriptor(object):
         self.attr_name = attr_name
 
     def __get__(self, obj, objtype):
-        check_delegate(obj, self.attr_name)
-        return getattr(obj.delegate, self.attr_name)
+        if obj:
+            check_delegate(obj, self.attr_name)
+            return getattr(obj.delegate, self.attr_name)
+        else:
+            # We're accessing this property on a class, e.g. when Sphinx wants
+            # MotorGridOut.md5.__doc__
+            return getattr(objtype.__delegate_class__, self.attr_name)
 
     def __set__(self, obj, val):
         raise AttributeError
@@ -684,6 +694,9 @@ class MotorClientBase(MotorOpenable, MotorBase):
         return self
 
     def sync_client(self):
+        """Get a PyMongo MongoClient / MongoReplicaSetClient with the same
+        configuration as this MotorClient / MotorReplicaSetClient.
+        """
         return self.__delegate_class__(
             *self._init_args, **self._init_kwargs)
 
@@ -736,11 +749,13 @@ class MotorClient(MotorClientBase):
         is opened.
 
         MotorClient takes the same constructor arguments as
-        :class:`~pymongo.mongo_client.MongoClient`, as well as:
+        `MongoClient`_, as well as:
 
         :Parameters:
           - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
             instance to use instead of default
+
+        .. _MongoClient: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html
         """
         super(MotorClient, self).__init__(
             None, kwargs.pop('io_loop', None), *args, **kwargs)
@@ -800,12 +815,13 @@ class MotorReplicaSetClient(MotorClientBase):
         connection is opened.
 
         MotorReplicaSetClient takes the same constructor arguments as
-        :class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient`,
-        as well as:
+        `MongoReplicaSetClient`_, as well as:
 
         :Parameters:
           - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
             instance to use instead of default
+
+        .. _MongoReplicaSetClient: http://api.mongodb.org/python/current/api/pymongo/mongo_replica_set_client.html
         """
         # We only override __init__ to replace its docstring
         super(MotorReplicaSetClient, self).__init__(
@@ -1032,13 +1048,13 @@ class MotorCollection(MotorBase):
 
     def find(self, *args, **kwargs):
         """Create a :class:`MotorCursor`. Same parameters as for
-        :meth:`~pymongo.collection.Collection.find`.
+        PyMongo's `find`_.
 
         Note that :meth:`find` does not take a `callback` parameter -- pass
         a callback to the :class:`MotorCursor`'s methods such as
         :meth:`MotorCursor.find`.
 
-        # TODO: examples of to_list and next
+        .. _find: http://api.mongodb.org/python/current/api/pymongo/collection.html#pymongo.collection.Collection.find
         """
         if 'callback' in kwargs:
             raise pymongo.errors.InvalidOperation(
@@ -1066,8 +1082,9 @@ class MotorCursorChainingMethod(MotorAttributeFactory):
             cursor_method(self.delegate, *args, **kwargs)
             return self
 
-        # For SynchroMeta
+        # This is for the benefit of motor_extensions.py
         return_clone.is_motorcursor_chaining_method = True
+        return_clone.pymongo_method_name = attr_name
         return return_clone
 
 
@@ -1092,12 +1109,8 @@ class MotorCursor(MotorBase):
     _Cursor__die  = AsyncCommand()
 
     def __init__(self, cursor, collection):
-        """You will not usually construct a MotorCursor yourself, but acquire
-        one from :meth:`MotorCollection.find`.
-
-        :Parameters:
-         - `cursor`:      PyMongo :class:`~pymongo.cursor.Cursor`
-         - `collection`:  :class:`MotorCollection`
+        """You don't construct a MotorCursor yourself, but acquire one from
+        :meth:`MotorCollection.find`.
 
         .. note::
           There is no need to manually close cursors; they are closed
@@ -1692,9 +1705,8 @@ class MotorGridIn(MotorOpenable):
         """
         Class to write data to GridFS. If instantiating directly, you must call
         :meth:`open` before using the `MotorGridIn` object. However,
-        application developers should generally not need to instantiate this
-        class - instead see the methods provided by
-        :class:`~motor.MotorGridFS`.
+        application developers should not generally need to instantiate this
+        class - see :meth:`~motor.MotorGridFS.new_file`.
 
         Any of the file level options specified in the `GridFS Spec
         <http://dochub.mongodb.org/core/gridfsspec>`_ may be passed as
