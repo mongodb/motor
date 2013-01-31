@@ -194,9 +194,6 @@ class MotorSocket(object):
         self.stream.read_bytes(num_bytes, callback)
 
     def close(self):
-        # TODO: examine this, decide if it's correct, and if so explain why
-        self.stream.set_close_callback(None)
-
         sock = self.stream.socket
         try:
             try:
