@@ -41,10 +41,11 @@ def find_by_path(root, classes):
 
 def get_parameter_names(parameters_node):
     parameter_names = []
-    for title_ref_node in find_by_path(parameters_node,
-        [list_item, paragraph, title_reference]
-    ):
-        parameter_names.append(title_ref_node[0].astext())
+    for list_item_node in find_by_path(parameters_node, [list_item]):
+        title_ref_nodes = find_by_path(
+            list_item_node, [paragraph, title_reference])
+
+        parameter_names.append(title_ref_nodes[0].astext())
 
     return parameter_names
 
