@@ -18,6 +18,7 @@ import functools
 import inspect
 import socket
 import time
+import sys
 
 from tornado import ioloop, iostream, gen
 import greenlet
@@ -46,6 +47,10 @@ version_tuple = (0, 0, '+')
 
 version = '.'.join(map(str, version_tuple))
 """Current version of Motor."""
+
+
+PY3 = sys.version_info[0] == 3
+
 
 # TODO: ensure we're doing
 #   timeouts as efficiently as possible, test performance hit with timeouts
@@ -329,7 +334,11 @@ def asynchronize(sync_method, has_write_concern, callback_required):
     name = sync_method.__name__
     if name.startswith('__') and not name.endswith("__"):
         # Mangle, e.g. Cursor.__die -> Cursor._Cursor__die
-        name = '_%s%s' % (sync_method.im_class.__name__, name)
+        if PY3:
+            classname = sync_method.__qualname__.split('.')[0]
+        else:
+            classname = sync_method.im_class.__name__
+        name = '_%s%s' % (classname, name)
     method.pymongo_method_name = name
     return method
 
