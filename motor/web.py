@@ -17,6 +17,7 @@
 import datetime
 import email.utils
 import time
+import mimetypes
 
 import tornado.web
 from tornado import gen
@@ -97,6 +98,10 @@ class GridFSHandler(tornado.web.RequestHandler):
         self.set_header("Etag", '"%s"' % gridout.md5)
 
         mime_type = gridout.content_type
+
+        # If content type is not defiend, try to check it with mimetypes
+        if mime_type is None:
+            mime_type, encoding = mimetypes.guess_type(path)
 
         # Starting from here, largely a copy of StaticFileHandler
         if mime_type:
