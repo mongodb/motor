@@ -14,11 +14,13 @@
 
 """Motor, an asynchronous driver for MongoDB and Tornado."""
 
+import collections
 import functools
 import inspect
 import socket
 import time
 import sys
+import weakref
 
 from tornado import ioloop, iostream, gen
 import greenlet
@@ -28,8 +30,8 @@ import pymongo.common
 import pymongo.errors
 import pymongo.mongo_client
 import pymongo.mongo_replica_set_client
-import pymongo.pool
 import pymongo.son_manipulator
+from pymongo.pool import Pool
 import gridfs
 
 from pymongo.database import Database
@@ -215,7 +217,21 @@ class MotorSocket(object):
         return self.stream.socket.fileno()
 
 
-class MotorPool(pymongo.pool.Pool):
+class InstanceCounter(object):
+    def __init__(self):
+        self.refs = set()
+
+    def track(self, instance):
+        self.refs.add(weakref.ref(instance, self.untrack))
+
+    def untrack(self, ref):
+        self.refs.remove(ref)
+
+    def count(self):
+        return len(self.refs)
+
+
+class MotorPool(Pool):
     """A simple connection pool of MotorSockets.
 
     Note this sets use_greenlets=True so that when PyMongo internally calls
@@ -224,18 +240,20 @@ class MotorPool(pymongo.pool.Pool):
     greenlet for the duration of the method. Request semantics are not exposed
     to Motor's users.
     """
-    def __init__(self, io_loop, *args, **kwargs):
-        self.io_loop = io_loop
+    def __init__(self, io_loop, max_concurrent, *args, **kwargs):
         kwargs['use_greenlets'] = True
-        pymongo.pool.Pool.__init__(self, *args, **kwargs)
+        Pool.__init__(self, *args, **kwargs)
+        self.io_loop = io_loop
+        self.max_concurrent = pymongo.common.validate_positive_integer(
+            'max_concurrent', max_concurrent)
+        self.motor_sock_counter = InstanceCounter()
+        self.queue = collections.deque()
 
     def create_connection(self, pair):
         """Copy of Pool.create_connection()
         """
         # TODO: refactor all this with Pool, use a new hook to wrap the
         #   socket with MotorSocket before attempting connect().
-        assert greenlet.getcurrent().parent, "Should be on child greenlet"
-
         host, port = pair or self.pair
 
         # Don't try IPv6 if we don't support it. Also skip it if host
@@ -254,7 +272,11 @@ class MotorPool(pymongo.pool.Pool):
                 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 motor_sock = MotorSocket(
                     sock, self.io_loop, use_ssl=self.use_ssl)
+
                 motor_sock.settimeout(self.conn_timeout or 20.0)
+
+                # Important to increment the count before beginning to connect
+                self.motor_sock_counter.track(motor_sock)
 
                 # MotorSocket pauses this greenlet and resumes when connected
                 motor_sock.connect(pair or self.pair)
@@ -277,9 +299,28 @@ class MotorPool(pymongo.pool.Pool):
            is inappropriate for Motor.
            TODO: refactor, extra hooks in Pool
         """
-        motor_sock = self.create_connection(pair)
-        motor_sock.settimeout(self.net_timeout)
-        return pymongo.pool.SocketInfo(motor_sock, self.pool_id)
+        child_gr = greenlet.getcurrent()
+        main = child_gr.parent
+        assert main, "Should be on child greenlet"
+
+        if self.motor_sock_counter.count() >= self.max_concurrent:
+            # Yield until maybe_return_socket passes spare socket in
+            self.queue.append(child_gr)
+            return main.switch()
+        else:
+            motor_sock = self.create_connection(pair)
+            motor_sock.settimeout(self.net_timeout)
+            return pymongo.pool.SocketInfo(motor_sock, self.pool_id)
+
+    def _return_socket(self, sock_info):
+        # This is *not* the request socket; we're going to return sock_info
+        # to the pool or discard it.
+        if self.queue:
+            next_child_gr = self.queue.popleft()
+            self.io_loop.add_callback(
+                functools.partial(next_child_gr.switch, sock_info))
+        else:
+            Pool._return_socket(self, sock_info)
 
 
 def asynchronize(sync_method, has_write_concern, callback_required):
@@ -656,6 +697,15 @@ class MotorClientBase(MotorOpenable, MotorBase):
     max_bson_size  = ReadOnlyProperty()
     max_pool_size  = ReadOnlyProperty()
 
+    def __init__(self, delegate, io_loop, *args, **kwargs):
+        if 'max_concurrent' in kwargs:
+            self._max_concurrent = kwargs.pop('max_concurrent')
+        else:
+            self._max_concurrent = 100
+
+        super(MotorClientBase, self).__init__(
+            delegate, io_loop, *args, **kwargs)
+
     def open_sync(self):
         """Synchronous open(), returning self.
 
@@ -685,7 +735,7 @@ class MotorClientBase(MotorOpenable, MotorBase):
             self.io_loop = standard_loop
             if self.delegate:
                 self.delegate.pool_class = functools.partial(
-                    MotorPool, self.io_loop)
+                    MotorPool, self.io_loop, self._max_concurrent)
 
                 for pool in self._get_pools():
                     pool.io_loop = self.io_loop
@@ -733,7 +783,8 @@ class MotorClientBase(MotorOpenable, MotorBase):
         """
         kwargs = self._init_kwargs.copy()
         kwargs['auto_start_request'] = False
-        kwargs['_pool_class'] = functools.partial(MotorPool, self.io_loop)
+        kwargs['_pool_class'] = functools.partial(
+            MotorPool, self.io_loop, self._max_concurrent)
         return self._init_args, kwargs
 
 
@@ -760,6 +811,8 @@ class MotorClient(MotorClientBase):
         :Parameters:
           - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
             instance to use instead of default
+          - `max_concurrent` (optional): Most connections open at once, default
+            100.
 
         .. _MongoClient: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html
         """
@@ -826,10 +879,11 @@ class MotorReplicaSetClient(MotorClientBase):
         :Parameters:
           - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
             instance to use instead of default
+          - `max_concurrent` (optional): Most connections open at once, default
+            100.
 
         .. _MongoReplicaSetClient: http://api.mongodb.org/python/current/api/pymongo/mongo_replica_set_client.html
         """
-        # We only override __init__ to replace its docstring
         super(MotorReplicaSetClient, self).__init__(
             None, kwargs.pop('io_loop', None), *args, **kwargs)
 

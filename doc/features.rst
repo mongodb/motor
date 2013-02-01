@@ -38,6 +38,13 @@ timeout interface::
             # find_one took more than 5 seconds
             pass
 
+Bounded Connection Growth
+=========================
+Motor has a default cap of 100 connections per host
+per :class:`~motor.MotorClient` or :class:`~motor.MotorReplicaSetClient`,
+configurable with the ``max_concurrent`` option. Operations yield to the
+event loop while waiting for a spare connection to use.
+
 Configurable IOLoops
 ====================
 Motor supports Tornado applications with multiple IOLoops_. Pass the ``io_loop``
