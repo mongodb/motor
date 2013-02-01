@@ -135,7 +135,7 @@ class MotorDatabaseTest(MotorTest):
         self.assertTrue("mike" in [u['user'] for u in users])
 
         # We need to authenticate many times at once to make sure that
-        # GreenletPool's start_request() is properly isolating operations
+        # Pool's start_request() is properly isolating operations
         for i in range(100):
             db.authenticate(
                 "mike", "password", callback=(yield gen.Callback(i)))

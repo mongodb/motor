@@ -230,9 +230,9 @@ class MotorPool(pymongo.pool.Pool):
         pymongo.pool.Pool.__init__(self, *args, **kwargs)
 
     def create_connection(self, pair):
-        """Copy of Pool.connect()
+        """Copy of Pool.create_connection()
         """
-        # TODO: refactor all this with BasePool, use a new hook to wrap the
+        # TODO: refactor all this with Pool, use a new hook to wrap the
         #   socket with MotorSocket before attempting connect().
         assert greenlet.getcurrent().parent, "Should be on child greenlet"
 
@@ -275,7 +275,7 @@ class MotorPool(pymongo.pool.Pool):
     def connect(self, pair):
         """Copy of Pool.connect(), avoiding call to ssl.wrap_socket which
            is inappropriate for Motor.
-           TODO: refactor, extra hooks in BasePool
+           TODO: refactor, extra hooks in Pool
         """
         motor_sock = self.create_connection(pair)
         motor_sock.settimeout(self.net_timeout)
