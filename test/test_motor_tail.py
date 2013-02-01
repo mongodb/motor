@@ -132,8 +132,6 @@ class MotorTailTest(MotorTest):
     @async_test_engine(timeout_sec=30)
     def test_tail_drop_collection(self, done):
         # Ensure tail() throws error when its collection is dropped
-        t = self.start_insertion_thread(self.drop_collection_pauses)
-
         results = []
         each = functools.partial(
             self.each, results, len(self.drop_collection_pauses),
@@ -142,6 +140,7 @@ class MotorTailTest(MotorTest):
         test_db = self.motor_connection(host, port).pymongo_test
         capped = test_db.capped
         capped.find().tail(each)
+        t = self.start_insertion_thread(self.drop_collection_pauses)
         yield gen.Wait('done')
 
         # Don't assume that the first 3 results before the drop will be
