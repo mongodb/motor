@@ -154,18 +154,20 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
         # Check that GridFSHandler uses file extension to guess Content-Type
         # if not provided
         for filename, expected_type in [
-            ('foo.jpg', 'image/jpeg'),
-            ('foo.png', 'image/png'),
-            ('ht.html', 'text/html'),
-            ('jscr.js', 'application/javascript'),
+            ('foo.jpg', 'jpeg'),
+            ('foo.png', 'png'),
+            ('ht.html', 'html'),
+            ('jscr.js', 'javascript'),
         ]:
             # 'fs' is PyMongo's blocking GridFS
             self.fs.put(b(''), filename=filename)
             for method in 'GET', 'HEAD':
                 response = self.fetch('/' + filename, method=method)
                 self.assertEqual(200, response.code)
-                self.assertEqual(
-                    expected_type, response.headers['Content-Type'])
+                # mimetypes are platform-defined, be fuzzy
+                self.assertTrue(
+                    response.headers['Content-Type'].lower().endswith(
+                        expected_type))
 
 
 class CustomGridFSHandlerTest(GridFSHandlerTestBase):
