@@ -108,6 +108,35 @@ class MotorPoolTest(MotorTest):
 
         done()
 
+    @async_test_engine(timeout_sec=30)
+    def test_max_concurrent_unacknowledged(self, done):
+        cx = motor.MotorClient(host, port).open_sync()
+        pool = cx.delegate._MongoClient__pool
+        collection = cx.pymongo_test.test_collection
+        yield motor.Op(collection.drop)
+        self.assertEqual(1, pool.motor_sock_counter.count())
+
+        nops = 500
+        for i in range(nops - 1):
+            collection.insert({'_id': i}, w=0)
+
+            # We have only one socket open, and it's already back in the pool
+            self.assertEqual(1, pool.motor_sock_counter.count())
+            self.assertEqual(1, len(pool.sockets))
+
+        # Acknowledged write; uses same socket and blocks for all inserts
+        yield motor.Op(collection.insert, {'_id': nops - 1})
+        self.assertEqual(1, pool.motor_sock_counter.count())
+
+        # Socket is back in the idle pool
+        self.assertEqual(1, len(pool.sockets))
+
+        # All ops completed
+        docs = yield motor.Op(collection.find().sort('_id').to_list)
+        self.assertEqual(list(range(nops)), [doc['_id'] for doc in docs])
+
+        done()
+
 
 if __name__ == '__main__':
     unittest.main()
