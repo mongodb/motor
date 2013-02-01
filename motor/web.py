@@ -16,8 +16,8 @@
 
 import datetime
 import email.utils
-import time
 import mimetypes
+import time
 
 import tornado.web
 from tornado import gen
@@ -99,7 +99,7 @@ class GridFSHandler(tornado.web.RequestHandler):
 
         mime_type = gridout.content_type
 
-        # If content type is not defiend, try to check it with mimetypes
+        # If content type is not defined, try to check it with mimetypes
         if mime_type is None:
             mime_type, encoding = mimetypes.guess_type(path)
 
