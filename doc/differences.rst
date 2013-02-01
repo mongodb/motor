@@ -185,6 +185,17 @@ You can override this behavior and do unacknowledged writes by passing
 
 .. seealso:: :ref:`generator-interface`
 
+max_concurrent
+--------------
+
+PyMongo allows the number of connections to MongoDB to grow to match the number
+of threads performing concurrent operations. (PyMongo's ``max_pool_size``
+merely caps the number of *idle* sockets kept open. [#max_pool_size]_)
+:class:`~motor.MotorClient` and :class:`~motor.MotorReplicaSetClient` provide
+an additional option, ``max_concurrent``, which caps the total number of
+sockets per host, per client. The default is 100. Once the cap is reached,
+operations yield to the IOLoop while waiting for a free socket.
+
 Timeouts
 --------
 
@@ -414,3 +425,6 @@ The difference arises because the PyMongo :class:`~pymongo.cursor.Cursor`'s
 slicing operator blocks until it has queried the MongoDB server, and determines
 if a document exists at the desired offset; Motor simply returns a new
 :class:`~motor.MotorCursor` with a skip and limit applied.
+
+.. [#max_pool_size] See `PyMongo's max_pool_size
+  <http://api.mongodb.org/python/current/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient.max_pool_size>`_
