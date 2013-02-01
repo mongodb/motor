@@ -313,8 +313,8 @@ class MotorPool(Pool):
             return pymongo.pool.SocketInfo(motor_sock, self.pool_id)
 
     def _return_socket(self, sock_info):
-        # This is *not* the request socket; we're going to return sock_info
-        # to the pool or discard it.
+        # This is *not* a request socket; give it to the greenlet at the head
+        # of the line, return it to the pool, or discard it.
         if self.queue:
             next_child_gr = self.queue.popleft()
             self.io_loop.add_callback(
