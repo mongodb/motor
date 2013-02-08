@@ -1832,11 +1832,19 @@ class Op(gen.Task):
     it is complete. :class:`motor.Op` adds an additional convenience to
     ``Task``: it assumes the callback is passed the standard ``result, error``
     pair, and if ``error`` is not ``None`` then ``Op`` raises the error.
-    Otherwise, ``result`` is returned from the ``yield`` expression::
+    Otherwise, ``result`` is returned from the ``yield`` expression:
+
+    .. testsetup:: op
+
+        sync_collection = MongoClient().doctest_test.test_collection
+        sync_collection.remove()
+        sync_collection.insert([{'_id': 1}, {'_id': 2}])
+
+    .. testcode:: op
 
         @gen.engine
-        def get_some_documents(db):
-            cursor = db.collection.find().limit(10)
+        def get_some_documents(collection):
+            cursor = collection.find().sort('_id').limit(2)
 
             try:
                 # to_list is passed a callback, which is later executed with
@@ -1844,9 +1852,23 @@ class Op(gen.Task):
                 # from this line. Otherwise 'result' is the value of the yield
                 # expression.
                 documents = yield motor.Op(cursor.to_list)
-                return documents
+                print documents
             except Exception, e:
                 print e
+
+    .. testcode:: op
+        :hide:
+
+        collection = MotorClient().open_sync().doctest_test.test_collection
+        get_some_documents(collection)
+        loop = IOLoop.instance()
+        loop.add_timeout(timedelta(seconds=.1), loop.stop)
+        loop.start()
+
+    .. testoutput:: op
+        :hide:
+
+        [{u'_id': 1}, {u'_id': 2}]
 
     .. _tornado.gen.Task: http://www.tornadoweb.org/documentation/gen.html#tornado.gen.Task
     """
@@ -1862,17 +1884,33 @@ class Op(gen.Task):
 
 class WaitOp(gen.Wait):
     """For complex control flows, a :class:`motor.Op` can be split into two
-    parts, a `Callback`_ and a :class:`motor.WaitOp`::
+    parts, a `Callback`_ and a :class:`motor.WaitOp`:
+
+    .. testcode:: op
 
         @gen.engine
-        def get_some_documents(db):
-            cursor = db.collection.find().limit(10)
+        def get_some_documents2(collection):
+            cursor = collection.find().sort('_id').limit(2)
             cursor.to_list(callback=(yield gen.Callback('key')))
             try:
                 documents = yield motor.WaitOp('key')
-                return documents
+                print documents
             except Exception, e:
                 print e
+
+    .. testcode:: op
+        :hide:
+
+        collection = MotorClient().open_sync().doctest_test.test_collection
+        get_some_documents2(collection)
+        loop = IOLoop.instance()
+        loop.add_timeout(timedelta(seconds=.1), loop.stop)
+        loop.start()
+
+    .. testoutput:: op
+        :hide:
+
+        [{u'_id': 1}, {u'_id': 2}]
 
     .. _Callback: http://www.tornadoweb.org/documentation/gen.html#tornado.gen.Callback
     """
@@ -1886,21 +1924,37 @@ class WaitOp(gen.Wait):
 
 class WaitAllOps(gen.YieldPoint):
     """To wait for multiple Callbacks to complete, yield
-    :class:`motor.WaitAllOps`::
+    :class:`motor.WaitAllOps`:
+
+    .. testcode:: op
 
         @gen.engine
-        def get_two_documents_in_parallel(db, id_one, id_two):
-            db.collection.find_one(
-                {'_id': id_one}, callback=(yield gen.Callback('one')))
+        def get_two_documents_in_parallel(collection):
+            collection.find_one(
+                {'_id': 1}, callback=(yield gen.Callback('one')))
 
-            db.collection.find_one(
-                {'_id': id_two}, callback=(yield gen.Callback('two')))
+            collection.find_one(
+                {'_id': 2}, callback=(yield gen.Callback('two')))
 
             try:
                 doc_one, doc_two = yield motor.WaitAllOps(['one', 'two'])
-                return doc_one, doc_two
+                print doc_one, doc_two
             except Exception, e:
                 print e
+
+    .. testcode:: op
+        :hide:
+
+        collection = MotorClient().open_sync().doctest_test.test_collection
+        get_two_documents_in_parallel(collection)
+        loop = IOLoop.instance()
+        loop.add_timeout(timedelta(seconds=.1), loop.stop)
+        loop.start()
+
+    .. testoutput:: op
+        :hide:
+
+        {u'_id': 1} {u'_id': 2}
 
     If an exception is passed to any of the callbacks, waiting is canceled and
     the exception is raised immediately. Other callbacks' keys are still
