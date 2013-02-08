@@ -70,10 +70,20 @@ doctest_path = os.path.abspath('..')
 doctest_test_doctest_blocks = False
 
 doctest_global_setup = """
+import sys
+from datetime import timedelta
+
+from tornado import gen
+from tornado.ioloop import IOLoop
+
+import pymongo
 from pymongo.mongo_client import MongoClient
 connection = MongoClient()
 connection.drop_database("doctest_test")
 db = connection.doctest_test
+
+import motor
+from motor import MotorClient
 """
 
 # -- Options for HTML output ---------------------------------------------------

@@ -1211,15 +1211,7 @@ class MotorCursor(MotorBase):
 
         .. testsetup:: fetch_next
 
-          import sys
-
-          from pymongo.mongo_client import MongoClient
           MongoClient().test.test_collection.remove()
-
-          import motor
-          from motor import MotorClient
-          from tornado.ioloop import IOLoop
-          from tornado import gen
           collection = MotorClient().open_sync().test.test_collection
 
         .. doctest:: fetch_next
@@ -1271,12 +1263,7 @@ class MotorCursor(MotorBase):
 
         .. testsetup:: each
 
-          import sys
-
-          from pymongo.mongo_client import MongoClient
           MongoClient().test.test_collection.remove()
-          from motor import MotorClient
-          from tornado.ioloop import IOLoop
           collection = MotorClient().open_sync().test.test_collection
 
         .. doctest:: each
@@ -1346,13 +1333,8 @@ class MotorCursor(MotorBase):
 
         .. testsetup:: to_list
 
-          from pymongo.mongo_client import MongoClient
           MongoClient().test.test_collection.remove()
-          from motor import MotorClient
-          from tornado.ioloop import IOLoop
-          from tornado import gen
           collection = MotorClient().open_sync().test.test_collection
-          import motor
 
         .. doctest:: to_list
 
@@ -1531,14 +1513,8 @@ class MotorCursor(MotorBase):
 
         .. testsetup:: getitem
 
-          import sys
-          from pymongo.mongo_client import MongoClient
           MongoClient().test.test_collection.remove()
-          from motor import MotorClient
-          from tornado.ioloop import IOLoop
-          from tornado import gen
           collection = MotorClient().open_sync().test.test_collection
-          import motor
 
         .. doctest:: getitem
 
@@ -1857,8 +1833,6 @@ class Op(gen.Task):
     ``Task``: it assumes the callback is passed the standard ``result, error``
     pair, and if ``error`` is not ``None`` then ``Op`` raises the error.
     Otherwise, ``result`` is returned from the ``yield`` expression::
-
-        from tornado import gen
 
         @gen.engine
         def get_some_documents(db):
