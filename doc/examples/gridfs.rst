@@ -1,7 +1,7 @@
 Motor GridFS Examples
 =====================
 
-.. seealso:: :ref:`gridfs-handler`
+.. seealso:: :doc:`../api/web`
 
 Writing a file to GridFS with :meth:`~motor.MotorGridFS.put`
 ------------------------------------------------------------

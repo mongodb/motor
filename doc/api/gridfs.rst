@@ -8,7 +8,7 @@ Store blobs of data in `GridFS <http://www.mongodb.org/display/DOCS/GridFS>`_.
 .. seealso:: :ref:`Differences between PyMongo's and Motor's GridFS APIs
   <gridfs-differences>`.
 
-.. seealso:: :ref:`gridfs-handler`
+.. seealso:: :doc:`web`
 
 .. autoclass:: MotorGridFS
   :members:

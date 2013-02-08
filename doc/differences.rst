@@ -325,7 +325,7 @@ GridFS
     :meth:`~motor.MotorGridOut.read` method. For convenience ``MotorGridOut``
     provides :meth:`~motor.MotorGridOut.stream_to_handler`.
 
-    .. seealso:: :ref:`reading-from-gridfs` and :ref:`GridFSHandler <gridfs-handler>`.
+    .. seealso:: :ref:`reading-from-gridfs` and :doc:`../api/web`
 
 - Setting properties
 
