@@ -39,8 +39,15 @@ from pymongo.common import SAFE_OPTIONS
 # thinking it's really pymongo
 from pymongo import (
     ASCENDING, DESCENDING, GEO2D, GEOHAYSTACK, ReadPreference,
-    ALL, helpers, OFF, SLOW_ONLY, pool, thread_util, MongoClient, Connection
+    ALL, helpers, OFF, SLOW_ONLY, pool, thread_util, MongoClient,
+    MongoReplicaSetClient, Connection
 )
+
+try:
+    from pymongo import auth
+except ImportError:
+    # auth module will land in PyMongo 2.5
+    print "Warning: Can't import pymongo.auth"
 
 from gridfs.grid_file import DEFAULT_CHUNK_SIZE, _SEEK_CUR, _SEEK_END
 
