@@ -99,6 +99,9 @@ excluded_tests = [
     # Motor's tailing works differently
     'TestCursor.test_tailable',
 
+    # No context-manager protocol for MotorCursor
+    'TestCursor.test_with_statement',
+
     # Can't iterate a GridOut in Motor
     'TestGridfs.test_missing_length_iter',
     'TestGridFile.test_iterator',
