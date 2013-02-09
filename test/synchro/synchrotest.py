@@ -30,6 +30,7 @@ from nose.config import Config
 from nose.plugins import Plugin
 from nose.plugins.manager import PluginManager
 from nose.plugins.skip import Skip
+from nose.plugins.xunit import Xunit
 from nose.selector import Selector
 
 excluded_modules = [
@@ -181,4 +182,4 @@ if __name__ == '__main__':
 
     nose.main(
         config=config,
-        addplugins=[SynchroNosePlugin(), Skip()])
+        addplugins=[SynchroNosePlugin(), Skip(), Xunit()])
