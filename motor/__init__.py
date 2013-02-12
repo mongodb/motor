@@ -255,55 +255,44 @@ class MotorPool(Pool):
         # TODO: refactor all this with Pool, use a new hook to wrap the
         #   socket with MotorSocket before attempting connect().
         host, port = pair or self.pair
-        motor_sock = None
 
         # Check if dealing with a unix domain socket
         if host.endswith('.sock'):
             if not hasattr(socket, "AF_UNIX"):
                 raise pymongo.errors.ConnectionFailure(
                     "UNIX-sockets are not supported on this system")
-            sock = socket.socket(socket.AF_UNIX)
-            try:
-                motor_sock = MotorSocket(
-                    sock, self.io_loop, use_ssl=self.use_ssl)
+            addrinfos = [(socket.AF_UNIX, socket.SOCK_STREAM, 0, host)]
 
-                motor_sock.settimeout(self.conn_timeout or 20.0)
+        else:
+            # Don't try IPv6 if we don't support it. Also skip it if host
+            # is 'localhost' (::1 is fine). Avoids slow connect issues
+            # like PYTHON-356.
+            family = socket.AF_INET
+            if socket.has_ipv6 and host != 'localhost':
+                family = socket.AF_UNSPEC
 
-                # Important to increment the count before beginning to connect
-                self.motor_sock_counter.track(motor_sock)
-
-                # MotorSocket pauses this greenlet and resumes when connected
-                motor_sock.connect(host)
-                return motor_sock
-            except socket.error, e:
-                if motor_sock is not None:
-                    motor_sock.close()
-                raise e
-
-        # Don't try IPv6 if we don't support it. Also skip it if host
-        # is 'localhost' (::1 is fine). Avoids slow connect issues
-        # like PYTHON-356.
-        family = socket.AF_INET
-        if socket.has_ipv6 and host != 'localhost':
-            family = socket.AF_UNSPEC
+            addrinfos = [
+                (af, socktype, proto, sa) for af, socktype, proto, dummy, sa in
+                socket.getaddrinfo(host, port, family, socket.SOCK_STREAM)]
 
         err = None
-        for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
-            af, socktype, proto, dummy, sa = res
-            motor_sock = None
+        motor_sock = None
+        for af, socktype, proto, sa in addrinfos:
             try:
                 sock = socket.socket(af, socktype, proto)
-                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 motor_sock = MotorSocket(
                     sock, self.io_loop, use_ssl=self.use_ssl)
 
-                motor_sock.settimeout(self.conn_timeout or 20.0)
+                if af != socket.AF_UNIX:
+                    sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                    motor_sock.settimeout(self.conn_timeout or 20.0)
 
                 # Important to increment the count before beginning to connect
                 self.motor_sock_counter.track(motor_sock)
 
                 # MotorSocket pauses this greenlet and resumes when connected
-                motor_sock.connect(pair or self.pair)
+                motor_sock.connect(sa)
+
                 return motor_sock
             except socket.error, e:
                 err = e
