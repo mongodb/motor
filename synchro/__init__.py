@@ -29,22 +29,24 @@ from tornado.ioloop import IOLoop
 
 import motor
 from pymongo import son_manipulator
+from pymongo.common import SAFE_OPTIONS
 from pymongo.errors import (
     ConnectionFailure, TimeoutError, OperationFailure, InvalidOperation,
     ConfigurationError)
-from pymongo.common import SAFE_OPTIONS
-
 
 # So that synchronous unittests can import these names from Synchro,
 # thinking it's really pymongo
 from pymongo import (
     ASCENDING, DESCENDING, GEO2D, GEOHAYSTACK, ReadPreference,
     ALL, helpers, OFF, SLOW_ONLY, pool, thread_util, MongoClient,
-    MongoReplicaSetClient, Connection
+    MongoReplicaSetClient
 )
+
+from gridfs.errors import FileExists, NoFile, UnsupportedAPI
 
 try:
     from pymongo import auth
+    from pymongo.auth import MongoAuthenticationMechanism, MECHANISMS
 except ImportError:
     # auth module will land in PyMongo 2.5
     print "Warning: Can't import pymongo.auth"
@@ -53,6 +55,7 @@ from gridfs.grid_file import DEFAULT_CHUNK_SIZE, _SEEK_CUR, _SEEK_END
 
 GreenletPool = None
 GridFile = None
+have_gevent = False
 
 from pymongo.pool import NO_REQUEST, NO_SOCKET_YET, SocketInfo, Pool, _closed
 from pymongo.mongo_replica_set_client import _partition_node, Member, Monitor
@@ -90,8 +93,8 @@ def wrap_synchro(fn):
         # Not all Motor classes appear here, only those we need to return
         # from methods like map_reduce() or create_collection()
         if isinstance(motor_obj, motor.MotorCollection):
-            connection = Connection(delegate=motor_obj.database.connection)
-            database = Database(connection, motor_obj.database.name)
+            client = MongoClient(delegate=motor_obj.database.connection)
+            database = Database(client, motor_obj.database.name)
             return Collection(database, motor_obj.name)
         if isinstance(motor_obj, motor.MotorCursor):
             return Cursor(motor_obj)
@@ -149,7 +152,7 @@ class SynchroProperty(object):
 
 
 class SynchroMeta(type):
-    """This metaclass customizes creation of Synchro's Connection, Database,
+    """This metaclass customizes creation of Synchro's MongoClient, Database,
     etc., classes:
 
     - All asynchronized methods of Motor classes, such as
@@ -166,7 +169,7 @@ class SynchroMeta(type):
     """
 
     def __new__(cls, name, bases, attrs):
-        # Create the class, e.g. the Synchro Connection or Database class
+        # Create the class, e.g. the Synchro MongoClient or Database class
         new_class = type.__new__(cls, name, bases, attrs)
 
         # delegate_class is a Motor class like MotorClient
@@ -240,7 +243,9 @@ class Synchro(object):
             assert 'callback' not in kwargs, (
                 "Cannot pass callback to synchronized method")
 
-            # TODO: remove after PYTHON-452 is done
+            # In Motor, passing a callback is like passing w=1 unless
+            # overridden explicitly with a w=0 kwarg. To emulate PyMongo, pass
+            # w=0 if necessary.
             safe, opts = False, {}
             try:
                 gle_opts = dict([(k, v)
@@ -255,11 +260,8 @@ class Synchro(object):
                 # clear spurious errors
                 sys.exc_clear()
 
-            if not safe and has_write_concern:
-                # By default, Motor passes safe=True if there's a callback, but
-                # we're emulating PyMongo's Connection, which defaults safe to
-                # False, so we explicitly override.
-                kwargs['w'] = 0
+            if has_write_concern:
+                kwargs['w'] = opts.get('w', 1) if safe else 0
 
             kwargs.pop('safe', None)
 
@@ -286,8 +288,12 @@ class Synchro(object):
                 except Exception:
                     traceback.print_exc(sys.stderr)
                     raise
-    
+
             kwargs['callback'] = callback
+
+            if getattr(async_method, 'has_write_concern', False):
+                kwargs.setdefault('w', self.write_concern.get('w', 1))
+
             async_method(*args, **kwargs)
             try:
                 loop.start()
@@ -302,7 +308,7 @@ class Synchro(object):
         return synchronized_method
 
 
-class Connection(Synchro):
+class MongoClient(Synchro):
     HOST = 'localhost'
     PORT = 27017
 
@@ -312,26 +318,13 @@ class Connection(Synchro):
         # Motor doesn't implement auto_start_request
         kwargs.pop('auto_start_request', None)
 
-        # So that TestConnection.test_constants and test_types work
+        # So that TestClient.test_constants and test_types work
         host = host if host is not None else self.HOST
         port = port if port is not None else self.PORT
         self.delegate = kwargs.pop('delegate', None)
 
-        # TODO: HACK, remove, this is while PyMongo is testing Connection but
-        #   Motor wraps MongoClient. Remove after PYTHON-452 is done.
-        kwargs.setdefault('safe', False)
-        network_timeout = kwargs.pop('network_timeout', None)
-        if network_timeout is not None:
-            if (not isinstance(network_timeout, (int, float)) or
-                network_timeout <= 0):
-                raise ConfigurationError("network_timeout must "
-                                         "be a positive integer")
-            kwargs['socketTimeoutMS'] = network_timeout * 1000
-
         if not self.delegate:
-            self.delegate = self.__delegate_class__(
-                host, port, *args, **kwargs
-            )
+            self.delegate = self.__delegate_class__(host, port, *args, **kwargs)
             self.synchro_connect()
 
     def synchro_connect(self):
@@ -355,7 +348,7 @@ class Connection(Synchro):
         self.delegate.disconnect()
 
     def __getattr__(self, name):
-        # If this is like connection.db, then wrap the outgoing object with
+        # If this is like client.db, then wrap the outgoing object with
         # Synchro's Database
         return Database(self, name)
 
@@ -372,28 +365,13 @@ class MasterSlaveConnection(object):
     pass
 
 
-class ReplicaSetConnection(Connection):
+class MongoReplicaSetClient(MongoClient):
     __delegate_class__ = motor.MotorReplicaSetClient
 
     def __init__(self, *args, **kwargs):
         # Motor doesn't implement auto_start_request
         kwargs.pop('auto_start_request', None)
-
-        # TODO: HACK, remove, this is while PyMongo is testing Connection but
-        #   Motor wraps MongoClient. Remove after PYTHON-452 is done.
-        kwargs.setdefault('safe', False)
-        network_timeout = kwargs.pop('network_timeout', None)
-        if network_timeout is not None:
-            if (not isinstance(network_timeout, (int, float)) or
-                network_timeout <= 0):
-                raise ConfigurationError("network_timeout must "
-                                         "be a positive integer")
-            kwargs['socketTimeoutMS'] = network_timeout * 1000
-
-        self.delegate = self.__delegate_class__(
-            *args, **kwargs
-        )
-
+        self.delegate = self.__delegate_class__(*args, **kwargs)
         self.synchro_connect()
 
     _MongoReplicaSetClient__writer           = SynchroProperty()
@@ -405,13 +383,13 @@ class ReplicaSetConnection(Connection):
 class Database(Synchro):
     __delegate_class__ = motor.MotorDatabase
 
-    def __init__(self, connection, name):
-        assert isinstance(connection, Connection), (
-            "Expected Connection, got %s" % repr(connection)
-        )
-        self.connection = connection
+    def __init__(self, client, name):
+        assert isinstance(client, MongoClient), (
+            "Expected MongoClient, got %s" % repr(client))
 
-        self.delegate = connection.delegate[name]
+        self.connection = client
+
+        self.delegate = client.delegate[name]
         assert isinstance(self.delegate, motor.MotorDatabase), (
             "synchro.Database delegate must be MotorDatabase, not "
             " %s" % repr(self.delegate))
@@ -594,7 +572,7 @@ class GridOut(Synchro):
 
 class TimeModule(object):
     """Fake time module so time.sleep() lets other tasks run on the IOLoop.
-       See e.g. test_schedule_refresh() in test_replica_set_connection.py.
+       See e.g. test_schedule_refresh() in test_replica_set_client.py.
     """
     def __getattr__(self, item):
         def sleep(seconds):

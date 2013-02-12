@@ -23,7 +23,7 @@ Motor operation to complete, default 5 seconds.
 """
 
 import sys
-from test import synchro
+import synchro
 
 import nose
 from nose.config import Config
@@ -40,49 +40,47 @@ excluded_modules = [
 
     # Exclude some PyMongo tests that can't be applied to Synchro.
     'test.test_threads',
-    'test.test_threads_replica_set_connection',
+    'test.test_threads_replica_set_client',
     'test.test_pooling',
     'test.test_pooling_gevent',
     'test.test_paired',
     'test.test_master_slave_connection',
+    'test.test_legacy_connections',
 ]
 
 excluded_tests = [
     # Synchro can't simulate requests, so test copy_db in Motor directly
-    'TestConnection.test_copy_db',
+    '*.test_copy_db',
 
     # use_greenlets is always True with Motor
-    'TestConnection.test_use_greenlets',
+    '*.test_use_greenlets',
 
     # Motor's reprs aren't the same as PyMongo's
     '*.test_repr',
 
     # Motor doesn't do requests
-    'TestConnection.test_auto_start_request',
-    'TestConnection.test_contextlib_auto_start_request',
-    'TestConnection.test_with_start_request',
-    'TestConnection.test_operation_failure_with_request',
-    'TestConnection.test_nested_request',
-    'TestConnection.test_request_threads',
+    '*.test_auto_start_request',
+    '*.test_nested_request',
+    '*.test_request_threads',
+    '*.test_operation_failure_with_request',
+    'TestClient.test_with_start_request',
     'TestDatabase.test_authenticate_and_request',
     'TestGridfs.test_request',
-    'TestGridfsRequest.test_gridfs_request',
+    'TestGridfs.test_gridfs_request',
 
-    # test_replica_set_connection: We test this directly, because it requires
-    # monkey-patching either socket or IOStream, depending on whether it's
-    # PyMongo or Motor
-    'TestConnection.test_auto_reconnect_exception_when_read_preference_is_secondary',
+    # We test this directly, because it requires monkey-patching either socket
+    # or IOStream, depending on whether it's PyMongo or Motor
+    'TestReplicaSetClient.test_auto_reconnect_exception_when_read_preference_is_secondary',
 
-    # test_replica_set_connection: No pinning in Motor since there are no
-    # requests
-    'TestConnection.test_pinned_member',
+    # No pinning in Motor since there are no requests
+    'TestReplicaSetClient.test_pinned_member',
 
-    # test_read_preference: requires patching ReplicaSetConnection specially
+    # test_read_preference: requires patching MongoReplicaSetClient specially
     'TestCommandAndReadPreference.*',
 
     # Motor doesn't support forking or threading
-    'TestConnection.test_fork',
-    'TestConnection.test_interrupt_signal',
+    '*.test_interrupt_signal',
+    '*.test_fork',
     'TestCollection.test_ensure_unique_index_threaded',
     'TestGridfs.test_threaded_writes',
     'TestGridfs.test_threaded_reads',
@@ -158,31 +156,28 @@ if __name__ == '__main__':
     sys.modules['pymongo'] = synchro
 
     for mod in [
-        'pymongo.connection',
+        'pymongo.auth',
+        'pymongo.mongo_client',
         'pymongo.collection',
-        'pymongo.replica_set_connection',
+        'pymongo.mongo_replica_set_client',
         'pymongo.master_slave_connection',
         'pymongo.database',
         'pymongo.pool',
         'pymongo.thread_util',
         'gridfs',
+        'gridfs.errors',
         'gridfs.grid_file',
     ]:
-        # So that e.g. 'from pymongo.connection import Connection' gets the
-        # Synchro Connection, not the real one. We include
+        # So that e.g. 'from pymongo.mongo_client import MongoClient' gets the
+        # Synchro MongoClient, not the real one. We include
         # master_slave_connection, even though Motor doesn't support it and
         # we exclude it from tests, so that the import doesn't fail.
         sys.modules[mod] = synchro
 
     # Ensure time.sleep() acts as PyMongo's tests expect: background tasks
     # can run to completion while foreground pauses
-    time_module = synchro.TimeModule()
-    sys.modules['time'] = time_module
-
-    config = Config(
-        plugins=PluginManager(),
-    )
+    sys.modules['time'] = synchro.TimeModule()
 
     nose.main(
-        config=config,
+        config=Config(plugins=PluginManager()),
         addplugins=[SynchroNosePlugin(), Skip(), Xunit()])
