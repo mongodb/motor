@@ -46,7 +46,7 @@ from gridfs.errors import FileExists, NoFile, UnsupportedAPI
 
 try:
     from pymongo import auth
-    from pymongo.auth import MongoAuthenticationMechanism, MECHANISMS
+    from pymongo.auth import HAVE_KERBEROS, MECHANISMS
 except ImportError:
     # auth module will land in PyMongo 2.5
     print "Warning: Can't import pymongo.auth"
