@@ -14,18 +14,22 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+import os
+import socket
 import time
 import unittest
+import sys
 
+from nose.plugins.skip import SkipTest
 import pymongo
-from tornado import ioloop, gen
 from pymongo.errors import InvalidOperation, ConfigurationError
 from pymongo.errors import ConnectionFailure
+from tornado import ioloop, gen
 
 import motor
 from test import host, port
 from test import MotorTest, async_test_engine, AssertRaises, AssertEqual
-from test.utils import server_is_master_with_slave, delay
+from test.utils import server_is_master_with_slave, delay, server_started_with_auth
 
 
 class MotorClientTest(MotorTest):
@@ -61,6 +65,35 @@ class MotorClientTest(MotorTest):
         cx = motor.MotorClient(host, port).open_sync()
         cx.disconnect()
         self.assertEqual(0, len(cx.delegate._MongoClient__pool.sockets))
+
+    @async_test_engine()
+    def test_unix_socket(self, done):
+        if not hasattr(socket, "AF_UNIX"):
+            raise SkipTest("UNIX-sockets are not supported on this system")
+        if (sys.platform == 'darwin' and
+            server_started_with_auth(self.sync_cx)):
+            raise SkipTest("SERVER-8492")
+
+        mongodb_socket = '/tmp/mongodb-27017.sock'
+        if not os.access(mongodb_socket, os.R_OK):
+            raise SkipTest("Socket file is not accessable")
+
+        mongodb_socket = '/tmp/mongodb-27017.sock'
+        motor.MotorClient("mongodb://%s" % mongodb_socket).open_sync()
+
+        client = motor.MotorClient("mongodb://%s" % mongodb_socket).open_sync()
+        yield motor.Op(client.pymongo_test.test.save, {"dummy": "object"})
+
+        # Confirm we can read via the socket
+        dbs = yield motor.Op(client.database_names)
+        self.assertTrue("pymongo_test" in dbs)
+
+        # Confirm it fails with a missing socket
+        self.assertRaises(
+            ConnectionFailure,
+            motor.MotorClient("mongodb:///tmp/non-existent.sock").open_sync)
+
+        done()
 
     @async_test_engine()
     def test_sync_client(self, done):
