@@ -104,6 +104,9 @@ excluded_tests = [
     'TestGridfs.test_missing_length_iter',
     'TestGridFile.test_iterator',
 
+    # Don't need to check that GridFile is deprecated
+    'TestGridFile.test_grid_file',
+
     # No context-manager protocol for MotorGridIn, and can't set attrs
     'TestGridFile.test_context_manager',
     'TestGridFile.test_grid_in_default_opts',
