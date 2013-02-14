@@ -22,7 +22,7 @@ import time
 import sys
 import weakref
 
-from tornado import ioloop, iostream, gen
+from tornado import ioloop, iostream, gen, stack_context
 import greenlet
 
 import pymongo
@@ -317,8 +317,8 @@ class MotorPool(Pool):
         assert main, "Should be on child greenlet"
 
         if self.motor_sock_counter.count() >= self.max_concurrent:
-            # Yield until maybe_return_socket passes spare socket in
-            self.queue.append(child_gr)
+            # Yield until maybe_return_socket passes spare socket in.
+            self.queue.append(stack_context.wrap(child_gr.switch))
             return main.switch()
         else:
             motor_sock = self.create_connection(pair)
@@ -329,9 +329,9 @@ class MotorPool(Pool):
         # This is *not* a request socket; give it to the greenlet at the head
         # of the line, return it to the pool, or discard it.
         if self.queue:
-            next_child_gr = self.queue.popleft()
-            self.io_loop.add_callback(
-                functools.partial(next_child_gr.switch, sock_info))
+            waiter = self.queue.popleft()
+            with stack_context.NullContext():
+                self.io_loop.add_callback(functools.partial(waiter, sock_info))
         else:
             Pool._return_socket(self, sock_info)
 

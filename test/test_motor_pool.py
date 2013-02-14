@@ -14,13 +14,16 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+import datetime
 import functools
+import greenlet
 import random
 import unittest
 
 from nose.plugins.skip import SkipTest
 from pymongo.errors import ConfigurationError
-from tornado import gen
+from tornado import gen, stack_context
+from tornado.ioloop import IOLoop
 
 import motor
 from test import host, port, MotorTest, async_test_engine
@@ -137,6 +140,61 @@ class MotorPoolTest(MotorTest):
 
         done()
 
+    @async_test_engine()
+    def test_stack_context(self, done):
+        # See http://www.tornadoweb.org/documentation/stack_context.html
+        # MotorPool.get_socket can block waiting for a callback in another
+        # context to return a socket. We verify MotorPool's stack-context
+        # handling by testing that exceptions raised in get_socket's
+        # continuation are caught in get_socket's stack context, not
+        # return_socket's.
+
+        loop = IOLoop.instance()
+        history = []
+        cx = yield motor.Op(
+            motor.MotorClient(host, port, max_concurrent=1).open)
+
+        pool = cx._get_pools()[0]
+        self.assertEqual(1, len(pool.sockets))
+        sock_info = pool.get_socket()
+
+        main_gr = greenlet.getcurrent()
+
+        def catch_get_sock_exc(exc_type, exc_value, exc_traceback):
+            history.extend(['get_sock_exc', exc_value])
+            return True  # Don't propagate
+
+        def catch_return_sock_exc(exc_type, exc_value, exc_traceback):
+            history.extend(['return_sock_exc', exc_value])
+            return True  # Don't propagate
+
+        def get_socket():
+            with stack_context.ExceptionStackContext(catch_get_sock_exc):
+                # Blocks until socket is available, since max_concurrent is 1
+                pool.get_socket()
+                loop.add_callback(raise_callback)
+
+        my_assert = AssertionError('foo')
+
+        def raise_callback():
+            history.append('raise')
+            raise my_assert
+
+        def return_socket():
+            with stack_context.ExceptionStackContext(catch_return_sock_exc):
+                pool.maybe_return_socket(sock_info)
+
+            main_gr.switch()
+
+        greenlet.greenlet(get_socket).switch()
+        greenlet.greenlet(return_socket).switch()
+
+        yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
+
+        # 'return_sock_exc' was *not* added to history, because stack context
+        # wasn't leaked from return_socket to get_socket.
+        self.assertEqual(['raise', 'get_sock_exc', my_assert], history)
+        done()
 
 if __name__ == '__main__':
     unittest.main()
