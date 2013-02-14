@@ -239,7 +239,7 @@ class MotorPoolTimeout(pymongo.errors.OperationFailure):
 
 
 class MotorPool(Pool):
-    """A simple connection pool of MotorSockets.
+    """A pool of MotorSockets.
 
     Note this sets use_greenlets=True so that when PyMongo internally calls
     start_request, e.g. in Database.authenticate() or
