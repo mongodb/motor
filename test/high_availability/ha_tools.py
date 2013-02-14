@@ -30,6 +30,7 @@ from stat import S_IRUSR
 
 import pymongo
 import pymongo.errors
+from pymongo.read_preferences import ReadPreference
 
 home = os.environ.get('HOME')
 default_dbpath = os.path.join(home, 'data', 'pymongo_high_availability')
@@ -64,7 +65,6 @@ def kill_members(members, sig, hosts=nodes):
         except OSError:
             if ha_tools_debug:
                 print member, 'already dead?'
-            pass  # already dead
 
 
 def kill_all_members():
@@ -145,7 +145,7 @@ def start_replica_set(members, auth=False, fresh=True):
 
     config = {'_id': set_name, 'members': members}
     primary = members[0]['host']
-    c = pymongo.Connection(primary, use_greenlets=use_greenlets)
+    c = pymongo.MongoClient(primary, use_greenlets=use_greenlets)
     try:
         if ha_tools_debug:
             print 'rs.initiate(%s)' % config
@@ -246,9 +246,9 @@ def create_sharded_cluster(num_routers=3):
             return None
 
     # Add the shard
-    conn = pymongo.Connection(host)
+    client = pymongo.MongoClient(host)
     try:
-        conn.admin.command({'addshard': shard_host})
+        client.admin.command({'addshard': shard_host})
     except pymongo.errors.OperationFailure:
         # Already configured.
         pass
@@ -257,8 +257,11 @@ def create_sharded_cluster(num_routers=3):
 
 
 # Connect to a random member
-def get_connection():
-    return pymongo.Connection(nodes.keys(), slave_okay=True, use_greenlets=use_greenlets)
+def get_client():
+    return pymongo.MongoClient(
+        nodes.keys(),
+        read_preference=ReadPreference.PRIMARY_PREFERRED,
+        use_greenlets=use_greenlets)
 
 
 def get_mongos_seed_list():
@@ -276,7 +279,7 @@ def restart_mongos(host):
 
 
 def get_members_in_state(state):
-    status = get_connection().admin.command('replSetGetStatus')
+    status = get_client().admin.command('replSetGetStatus')
     members = status['members']
     return [k['name'] for k in members if k['state'] == state]
 
@@ -313,11 +316,11 @@ def get_recovering():
 
 
 def get_passives():
-    return get_connection().admin.command('ismaster').get('passives', [])
+    return get_client().admin.command('ismaster').get('passives', [])
 
 
 def get_hosts():
-    return get_connection().admin.command('ismaster').get('hosts', [])
+    return get_client().admin.command('ismaster').get('hosts', [])
 
 
 def get_hidden_members():
@@ -334,7 +337,7 @@ def get_hidden_members():
 
 
 def get_tags(member):
-    config = get_connection().local.system.replset.find_one()
+    config = get_client().local.system.replset.find_one()
     for m in config['members']:
         if m['host'] == member:
             return m.get('tags', {})
@@ -363,7 +366,7 @@ def kill_all_secondaries(sig=2):
 def stepdown_primary():
     primary = get_primary()
     if primary:
-        c = pymongo.Connection(primary, use_greenlets=use_greenlets)
+        c = pymongo.MongoClient(primary, use_greenlets=use_greenlets)
         # replSetStepDown causes mongod to close all connections
         try:
             c.admin.command('replSetStepDown', 20)
@@ -374,7 +377,7 @@ def stepdown_primary():
 def set_maintenance(member, value):
     """Put a member into RECOVERING state if value is True, else normal state.
     """
-    c = pymongo.Connection(member, use_greenlets=use_greenlets)
+    c = pymongo.MongoClient(member, use_greenlets=use_greenlets)
     c.admin.command('replSetMaintenance', value)
     start = time.time()
     while value != (member in get_recovering()):
