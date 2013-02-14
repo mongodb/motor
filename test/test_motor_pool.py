@@ -112,14 +112,15 @@ class MotorPoolTest(MotorTest):
         done()
 
     @async_test_engine(timeout_sec=30)
-    def test_max_concurrent_unacknowledged(self, done):
+    def test_connections_unacknowledged_writes(self, done):
+        # Verifying that unacknowledged writes don't open extra connections
         cx = motor.MotorClient(host, port).open_sync()
         pool = cx.delegate._MongoClient__pool
         collection = cx.pymongo_test.test_collection
         yield motor.Op(collection.drop)
         self.assertEqual(1, pool.motor_sock_counter.count())
 
-        nops = 500
+        nops = 10
         for i in range(nops - 1):
             collection.insert({'_id': i}, w=0)
 
