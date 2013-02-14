@@ -233,6 +233,11 @@ class InstanceCounter(object):
         return len(self.refs)
 
 
+class MotorPoolTimeout(pymongo.errors.OperationFailure):
+    """An operation waited too long to acquire a socket from the pool"""
+    pass
+
+
 class MotorPool(Pool):
     """A simple connection pool of MotorSockets.
 
@@ -242,14 +247,20 @@ class MotorPool(Pool):
     greenlet for the duration of the method. Request semantics are not exposed
     to Motor's users.
     """
-    def __init__(self, io_loop, max_concurrent, *args, **kwargs):
+    def __init__(self, io_loop, max_concurrent, max_wait_time, *args, **kwargs):
         kwargs['use_greenlets'] = True
         Pool.__init__(self, *args, **kwargs)
         self.io_loop = io_loop
-        self.max_concurrent = pymongo.common.validate_positive_integer(
-            'max_concurrent', max_concurrent)
         self.motor_sock_counter = InstanceCounter()
         self.queue = collections.deque()
+        self.waiter_timeouts = {}
+        self.max_concurrent = pymongo.common.validate_positive_integer(
+            'max_concurrent', max_concurrent)
+
+        self.max_wait_time = max_wait_time
+        if self.max_wait_time is not None:
+            pymongo.common.validate_positive_float(
+                'max_wait_time', self.max_wait_time)
 
     def create_connection(self, pair):
         """Copy of Pool.create_connection()
@@ -319,8 +330,16 @@ class MotorPool(Pool):
         assert main, "Should be on child greenlet"
 
         if self.motor_sock_counter.count() >= self.max_concurrent:
+            waiter = stack_context.wrap(child_gr.switch)
+            self.queue.append(waiter)
+
+            if self.max_wait_time:
+                deadline = time.time() + self.max_wait_time
+                timeout = self.io_loop.add_timeout(deadline, functools.partial(
+                    child_gr.throw, MotorPoolTimeout, "timeout"))
+                self.waiter_timeouts[waiter] = timeout
+
             # Yield until maybe_return_socket passes spare socket in.
-            self.queue.append(stack_context.wrap(child_gr.switch))
             return main.switch()
         else:
             motor_sock = self.create_connection(pair)
@@ -332,6 +351,9 @@ class MotorPool(Pool):
         # of the line, return it to the pool, or discard it.
         if self.queue:
             waiter = self.queue.popleft()
+            if waiter in self.waiter_timeouts:
+                self.io_loop.remove_timeout(self.waiter_timeouts.pop(waiter))
+
             with stack_context.NullContext():
                 self.io_loop.add_callback(functools.partial(waiter, sock_info))
         else:
@@ -713,11 +735,8 @@ class MotorClientBase(MotorOpenable, MotorBase):
     max_pool_size  = ReadOnlyProperty()
 
     def __init__(self, delegate, io_loop, *args, **kwargs):
-        if 'max_concurrent' in kwargs:
-            self._max_concurrent = kwargs.pop('max_concurrent')
-        else:
-            self._max_concurrent = 100
-
+        self._max_concurrent = kwargs.pop('max_concurrent', 100)
+        self._max_wait_time = kwargs.pop('max_wait_time', None)
         super(MotorClientBase, self).__init__(
             delegate, io_loop, *args, **kwargs)
 
@@ -750,7 +769,8 @@ class MotorClientBase(MotorOpenable, MotorBase):
             self.io_loop = standard_loop
             if self.delegate:
                 self.delegate.pool_class = functools.partial(
-                    MotorPool, self.io_loop, self._max_concurrent)
+                    MotorPool, self.io_loop,
+                    self._max_concurrent, self._max_wait_time)
 
                 for pool in self._get_pools():
                     pool.io_loop = self.io_loop
@@ -799,7 +819,7 @@ class MotorClientBase(MotorOpenable, MotorBase):
         kwargs = self._init_kwargs.copy()
         kwargs['auto_start_request'] = False
         kwargs['_pool_class'] = functools.partial(
-            MotorPool, self.io_loop, self._max_concurrent)
+            MotorPool, self.io_loop, self._max_concurrent, self._max_wait_time)
         return self._init_args, kwargs
 
 
@@ -828,6 +848,9 @@ class MotorClient(MotorClientBase):
             instance to use instead of default
           - `max_concurrent` (optional): Most connections open at once, default
             100.
+          - `max_wait_time` (optional): How long an operation can wait for a
+            connection before raising :exc:`MotorPoolTimeout`, default no
+            timeout.
 
         .. _MongoClient: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html
         """
@@ -896,6 +919,9 @@ class MotorReplicaSetClient(MotorClientBase):
             instance to use instead of default
           - `max_concurrent` (optional): Most connections open at once, default
             100.
+          - `max_wait_time` (optional): How long an operation can wait for a
+            connection before raising :exc:`MotorPoolTimeout`, default no
+            timeout.
 
         .. _MongoReplicaSetClient: http://api.mongodb.org/python/current/api/pymongo/mongo_replica_set_client.html
         """

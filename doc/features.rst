@@ -42,8 +42,8 @@ Bounded Connection Growth
 =========================
 Motor has a default cap of 100 connections per host
 per :class:`~motor.MotorClient` or :class:`~motor.MotorReplicaSetClient`,
-configurable with the ``max_concurrent`` option. Operations yield to the
-event loop while waiting for a spare connection to use.
+configurable with the ``max_concurrent`` and ``max_wait_time`` options.
+Operations yield to the event loop while waiting for a spare connection to use.
 
 Configurable IOLoops
 ====================

@@ -28,7 +28,7 @@ from tornado import gen, stack_context
 from tornado.ioloop import IOLoop
 
 import motor
-from test import host, port, MotorTest, async_test_engine
+from test import host, port, MotorTest, async_test_engine, AssertRaises
 from test.utils import delay
 
 
@@ -52,6 +52,25 @@ class MotorPoolTest(MotorTest):
 
         self.assertRaises(TypeError,
             motor.MotorClient(host, port, max_concurrent=1.5).open_sync)
+
+    def test_max_wait_default(self):
+        cx = motor.MotorClient(host, port).open_sync()
+        pool = cx.delegate._MongoClient__pool
+        self.assertEqual(None, pool.max_wait_time)
+
+    def test_max_wait_validation(self):
+        self.assertRaises(ConfigurationError,
+            motor.MotorClient(host, port, max_wait_time=-1).open_sync)
+
+        self.assertRaises(ConfigurationError,
+            motor.MotorClient(host, port, max_wait_time=0).open_sync)
+
+        self.assertRaises(ConfigurationError,
+            motor.MotorClient(host, port, max_wait_time='foo').open_sync)
+
+        # Ok
+        motor.MotorClient(host, port, max_wait_time=None).open_sync()
+        motor.MotorClient(host, port, max_wait_time=100).open_sync()
 
     @async_test_engine(timeout_sec=30)
     def test_max_concurrent(self, done):
@@ -107,6 +126,28 @@ class MotorPoolTest(MotorTest):
         # Shrunk back to max_pool_size
         self.assertEqual(max_pool_size, pool.motor_sock_counter.count())
         self.assertEqual(max_pool_size, len(pool.sockets))
+
+        done()
+
+    @async_test_engine(timeout_sec=10)
+    def test_max_wait(self, done):
+        where_delay = .4
+        for max_wait_time in .2, .6, None:
+            cx = motor.MotorClient(
+                host, port, max_concurrent=1, max_wait_time=max_wait_time,
+            ).open_sync()
+
+            pool = cx._get_pools()[0]
+            self.assertEqual(max_wait_time, pool.max_wait_time)
+            collection = cx.pymongo_test.test_collection
+            cb = yield gen.Callback('find_one')
+            collection.find_one({'$where': delay(where_delay)}, callback=cb)
+            if max_wait_time and max_wait_time < where_delay:
+                yield AssertRaises(motor.MotorPoolTimeout, collection.find_one)
+            else:
+                # No error
+                yield motor.Op(collection.find_one)
+            yield gen.Wait('find_one')
 
         done()
 

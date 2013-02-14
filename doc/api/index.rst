@@ -15,3 +15,4 @@ Motor API
     gridfs
     generator_interface
     web
+    exceptions
