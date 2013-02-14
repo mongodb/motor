@@ -47,9 +47,6 @@ class MotorPoolTest(MotorTest):
         self.assertRaises(ConfigurationError,
             motor.MotorClient(host, port, max_concurrent=-1).open_sync)
 
-        self.assertRaises(ConfigurationError,
-            motor.MotorClient(host, port, max_concurrent=-1).open_sync)
-
         self.assertRaises(TypeError,
             motor.MotorClient(host, port, max_concurrent=None).open_sync)
 
@@ -70,7 +67,7 @@ class MotorPoolTest(MotorTest):
             max_pool_size=max_pool_size, max_concurrent=max_concurrent
         ).open_sync()
 
-        pool = cx.delegate._MongoClient__pool
+        pool = cx._get_pools()[0]
         self.assertEqual(max_pool_size, pool.max_size)
         self.assertEqual(max_concurrent, pool.max_concurrent)
 
