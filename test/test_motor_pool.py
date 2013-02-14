@@ -78,7 +78,7 @@ class MotorPoolTest(MotorTest):
 
         # Grow to max_concurrent
         ops_completed = yield gen.Callback('ops_completed')
-        nops = 500
+        nops = 100
         results = []
         def callback(i, result, error):
             self.assertFalse(error)
