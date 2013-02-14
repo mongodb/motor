@@ -53,9 +53,6 @@ NEAREST = ReadPreference.NEAREST
 
 
 class MotorTestDirectConnection(unittest.TestCase):
-    # Prevent Nose from automatically running this test
-    __test__ = False
-
     def setUp(self):
         super(MotorTestDirectConnection, self).setUp()
         members = [{}, {}, {'arbiterOnly': True}]
@@ -153,9 +150,6 @@ class MotorTestDirectConnection(unittest.TestCase):
 
 
 class MotorTestPassiveAndHidden(unittest.TestCase):
-    # Prevent Nose from automatically running this test
-    __test__ = False
-
     def setUp(self):
         super(MotorTestPassiveAndHidden, self).setUp()
         members = [{},
@@ -199,9 +193,6 @@ class MotorTestMonitorRemovesRecoveringMember(unittest.TestCase):
     # Verify that if a secondary goes into RECOVERING mode, the Monitor removes
     # it from the set of readers.
 
-    # Prevent Nose from automatically running this test
-    __test__ = False
-
     def setUp(self):
         members = [{}, {'priority': 0}, {'priority': 0}]
         res = ha_tools.start_replica_set(members)
@@ -239,10 +230,6 @@ class MotorTestMonitorRemovesRecoveringMember(unittest.TestCase):
 class MotorTestTriggeredRefresh(unittest.TestCase):
     # Verify that if a secondary goes into RECOVERING mode or if the primary
     # changes, the next exception triggers an immediate refresh.
-
-    # Prevent Nose from automatically running this test
-    __test__ = False
-
     def setUp(self):
         members = [{}, {}]
         res = ha_tools.start_replica_set(members)
@@ -321,9 +308,6 @@ class MotorTestTriggeredRefresh(unittest.TestCase):
 
 
 class MotorTestHealthMonitor(unittest.TestCase):
-    # Prevent Nose from automatically running this test
-    __test__ = False
-
     def setUp(self):
         super(MotorTestHealthMonitor, self).setUp()
         res = ha_tools.start_replica_set([{}, {}, {}])
@@ -406,9 +390,6 @@ class MotorTestHealthMonitor(unittest.TestCase):
 
 
 class MotorTestWritesWithFailover(unittest.TestCase):
-    # Prevent Nose from automatically running this test
-    __test__ = False
-
     def setUp(self):
         super(MotorTestWritesWithFailover, self).setUp()
         res = ha_tools.start_replica_set([{}, {}, {}])
@@ -452,9 +433,6 @@ class MotorTestWritesWithFailover(unittest.TestCase):
 
 
 class MotorTestReadWithFailover(unittest.TestCase):
-    # Prevent Nose from automatically running this test
-    __test__ = False
-
     def setUp(self):
         super(MotorTestReadWithFailover, self).setUp()
         res = ha_tools.start_replica_set([{}, {}, {}])
@@ -491,11 +469,7 @@ class MotorTestReadWithFailover(unittest.TestCase):
     def tearDown(self):
         ha_tools.kill_all_members()
 
-
 class MotorTestReadPreference(unittest.TestCase):
-    # Prevent Nose from automatically running this test
-    __test__ = False
-
     def setUp(self):
         super(MotorTestReadPreference, self).setUp()
         members = [
@@ -838,9 +812,6 @@ class MotorTestReadPreference(unittest.TestCase):
 
 
 class MotorTestReplicaSetAuth(unittest.TestCase):
-    # Prevent Nose from automatically running this test
-    __test__ = False
-
     def setUp(self):
         super(MotorTestReplicaSetAuth, self).setUp()
         members = [
@@ -900,9 +871,6 @@ class MotorTestReplicaSetAuth(unittest.TestCase):
 
 
 class MotorTestMongosHighAvailability(unittest.TestCase):
-    # Prevent Nose from automatically running this test
-    __test__ = False
-
     def setUp(self):
         super(MotorTestMongosHighAvailability, self).setUp()
         self.seed_list = ha_tools.create_sharded_cluster()
@@ -952,9 +920,6 @@ class MotorTestMongosHighAvailability(unittest.TestCase):
 
 
 class MotorTestAlive(unittest.TestCase):
-    # Prevent Nose from automatically running this test
-    __test__ = False
-
     def setUp(self):
         members = [{}, {}]
         self.seed, self.name = ha_tools.start_replica_set(members)
