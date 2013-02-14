@@ -127,7 +127,7 @@ class MotorTailTest(MotorTest):
         yield gen.Task(self.wait_for_cursors)
         done()
 
-    drop_collection_pauses = (0, 0, 1, 'drop', 1, 0, 0)
+    drop_collection_pauses = (0, 0, 5, 'drop', 1, 0, 0)
 
     @async_test_engine(timeout_sec=30)
     def test_tail_drop_collection(self, done):
