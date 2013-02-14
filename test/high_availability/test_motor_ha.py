@@ -870,55 +870,6 @@ class MotorTestReplicaSetAuth(unittest.TestCase):
         ha_tools.kill_all_members()
 
 
-class MotorTestMongosHighAvailability(unittest.TestCase):
-    def setUp(self):
-        super(MotorTestMongosHighAvailability, self).setUp()
-        self.seed_list = ha_tools.create_sharded_cluster()
-        self.dbname = 'pymongo_mongos_ha'
-        self.conn = pymongo.MongoClient(self.seed_list)
-        self.conn.drop_database(self.dbname)
-
-    @async_test_engine(timeout_sec=300)
-    def test_mongos_ha(self, done):
-        conn = motor.MotorClient(self.seed_list).open_sync()
-        coll = conn[self.dbname].test
-        res = yield motor.Op(coll.insert, {'foo': 'bar'})
-        self.assertTrue(res)
-
-        first = '%s:%d' % (conn.host, conn.port)
-        ha_tools.kill_mongos(first)
-        # Fail first attempt
-        yield AssertRaises(AutoReconnect, coll.count)
-        # Find new mongos
-        yield AssertEqual(1, coll.count)
-
-        second = '%s:%d' % (conn.host, conn.port)
-        self.assertNotEqual(first, second)
-        ha_tools.kill_mongos(second)
-        # Fail first attempt
-        yield AssertRaises(AutoReconnect, coll.count)
-        # Find new mongos
-        yield AssertEqual(1, coll.count)
-
-        third = '%s:%d' % (conn.host, conn.port)
-        self.assertNotEqual(second, third)
-        ha_tools.kill_mongos(third)
-        # Fail first attempt
-        yield AssertRaises(AutoReconnect, coll.count)
-
-        # We've killed all three, restart one.
-        ha_tools.restart_mongos(first)
-
-        # Find new mongos
-        yield AssertEqual(1, coll.count)
-        done()
-
-    def tearDown(self):
-        self.conn.disconnect() # Force reconnect, things have happened ....
-        self.conn.drop_database(self.dbname)
-        ha_tools.kill_all_members()
-
-
 class MotorTestAlive(unittest.TestCase):
     def setUp(self):
         members = [{}, {}]
@@ -964,9 +915,6 @@ class MotorTestAlive(unittest.TestCase):
 
 
 class MotorTestMongosHighAvailability(unittest.TestCase):
-    # Prevent Nose from automatically running this test
-    __test__ = False
-
     def setUp(self):
         self.seed_list = ha_tools.create_sharded_cluster()
 
