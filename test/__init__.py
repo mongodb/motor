@@ -78,8 +78,7 @@ or:
     @async_test_engine(timeout_sec=10)""" % (
         repr(timeout_sec)))
 
-    if timeout_sec is None:
-        timeout_sec = float(os.environ.get('TIMEOUT_SEC', 5))
+    timeout_sec = max(float(os.environ.get('TIMEOUT_SEC', 5)), timeout_sec)
 
     is_done = [False]
 
