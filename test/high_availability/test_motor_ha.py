@@ -469,6 +469,70 @@ class MotorTestReadWithFailover(unittest.TestCase):
     def tearDown(self):
         ha_tools.kill_all_members()
 
+
+class MotorTestShipOfTheseus(unittest.TestCase):
+    # If all of a replica set's members are replaced with new ones, is it still
+    # the same replica set, or a different one?
+    def setUp(self):
+        super(MotorTestShipOfTheseus, self).setUp()
+        res = ha_tools.start_replica_set([{}, {}])
+        self.seed, self.name = res
+
+    @async_test_engine(timeout_sec=180)
+    def test_ship_of_theseus(self, done):
+        loop = IOLoop.instance()
+        c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
+        c.open_sync()
+
+        db = c.pymongo_test
+        w = len(c.secondaries) + 1
+        db.test.insert({}, w=w)
+
+        primary = ha_tools.get_primary()
+        secondary1 = ha_tools.get_random_secondary()
+        ha_tools.add_member()
+        ha_tools.add_member()
+        ha_tools.add_member()
+
+        # Wait for new members to join
+        for _ in xrange(120):
+            if ha_tools.get_primary() and len(ha_tools.get_secondaries()) == 4:
+                break
+
+            yield gen.Task(loop.add_timeout, time.time() + 1)
+        else:
+            self.fail("New secondaries didn't join")
+
+        ha_tools.kill_members([primary, secondary1], 9)
+
+        # Wait for primary
+        for _ in xrange(30):
+            if ha_tools.get_primary() and len(ha_tools.get_secondaries()) == 2:
+                break
+
+            yield gen.Task(loop.add_timeout, time.time() + 1)
+        else:
+            self.fail("No failover")
+
+        # Ensure monitor picks up new members
+        yield gen.Task(loop.add_timeout, time.time() + 2 * MONITOR_INTERVAL)
+
+        try:
+            yield motor.Op(db.test.find_one)
+        except AutoReconnect:
+            # Might take one try to reconnect
+            yield gen.Task(loop.add_timeout, time.time() + 1)
+
+        # No error
+        yield motor.Op(db.test.find_one)
+        yield motor.Op(db.test.find_one, read_preference=SECONDARY)
+
+        done()
+
+    def tearDown(self):
+        ha_tools.kill_all_members()
+
+
 class MotorTestReadPreference(unittest.TestCase):
     def setUp(self):
         super(MotorTestReadPreference, self).setUp()
