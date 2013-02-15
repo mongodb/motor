@@ -338,23 +338,11 @@ class MotorClientTest(MotorTest):
 
     @async_test_engine()
     def test_connection_timeout(self, done):
-        # DNS lookup isn't charged against the timeout, so warm the DNS cache
-        # before testing timeout duration
+        # Motor merely tries to time out a connection attempt within the
+        # specified duration; DNS lookup in particular isn't charged against
+        # the timeout. So don't measure how long this takes.
         yield AssertRaises(ConnectionFailure, motor.MotorClient(
             'example.com', port=12345, connectTimeoutMS=1).open)
-
-        for timeout_ms in (1000, 100, 1):
-            start = time.time()
-            yield AssertRaises(ConnectionFailure, motor.MotorClient(
-                'example.com', port=12345, connectTimeoutMS=timeout_ms).open)
-
-            connection_duration_ms = 1000 * (time.time() - start)
-            self.assertTrue(
-                abs(connection_duration_ms - timeout_ms) < 250, (
-                'Expected connection to timeout after about %s ms, timed out'
-                ' after %s'
-            ) % (timeout_ms, connection_duration_ms))
-
         done()
 
     @async_test_engine()
