@@ -64,7 +64,7 @@ class AsyncTestRunner(gen.Runner):
             loop.stop()
 
 
-def async_test_engine(timeout_sec=None, io_loop=None):
+def async_test_engine(timeout_sec=5, io_loop=None):
     if (
         timeout_sec is not None
         and not isinstance(timeout_sec, int) and
@@ -78,7 +78,7 @@ or:
     @async_test_engine(timeout_sec=10)""" % (
         repr(timeout_sec)))
 
-    timeout_sec = max(float(os.environ.get('TIMEOUT_SEC', 5)), timeout_sec)
+    timeout_sec = max(float(os.environ.get('TIMEOUT_SEC', 0)), timeout_sec)
 
     is_done = [False]
 
