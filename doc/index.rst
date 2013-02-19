@@ -16,6 +16,7 @@ Motor presents a Tornado callback-based API for non-blocking access to
 MongoDB.
 
 .. toctree::
+   :maxdepth: 1
 
    differences
    features
