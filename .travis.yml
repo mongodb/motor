@@ -6,3 +6,6 @@ python:
   - "3.3"
 services: mongodb
 script: "python setup.py test"
+branches:
+  only:
+    - master
