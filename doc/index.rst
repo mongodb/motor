@@ -12,7 +12,6 @@ Motor: Asynchronous Python driver for Tornado and MongoDB
 
 .. |musho| replace:: *Musho Rodney Alan Greenblat*
 
-
 Motor presents a Tornado callback-based API for non-blocking access to
 MongoDB.
 
@@ -20,7 +19,7 @@ MongoDB.
 
    differences
    features
-   prerequisites
+   installation
    tutorial
    examples/index
    changelog
