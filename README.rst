@@ -30,9 +30,7 @@ Issues / Questions / Feedback
 
 Any issues with, questions about, or feedback for Motor should be sent to the
 mongodb-user list on Google Groups. For confirmed issues or feature requests,
-open a case on `jira <http://jira.mongodb.org>`_ in the "MOTOR" project. Please
-do not e-mail the author directly with issues or questions - you're more likely
-to get an answer on the list.
+open a case on `jira <http://jira.mongodb.org>`_ in the "MOTOR" project.
 
 Installation
 ============
