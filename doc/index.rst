@@ -12,8 +12,21 @@ Motor: Asynchronous Python driver for Tornado and MongoDB
 
 .. |musho| replace:: *Musho Rodney Alan Greenblat*
 
-Motor presents a Tornado callback-based API for non-blocking access to
-MongoDB.
+Motor wraps PyMongo_ and presents a Tornado_ callback-based API for
+non-blocking access to MongoDB.
+
+**Author**: A. Jesse Jiryu Davis
+
+    "Motor uses a clever greenlet-based approach to fully support both
+    synchronous and asynchronous interfaces from a single codebase. It's great
+    to see companies like 10gen produce first-party asynchronous drivers for
+    their products."
+
+    --*Ben Darnell, Tornado maintainer*
+
+.. _Tornado: http://tornadoweb.org/
+
+.. _PyMongo: http://pypi.python.org/pypi/pymongo/
 
 .. toctree::
    :maxdepth: 1

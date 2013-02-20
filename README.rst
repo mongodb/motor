@@ -18,6 +18,13 @@ Motor presents a Tornado_ callback-based API for non-blocking access to
 MongoDB. The source is `on GitHub <https://github.com/mongodb/motor>`_ and the
 docs are on ReadTheDocs_.
 
+    "Motor uses a clever greenlet-based approach to fully support both
+    synchronous and asynchronous interfaces from a single codebase. It's great
+    to see companies like 10gen produce first-party asynchronous drivers for
+    their products."
+
+    --*Ben Darnell, Tornado maintainer*
+
 Issues / Questions / Feedback
 =============================
 
