@@ -20,11 +20,8 @@ def one(s):
     return iter(s).next()
 
 def delay(sec):
-    # Javascript sleep() only available in MongoDB since version ~1.9
-    return '''function() {
-        var d = new Date((new Date()).getTime() + %s * 1000);
-        while (d > (new Date())) { }; return true;
-    }''' % sec
+    # Javascript sleep() available in MongoDB since version ~1.9
+    return 'sleep(%s * 1000); return true' % sec
 
 def get_command_line(connection):
     command_line = connection.admin.command('getCmdLineOpts')
