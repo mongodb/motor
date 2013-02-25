@@ -655,15 +655,8 @@ class MotorBase(object):
             return self.delegate == other.delegate
         return NotImplemented
 
-    get_lasterror_options           = ReadOnlyProperty()
-    set_lasterror_options           = ReadOnlyProperty()
-    unset_lasterror_options         = ReadOnlyProperty()
     name                            = ReadOnlyProperty()
     document_class                  = ReadWriteProperty()
-    slave_okay                      = ReadWriteProperty()
-    # TODO: this is superceded by write_concern, but needed for synchrotest;
-    #   remove after PYTHON-452 is done
-    safe                            = ReadWriteProperty()
     read_preference                 = ReadWriteProperty()
     tag_sets                        = ReadWriteProperty()
     secondary_acceptable_latency_ms = ReadWriteProperty()
