@@ -410,8 +410,8 @@ and :meth:`~motor.MotorCursor.next_object`:
   {u'i': 3, u'_id': ObjectId('...')}
   {u'i': 4, u'_id': ObjectId('...')}
 
-Note that ``fetch_next`` doesn't need to be used with ``yield motor.Op``; it's
-already a yieldable object so you simply ``yield cursor.fetch_next``.
+.. note:: ``fetch_next`` doesn't need to be used with ``yield motor.Op``; it's
+  already a yieldable object so you simply ``yield cursor.fetch_next``.
 
 You can apply a sort, limit, or skip to a query before you begin iterating:
 
