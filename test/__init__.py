@@ -14,11 +14,11 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-import functools
 import datetime
+import functools
 import os
-import time
 import sys
+import time
 import types
 import unittest
 
@@ -30,11 +30,11 @@ from tornado import gen, ioloop
 
 import motor
 
-have_ssl = True
+HAVE_SSL = True
 try:
     import ssl
 except ImportError:
-    have_ssl = False
+    HAVE_SSL = False
 
 
 host = os.environ.get("DB_IP", "localhost")
@@ -65,18 +65,13 @@ class AsyncTestRunner(gen.Runner):
 
 
 def async_test_engine(timeout_sec=5, io_loop=None):
-    if (
-        timeout_sec is not None
-        and not isinstance(timeout_sec, int) and
-        not isinstance(timeout_sec, float)
-    ):
-        raise TypeError(
-"""Expected int or float, got %s
+    if timeout_sec is not None and not isinstance(timeout_sec, (int, float)):
+        raise TypeError("""\
+Expected int or float, got %r
 Use async_test_engine like:
     @async_test_engine()
 or:
-    @async_test_engine(timeout_sec=10)""" % (
-        repr(timeout_sec)))
+    @async_test_engine(timeout_sec=10)""" % timeout_sec)
 
     timeout_sec = max(float(os.environ.get('TIMEOUT_SEC', 0)), timeout_sec)
 
@@ -194,7 +189,7 @@ class MotorTest(unittest.TestCase):
         # isn't up or is hung by a long-running $where clause.
         connectTimeoutMS = socketTimeoutMS = 30 * 1000
         if self.ssl:
-            if not have_ssl:
+            if not HAVE_SSL:
                 raise SkipTest("Python compiled without SSL")
             try:
                 self.sync_cx = pymongo.MongoClient(

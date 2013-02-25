@@ -20,12 +20,12 @@ from nose.plugins.skip import SkipTest
 from pymongo.errors import ConfigurationError
 
 import motor
-from test import host, port, MotorTest, async_test_engine, have_ssl
+from test import host, port, MotorTest, async_test_engine, HAVE_SSL
 
 
 class MotorNoSSLTest(unittest.TestCase):
     def test_no_ssl(self):
-        if have_ssl:
+        if HAVE_SSL:
             raise SkipTest(
                 "We have SSL compiled into Python, can't test what happens "
                 "without SSL"
@@ -45,7 +45,7 @@ class MotorSSLTest(MotorTest):
 
     @async_test_engine()
     def test_simple_ops(self, done):
-        if not have_ssl:
+        if not HAVE_SSL:
             raise SkipTest("SSL not compiled into Python")
 
         cx = yield motor.Op(motor.MotorClient(host, port, ssl=True).open)

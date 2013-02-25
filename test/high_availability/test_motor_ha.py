@@ -28,16 +28,11 @@ from pymongo.mongo_replica_set_client import Member, Monitor, _partition_node
 from pymongo.errors import AutoReconnect, OperationFailure
 
 import motor
+import ha_tools
 from test.utils import one
 from test import async_test_engine
 from test import AssertEqual, AssertRaises, AssertTrue, AssertFalse
-from test.high_availability.test_motor_ha_utils import (
-    assertReadFrom, assertReadFromAll)
-from test.high_availability import ha_tools
-
-
-# Don't run automatically from nose
-__test__ = False
+from test_motor_ha_utils import assertReadFrom, assertReadFromAll
 
 
 # Override default 30-second interval for faster testing
