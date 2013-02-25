@@ -1170,9 +1170,9 @@ class MotorCollection(MotorBase):
         """Create a :class:`MotorCursor`. Same parameters as for
         PyMongo's `find`_.
 
-        Note that :meth:`find` does not take a `callback` parameter -- pass
+        Note that :meth:`find` does not take a `callback` parameter--pass
         a callback to the :class:`MotorCursor`'s methods such as
-        :meth:`MotorCursor.find`.
+        :meth:`MotorCursor.to_list` or :meth:`MotorCursor.count`.
 
         .. _find: http://api.mongodb.org/python/current/api/pymongo/collection.html#pymongo.collection.Collection.find
         """
