@@ -117,9 +117,9 @@ class MotorCursorTest(MotorTest):
         self.assertEqual(None, cursor.cursor_id)
         yield cursor.fetch_next
         self.assertTrue(cursor.cursor_id)
-        self.assertEqual(101, cursor.buffer_size)
-        yield cursor.fetch_next # Does nothing
-        self.assertEqual(101, cursor.buffer_size)
+        self.assertEqual(101, cursor._buffer_size())
+        yield cursor.fetch_next  # Does nothing
+        self.assertEqual(101, cursor._buffer_size())
         done()
 
     @async_test_engine()

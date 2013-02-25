@@ -1307,7 +1307,7 @@ class MotorCursor(MotorBase):
         See :attr:`fetch_next`.
         """
         # __empty is a special case: limit of 0
-        if self.delegate._Cursor__empty or not self.buffer_size:
+        if self.delegate._Cursor__empty or not self._buffer_size():
             return None
         return self.delegate.next()
 
@@ -1364,7 +1364,7 @@ class MotorCursor(MotorBase):
 
         add_callback = self.get_io_loop().add_callback
 
-        while self.buffer_size > 0:
+        while self._buffer_size() > 0:
             try:
                 doc = self.delegate.next()  # decrements self.buffer_size
             except StopIteration:
@@ -1476,7 +1476,7 @@ class MotorCursor(MotorBase):
             the_list.extend(self.delegate._Cursor__data)
             self.delegate._Cursor__data.clear()
         else:
-            while self.buffer_size > 0 and len(the_list) < length:
+            while self._buffer_size() > 0 and len(the_list) < length:
                 the_list.append(self.delegate._Cursor__data.popleft())
 
         if (
@@ -1554,11 +1554,6 @@ class MotorCursor(MotorBase):
 
     def get_io_loop(self):
         return self.collection.get_io_loop()
-
-    @property
-    def buffer_size(self):
-        # TODO: expose so we don't have to use double-underscore hack
-        return len(self.delegate._Cursor__data)
 
     def close(self, callback=None):
         """Explicitly kill this cursor on the server, and cease iterating with
@@ -1660,6 +1655,10 @@ class MotorCursor(MotorBase):
             # immediately
             return self[self.delegate._Cursor__skip + index:].limit(-1)
 
+    def _buffer_size(self):
+        # TODO: expose so we don't have to use double-underscore hack
+        return len(self.delegate._Cursor__data)
+
     def _check_not_started(self):
         if self.started:
             raise pymongo.errors.InvalidOperation(
@@ -1718,8 +1717,7 @@ class MotorGridOut(MotorOpenable):
     ):
         if isinstance(root_collection, grid_file.GridOut):
             # Short cut
-            MotorOpenable.__init__(
-                self, root_collection, io_loop)
+            super(MotorGridOut, self).__init__(root_collection, io_loop)
         else:
             if not isinstance(root_collection, MotorCollection):
                 raise TypeError(
@@ -1729,9 +1727,9 @@ class MotorGridOut(MotorOpenable):
             assert io_loop is None, \
                 "Can't override IOLoop for MotorGridOut"
 
-            MotorOpenable.__init__(
-                self, None, root_collection.get_io_loop(),
-                root_collection.delegate, file_id, file_document)
+            super(MotorGridOut, self).__init__(
+                None, root_collection.get_io_loop(), root_collection.delegate,
+                file_id, file_document)
 
     @gen.engine
     def stream_to_handler(self, request_handler, callback=None):
@@ -2106,7 +2104,7 @@ class FetchNext(gen.YieldPoint):
     def start(self, runner):
         # If cursor's current batch is empty, start fetching next batch...
         cursor = self.cursor
-        if not cursor.buffer_size and cursor.alive:
+        if not cursor._buffer_size() and cursor.alive:
             self.ready = False
             self.runner = runner
             cursor._get_more(self.set_result)
@@ -2130,4 +2128,4 @@ class FetchNext(gen.YieldPoint):
         if self.cursor.delegate._Cursor__empty:
             # Special case, limit of 0
             return False
-        return bool(self.cursor.buffer_size)
+        return bool(self.cursor._buffer_size())
