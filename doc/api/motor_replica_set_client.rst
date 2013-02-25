@@ -6,9 +6,9 @@
 .. autoclass:: motor.MotorReplicaSetClient
   :members:
 
-  .. describe:: c[db_name] || c.db_name
+  .. describe:: client[db_name] || client.db_name
 
-     Get the `db_name` :class:`MotorDatabase` on :class:`MotorReplicaSetClient` `c`.
+     Get the `db_name` :class:`MotorDatabase` on :class:`MotorReplicaSetClient` `client`.
 
      Raises :class:`~pymongo.errors.InvalidName` if an invalid database name is used.
      Raises :class:`~pymongo.errors.InvalidOperation` if connection isn't opened yet.
