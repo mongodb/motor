@@ -160,16 +160,6 @@ class MotorCollectionTest(MotorTest):
         done()
 
     @async_test_engine()
-    def test_find_to_list(self, done):
-        yield AssertEqual(
-            [{'_id': i} for i in range(200)],
-            self.motor_client(host, port).pymongo_test.test_collection.find(
-                sort=[('_id', 1)], fields=['_id']
-            ).to_list
-        )
-        done()
-
-    @async_test_engine()
     def test_find_one(self, done):
         cx = self.motor_client(host, port)
         yield AssertEqual(
