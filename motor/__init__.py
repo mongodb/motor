@@ -670,7 +670,7 @@ class MotorBase(object):
     write_concern                   = ReadWriteProperty()
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, repr(self.delegate))
+        return '%s(%r)' % (self.__class__.__name__, self.delegate)
 
 
 class MotorOpenable(object):
@@ -685,8 +685,7 @@ class MotorOpenable(object):
         if io_loop:
             if not isinstance(io_loop, ioloop.IOLoop):
                 raise TypeError(
-                    "io_loop must be instance of IOLoop, not %s" % (
-                        repr(io_loop)))
+                    "io_loop must be instance of IOLoop, not %r" % io_loop)
             self.io_loop = io_loop
         else:
             self.io_loop = ioloop.IOLoop.instance()
@@ -1011,7 +1010,7 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
             rsc, pymongo.mongo_replica_set_client.MongoReplicaSetClient
         ), (
             "First argument to MotorReplicaSetMonitor must be"
-            " MongoReplicaSetClient, not %s" % repr(rsc))
+            " MongoReplicaSetClient, not %r" % rsc)
 
         # Fake the event_class: we won't use it
         pymongo.mongo_replica_set_client.Monitor.__init__(
@@ -1094,7 +1093,7 @@ class MotorDatabase(MotorBase):
     def __init__(self, connection, name):
         if not isinstance(connection, MotorClientBase):
             raise TypeError("First argument to MotorDatabase must be "
-                            "MotorClientBase, not %s" % repr(connection))
+                            "MotorClientBase, not %r" % connection)
 
         self.connection = connection
         self.delegate = Database(connection.delegate, name)
@@ -1162,7 +1161,7 @@ class MotorCollection(MotorBase):
             self.delegate = Collection
         elif not isinstance(database, MotorDatabase):
             raise TypeError("First argument to MotorCollection must be "
-                            "MotorDatabase, not %s" % repr(database))
+                            "MotorDatabase, not %r" % database)
         else:
             self.database = database
             self.delegate = Collection(self.database.delegate, name)
@@ -1732,7 +1731,7 @@ class MotorGridOut(MotorOpenable):
             if not isinstance(root_collection, MotorCollection):
                 raise TypeError(
                     "First argument to MotorGridOut must be "
-                    "MotorCollection, not %s" % repr(root_collection))
+                    "MotorCollection, not %r" % root_collection)
 
             assert io_loop is None, \
                 "Can't override IOLoop for MotorGridOut"
@@ -1850,7 +1849,7 @@ class MotorGridIn(MotorOpenable):
             if not isinstance(root_collection, MotorCollection):
                 raise TypeError(
                     "First argument to MotorGridIn must be "
-                    "MotorCollection, not %s" % repr(root_collection))
+                    "MotorCollection, not %r" % root_collection)
 
             assert 'io_loop' not in kwargs, \
                 "Can't override IOLoop for MotorGridIn"
@@ -1901,7 +1900,7 @@ class MotorGridFS(MotorOpenable):
         """
         if not isinstance(database, MotorDatabase):
             raise TypeError("First argument to MotorGridFS must be "
-                            "MotorDatabase, not %s" % repr(database))
+                            "MotorDatabase, not %r" % database)
 
         MotorOpenable.__init__(
             self, None, database.get_io_loop(), database.delegate, collection)
