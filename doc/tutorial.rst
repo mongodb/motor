@@ -580,15 +580,24 @@ the :meth:`~motor.MotorDatabase.command` method on :class:`~motor.MotorDatabase`
 
 .. doctest:: after-inserting-2000-docs
 
+  >>> from bson import SON
   >>> @gen.engine
   ... def use_count_command():
-  ...     response = yield motor.Op(db.command, {"count": "test_collection"})
+  ...     response = yield motor.Op(
+  ...         db.command, SON([("count", "test_collection")]))
   ...     print 'response:', response
   ...     IOLoop.instance().stop()
   ...
   >>> use_count_command()
   >>> IOLoop.instance().start()
   response: {u'ok': 1.0, u'n': 1000.0}
+
+Since the order of command parameters matters, don't use a Python dict to pass
+the command's parameters. Instead, make a habit of using :class:`bson.SON`,
+from the ``bson`` module included with PyMongo::
+
+    yield motor.Op(
+        db.command, SON([("distinct", "test_collection"), ("key", "my_key"]))
 
 Many commands have special helper methods, such as
 :meth:`~motor.MotorDatabase.create_collection` or
