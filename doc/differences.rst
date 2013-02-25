@@ -297,7 +297,7 @@ Tailable cursors
 Motor provides a convenience method :meth:`~motor.MotorCursor.tail` that
 hides some complexity involved in tailing a cursor on a capped collection.
 
-.. seealso:: `Tailable cursors <http://www.mongodb.org/display/DOCS/Tailable+Cursors>`_
+.. seealso:: `Tailable cursors <http://docs.mongodb.org/manual/tutorial/create-tailable-cursor/>`_
 
 .. _gridfs-differences:
 
@@ -401,7 +401,7 @@ Motor does not. One should use ``system.js`` as a regular collection with Motor:
         {'_id': 'my_func', 'value': Code('function(x) { return x * x; }')},
         callback=saved)
 
-.. seealso:: `Server-side code execution <http://www.mongodb.org/display/DOCS/Server-side+Code+Execution>`_
+.. seealso:: `Server-side code execution <http://docs.mongodb.org/manual/applications/server-side-javascript/>`_
 
 Cursor slicing
 --------------

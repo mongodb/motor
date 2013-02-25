@@ -68,7 +68,7 @@ Motor can stream data from GridFS_ to a Tornado RequestHandler_
 using :meth:`~motor.MotorGridOut.stream_to_handler` or
 the :class:`~motor.web.GridFSHandler` class.
 
-.. _GridFS: http://www.mongodb.org/display/DOCS/GridFS
+.. _GridFS: http://docs.mongodb.org/manual/applications/gridfs/
 
 .. _RequestHandler: http://www.tornadoweb.org/documentation/web.html#request-handlers
 

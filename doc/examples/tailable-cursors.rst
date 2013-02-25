@@ -52,6 +52,6 @@ A cursor can also be tailed using :attr:`~motor.MotorCursor.fetch_next`:
             if (yield cursor.fetch_next):
                 results.append(cursor.next_object())
 
-.. seealso:: `Tailable cursors <http://www.mongodb.org/display/DOCS/Tailable+Cursors>`_
+.. seealso:: `Tailable cursors <http://docs.mongodb.org/manual/tutorial/create-tailable-cursor/>`_
 
 .. _tornado.gen: http://www.tornadoweb.org/documentation/gen.html

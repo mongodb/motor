@@ -52,7 +52,7 @@ exception:
 
 This tutorial also assumes that a MongoDB instance is running on the
 default host and port. Assuming you have `downloaded and installed
-<http://www.mongodb.org/display/DOCS/Getting+Started>`_ MongoDB, you
+<http://docs.mongodb.org/manual/installation/>`_ MongoDB, you
 can start it like so:
 
 .. code-block:: bash
@@ -61,7 +61,7 @@ can start it like so:
 
 .. _pip: http://www.pip-installer.org/en/latest/installing.html
 
-.. _MongoDB Tutorial: http://api.mongodb.org/wiki/current/Tutorial.html
+.. _MongoDB Tutorial: http://docs.mongodb.org/manual/tutorial/getting-started/
 
 Object Hierarchy
 ----------------
@@ -106,9 +106,9 @@ specify the host and port like:
 Getting a Database
 ------------------
 A single instance of MongoDB can support multiple independent
-`databases <http://www.mongodb.org/display/DOCS/Databases>`_. From an open
-client, you can get a reference to a particular database with dot-notation
-or bracket-notation:
+`databases <http://docs.mongodb.org/manual/reference/glossary/#term-database>`_.
+From an open client, you can get a reference to a particular database with
+dot-notation or bracket-notation:
 
 .. doctest:: before-inserting-2000-docs
 
@@ -171,8 +171,8 @@ multiple subprocesses, you must create the client object **after** calling
 
 Getting a Collection
 --------------------
-A `collection <http://www.mongodb.org/display/DOCS/Collections>`_ is a
-group of documents stored in MongoDB, and can be thought of as roughly
+A `collection <http://docs.mongodb.org/manual/reference/glossary/#term-collection>`_
+is a group of documents stored in MongoDB, and can be thought of as roughly
 the equivalent of a table in a relational database. Getting a
 collection in Motor works the same as getting a database:
 
@@ -456,7 +456,7 @@ a collection, or the number of documents that match a query:
 :meth:`~motor.MotorCursor.count` uses the *count command* internally; we'll
 cover commands_ below.
 
-.. seealso:: `Count command <http://www.mongodb.org/display/DOCS/Aggregation#Aggregation-Count>`_
+.. seealso:: `Count command <http://docs.mongodb.org/manual/reference/command/count/>`_
 
 Updating Documents
 ------------------

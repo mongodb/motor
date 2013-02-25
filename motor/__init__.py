@@ -1281,7 +1281,7 @@ class MotorCursor(MotorBase):
           the server individually, the cursor actually fetches documents
           efficiently in `large batches`_.
 
-        .. _`large batches`: http://www.mongodb.org/display/DOCS/Queries+and+Cursors#QueriesandCursors-Executionofqueriesinbatches
+        .. _`large batches`: http://docs.mongodb.org/manual/core/read-operations/#cursor-behaviors
         """
         # TODO: optimize, always return same FetchNext instance? Or even make
         #   this cursor a YieldPoint?
