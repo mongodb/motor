@@ -130,7 +130,7 @@ or:
         return _async_test
     return decorator
 
-async_test_engine.__test__ = False # Nose otherwise mistakes it for a test
+async_test_engine.__test__ = False  # Nose otherwise mistakes it for a test
 
 
 class AssertRaises(gen.Task):
