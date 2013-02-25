@@ -241,10 +241,9 @@ class MotorPool(Pool):
     """A pool of MotorSockets.
 
     Note this sets use_greenlets=True so that when PyMongo internally calls
-    start_request, e.g. in Database.authenticate() or
-    MongoClient.copy_database(), this pool assigns a socket to the current
-    greenlet for the duration of the method. Request semantics are not exposed
-    to Motor's users.
+    start_request, e.g. in MongoClient.copy_database(), this pool assigns a
+    socket to the current greenlet for the duration of the method. Request
+    semantics are not exposed to Motor's users.
     """
     def __init__(self, io_loop, max_concurrent, max_wait_time, *args, **kwargs):
         kwargs['use_greenlets'] = True
@@ -365,11 +364,11 @@ def asynchronize(sync_method, has_write_concern, callback_required, doc=None):
     `callback` with (result, error) arguments when greenlet completes.
 
     :Parameters:
-     - `io_loop`:           A Tornado IOLoop
      - `sync_method`:       Bound method of pymongo Collection, Database,
                             MongoClient, or Cursor
      - `has_write_concern`: Whether the method accepts getLastError options
      - `callback_required`: If True, raise TypeError if no callback is passed
+     - `doc`:               Optionally override sync_method's docstring
     """
     @functools.wraps(sync_method)
     def method(self, *args, **kwargs):
@@ -422,6 +421,10 @@ def asynchronize(sync_method, has_write_concern, callback_required, doc=None):
 
 
 class MotorAttributeFactory(object):
+    """Used by Motor classes to mark attributes that delegate in some way to
+    PyMongo. At module import time, each Motor class is created, and MotorMeta
+    calls create_attribute() for each attr to create the final class attribute.
+    """
     def create_attribute(self, cls, attr_name):
         raise NotImplementedError
 
@@ -463,9 +466,20 @@ class WrapAsync(WrapBase):
         result is a PyMongo class and wraps it in a Motor class. E.g., Motor's
         map_reduce should pass a MotorCollection instead of a PyMongo
         Collection to the callback. Uses the wrap() method on the owner object
-        to do the actual wrapping.
+        to do the actual wrapping. E.g., Database.create_collection returns a
+        Collection, so MotorDatabase has:
+
+        create_collection = AsyncCommand().wrap(Collection)
+
+        Once Database.create_collection is done, Motor calls
+        MotorDatabase.wrap() on its result, transforming the result from
+        Collection to MotorCollection, which is passed to the callback.
+
+        :Parameters:
+        - `prop`: An Async, the async method to call before wrapping its result
+          in a Motor class.
         """
-        WrapBase.__init__(self, prop)
+        super(WrapAsync, self).__init__(prop)
         self.original_class = original_class
 
     def create_attribute(self, cls, attr_name):
@@ -586,6 +600,7 @@ class ReadOnlyPropertyDescriptor(object):
 
 
 class ReadOnlyProperty(MotorAttributeFactory):
+    """Creates a readonly attribute on the wrapped PyMongo object"""
     def create_attribute(self, cls, attr_name):
         return ReadOnlyPropertyDescriptor(attr_name)
 
@@ -597,11 +612,15 @@ class ReadWritePropertyDescriptor(ReadOnlyPropertyDescriptor):
 
 
 class ReadWriteProperty(MotorAttributeFactory):
+    """Creates a mutable attribute on the wrapped PyMongo object"""
     def create_attribute(self, cls, attr_name):
         return ReadWritePropertyDescriptor(attr_name)
 
 
 class MotorMeta(type):
+    """Initializes a Motor class, calling create_attribute() on all its
+    MotorAttributeFactories to create the actual class attributes.
+    """
     def __new__(cls, class_name, bases, attrs):
         new_class = type.__new__(cls, class_name, bases, attrs)
 
