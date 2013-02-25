@@ -61,5 +61,4 @@ setup(name='motor',
       # use 'python setup.py test' to test
       setup_requires=['nose'],
       test_suite='nose.main',
-      **kwargs
-)
+      **kwargs)
