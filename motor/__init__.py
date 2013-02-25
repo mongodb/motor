@@ -62,11 +62,11 @@ PY3 = sys.version_info[0] == 3
 #   from registering and cancelling timeouts
 
 
-def check_callable(kallable, required=False):
-    if required and not kallable:
-        raise TypeError("callable is required")
-    if kallable is not None and not callable(kallable):
-        raise TypeError("callback must be callable")
+def check_callable(callback, required=False):
+    if required and not callback:
+        raise TypeError("callback is required")
+    if callback is not None and not callable(callback):
+        raise TypeError("callback must be a callable")
 
 
 def motor_sock_method(method):
@@ -133,8 +133,7 @@ def motor_sock_method(method):
             # Pause child greenlet until resumed by main greenlet, which
             # will pass the result of the socket operation (data for recv,
             # number of bytes written for sendall) to us.
-            socket_result = main.switch()
-            return socket_result
+            return main.switch()
         except socket.error:
             raise
         except IOError, e:
@@ -201,12 +200,11 @@ class MotorSocket(object):
     def close(self):
         sock = self.stream.socket
         try:
-            try:
-                self.stream.close()
-            except KeyError:
-                # Tornado's _impl (epoll, kqueue, ...) has already removed this
-                # file descriptor from its dict.
-                pass
+            self.stream.close()
+        except KeyError:
+            # Tornado's _impl (epoll, kqueue, ...) has already removed this
+            # file descriptor from its dict.
+            pass
         finally:
             # Sometimes necessary to avoid ResourceWarnings in Python 3:
             # specifically, if the fd is closed from the OS's view, then
