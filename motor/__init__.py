@@ -439,6 +439,7 @@ class Async(MotorAttributeFactory):
          - `has_write_concern`: Whether the method accepts getLastError options
          - `callback_required`: Whether callback is required or optional
         """
+        super(Async, self).__init__()
         self.has_write_concern = has_write_concern
         self.callback_required = callback_required
 
@@ -456,8 +457,8 @@ class Async(MotorAttributeFactory):
 
 class WrapBase(MotorAttributeFactory):
     def __init__(self, prop):
-        MotorAttributeFactory.__init__(self)
-        self.prop = prop
+        super(WrapBase, self).__init__()
+        self.property = prop
 
 
 class WrapAsync(WrapBase):
@@ -483,9 +484,9 @@ class WrapAsync(WrapBase):
         self.original_class = original_class
 
     def create_attribute(self, cls, attr_name):
-        async_method = self.prop.create_attribute(cls, attr_name)
+        async_method = self.property.create_attribute(cls, attr_name)
         original_class = self.original_class
-        callback_required = self.prop.callback_required
+        callback_required = self.property.callback_required
 
         @functools.wraps(async_method)
         def wrap(self, *args, **kwargs):
@@ -498,7 +499,7 @@ class WrapAsync(WrapBase):
                         return
 
                     # Don't call isinstance(), not checking subclasses
-                    if result.__class__ is original_class:
+                    if result.__class__ == original_class:
                         # Delegate to the current object to wrap the result
                         new_object = self.wrap(result)
                     else:
@@ -517,12 +518,11 @@ class UnwrapAsync(WrapBase):
         them. E.g., Motor's drop_database takes a MotorDatabase, unwraps it,
         and passes a PyMongo Database instead.
         """
-        WrapBase.__init__(self, prop)
-        self.prop = prop
+        super(UnwrapAsync, self).__init__(prop)
         self.motor_class = motor_class
 
     def create_attribute(self, cls, attr_name):
-        f = self.prop.create_attribute(cls, attr_name)
+        f = self.property.create_attribute(cls, attr_name)
         motor_class = self.motor_class
 
         def _unwrap_obj(obj):
@@ -534,7 +534,7 @@ class UnwrapAsync(WrapBase):
             else:
                 actual_motor_class = motor_class
             # Don't call isinstance(), not checking subclasses
-            if obj.__class__ is actual_motor_class:
+            if obj.__class__ == actual_motor_class:
                 return obj.delegate
             else:
                 return obj
