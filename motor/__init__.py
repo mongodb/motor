@@ -360,7 +360,7 @@ class MotorPool(Pool):
             Pool._return_socket(self, sock_info)
 
 
-def asynchronize(sync_method, has_write_concern, callback_required):
+def asynchronize(sync_method, has_write_concern, callback_required, doc=None):
     """
     Decorate `sync_method` so it's run on a child greenlet and executes
     `callback` with (result, error) arguments when greenlet completes.
@@ -415,6 +415,10 @@ def asynchronize(sync_method, has_write_concern, callback_required):
             classname = sync_method.im_class.__name__
         name = '_%s%s' % (classname, name)
     method.pymongo_method_name = name
+
+    if doc is not None:
+        method.__doc__ = doc
+
     return method
 
 
@@ -1827,7 +1831,21 @@ class MotorGridIn(MotorOpenable):
                 self, None, root_collection.get_io_loop(),
                 root_collection.delegate, **kwargs)
 
-MotorGridIn.set = asynchronize(gridfs.GridIn.__setattr__, False, False)
+MotorGridIn.set = asynchronize(gridfs.GridIn.__setattr__, False, False, doc="""
+Set an arbitrary metadata attribute on the file. Stores value on the server
+as a key-value pair within the file document once the file is closed. If
+the file is already closed, calling `set` will immediately update the file
+document on the server.
+
+Metadata set on the file appears as attributes on a :class:`~MotorGridOut`
+object created from the file.
+
+:Parameters:
+  - `name`: Name of the attribute, will be stored as a key in the file
+    document on the server
+  - `value`: Value of the attribute
+  - `callback`: Optional callback to execute once attribute is set.
+""")
 
 
 class MotorGridFS(MotorOpenable):
