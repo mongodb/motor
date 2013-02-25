@@ -1774,7 +1774,6 @@ class MotorGridIn(MotorOpenable):
     length          = ReadOnlyProperty()
     chunk_size      = ReadOnlyProperty()
     upload_date     = ReadOnlyProperty()
-    set             = asynchronize(gridfs.GridIn.__setattr__, False, False)
 
     def __init__(self, root_collection, **kwargs):
         """
@@ -1827,6 +1826,8 @@ class MotorGridIn(MotorOpenable):
             MotorOpenable.__init__(
                 self, None, root_collection.get_io_loop(),
                 root_collection.delegate, **kwargs)
+
+MotorGridIn.set = asynchronize(gridfs.GridIn.__setattr__, False, False)
 
 
 class MotorGridFS(MotorOpenable):
