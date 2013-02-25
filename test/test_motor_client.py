@@ -34,7 +34,7 @@ from test.utils import server_is_master_with_slave, delay, server_started_with_a
 
 class MotorClientTest(MotorTest):
     @async_test_engine()
-    def test_connection(self, done):
+    def test_client(self, done):
         cx = motor.MotorClient(host, port)
 
         # Can't access databases before connecting
@@ -57,7 +57,7 @@ class MotorClientTest(MotorTest):
         self.assertEqual(cx, cx.open_sync())
         done()
 
-    def test_connection_callback(self):
+    def test_open_callback(self):
         cx = motor.MotorClient(host, port)
         self.check_optional_callback(cx.open)
 
@@ -116,7 +116,7 @@ class MotorClientTest(MotorTest):
         self.assertEqual(True, sync_cx._MongoClient__tz_aware)
         self.assertEqual(DictSubclass, sync_cx._MongoClient__document_class)
 
-        # Make sure sync connection works
+        # Make sure sync client works
         self.assertEqual(
             {'_id': 5, 's': hex(5)},
             sync_cx.pymongo_test.test_collection.find_one({'_id': 5}))
@@ -196,13 +196,13 @@ class MotorClientTest(MotorTest):
         test(self)
 
     def test_database_named_delegate(self):
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
         self.assertTrue(
             isinstance(cx.delegate, pymongo.mongo_client.MongoClient))
         self.assertTrue(isinstance(cx['delegate'], motor.MotorDatabase))
 
     def test_copy_db_argument_checking(self):
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
 
         self.assertRaises(TypeError, cx.copy_database, 4, "foo")
         self.assertRaises(TypeError, cx.copy_database, "foo", 4)
@@ -222,7 +222,7 @@ class MotorClientTest(MotorTest):
         ncopies = 10
         nrange = list(range(ncopies))
         test_db_names = ['pymongo_test%s' % i for i in nrange]
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
 
         def check_copydb_results():
             db_names = self.sync_cx.database_names()
@@ -293,7 +293,7 @@ class MotorClientTest(MotorTest):
 
     @async_test_engine()
     def test_is_locked(self, done):
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
         self.assertTrue((yield motor.Op(cx.is_locked)) is False)
         yield motor.Op(cx.fsync, lock=True)
         self.assertTrue((yield motor.Op(cx.is_locked)) is True)
@@ -304,8 +304,8 @@ class MotorClientTest(MotorTest):
     @async_test_engine()
     def test_timeout(self, done):
         # Launch two slow find_ones. The one with a timeout should get an error
-        no_timeout = self.motor_connection(host, port)
-        timeout = self.motor_connection(host, port, socketTimeoutMS=100)
+        no_timeout = self.motor_client(host, port)
+        timeout = self.motor_client(host, port, socketTimeoutMS=100)
         query = {'$where': delay(0.5), '_id': 1}
 
         timeout.pymongo_test.test_collection.find_one(
@@ -359,7 +359,7 @@ class MotorClientTest(MotorTest):
         done()
 
     def test_requests(self):
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
         for method in 'start_request', 'in_request', 'end_request':
             self.assertRaises(NotImplementedError, getattr(cx, method))
 
@@ -367,7 +367,7 @@ class MotorClientTest(MotorTest):
     def test_high_concurrency(self, done):
         self.sync_db.insert_collection.drop()
         self.assertEqual(200, self.sync_coll.count())
-        cx = self.motor_connection(host, port).open_sync()
+        cx = self.motor_client(host, port).open_sync()
         collection = cx.pymongo_test.test_collection
 
         concurrency = 100

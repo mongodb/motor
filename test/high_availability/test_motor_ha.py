@@ -89,58 +89,58 @@ class MotorTestDirectConnection(unittest.TestCase):
             {'read_preference': NEAREST},
             {'slave_okay': True}
         ]:
-            conn = yield motor.Op(motor.MotorClient(
+            client = yield motor.Op(motor.MotorClient(
                 primary_host, primary_port, **kwargs).open)
-            self.assertEqual(primary_host, conn.host)
-            self.assertEqual(primary_port, conn.port)
-            self.assertTrue(conn.is_primary)
+            self.assertEqual(primary_host, client.host)
+            self.assertEqual(primary_port, client.port)
+            self.assertTrue(client.is_primary)
 
             # Direct connection to primary can be queried with any read pref
-            self.assertTrue((yield motor.Op(conn.pymongo_test.test.find_one)))
+            self.assertTrue((yield motor.Op(client.pymongo_test.test.find_one)))
 
-            conn = yield motor.Op(motor.MotorClient(
+            client = yield motor.Op(motor.MotorClient(
                 secondary_host, secondary_port, **kwargs).open)
-            self.assertEqual(secondary_host, conn.host)
-            self.assertEqual(secondary_port, conn.port)
-            self.assertFalse(conn.is_primary)
+            self.assertEqual(secondary_host, client.host)
+            self.assertEqual(secondary_port, client.port)
+            self.assertFalse(client.is_primary)
 
             # Direct connection to secondary can be queried with any read pref
             # but PRIMARY
             if kwargs.get('read_preference') != PRIMARY:
                 self.assertTrue((
-                    yield motor.Op(conn.pymongo_test.test.find_one)))
+                    yield motor.Op(client.pymongo_test.test.find_one)))
             else:
                 yield AssertRaises(
-                    AutoReconnect, conn.pymongo_test.test.find_one)
+                    AutoReconnect, client.pymongo_test.test.find_one)
 
             # Since an attempt at an acknowledged write to a secondary from a
             # direct connection raises AutoReconnect('not master'), MotorClient
             # should do the same for unacknowledged writes.
             try:
-                yield motor.Op(conn.pymongo_test.test.insert, {}, w=0)
+                yield motor.Op(client.pymongo_test.test.insert, {}, w=0)
             except AutoReconnect, e:
                 self.assertEqual('not master', e.args[0])
             else:
                 self.fail(
-                    'Unacknowledged insert into secondary connection %s should'
-                    'have raised exception' % conn)
+                    'Unacknowledged insert into secondary client %s should'
+                    'have raised exception' % client)
 
             # Test direct connection to an arbiter
-            conn = yield motor.Op(motor.MotorClient(
+            client = yield motor.Op(motor.MotorClient(
                 arbiter_host, arbiter_port, **kwargs).open)
-            self.assertEqual(arbiter_host, conn.host)
-            self.assertEqual(arbiter_port, conn.port)
-            self.assertFalse(conn.is_primary)
+            self.assertEqual(arbiter_host, client.host)
+            self.assertEqual(arbiter_port, client.port)
+            self.assertFalse(client.is_primary)
 
             # See explanation above
             try:
-                yield motor.Op(conn.pymongo_test.test.insert, {}, w=0)
+                yield motor.Op(client.pymongo_test.test.insert, {}, w=0)
             except AutoReconnect, e:
                 self.assertEqual('not master', e.message)
             else:
                 self.fail(
                     'Unacknowledged insert into arbiter connection %s should'
-                    'have raised exception' % conn)
+                    'have raised exception' % client)
         done()
 
     def tearDown(self):
@@ -241,7 +241,7 @@ class MotorTestTriggeredRefresh(unittest.TestCase):
     @async_test_engine(timeout_sec=60)
     def test_recovering_member_triggers_refresh(self, done):
         # To test that find_one() and count() trigger immediate refreshes,
-        # we'll create a separate connection for each
+        # we'll create a separate client for each
         self.c_find_one, self.c_count = [
             motor.MotorReplicaSetClient(
                 self.seed, replicaSet=self.name, read_preference=SECONDARY

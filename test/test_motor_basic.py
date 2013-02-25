@@ -24,7 +24,7 @@ from test import MotorTest, async_test_engine, AssertRaises
 
 class MotorTestBasic(MotorTest):
     def test_repr(self):
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
         self.assertTrue(repr(cx).startswith('MotorClient'))
         db = cx.pymongo_test
         self.assertTrue(repr(db).startswith('MotorDatabase'))

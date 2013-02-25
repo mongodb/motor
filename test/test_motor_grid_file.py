@@ -44,7 +44,7 @@ class MotorGridFileTest(MotorTest):
 
     @async_test_engine()
     def test_grid_in_callback(self, done):
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         f = motor.MotorGridIn(db.fs, filename="test")
         self.check_optional_callback(f.open)
         f = yield motor.Op(motor.MotorGridIn(db.fs, filename="test").open)
@@ -57,7 +57,7 @@ class MotorGridFileTest(MotorTest):
     @async_test_engine()
     def test_grid_out_callback(self, done):
         # Some setup: we need to make an open GridOut
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         f = yield motor.Op(motor.MotorGridIn(db.fs, filename="test").open)
         yield motor.Op(f.close)
 
@@ -71,7 +71,7 @@ class MotorGridFileTest(MotorTest):
 
     @async_test_engine()
     def test_basic(self, done):
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         f = yield motor.Op(motor.MotorGridIn(db.fs, filename="test").open)
         yield motor.Op(f.write, b("hello world"))
         yield motor.Op(f.close)
@@ -96,7 +96,7 @@ class MotorGridFileTest(MotorTest):
 
     @async_test_engine()
     def test_alternate_collection(self, done):
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         yield motor.Op(db.alt.files.remove)
         yield motor.Op(db.alt.chunks.remove)
 
@@ -116,7 +116,7 @@ class MotorGridFileTest(MotorTest):
 
     @async_test_engine()
     def test_grid_in_default_opts(self, done):
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         self.assertRaises(TypeError, motor.MotorGridIn, "foo")
 
         a = yield motor.Op(motor.MotorGridIn(db.fs).open)
@@ -190,7 +190,7 @@ class MotorGridFileTest(MotorTest):
     def test_grid_in_custom_opts(self, done):
         self.assertRaises(TypeError, motor.MotorGridIn, "foo")
 
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         a = yield motor.Op(
             motor.MotorGridIn(db.fs, _id=5, filename="my_file",
             contentType="text/html", chunkSize=1000, aliases=["foo"],
@@ -218,7 +218,7 @@ class MotorGridFileTest(MotorTest):
     def test_grid_out_default_opts(self, done):
         self.assertRaises(TypeError, motor.MotorGridOut, "foo")
 
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         gout = motor.MotorGridOut(db.fs, 5)
         yield AssertRaises(NoFile, gout.open)
 
@@ -244,7 +244,7 @@ class MotorGridFileTest(MotorTest):
 
     @async_test_engine()
     def test_grid_out_custom_opts(self, done):
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         one = yield motor.Op(
             motor.MotorGridIn(db.fs, _id=5, filename="my_file",
             contentType="text/html", chunkSize=1000, aliases=["foo"],
@@ -272,7 +272,7 @@ class MotorGridFileTest(MotorTest):
 
     @async_test_engine()
     def test_grid_out_file_document(self, done):
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         one = yield motor.Op(motor.MotorGridIn(db.fs).open)
         yield motor.Op(one.write, b("foo bar"))
         yield motor.Op(one.close)
@@ -295,7 +295,7 @@ class MotorGridFileTest(MotorTest):
 
     @async_test_engine()
     def test_write_file_like(self, done):
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         one = yield motor.Op(motor.MotorGridIn(db.fs).open)
         yield motor.Op(one.write, b("hello world"))
         yield motor.Op(one.close)
@@ -312,7 +312,7 @@ class MotorGridFileTest(MotorTest):
 
     @async_test_engine()
     def test_set_after_close(self, done):
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         f = yield motor.Op(
             motor.MotorGridIn(db.fs, _id="foo", bar="baz").open)
 
@@ -361,7 +361,7 @@ class MotorGridFileTest(MotorTest):
             def flush(self):
                 pass
 
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         fs = yield motor.Op(motor.MotorGridFS(db).open)
 
         for content_length in (0, 1, 100, 100 * 1000):

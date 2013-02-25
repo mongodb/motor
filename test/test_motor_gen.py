@@ -34,7 +34,7 @@ class MotorGenTest(MotorTest):
 
     @async_test_engine()
     def test_op(self, done):
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
         collection = cx.pymongo_test.test_collection
         doc = {'_id': 'jesse'}
         _id = yield motor.Op(collection.insert, doc)
@@ -53,7 +53,7 @@ class MotorGenTest(MotorTest):
 
     @async_test_engine()
     def test_wait_op(self, done):
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
         collection = cx.pymongo_test.test_collection
         doc = {'_id': 'jesse'}
         collection.insert(doc, callback=(yield gen.Callback('insert_a')))
@@ -78,7 +78,7 @@ class MotorGenTest(MotorTest):
 
     @async_test_engine()
     def test_wait_all_ops(self, done):
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
         collection = cx.pymongo_test.test_collection2
         collection.insert(
             {'_id': 'b'}, callback=(yield gen.Callback('insert_b')))

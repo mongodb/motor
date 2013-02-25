@@ -50,7 +50,7 @@ class MotorSSLTest(MotorTest):
 
         cx = yield motor.Op(motor.MotorClient(host, port, ssl=True).open)
 
-        # Make sure the connection works
+        # Make sure the client works
         db = cx.motor_ssl_test
         yield motor.Op(db.collection.insert, {'hello': 'goodbye'})
         hello = yield motor.Op(db.collection.find_one, {'hello': 'goodbye'})

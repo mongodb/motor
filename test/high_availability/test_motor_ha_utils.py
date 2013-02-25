@@ -26,11 +26,11 @@ def read_from_which_host(
     rsc, mode,
     tag_sets=None, secondary_acceptable_latency_ms=15, callback=None,
 ):
-    """Read from a ReplicaSetConnection with the given Read Preference mode,
+    """Read from a MongoReplicaSetClient with the given Read Preference mode,
        tags, and acceptable latency. Return the 'host:port' which was read from.
 
     :Parameters:
-      - `rsc`: A ReplicaSetConnection
+      - `rsc`: A MongoReplicaSetClient
       - `mode`: A ReadPreference
       - `tag_sets`: List of dicts of tags for data-center-aware reads
       - `secondary_acceptable_latency_ms`: a float
@@ -62,8 +62,8 @@ def assertReadFrom(
 
     :Parameters:
       - `testcase`: A unittest.TestCase
-      - `rsc`: A ReplicaSetConnection
-      - `member`: replica_set_connection.Member expected to be used
+      - `rsc`: A MongoReplicaSetClient
+      - `member`: Member expected to be used
       - `mode`: A ReadPreference
       - `tag_sets`: List of dicts of tags for data-center-aware reads
       - `secondary_acceptable_latency_ms`: a float

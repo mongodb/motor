@@ -30,7 +30,7 @@ class MotorDatabaseTest(MotorTest):
     def test_database(self, done):
         # Test that we can create a db directly, not just from MotorClient's
         # accessors
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
         db = motor.MotorDatabase(cx, 'pymongo_test')
 
         # Make sure we got the right DB and it can do an operation
@@ -39,19 +39,19 @@ class MotorDatabaseTest(MotorTest):
         done()
 
     def test_collection_named_delegate(self):
-        db = self.motor_connection(host, port).pymongo_test
+        db = self.motor_client(host, port).pymongo_test
         self.assertTrue(isinstance(db.delegate, pymongo.database.Database))
         self.assertTrue(isinstance(db['delegate'], motor.MotorCollection))
 
     def test_database_callbacks(self):
-        db = self.motor_connection(host, port).pymongo_test
+        db = self.motor_client(host, port).pymongo_test
         self.check_optional_callback(db.drop_collection, "collection")
         self.check_optional_callback(db.create_collection, "collection")
         self.check_required_callback(db.validate_collection, "collection")
 
     @async_test_engine()
     def test_command(self, done):
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
         result = yield motor.Op(cx.admin.command, "buildinfo")
         self.assertEqual(int, type(result['bits']))
         done()
@@ -60,7 +60,7 @@ class MotorDatabaseTest(MotorTest):
     def test_create_collection(self, done):
         # Test creating collection, return val is wrapped in MotorCollection,
         # creating it again raises CollectionInvalid.
-        db = self.motor_connection(host, port).pymongo_test
+        db = self.motor_client(host, port).pymongo_test
         yield motor.Op(db.drop_collection, 'test_collection2')
         collection = yield motor.Op(db.create_collection, 'test_collection2')
         self.assertTrue(isinstance(collection, motor.MotorCollection))
@@ -82,7 +82,7 @@ class MotorDatabaseTest(MotorTest):
         done()
 
     def test_command_callback(self):
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
         self.check_optional_callback(cx.admin.command, 'buildinfo', check=False)
 
     @async_test_engine()
@@ -91,7 +91,7 @@ class MotorDatabaseTest(MotorTest):
         # implementation for Motor for async is a little complex so we test
         # that it works here, and we don't just rely on synchrotest
         # to cover it.
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
         db = cx.pymongo_test
 
         # We test a special hack where add_son_manipulator corrects our mistake
@@ -126,7 +126,7 @@ class MotorDatabaseTest(MotorTest):
 
     @async_test_engine()
     def test_authenticate(self, done):
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
         db = cx.pymongo_test
 
         yield motor.Op(db.system.users.remove)
@@ -151,7 +151,7 @@ class MotorDatabaseTest(MotorTest):
 
     @async_test_engine()
     def test_validate_collection(self, done):
-        cx = self.motor_connection(host, port)
+        cx = self.motor_client(host, port)
         db = cx.pymongo_test
 
         yield AssertRaises(TypeError, db.validate_collection, 5)

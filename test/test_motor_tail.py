@@ -39,7 +39,7 @@ class MotorTailTest(MotorTest):
         self.sync_db.uncapped.insert({})
 
     def test_tail_callback(self):
-        test_db = self.motor_connection(host, port).pymongo_test
+        test_db = self.motor_client(host, port).pymongo_test
         capped = test_db.capped
         self.check_required_callback(capped.find().tail)
 
@@ -87,7 +87,7 @@ class MotorTailTest(MotorTest):
             self.each, results, len(self.tail_pauses),
             (yield gen.Callback('done')))
 
-        test_db = self.motor_connection(host, port).pymongo_test
+        test_db = self.motor_client(host, port).pymongo_test
         capped = test_db.capped
 
         # Note we do *not* pass tailable or await_data to find(), the
@@ -110,7 +110,7 @@ class MotorTailTest(MotorTest):
             self.each, results, len(pauses),
             (yield gen.Callback('done')))
 
-        test_db = self.motor_connection(host, port).pymongo_test
+        test_db = self.motor_client(host, port).pymongo_test
         capped = test_db.capped
 
         capped.find().tail(each)
@@ -137,7 +137,7 @@ class MotorTailTest(MotorTest):
             self.each, results, len(self.drop_collection_pauses),
             (yield gen.Callback('done')))
 
-        test_db = self.motor_connection(host, port).pymongo_test
+        test_db = self.motor_client(host, port).pymongo_test
         capped = test_db.capped
         capped.find().tail(each)
         t = self.start_insertion_thread(self.drop_collection_pauses)
@@ -154,7 +154,7 @@ class MotorTailTest(MotorTest):
 
     @async_test_engine()
     def test_tail_uncapped_collection(self, done):
-        test_db = self.motor_connection(host, port).pymongo_test
+        test_db = self.motor_client(host, port).pymongo_test
         uncapped = test_db.uncapped
         yield AssertRaises(OperationFailure, uncapped.find().tail)
         done()
@@ -170,7 +170,7 @@ class MotorTailTest(MotorTest):
         each = functools.partial(
             self.each, results, len(pauses) + 2, (yield gen.Callback('done')))
 
-        test_db = self.motor_connection(host, port).pymongo_test
+        test_db = self.motor_client(host, port).pymongo_test
         capped = test_db.capped
         capped.find().tail(each)
         yield gen.Wait('done')
@@ -188,7 +188,7 @@ class MotorTailTest(MotorTest):
 
         results = []
 
-        test_db = self.motor_connection(host, port).pymongo_test
+        test_db = self.motor_client(host, port).pymongo_test
         cursor = test_db.capped.find()
 
         def each(result, error):
@@ -214,7 +214,7 @@ class MotorTailTest(MotorTest):
         loop = ioloop.IOLoop.instance()
         results = []
 
-        test_db = self.motor_connection(host, port).pymongo_test
+        test_db = self.motor_client(host, port).pymongo_test
         capped = test_db.capped
         cursor = capped.find(tailable=True, await_data=True)
         while len(results) < len(pauses):

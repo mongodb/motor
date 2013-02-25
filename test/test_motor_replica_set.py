@@ -27,7 +27,7 @@ from test import async_test_engine, AssertEqual, AssertRaises
 
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
     @async_test_engine()
-    def test_replica_set_connection(self, done):
+    def test_replica_set_client(self, done):
         cx = motor.MotorReplicaSetClient(
             '%s:%s' % (host, port), replicaSet=self.name)
 
@@ -51,7 +51,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             cx.delegate._MongoReplicaSetClient__monitor.io_loop)
         done()
 
-    def test_connection_callback(self):
+    def test_open_callback(self):
         cx = motor.MotorReplicaSetClient(
             '%s:%s' % (host, port), replicaSet=self.name)
         self.check_optional_callback(cx.open)
@@ -173,7 +173,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         self.assertEqual(DictSubclass,
             sync_cx._MongoReplicaSetClient__document_class)
 
-        # Make sure sync connection works
+        # Make sure sync client works
         self.assertEqual(
             {'_id': 5, 's': hex(5)},
             sync_cx.pymongo_test.test_collection.find_one({'_id': 5}))

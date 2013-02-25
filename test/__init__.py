@@ -189,7 +189,7 @@ class MotorTest(unittest.TestCase):
     def setUp(self):
         super(MotorTest, self).setUp()
 
-        # Store a regular synchronous pymongo Connection for convenience while
+        # Store a regular synchronous pymongo MongoClient for convenience while
         # testing. Set a timeout so we don't hang a test because, say, Mongo
         # isn't up or is hung by a long-running $where clause.
         connectTimeoutMS = socketTimeoutMS = 30 * 1000
@@ -262,7 +262,7 @@ class MotorTest(unittest.TestCase):
 
         callback()
 
-    def motor_connection(self, host, port, *args, **kwargs):
+    def motor_client(self, host, port, *args, **kwargs):
         """Get an open MotorClient. Ignores self.ssl, you must pass 'ssl'
            argument.
         """

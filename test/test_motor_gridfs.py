@@ -49,7 +49,7 @@ class MotorGridfsTest(MotorTest):
     def test_gridfs(self, done):
         self.assertRaises(TypeError, motor.MotorGridFS, "foo")
         self.assertRaises(TypeError, motor.MotorGridFS, 5)
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         fs = yield motor.Op(motor.MotorGridFS(db).open)
 
         # new_file should be an already-open MotorGridIn.
@@ -70,7 +70,7 @@ class MotorGridfsTest(MotorTest):
 
     @async_test_engine()
     def test_gridfs_callback(self, done):
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         fs = motor.MotorGridFS(db)
         self.check_optional_callback(fs.open)
 
@@ -126,7 +126,7 @@ class MotorGridfsTest(MotorTest):
 
     @async_test_engine()
     def test_basic(self, done):
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         fs = yield motor.Op(motor.MotorGridFS(db).open)
         oid = yield motor.Op(fs.put, b("hello world"))
         out = yield motor.Op(fs.get, oid)
@@ -147,7 +147,7 @@ class MotorGridfsTest(MotorTest):
 
     @async_test_engine()
     def test_list(self, done):
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         fs = yield motor.Op(motor.MotorGridFS(db).open)
         self.assertEqual([], (yield motor.Op(fs.list)))
         yield motor.Op(fs.put, b("hello world"))
@@ -163,7 +163,7 @@ class MotorGridfsTest(MotorTest):
 
     @async_test_engine()
     def test_alt_collection(self, done):
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         alt = yield motor.Op(motor.MotorGridFS(db, 'alt').open)
         oid = yield motor.Op(alt.put, b("hello world"))
         gridout = yield motor.Op(alt.get, oid)
@@ -192,7 +192,7 @@ class MotorGridfsTest(MotorTest):
 
     @async_test_engine()
     def test_put_filelike(self, done):
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         fs = yield motor.Op(motor.MotorGridFS(db).open)
         oid = yield motor.Op(fs.put, StringIO(b("hello world")), chunk_size=1)
         self.assertEqual(11, (yield motor.Op(db.fs.chunks.count)))
@@ -202,7 +202,7 @@ class MotorGridfsTest(MotorTest):
 
     @async_test_engine()
     def test_put_duplicate(self, done):
-        db = self.motor_connection(host, port).open_sync().pymongo_test
+        db = self.motor_client(host, port).open_sync().pymongo_test
         fs = yield motor.Op(motor.MotorGridFS(db).open)
         oid = yield motor.Op(fs.put, b("hello"))
         yield AssertRaises(FileExists, fs.put, b("world"), _id=oid)
@@ -232,25 +232,25 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
     @async_test_engine()
     def test_gridfs_secondary(self, done):
         primary_host, primary_port = self.primary
-        primary_connection = motor.MotorClient(
+        primary_client = motor.MotorClient(
             primary_host, primary_port).open_sync()
 
         secondary_host, secondary_port = self.secondaries[0]
-        for secondary_connection in [
+        for secondary_client in [
             motor.MotorClient(
                 secondary_host, secondary_port, slave_okay=True).open_sync(),
             motor.MotorClient(secondary_host, secondary_port,
                 read_preference=ReadPreference.SECONDARY).open_sync(),
         ]:
             yield motor.Op(
-                primary_connection.pymongo_test.drop_collection, "fs.files")
+                primary_client.pymongo_test.drop_collection, "fs.files")
             yield motor.Op(
-                primary_connection.pymongo_test.drop_collection, "fs.chunks")
+                primary_client.pymongo_test.drop_collection, "fs.chunks")
 
             # Should detect it's connected to secondary and not attempt to
             # create index
             fs = yield motor.Op(
-                motor.MotorGridFS(secondary_connection.pymongo_test).open)
+                motor.MotorGridFS(secondary_client.pymongo_test).open)
 
             # This won't detect secondary, raises error
             yield AssertRaises(AutoReconnect, fs.put, b('foo'))
