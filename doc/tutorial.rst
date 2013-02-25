@@ -520,6 +520,32 @@ update all of them with the ``multi`` flag::
 
 .. mongodoc:: update
 
+Saving Documents
+----------------
+
+:meth:`~motor.MotorCollection.save` is a convenience method provided to insert
+a new document or update an existing one. If the dict passed to :meth:`save`
+has an ``"_id"`` key then Motor performs an :meth:`update` (upsert) operation
+and any existing document with that ``"_id"`` is overwritten. Otherwise Motor
+performs an :meth:`insert`.
+
+.. doctest:: after-inserting-2000-docs
+
+  >>> @gen.engine
+  ... def do_save():
+  ...     coll = db.test_collection
+  ...     doc = {'key': 'value'}
+  ...     yield motor.Op(coll.save, doc)
+  ...     print 'document _id:', repr(doc['_id'])
+  ...     doc['other_key'] = 'other_value'
+  ...     yield motor.Op(coll.save, doc)
+  ...     yield motor.Op(coll.remove, doc)
+  ...     IOLoop.instance().stop()
+  ...
+  >>> do_save()
+  >>> IOLoop.instance().start()
+  document _id: ObjectId('...')
+
 Removing Documents
 ------------------
 
