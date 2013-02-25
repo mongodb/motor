@@ -1,4 +1,12 @@
+*~
+*#*
+.DS*
 *.pyc
-/nosetests.xml
-/motor.egg-info/
-/build/
+*.pyd
+build/
+dist/
+motor.egg-info/
+nosetests.xml
+setup.cfg
+*.egg
+.tox
