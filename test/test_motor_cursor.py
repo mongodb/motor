@@ -16,15 +16,16 @@
 
 from __future__ import with_statement
 
-import unittest
 import sys
+import time
+import unittest
+import warnings
 
 import greenlet
-import warnings
 import pymongo
 from nose.plugins.skip import SkipTest
 from tornado import ioloop, gen
-from pymongo.errors import InvalidOperation, ConfigurationError
+from pymongo.errors import InvalidOperation, ConfigurationError, OperationFailure
 
 import motor
 from test import host, port, MotorTest, async_test_engine, AssertEqual
@@ -445,6 +446,37 @@ class MotorCursorTest(MotorTest):
         self.assertEqual(cursor, cursor.rewind())
         done()
 
+    @gen.engine
+    def wait_for_cursor(self, cursor, callback):
+        """Wait 10 seconds for a cursor to be closed server-side, else fail
+        """
+        loop = ioloop.IOLoop.instance()
+        patience_seconds = 10
+        start = time.time()
+
+        try:
+            try:
+                yield cursor.fetch_next
+            except OperationFailure, e:
+                # Let's check this error was because the cursor was killed, not a
+                # test bug. mongod reports "cursor id 'N' not valid at server",
+                # mongos says "database error: could not find cursor in cache for
+                # id N over collection pymongo_test.test_collection".
+                self.assertTrue(
+                    "not valid at server" in e.message or
+                    "could not find cursor in cache" in e.message)
+            else:
+                now = time.time()
+                if now - start > patience_seconds:
+                    self.fail("Cursor not closed")
+                else:
+                    yield gen.Task(loop.add_timeout, time.time() + 1)
+
+        except Exception, e:
+            callback(None, e)
+        else:
+            callback(None, None)
+
     @async_test_engine()
     def test_del_on_main_greenlet(self, done):
         # Since __del__ can happen on any greenlet, MotorCursor must be
@@ -452,15 +484,14 @@ class MotorCursorTest(MotorTest):
         cx = self.motor_client(host, port)
         cursor = cx.pymongo_test.test_collection.find()
         yield cursor.fetch_next
-        self.assertEqual(1 + self.open_cursors, self.get_open_cursors())
+        clone = cursor.clone()
+        clone.delegate._Cursor__id = cursor.cursor_id
 
         # Clear the FetchNext reference from this gen.Runner so it's deleted
         # and decrefs the cursor
         yield gen.Task(ioloop.IOLoop.instance().add_callback)
-        self.assertEqual(1 + self.open_cursors, self.get_open_cursors())
-
         del cursor
-        yield gen.Task(self.wait_for_cursors)
+        yield motor.Op(self.wait_for_cursor, clone)
         done()
 
     @async_test_engine()
@@ -470,11 +501,12 @@ class MotorCursorTest(MotorTest):
         cx = self.motor_client(host, port)
         cursor = [cx.pymongo_test.test_collection.find()]
         yield cursor[0].fetch_next
+        clone = cursor[0].clone()
+        clone.delegate._Cursor__id = cursor[0].cursor_id
 
         # Clear the FetchNext reference from this gen.Runner so it's deleted
         # and decrefs the cursor
         yield gen.Task(ioloop.IOLoop.instance().add_callback)
-        self.assertEqual(1 + self.open_cursors, self.get_open_cursors())
 
         def f():
             # Last ref, should trigger __del__ immediately in CPython and
@@ -482,7 +514,7 @@ class MotorCursorTest(MotorTest):
             del cursor[0]
 
         greenlet.greenlet(f).switch()
-        yield gen.Task(self.wait_for_cursors)
+        yield motor.Op(self.wait_for_cursor, clone)
         done()
 
 

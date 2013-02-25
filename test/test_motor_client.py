@@ -16,7 +16,6 @@
 
 import os
 import socket
-import time
 import unittest
 import sys
 
@@ -279,14 +278,16 @@ class MotorClientTest(MotorTest):
             username="mike", password="bar")
 
         # 4. Copy a database using name and password
-        for test_db_name in test_db_names:
-            cx.copy_database(
-                "pymongo_test", test_db_name,
-                username="mike", password="password",
-                callback=(yield gen.Callback(test_db_name)))
+        if not cx.is_mongos:
+            # See SERVER-6427
+            for test_db_name in test_db_names:
+                cx.copy_database(
+                    "pymongo_test", test_db_name,
+                    username="mike", password="password",
+                    callback=(yield gen.Callback(test_db_name)))
 
-        yield motor.WaitAllOps(test_db_names)
-        check_copydb_results()
+            yield motor.WaitAllOps(test_db_names)
+            check_copydb_results()
 
         drop_all()
         done()
@@ -294,6 +295,9 @@ class MotorClientTest(MotorTest):
     @async_test_engine()
     def test_is_locked(self, done):
         cx = self.motor_client(host, port)
+        if cx.is_mongos:
+            raise SkipTest('fsync/lock not supported by mongos')
+
         self.assertTrue((yield motor.Op(cx.is_locked)) is False)
         yield motor.Op(cx.fsync, lock=True)
         self.assertTrue((yield motor.Op(cx.is_locked)) is True)
