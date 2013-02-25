@@ -22,6 +22,7 @@ import inspect
 import socket
 import time
 import sys
+import warnings
 import weakref
 
 from tornado import ioloop, iostream, gen, stack_context
@@ -1444,6 +1445,10 @@ class MotorCursor(MotorBase):
         if self.delegate._Cursor__empty:
             callback([], None)
             return
+        elif length is None and not self.delegate._Cursor__limit:
+            warnings.warn(
+                "Pass a length parameter or set a limit on this cursor to"
+                " avoid the risk of memory exhaustion", RuntimeWarning)
 
         self._to_list_got_more(callback, the_list, length, None, None)
 

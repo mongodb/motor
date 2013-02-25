@@ -14,11 +14,15 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+from __future__ import with_statement
+
 import unittest
-from functools import partial
+import sys
 
 import greenlet
+import warnings
 import pymongo
+from nose.plugins.skip import SkipTest
 from tornado import ioloop, gen
 from pymongo.errors import InvalidOperation, ConfigurationError
 
@@ -154,9 +158,30 @@ class MotorCursorTest(MotorTest):
         coll = self.motor_client(host, port).pymongo_test.test_collection
         cursor = coll.find({}, {'_id': 1}).sort([('_id', pymongo.ASCENDING)])
         expected = [{'_id': i} for i in range(200)]
-        yield AssertEqual(expected, cursor.to_list)
+        yield AssertEqual(expected, cursor.to_list, length=1000)
         yield motor.Op(cursor.close)
         done()
+
+    def test_to_list_length_warning(self):
+        coll = self.motor_client(host, port).pymongo_test.test_collection
+        callback = lambda result, error: None
+
+        if sys.version_info[:2] < (2, 6):
+            raise SkipTest("Too annoying to test warnings in Python 2.5")
+
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+
+            coll.find().to_list(length=None, callback=callback)
+            self.assertEqual(1, len(w))
+            self.assertTrue(issubclass(w[0].category, RuntimeWarning))
+
+            # No warnings
+            coll.find().to_list(length=0, callback=callback)
+            coll.find().to_list(length=1, callback=callback)
+            coll.find().limit(1).to_list(length=None, callback=callback)
+            coll.find().to_list(length=None, callback=callback)
 
     @async_test_engine()
     def test_to_list_with_length(self, done):
@@ -203,7 +228,7 @@ class MotorCursorTest(MotorTest):
         coll = self.motor_client(host, port).pymongo_test.test_collection
 
         # Make sure our setup code made some documents
-        results = yield motor.Op(coll.find().to_list)
+        results = yield motor.Op(coll.find().to_list, length=1000)
         self.assertTrue(len(results) > 0)
         self.assertEqual(False, (yield coll.find()[:0].fetch_next))
         self.assertEqual(False, (yield coll.find()[5:5].fetch_next))
@@ -285,6 +310,7 @@ class MotorCursorTest(MotorTest):
     def test_cursor_slice(self, done):
         # This is an asynchronous copy of PyMongo's test_getitem_slice_index in
         # test_cursor.py
+        warnings.simplefilter("ignore")
 
         cx = self.motor_client(host, port)
 
@@ -295,26 +321,29 @@ class MotorCursorTest(MotorTest):
         self.assertRaises(IndexError, lambda: coll.find()[1:2:2])
         self.assertRaises(IndexError, lambda: coll.find()[2:1])
 
-        result = yield motor.Op(coll.find()[0:].to_list)
+        # Since the cursor has no limit in this test, important to pass length
+        # and avoid raising to_list's RuntimeWarning; otherwise it isn't raised
+        # again and test_to_list_length_warning fails.
+        result = yield motor.Op(coll.find()[0:].to_list, length=1000)
         self.assertEqual(200, len(result))
 
-        result = yield motor.Op(coll.find()[20:].to_list)
+        result = yield motor.Op(coll.find()[20:].to_list, length=1000)
         self.assertEqual(180, len(result))
 
-        result = yield motor.Op(coll.find()[99:].to_list)
+        result = yield motor.Op(coll.find()[99:].to_list, length=1000)
         self.assertEqual(101, len(result))
 
-        result = yield motor.Op(coll.find()[1000:].to_list)
+        result = yield motor.Op(coll.find()[1000:].to_list, length=1000)
         self.assertEqual(0, len(result))
 
         result = yield motor.Op(coll.find()[20:25].to_list)
         self.assertEqual(5, len(result))
 
         # Any slice overrides all previous slices
-        result = yield motor.Op(coll.find()[20:25][20:].to_list)
+        result = yield motor.Op(coll.find()[20:25][20:].to_list, length=1000)
         self.assertEqual(180, len(result))
 
-        result = yield motor.Op(coll.find()[20:25].limit(0).skip(20).to_list)
+        result = yield motor.Op(coll.find()[20:25].limit(0).skip(20).to_list, length=1000)
         self.assertEqual(180, len(result))
 
         result = yield motor.Op(coll.find().limit(0).skip(20)[20:25].to_list)

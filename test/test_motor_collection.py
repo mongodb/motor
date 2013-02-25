@@ -65,16 +65,16 @@ class MotorCollectionTest(MotorTest):
     def test_find_where(self, done):
         # Check that $where clauses work
         coll = self.motor_client(host, port).pymongo_test.test_collection
-        res = yield motor.Op(coll.find().to_list)
+        res = yield motor.Op(coll.find().to_list, length=1000)
         self.assertEqual(200, len(res))
 
         # Get the one doc with _id of 8
         where = 'this._id == 2 * 4'
-        res0 = yield motor.Op(coll.find({'$where': where}).to_list)
+        res0 = yield motor.Op(coll.find({'$where': where}).to_list, length=1000)
         self.assertEqual(1, len(res0))
         self.assertEqual(8, res0[0]['_id'])
 
-        res1 = yield motor.Op(coll.find().where(where).to_list)
+        res1 = yield motor.Op(coll.find().where(where).to_list, length=1000)
         self.assertEqual(res0, res1)
         done()
 
@@ -82,7 +82,10 @@ class MotorCollectionTest(MotorTest):
         cx = self.motor_client(host, port)
         cursor = cx.pymongo_test.test_collection.find()
         self.check_required_callback(cursor.each)
-        self.check_required_callback(cursor.to_list)
+
+        # Avoid triggering length warning here, test_to_list_length_warning
+        # must be the only place it's raised
+        self.check_required_callback(cursor.to_list, length=1)
 
     @async_test_engine()
     def test_find_is_async(self, done):
@@ -305,14 +308,14 @@ class MotorCollectionTest(MotorTest):
         # First insert should've succeeded
         yield AssertEqual(
             [{'_id': 201, 's': hex(201)}],
-            self.sync_db.test_collection.find({'_id': 201}).to_list
-        )
+            self.sync_db.test_collection.find({'_id': 201}).to_list,
+            length=1000)
 
         # Final insert didn't execute, since second failed
         yield AssertEqual(
             [],
-            self.sync_db.test_collection.find({'_id': 203}).to_list
-        )
+            self.sync_db.test_collection.find({'_id': 203}).to_list,
+            length=1000)
 
     def test_save_callback(self):
         cx = self.motor_client(host, port)
@@ -533,7 +536,8 @@ class MotorCollectionTest(MotorTest):
         self.assertTrue(isinstance(tmp_mr, motor.MotorCollection),
             'map_reduce should return MotorCollection, not %s' % tmp_mr)
 
-        result = yield motor.Op(tmp_mr.find().sort([('_id', 1)]).to_list)
+        result = yield motor.Op(
+            tmp_mr.find().sort([('_id', 1)]).to_list, length=1000)
         self.assertEqual(expected_result, result)
 
         # Standard mapreduce with full response
@@ -541,11 +545,13 @@ class MotorCollectionTest(MotorTest):
         response = yield motor.Op(cx.pymongo_test.test_collection.map_reduce,
             map, reduce, 'tmp_mr', full_response=True)
 
-        self.assertTrue(isinstance(response, dict),
+        self.assertTrue(
+            isinstance(response, dict),
             'map_reduce should return dict, not %s' % response)
 
         self.assertEqual('tmp_mr', response['result'])
-        result = yield motor.Op(tmp_mr.find().sort([('_id', 1)]).to_list)
+        result = yield motor.Op(
+            tmp_mr.find().sort([('_id', 1)]).to_list, length=1000)
         self.assertEqual(expected_result, result)
 
         # Inline mapreduce
