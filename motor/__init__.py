@@ -605,6 +605,11 @@ class ReadOnlyProperty(MotorAttributeFactory):
         return ReadOnlyPropertyDescriptor(attr_name)
 
 
+DelegateMethod = ReadOnlyProperty
+"""A method on the wrapped PyMongo object that does no I/O and can be called
+synchronously"""
+
+
 class ReadWritePropertyDescriptor(ReadOnlyPropertyDescriptor):
     def __set__(self, obj, val):
         check_delegate(obj, self.attr_name)
@@ -748,9 +753,9 @@ class MotorClientBase(MotorOpenable, MotorBase):
     close_cursor   = AsyncCommand()
     copy_database  = AsyncCommand()
     drop_database  = AsyncCommand().unwrap('MotorDatabase')
-    disconnect     = ReadOnlyProperty()
+    disconnect     = DelegateMethod()
     tz_aware       = ReadOnlyProperty()
-    close          = ReadOnlyProperty()
+    close          = DelegateMethod()
     is_primary     = ReadOnlyProperty()
     is_mongos      = ReadOnlyProperty()
     max_bson_size  = ReadOnlyProperty()
@@ -924,7 +929,7 @@ class MotorReplicaSetClient(MotorClientBase):
     arbiters    = ReadOnlyProperty()
     hosts       = ReadOnlyProperty()
     seeds       = ReadOnlyProperty()
-    close       = ReadOnlyProperty()
+    close       = DelegateMethod()
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a MongoDB replica set.
@@ -1699,7 +1704,7 @@ class MotorGridOut(MotorOpenable):
     """
     __delegate_class__ = gridfs.GridOut
 
-    __getattr__     = ReadOnlyProperty()
+    __getattr__     = DelegateMethod()
     _id             = ReadOnlyProperty()
     filename        = ReadOnlyProperty()
     name            = ReadOnlyProperty()
@@ -1710,8 +1715,8 @@ class MotorGridOut(MotorOpenable):
     aliases         = ReadOnlyProperty()
     metadata        = ReadOnlyProperty()
     md5             = ReadOnlyProperty()
-    tell            = ReadOnlyProperty()
-    seek            = ReadOnlyProperty()
+    tell            = DelegateMethod()
+    seek            = DelegateMethod()
     read            = AsyncRead()
     readline        = AsyncRead()
 
@@ -1787,7 +1792,7 @@ class MotorGridOut(MotorOpenable):
 class MotorGridIn(MotorOpenable):
     __delegate_class__ = gridfs.GridIn
 
-    __getattr__     = ReadOnlyProperty()
+    __getattr__     = DelegateMethod()
     closed          = ReadOnlyProperty()
     close           = AsyncCommand()
     write           = AsyncCommand().unwrap(MotorGridOut)
