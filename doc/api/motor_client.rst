@@ -1,5 +1,5 @@
 :class:`MotorClient` -- Connection to MongoDB
-=================================================
+=============================================
 
 .. currentmodule:: motor
 

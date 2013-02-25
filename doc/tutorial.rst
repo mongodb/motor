@@ -73,33 +73,33 @@ Motor, like PyMongo, represents data with a 4-level object hierarchy:
   use it for the lifetime of your application.
 * :class:`~motor.MotorDatabase`: Each mongod has a set of databases (distinct
   sets of data files on disk). You can get a reference to a database from a
-  connection.
+  client.
 * :class:`~motor.MotorCollection`: A database has a set of collections, which
   contain documents; you get a reference to a collection from a database.
 * :class:`~motor.MotorCursor`: Executing :meth:`~motor.MotorCollection.find` on
   a :class:`~motor.MotorCollection` gets a :class:`~motor.MotorCursor`, which
   represents the set of documents matching a query.
 
-Making a Connection
--------------------
+Creating a Client
+-----------------
 You typically create a single instance of either :class:`~motor.MotorClient`
 or :class:`~motor.MotorReplicaSetClient` at the time your application starts
 up. (See `high availability and PyMongo`_ for an introduction to
 MongoDB replica sets and how PyMongo connects to them.)
 
-You must call :meth:`~motor.MotorClient.open_sync` on this connection object
+You must call :meth:`~motor.MotorClient.open_sync` on this client object
 before any other operations on it:
 
 .. doctest:: before-inserting-2000-docs
 
-  >>> connection = motor.MotorClient().open_sync()
+  >>> client = motor.MotorClient().open_sync()
 
 This connects to a ``mongod`` listening on the default host and port. You can
 specify the host and port like:
 
 .. doctest:: before-inserting-2000-docs
 
-  >>> connection = motor.MotorClient('localhost', 27017).open_sync()
+  >>> client = motor.MotorClient('localhost', 27017).open_sync()
 
 .. _high availability and PyMongo: http://api.mongodb.org/python/current/examples/high_availability.html
 
@@ -107,19 +107,19 @@ Getting a Database
 ------------------
 A single instance of MongoDB can support multiple independent
 `databases <http://www.mongodb.org/display/DOCS/Databases>`_. From an open
-connection, you can get a reference to a particular database with dot-notation
+client, you can get a reference to a particular database with dot-notation
 or bracket-notation:
 
 .. doctest:: before-inserting-2000-docs
 
-  >>> db = connection.test_database
-  >>> db = connection['test_database']
+  >>> db = client.test_database
+  >>> db = client['test_database']
 
 Creating a reference to a database does no I/O and does not require a callback.
 
 Tornado Application Startup Sequence
 ------------------------------------
-Now that we can open a connection and get a database, we're ready to start
+Now that we can create a client and get a database, we're ready to start
 a Tornado application that uses Motor.
 
 :meth:`~motor.MotorClient.open_sync` is a blocking operation so it should
@@ -143,8 +143,8 @@ available to request handlers::
             db = self.settings['db']
 
 If you want to use the Tornado HTTP server's `start() method`_ to fork
-multiple subprocesses, you must create the connection object **after** calling
-``start()``, since a connection created before forking isn't valid after::
+multiple subprocesses, you must create the client object **after** calling
+``start()``, since a client created before forking isn't valid after::
 
     application = tornado.web.Application([
         (r'/', MainHandler)

@@ -80,9 +80,9 @@ from tornado.ioloop import IOLoop
 
 import pymongo
 from pymongo.mongo_client import MongoClient
-connection = MongoClient()
-connection.drop_database("doctest_test")
-db = connection.doctest_test
+sync_client = MongoClient()
+sync_client.drop_database("doctest_test")
+db = sync_client.doctest_test
 
 import motor
 from motor import MotorClient

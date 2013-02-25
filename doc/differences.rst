@@ -19,21 +19,21 @@ application, before accepting requests:
 .. code-block:: python
 
     import motor
-    connection = motor.MotorClient().open_sync()
+    client = motor.MotorClient().open_sync()
 
 To make a connection asynchronously once the application is running, call
 :meth:`~motor.MotorClient.open`:
 
 .. code-block:: python
 
-    def connected(connection, error):
+    def opened(client, error):
         if error:
             print 'Error connecting!', error
         else:
-            # Use the connection
+            # Use the client
             pass
 
-    motor.MotorClient().open(connected)
+    motor.MotorClient().open(opened)
 
 Callbacks
 ---------
