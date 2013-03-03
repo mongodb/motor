@@ -294,7 +294,7 @@ class MotorPool(Pool):
                 motor_sock = MotorSocket(
                     sock, self.io_loop, use_ssl=self.use_ssl)
 
-                if af != socket.AF_UNIX:
+                if af != getattr(socket, 'AF_UNIX', None):
                     sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                     motor_sock.settimeout(self.conn_timeout or 20.0)
 
