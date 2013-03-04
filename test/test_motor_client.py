@@ -148,6 +148,43 @@ class MotorClientTest(MotorTest):
         self.assertEqual('test_open_sync', doc['_id'])
         done()
 
+    def test_open_sync_auth_from_uri(self):
+        if not server_started_with_auth(self.sync_cx):
+            raise SkipTest("Server not started with auth")
+
+        self.sync_cx.admin.system.users.remove({})
+        self.sync_cx.pymongo_test.system.users.remove({})
+        self.sync_cx.admin.add_user("admin", "pass")
+        self.sync_cx.admin.authenticate("admin", "pass")
+        self.sync_cx.pymongo_test.add_user("user", "pass")
+
+        try:
+            uri = "mongodb://foo:bar@%s:%d" % (host, port)
+            self.assertRaises(ConfigurationError, motor.MotorClient(uri).open_sync)
+
+            uri = "mongodb://admin:bar@%s:%d" % (host, port)
+            self.assertRaises(ConfigurationError, motor.MotorClient(uri).open_sync)
+
+            uri = "mongodb://user:pass@%s:%d" % (host, port)
+            self.assertRaises(ConfigurationError, motor.MotorClient(uri).open_sync)
+
+            # Works
+            uri = "mongodb://admin:pass@%s:%d" % (host, port)
+            motor.MotorClient(uri).open_sync()
+
+            uri = "mongodb://admin:pass@%s:%d/pymongo_test"
+            self.assertRaises(ConfigurationError, motor.MotorClient(uri).open_sync)
+
+            uri = "mongodb://user:foo@%s:%d/pymongo_test" % (host, port)
+            self.assertRaises(ConfigurationError, motor.MotorClient(uri).open_sync)
+
+            uri = "mongodb://user:pass@%s:%d/pymongo_test" % (host, port)
+            motor.MotorClient(uri).open_sync()
+
+        finally:
+            self.sync_cx.admin.system.users.remove({})
+            self.sync_cx.pymongo_test.system.users.remove({})
+
     def test_open_sync_custom_io_loop(self):
         # Check that we can create a MotorClient with a custom IOLoop, then
         # call open_sync(), which uses a new loop, and the custom loop is
