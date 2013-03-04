@@ -463,8 +463,8 @@ class MotorCursorTest(MotorTest):
                 # mongos says "database error: could not find cursor in cache for
                 # id N over collection pymongo_test.test_collection".
                 self.assertTrue(
-                    "not valid at server" in e.message or
-                    "could not find cursor in cache" in e.message)
+                    "not valid at server" in e.args[0] or
+                    "could not find cursor in cache" in e.args[0])
             else:
                 now = time.time()
                 if now - start > patience_seconds:
