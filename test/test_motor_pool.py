@@ -131,8 +131,10 @@ class MotorPoolTest(MotorTest):
 
     @async_test_engine(timeout_sec=10)
     def test_max_wait(self, done):
-        where_delay = .4
-        for max_wait_time in .2, .6, None:
+        # Do a find_one that takes 1 second, and set max_wait_time to .5 sec,
+        # 1 sec, and None. Verify timeout iff max_wait_time < 1 sec.
+        where_delay = 1
+        for max_wait_time in .5, 2, None:
             cx = motor.MotorClient(
                 host, port, max_concurrent=1, max_wait_time=max_wait_time,
             ).open_sync()
