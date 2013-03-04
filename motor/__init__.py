@@ -54,9 +54,6 @@ version = '.'.join(map(str, version_tuple))
 """Current version of Motor."""
 
 
-PY3 = sys.version_info[0] == 3
-
-
 # TODO: ensure we're doing
 #   timeouts as efficiently as possible, test performance hit with timeouts
 #   from registering and cancelling timeouts
@@ -358,12 +355,16 @@ class MotorPool(Pool):
             Pool._return_socket(self, sock_info)
 
 
-def asynchronize(sync_method, has_write_concern, callback_required, doc=None):
+def asynchronize(
+    motor_class, sync_method, has_write_concern, callback_required,
+    doc=None
+):
     """
     Decorate `sync_method` so it's run on a child greenlet and executes
     `callback` with (result, error) arguments when greenlet completes.
 
     :Parameters:
+     - `motor_class`:       Motor class being created, e.g. MotorClient.
      - `sync_method`:       Bound method of pymongo Collection, Database,
                             MongoClient, or Cursor
      - `has_write_concern`: Whether the method accepts getLastError options
@@ -400,17 +401,15 @@ def asynchronize(sync_method, has_write_concern, callback_required, doc=None):
         # Start running the operation on a greenlet
         greenlet.greenlet(call_method).switch()
 
-    # This is for the benefit of motor_extensions.py
+    # This is for the benefit of motor_extensions.py, which needs this info to
+    # generate documentation with Sphinx.
     method.is_async_method = True
     method.has_write_concern = has_write_concern
     method.callback_required = callback_required
     name = sync_method.__name__
     if name.startswith('__') and not name.endswith("__"):
         # Mangle, e.g. Cursor.__die -> Cursor._Cursor__die
-        if PY3:
-            classname = sync_method.__qualname__.split('.')[0]
-        else:
-            classname = sync_method.im_class.__name__
+        classname = motor_class.__delegate_class__.__name__
         name = '_%s%s' % (classname, name)
     method.pymongo_method_name = name
 
@@ -446,7 +445,7 @@ class Async(MotorAttributeFactory):
     def create_attribute(self, cls, attr_name):
         method = getattr(cls.__delegate_class__, attr_name)
         return asynchronize(
-            method, self.has_write_concern, self.callback_required)
+            cls, method, self.has_write_concern, self.callback_required)
 
     def wrap(self, original_class):
         return WrapAsync(self, original_class)
@@ -1848,7 +1847,8 @@ class MotorGridIn(MotorOpenable):
                 self, None, root_collection.get_io_loop(),
                 root_collection.delegate, **kwargs)
 
-MotorGridIn.set = asynchronize(gridfs.GridIn.__setattr__, False, False, doc="""
+MotorGridIn.set = asynchronize(
+    MotorGridIn, gridfs.GridIn.__setattr__, False, False, doc="""
 Set an arbitrary metadata attribute on the file. Stores value on the server
 as a key-value pair within the file document once the file is closed. If
 the file is already closed, calling `set` will immediately update the file
