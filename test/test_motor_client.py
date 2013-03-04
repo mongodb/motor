@@ -28,7 +28,8 @@ from tornado import ioloop, gen
 import motor
 from test import host, port
 from test import MotorTest, async_test_engine, AssertRaises, AssertEqual
-from test.utils import server_is_master_with_slave, delay, server_started_with_auth
+from test.utils import (
+    server_is_master_with_slave, delay, server_started_with_auth)
 
 
 class MotorClientTest(MotorTest):
@@ -70,7 +71,7 @@ class MotorClientTest(MotorTest):
         if not hasattr(socket, "AF_UNIX"):
             raise SkipTest("UNIX-sockets are not supported on this system")
         if (sys.platform == 'darwin' and
-            server_started_with_auth(self.sync_cx)):
+                server_started_with_auth(self.sync_cx)):
             raise SkipTest("SERVER-8492")
 
         mongodb_socket = '/tmp/mongodb-27017.sock'

@@ -178,8 +178,8 @@ class AssertFalse(AssertEqual):
 
 
 class MotorTest(unittest.TestCase):
-    longMessage = True # Used by unittest.TestCase
-    ssl = False # If True, connect with SSL, skip if mongod isn't SSL
+    longMessage = True  # Used by unittest.TestCase
+    ssl = False  # If True, connect with SSL, skip if mongod isn't SSL
 
     def setUp(self):
         super(MotorTest, self).setUp()
