@@ -55,7 +55,7 @@ requires:
 Additional dependencies are:
 
 - (to generate documentation) sphinx_
-- (to auto-discover tests) nose_
+- (to run tests) nose_
 
 Documentation
 =============
@@ -71,14 +71,26 @@ Examples
 See the `examples on ReadTheDocs <https://motor.readthedocs.org/en/latest/examples/index.html>`_
 or `Chirp, a dumb Twitter clone <https://github.com/ajdavis/chirp>`_.
 
-
-
 Testing
 =======
 
 The easiest way to run the tests is to install nose_ and run ``nosetests``
-or ``python setup.py test`` in the root of the distribution. Tests are
-located in the ``test/`` directory.
+in the root of the distribution.
+
+You can run all the tests in Python 3 with ``python setup.py nosetests``. Due
+to a `nose bug`_, running a subset of the tests in Python 3 is complicated.
+Build Motor and its tests with Python 3, then ``cd`` to the build directory and
+run ``nosetests``::
+
+  $ python3.3 setup.py build --test
+  using 2to3
+  including test modules
+  running build
+  running build_py
+  creating build/lib/motor
+  ...
+  $ cd build/lib
+  $ nosetests-3.3 test.test_motor_client
 
 .. _PyMongo: http://pypi.python.org/pypi/pymongo/
 
@@ -91,3 +103,5 @@ located in the ``test/`` directory.
 .. _sphinx: http://sphinx.pocoo.org/
 
 .. _nose: http://somethingaboutorange.com/mrl/projects/nose/
+
+.. _nose bug: https://github.com/nose-devs/nose/issues/556
