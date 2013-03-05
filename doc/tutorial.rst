@@ -101,7 +101,13 @@ specify the host and port like:
 
   >>> client = motor.MotorClient('localhost', 27017).open_sync()
 
+Motor also supports `connection URIs`_::
+
+  >>> client = motor.MotorClient('mongodb://localhost:27017').open_sync()
+
 .. _high availability and PyMongo: http://api.mongodb.org/python/current/examples/high_availability.html
+
+.. _connection URIs: http://docs.mongodb.org/manual/reference/connection-string/
 
 Getting a Database
 ------------------

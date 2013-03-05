@@ -1,55 +1,38 @@
-Motor Authentication Examples
-=============================
+Authentication With Motor
+=========================
 
 To use authentication, you must start ``mongod`` with ``--auth`` or, for
-replica sets or sharded clusters, ``--keyFile``.
+replica sets or sharded clusters, ``--keyFile``. Create an admin user and
+optionally normal users or read-only users.
 
-.. mongodoc:: authenticate
+.. seealso:: `MongoDB Authentication
+  <http://docs.mongodb.org/manual/tutorial/control-access-to-mongodb-with-authentication/>`_
 
-Creating an admin user
-----------------------
-The first step to securing a MongoDB instance with authentication is to create
-a user in the ``admin`` database--this user is like a super-user who can add
-or remove regular users::
+Synchronous Authentication
+--------------------------
+To create an authenticated :class:`~motor.MotorClient` before starting the
+IOLoop, use a `MongoDB connection URI`_::
 
-    from tornado import gen
-    import motor
+    admin_uri = "mongodb://admin:pass@localhost:27017"
+    client = motor.MotorClient(admin_uri).open_sync()
 
-    c = motor.MotorClient().open_sync()
+    normal_uri = "mongodb://user:pass@localhost:27017/database_name"
+    client = motor.MotorClient(normal_uri).open_sync()
 
-    @gen.engine
-    def create_admin_user():
-        yield motor.Op(c.admin.add_user, "admin", "secret password")
+Asynchronous Authentication
+---------------------------
+Use the non-blocking :meth:`~motor.MotorDatabase.authenticate` to log in after
+starting the IOLoop::
 
-.. seealso:: :meth:`~motor.MotorDatabase.add_user`
-
-Creating a regular user
------------------------
-Once you've created the admin user you must log in before any further
-operations, including creating a regular user::
-
-    @gen.engine
-    def create_regular_user():
-        yield motor.Op(c.admin.authenticate, "admin", "secret password")
-        yield motor.Op(c.my_database.add_user, "jesse", "jesse's password")
-
-.. seealso:: :meth:`~motor.MotorDatabase.authenticate`,
-  :meth:`~motor.MotorDatabase.add_user`
-
-Authenticating as a regular user
---------------------------------
-Creating an admin user or authenticating as one is a rare task, and typically
-done with the mongo shell rather than with Motor. Your day-to-day operations
-will only need regular authentication::
+    client = motor.MotorClient('localhost', 27017).open_sync()
 
     @gen.engine
     def login(c):
-        yield motor.Op(c.my_database.authenticate, "jesse", "jesse's password")
+        yield motor.Op(c.my_database.authenticate, "user", "pass")
 
 After you've logged in to a database with a given :class:`~motor.MotorClient`
 or :class:`~motor.MotorReplicaSetClient`, all further operations on that
 database using that client will already be authenticated until you
 call :meth:`~motor.MotorDatabase.logout`.
 
-.. seealso:: :meth:`~motor.MotorDatabase.authenticate`,
-  :meth:`~motor.MotorDatabase.logout`
+.. _MongoDB connection URI: http://docs.mongodb.org/manual/reference/connection-string/
