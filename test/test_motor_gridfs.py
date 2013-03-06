@@ -238,8 +238,7 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
         secondary_host, secondary_port = self.secondaries[0]
         for secondary_client in [
             motor.MotorClient(
-                secondary_host, secondary_port, slave_okay=True).open_sync(),
-            motor.MotorClient(secondary_host, secondary_port,
+                secondary_host, secondary_port,
                 read_preference=ReadPreference.SECONDARY).open_sync(),
         ]:
             yield motor.Op(
