@@ -38,6 +38,10 @@ excluded_modules = [
     # run them now.
     'test.test_motor_',
 
+    # Not worth simulating PyMongo's crazy deprecation semantics for safe and
+    # slave_okay in Synchro
+    'test.test_common',
+
     # Exclude some PyMongo tests that can't be applied to Synchro.
     'test.test_threads',
     'test.test_threads_replica_set_client',
@@ -57,6 +61,10 @@ excluded_tests = [
 
     # Motor's reprs aren't the same as PyMongo's
     '*.test_repr',
+
+    # Not worth simulating PyMongo's crazy deprecation semantics for safe and
+    # slave_okay in Synchro
+    'TestClient.test_from_uri',
 
     # Motor doesn't do requests
     '*.test_auto_start_request',
@@ -153,29 +161,56 @@ class SynchroNosePlugin(Plugin):
         return True
 
 
+# So that e.g. 'from pymongo.mongo_client import MongoClient' gets the
+# Synchro MongoClient, not the real one. We include
+# master_slave_connection, connection, etc. even though Motor doesn't support
+# them and we exclude them from tests, so that the import doesn't fail.
+pymongo_modules = set([
+    'gridfs',
+    'gridfs.errors',
+    'gridfs.grid_file',
+    'pymongo',
+    'pymongo.auth',
+    'pymongo.collection',
+    'pymongo.common',
+    'pymongo.connection',
+    'pymongo.cursor',
+    'pymongo.database',
+    'pymongo.errors',
+    'pymongo.master_slave_connection',
+    'pymongo.mongo_client',
+    'pymongo.mongo_replica_set_client',
+    'pymongo.pool',
+    'pymongo.read_preferences',
+    'pymongo.replica_set_connection',
+    'pymongo.son_manipulator',
+    'pymongo.thread_util',
+    'pymongo.uri_parser',
+])
+
+
+class SynchroModuleFinder(object):
+    def find_module(self, fullname, path=None):
+        for module_name in pymongo_modules:
+            if fullname.endswith(module_name):
+                return SynchroModuleLoader(path)
+
+        # Let regular module search continue
+        return None
+
+
+class SynchroModuleLoader(object):
+    def __init__(self, path):
+        self.path = path
+
+    def load_module(self, fullname):
+        return synchro
+
+
 if __name__ == '__main__':
     # Monkey-patch all pymongo's unittests so they think Synchro is the
     # real PyMongo
-    sys.modules['pymongo'] = synchro
-
-    for mod in [
-        'pymongo.auth',
-        'pymongo.mongo_client',
-        'pymongo.collection',
-        'pymongo.mongo_replica_set_client',
-        'pymongo.master_slave_connection',
-        'pymongo.database',
-        'pymongo.pool',
-        'pymongo.thread_util',
-        'gridfs',
-        'gridfs.errors',
-        'gridfs.grid_file',
-    ]:
-        # So that e.g. 'from pymongo.mongo_client import MongoClient' gets the
-        # Synchro MongoClient, not the real one. We include
-        # master_slave_connection, even though Motor doesn't support it and
-        # we exclude it from tests, so that the import doesn't fail.
-        sys.modules[mod] = synchro
+    sys.meta_path[0:0] = [SynchroModuleFinder()]
 
     # Ensure time.sleep() acts as PyMongo's tests expect: background tasks
     # can run to completion while foreground pauses

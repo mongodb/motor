@@ -28,28 +28,33 @@ import traceback
 from tornado.ioloop import IOLoop
 
 import motor
-from pymongo import son_manipulator
-from pymongo.common import SAFE_OPTIONS
-from pymongo.errors import (
-    ConnectionFailure, TimeoutError, OperationFailure, InvalidOperation,
-    ConfigurationError)
 
-# So that synchronous unittests can import these names from Synchro,
-# thinking it's really pymongo
-from pymongo import (
-    ASCENDING, DESCENDING, GEO2D, GEOHAYSTACK, ReadPreference,
-    ALL, helpers, OFF, SLOW_ONLY, pool, thread_util, MongoClient,
-    MongoReplicaSetClient
-)
-
-from gridfs.errors import FileExists, NoFile, UnsupportedAPI
+# Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
+# importing * won't pick up underscore-prefixed attrs.
+from gridfs.errors import *
+from pymongo import *
+from pymongo.common import *
+from pymongo.cursor import *
+from pymongo.cursor import _QUERY_OPTIONS
+from pymongo.errors import *
+from pymongo.read_preferences import *
+from pymongo.son_manipulator import *
+from pymongo.uri_parser import *
+from pymongo.uri_parser import _partition,_rpartition
 
 try:
     from pymongo import auth
-    from pymongo.auth import HAVE_KERBEROS, MECHANISMS
+    from pymongo.auth import *
+    from pymongo.auth import _password_digest
 except ImportError:
     # auth module will land in PyMongo 2.5
     print "Warning: Can't import pymongo.auth"
+
+try:
+    from pymongo import GEOSPHERE, HASHED
+except ImportError:
+    # PyMongo 2.5
+    print "Warning: Can't import GEOSPHERE and HASHED"
 
 from gridfs.grid_file import DEFAULT_CHUNK_SIZE, _SEEK_CUR, _SEEK_END
 
@@ -186,31 +191,35 @@ class SynchroMeta(type):
                 # this attribute, e.g. Database.add_son_manipulator which is
                 # special-cased. Ignore such attrs.
                 if attrname not in attrs:
-                    if getattr(delegate_attr, 'is_async_method', False):
+                    if getattr(
+                            delegate_attr, 'is_async_method', False):
                         # Re-synchronize the method
                         sync_method = Sync(
                             attrname, delegate_attr.has_write_concern)
                         setattr(new_class, attrname, sync_method)
-                    elif isinstance(delegate_attr, motor.UnwrapAsync):
+                    elif isinstance(
+                            delegate_attr, motor.UnwrapAsync):
                         # Re-synchronize the method
                         sync_method = Sync(
                             attrname, delegate_attr.prop.has_write_concern)
                         setattr(new_class, attrname, sync_method)
                     elif getattr(
-                        delegate_attr, 'is_motorcursor_chaining_method', False):
+                            delegate_attr,
+                            'is_motorcursor_chaining_method',
+                            False):
                         # Wrap MotorCursors in Synchro Cursors
                         wrapper = WrapOutgoing()
                         wrapper.name = attrname
                         setattr(new_class, attrname, wrapper)
-                    elif isinstance(delegate_attr, motor.ReadOnlyPropertyDescriptor):
+                    elif isinstance(
+                            delegate_attr, motor.ReadOnlyPropertyDescriptor):
                         # Delegate the property from Synchro to Motor
                         setattr(new_class, attrname, delegate_attr)
 
         # Set DelegateProperties' and SynchroProperties' names
         for name, attr in attrs.items():
-            if isinstance(
-                attr,
-                (motor.MotorAttributeFactory, SynchroProperty, WrapOutgoing)
+            if isinstance(attr, (
+                motor.MotorAttributeFactory, SynchroProperty, WrapOutgoing)
             ):
                 attr.name = name
 
@@ -254,11 +263,7 @@ class Synchro(object):
 
                 safe, opts = self.delegate.delegate._get_write_mode(**gle_opts)
             except (AttributeError, InvalidOperation):
-                # Delegate not set yet, or no _get_write_mode method.
-                # Since, as of Tornado 2.3, IOStream tries to divine the error
-                # that closed it using sys.exc_info(), it's important here to
-                # clear spurious errors
-                sys.exc_clear()
+                pass
 
             if has_write_concern:
                 kwargs['w'] = opts.get('w', 1) if safe else 0
@@ -307,6 +312,25 @@ class Synchro(object):
     
         return synchronized_method
 
+    # Motor doesn't support these deprecated attrs, but PyMongo still tests
+    # that its classes do
+    @property
+    def safe(self):
+        try:
+            safe, opts = self.delegate.delegate._get_write_mode()
+            return safe
+        except (AttributeError, InvalidOperation):
+            return True
+
+    @property
+    def slave_okay(self):
+        try:
+            return self.delegate.read_preference != ReadPreference.PRIMARY
+        except (AttributeError, InvalidOperation):
+            return False
+
+    get_lasterror_options = SynchroProperty()
+
 
 class MongoClient(Synchro):
     HOST = 'localhost'
@@ -317,6 +341,28 @@ class MongoClient(Synchro):
     def __init__(self, host=None, port=None, *args, **kwargs):
         # Motor doesn't implement auto_start_request
         kwargs.pop('auto_start_request', None)
+
+        if 'read_preference' not in kwargs and (
+                kwargs.get('tag_sets') not in (None, [], [{}])):
+            # Make test_mongos_connection.TestMongosConnection pass
+            raise ConfigurationError()
+
+        # Motor doesn't support deprecated options slave_okay and safe; but
+        # PyMongo still does.
+        if 'read_preference' not in kwargs and (
+                'slaveok' in kwargs or 'slave_okay' in kwargs):
+
+            secondary = kwargs.pop('slave_okay', kwargs.pop('slaveok', False))
+            kwargs['read_preference'] = (
+                ReadPreference.SECONDARY if secondary
+                else ReadPreference.PRIMARY)
+
+        gle_opts = dict([
+            (k, v) for k, v in kwargs.items()
+            if k in SAFE_OPTIONS])
+
+        if gle_opts:
+            kwargs['w'] = 1
 
         # So that TestClient.test_constants and test_types work
         host = host if host is not None else self.HOST
@@ -367,12 +413,6 @@ class MasterSlaveConnection(object):
 
 class MongoReplicaSetClient(MongoClient):
     __delegate_class__ = motor.MotorReplicaSetClient
-
-    def __init__(self, *args, **kwargs):
-        # Motor doesn't implement auto_start_request
-        kwargs.pop('auto_start_request', None)
-        self.delegate = self.__delegate_class__(*args, **kwargs)
-        self.synchro_connect()
 
     _MongoReplicaSetClient__writer           = SynchroProperty()
     _MongoReplicaSetClient__members          = SynchroProperty()
@@ -459,11 +499,11 @@ class Cursor(Synchro):
         if cursor.delegate._Cursor__empty:
             raise StopIteration
 
-        if cursor.buffer_size:
+        if cursor._buffer_size():
             return cursor.next_object()
         elif cursor.alive:
             self.synchronize(cursor._refresh)()
-            if cursor.buffer_size:
+            if cursor._buffer_size():
                 return cursor.next_object()
 
         raise StopIteration
