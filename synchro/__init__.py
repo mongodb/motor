@@ -414,6 +414,12 @@ class MasterSlaveConnection(object):
 class MongoReplicaSetClient(MongoClient):
     __delegate_class__ = motor.MotorReplicaSetClient
 
+    def __init__(self, *args, **kwargs):
+        # Motor doesn't implement auto_start_request
+        kwargs.pop('auto_start_request', None)
+        self.delegate = self.__delegate_class__(*args, **kwargs)
+        self.synchro_connect()
+
     _MongoReplicaSetClient__writer           = SynchroProperty()
     _MongoReplicaSetClient__members          = SynchroProperty()
     _MongoReplicaSetClient__schedule_refresh = SynchroProperty()

@@ -65,6 +65,7 @@ excluded_tests = [
     # Not worth simulating PyMongo's crazy deprecation semantics for safe and
     # slave_okay in Synchro
     'TestClient.test_from_uri',
+    'TestReplicaSetClient.test_properties',
 
     # Motor doesn't do requests
     '*.test_auto_start_request',
