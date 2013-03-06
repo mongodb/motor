@@ -15,7 +15,7 @@
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import pymongo
-from pymongo.errors import InvalidOperation
+from pymongo.errors import ConfigurationError
 
 import motor
 from test import host, port
@@ -74,8 +74,8 @@ class MotorTestBasic(MotorTest):
             yield motor.Op(collection.insert, {'_id': 0}, w=0)
 
             # Motor doesn't support 'safe'
-            self.assertRaises(AssertionError, collection.insert, {}, safe=False)
-            self.assertRaises(AssertionError, collection.insert, {}, safe=True)
+            self.assertRaises(ConfigurationError, collection.insert, {}, safe=False)
+            self.assertRaises(ConfigurationError, collection.insert, {}, safe=True)
 
         collection = cx.pymongo_test.test_collection
         collection.write_concern['w'] = 2

@@ -373,7 +373,10 @@ def asynchronize(
     """
     @functools.wraps(sync_method)
     def method(self, *args, **kwargs):
-        assert 'safe' not in kwargs, "Motor does not support 'safe', use 'w'"
+        if 'safe' in kwargs:
+            raise pymongo.errors.ConfigurationError(
+                "Motor does not support 'safe', use 'w'")
+
         callback = kwargs.pop('callback', None)
         check_callable(callback, required=callback_required)
 
