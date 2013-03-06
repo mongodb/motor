@@ -16,6 +16,7 @@
 
 import pymongo
 from pymongo.errors import ConfigurationError
+from pymongo.read_preferences import ReadPreference
 
 import motor
 from test import host, port
@@ -73,10 +74,6 @@ class MotorTestBasic(MotorTest):
             # No error
             yield motor.Op(collection.insert, {'_id': 0}, w=0)
 
-            # Motor doesn't support 'safe'
-            self.assertRaises(ConfigurationError, collection.insert, {}, safe=False)
-            self.assertRaises(ConfigurationError, collection.insert, {}, safe=True)
-
         collection = cx.pymongo_test.test_collection
         collection.write_concern['w'] = 2
 
@@ -112,4 +109,99 @@ class MotorTestBasic(MotorTest):
         # Important that the last operation on each MotorClient was
         # acknowledged, so lingering messages aren't delivered in the middle of
         # the next test
+        done()
+
+    @async_test_engine()
+    def test_read_preference(self, done):
+        cx = motor.MotorClient(host, port)
+
+        # An implementation quirk of Motor, can't access properties until
+        # connected
+        self.assertRaises(
+            pymongo.errors.InvalidOperation, getattr, cx, 'read_preference')
+
+        # Check the default
+        yield motor.Op(cx.open)
+        self.assertEqual(ReadPreference.PRIMARY, cx.read_preference)
+
+        # We can set mode, tags, and latency, both with open() and open_sync()
+        cx = yield motor.Op(motor.MotorClient(
+            host, port, read_preference=ReadPreference.SECONDARY,
+            tag_sets=[{'foo': 'bar'}],
+            secondary_acceptable_latency_ms=42).open)
+
+        self.assertEqual(ReadPreference.SECONDARY, cx.read_preference)
+        self.assertEqual([{'foo': 'bar'}], cx.tag_sets)
+        self.assertEqual(42, cx.secondary_acceptable_latency_ms)
+
+        cx = motor.MotorClient(
+            host, port, read_preference=ReadPreference.SECONDARY,
+            tag_sets=[{'foo': 'bar'}],
+            secondary_acceptable_latency_ms=42).open_sync()
+
+        self.assertEqual(ReadPreference.SECONDARY, cx.read_preference)
+        self.assertEqual([{'foo': 'bar'}], cx.tag_sets)
+        self.assertEqual(42, cx.secondary_acceptable_latency_ms)
+
+        # Make a MotorCursor and get its PyMongo Cursor
+        cursor = cx.pymongo_test.test_collection.find(
+            read_preference=ReadPreference.NEAREST,
+            tag_sets=[{'yay': 'jesse'}],
+            secondary_acceptable_latency_ms=17).delegate
+
+        self.assertEqual(
+            ReadPreference.NEAREST, cursor._Cursor__read_preference)
+
+        self.assertEqual([{'yay': 'jesse'}], cursor._Cursor__tag_sets)
+        self.assertEqual(17, cursor._Cursor__secondary_acceptable_latency_ms)
+        done()
+
+    @async_test_engine()
+    def test_safe(self, done):
+        # Motor doesn't support 'safe'
+        self.assertRaises(
+            ConfigurationError, motor.MotorClient, host, port, safe=True)
+
+        self.assertRaises(
+            ConfigurationError, motor.MotorClient, host, port, safe=False)
+
+        cx = motor.MotorClient(host, port)
+        yield motor.Op(cx.open)
+        collection = cx.pymongo_test.test_collection
+
+        self.assertRaises(
+            ConfigurationError, collection.insert, {}, safe=False)
+
+        self.assertRaises(
+            ConfigurationError, collection.insert, {}, safe=True)
+
+        done()
+
+    @async_test_engine()
+    def test_slave_okay(self, done):
+        # Motor doesn't support 'slave_okay'
+        self.assertRaises(
+            ConfigurationError, motor.MotorClient, host, port, slave_okay=True)
+
+        self.assertRaises(
+            ConfigurationError, motor.MotorClient, host, port, slave_okay=False)
+
+        self.assertRaises(
+            ConfigurationError, motor.MotorClient, host, port, slaveok=True)
+
+        self.assertRaises(
+            ConfigurationError, motor.MotorClient, host, port, slaveok=False)
+
+        cx = motor.MotorClient(host, port)
+        yield motor.Op(cx.open)
+        collection = cx.pymongo_test.test_collection
+
+        self.assertRaises(
+            ConfigurationError,
+            collection.find_one, slave_okay=True)
+
+        self.assertRaises(
+            ConfigurationError,
+            collection.find_one, slaveok=True)
+
         done()

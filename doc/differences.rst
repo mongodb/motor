@@ -279,6 +279,21 @@ a single-threaded Tornado application. See Tornado's documentation on
 Minor differences
 =================
 
+Deprecated classes and options
+------------------------------
+
+PyMongo deprecated the ``slave_okay`` / ``slaveok`` option in favor of
+`read preferences`_ in version 2.3. It deprecated
+:class:`~pymongo.connection.Connection` and
+:class:`~pymongo.replica_set_connection.ReplicaSetConnection` in favor of
+:class:`~pymongo.mongo_client.MongoClient` and
+:class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient` in version
+2.4, as well as deprecating the ``safe`` option in favor of `write concerns`_.
+Motor supports none of PyMongo's deprecated options and classes at all, and
+will raise :exc:`~pymongo.errors.ConfigurationError` if you use them.
+
+.. _read preferences: http://api.mongodb.org/python/current/examples/high_availability.html#secondary-reads
+
 MasterSlaveConnection
 ---------------------
 

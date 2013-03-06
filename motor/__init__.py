@@ -59,6 +59,16 @@ version = '.'.join(map(str, version_tuple))
 #   from registering and cancelling timeouts
 
 
+def check_deprecated_kwargs(kwargs):
+    if 'safe' in kwargs:
+        raise pymongo.errors.ConfigurationError(
+            "Motor does not support 'safe', use 'w'")
+
+    if 'slave_okay' in kwargs or 'slaveok' in kwargs:
+        raise pymongo.errors.ConfigurationError(
+            "Motor does not support 'slave_okay', use read_preference")
+
+
 def check_callable(callback, required=False):
     if required and not callback:
         raise TypeError("callback is required")
@@ -373,10 +383,7 @@ def asynchronize(
     """
     @functools.wraps(sync_method)
     def method(self, *args, **kwargs):
-        if 'safe' in kwargs:
-            raise pymongo.errors.ConfigurationError(
-                "Motor does not support 'safe', use 'w'")
-
+        check_deprecated_kwargs(kwargs)
         callback = kwargs.pop('callback', None)
         check_callable(callback, required=callback_required)
 
@@ -756,6 +763,7 @@ class MotorClientBase(MotorOpenable, MotorBase):
     max_pool_size  = ReadOnlyProperty()
 
     def __init__(self, delegate, io_loop, *args, **kwargs):
+        check_deprecated_kwargs(kwargs)
         self._max_concurrent = kwargs.pop('max_concurrent', 100)
         self._max_wait_time = kwargs.pop('max_wait_time', None)
         super(MotorClientBase, self).__init__(
