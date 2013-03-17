@@ -45,8 +45,9 @@ port = int(os.environ.get("DB_PORT", 27017))
 
 class AsyncTestRunner(gen.Runner):
     def __init__(self, gen, timeout):
-        # Tornado 2.3 added a second argument to Runner()
-        super(AsyncTestRunner, self).__init__(gen, lambda: None)
+        # In Tornado 2.3.x through 2.4.x, the second arg to Runner() is a
+        # deactivate_context callback; in Tornado 3 it's a final_callback.
+        super(AsyncTestRunner, self).__init__(gen, lambda *args, **kwargs: None)
         self.timeout = timeout
 
     def run(self):
