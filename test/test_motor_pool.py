@@ -178,7 +178,7 @@ class MotorPoolTest(MotorTest):
         self.assertEqual(1, len(pool.sockets))
 
         # All ops completed
-        docs = yield motor.Op(collection.find().sort('_id').to_list)
+        docs = yield motor.Op(collection.find().sort('_id').to_list, length=100)
         self.assertEqual(list(range(nops)), [doc['_id'] for doc in docs])
 
         done()
