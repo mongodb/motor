@@ -55,7 +55,7 @@ if 'test' in sys.argv or 'nosetests' in sys.argv or '--test' in sys.argv:
     packages.append('test')
 
 setup(name='motor',
-      version='0.1',
+      version='0.1+',
       packages=packages,
       description=description,
       long_description=long_description,
