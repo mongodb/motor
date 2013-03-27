@@ -212,10 +212,9 @@ class MotorPoolTest(MotorTest):
             return True  # Don't propagate
 
         def get_socket():
-            with stack_context.ExceptionStackContext(catch_get_sock_exc):
-                # Blocks until socket is available, since max_concurrent is 1
-                pool.get_socket()
-                loop.add_callback(raise_callback)
+            # Blocks until socket is available, since max_concurrent is 1
+            pool.get_socket()
+            loop.add_callback(raise_callback)
 
         my_assert = AssertionError('foo')
 
@@ -229,7 +228,9 @@ class MotorPoolTest(MotorTest):
 
             main_gr.switch()
 
-        greenlet.greenlet(get_socket).switch()
+        with stack_context.ExceptionStackContext(catch_get_sock_exc):
+            loop.add_callback(greenlet.greenlet(get_socket).switch)
+
         greenlet.greenlet(return_socket).switch()
 
         yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
