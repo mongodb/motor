@@ -357,8 +357,8 @@ class MotorPool(Pool):
             return pymongo.pool.SocketInfo(motor_sock, self.pool_id)
 
     def _return_socket(self, sock_info):
-        # This is *not* a request socket; give it to the greenlet at the head
-        # of the line, return it to the pool, or discard it.
+        # This is *not* a request socket. Give it to the greenlet at the head
+        # of the line, or return it to the pool, or discard it.
         if self.queue:
             waiter = self.queue.popleft()
             if waiter in self.waiter_timeouts:
