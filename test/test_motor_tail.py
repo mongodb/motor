@@ -38,10 +38,15 @@ class MotorTailTest(MotorTest):
         self.sync_db.uncapped.drop()
         self.sync_db.uncapped.insert({})
 
-    def test_tail_callback(self):
+    @async_test_engine()
+    def test_tail_callback(self, done):
         test_db = self.motor_client(host, port).pymongo_test
-        capped = test_db.capped
-        self.check_required_callback(capped.find().tail)
+        tail = test_db.capped.tail  # The MotorCursor.tail() method.
+        self.assertRaises(TypeError, tail, callback='foo')
+        self.assertRaises(TypeError, tail, callback=1)
+        self.assertRaises(TypeError, tail)
+        self.assertRaises(TypeError, tail, None)
+        done()
 
     def start_insertion_thread(self, pauses):
         """A thread that gradually inserts documents into a capped collection

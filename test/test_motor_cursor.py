@@ -42,7 +42,7 @@ class MotorCursorTest(MotorTest):
     @async_test_engine()
     def test_count(self, done):
         coll = self.motor_client(host, port).pymongo_test.test_collection
-        self.check_required_callback(coll.find().count)
+        yield motor.Op(self.check_required_callback, coll.find().count)
         yield AssertEqual(200, coll.find().count)
         yield AssertEqual(100, coll.find({'_id': {'$gt': 99}}).count)
         where = 'this._id % 2 == 0 && this._id >= 50'
@@ -59,7 +59,7 @@ class MotorCursorTest(MotorTest):
     @async_test_engine()
     def test_distinct(self, done):
         coll = self.motor_client(host, port).pymongo_test.test_collection
-        self.check_required_callback(coll.find().distinct, '_id')
+        yield motor.Op(self.check_required_callback, coll.find().distinct, '_id')
         self.assertEqual(set(range(10)), set((
             yield motor.Op(coll.find({'_id': {'$lt': 10}}).distinct, '_id'))))
         done()
@@ -126,7 +126,7 @@ class MotorCursorTest(MotorTest):
     @async_test_engine()
     def test_each(self, done):
         coll = self.motor_client(host, port).pymongo_test.test_collection
-        self.check_required_callback(coll.find().each)
+        yield motor.Op(self.check_required_callback, coll.find().each)
         cursor = coll.find({}, {'_id': 1}).sort([('_id', pymongo.ASCENDING)])
         yield_point = yield gen.Callback(0)
         results = []
@@ -144,15 +144,16 @@ class MotorCursorTest(MotorTest):
         self.assertEqual(expected, results)
         done()
 
-    def test_to_list_argument_checking(self):
+    @async_test_engine()
+    def test_to_list_argument_checking(self, done):
         coll = self.motor_client(host, port).pymongo_test.test_collection
         cursor = coll.find()
-        self.check_required_callback(cursor.to_list, 10)
-
+        yield motor.Op(self.check_required_callback, cursor.to_list, 10)
         cursor = coll.find()
         callback = lambda result, error: None
         self.assertRaises(ConfigurationError, cursor.to_list, -1, callback)
         self.assertRaises(ConfigurationError, cursor.to_list, 'foo', callback)
+        done()
 
     @async_test_engine()
     def test_to_list(self, done):
@@ -243,7 +244,7 @@ class MotorCursorTest(MotorTest):
     def test_cursor_explicit_close(self, done):
         cx = self.motor_client(host, port)
         collection = cx.pymongo_test.test_collection
-        self.check_optional_callback(collection.find().close)
+        yield motor.Op(self.check_optional_callback, collection.find().close)
         cursor = collection.find()
         yield cursor.fetch_next
         self.assertTrue(cursor.alive)

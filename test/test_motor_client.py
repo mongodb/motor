@@ -57,9 +57,11 @@ class MotorClientTest(MotorTest):
         self.assertEqual(cx, cx.open_sync())
         done()
 
-    def test_open_callback(self):
+    @async_test_engine()
+    def test_open_callback(self, done):
         cx = motor.MotorClient(host, port)
-        self.check_optional_callback(cx.open)
+        yield motor.Op(self.check_optional_callback, cx.open)
+        done()
 
     def test_disconnect(self):
         cx = motor.MotorClient(host, port).open_sync()

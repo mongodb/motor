@@ -51,10 +51,12 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             cx.delegate._MongoReplicaSetClient__monitor.io_loop)
         done()
 
-    def test_open_callback(self):
+    @async_test_engine()
+    def test_open_callback(self, done):
         cx = motor.MotorReplicaSetClient(
             '%s:%s' % (host, port), replicaSet=self.name)
-        self.check_optional_callback(cx.open)
+        yield motor.Op(self.check_optional_callback, cx.open)
+        done()
 
     @async_test_engine()
     def test_open_sync(self, done):

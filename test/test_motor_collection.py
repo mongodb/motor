@@ -78,14 +78,16 @@ class MotorCollectionTest(MotorTest):
         self.assertEqual(res0, res1)
         done()
 
-    def test_find_callback(self):
+    @async_test_engine()
+    def test_find_callback(self, done):
         cx = self.motor_client(host, port)
         cursor = cx.pymongo_test.test_collection.find()
-        self.check_required_callback(cursor.each)
+        yield motor.Op(self.check_required_callback, cursor.each)
 
         # Avoid triggering length warning here, test_to_list_length_warning
         # must be the only place it's raised
-        self.check_required_callback(cursor.to_list, length=1)
+        yield motor.Op(self.check_required_callback, cursor.to_list, length=1)
+        done()
 
     @async_test_engine()
     def test_find_is_async(self, done):
@@ -168,9 +170,14 @@ class MotorCollectionTest(MotorTest):
             {'_id': 1})
         done()
 
-    def test_find_one_callback(self):
+    @async_test_engine()
+    def test_find_one_callback(self, done):
         cx = self.motor_client(host, port)
-        self.check_required_callback(cx.pymongo_test.test_collection.find_one)
+        yield motor.Op(
+            self.check_required_callback,
+            cx.pymongo_test.test_collection.find_one)
+
+        done()
 
     @async_test_engine(timeout_sec=6)
     def test_find_one_is_async(self, done):
@@ -242,10 +249,14 @@ class MotorCollectionTest(MotorTest):
 
         done()
 
-    def test_update_callback(self):
+    @async_test_engine()
+    def test_update_callback(self, done):
         cx = self.motor_client(host, port)
-        self.check_optional_callback(
+        yield motor.Op(
+            self.check_optional_callback,
             cx.pymongo_test.test_collection.update, {}, {})
+
+        done()
 
     @async_test_engine()
     def test_insert(self, done):
@@ -307,9 +318,14 @@ class MotorCollectionTest(MotorTest):
             self.sync_db.test_collection.find({'_id': 203}).to_list,
             length=1000)
 
-    def test_save_callback(self):
+    @async_test_engine()
+    def test_save_callback(self, done):
         cx = self.motor_client(host, port)
-        self.check_optional_callback(cx.pymongo_test.test_collection.save, {})
+        yield motor.Op(
+            self.check_optional_callback,
+            cx.pymongo_test.test_collection.save, {})
+
+        done()
 
     @async_test_engine()
     def test_save_with_id(self, done):
@@ -364,9 +380,14 @@ class MotorCollectionTest(MotorTest):
         self.assertEqual(None, result['err'])
         done()
 
-    def test_remove_callback(self):
+    @async_test_engine()
+    def test_remove_callback(self, done):
         cx = self.motor_client(host, port)
-        self.check_optional_callback(cx.pymongo_test.test_collection.remove)
+        yield motor.Op(
+            self.check_optional_callback,
+            cx.pymongo_test.test_collection.remove)
+
+        done()
 
     @async_test_engine()
     def test_unacknowledged_remove(self, done):

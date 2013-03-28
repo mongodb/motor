@@ -42,16 +42,21 @@ class MotorGridFileTest(MotorTest):
         self._reset()
         super(MotorGridFileTest, self).tearDown()
 
-    @async_test_engine()
+    @async_test_engine(timeout_sec=20)
     def test_grid_in_callback(self, done):
         db = self.motor_client(host, port).open_sync().pymongo_test
         f = motor.MotorGridIn(db.fs, filename="test")
-        self.check_optional_callback(f.open)
+        yield motor.Op(self.check_optional_callback, f.open)
         f = yield motor.Op(motor.MotorGridIn(db.fs, filename="test").open)
-        self.check_optional_callback(partial(f.set, 'name', 'value'))
-        self.check_optional_callback(f.close)
-        self.check_optional_callback(partial(f.write, b('a')))
-        self.check_optional_callback(partial(f.writelines, [b('a')]))
+        yield motor.Op(
+            self.check_optional_callback, partial(f.set, 'name', 'value'))
+
+        yield motor.Op(self.check_optional_callback, partial(f.write, b('a')))
+        yield motor.Op(
+            self.check_optional_callback, partial(f.writelines, [b('a')]))
+
+        yield motor.Op(self.check_optional_callback, f.close)
+
         done()
 
     @async_test_engine()
@@ -62,11 +67,11 @@ class MotorGridFileTest(MotorTest):
         yield motor.Op(f.close)
 
         g = motor.MotorGridOut(db.fs, f._id)
-        self.check_optional_callback(g.open)
+        yield motor.Op(self.check_optional_callback, g.open)
 
         g = yield motor.Op(motor.MotorGridOut(db.fs, f._id).open)
-        self.check_required_callback(g.read)
-        self.check_required_callback(g.readline)
+        yield motor.Op(self.check_required_callback, g.read)
+        yield motor.Op(self.check_required_callback, g.readline)
         done()
 
     @async_test_engine()

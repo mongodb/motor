@@ -14,12 +14,13 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+import datetime
 import unittest
 
 import pymongo.database
 from pymongo.errors import OperationFailure, CollectionInvalid
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
-from tornado import gen
+from tornado import gen, ioloop
 
 import motor
 from test import host, port, MotorTest, async_test_engine, AssertRaises
@@ -43,11 +44,31 @@ class MotorDatabaseTest(MotorTest):
         self.assertTrue(isinstance(db.delegate, pymongo.database.Database))
         self.assertTrue(isinstance(db['delegate'], motor.MotorCollection))
 
-    def test_database_callbacks(self):
+    @async_test_engine()
+    def test_database_callbacks(self, done):
         db = self.motor_client(host, port).pymongo_test
-        self.check_optional_callback(db.drop_collection, "collection")
-        self.check_optional_callback(db.create_collection, "collection")
-        self.check_required_callback(db.validate_collection, "collection")
+        yield motor.Op(
+            self.check_optional_callback, db.drop_collection, 'c')
+
+        # check_optional_callback would call create_collection twice, and the
+        # second call would raise "already exists", so test manually.
+        self.assertRaises(TypeError, db.create_collection, 'c', callback='foo')
+        self.assertRaises(TypeError, db.create_collection, 'c', callback=1)
+        
+        # No error without callback
+        db.create_collection('c', callback=None)
+        
+        # Wait for create_collection to complete
+        loop = ioloop.IOLoop.instance()
+        for _ in range(10):
+            yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.5))
+            if 'c' in (yield motor.Op(db.collection_names)):
+                break
+
+        yield motor.Op(
+            self.check_required_callback, db.validate_collection, 'c')
+
+        done()
 
     @async_test_engine()
     def test_command(self, done):
@@ -81,9 +102,11 @@ class MotorDatabaseTest(MotorTest):
 
         done()
 
-    def test_command_callback(self):
+    @async_test_engine()
+    def test_command_callback(self, done):
         cx = self.motor_client(host, port)
-        self.check_optional_callback(cx.admin.command, 'buildinfo', check=False)
+        yield motor.Op(self.check_optional_callback, cx.admin.command, 'buildinfo', check=False)
+        done()
 
     @async_test_engine()
     def test_auto_ref_and_deref(self, done):
@@ -131,7 +154,7 @@ class MotorDatabaseTest(MotorTest):
 
         yield motor.Op(db.system.users.remove)
         yield motor.Op(db.add_user, "mike", "password")
-        users = yield motor.Op(db.system.users.find().to_list)
+        users = yield motor.Op(db.system.users.find().to_list, length=10)
         self.assertTrue("mike" in [u['user'] for u in users])
 
         # We need to authenticate many times at once to make sure that
@@ -145,7 +168,7 @@ class MotorDatabaseTest(MotorTest):
         # just make sure there are no exceptions here
         yield motor.Op(db.logout)
         yield motor.Op(db.remove_user, "mike")
-        users = yield motor.Op(db.system.users.find().to_list)
+        users = yield motor.Op(db.system.users.find().to_list, length=10)
         self.assertFalse("mike" in [u['user'] for u in users])
         done()
 

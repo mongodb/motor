@@ -19,7 +19,6 @@ import functools
 import os
 import sys
 import time
-import types
 import unittest
 
 import pymongo
@@ -27,6 +26,7 @@ import pymongo.errors
 from nose.plugins.skip import SkipTest
 from pymongo.mongo_client import _partition_node
 from tornado import gen, ioloop
+from tornado.stack_context import ExceptionStackContext
 
 import motor
 
@@ -35,34 +35,11 @@ try:
     import ssl
 except ImportError:
     HAVE_SSL = False
+    ssl = None
 
 
 host = os.environ.get("DB_IP", "localhost")
 port = int(os.environ.get("DB_PORT", 27017))
-
-
-# TODO: replicate asyncmongo's whole test suite?
-
-class AsyncTestRunner(gen.Runner):
-    def __init__(self, gen, timeout):
-        # In Tornado 2.3.x through 2.4.x, the second arg to Runner() is a
-        # deactivate_context callback; in Tornado 3 it's a final_callback.
-        super(AsyncTestRunner, self).__init__(gen, lambda *args, **kwargs: None)
-        self.timeout = timeout
-
-    def run(self):
-        loop = ioloop.IOLoop.instance()
-
-        try:
-            super(AsyncTestRunner, self).run()
-        except:
-            loop.remove_timeout(self.timeout)
-            loop.stop()
-            raise
-
-        if self.finished:
-            loop.remove_timeout(self.timeout)
-            loop.stop()
 
 
 def async_test_engine(timeout_sec=5, io_loop=None):
@@ -76,52 +53,43 @@ or:
 
     timeout_sec = max(float(os.environ.get('TIMEOUT_SEC', 0)), timeout_sec)
 
-    is_done = [False]
-
     def decorator(func):
-        def done():
-            is_done[0] = True
-
         @functools.wraps(func)
         def _async_test(self):
-            # Uninstall previous loop
-            if hasattr(ioloop.IOLoop, '_instance'):
-                del ioloop.IOLoop._instance
-
             loop = io_loop or ioloop.IOLoop.instance()
-            assert not loop._stopped
-            if io_loop:
-                io_loop.install()
-
             start = time.time()
+            is_done = [False]
+            error = [None]
+
+            def on_exception(exc_type, exc_value, exc_traceback):
+                error[0] = exc_value
+                loop.stop()
+
+            def done():
+                is_done[0] = True
+                loop.stop()
+
+            def start_test():
+                gen.engine(func)(self, done)
 
             def on_timeout():
-                print '%s timed out after %.2f seconds' % (
-                    func, time.time() - start)
+                error[0] = AssertionError(
+                    '%s timed out after %.2f seconds' % (
+                        func, time.time() - start))
                 loop.stop()
-                raise AssertionError("%s timed out" % func)
 
             timeout = loop.add_timeout(start + timeout_sec, on_timeout)
 
-            try:
-                generator = func(self, done)
-                assert isinstance(generator, types.GeneratorType), (
-                    "%s should be a generator, include a yield "
-                    "statement" % func
-                )
+            with ExceptionStackContext(on_exception):
+                loop.add_callback(start_test)
 
-                runner = AsyncTestRunner(generator, timeout)
-                runner.run()
-                loop.start()
-                if not runner.finished:
-                    # Something stopped the loop before func could finish or
-                    # throw an exception.
-                    raise Exception('%s did not finish' % func)
+            loop.start()
+            loop.remove_timeout(timeout)
+            if error[0]:
+                raise error[0]
 
-                if not is_done[0]:
-                    raise Exception('%s did not call done()' % func)
-            finally:
-                del ioloop.IOLoop._instance # Uninstall
+            if not is_done[0]:
+                raise Exception('%s did not call done()' % func)
 
         return _async_test
     return decorator
@@ -264,32 +232,52 @@ class MotorTest(unittest.TestCase):
         """
         return motor.MotorClient(host, port, *args, **kwargs).open_sync()
 
-    def check_callback_handling(self, fn, required):
-        """
-        Take a function and verify that it accepts a 'callback' parameter
+    @gen.engine
+    def check_callback_handling(self, fn, required, callback):
+        """Take a function and verify that it accepts a 'callback' parameter
         and properly type-checks it. If 'required', check that fn requires
         a callback.
+
+        NOTE: This method can call fn several times, so it should be relatively
+        free of side-effects. Otherwise you should test fn without this method.
+
+        :Parameters:
+          - `fn`: A function that accepts a callback
+          - `required`: Whether `fn` should require a callback or not
+          - `callback`: To be called with ``(None, error)`` when done
         """
-        self.assertRaises(TypeError, fn, callback='foo')
-        self.assertRaises(TypeError, fn, callback=1)
+        try:
+            self.assertRaises(TypeError, fn, callback='foo')
+            self.assertRaises(TypeError, fn, callback=1)
 
-        if required:
-            self.assertRaises(TypeError, fn)
-            self.assertRaises(TypeError, fn, None)
-        else:
+            if required:
+                self.assertRaises(TypeError, fn)
+                self.assertRaises(TypeError, fn, None)
+            else:
+                # Should not raise
+                fn(callback=None)
+
+                # Let it finish so it doesn't interfere with future tests
+                loop = ioloop.IOLoop.instance()
+                yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=1))
+
             # Should not raise
-            fn(callback=None)
+            yield motor.Op(fn)
+            callback(None, None)
+        except Exception, e:
+            callback(None, e)
 
-        # Should not raise
-        fn(callback=lambda result, error: None)
-
+    @gen.engine
     def check_required_callback(self, fn, *args, **kwargs):
+        callback = kwargs.pop('callback')
         self.check_callback_handling(
-            functools.partial(fn, *args, **kwargs), True)
+            functools.partial(fn, *args, **kwargs), True, callback=callback)
 
+    @gen.engine
     def check_optional_callback(self, fn, *args, **kwargs):
+        callback = kwargs.pop('callback')
         self.check_callback_handling(
-            functools.partial(fn, *args, **kwargs), False)
+            functools.partial(fn, *args, **kwargs), False, callback=callback)
 
     def tearDown(self):
         self.sync_coll.drop()
