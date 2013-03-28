@@ -14,13 +14,14 @@
 
 """Test Motor's async test helpers."""
 
-import unittest
 import datetime
+import unittest
 
 from tornado import gen
 from tornado.ioloop import IOLoop
 
-from test import async_test_engine, AssertRaises
+import motor
+from test import async_test_engine, AssertRaises, MotorTest
 
 
 class MotorTestTest(unittest.TestCase):
@@ -48,7 +49,7 @@ class MotorTestTest(unittest.TestCase):
         self.pause_delta = datetime.timedelta(seconds=0)
         self.pause()  # No error.
 
-    @async_test_engine()
+    @async_test_engine(timeout_sec=0.1)
     def doesnt_call_done(self, done):
         pass
 
@@ -56,17 +57,47 @@ class MotorTestTest(unittest.TestCase):
         self.assertRaises(Exception, self.doesnt_call_done)
 
     @async_test_engine()
-    def assert_raises(self, done):
+    def yield_assert_raises(self, done):
         def _raise(callback):
             callback(None, self.exception)
 
-        yield AssertRaises(AssertionError, _raise)
+        yield AssertRaises(ZeroDivisionError, _raise)
         done()
 
     def test_assert_raises(self):
-        self.exception = AssertionError()
-        self.assert_raises()
+        self.exception = ZeroDivisionError()
+        self.yield_assert_raises()  # No error.
 
     def test_assert_raises_failure(self):
         self.exception = None
-        self.assertRaises(Exception, self.assert_raises)
+        self.assertRaises(Exception, self.yield_assert_raises)
+
+
+def require_callback(callback=None):
+    motor.check_callable(callback, True)
+    callback(None, None)
+
+
+def dont_require_callback(callback=None):
+    motor.check_callable(callback, False)
+    if callback is not None:
+        callback(None, None)
+
+
+class MotorCallbackTestTest(MotorTest):
+    @async_test_engine()
+    def test_check_required_callback(self, done):
+        yield motor.Op(self.check_required_callback, require_callback)
+        yield AssertRaises(
+            Exception,
+            self.check_required_callback, dont_require_callback)
+
+        done()
+
+    @async_test_engine()
+    def test_check_optional_callback(self, done):
+        yield motor.Op(self.check_optional_callback, dont_require_callback)
+        yield AssertRaises(
+            Exception, self.check_optional_callback, require_callback)
+
+        done()
