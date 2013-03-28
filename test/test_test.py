@@ -35,14 +35,14 @@ class MotorTestTest(unittest.TestCase):
     def test_non_generator(self, done):
         done()
 
-    @async_test_engine(timeout_sec=0.1)
+    @async_test_engine(timeout_sec=1)
     def pause(self, done):
         loop = IOLoop.instance()
         yield gen.Task(loop.add_timeout, self.pause_delta)
         done()
 
     def test_timeout(self):
-        self.pause_delta = datetime.timedelta(seconds=.2)
+        self.pause_delta = datetime.timedelta(seconds=10)
         self.assertRaises(Exception, self.pause)
 
     def test_no_timeout(self):
