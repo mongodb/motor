@@ -987,10 +987,12 @@ class MotorReplicaSetClient(MotorClientBase):
                     monitor = self.delegate._MongoReplicaSetClient__monitor
                     monitor.start_motor(self.io_loop)
                 except Exception, e:
-                    callback(None, e)
+                    if callback:
+                        callback(None, e)
                 else:
                     # No errors
-                    callback(self, None)
+                    if callback:
+                        callback(self, None)
 
         super(MotorReplicaSetClient, self)._open(callback=opened)
 
