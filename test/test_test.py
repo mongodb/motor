@@ -42,7 +42,7 @@ class MotorTestTest(unittest.TestCase):
         done()
 
     def test_timeout(self):
-        self.pause_delta = datetime.timedelta(seconds=10)
+        self.pause_delta = datetime.timedelta(seconds=30)
         self.assertRaises(Exception, self.pause)
 
     def test_no_timeout(self):
