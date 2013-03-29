@@ -168,9 +168,6 @@ class MotorCursorTest(MotorTest):
         coll = self.motor_client(host, port).pymongo_test.test_collection
         callback = lambda result, error: None
 
-        if sys.version_info[:2] < (2, 6):
-            raise SkipTest("Too annoying to test warnings in Python 2.5")
-
         with warnings.catch_warnings(record=True) as w:
             # Cause all warnings to always be triggered.
             warnings.simplefilter("always")

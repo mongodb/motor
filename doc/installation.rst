@@ -14,7 +14,7 @@ and Tornado_.
 Prerequisites
 -------------
 
-* CPython 2.5, 2.6, 2.7, or 3.3
+* CPython 2.6, 2.7, or 3.3
 * Although Motor works with PyPy 2.0-beta1, limitations with greenlets and
   PyPy's JIT compiler make PyPy applications that use Motor too slow for
   regular use
