@@ -55,8 +55,9 @@ class MotorGridFileTest(MotorTest):
         yield motor.Op(
             self.check_optional_callback, partial(f.writelines, [b('a')]))
 
-        yield motor.Op(self.check_optional_callback, f.close)
-
+        self.assertRaises(TypeError, f.close, callback='foo')
+        self.assertRaises(TypeError, f.close, callback=1)
+        f.close(callback=None)  # No error
         done()
 
     @async_test_engine()
