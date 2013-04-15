@@ -23,7 +23,7 @@ from pymongo.son_manipulator import AutoReference, NamespaceInjector
 from tornado import gen, ioloop
 
 import motor
-from test import host, port, MotorTest, async_test_engine, AssertRaises
+from test import host, port, MotorTest, async_test_engine
 
 
 class MotorDatabaseTest(MotorTest):
@@ -87,8 +87,10 @@ class MotorDatabaseTest(MotorTest):
         self.assertTrue(isinstance(collection, motor.MotorCollection))
         self.assertTrue(
             'test_collection2' in (yield motor.Op(db.collection_names)))
-        yield AssertRaises(
-            CollectionInvalid, db.create_collection, 'test_collection2')
+
+        with self.assertRaises(CollectionInvalid):
+            yield motor.Op(db.create_collection, 'test_collection2')
+
         yield motor.Op(db.drop_collection, 'test_collection2')
 
         # Test creating capped collection
@@ -177,12 +179,14 @@ class MotorDatabaseTest(MotorTest):
         cx = self.motor_client(host, port)
         db = cx.pymongo_test
 
-        yield AssertRaises(TypeError, db.validate_collection, 5)
-        yield AssertRaises(TypeError, db.validate_collection, None)
-        yield AssertRaises(OperationFailure, db.validate_collection,
-                          "test.doesnotexist")
-        yield AssertRaises(OperationFailure, db.validate_collection,
-                          db.test.doesnotexist)
+        with self.assertRaises(TypeError):
+            yield motor.Op(db.validate_collection, 5)
+        with self.assertRaises(TypeError):
+            yield motor.Op(db.validate_collection, None)
+        with self.assertRaises(OperationFailure):
+            yield motor.Op(db.validate_collection, "test.doesnotexist")
+        with self.assertRaises(OperationFailure):
+            yield motor.Op(db.validate_collection, db.test.doesnotexist)
 
         yield motor.Op(db.test.save, {"dummy": u"object"})
         self.assertTrue((yield motor.Op(db.validate_collection, "test")))

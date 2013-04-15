@@ -27,7 +27,7 @@ from tornado import ioloop, gen
 
 import motor
 from test import host, port
-from test import MotorTest, async_test_engine, AssertRaises, AssertEqual
+from test import MotorTest, async_test_engine, AssertEqual
 from test.utils import (
     server_is_master_with_slave, delay, server_started_with_auth)
 
@@ -307,15 +307,15 @@ class MotorClientTest(MotorTest):
         # 3. Create a username and password
         yield motor.Op(cx.pymongo_test.add_user, "mike", "password")
 
-        yield AssertRaises(
-            pymongo.errors.OperationFailure,
-            cx.copy_database, "pymongo_test", "pymongo_test0",
-            username="foo", password="bar")
+        with self.assertRaises(pymongo.errors.OperationFailure):
+            yield motor.Op(
+                cx.copy_database, "pymongo_test", "pymongo_test0",
+                username="foo", password="bar")
 
-        yield AssertRaises(
-            pymongo.errors.OperationFailure, cx.copy_database,
-            "pymongo_test", "pymongo_test0",
-            username="mike", password="bar")
+        with self.assertRaises(pymongo.errors.OperationFailure):
+            yield motor.Op(
+                cx.copy_database, "pymongo_test", "pymongo_test0",
+                username="mike", password="bar")
 
         # 4. Copy a database using name and password
         if not cx.is_mongos:
@@ -385,17 +385,20 @@ class MotorClientTest(MotorTest):
         # Motor merely tries to time out a connection attempt within the
         # specified duration; DNS lookup in particular isn't charged against
         # the timeout. So don't measure how long this takes.
-        yield AssertRaises(ConnectionFailure, motor.MotorClient(
-            'example.com', port=12345, connectTimeoutMS=1).open)
+        with self.assertRaises(ConnectionFailure):
+            yield motor.Op(motor.MotorClient(
+                'example.com', port=12345, connectTimeoutMS=1).open)
         done()
 
     @async_test_engine()
     def test_max_pool_size_validation(self, done):
         cx = motor.MotorClient(host=host, port=port, max_pool_size=-1)
-        yield AssertRaises(ConfigurationError, cx.open)
+        with self.assertRaises(ConfigurationError):
+            yield motor.Op(cx.open)
 
         cx = motor.MotorClient(host=host, port=port, max_pool_size='foo')
-        yield AssertRaises(ConfigurationError, cx.open)
+        with self.assertRaises(ConfigurationError):
+            yield motor.Op(cx.open)
 
         c = motor.MotorClient(host=host, port=port, max_pool_size=100)
         yield motor.Op(c.open)

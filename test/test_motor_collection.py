@@ -26,7 +26,7 @@ from test.utils import delay
 
 import motor
 from test import host, port
-from test import MotorTest, async_test_engine, AssertEqual, AssertRaises
+from test import MotorTest, async_test_engine, AssertEqual
 
 
 class MotorCollectionTest(MotorTest):
@@ -242,10 +242,11 @@ class MotorCollectionTest(MotorTest):
         cx = self.motor_client(host, port)
 
         # There's already a document with s: hex(4)
-        yield AssertRaises(DuplicateKeyError,
-            cx.pymongo_test.test_collection.update,
-            {'_id': 5},
-            {'$set': {'s': hex(4)}})
+        with self.assertRaises(DuplicateKeyError):
+            yield motor.Op(
+                cx.pymongo_test.test_collection.update,
+                {'_id': 5},
+                {'$set': {'s': hex(4)}})
 
         done()
 
@@ -282,37 +283,32 @@ class MotorCollectionTest(MotorTest):
     def test_insert_bad(self, done):
         # Violate a unique index, make sure we handle error well
         cx = self.motor_client(host, port)
-        yield AssertRaises(
-            DuplicateKeyError,
-            cx.pymongo_test.test_collection.insert,
-            {'s': hex(4)} # There's already a document with s: hex(4)
-        )
+        with self.assertRaises(DuplicateKeyError):
+            yield motor.Op(
+                cx.pymongo_test.test_collection.insert,
+                {'s': hex(4)})  # There's already a document with s: hex(4)
+
         done()
 
     def test_insert_many_one_bad(self):
-        # Violate a unique index in one of many updates, handle error
+        # Violate a unique index in one of many updates, handle error.
         cx = self.motor_client(host, port)
-        result = yield AssertRaises(
-            DuplicateKeyError,
-            cx.pymongo_test.test_collection.insert,
-            [
-                {'_id': 201, 's': hex(201)},
-                {'_id': 202, 's': hex(4)}, # Already exists
-                {'_id': 203, 's': hex(203)},
-            ]
-        )
+        with self.assertRaises(DuplicateKeyError):
+            yield motor.Op(
+                cx.pymongo_test.test_collection.insert,
+                [
+                    {'_id': 201, 's': hex(201)},
+                    {'_id': 202, 's': hex(4)},  # Already exists
+                    {'_id': 203, 's': hex(203)},
+                ])
 
-        # Even though first insert succeeded, an exception was raised and
-        # result is None
-        self.assertEqual(None, result)
-
-        # First insert should've succeeded
+        # First insert should have succeeded.
         yield AssertEqual(
             [{'_id': 201, 's': hex(201)}],
             self.sync_db.test_collection.find({'_id': 201}).to_list,
             length=1000)
 
-        # Final insert didn't execute, since second failed
+        # Final insert didn't execute, since second failed.
         yield AssertEqual(
             [],
             self.sync_db.test_collection.find({'_id': 203}).to_list,
@@ -351,11 +347,11 @@ class MotorCollectionTest(MotorTest):
     @async_test_engine()
     def test_save_bad(self, done):
         # Violate a unique index, make sure we handle error well
-        yield AssertRaises(
-            DuplicateKeyError,
-            self.motor_client(host, port).pymongo_test.test_collection.save,
-            {'_id': 5, 's': hex(4)} # There's already a document with s: hex(4)
-        )
+        collection = self.motor_client(host, port).pymongo_test.test_collection
+        with self.assertRaises(DuplicateKeyError):
+            # There's already a document with s: hex(4).
+            yield motor.Op(collection.save, {'_id': 5, 's': hex(4)})
+
         done()
 
     @async_test_engine()

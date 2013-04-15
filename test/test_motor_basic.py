@@ -20,7 +20,7 @@ from pymongo.read_preferences import ReadPreference
 
 import motor
 from test import host, port
-from test import MotorTest, async_test_engine, AssertRaises
+from test import MotorTest, async_test_engine
 
 
 class MotorTestBasic(MotorTest):
@@ -68,8 +68,8 @@ class MotorTestBasic(MotorTest):
 
             # Call GLE whenever passing a callback, even if
             # collection.write_concern['w'] == 0
-            yield AssertRaises(pymongo.errors.DuplicateKeyError,
-                collection.insert, {'_id': 0})
+            with self.assertRaises(pymongo.errors.DuplicateKeyError):
+                yield motor.Op(collection.insert, {'_id': 0})
 
             # No error
             yield motor.Op(collection.insert, {'_id': 0}, w=0)
@@ -87,24 +87,28 @@ class MotorTestBasic(MotorTest):
         # Test write concerns passed to MotorClient, set on collection, or
         # passed to insert.
         if self.is_replica_set:
-            yield AssertRaises(pymongo.errors.DuplicateKeyError,
-                cxw2.pymongo_test.test_collection.insert, {'_id': 0})
+            with self.assertRaises(pymongo.errors.DuplicateKeyError):
+                yield motor.Op(
+                    cxw2.pymongo_test.test_collection.insert, {'_id': 0})
 
-            yield AssertRaises(pymongo.errors.DuplicateKeyError,
-                collection.insert, {'_id': 0})
+            with self.assertRaises(pymongo.errors.DuplicateKeyError):
+                yield motor.Op(collection.insert, {'_id': 0})
 
-            yield AssertRaises(pymongo.errors.DuplicateKeyError,
-                cx.pymongo_test.test_collection.insert, {'_id': 0}, w=2)
+            with self.assertRaises(pymongo.errors.DuplicateKeyError):
+                yield motor.Op(
+                    cx.pymongo_test.test_collection.insert, {'_id': 0}, w=2)
         else:
             # w > 1 and no replica set
-            yield AssertRaises(pymongo.errors.OperationFailure,
-                cxw2.pymongo_test.test_collection.insert, {'_id': 0})
+            with self.assertRaises(pymongo.errors.OperationFailure):
+                yield motor.Op(
+                    cxw2.pymongo_test.test_collection.insert, {'_id': 0})
 
-            yield AssertRaises(pymongo.errors.OperationFailure,
-                collection.insert, {'_id': 0})
+            with self.assertRaises(pymongo.errors.OperationFailure):
+                yield motor.Op(collection.insert, {'_id': 0})
 
-            yield AssertRaises(pymongo.errors.OperationFailure,
-                cx.pymongo_test.test_collection.insert, {'_id': 0}, w=2)
+            with self.assertRaises(pymongo.errors.OperationFailure):
+                yield motor.Op(
+                    cx.pymongo_test.test_collection.insert, {'_id': 0}, w=2)
 
         # Important that the last operation on each MotorClient was
         # acknowledged, so lingering messages aren't delivered in the middle of

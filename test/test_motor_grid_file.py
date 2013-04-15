@@ -24,7 +24,7 @@ from bson.py3compat import b
 from gridfs.errors import NoFile
 
 import motor
-from test import host, port, MotorTest, async_test_engine, AssertRaises
+from test import host, port, MotorTest, async_test_engine
 
 
 class MotorGridFileTest(MotorTest):
@@ -226,7 +226,8 @@ class MotorGridFileTest(MotorTest):
 
         db = self.motor_client(host, port).open_sync().pymongo_test
         gout = motor.MotorGridOut(db.fs, 5)
-        yield AssertRaises(NoFile, gout.open)
+        with self.assertRaises(NoFile):
+            yield motor.Op(gout.open)
 
         a = yield motor.Op(motor.MotorGridIn(db.fs).open)
         yield motor.Op(a.close)
@@ -295,8 +296,9 @@ class MotorGridFileTest(MotorTest):
 
         self.assertEqual(b("foo bar"), (yield motor.Op(three.read)))
 
-        yield AssertRaises(
-            NoFile, motor.MotorGridOut(db.fs, file_document={}).open)
+        with self.assertRaises(NoFile):
+            yield motor.Op(motor.MotorGridOut(db.fs, file_document={}).open)
+
         done()
 
     @async_test_engine()

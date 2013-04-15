@@ -31,7 +31,7 @@ import motor
 import ha_tools
 from test.utils import one
 from test import async_test_engine
-from test import AssertEqual, AssertRaises, AssertTrue, AssertFalse
+from test import AssertEqual, AssertTrue, AssertFalse
 from test_motor_ha_utils import assertReadFrom, assertReadFromAll
 
 
@@ -105,8 +105,8 @@ class MotorTestDirectConnection(unittest.TestCase):
                 self.assertTrue((
                     yield motor.Op(client.pymongo_test.test.find_one)))
             else:
-                yield AssertRaises(
-                    AutoReconnect, client.pymongo_test.test.find_one)
+                with self.assertRaises(AutoReconnect):
+                    yield motor.Op(client.pymongo_test.test.find_one)
 
             # Since an attempt at an acknowledged write to a secondary from a
             # direct connection raises AutoReconnect('not master'), MotorClient
@@ -253,8 +253,10 @@ class MotorTestTriggeredRefresh(unittest.TestCase):
         ha_tools.set_maintenance(secondary, True)
 
         # Trigger a refresh in various ways
-        yield AssertRaises(AutoReconnect, self.c_find_one.test.test.find_one)
-        yield AssertRaises(AutoReconnect, self.c_count.test.test.count)
+        with self.assertRaises(AutoReconnect):
+            yield motor.Op(self.c_find_one.test.test.find_one)
+        with self.assertRaises(AutoReconnect):
+            yield motor.Op(self.c_count.test.test.count)
 
         # Wait for the immediate refresh to complete - we're not waiting for
         # the periodic refresh, which has been disabled
@@ -284,7 +286,8 @@ class MotorTestTriggeredRefresh(unittest.TestCase):
         yield gen.Task(IOLoop.instance().add_timeout, time.time() + 1)
 
         # Trigger a refresh
-        yield AssertRaises(AutoReconnect, c_find_one.test.test.find_one)
+        with self.assertRaises(AutoReconnect):
+            yield motor.Op(c_find_one.test.test.find_one)
 
         # Wait for the immediate refresh to complete - we're not waiting for
         # the periodic refresh, which has been disabled
@@ -905,7 +908,8 @@ class MotorTestReplicaSetAuth(unittest.TestCase):
             {'foo': 'bar'},
             w=3, wtimeout=1000)
         yield motor.Op(db.logout)
-        yield AssertRaises(OperationFailure, db.foo.find_one)
+        with self.assertRaises(OperationFailure):
+            yield motor.Op(db.foo.find_one)
 
         primary = '%s:%d' % self.c.primary
         ha_tools.kill_members([primary], 2)
@@ -988,7 +992,8 @@ class MotorTestMongosHighAvailability(unittest.TestCase):
         first = '%s:%d' % (c.host, c.port)
         ha_tools.kill_mongos(first)
         # Fail first attempt
-        yield AssertRaises(AutoReconnect, coll.count)
+        with self.assertRaises(AutoReconnect):
+            yield motor.Op(coll.count)
         # Find new mongos
         yield AssertEqual(1, coll.count)
 
@@ -996,7 +1001,8 @@ class MotorTestMongosHighAvailability(unittest.TestCase):
         self.assertNotEqual(first, second)
         ha_tools.kill_mongos(second)
         # Fail first attempt
-        yield AssertRaises(AutoReconnect, coll.count)
+        with self.assertRaises(AutoReconnect):
+            yield motor.Op(coll.count)
         # Find new mongos
         yield AssertEqual(1, coll.count)
 
@@ -1004,7 +1010,8 @@ class MotorTestMongosHighAvailability(unittest.TestCase):
         self.assertNotEqual(second, third)
         ha_tools.kill_mongos(third)
         # Fail first attempt
-        yield AssertRaises(AutoReconnect, coll.count)
+        with self.assertRaises(AutoReconnect):
+            yield motor.Op(coll.count)
 
         # We've killed all three, restart one.
         ha_tools.restart_mongos(first)

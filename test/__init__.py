@@ -99,28 +99,6 @@ or:
 async_test_engine.__test__ = False  # Nose otherwise mistakes it for a test
 
 
-class AssertRaises(gen.Task):
-    def __init__(self, exc_type, func, *args, **kwargs):
-        super(AssertRaises, self).__init__(func, *args, **kwargs)
-        if not isinstance(exc_type, type):
-            raise TypeError("%s is not a class" % repr(exc_type))
-
-        if not issubclass(exc_type, Exception):
-            raise TypeError(
-                "%s is not a subclass of Exception" % repr(exc_type))
-        self.exc_type = exc_type
-
-    def get_result(self):
-        (result, error), _ = self.runner.pop_result(self.key)
-        if not isinstance(error, self.exc_type):
-            if error:
-                raise AssertionError("%s raised instead of %s" % (
-                    repr(error), self.exc_type.__name__))
-            else:
-                raise AssertionError("%s not raised" % self.exc_type.__name__)
-        return result
-
-
 class AssertEqual(gen.Task):
     def __init__(self, expected, func, *args, **kwargs):
         super(AssertEqual, self).__init__(func, *args, **kwargs)

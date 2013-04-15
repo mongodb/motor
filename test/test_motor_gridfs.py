@@ -27,7 +27,7 @@ from tornado import ioloop
 
 import motor
 from test import host, port, MotorTest, MotorReplicaSetTestBase
-from test import async_test_engine, AssertEqual, AssertRaises
+from test import async_test_engine, AssertEqual
 
 
 class MotorGridfsTest(MotorTest):
@@ -138,11 +138,13 @@ class MotorGridfsTest(MotorTest):
         yield AssertEqual(1, db.fs.chunks.count)
 
         yield motor.Op(fs.delete, oid)
-        yield AssertRaises(NoFile, fs.get, oid)
+        with self.assertRaises(NoFile):
+            yield motor.Op(fs.get, oid)
         yield AssertEqual(0, db.fs.files.count)
         yield AssertEqual(0, db.fs.chunks.count)
 
-        yield AssertRaises(NoFile, fs.get, "foo")
+        with self.assertRaises(NoFile):
+            yield motor.Op(fs.get, "foo")
         yield AssertEqual("foo", fs.put, b("hello world"), _id="foo")
         gridout = yield motor.Op(fs.get, "foo")
         yield AssertEqual(b("hello world"), gridout.read)
@@ -175,11 +177,13 @@ class MotorGridfsTest(MotorTest):
         self.assertEqual(1, (yield motor.Op(db.alt.chunks.count)))
 
         yield motor.Op(alt.delete, oid)
-        yield AssertRaises(NoFile, alt.get, oid)
+        with self.assertRaises(NoFile):
+            yield motor.Op(alt.get, oid)
         self.assertEqual(0, (yield motor.Op(db.alt.files.count)))
         self.assertEqual(0, (yield motor.Op(db.alt.chunks.count)))
 
-        yield AssertRaises(NoFile, alt.get, "foo")
+        with self.assertRaises(NoFile):
+            yield motor.Op(alt.get, "foo")
         oid = yield motor.Op(alt.put, b("hello world"), _id="foo")
         self.assertEqual("foo", oid)
         gridout = yield motor.Op(alt.get, "foo")
@@ -208,7 +212,8 @@ class MotorGridfsTest(MotorTest):
         db = self.motor_client(host, port).open_sync().pymongo_test
         fs = yield motor.Op(motor.MotorGridFS(db).open)
         oid = yield motor.Op(fs.put, b("hello"))
-        yield AssertRaises(FileExists, fs.put, b("world"), _id=oid)
+        with self.assertRaises(FileExists):
+            yield motor.Op(fs.put, b("world"), _id=oid)
         done()
 
 
@@ -255,7 +260,8 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
                 motor.MotorGridFS(secondary_client.pymongo_test).open)
 
             # This won't detect secondary, raises error
-            yield AssertRaises(AutoReconnect, fs.put, b('foo'))
+            with self.assertRaises(AutoReconnect):
+                yield motor.Op(fs.put, b('foo'))
 
         done()
 

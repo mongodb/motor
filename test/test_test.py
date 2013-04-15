@@ -21,7 +21,7 @@ from tornado import gen
 from tornado.ioloop import IOLoop
 
 import motor
-from test import async_test_engine, AssertRaises, MotorTest
+from test import async_test_engine, MotorTest
 
 
 class MotorTestTest(unittest.TestCase):
@@ -56,22 +56,6 @@ class MotorTestTest(unittest.TestCase):
     def test_doesnt_call_done(self):
         self.assertRaises(Exception, self.doesnt_call_done)
 
-    @async_test_engine()
-    def yield_assert_raises(self, done):
-        def _raise(callback):
-            callback(None, self.exception)
-
-        yield AssertRaises(ZeroDivisionError, _raise)
-        done()
-
-    def test_assert_raises(self):
-        self.exception = ZeroDivisionError()
-        self.yield_assert_raises()  # No error.
-
-    def test_assert_raises_failure(self):
-        self.exception = None
-        self.assertRaises(Exception, self.yield_assert_raises)
-
 
 def require_callback(callback=None):
     motor.check_callable(callback, True)
@@ -88,16 +72,15 @@ class MotorCallbackTestTest(MotorTest):
     @async_test_engine()
     def test_check_required_callback(self, done):
         yield motor.Op(self.check_required_callback, require_callback)
-        yield AssertRaises(
-            Exception,
-            self.check_required_callback, dont_require_callback)
+        with self.assertRaises(Exception):
+            yield motor.Op(self.check_required_callback, dont_require_callback)
 
         done()
 
     @async_test_engine()
     def test_check_optional_callback(self, done):
         yield motor.Op(self.check_optional_callback, dont_require_callback)
-        yield AssertRaises(
-            Exception, self.check_optional_callback, require_callback)
+        with self.assertRaises(Exception):
+            yield motor.Op(self.check_optional_callback, require_callback)
 
         done()

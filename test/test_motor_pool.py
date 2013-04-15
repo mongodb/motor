@@ -28,7 +28,7 @@ from tornado import gen, stack_context
 from tornado.ioloop import IOLoop
 
 import motor
-from test import host, port, MotorTest, async_test_engine, AssertRaises
+from test import host, port, MotorTest, async_test_engine
 from test.utils import delay
 
 
@@ -145,7 +145,8 @@ class MotorPoolTest(MotorTest):
             cb = yield gen.Callback('find_one')
             collection.find_one({'$where': delay(where_delay)}, callback=cb)
             if max_wait_time and max_wait_time < where_delay:
-                yield AssertRaises(motor.MotorPoolTimeout, collection.find_one)
+                with self.assertRaises(motor.MotorPoolTimeout):
+                    yield motor.Op(collection.find_one)
             else:
                 # No error
                 yield motor.Op(collection.find_one)

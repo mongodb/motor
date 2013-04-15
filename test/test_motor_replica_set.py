@@ -22,7 +22,7 @@ from tornado import ioloop, iostream
 
 import motor
 from test import host, port, MotorReplicaSetTestBase
-from test import async_test_engine, AssertEqual, AssertRaises
+from test import async_test_engine, AssertEqual
 
 
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
@@ -199,7 +199,8 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             cursor = db.pymongo_test.find(
                 read_preference=pymongo.ReadPreference.SECONDARY)
 
-            yield AssertRaises(pymongo.errors.AutoReconnect, cursor.each)
+            with self.assertRaises(pymongo.errors.AutoReconnect):
+                yield motor.Op(cursor.each)
         finally:
             iostream.IOStream.write = old_write
 
