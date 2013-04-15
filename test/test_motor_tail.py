@@ -66,10 +66,8 @@ class MotorTailTest(MotorTest):
         cursor = capped.find(tailable=True, await_data=True)
         results = []
         while results != expected:
-            print 'restart'
             while (yield cursor.fetch_next):
                 doc = cursor.next_object()
-                print doc
                 results.append(doc)
 
         t.join()
