@@ -1195,9 +1195,7 @@ class MotorCollection(MotorBase):
         """
         if 'callback' in kwargs:
             raise pymongo.errors.InvalidOperation(
-                "Pass a callback to fetch_next, each, to_list, count, or tail,"
-                "not to find"
-            )
+                "Pass a callback to each, to_list, or count, not to find.")
 
         cursor = self.delegate.find(*args, **kwargs)
         return MotorCursor(cursor, self)
@@ -1517,64 +1515,12 @@ class MotorCursor(MotorBase):
         self.started = False
         return self
 
-    def tail(self, callback):
-        """Query a `capped collection`_. The callback is executed once for each
-        existing document that matches the query, and continues to be executed
-        as new matching documents are appended to the collection.
-        :meth:`tail` returns the :class:`MotorCursor`. The cursor is closed and
-        tailing is canceled with :meth:`close`, or by returning ``False`` from
-        the callback.
-
-        .. seealso:: :doc:`../examples/tailable-cursors`
-
-        .. _capped collection: http://docs.mongodb.org/manual/core/capped-collections/
-
-        :Parameters:
-         - `callback`: function taking (document, error)
-        """
-        # TODO: doc that tailing an empty collection is expensive,
-        #   consider a failsafe, e.g. timing the interval between getmore
-        #   and return, and if it's short and no doc, pause before next
-        #   getmore
-        check_callable(callback, True)
-        self._check_not_started()
-        self.delegate._Cursor__tailable = True
-        self.delegate._Cursor__await_data = True
-
-        # Start tailing
-        self.each(functools.partial(self._tail_got_more, callback))
-        return self
-
-    def _tail_got_more(self, callback, result, error):
-        if self.closed:
-            # Someone has explicitly called close() to cancel iteration
-            return
-
-        if error:
-            self.close()
-            callback(None, error)
-
-        elif result is not None:
-            if callback(result, None) is False:
-                # Callee cancelled tailing, we'll cancel the outer each()
-                self.close()
-                return False
-
-        if not self.alive and not self.closed:
-            # Cursor died because collection was dropped, or we started with
-            # the collection empty, and a callback hasn't closed us since we
-            # started this method. Start over soon.
-            self.rewind()
-            self.get_io_loop().add_timeout(
-                time.time() + 0.5,
-                functools.partial(self.tail, callback))
-
     def get_io_loop(self):
         return self.collection.get_io_loop()
 
     def close(self, callback=None):
         """Explicitly kill this cursor on the server, and cease iterating with
-        :meth:`each` or :meth:`tail`.
+        :meth:`each`.
         """
         self.closed = True
         self._Cursor__die(callback=callback)
@@ -1594,6 +1540,7 @@ class MotorCursor(MotorBase):
 
         .. doctest:: getitem
 
+          >>> from tornado import gen
           >>> @gen.engine
           ... def f():
           ...     yield motor.Op(collection.insert,

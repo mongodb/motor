@@ -306,14 +306,6 @@ has no equivalent to MasterSlaveConnection.
 
 .. _replica sets: http://docs.mongodb.org/manual/core/replication/
 
-Tailable cursors
-----------------
-
-Motor provides a convenience method :meth:`~motor.MotorCursor.tail` that
-hides some complexity involved in tailing a cursor on a capped collection.
-
-.. seealso:: `Tailable cursors <http://docs.mongodb.org/manual/tutorial/create-tailable-cursor/>`_
-
 .. _gridfs-differences:
 
 GridFS

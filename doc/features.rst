@@ -71,9 +71,3 @@ the :class:`~motor.web.GridFSHandler` class.
 .. _GridFS: http://docs.mongodb.org/manual/applications/gridfs/
 
 .. _RequestHandler: http://www.tornadoweb.org/documentation/web.html#request-handlers
-
-Tailable Cursors
-================
-MotorCursor provides a convenient :meth:`~motor.MotorCursor.tail` method to
-watch a MongoDB capped collection and execute a callback with each new document
-as it is inserted.
