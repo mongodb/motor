@@ -6,6 +6,26 @@ python:
   - "3.3"
 services: mongodb
 script: "python setup.py test"
+
+# Futures were introduced in Python 3.2 in the `concurrent.futures` package.
+# This package has also been backported to older versions of Python and can be
+# installed with `pip install futures`. Tornado uses concurrent.futures if
+# available; otherwise it will use a compatible class defined in
+# tornado.concurrent. We want to test all cases: with and without the 'futures'
+# package installed in Python < 3.2, as well as Python >= 3.2.
+
+env:
+  - FUTURES=yes
+  - FUTURES=no
+matrix:
+  exclude:
+    - python: "3.2"
+      env: FUTURES=yes
+    - python: "3.3"
+      env: FUTURES=yes
+before_script:
+  - if [[ "$FUTURES" == "yes" ]]; then pip install futures; fi
+
 branches:
   only:
     - master
