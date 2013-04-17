@@ -18,7 +18,6 @@ import threading
 import time
 import unittest
 
-from tornado import gen
 from tornado.testing import gen_test
 
 from test import MotorTest
@@ -52,26 +51,33 @@ class MotorTailTest(MotorTest):
     # Need at least one pause > 4.5 seconds to ensure we recover when
     # getMore times out
     tail_pauses = (0, 1, 0, 1, 0, 5, 0, 0)
+    expected_duration = sum(tail_pauses) + 10  # Add some fudge
 
     @gen_test
     def test_tail(self):
         expected = [{'_id': i} for i in range(len(self.tail_pauses))]
         t = self.start_insertion_thread(self.tail_pauses)
         capped = self.cx.pymongo_test.capped
-
-        cursor = capped.find(tailable=True, await_data=True)
         results = []
-        while results != expected:
+        time = self.io_loop.time
+        start = time()
+        cursor = capped.find(tailable=True, await_data=True)
+
+        while (results != expected
+               and time() - start < MotorTailTest.expected_duration):
+
             while (yield cursor.fetch_next):
                 doc = cursor.next_object()
                 results.append(doc)
 
-        t.join()
+            # If cursor was created while capped collection had no documents
+            # (i.e., before the thread inserted first doc), it dies
+            # immediately. Just restart it.
+            if not cursor.alive:
+                cursor = capped.find(tailable=True, await_data=True)
 
-        # Clear cursor from this scope and from Runner
-        cursor = None
-        yield gen.Task(self.io_loop.add_callback)
-        yield self.wait_for_cursors()
+        t.join()
+        self.assertEqual(expected, results)
 
 
 if __name__ == '__main__':

@@ -90,9 +90,10 @@ class MotorCursorTest(MotorTest):
         # clears the engine Runner's reference to the cursor.
         cursor = coll.find()
         yield cursor.fetch_next
+        cursor_id = cursor.cursor_id
         del cursor
         yield gen.Task(self.io_loop.add_callback)
-        yield self.wait_for_cursors()
+        yield self.wait_for_cursor(coll, cursor_id)
 
     @gen_test
     def test_fetch_next_without_results(self):
@@ -252,7 +253,7 @@ class MotorCursorTest(MotorTest):
         # Cursor reports it's alive because it has buffered data, even though
         # it's killed on the server
         self.assertTrue(cursor.alive)
-        yield self.wait_for_cursors()
+        yield self.wait_for_cursor(collection, cursor.cursor_id)
 
     def test_each_cancel(self):
         loop = self.io_loop
@@ -266,7 +267,7 @@ class MotorCursorTest(MotorTest):
 
             results.append(result)
             loop.add_callback(canceled)
-            return False # Cancel iteration
+            return False  # Cancel iteration
 
         def canceled():
             try:
@@ -431,54 +432,29 @@ class MotorCursorTest(MotorTest):
         self.assertEqual(2, count)
         self.assertEqual(cursor, cursor.rewind())
 
-    @gen.coroutine
-    def wait_for_cursor(self, cursor):
-        """Wait 10 seconds for a cursor to be closed server-side, else fail
-        """
-        loop = self.io_loop
-        patience_seconds = 10
-        start = time.time()
-
-        try:
-            yield cursor.fetch_next
-        except OperationFailure, e:
-            # Let's check this error was because the cursor was killed, not a
-            # test bug. mongod reports "cursor id 'N' not valid at server",
-            # mongos says "database error: could not find cursor in cache for
-            # id N over collection pymongo_test.test_collection".
-            self.assertTrue(
-                "not valid at server" in e.args[0] or
-                "could not find cursor in cache" in e.args[0])
-        else:
-            now = time.time()
-            if now - start > patience_seconds:
-                self.fail("Cursor not closed")
-            else:
-                yield gen.Task(loop.add_timeout, time.time() + 1)
-
     @gen_test
     def test_del_on_main_greenlet(self):
         # Since __del__ can happen on any greenlet, MotorCursor must be
         # prepared to close itself correctly on main or a child.
-        cursor = self.cx.pymongo_test.test_collection.find()
+        collection = self.cx.pymongo_test.test_collection
+        cursor = collection.find()
         yield cursor.fetch_next
-        clone = cursor.clone()
-        clone.delegate._Cursor__id = cursor.cursor_id
+        cursor_id = cursor.cursor_id
 
         # Clear the FetchNext reference from this gen.Runner so it's deleted
         # and decrefs the cursor
         yield gen.Task(self.io_loop.add_callback)
         del cursor
-        yield self.wait_for_cursor(clone)
+        yield self.wait_for_cursor(collection, cursor_id)
 
     @gen_test
     def test_del_on_child_greenlet(self):
         # Since __del__ can happen on any greenlet, MotorCursor must be
         # prepared to close itself correctly on main or a child.
-        cursor = [self.cx.pymongo_test.test_collection.find()]
+        collection = self.cx.pymongo_test.test_collection
+        cursor = [collection.find()]
         yield cursor[0].fetch_next
-        clone = cursor[0].clone()
-        clone.delegate._Cursor__id = cursor[0].cursor_id
+        cursor_id = cursor[0].cursor_id
 
         # Clear the FetchNext reference from this gen.Runner so it's deleted
         # and decrefs the cursor
@@ -490,7 +466,7 @@ class MotorCursorTest(MotorTest):
             del cursor[0]
 
         greenlet.greenlet(f).switch()
-        yield self.wait_for_cursor(clone)
+        yield self.wait_for_cursor(collection, cursor_id)
 
 
 if __name__ == '__main__':

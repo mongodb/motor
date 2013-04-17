@@ -135,28 +135,59 @@ class MotorTest(testing.AsyncTestCase):
         self.sync_coll.insert(
             [{'_id': i, 's': hex(i)} for i in range(200)])
 
-        self.open_cursors = self.get_open_cursors()
         self.cx = self.motor_client_sync()
 
-    def get_open_cursors(self):
-        # TODO: we've found this unreliable in PyMongo testing; find instead a
-        # way to track cursors Motor creates and assert they're all closed
-        output = self.sync_cx.admin.command('serverStatus')
-        return output.get('cursors', {}).get('totalOpen', 0)
-
     @gen.coroutine
-    def wait_for_cursors(self):
-        """Ensure any cursors opened during the test have been closed on the
-        server. `yield motor.Op(cursor.close)` is usually simpler.
-        """
-        timeout_sec = float(os.environ.get('TIMEOUT_SEC', 5)) - 1
-        loop = self.io_loop
-        start = time.time()
-        while self.get_open_cursors() > self.open_cursors:
-            if time.time() - start > timeout_sec:
-                self.fail("Waited too long for cursors to close")
+    def wait_for_cursor(self, collection, cursor_id):
+        """Ensure a cursor opened during the test is closed on the
+        server, e.g. after dereferencing an open cursor on the client:
 
-            yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
+            cursor = self.cx.pymongo_test.test_collection.find()
+
+            # Open it server-side
+            yield cursor.fetch_next
+            cursor_id = cursor.cursor_id
+
+            # Clear cursor reference from this scope and from Runner
+            del cursor
+            yield gen.Task(self.io_loop.add_callback)
+
+            # Wait for cursor to be closed server-side
+            yield self.wait_for_cursor(clone)
+
+        `yield motor.Op(cursor.close)` is usually simpler.
+        """
+        patience_seconds = 20
+        start = self.io_loop.time()
+
+        cursor = collection.find()
+        cursor.delegate._Cursor__id = cursor_id
+
+        while True:
+            try:
+                yield cursor.fetch_next
+            except pymongo.errors.OperationFailure, e:
+                # Let's check this error was because the cursor was killed,
+                # not a test bug. mongod reports "cursor id 'N' not valid at
+                # server", mongos says:
+                # "database error: could not find cursor in cache for id N
+                # over collection pymongo_test.test_collection".
+                self.assertTrue(
+                    "not valid at server" in e.args[0] or
+                    "could not find cursor in cache" in e.args[0])
+
+                # Success; avoid spurious errors trying to close after loop is
+                # closed.
+                cursor.delegate._Cursor__id = None
+                return
+            else:
+                now = self.io_loop.time()
+                if now - start > patience_seconds:
+                    self.fail("Cursor not closed")
+                else:
+                    yield gen.Task(
+                        self.io_loop.add_timeout,
+                        datetime.timedelta(seconds=0.1))
 
     @gen.coroutine
     def motor_client(self, host=host, port=port, *args, **kwargs):
@@ -218,22 +249,6 @@ class MotorTest(testing.AsyncTestCase):
     def tearDown(self):
         self.sync_coll.drop()
         self.cx.close()
-
-        # Replication cursors come and go, making this check unreliable against
-        # replica sets.
-        if not self.is_replica_set:
-            if 'PyPy' in sys.version:
-                import gc
-                gc.collect()
-                time.sleep(1)
-
-            actual_open_cursors = self.get_open_cursors()
-            self.assertEqual(
-                self.open_cursors,
-                actual_open_cursors,
-                "%d open cursors at start of test, %d at end, should be equal"
-                % (self.open_cursors, actual_open_cursors))
-
         super(MotorTest, self).tearDown()
 
 
