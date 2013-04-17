@@ -152,7 +152,11 @@ class MotorDatabaseTest(MotorTest):
             db.authenticate(
                 "mike", "password", callback=(yield gen.Callback(i)))
 
-        yield motor.WaitAllOps(range(100))
+        # TODO: remove after copy_authenticate
+        outcomes = yield gen.WaitAll(range(100))
+        for (result, error), _ in outcomes:
+            if error:
+                raise error
 
         # just make sure there are no exceptions here
         yield motor.Op(db.logout)

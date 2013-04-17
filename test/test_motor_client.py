@@ -258,7 +258,12 @@ class MotorClientTest(MotorTest):
                 "pymongo_test", test_db_name,
                 callback=(yield gen.Callback(key=test_db_name)))
 
-        yield motor.WaitAllOps(test_db_names)
+        # TODO: remove after copy_database returns a Future
+        outcomes = yield gen.WaitAll(test_db_names)
+        for (result, error), _ in outcomes:
+            if error:
+                raise error
+
         check_copydb_results()
 
         drop_all()
@@ -285,7 +290,12 @@ class MotorClientTest(MotorTest):
                     username="mike", password="password",
                     callback=(yield gen.Callback(test_db_name)))
 
-            yield motor.WaitAllOps(test_db_names)
+            # TODO: remove after copy_database returns a Future
+            outcomes = yield gen.WaitAll(test_db_names)
+            for (result, error), _ in outcomes:
+                if error:
+                    raise error
+
             check_copydb_results()
 
         drop_all()

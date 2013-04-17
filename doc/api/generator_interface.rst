@@ -14,7 +14,3 @@ they assume all async functions pass ``(result, error)`` to their callbacks.
 See :ref:`generator-interface-example`.
 
 .. autoclass:: Op
-
-.. autoclass:: WaitOp
-
-.. autoclass:: WaitAllOps
