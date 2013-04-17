@@ -7,7 +7,7 @@ A cursor on a capped collection can be tailed using
 .. code-block:: python
 
     @gen.coroutine
-    def tailable_example_fetch_next():
+    def tail_example():
         results = []
         collection = db.my_capped_collection
         cursor = collection.find(tailable=True, await_data=True)
