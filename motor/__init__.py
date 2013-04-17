@@ -14,8 +14,6 @@
 
 """Motor, an asynchronous driver for MongoDB and Tornado."""
 
-from __future__ import with_statement
-
 import collections
 import functools
 import inspect

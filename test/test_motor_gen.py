@@ -14,8 +14,6 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-from __future__ import with_statement
-
 import contextlib
 import datetime
 import unittest
