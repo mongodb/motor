@@ -289,7 +289,7 @@ callbacks:
 You can simplify this code with ``gen.coroutine``.
 
 Using Motor with `gen.coroutine`
------------------------------
+--------------------------------
 The `tornado.gen module`_
 lets you use generators to simplify asynchronous code, combining operations and
 their callbacks in a single function. You must decorate the function with
@@ -305,11 +305,8 @@ complete:
   ...         result, error = arguments.args
   ...         if error:
   ...             raise error
-  ...     IOLoop.instance().stop()
   ...
-  >>> # Start
-  >>> do_insert()
-  >>> IOLoop.instance().start()
+  >>> IOLoop.current().run_sync(do_insert)
 
 Here ``arguments`` is an instance of `tornado.gen.Arguments`_
 containing the arguments :meth:`insert` passed to its callback function.
@@ -322,10 +319,8 @@ with ``gen.coroutine``:
   ... def do_insert():
   ...     for i in range(2000):
   ...         result = yield motor.Op(db.test_collection.insert, {'i': i})
-  ...     IOLoop.instance().stop()
   ...
-  >>> do_insert()
-  >>> IOLoop.instance().start()
+  >>> IOLoop.current().run_sync(do_insert)
 
 :class:`~motor.Op` receives the ``result`` and ``error`` parameters and either
 raises the error or returns the result. In the code above, ``result`` is the
@@ -354,10 +349,8 @@ less than 2:
   ...     document = yield motor.Op(
   ...         db.test_collection.find_one, {'i': {'$lt': 2}})
   ...     print document
-  ...     IOLoop.instance().stop()
   ...
-  >>> do_find_one()
-  >>> IOLoop.instance().start()
+  >>> IOLoop.current().run_sync(do_find_one)
   {u'i': 0, u'_id': ObjectId('...')}
 
 The result is a dictionary matching the one that we inserted previously.
@@ -382,20 +375,20 @@ To find all documents with "i" less than 5:
   >>> @gen.coroutine
   ... def do_find():
   ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
-  ...     for document in (yield motor.Op(cursor.to_list)):
+  ...     for document in (yield motor.Op(cursor.to_list, length=100)):
   ...         print document
-  ...     IOLoop.instance().stop()
   ...
-  >>> do_find()
-  >>> IOLoop.instance().start()
+  >>> IOLoop.current().run_sync(do_find)
   {u'i': 0, u'_id': ObjectId('...')}
   {u'i': 1, u'_id': ObjectId('...')}
   {u'i': 2, u'_id': ObjectId('...')}
   {u'i': 3, u'_id': ObjectId('...')}
   {u'i': 4, u'_id': ObjectId('...')}
 
-To iterate over a large result set without holding all the documents in memory
-at once, get one document at a time with :attr:`~motor.MotorCursor.fetch_next`
+A ``length`` argument is encouraged when you call to_list to prevent Motor from
+buffering an unlimited number of documents.
+
+To get one document at a time with :attr:`~motor.MotorCursor.fetch_next`
 and :meth:`~motor.MotorCursor.next_object`:
 
 .. doctest:: after-inserting-2000-docs
@@ -406,10 +399,8 @@ and :meth:`~motor.MotorCursor.next_object`:
   ...     while (yield cursor.fetch_next):
   ...         document = cursor.next_object()
   ...         print document
-  ...     IOLoop.instance().stop()
   ...
-  >>> do_find()
-  >>> IOLoop.instance().start()
+  >>> IOLoop.current().run_sync(do_find)
   {u'i': 0, u'_id': ObjectId('...')}
   {u'i': 1, u'_id': ObjectId('...')}
   {u'i': 2, u'_id': ObjectId('...')}
@@ -431,12 +422,13 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
   ...     while (yield cursor.fetch_next):
   ...         document = cursor.next_object()
   ...         print document
-  ...     IOLoop.instance().stop()
   ...
-  >>> do_find()
-  >>> IOLoop.instance().start()
+  >>> IOLoop.current().run_sync(do_find)
   {u'i': 2, u'_id': ObjectId('...')}
   {u'i': 1, u'_id': ObjectId('...')}
+
+``fetch_next`` doesn't actually retrieve a single document at a time from the
+server: it fetches them on demand in reasonably-sized batches.
 
 Counting Documents
 ------------------
@@ -452,10 +444,8 @@ a collection, or the number of documents that match a query:
   ...     n = yield motor.Op(
   ...         db.test_collection.find({'i': {'$gt': 1000}}).count)
   ...     print n, 'documents where i > 1000'
-  ...     IOLoop.instance().stop()
   ...
-  >>> do_count()
-  >>> IOLoop.instance().start()
+  >>> IOLoop.current().run_sync(do_count)
   2000 documents in collection
   999 documents where i > 1000
 
@@ -484,10 +474,8 @@ document, or it can update some fields of a document. To replace a document:
   ...     print 'replaced', result['n'], 'document'
   ...     new_document = yield motor.Op(coll.find_one, {'_id': _id})
   ...     print 'document is now', new_document
-  ...     IOLoop.instance().stop()
   ...
-  >>> do_replace()
-  >>> IOLoop.instance().start()
+  >>> IOLoop.current().run_sync(do_replace)
   found document: {u'i': 50, u'_id': ObjectId('...')}
   replaced 1 document
   document is now {u'_id': ObjectId('...'), u'key': u'value'}
@@ -509,10 +497,8 @@ operator to set "key" to "value":
   ...     print 'updated', result['n'], 'document'
   ...     new_document = yield motor.Op(coll.find_one, {'i': 51})
   ...     print 'document is now', new_document
-  ...     IOLoop.instance().stop()
   ...
-  >>> do_update()
-  >>> IOLoop.instance().start()
+  >>> IOLoop.current().run_sync(do_update)
   updated 1 document
   document is now {u'i': 51, u'_id': ObjectId('...'), u'key': u'value'}
 
@@ -546,10 +532,8 @@ performs an :meth:`insert`.
   ...     doc['other_key'] = 'other_value'
   ...     yield motor.Op(coll.save, doc)
   ...     yield motor.Op(coll.remove, doc)
-  ...     IOLoop.instance().stop()
   ...
-  >>> do_save()
-  >>> IOLoop.instance().start()
+  >>> IOLoop.current().run_sync(do_save)
   document _id: ObjectId('...')
 
 Removing Documents
@@ -569,10 +553,8 @@ Removing Documents
   ...     result = yield motor.Op(db.test_collection.remove,
   ...         {'i': {'$gte': 1000}})
   ...     print (yield motor.Op(coll.count)), 'documents after'
-  ...     IOLoop.instance().stop()
   ...
-  >>> do_remove()
-  >>> IOLoop.instance().start()
+  >>> IOLoop.current().run_sync(do_remove)
   2000 documents before calling remove()
   1000 documents after
 
@@ -592,10 +574,8 @@ the :meth:`~motor.MotorDatabase.command` method on :class:`~motor.MotorDatabase`
   ...     response = yield motor.Op(
   ...         db.command, SON([("count", "test_collection")]))
   ...     print 'response:', response
-  ...     IOLoop.instance().stop()
   ...
-  >>> use_count_command()
-  >>> IOLoop.instance().start()
+  >>> IOLoop.current().run_sync(use_count_command)
   response: {u'ok': 1.0, u'n': 1000.0}
 
 Since the order of command parameters matters, don't use a Python dict to pass

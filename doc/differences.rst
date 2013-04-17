@@ -155,7 +155,7 @@ acknowledged and unacknowledged writes with Motor:
 +-----------+-------------------------+--------------------------------+
 
 Unacknowledged Writes With gen.coroutine
-'''''''''''''''''''''''''''''''''''''
+''''''''''''''''''''''''''''''''''''''''
 
 When using Motor with `tornado.gen`_, each Motor operation is passed an implicit
 callback and is therefore acknowledged ("safe"):

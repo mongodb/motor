@@ -695,7 +695,7 @@ class MotorOpenable(object):
                     "io_loop must be instance of IOLoop, not %r" % io_loop)
             self.io_loop = io_loop
         else:
-            self.io_loop = ioloop.IOLoop.instance()
+            self.io_loop = ioloop.IOLoop.current()
 
         self.delegate = delegate
 
@@ -1287,7 +1287,7 @@ class MotorCursor(MotorBase):
         .. testsetup:: fetch_next
 
           MongoClient().test.test_collection.remove()
-          collection = MotorClient().test.test_collection
+          collection = MotorClient().open_sync().test.test_collection
 
         .. doctest:: fetch_next
 
@@ -1301,10 +1301,8 @@ class MotorCursor(MotorBase):
           ...         doc = cursor.next_object()
           ...         sys.stdout.write(str(doc['_id']) + ', ')
           ...     print 'done'
-          ...     IOLoop.instance().stop()
           ...
-          >>> f()
-          >>> IOLoop.instance().start()
+          >>> IOLoop.current().run_sync(f)
           0, 1, 2, 3, 4, done
 
         .. note:: While it appears that fetch_next retrieves each document from
@@ -1339,11 +1337,10 @@ class MotorCursor(MotorBase):
         .. testsetup:: each
 
           MongoClient().test.test_collection.remove()
-          collection = MotorClient().test.test_collection
+          collection = MotorClient().open_sync().test.test_collection
 
         .. doctest:: each
 
-          >>> cursor = None
           >>> def inserted(result, error):
           ...     global cursor
           ...     if error:
@@ -1358,12 +1355,12 @@ class MotorCursor(MotorBase):
           ...         sys.stdout.write(str(result['_id']) + ', ')
           ...     else:
           ...         # Iteration complete
-          ...         IOLoop.instance().stop()
+          ...         IOLoop.current().stop()
           ...         print 'done'
           ...
           >>> collection.insert(
           ...     [{'_id': i} for i in range(5)], callback=inserted)
-          >>> IOLoop.instance().start()
+          >>> IOLoop.current().start()
           0, 1, 2, 3, 4, done
 
         :Parameters:
@@ -1409,7 +1406,7 @@ class MotorCursor(MotorBase):
         .. testsetup:: to_list
 
           MongoClient().test.test_collection.remove()
-          collection = MotorClient().test.test_collection
+          collection = MotorClient().open_sync().test.test_collection
 
         .. doctest:: to_list
 
@@ -1418,16 +1415,14 @@ class MotorCursor(MotorBase):
           ...     yield motor.Op(
           ...         collection.insert, [{'_id': i} for i in range(4)])
           ...     cursor = collection.find().sort([('_id', 1)])
-          ...     docs = yield motor.Op(cursor.to_list, 2) # length is 2
+          ...     docs = yield motor.Op(cursor.to_list, length=2)
           ...     while docs:
           ...         print docs
           ...         docs = (yield motor.Op(cursor.to_list, 2))
           ...
           ...     print 'done'
-          ...     IOLoop.instance().stop()
           ...
-          >>> f()
-          >>> IOLoop.instance().start()
+          >>> IOLoop.current().run_sync(f)
           [{u'_id': 0}, {u'_id': 1}]
           [{u'_id': 2}, {u'_id': 3}]
           done
@@ -1445,10 +1440,9 @@ class MotorCursor(MotorBase):
           ...     docs = yield motor.Op(cursor.to_list)
           ...     print docs
           ...     print 'done'
-          ...     IOLoop.instance().stop()
+          ...     IOLoop.current().stop()
           ...
-          >>> f()
-          >>> IOLoop.instance().start()
+          >>> IOLoop.current().run_sync(f)
           [{u'_id': 0}, {u'_id': 1}, {u'_id': 2}, {u'_id': 3}]
           done
 
@@ -1536,24 +1530,22 @@ class MotorCursor(MotorBase):
         .. testsetup:: getitem
 
           MongoClient().test.test_collection.remove()
-          collection = MotorClient().test.test_collection
+          collection = MotorClient().open_sync().test.test_collection
 
         .. doctest:: getitem
 
-          >>> from tornado import gen
           >>> @gen.coroutine
-          ... def f():
-          ...     yield motor.Op(collection.insert,
+          ... def fifth_item():
+          ...     yield motor.Op(
+          ...         collection.insert,
           ...         [{'i': i} for i in range(10)])
           ...
           ...     cursor = collection.find().sort([('i', 1)])[5]
           ...     yield cursor.fetch_next
           ...     doc = cursor.next_object()
           ...     print doc['i']
-          ...     IOLoop.instance().stop()
           ...
-          >>> f()
-          >>> IOLoop.instance().start()
+          >>> IOLoop.current().run_sync(fifth_item)
           5
 
         Any limit previously applied to this cursor will be ignored.
@@ -1564,14 +1556,12 @@ class MotorCursor(MotorBase):
         .. doctest:: getitem
 
           >>> @gen.coroutine
-          ... def f():
+          ... def one_thousandth_item():
           ...     cursor = collection.find().sort([('i', 1)])[1000]
           ...     yield cursor.fetch_next
           ...     print cursor.next_object()
-          ...     IOLoop.instance().stop()
           ...
-          >>> f()
-          >>> IOLoop.instance().start()
+          >>> IOLoop.current().run_sync(one_thousandth_item)
           None
 
         To get a slice of documents use a slice index like
@@ -1580,22 +1570,19 @@ class MotorCursor(MotorBase):
         .. doctest:: getitem
 
           >>> @gen.coroutine
-          ... def f():
+          ... def second_through_fifth_item():
           ...     cursor = collection.find().sort([('i', 1)])[2:6]
           ...     while (yield cursor.fetch_next):
           ...         doc = cursor.next_object()
           ...         sys.stdout.write(str(doc['i']) + ', ')
           ...     print 'done'
-          ...     IOLoop.instance().stop()
           ...
-          >>> f()
-          >>> IOLoop.instance().start()
+          >>> IOLoop.current().run_sync(second_through_fifth_item)
           2, 3, 4, 5, done
 
-        This will return a copy of this cursor with a limit of ``5`` and
-        skip of ``20`` applied.  Using a slice index will override any prior
-        limits or skips applied to this cursor (including those
-        applied through previous calls to this method).
+        This will apply a skip of 2 and a limit of 4 to the cursor. Using a
+        slice index overrides prior limits or skips applied to this cursor
+        (including those applied through previous calls to this method).
 
         Raises :class:`~pymongo.errors.IndexError` when the slice has a step,
         a negative start value, or a stop value less than or equal to
@@ -1901,9 +1888,9 @@ class Op(gen.Task):
     .. testcode:: op
         :hide:
 
-        collection = MotorClient().doctest_test.test_collection
+        collection = MotorClient().open_sync().doctest_test.test_collection
         get_some_documents(collection)
-        loop = IOLoop.instance()
+        loop = IOLoop.current()
         loop.add_timeout(timedelta(seconds=.1), loop.stop)
         loop.start()
 
@@ -1943,9 +1930,9 @@ class WaitOp(gen.Wait):
     .. testcode:: op
         :hide:
 
-        collection = MotorClient().doctest_test.test_collection
+        collection = MotorClient().open_sync().doctest_test.test_collection
         get_some_documents2(collection)
-        loop = IOLoop.instance()
+        loop = IOLoop.current()
         loop.add_timeout(timedelta(seconds=.1), loop.stop)
         loop.start()
 
@@ -1987,9 +1974,9 @@ class WaitAllOps(gen.YieldPoint):
     .. testcode:: op
         :hide:
 
-        collection = MotorClient().doctest_test.test_collection
+        collection = MotorClient().open_sync().doctest_test.test_collection
         get_two_documents_in_parallel(collection)
-        loop = IOLoop.instance()
+        loop = IOLoop.current()
         loop.add_timeout(timedelta(seconds=.1), loop.stop)
         loop.start()
 
