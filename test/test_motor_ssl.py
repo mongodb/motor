@@ -18,18 +18,18 @@ import unittest
 
 from nose.plugins.skip import SkipTest
 from pymongo.errors import ConfigurationError
+from tornado.testing import gen_test
 
 import motor
-from test import host, port, MotorTest, async_test_engine, HAVE_SSL
+from test import host, port, MotorTest, HAVE_SSL
 
 
-class MotorNoSSLTest(unittest.TestCase):
+class MotorNoSSLTest(MotorTest):
     def test_no_ssl(self):
         if HAVE_SSL:
             raise SkipTest(
                 "We have SSL compiled into Python, can't test what happens "
-                "without SSL"
-            )
+                "without SSL")
 
         for cx_class in (
             motor.MotorClient,
@@ -37,26 +37,23 @@ class MotorNoSSLTest(unittest.TestCase):
         ):
             self.assertRaises(
                 ConfigurationError,
-                cx_class(host, port, ssl=True).open_sync)
+                cx_class(host, port, ssl=True, io_loop=self.io_loop).open_sync)
 
 
 class MotorSSLTest(MotorTest):
     ssl = True
 
-    @async_test_engine()
-    def test_simple_ops(self, done):
+    @gen_test
+    def test_simple_ops(self):
         if not HAVE_SSL:
             raise SkipTest("SSL not compiled into Python")
 
-        cx = yield motor.Op(motor.MotorClient(host, port, ssl=True).open)
+        cx = yield self.motor_client(ssl=True)
 
         # Make sure the client works
-        db = cx.motor_ssl_test
-        yield motor.Op(db.collection.insert, {'hello': 'goodbye'})
-        hello = yield motor.Op(db.collection.find_one, {'hello': 'goodbye'})
-        self.assertEqual('goodbye', hello['hello'])
-        yield motor.Op(cx.drop_database, db)
-        done()
+        collection = cx.pymongo_test.test_collection
+        doc = yield motor.Op(collection.find_one, {'_id': 0})
+        self.assertEqual(0, doc['_id'])
 
 
 if __name__ == '__main__':

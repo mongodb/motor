@@ -22,9 +22,10 @@ from functools import partial
 from bson.objectid import ObjectId
 from bson.py3compat import b
 from gridfs.errors import NoFile
+from tornado.testing import gen_test
 
 import motor
-from test import host, port, MotorTest, async_test_engine
+from test import MotorTest, assert_raises
 
 
 class MotorGridFileTest(MotorTest):
@@ -42,42 +43,38 @@ class MotorGridFileTest(MotorTest):
         self._reset()
         super(MotorGridFileTest, self).tearDown()
 
-    @async_test_engine(timeout_sec=20)
-    def test_grid_in_callback(self, done):
-        db = self.motor_client(host, port).open_sync().pymongo_test
+    @gen_test
+    def test_grid_in_callback(self):
+        db = self.cx.pymongo_test
         f = motor.MotorGridIn(db.fs, filename="test")
-        yield motor.Op(self.check_optional_callback, f.open)
+        yield self.check_optional_callback(f.open)
         f = yield motor.Op(motor.MotorGridIn(db.fs, filename="test").open)
-        yield motor.Op(
-            self.check_optional_callback, partial(f.set, 'name', 'value'))
+        yield self.check_optional_callback(partial(f.set, 'name', 'value'))
 
-        yield motor.Op(self.check_optional_callback, partial(f.write, b('a')))
-        yield motor.Op(
-            self.check_optional_callback, partial(f.writelines, [b('a')]))
+        yield self.check_optional_callback(partial(f.write, b('a')))
+        yield self.check_optional_callback(partial(f.writelines, [b('a')]))
 
         self.assertRaises(TypeError, f.close, callback='foo')
         self.assertRaises(TypeError, f.close, callback=1)
         f.close(callback=None)  # No error
-        done()
 
-    @async_test_engine()
-    def test_grid_out_callback(self, done):
+    @gen_test
+    def test_grid_out_callback(self):
         # Some setup: we need to make an open GridOut
-        db = self.motor_client(host, port).open_sync().pymongo_test
+        db = self.cx.pymongo_test
         f = yield motor.Op(motor.MotorGridIn(db.fs, filename="test").open)
         yield motor.Op(f.close)
 
         g = motor.MotorGridOut(db.fs, f._id)
-        yield motor.Op(self.check_optional_callback, g.open)
+        yield self.check_optional_callback(g.open)
 
         g = yield motor.Op(motor.MotorGridOut(db.fs, f._id).open)
-        yield motor.Op(self.check_required_callback, g.read)
-        yield motor.Op(self.check_required_callback, g.readline)
-        done()
+        yield self.check_required_callback(g.read)
+        yield self.check_required_callback(g.readline)
 
-    @async_test_engine()
-    def test_basic(self, done):
-        db = self.motor_client(host, port).open_sync().pymongo_test
+    @gen_test
+    def test_basic(self):
+        db = self.cx.pymongo_test
         f = yield motor.Op(motor.MotorGridIn(db.fs, filename="test").open)
         yield motor.Op(f.write, b("hello world"))
         yield motor.Op(f.close)
@@ -98,11 +95,10 @@ class MotorGridFileTest(MotorTest):
 
         g = yield motor.Op(motor.MotorGridOut(db.fs, f._id).open)
         self.assertEqual(b(""), (yield motor.Op(g.read)))
-        done()
 
-    @async_test_engine()
-    def test_alternate_collection(self, done):
-        db = self.motor_client(host, port).open_sync().pymongo_test
+    @gen_test
+    def test_alternate_collection(self):
+        db = self.cx.pymongo_test
         yield motor.Op(db.alt.files.remove)
         yield motor.Op(db.alt.chunks.remove)
 
@@ -118,11 +114,10 @@ class MotorGridFileTest(MotorTest):
 
         # test that md5 still works...
         self.assertEqual("5eb63bbbe01eeed093cb22bb8f5acdc3", g.md5)
-        done()
 
-    @async_test_engine()
-    def test_grid_in_default_opts(self, done):
-        db = self.motor_client(host, port).open_sync().pymongo_test
+    @gen_test
+    def test_grid_in_default_opts(self):
+        db = self.cx.pymongo_test
         self.assertRaises(TypeError, motor.MotorGridIn, "foo")
 
         a = yield motor.Op(motor.MotorGridIn(db.fs).open)
@@ -190,13 +185,12 @@ class MotorGridFileTest(MotorTest):
 
         self.assertEqual("d41d8cd98f00b204e9800998ecf8427e", a.md5)
         self.assertRaises(AttributeError, setattr, a, "md5", 5)
-        done()
 
-    @async_test_engine()
-    def test_grid_in_custom_opts(self, done):
+    @gen_test
+    def test_grid_in_custom_opts(self):
         self.assertRaises(TypeError, motor.MotorGridIn, "foo")
 
-        db = self.motor_client(host, port).open_sync().pymongo_test
+        db = self.cx.pymongo_test
         a = yield motor.Op(
             motor.MotorGridIn(db.fs, _id=5, filename="my_file",
             contentType="text/html", chunkSize=1000, aliases=["foo"],
@@ -218,15 +212,14 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual("text/html", b.content_type)
         self.assertEqual(1000, b.chunk_size)
         self.assertEqual(100, b.baz)
-        done()
 
-    @async_test_engine()
-    def test_grid_out_default_opts(self, done):
+    @gen_test
+    def test_grid_out_default_opts(self):
         self.assertRaises(TypeError, motor.MotorGridOut, "foo")
 
-        db = self.motor_client(host, port).open_sync().pymongo_test
+        db = self.cx.pymongo_test
         gout = motor.MotorGridOut(db.fs, 5)
-        with self.assertRaises(NoFile):
+        with assert_raises(NoFile):
             yield motor.Op(gout.open)
 
         a = yield motor.Op(motor.MotorGridIn(db.fs).open)
@@ -247,11 +240,9 @@ class MotorGridFileTest(MotorTest):
                      "upload_date", "aliases", "metadata", "md5"]:
             self.assertRaises(AttributeError, setattr, b, attr, 5)
 
-        done()
-
-    @async_test_engine()
-    def test_grid_out_custom_opts(self, done):
-        db = self.motor_client(host, port).open_sync().pymongo_test
+    @gen_test
+    def test_grid_out_custom_opts(self):
+        db = self.cx.pymongo_test
         one = yield motor.Op(
             motor.MotorGridIn(db.fs, _id=5, filename="my_file",
             contentType="text/html", chunkSize=1000, aliases=["foo"],
@@ -275,11 +266,9 @@ class MotorGridFileTest(MotorTest):
                      "upload_date", "aliases", "metadata", "md5"]:
             self.assertRaises(AttributeError, setattr, two, attr, 5)
 
-        done()
-
-    @async_test_engine()
-    def test_grid_out_file_document(self, done):
-        db = self.motor_client(host, port).open_sync().pymongo_test
+    @gen_test
+    def test_grid_out_file_document(self):
+        db = self.cx.pymongo_test
         one = yield motor.Op(motor.MotorGridIn(db.fs).open)
         yield motor.Op(one.write, b("foo bar"))
         yield motor.Op(one.close)
@@ -296,14 +285,12 @@ class MotorGridFileTest(MotorTest):
 
         self.assertEqual(b("foo bar"), (yield motor.Op(three.read)))
 
-        with self.assertRaises(NoFile):
+        with assert_raises(NoFile):
             yield motor.Op(motor.MotorGridOut(db.fs, file_document={}).open)
 
-        done()
-
-    @async_test_engine()
-    def test_write_file_like(self, done):
-        db = self.motor_client(host, port).open_sync().pymongo_test
+    @gen_test
+    def test_write_file_like(self):
+        db = self.cx.pymongo_test
         one = yield motor.Op(motor.MotorGridIn(db.fs).open)
         yield motor.Op(one.write, b("hello world"))
         yield motor.Op(one.close)
@@ -316,11 +303,10 @@ class MotorGridFileTest(MotorTest):
 
         four = yield motor.Op(motor.MotorGridOut(db.fs, three._id).open)
         self.assertEqual(b("hello world"), (yield motor.Op(four.read)))
-        done()
 
-    @async_test_engine()
-    def test_set_after_close(self, done):
-        db = self.motor_client(host, port).open_sync().pymongo_test
+    @gen_test
+    def test_set_after_close(self):
+        db = self.cx.pymongo_test
         f = yield motor.Op(
             motor.MotorGridIn(db.fs, _id="foo", bar="baz").open)
 
@@ -355,10 +341,9 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual("b", g.baz)
         # Versions 2.0.1 and older saved a _closed field for some reason.
         self.assertRaises(AttributeError, getattr, g, "_closed")
-        done()
 
-    @async_test_engine()
-    def test_stream_to_handler(self, done):
+    @gen_test
+    def test_stream_to_handler(self):
         class MockRequestHandler(object):
             def __init__(self):
                 self.n_written = 0
@@ -369,7 +354,7 @@ class MotorGridFileTest(MotorTest):
             def flush(self):
                 pass
 
-        db = self.motor_client(host, port).open_sync().pymongo_test
+        db = self.cx.pymongo_test
         fs = yield motor.Op(motor.MotorGridFS(db).open)
 
         for content_length in (0, 1, 100, 100 * 1000):
@@ -379,8 +364,6 @@ class MotorGridFileTest(MotorTest):
             yield motor.Op(gridout.stream_to_handler, handler)
             self.assertEqual(content_length, handler.n_written)
             yield motor.Op(fs.delete, _id)
-
-        done()
 
 if __name__ == "__main__":
     unittest.main()

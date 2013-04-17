@@ -792,7 +792,7 @@ class MotorClientBase(MotorOpenable, MotorBase):
 
             def callback(connection, error):
                 outcome['error'] = error
-                self.io_loop.stop()
+                private_loop.stop()
 
             self._open(callback)
 
@@ -897,7 +897,7 @@ class MotorClient(MotorClientBase):
         read operations may still be allowed.
         Use :meth:`fsync` to lock, :meth:`unlock` to unlock::
 
-            @gen.engine
+            @gen.coroutine
             def lock_unlock():
                 c = yield motor.Op(motor.MotorClient().open)
                 locked = yield motor.Op(c.is_locked)
@@ -1277,21 +1277,21 @@ class MotorCursor(MotorBase):
 
     @property
     def fetch_next(self):
-        """Used with `gen.engine`_ to asynchronously retrieve the next document
-        in the result set, fetching a batch of documents from the server if
-        necessary. Yields ``False`` if there are no more documents, otherwise
-        :meth:`next_object` is guaranteed to return a document.
+        """Used with `gen.coroutine`_ to asynchronously retrieve the next
+        document in the result set, fetching a batch of documents from the
+        server if necessary. Yields ``False`` if there are no more documents,
+        otherwise :meth:`next_object` is guaranteed to return a document.
 
-        .. _`gen.engine`: http://www.tornadoweb.org/documentation/gen.html
+        .. _`gen.coroutine`: http://www.tornadoweb.org/documentation/gen.html
 
         .. testsetup:: fetch_next
 
           MongoClient().test.test_collection.remove()
-          collection = MotorClient().open_sync().test.test_collection
+          collection = MotorClient().test.test_collection
 
         .. doctest:: fetch_next
 
-          >>> @gen.engine
+          >>> @gen.coroutine
           ... def f():
           ...     yield motor.Op(collection.insert,
           ...         [{'_id': i} for i in range(5)])
@@ -1339,7 +1339,7 @@ class MotorCursor(MotorBase):
         .. testsetup:: each
 
           MongoClient().test.test_collection.remove()
-          collection = MotorClient().open_sync().test.test_collection
+          collection = MotorClient().test.test_collection
 
         .. doctest:: each
 
@@ -1409,11 +1409,11 @@ class MotorCursor(MotorBase):
         .. testsetup:: to_list
 
           MongoClient().test.test_collection.remove()
-          collection = MotorClient().open_sync().test.test_collection
+          collection = MotorClient().test.test_collection
 
         .. doctest:: to_list
 
-          >>> @gen.engine
+          >>> @gen.coroutine
           ... def f():
           ...     yield motor.Op(
           ...         collection.insert, [{'_id': i} for i in range(4)])
@@ -1436,7 +1436,7 @@ class MotorCursor(MotorBase):
 
         .. doctest:: to_list
 
-          >>> @gen.engine
+          >>> @gen.coroutine
           ... def f():
           ...     yield motor.Op(
           ...         collection.insert, [{'_id': i} for i in range(4, 400)])
@@ -1536,12 +1536,12 @@ class MotorCursor(MotorBase):
         .. testsetup:: getitem
 
           MongoClient().test.test_collection.remove()
-          collection = MotorClient().open_sync().test.test_collection
+          collection = MotorClient().test.test_collection
 
         .. doctest:: getitem
 
           >>> from tornado import gen
-          >>> @gen.engine
+          >>> @gen.coroutine
           ... def f():
           ...     yield motor.Op(collection.insert,
           ...         [{'i': i} for i in range(10)])
@@ -1563,7 +1563,7 @@ class MotorCursor(MotorBase):
 
         .. doctest:: getitem
 
-          >>> @gen.engine
+          >>> @gen.coroutine
           ... def f():
           ...     cursor = collection.find().sort([('i', 1)])[1000]
           ...     yield cursor.fetch_next
@@ -1579,7 +1579,7 @@ class MotorCursor(MotorBase):
 
         .. doctest:: getitem
 
-          >>> @gen.engine
+          >>> @gen.coroutine
           ... def f():
           ...     cursor = collection.find().sort([('i', 1)])[2:6]
           ...     while (yield cursor.fetch_next):
@@ -1707,7 +1707,7 @@ class MotorGridOut(MotorOpenable):
 
             class FileHandler(tornado.web.RequestHandler):
                 @tornado.web.asynchronous
-                @gen.engine
+                @gen.coroutine
                 def get(self, filename):
                     db = self.settings['db']
                     fs = yield motor.Op(motor.MotorGridFS(db).open)
@@ -1884,7 +1884,7 @@ class Op(gen.Task):
 
     .. testcode:: op
 
-        @gen.engine
+        @gen.coroutine
         def get_some_documents(collection):
             cursor = collection.find().sort('_id').limit(2)
 
@@ -1901,7 +1901,7 @@ class Op(gen.Task):
     .. testcode:: op
         :hide:
 
-        collection = MotorClient().open_sync().doctest_test.test_collection
+        collection = MotorClient().doctest_test.test_collection
         get_some_documents(collection)
         loop = IOLoop.instance()
         loop.add_timeout(timedelta(seconds=.1), loop.stop)
@@ -1930,7 +1930,7 @@ class WaitOp(gen.Wait):
 
     .. testcode:: op
 
-        @gen.engine
+        @gen.coroutine
         def get_some_documents2(collection):
             cursor = collection.find().sort('_id').limit(2)
             cursor.to_list(callback=(yield gen.Callback('key')))
@@ -1943,7 +1943,7 @@ class WaitOp(gen.Wait):
     .. testcode:: op
         :hide:
 
-        collection = MotorClient().open_sync().doctest_test.test_collection
+        collection = MotorClient().doctest_test.test_collection
         get_some_documents2(collection)
         loop = IOLoop.instance()
         loop.add_timeout(timedelta(seconds=.1), loop.stop)
@@ -1970,7 +1970,7 @@ class WaitAllOps(gen.YieldPoint):
 
     .. testcode:: op
 
-        @gen.engine
+        @gen.coroutine
         def get_two_documents_in_parallel(collection):
             collection.find_one(
                 {'_id': 1}, callback=(yield gen.Callback('one')))
@@ -1987,7 +1987,7 @@ class WaitAllOps(gen.YieldPoint):
     .. testcode:: op
         :hide:
 
-        collection = MotorClient().open_sync().doctest_test.test_collection
+        collection = MotorClient().doctest_test.test_collection
         get_two_documents_in_parallel(collection)
         loop = IOLoop.instance()
         loop.add_timeout(timedelta(seconds=.1), loop.stop)

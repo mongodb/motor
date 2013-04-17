@@ -25,10 +25,10 @@ import unittest
 from nose.plugins.skip import SkipTest
 from pymongo.errors import ConfigurationError
 from tornado import gen, stack_context
-from tornado.ioloop import IOLoop
+from tornado.testing import gen_test
 
 import motor
-from test import host, port, MotorTest, async_test_engine
+from test import MotorTest, assert_raises
 from test.utils import delay
 
 
@@ -36,44 +36,43 @@ class MotorPoolTest(MotorTest):
     def test_max_concurrent_default(self):
         # pool.max_size, which is actually the max number of *idle* sockets,
         # defaults to 10 in PyMongo. Our max_concurrent defaults to 100.
-        cx = motor.MotorClient(host, port).open_sync()
-        pool = cx.delegate._MongoClient__pool
+        pool = self.cx.delegate._MongoClient__pool
 
         # Current defaults
         self.assertEqual(10, pool.max_size)
         self.assertEqual(100, pool.max_concurrent)
 
+    @gen_test
     def test_max_concurrent_validation(self):
-        self.assertRaises(ConfigurationError,
-            motor.MotorClient(host, port, max_concurrent=-1).open_sync)
+        with assert_raises(ConfigurationError):
+            yield self.motor_client(max_concurrent=-1)
 
-        self.assertRaises(TypeError,
-            motor.MotorClient(host, port, max_concurrent=None).open_sync)
+        with assert_raises(TypeError):
+            yield self.motor_client(max_concurrent=None)
 
-        self.assertRaises(TypeError,
-            motor.MotorClient(host, port, max_concurrent=1.5).open_sync)
+        with assert_raises(TypeError):
+            yield self.motor_client(max_concurrent=1.5)
 
     def test_max_wait_default(self):
-        cx = motor.MotorClient(host, port).open_sync()
-        pool = cx.delegate._MongoClient__pool
+        pool = self.cx.delegate._MongoClient__pool
         self.assertEqual(None, pool.max_wait_time)
 
     def test_max_wait_validation(self):
-        self.assertRaises(ConfigurationError,
-            motor.MotorClient(host, port, max_wait_time=-1).open_sync)
+        with assert_raises(ConfigurationError):
+            yield self.motor_client(max_wait_time=-1)
 
-        self.assertRaises(ConfigurationError,
-            motor.MotorClient(host, port, max_wait_time=0).open_sync)
+        with assert_raises(ConfigurationError):
+            yield self.motor_client(max_wait_time=0)
 
-        self.assertRaises(ConfigurationError,
-            motor.MotorClient(host, port, max_wait_time='foo').open_sync)
+        with assert_raises(ConfigurationError):
+            yield self.motor_client(max_wait_time='foo')
 
         # Ok
-        motor.MotorClient(host, port, max_wait_time=None).open_sync()
-        motor.MotorClient(host, port, max_wait_time=100).open_sync()
+        self.motor_client_sync(max_wait_time=None)
+        self.motor_client_sync(max_wait_time=100)
 
-    @async_test_engine(timeout_sec=30)
-    def test_max_concurrent(self, done):
+    @gen_test
+    def test_max_concurrent(self):
         if not self.sync_cx.server_info().get('javascriptEngine') == 'V8':
             raise SkipTest("Need multithreaded Javascript in mongod for test")
 
@@ -81,23 +80,22 @@ class MotorPoolTest(MotorTest):
         max_pool_size = 5
         max_concurrent = 20
 
-        cx = motor.MotorClient(
-            host, port,
-            max_pool_size=max_pool_size, max_concurrent=max_concurrent
-        ).open_sync()
+        cx = yield self.motor_client(
+            max_pool_size=max_pool_size, max_concurrent=max_concurrent)
 
         pool = cx._get_pools()[0]
         self.assertEqual(max_pool_size, pool.max_size)
         self.assertEqual(max_concurrent, pool.max_concurrent)
 
-        # Start empty
-        self.assertEqual(0, pool.motor_sock_counter.count())
-        self.assertEqual(0, len(pool.sockets))
+        # Start with the socket used for isMaster
+        self.assertEqual(1, pool.motor_sock_counter.count())
+        self.assertEqual(1, len(pool.sockets))
 
         # Grow to max_concurrent
         ops_completed = yield gen.Callback('ops_completed')
         nops = 100
         results = []
+
         def callback(i, result, error):
             self.assertFalse(error)
             results.append(i)
@@ -107,7 +105,8 @@ class MotorPoolTest(MotorTest):
         collection = cx.pymongo_test.test_collection
         for i in range(nops):
             # Introduce random delay, avg 5ms, just to make sure we're async
-            collection.find_one({'$where': delay(random.random() / 10)},
+            collection.find_one(
+                {'$where': delay(random.random() / 10)},
                 callback=functools.partial(callback, i))
 
             # Active sockets tops out at max_concurrent, which defaults to 100
@@ -126,18 +125,16 @@ class MotorPoolTest(MotorTest):
         # Shrunk back to max_pool_size
         self.assertEqual(max_pool_size, pool.motor_sock_counter.count())
         self.assertEqual(max_pool_size, len(pool.sockets))
+        cx.close()
 
-        done()
-
-    @async_test_engine(timeout_sec=10)
-    def test_max_wait(self, done):
+    @gen_test
+    def test_max_wait(self):
         # Do a find_one that takes 1 second, and set max_wait_time to .5 sec,
         # 1 sec, and None. Verify timeout iff max_wait_time < 1 sec.
         where_delay = 1
         for max_wait_time in .5, 2, None:
-            cx = motor.MotorClient(
-                host, port, max_concurrent=1, max_wait_time=max_wait_time,
-            ).open_sync()
+            cx = yield self.motor_client(
+                max_concurrent=1, max_wait_time=max_wait_time)
 
             pool = cx._get_pools()[0]
             self.assertEqual(max_wait_time, pool.max_wait_time)
@@ -145,21 +142,19 @@ class MotorPoolTest(MotorTest):
             cb = yield gen.Callback('find_one')
             collection.find_one({'$where': delay(where_delay)}, callback=cb)
             if max_wait_time and max_wait_time < where_delay:
-                with self.assertRaises(motor.MotorPoolTimeout):
+                with assert_raises(motor.MotorPoolTimeout):
                     yield motor.Op(collection.find_one)
             else:
                 # No error
                 yield motor.Op(collection.find_one)
             yield gen.Wait('find_one')
+            cx.close()
 
-        done()
-
-    @async_test_engine(timeout_sec=30)
-    def test_connections_unacknowledged_writes(self, done):
+    @gen_test
+    def test_connections_unacknowledged_writes(self):
         # Verifying that unacknowledged writes don't open extra connections
-        cx = motor.MotorClient(host, port).open_sync()
-        pool = cx.delegate._MongoClient__pool
-        collection = cx.pymongo_test.test_collection
+        pool = self.cx.delegate._MongoClient__pool
+        collection = self.cx.pymongo_test.test_collection
         yield motor.Op(collection.drop)
         self.assertEqual(1, pool.motor_sock_counter.count())
 
@@ -182,10 +177,8 @@ class MotorPoolTest(MotorTest):
         docs = yield motor.Op(collection.find().sort('_id').to_list, length=100)
         self.assertEqual(list(range(nops)), [doc['_id'] for doc in docs])
 
-        done()
-
-    @async_test_engine()
-    def test_stack_context(self, done):
+    @gen_test
+    def test_stack_context(self):
         # See http://www.tornadoweb.org/documentation/stack_context.html
         # MotorPool.get_socket can block waiting for a callback in another
         # context to return a socket. We verify MotorPool's stack-context
@@ -193,10 +186,12 @@ class MotorPoolTest(MotorTest):
         # continuation are caught in get_socket's stack context, not
         # return_socket's.
 
-        loop = IOLoop.instance()
+        loop = self.io_loop
         history = []
-        cx = yield motor.Op(
-            motor.MotorClient(host, port, max_concurrent=1).open)
+        cx = yield self.motor_client(max_concurrent=1)
+
+        # Open a socket
+        yield motor.Op(cx.pymongo_test.test_collection.find_one)
 
         pool = cx._get_pools()[0]
         self.assertEqual(1, len(pool.sockets))
@@ -239,7 +234,8 @@ class MotorPoolTest(MotorTest):
         # 'return_sock_exc' was *not* added to history, because stack context
         # wasn't leaked from return_socket to get_socket.
         self.assertEqual(['raise', 'get_sock_exc', my_assert], history)
-        done()
+        cx.close()
+
 
 if __name__ == '__main__':
     unittest.main()

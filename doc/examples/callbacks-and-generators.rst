@@ -130,7 +130,7 @@ the result. To use async methods without explicit callbacks:
 
     class NewMessageHandler(tornado.web.RequestHandler):
         @tornado.web.asynchronous
-        @gen.engine
+        @gen.coroutine
         def post(self):
             """Insert a message
             """
@@ -146,7 +146,7 @@ the result. To use async methods without explicit callbacks:
 
     class MessagesHandler(tornado.web.RequestHandler):
         @tornado.web.asynchronous
-        @gen.engine
+        @gen.coroutine
         def get(self):
             """Display all messages
             """

@@ -26,7 +26,7 @@ starting the IOLoop::
 
     client = motor.MotorClient('localhost', 27017).open_sync()
 
-    @gen.engine
+    @gen.coroutine
     def login(c):
         yield motor.Op(c.my_database.authenticate, "user", "pass")
 

@@ -114,7 +114,8 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
             self.assertEqual(b(''), response.body)
 
         # If-Modified-Since in the past, get whole response back
-        response = self.fetch('/foo',
+        response = self.fetch(
+            '/foo',
             if_modified_since=last_mod_dt - datetime.timedelta(seconds=1))
         self.assertEqual(200, response.code)
         self.assertEqual(self.contents, response.body)

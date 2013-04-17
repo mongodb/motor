@@ -17,26 +17,25 @@
 import pymongo
 from pymongo.errors import ConfigurationError
 from pymongo.read_preferences import ReadPreference
+from tornado.testing import gen_test
 
 import motor
-from test import host, port
-from test import MotorTest, async_test_engine
+from test import host, port, assert_raises, MotorTest
 
 
 class MotorTestBasic(MotorTest):
     def test_repr(self):
-        cx = self.motor_client(host, port)
-        self.assertTrue(repr(cx).startswith('MotorClient'))
-        db = cx.pymongo_test
+        self.assertTrue(repr(self.cx).startswith('MotorClient'))
+        db = self.cx.pymongo_test
         self.assertTrue(repr(db).startswith('MotorDatabase'))
         coll = db.test_collection
         self.assertTrue(repr(coll).startswith('MotorCollection'))
         cursor = coll.find()
         self.assertTrue(repr(cursor).startswith('MotorCursor'))
 
-    @async_test_engine()
-    def test_write_concern(self, done):
-        cx = motor.MotorClient(host, port)
+    @gen_test
+    def test_write_concern(self):
+        cx = motor.MotorClient(host, port, io_loop=self.io_loop)
 
         # An implementation quirk of Motor, can't access properties until
         # connected
@@ -47,6 +46,7 @@ class MotorTestBasic(MotorTest):
 
         # Default empty dict means "w=1"
         self.assertEqual({}, cx.write_concern)
+        cx.close()
 
         for gle_options in [
             {},
@@ -55,8 +55,7 @@ class MotorTestBasic(MotorTest):
             {'wtimeout': 1000},
             {'j': True},
         ]:
-            cx = motor.MotorClient(host, port, **gle_options)
-            yield motor.Op(cx.open)
+            cx = yield self.motor_client(host, port, **gle_options)
             expected_wc = gle_options.copy()
             self.assertEqual(expected_wc, cx.write_concern)
 
@@ -68,11 +67,12 @@ class MotorTestBasic(MotorTest):
 
             # Call GLE whenever passing a callback, even if
             # collection.write_concern['w'] == 0
-            with self.assertRaises(pymongo.errors.DuplicateKeyError):
+            with assert_raises(pymongo.errors.DuplicateKeyError):
                 yield motor.Op(collection.insert, {'_id': 0})
 
             # No error
             yield motor.Op(collection.insert, {'_id': 0}, w=0)
+            cx.close()
 
         collection = cx.pymongo_test.test_collection
         collection.write_concern['w'] = 2
@@ -80,44 +80,47 @@ class MotorTestBasic(MotorTest):
         # No error
         yield motor.Op(collection.insert, {'_id': 0}, w=0)
 
-        cxw2 = yield motor.Op(motor.MotorClient(host, port, w=2).open)
+        cxw2 = yield self.motor_client(w=2)
         yield motor.Op(
             cxw2.pymongo_test.test_collection.insert, {'_id': 0}, w=0)
 
         # Test write concerns passed to MotorClient, set on collection, or
         # passed to insert.
         if self.is_replica_set:
-            with self.assertRaises(pymongo.errors.DuplicateKeyError):
+            with assert_raises(pymongo.errors.DuplicateKeyError):
                 yield motor.Op(
                     cxw2.pymongo_test.test_collection.insert, {'_id': 0})
 
-            with self.assertRaises(pymongo.errors.DuplicateKeyError):
+            with assert_raises(pymongo.errors.DuplicateKeyError):
                 yield motor.Op(collection.insert, {'_id': 0})
 
-            with self.assertRaises(pymongo.errors.DuplicateKeyError):
+            with assert_raises(pymongo.errors.DuplicateKeyError):
                 yield motor.Op(
                     cx.pymongo_test.test_collection.insert, {'_id': 0}, w=2)
         else:
             # w > 1 and no replica set
-            with self.assertRaises(pymongo.errors.OperationFailure):
+            with assert_raises(pymongo.errors.OperationFailure):
                 yield motor.Op(
                     cxw2.pymongo_test.test_collection.insert, {'_id': 0})
 
-            with self.assertRaises(pymongo.errors.OperationFailure):
+            with assert_raises(pymongo.errors.OperationFailure):
                 yield motor.Op(collection.insert, {'_id': 0})
 
-            with self.assertRaises(pymongo.errors.OperationFailure):
+            with assert_raises(pymongo.errors.OperationFailure):
                 yield motor.Op(
                     cx.pymongo_test.test_collection.insert, {'_id': 0}, w=2)
 
         # Important that the last operation on each MotorClient was
         # acknowledged, so lingering messages aren't delivered in the middle of
-        # the next test
-        done()
+        # the next test. Also, a quirk of tornado.testing.AsyncTestCase:  we
+        # must relinquish all file descriptors before its tearDown calls
+        # self.io_loop.close(all_fds=True).
+        cx.close()
+        cxw2.close()
 
-    @async_test_engine()
-    def test_read_preference(self, done):
-        cx = motor.MotorClient(host, port)
+    @gen_test
+    def test_read_preference(self):
+        cx = motor.MotorClient(host, port, io_loop=self.io_loop)
 
         # An implementation quirk of Motor, can't access properties until
         # connected
@@ -127,10 +130,13 @@ class MotorTestBasic(MotorTest):
         # Check the default
         yield motor.Op(cx.open)
         self.assertEqual(ReadPreference.PRIMARY, cx.read_preference)
+        cx.close()
 
         # We can set mode, tags, and latency, both with open() and open_sync()
+        cx.close()
         cx = yield motor.Op(motor.MotorClient(
-            host, port, read_preference=ReadPreference.SECONDARY,
+            host, port, io_loop=self.io_loop,
+            read_preference=ReadPreference.SECONDARY,
             tag_sets=[{'foo': 'bar'}],
             secondary_acceptable_latency_ms=42).open)
 
@@ -138,10 +144,11 @@ class MotorTestBasic(MotorTest):
         self.assertEqual([{'foo': 'bar'}], cx.tag_sets)
         self.assertEqual(42, cx.secondary_acceptable_latency_ms)
 
-        cx = motor.MotorClient(
-            host, port, read_preference=ReadPreference.SECONDARY,
+        cx.close()
+        cx = yield self.motor_client(
+            read_preference=ReadPreference.SECONDARY,
             tag_sets=[{'foo': 'bar'}],
-            secondary_acceptable_latency_ms=42).open_sync()
+            secondary_acceptable_latency_ms=42)
 
         self.assertEqual(ReadPreference.SECONDARY, cx.read_preference)
         self.assertEqual([{'foo': 'bar'}], cx.tag_sets)
@@ -149,6 +156,7 @@ class MotorTestBasic(MotorTest):
 
         # Make a MotorCursor and get its PyMongo Cursor
         cursor = cx.pymongo_test.test_collection.find(
+            io_loop=self.io_loop,
             read_preference=ReadPreference.NEAREST,
             tag_sets=[{'yay': 'jesse'}],
             secondary_acceptable_latency_ms=17).delegate
@@ -158,47 +166,50 @@ class MotorTestBasic(MotorTest):
 
         self.assertEqual([{'yay': 'jesse'}], cursor._Cursor__tag_sets)
         self.assertEqual(17, cursor._Cursor__secondary_acceptable_latency_ms)
-        done()
+        cx.close()
 
-    @async_test_engine()
-    def test_safe(self, done):
+    @gen_test
+    def test_safe(self):
         # Motor doesn't support 'safe'
         self.assertRaises(
-            ConfigurationError, motor.MotorClient, host, port, safe=True)
+            ConfigurationError,
+            motor.MotorClient, host, port, io_loop=self.io_loop, safe=True)
 
         self.assertRaises(
-            ConfigurationError, motor.MotorClient, host, port, safe=False)
+            ConfigurationError,
+            motor.MotorClient, host, port, io_loop=self.io_loop, safe=False)
 
-        cx = motor.MotorClient(host, port)
-        yield motor.Op(cx.open)
-        collection = cx.pymongo_test.test_collection
-
+        collection = self.cx.pymongo_test.test_collection
         self.assertRaises(
             ConfigurationError, collection.insert, {}, safe=False)
 
         self.assertRaises(
             ConfigurationError, collection.insert, {}, safe=True)
 
-        done()
-
-    @async_test_engine()
-    def test_slave_okay(self, done):
+    @gen_test
+    def test_slave_okay(self):
         # Motor doesn't support 'slave_okay'
         self.assertRaises(
-            ConfigurationError, motor.MotorClient, host, port, slave_okay=True)
+            ConfigurationError,
+            motor.MotorClient, host, port,
+            io_loop=self.io_loop, slave_okay=True)
 
         self.assertRaises(
-            ConfigurationError, motor.MotorClient, host, port, slave_okay=False)
+            ConfigurationError,
+            motor.MotorClient, host, port,
+            io_loop=self.io_loop, slave_okay=False)
 
         self.assertRaises(
-            ConfigurationError, motor.MotorClient, host, port, slaveok=True)
+            ConfigurationError,
+            motor.MotorClient, host, port,
+            io_loop=self.io_loop, slaveok=True)
 
         self.assertRaises(
-            ConfigurationError, motor.MotorClient, host, port, slaveok=False)
+            ConfigurationError,
+            motor.MotorClient, host, port,
+            io_loop=self.io_loop, slaveok=False)
 
-        cx = motor.MotorClient(host, port)
-        yield motor.Op(cx.open)
-        collection = cx.pymongo_test.test_collection
+        collection = self.cx.pymongo_test.test_collection
 
         self.assertRaises(
             ConfigurationError,
@@ -208,4 +219,4 @@ class MotorTestBasic(MotorTest):
             ConfigurationError,
             collection.find_one, slaveok=True)
 
-        done()
+        self.cx.close()

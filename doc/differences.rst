@@ -154,7 +154,7 @@ acknowledged and unacknowledged writes with Motor:
 | remove    | ``{'ok': 1.0, 'n': 1}`` | ``None``                       |
 +-----------+-------------------------+--------------------------------+
 
-Unacknowledged Writes With gen.engine
+Unacknowledged Writes With gen.coroutine
 '''''''''''''''''''''''''''''''''''''
 
 When using Motor with `tornado.gen`_, each Motor operation is passed an implicit
@@ -164,7 +164,7 @@ callback and is therefore acknowledged ("safe"):
 
     from tornado import gen
 
-    @gen.engine
+    @gen.coroutine
     def f():
         # Acknowledged
         yield motor.Op(motor_db.collection.insert, {'name': 'Randall'})
@@ -176,7 +176,7 @@ You can override this behavior and do unacknowledged writes by passing
 
     from tornado import gen
 
-    @gen.engine
+    @gen.coroutine
     def f():
         # Unacknowledged
         yield motor.Op(motor_db.collection.insert, {'name': 'Ross'}, w=0)
@@ -218,7 +218,7 @@ the callback as the ``error`` parameter, and the ``result`` parameter will be
 ``None``. Code using `tornado.gen`_ ends up looking very similar to the
 PyMongo code::
 
-    @gen.engine
+    @gen.coroutine
     def f():
         try:
             user = yield motor.Op(db.users.find_one, {'name': 'Jesse'})
@@ -256,7 +256,7 @@ for each operation and perform the next operation in the callback::
 This ensures ``find_one`` isn't run until ``insert`` has been acknowledged by
 the server. Obviously, this code is improved by `tornado.gen`_::
 
-    @gen.engine
+    @gen.coroutine
     def f():
         yield motor.Op(db.users.insert, {'name': 'Ben', 'author': 'Tornado'})
         result = yield motor.Op(db.users.find_one, {'name': 'Ben'})
@@ -349,7 +349,7 @@ GridFS
     Updating metadata on a :class:`~motor.MotorGridIn` requires a callback, so
     the API is different::
 
-        @gen.engine
+        @gen.coroutine
         def f():
             fs = motor.MotorGridFS(db)
             yield motor.Op(fs.open)

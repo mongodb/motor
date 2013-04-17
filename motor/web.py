@@ -80,7 +80,7 @@ class GridFSHandler(tornado.web.RequestHandler):
         fs.get_last_version(path, callback=callback)
 
     @tornado.web.asynchronous
-    @gen.engine
+    @gen.coroutine
     def get(self, path, include_body=True):
         fs = yield motor.Op(
             motor.MotorGridFS(self.database, self.root_collection).open)

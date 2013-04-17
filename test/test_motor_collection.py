@@ -18,53 +18,49 @@ import datetime
 import unittest
 
 import bson
-import pymongo
-from tornado import gen, ioloop
+from tornado import gen
 from bson.objectid import ObjectId
 from pymongo.errors import DuplicateKeyError
 from test.utils import delay
+from tornado.testing import gen_test
 
 import motor
-from test import host, port
-from test import MotorTest, async_test_engine, AssertEqual
+from test import MotorTest, AssertEqual, assert_raises
 
 
 class MotorCollectionTest(MotorTest):
-    @async_test_engine()
-    def test_collection(self, done):
+    @gen_test
+    def test_collection(self):
         # Test that we can create a collection directly, not just from
         # MotorClient's accessors
-        db = self.motor_client(host, port).pymongo_test
+        db = self.cx.pymongo_test
         collection = motor.MotorCollection(db, 'test_collection')
 
         # Make sure we got the right collection and it can do an operation
         doc = yield motor.Op(collection.find_one, {'_id': 1})
         self.assertEqual(1, doc['_id'])
-        done()
+        db.connection.close()
 
-    @async_test_engine()
-    def test_dotted_collection_name(self, done):
+    @gen_test
+    def test_dotted_collection_name(self):
         # Ensure that remove, insert, and find work on collections with dots
         # in their names.
-        cx = self.motor_client(host, port)
         for coll in (
-            cx.pymongo_test.foo,
-            cx.pymongo_test.foo.bar,
-            cx.pymongo_test.foo.bar.baz.quux
+            self.cx.pymongo_test.foo,
+            self.cx.pymongo_test.foo.bar,
+            self.cx.pymongo_test.foo.bar.baz.quux
         ):
             yield motor.Op(coll.remove)
-            yield AssertEqual('xyzzy', coll.insert, {'_id':'xyzzy'})
-            result = yield motor.Op(coll.find_one, {'_id':'xyzzy'})
+            yield AssertEqual('xyzzy', coll.insert, {'_id': 'xyzzy'})
+            result = yield motor.Op(coll.find_one, {'_id': 'xyzzy'})
             self.assertEqual(result['_id'], 'xyzzy')
             yield motor.Op(coll.remove)
-            yield AssertEqual(None, coll.find_one, {'_id':'xyzzy'})
+            yield AssertEqual(None, coll.find_one, {'_id': 'xyzzy'})
 
-        done()
-
-    @async_test_engine()
-    def test_find_where(self, done):
+    @gen_test
+    def test_find_where(self):
         # Check that $where clauses work
-        coll = self.motor_client(host, port).pymongo_test.test_collection
+        coll = self.cx.pymongo_test.test_collection
         res = yield motor.Op(coll.find().to_list, length=1000)
         self.assertEqual(200, len(res))
 
@@ -76,25 +72,23 @@ class MotorCollectionTest(MotorTest):
 
         res1 = yield motor.Op(coll.find().where(where).to_list, length=1000)
         self.assertEqual(res0, res1)
-        done()
+        coll.database.connection.close()
 
-    @async_test_engine()
-    def test_find_callback(self, done):
-        cx = self.motor_client(host, port)
-        cursor = cx.pymongo_test.test_collection.find()
-        yield motor.Op(self.check_required_callback, cursor.each)
+    @gen_test
+    def test_find_callback(self):
+        cursor = self.cx.pymongo_test.test_collection.find()
+        yield self.check_required_callback(cursor.each)
 
         # Avoid triggering length warning here, test_to_list_length_warning
         # must be the only place it's raised
-        yield motor.Op(self.check_required_callback, cursor.to_list, length=1)
-        done()
+        cursor = self.cx.pymongo_test.test_collection.find()
+        yield self.check_required_callback(cursor.to_list, length=1)
 
-    @async_test_engine()
-    def test_find_is_async(self, done):
+    @gen_test
+    def test_find_is_async(self):
         # Confirm find() is async by launching two operations which will finish
         # out of order. Also test that MotorClient doesn't reuse sockets
         # incorrectly.
-        cx = self.motor_client(host, port)
 
         # Launch find operations for _id's 1 and 2 which will finish in order
         # 2, then 1.
@@ -108,13 +102,13 @@ class MotorCollectionTest(MotorTest):
                 yield_points.pop()()
 
         # This find() takes 0.5 seconds
-        cx.pymongo_test.test_collection.find(
+        self.cx.pymongo_test.test_collection.find(
             {'_id': 1, '$where': delay(0.5)},
             fields={'s': True, '_id': False}
         ).limit(1).each(callback)
 
         # Very fast lookup
-        cx.pymongo_test.test_collection.find(
+        self.cx.pymongo_test.test_collection.find(
             {'_id': 2},
             fields={'s': True, '_id': False}
         ).limit(1).each(callback)
@@ -126,11 +120,8 @@ class MotorCollectionTest(MotorTest):
             [{'s': hex(s)} for s in (2, 1)],
             results)
 
-        done()
-
-    @async_test_engine()
-    def test_find_and_cancel(self, done):
-        cx = self.motor_client(host, port)
+    @gen_test
+    def test_find_and_cancel(self):
         results = []
 
         yield_point = yield gen.Callback(0)
@@ -146,7 +137,7 @@ class MotorCollectionTest(MotorTest):
                 # cancel iteration
                 return False
 
-        cursor = cx.pymongo_test.test_collection.find(sort=[('s', 1)])
+        cursor = self.cx.pymongo_test.test_collection.find(sort=[('s', 1)])
         cursor.each(callback)
         yield gen.Wait(0)
 
@@ -159,37 +150,23 @@ class MotorCollectionTest(MotorTest):
             results)
 
         yield motor.Op(cursor.close)
-        done()
 
-    @async_test_engine()
-    def test_find_one(self, done):
-        cx = self.motor_client(host, port)
+    @gen_test
+    def test_find_one(self):
         yield AssertEqual(
             {'_id': 1, 's': hex(1)},
-            cx.pymongo_test.test_collection.find_one,
+            self.cx.pymongo_test.test_collection.find_one,
             {'_id': 1})
-        done()
 
-    @async_test_engine()
-    def test_find_one_callback(self, done):
-        cx = self.motor_client(host, port)
-        yield motor.Op(
-            self.check_required_callback,
-            cx.pymongo_test.test_collection.find_one)
+    @gen_test
+    def test_find_one_callback(self):
+        yield self.check_required_callback(
+            self.cx.pymongo_test.test_collection.find_one)
 
-        done()
-
-    @async_test_engine(timeout_sec=6)
-    def test_find_one_is_async(self, done):
+    @gen_test
+    def test_find_one_is_async(self):
         # Confirm find_one() is async by launching two operations which will
         # finish out of order.
-        cx = self.motor_client(host, port)
-
-        def callback(result, error):
-            if error:
-                raise error
-            results.append(result)
-
         # Launch 2 find_one operations for _id's 1 and 2, which will finish in
         # order 2 then 1.
         results = []
@@ -201,14 +178,14 @@ class MotorCollectionTest(MotorTest):
                 results.append(result)
                 yield_points.pop()()
 
-        # This find_one() takes 5 seconds
-        cx.pymongo_test.test_collection.find_one(
-            {'_id': 1, '$where': delay(5)},
+        # This find_one() takes 3 seconds
+        self.cx.pymongo_test.test_collection.find_one(
+            {'_id': 1, '$where': delay(3)},
             fields={'s': True, '_id': False},
             callback=callback)
 
         # Very fast lookup
-        cx.pymongo_test.test_collection.find_one(
+        self.cx.pymongo_test.test_collection.find_one(
             {'_id': 2},
             fields={'s': True, '_id': False},
             callback=callback)
@@ -216,91 +193,66 @@ class MotorCollectionTest(MotorTest):
         yield gen.WaitAll([0, 1])
 
         # Results were appended in order 2, 1
-        self.assertEqual(
-            [{'s': hex(s)} for s in (2, 1)],
-            results)
+        self.assertEqual([{'s': hex(s)} for s in (2, 1)], results)
 
-        done()
-
-    @async_test_engine()
-    def test_update(self, done):
-        cx = self.motor_client(host, port)
-        result = yield motor.Op(cx.pymongo_test.test_collection.update,
+    @gen_test
+    def test_update(self):
+        result = yield motor.Op(
+            self.cx.pymongo_test.test_collection.update,
             {'_id': 5},
-            {'$set': {'foo': 'bar'}},
-        )
+            {'$set': {'foo': 'bar'}})
 
         self.assertEqual(1, result['ok'])
         self.assertEqual(True, result['updatedExisting'])
         self.assertEqual(1, result['n'])
         self.assertEqual(None, result['err'])
-        done()
 
-    @async_test_engine()
-    def test_update_bad(self, done):
+    @gen_test
+    def test_update_bad(self):
         # Violate a unique index, make sure we handle error well
-        cx = self.motor_client(host, port)
-
         # There's already a document with s: hex(4)
-        with self.assertRaises(DuplicateKeyError):
+        with assert_raises(DuplicateKeyError):
             yield motor.Op(
-                cx.pymongo_test.test_collection.update,
+                self.cx.pymongo_test.test_collection.update,
                 {'_id': 5},
                 {'$set': {'s': hex(4)}})
 
-        done()
+    @gen_test
+    def test_update_callback(self):
+        yield self.check_optional_callback(
+            self.cx.pymongo_test.test_collection.update, {}, {})
 
-    @async_test_engine()
-    def test_update_callback(self, done):
-        cx = self.motor_client(host, port)
-        yield motor.Op(
-            self.check_optional_callback,
-            cx.pymongo_test.test_collection.update, {}, {})
-
-        done()
-
-    @async_test_engine()
-    def test_insert(self, done):
-        cx = self.motor_client(host, port)
+    @gen_test
+    def test_insert(self):
         yield AssertEqual(
             201,
-            cx.pymongo_test.test_collection.insert,
-            {'_id': 201}
-        )
-        done()
+            self.cx.pymongo_test.test_collection.insert,
+            {'_id': 201})
 
-    @async_test_engine()
-    def test_insert_many(self, done):
-        cx = self.motor_client(host, port)
+    @gen_test
+    def test_insert_many(self):
         yield AssertEqual(
             range(201, 211),
-            cx.pymongo_test.test_collection.insert,
-            [{'_id': i, 's': hex(i)} for i in range(201, 211)]
-        )
-        done()
+            self.cx.pymongo_test.test_collection.insert,
+            [{'_id': i, 's': hex(i)} for i in range(201, 211)])
 
-    @async_test_engine()
-    def test_insert_bad(self, done):
+    @gen_test
+    def test_insert_bad(self):
         # Violate a unique index, make sure we handle error well
-        cx = self.motor_client(host, port)
-        with self.assertRaises(DuplicateKeyError):
+        with assert_raises(DuplicateKeyError):
             yield motor.Op(
-                cx.pymongo_test.test_collection.insert,
+                self.cx.pymongo_test.test_collection.insert,
                 {'s': hex(4)})  # There's already a document with s: hex(4)
-
-        done()
 
     def test_insert_many_one_bad(self):
         # Violate a unique index in one of many updates, handle error.
-        cx = self.motor_client(host, port)
-        with self.assertRaises(DuplicateKeyError):
+        with assert_raises(DuplicateKeyError):
             yield motor.Op(
-                cx.pymongo_test.test_collection.insert,
+                self.cx.pymongo_test.test_collection.insert,
                 [
                     {'_id': 201, 's': hex(201)},
                     {'_id': 202, 's': hex(4)},  # Already exists
-                    {'_id': 203, 's': hex(203)},
-                ])
+                    {'_id': 203, 's': hex(203)}])
 
         # First insert should have succeeded.
         yield AssertEqual(
@@ -314,53 +266,44 @@ class MotorCollectionTest(MotorTest):
             self.sync_db.test_collection.find({'_id': 203}).to_list,
             length=1000)
 
-    @async_test_engine()
-    def test_save_callback(self, done):
-        cx = self.motor_client(host, port)
-        yield motor.Op(
-            self.check_optional_callback,
-            cx.pymongo_test.test_collection.save, {})
+    @gen_test
+    def test_save_callback(self):
+        yield self.check_optional_callback(
+            self.cx.pymongo_test.test_collection.save, {})
 
-        done()
-
-    @async_test_engine()
-    def test_save_with_id(self, done):
+    @gen_test
+    def test_save_with_id(self):
         # save() returns the _id, in this case 5
         yield AssertEqual(
             5,
-            self.motor_client(host, port).pymongo_test.test_collection.save,
-            {'_id': 5}
-        )
-        done()
+            self.cx.pymongo_test.test_collection.save,
+            {'_id': 5})
 
-    @async_test_engine()
-    def test_save_without_id(self, done):
+    @gen_test
+    def test_save_without_id(self):
         result = yield motor.Op(
-            self.motor_client(host, port).pymongo_test.test_collection.save,
-            {'fiddle': 'faddle'}
-        )
+            self.cx.pymongo_test.test_collection.save,
+            {'fiddle': 'faddle'})
 
         # save() returns the new _id
         self.assertTrue(isinstance(result, ObjectId))
-        done()
 
-    @async_test_engine()
-    def test_save_bad(self, done):
+    @gen_test
+    def test_save_bad(self):
         # Violate a unique index, make sure we handle error well
-        collection = self.motor_client(host, port).pymongo_test.test_collection
-        with self.assertRaises(DuplicateKeyError):
+        collection = self.cx.pymongo_test.test_collection
+        with assert_raises(DuplicateKeyError):
             # There's already a document with s: hex(4).
             yield motor.Op(collection.save, {'_id': 5, 's': hex(4)})
 
-        done()
+        collection.database.connection.close()
 
-    @async_test_engine()
-    def test_remove(self, done):
+    @gen_test
+    def test_remove(self):
         # Remove a document twice, check that we get a success response first
         # time and an error the second time.
-        cx = self.motor_client(host, port)
         result = yield motor.Op(
-            cx.pymongo_test.test_collection.remove, {'_id': 1})
+            self.cx.pymongo_test.test_collection.remove, {'_id': 1})
 
         # First time we remove, n = 1
         self.assertEqual(1, result['n'])
@@ -368,94 +311,88 @@ class MotorCollectionTest(MotorTest):
         self.assertEqual(None, result['err'])
 
         result = yield motor.Op(
-            cx.pymongo_test.test_collection.remove, {'_id': 1})
+            self.cx.pymongo_test.test_collection.remove, {'_id': 1})
 
         # Second time, document is already gone, n = 0
         self.assertEqual(0, result['n'])
         self.assertEqual(1, result['ok'])
         self.assertEqual(None, result['err'])
-        done()
 
-    @async_test_engine()
-    def test_remove_callback(self, done):
-        cx = self.motor_client(host, port)
-        yield motor.Op(
-            self.check_optional_callback,
-            cx.pymongo_test.test_collection.remove)
+    @gen_test
+    def test_remove_callback(self):
+        yield self.check_optional_callback(
+            self.cx.pymongo_test.test_collection.remove)
 
-        done()
-
-    @async_test_engine()
-    def test_unacknowledged_remove(self, done):
+    @gen_test
+    def test_unacknowledged_remove(self):
         # Test that unsafe removes with no callback still work
         def ndocs():
             return self.sync_coll.find(
                 {'_id': {'$gte': 115, '$lte': 117}}).count()
 
         self.assertEqual(3, ndocs(), msg="Test setup should have 3 documents")
-        coll = self.motor_client(host, port).pymongo_test.test_collection
+        coll = self.cx.pymongo_test.test_collection
         # Unacknowledged removes
         coll.remove({'_id': 115})
         coll.remove({'_id': 116})
         coll.remove({'_id': 117})
         # Wait for them to complete
-        loop = ioloop.IOLoop.instance()
+        loop = self.io_loop
         while ndocs():
             yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
 
-        done()
+        coll.database.connection.close()
 
-    @async_test_engine()
-    def test_unacknowledged_insert(self, done):
+    @gen_test
+    def test_unacknowledged_insert(self):
         # Test that unsafe inserts with no callback still work
 
         # id 201 not present
         self.assertEqual(0, self.sync_coll.find({'_id': 201}).count())
 
         # insert id 201 without a callback or w=1
-        coll = self.motor_client(host, port).pymongo_test.test_collection
+        coll = self.cx.pymongo_test.test_collection
         coll.insert({'_id': 201})
 
         # the insert is eventually executed
-        loop = ioloop.IOLoop.instance()
+        loop = self.io_loop
         while not self.sync_db.test_collection.find({'_id': 201}).count():
             yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
 
         # DuplicateKeyError not raised
         coll.insert({'_id': 201})
         yield motor.Op(coll.insert, {'_id': 201}, w=0)
-        done()
+        coll.database.connection.close()
 
-    @async_test_engine()
-    def test_unacknowledged_save(self, done):
+    @gen_test
+    def test_unacknowledged_save(self):
         # Test that unsafe saves with no callback still work
-        coll = self.motor_client(host, port).pymongo_test.test_collection
+        coll = self.cx.pymongo_test.test_collection
         coll.save({'_id': 201})
 
-        loop = ioloop.IOLoop.instance()
+        loop = self.io_loop
         while not self.sync_db.test_collection.find({'_id': 201}).count():
             yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
 
         # DuplicateKeyError not raised
         coll.save({'_id': 201})
         yield motor.Op(coll.save, {'_id': 201}, w=0)
-        done()
+        coll.database.connection.close()
 
-    @async_test_engine()
-    def test_unacknowledged_update(self, done):
+    @gen_test
+    def test_unacknowledged_update(self):
         # Test that unsafe updates with no callback still work
-        coll = self.motor_client(host, port).pymongo_test.test_collection
+        coll = self.cx.pymongo_test.test_collection
         coll.update({'_id': 100}, {'$set': {'a': 1}})
 
-        loop = ioloop.IOLoop.instance()
+        loop = self.io_loop
         while not self.sync_db.test_collection.find({'a': 1}).count():
             yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
 
-        done()
+        coll.database.connection.close()
 
-    @async_test_engine()
-    def test_nested_callbacks(self, done):
-        cx = self.motor_client(host, port)
+    @gen_test
+    def test_nested_callbacks(self):
         results = [0]
         yield_point = yield gen.Callback(0)
 
@@ -469,14 +406,14 @@ class MotorCollectionTest(MotorTest):
 
             results[0] += 1
             if results[0] < 1000:
-                cx.pymongo_test.test_collection.find(
+                self.cx.pymongo_test.test_collection.find(
                     {'_id': 1},
                     {'s': False},
                 ).each(callback)
             else:
                 yield_point()
 
-        cx.pymongo_test.test_collection.find(
+        self.cx.pymongo_test.test_collection.find(
             {'_id': 1},
             {'s': False},
         ).each(callback)
@@ -486,43 +423,9 @@ class MotorCollectionTest(MotorTest):
         self.assertEqual(
             1000,
             results[0])
-        done()
 
-    @async_test_engine()
-    def test_nested_callbacks_2(self, done):
-        cx = motor.MotorClient(host, port)
-        yield_point = yield gen.Callback(0)
-
-        def connected(cx, error):
-            if error:
-                raise error
-
-            cx.pymongo_test.test_collection.insert({'_id': 201},
-                callback=inserted)
-
-        def inserted(result, error):
-            if error:
-                raise error
-
-            cx.pymongo_test.test_collection.find_one({'_id': 201},
-                callback=found)
-
-        def found(result, error):
-            if error:
-                raise error
-
-            cx.pymongo_test.test_collection.remove({'_id': 201},
-                callback=removed)
-
-        def removed(result, error):
-            yield_point()
-
-        cx.open(connected)
-        yield gen.Wait(0)
-        done()
-
-    @async_test_engine()
-    def test_map_reduce(self, done):
+    @gen_test
+    def test_map_reduce(self):
         # Count number of documents with even and odd _id
         expected_result = [{'_id': 0, 'value': 100}, {'_id': 1, 'value': 100}]
         map = bson.Code('function map() { emit(this._id % 2, 1); }')
@@ -533,14 +436,14 @@ class MotorCollectionTest(MotorTest):
             return r;
         }''')
 
-        cx = self.motor_client(host, port)
-        yield motor.Op(cx.pymongo_test.tmp_mr.drop)
+        yield motor.Op(self.cx.pymongo_test.tmp_mr.drop)
 
         # First do a standard mapreduce, should return MotorCollection
-        tmp_mr = yield motor.Op(cx.pymongo_test.test_collection.map_reduce,
+        tmp_mr = yield motor.Op(self.cx.pymongo_test.test_collection.map_reduce,
             map, reduce, 'tmp_mr')
 
-        self.assertTrue(isinstance(tmp_mr, motor.MotorCollection),
+        self.assertTrue(
+            isinstance(tmp_mr, motor.MotorCollection),
             'map_reduce should return MotorCollection, not %s' % tmp_mr)
 
         result = yield motor.Op(
@@ -548,8 +451,9 @@ class MotorCollectionTest(MotorTest):
         self.assertEqual(expected_result, result)
 
         # Standard mapreduce with full response
-        yield motor.Op(cx.pymongo_test.tmp_mr.drop)
-        response = yield motor.Op(cx.pymongo_test.test_collection.map_reduce,
+        yield motor.Op(self.cx.pymongo_test.tmp_mr.drop)
+        response = yield motor.Op(
+            self.cx.pymongo_test.test_collection.map_reduce,
             map, reduce, 'tmp_mr', full_response=True)
 
         self.assertTrue(
@@ -562,18 +466,16 @@ class MotorCollectionTest(MotorTest):
         self.assertEqual(expected_result, result)
 
         # Inline mapreduce
-        yield motor.Op(cx.pymongo_test.tmp_mr.drop)
+        yield motor.Op(self.cx.pymongo_test.tmp_mr.drop)
         result = yield motor.Op(
-            cx.pymongo_test.test_collection.inline_map_reduce, map, reduce)
+            self.cx.pymongo_test.test_collection.inline_map_reduce, map, reduce)
 
         result.sort(key=lambda doc: doc['_id'])
         self.assertEqual(expected_result, result)
-        done()
 
-    @async_test_engine()
-    def test_indexes(self, done):
-        cx = self.motor_client(host, port)
-        test_collection = cx.pymongo_test.test_collection
+    @gen_test
+    def test_indexes(self):
+        test_collection = self.cx.pymongo_test.test_collection
 
         # Create an index
         idx_name = yield motor.Op(test_collection.create_index, [('foo', 1)])
@@ -592,7 +494,6 @@ class MotorCollectionTest(MotorTest):
         self.assertTrue(any([
             info['key'] == [('bar', 1)] for info in index_info.values()
         ]))
-        done()
 
         # Don't test drop_index or drop_indexes -- Synchro tests them
         

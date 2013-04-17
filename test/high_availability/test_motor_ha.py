@@ -26,12 +26,12 @@ import pymongo
 from pymongo import ReadPreference
 from pymongo.mongo_replica_set_client import Member, Monitor, _partition_node
 from pymongo.errors import AutoReconnect, OperationFailure
+from tornado.testing import gen_test
 
 import motor
 import ha_tools
 from test.utils import one
-from test import async_test_engine
-from test import AssertEqual, AssertTrue, AssertFalse
+from test import AssertEqual, AssertTrue, AssertFalse, assert_raises
 from test_motor_ha_utils import assertReadFrom, assertReadFromAll
 
 
@@ -54,10 +54,10 @@ class MotorTestDirectConnection(unittest.TestCase):
         res = ha_tools.start_replica_set(members)
         self.seed, self.name = res
 
-    @async_test_engine(timeout_sec=60)
-    def test_secondary_connection(self, done):
+    @gen_test
+    def test_secondary_connection(self):
         self.c = motor.MotorReplicaSetClient(
-            self.seed, replicaSet=self.name).open_sync()
+            self.seed, replicaSet=self.name)
         self.assertTrue(bool(len(self.c.secondaries)))
         db = self.c.pymongo_test
         yield motor.Op(db.test.remove, {}, w=len(self.c.secondaries))
@@ -105,7 +105,7 @@ class MotorTestDirectConnection(unittest.TestCase):
                 self.assertTrue((
                     yield motor.Op(client.pymongo_test.test.find_one)))
             else:
-                with self.assertRaises(AutoReconnect):
+                with assert_raises(AutoReconnect):
                     yield motor.Op(client.pymongo_test.test.find_one)
 
             # Since an attempt at an acknowledged write to a secondary from a
@@ -136,7 +136,6 @@ class MotorTestDirectConnection(unittest.TestCase):
                 self.fail(
                     'Unacknowledged insert into arbiter connection %s should'
                     'have raised exception' % client)
-        done()
 
     def tearDown(self):
         ha_tools.kill_all_members()
@@ -156,11 +155,11 @@ class MotorTestPassiveAndHidden(unittest.TestCase):
         res = ha_tools.start_replica_set(members)
         self.seed, self.name = res
 
-    @async_test_engine(timeout_sec=60)
-    def test_passive_and_hidden(self, done):
+    @gen_test
+    def test_passive_and_hidden(self):
         loop = IOLoop.instance()
         self.c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
-        self.c.open_sync()
+        self.c
 
         passives = ha_tools.get_passives()
         passives = [_partition_node(member) for member in passives]
@@ -173,8 +172,6 @@ class MotorTestPassiveAndHidden(unittest.TestCase):
         yield gen.Task(loop.add_timeout, time.time() + 2 * MONITOR_INTERVAL)
         yield motor.Op(assertReadFrom,
             self, self.c, self.c.primary, SECONDARY_PREFERRED)
-
-        done()
 
     def tearDown(self):
         ha_tools.kill_all_members()
@@ -193,10 +190,10 @@ class MotorTestMonitorRemovesRecoveringMember(unittest.TestCase):
         res = ha_tools.start_replica_set(members)
         self.seed, self.name = res
 
-    @async_test_engine(timeout_sec=60)
-    def test_monitor_removes_recovering_member(self, done):
+    @gen_test
+    def test_monitor_removes_recovering_member(self):
         self.c = motor.MotorReplicaSetClient(
-            self.seed, replicaSet=self.name).open_sync()
+            self.seed, replicaSet=self.name)
 
         secondaries = ha_tools.get_secondaries()
 
@@ -215,8 +212,6 @@ class MotorTestMonitorRemovesRecoveringMember(unittest.TestCase):
             yield motor.Op(assertReadFrom,
                 self, self.c, _partition_node(secondary), mode)
 
-        done()
-
     def tearDown(self):
         self.c.close()
         ha_tools.kill_all_members()
@@ -233,14 +228,14 @@ class MotorTestTriggeredRefresh(unittest.TestCase):
         # Disable periodic refresh
         Monitor._refresh_interval = 1e6
 
-    @async_test_engine(timeout_sec=60)
-    def test_recovering_member_triggers_refresh(self, done):
+    @gen_test
+    def test_recovering_member_triggers_refresh(self):
         # To test that find_one() and count() trigger immediate refreshes,
         # we'll create a separate client for each
         self.c_find_one, self.c_count = [
             motor.MotorReplicaSetClient(
                 self.seed, replicaSet=self.name, read_preference=SECONDARY
-            ).open_sync() for _ in xrange(2)]
+            ) for _ in xrange(2)]
 
         # We've started the primary and one secondary
         primary = ha_tools.get_primary()
@@ -253,9 +248,9 @@ class MotorTestTriggeredRefresh(unittest.TestCase):
         ha_tools.set_maintenance(secondary, True)
 
         # Trigger a refresh in various ways
-        with self.assertRaises(AutoReconnect):
+        with assert_raises(AutoReconnect):
             yield motor.Op(self.c_find_one.test.test.find_one)
-        with self.assertRaises(AutoReconnect):
+        with assert_raises(AutoReconnect):
             yield motor.Op(self.c_count.test.test.count)
 
         # Wait for the immediate refresh to complete - we're not waiting for
@@ -267,12 +262,10 @@ class MotorTestTriggeredRefresh(unittest.TestCase):
             self.assertFalse(c.secondaries)
             self.assertEqual(_partition_node(primary), c.primary)
 
-        done()
-
-    @async_test_engine(timeout_sec=60)
-    def test_stepdown_triggers_refresh(self, done):
+    @gen_test
+    def test_stepdown_triggers_refresh(self):
         c_find_one = motor.MotorReplicaSetClient(
-            self.seed, replicaSet=self.name).open_sync()
+            self.seed, replicaSet=self.name)
 
         # We've started the primary and one secondary
         primary = ha_tools.get_primary()
@@ -286,7 +279,7 @@ class MotorTestTriggeredRefresh(unittest.TestCase):
         yield gen.Task(IOLoop.instance().add_timeout, time.time() + 1)
 
         # Trigger a refresh
-        with self.assertRaises(AutoReconnect):
+        with assert_raises(AutoReconnect):
             yield motor.Op(c_find_one.test.test.find_one)
 
         # Wait for the immediate refresh to complete - we're not waiting for
@@ -297,8 +290,6 @@ class MotorTestTriggeredRefresh(unittest.TestCase):
         self.assertTrue(
             not c_find_one.primary
             or primary != _partition_node(c_find_one.primary))
-
-        done()
 
     def tearDown(self):
         Monitor._refresh_interval = MONITOR_INTERVAL
@@ -311,11 +302,11 @@ class MotorTestHealthMonitor(unittest.TestCase):
         res = ha_tools.start_replica_set([{}, {}, {}])
         self.seed, self.name = res
 
-    @async_test_engine(timeout_sec=60)
-    def test_primary_failure(self, done):
+    @gen_test
+    def test_primary_failure(self):
         loop = IOLoop.instance()
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
-        c.open_sync()
+        c
         self.assertTrue(bool(len(c.secondaries)))
         primary = c.primary
         secondaries = c.secondaries
@@ -331,13 +322,12 @@ class MotorTestHealthMonitor(unittest.TestCase):
             yield gen.Task(loop.add_timeout, time.time() + 1)
         else:
             self.fail("New primary not detected")
-        done()
 
-    @async_test_engine(timeout_sec=60)
-    def test_secondary_failure(self, done):
+    @gen_test
+    def test_secondary_failure(self):
         loop = IOLoop.instance()
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
-        c.open_sync()
+        c
         self.assertTrue(bool(len(c.secondaries)))
         primary = c.primary
         secondaries = c.secondaries
@@ -360,13 +350,12 @@ class MotorTestHealthMonitor(unittest.TestCase):
             yield gen.Task(loop.add_timeout, time.time() + 1)
         else:
             self.fail("Dead secondary not detected")
-        done()
 
-    @async_test_engine(timeout_sec=60)
-    def test_primary_stepdown(self, done):
+    @gen_test
+    def test_primary_stepdown(self):
         loop = IOLoop.instance()
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
-        c.open_sync()
+        c
         self.assertTrue(bool(len(c.secondaries)))
         primary = c.primary
         secondaries = c.secondaries.copy()
@@ -380,7 +369,6 @@ class MotorTestHealthMonitor(unittest.TestCase):
             yield gen.Task(loop.add_timeout, time.time() + 1)
         else:
             self.fail("New primary not detected")
-        done()
 
     def tearDown(self):
         super(MotorTestHealthMonitor, self).tearDown()
@@ -393,11 +381,11 @@ class MotorTestWritesWithFailover(unittest.TestCase):
         res = ha_tools.start_replica_set([{}, {}, {}])
         self.seed, self.name = res
 
-    @async_test_engine(timeout_sec=60)
-    def test_writes_with_failover(self, done):
+    @gen_test
+    def test_writes_with_failover(self):
         loop = IOLoop.instance()
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
-        c.open_sync()
+        c
         primary = c.primary
         db = c.pymongo_test
         w = len(c.secondaries) + 1
@@ -424,7 +412,6 @@ class MotorTestWritesWithFailover(unittest.TestCase):
         self.assertTrue(primary != c.primary)
         result = yield motor.Op(db.test.find_one, {'bar': 'baz'})
         self.assertEqual('baz', result['bar'])
-        done()
 
     def tearDown(self):
         ha_tools.kill_all_members()
@@ -436,11 +423,11 @@ class MotorTestReadWithFailover(unittest.TestCase):
         res = ha_tools.start_replica_set([{}, {}, {}])
         self.seed, self.name = res
 
-    @async_test_engine(timeout_sec=60)
-    def test_read_with_failover(self, done):
+    @gen_test
+    def test_read_with_failover(self):
         loop = IOLoop.instance()
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
-        c.open_sync()
+        c
         self.assertTrue(bool(len(c.secondaries)))
 
         db = c.pymongo_test
@@ -462,7 +449,6 @@ class MotorTestReadWithFailover(unittest.TestCase):
         # Primary failure shouldn't interrupt the cursor
         yield cursor.fetch_next
         self.assertEqual(10, cursor.delegate._Cursor__retrieved)
-        done()
 
     def tearDown(self):
         ha_tools.kill_all_members()
@@ -476,11 +462,11 @@ class MotorTestShipOfTheseus(unittest.TestCase):
         res = ha_tools.start_replica_set([{}, {}])
         self.seed, self.name = res
 
-    @async_test_engine(timeout_sec=180)
-    def test_ship_of_theseus(self, done):
+    @gen_test
+    def test_ship_of_theseus(self):
         loop = IOLoop.instance()
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
-        c.open_sync()
+        c
 
         db = c.pymongo_test
         w = len(c.secondaries) + 1
@@ -524,8 +510,6 @@ class MotorTestShipOfTheseus(unittest.TestCase):
         # No error
         yield motor.Op(db.test.find_one)
         yield motor.Op(db.test.find_one, read_preference=SECONDARY)
-
-        done()
 
     def tearDown(self):
         ha_tools.kill_all_members()
@@ -591,8 +575,8 @@ class MotorTestReadPreference(unittest.TestCase):
     def clear_ping_times(self):
         Member._host_to_ping_time.clear()
 
-    @async_test_engine(timeout_sec=300)
-    def test_read_preference(self, done):
+    @gen_test
+    def test_read_preference(self):
         # This is long, but we put all the tests in one function to save time
         # on setUp, which takes about 30 seconds to bring up a replica set.
         # We pass through four states:
@@ -606,15 +590,14 @@ class MotorTestReadPreference(unittest.TestCase):
         # PRIMARY_PREFERRED, SECONDARY, SECONDARY_PREFERRED, and NEAREST
         loop = IOLoop.instance()
         c = motor.MotorReplicaSetClient(
-            self.seed, replicaSet=self.name).open_sync()
+            self.seed, replicaSet=self.name)
 
-        @gen.engine
+        @gen.coroutine
         def read_from_which_host(
             rsc,
             mode,
             tag_sets=None,
             latency=15,
-            callback=None
         ):
             db = rsc.pymongo_test
             db.read_preference = mode
@@ -626,34 +609,25 @@ class MotorTestReadPreference(unittest.TestCase):
             cursor = db.test.find()
             try:
                 yield cursor.fetch_next
-                callback(cursor.delegate._Cursor__connection_id)
+                raise gen.Return(cursor.delegate._Cursor__connection_id)
             except AutoReconnect:
-                callback(None)
+                raise gen.Return(None)
 
-        @gen.engine
+        @gen.coroutine
         def assertReadFrom(member, *args, **kwargs):
-            callback = kwargs.pop('callback')
             for _ in range(10):
-                used = yield gen.Task(
-                    read_from_which_host, c, *args, **kwargs)
+                used = yield read_from_which_host(c, *args, **kwargs)
                 self.assertEqual(member, used)
 
-            # Done
-            callback()
-
-        @gen.engine
+        @gen.coroutine
         def assertReadFromAll(members, *args, **kwargs):
-            callback = kwargs.pop('callback')
             members = set(members)
             all_used = set()
             for _ in range(100):
-                used = yield gen.Task(
-                    read_from_which_host, c, *args, **kwargs)
+                used = yield read_from_which_host(c, *args, **kwargs)
                 all_used.add(used)
                 if members == all_used:
-                    # Success
-                    callback()
-                    break
+                    raise gen.Return()  # Success
 
             # This will fail
             self.assertEqual(members, all_used)
@@ -670,50 +644,50 @@ class MotorTestReadPreference(unittest.TestCase):
 
         # 1. THREE MEMBERS UP -------------------------------------------------
         #       PRIMARY
-        yield gen.Task(assertReadFrom, primary, PRIMARY)
+        yield assertReadFrom(primary, PRIMARY)
 
         #       PRIMARY_PREFERRED
         # Trivial: mode and tags both match
-        yield gen.Task(assertReadFrom, primary, PRIMARY_PREFERRED, self.primary_dc)
+        yield assertReadFrom(primary, PRIMARY_PREFERRED, self.primary_dc)
 
         # Secondary matches but not primary, choose primary
-        yield gen.Task(assertReadFrom, primary, PRIMARY_PREFERRED, self.secondary_dc)
+        yield assertReadFrom(primary, PRIMARY_PREFERRED, self.secondary_dc)
 
         # Chooses primary, ignoring tag sets
-        yield gen.Task(assertReadFrom, primary, PRIMARY_PREFERRED, self.primary_dc)
+        yield assertReadFrom(primary, PRIMARY_PREFERRED, self.primary_dc)
 
         # Chooses primary, ignoring tag sets
-        yield gen.Task(assertReadFrom, primary, PRIMARY_PREFERRED, bad_tag)
-        yield gen.Task(assertReadFrom, primary, PRIMARY_PREFERRED, [bad_tag, {}])
+        yield assertReadFrom(primary, PRIMARY_PREFERRED, bad_tag)
+        yield assertReadFrom(primary, PRIMARY_PREFERRED, [bad_tag, {}])
 
         #       SECONDARY
-        yield gen.Task(assertReadFromAll, [secondary, other_secondary], SECONDARY, latency=9999999)
+        yield assertReadFromAll([secondary, other_secondary], SECONDARY, latency=9999999)
 
         #       SECONDARY_PREFERRED
-        yield gen.Task(assertReadFromAll, [secondary, other_secondary], SECONDARY_PREFERRED, latency=9999999)
+        yield assertReadFromAll([secondary, other_secondary], SECONDARY_PREFERRED, latency=9999999)
 
         # Multiple tags
-        yield gen.Task(assertReadFrom, secondary, SECONDARY_PREFERRED, self.secondary_tags)
+        yield assertReadFrom(secondary, SECONDARY_PREFERRED, self.secondary_tags)
 
         # Fall back to primary if it's the only one matching the tags
-        yield gen.Task(assertReadFrom, primary, SECONDARY_PREFERRED, {'name': 'primary'})
+        yield assertReadFrom(primary, SECONDARY_PREFERRED, {'name': 'primary'})
 
         # No matching secondaries
-        yield gen.Task(assertReadFrom, primary, SECONDARY_PREFERRED, bad_tag)
+        yield assertReadFrom(primary, SECONDARY_PREFERRED, bad_tag)
 
         # Fall back from non-matching tag set to matching set
-        yield gen.Task(assertReadFromAll, [secondary, other_secondary],
+        yield assertReadFromAll([secondary, other_secondary],
             SECONDARY_PREFERRED, [bad_tag, {}], latency=9999999)
 
-        yield gen.Task(assertReadFrom, other_secondary,
+        yield assertReadFrom(other_secondary,
             SECONDARY_PREFERRED, [bad_tag, {'dc': 'ny'}])
 
         #       NEAREST
         self.clear_ping_times()
 
-        yield gen.Task(assertReadFromAll, [primary, secondary, other_secondary], NEAREST, latency=9999999)
+        yield assertReadFromAll([primary, secondary, other_secondary], NEAREST, latency=9999999)
 
-        yield gen.Task(assertReadFromAll, [primary, other_secondary],
+        yield assertReadFromAll([primary, other_secondary],
             NEAREST, [bad_tag, {'dc': 'ny'}], latency=9999999)
 
         self.set_ping_time(primary, 0)
@@ -721,32 +695,32 @@ class MotorTestReadPreference(unittest.TestCase):
         self.set_ping_time(other_secondary, 10)
 
         # Nearest member, no tags
-        yield gen.Task(assertReadFrom, primary, NEAREST)
+        yield assertReadFrom(primary, NEAREST)
 
         # Tags override nearness
-        yield gen.Task(assertReadFrom, primary, NEAREST, {'name': 'primary'})
-        yield gen.Task(assertReadFrom, secondary, NEAREST, self.secondary_dc)
+        yield assertReadFrom(primary, NEAREST, {'name': 'primary'})
+        yield assertReadFrom(secondary, NEAREST, self.secondary_dc)
 
         # Make secondary fast
         self.set_ping_time(primary, .03) # 30 ms
         self.set_ping_time(secondary, 0)
 
-        yield gen.Task(assertReadFrom, secondary, NEAREST)
+        yield assertReadFrom(secondary, NEAREST)
 
         # Other secondary fast
         self.set_ping_time(secondary, 10)
         self.set_ping_time(other_secondary, 0)
 
-        yield gen.Task(assertReadFrom, other_secondary, NEAREST)
+        yield assertReadFrom(other_secondary, NEAREST)
 
         # High secondaryAcceptableLatencyMS, should read from all members
-        yield gen.Task(assertReadFromAll, 
+        yield assertReadFromAll(
             [primary, secondary, other_secondary],
             NEAREST, latency=9999999)
 
         self.clear_ping_times()
 
-        yield gen.Task(assertReadFromAll, [primary, other_secondary], NEAREST, [{'dc': 'ny'}], latency=9999999)
+        yield assertReadFromAll([primary, other_secondary], NEAREST, [{'dc': 'ny'}], latency=9999999)
 
         # 2. PRIMARY DOWN -----------------------------------------------------
         killed = ha_tools.kill_primary()
@@ -755,35 +729,35 @@ class MotorTestReadPreference(unittest.TestCase):
         yield gen.Task(loop.add_timeout, time.time() + 2 * MONITOR_INTERVAL)
 
         #       PRIMARY
-        yield gen.Task(assertReadFrom, None, PRIMARY)
+        yield assertReadFrom(None, PRIMARY)
 
         #       PRIMARY_PREFERRED
         # No primary, choose matching secondary
-        yield gen.Task(assertReadFromAll, [secondary, other_secondary], PRIMARY_PREFERRED, latency=9999999)
-        yield gen.Task(assertReadFrom, secondary, PRIMARY_PREFERRED, {'name': 'secondary'})
+        yield assertReadFromAll([secondary, other_secondary], PRIMARY_PREFERRED, latency=9999999)
+        yield assertReadFrom(secondary, PRIMARY_PREFERRED, {'name': 'secondary'})
 
         # No primary or matching secondary
-        yield gen.Task(assertReadFrom, None, PRIMARY_PREFERRED, bad_tag)
+        yield assertReadFrom(None, PRIMARY_PREFERRED, bad_tag)
 
         #       SECONDARY
-        yield gen.Task(assertReadFromAll, [secondary, other_secondary], SECONDARY, latency=9999999)
+        yield assertReadFromAll([secondary, other_secondary], SECONDARY, latency=9999999)
 
         # Only primary matches
-        yield gen.Task(assertReadFrom, None, SECONDARY, {'name': 'primary'})
+        yield assertReadFrom(None, SECONDARY, {'name': 'primary'})
 
         # No matching secondaries
-        yield gen.Task(assertReadFrom, None, SECONDARY, bad_tag)
+        yield assertReadFrom(None, SECONDARY, bad_tag)
 
         #       SECONDARY_PREFERRED
-        yield gen.Task(assertReadFromAll, [secondary, other_secondary], SECONDARY_PREFERRED, latency=9999999)
+        yield assertReadFromAll([secondary, other_secondary], SECONDARY_PREFERRED, latency=9999999)
 
         # Mode and tags both match
-        yield gen.Task(assertReadFrom, secondary, SECONDARY_PREFERRED, {'name': 'secondary'})
+        yield assertReadFrom(secondary, SECONDARY_PREFERRED, {'name': 'secondary'})
 
         #       NEAREST
         self.clear_ping_times()
 
-        yield gen.Task(assertReadFromAll, [secondary, other_secondary], NEAREST, latency=9999999)
+        yield assertReadFromAll([secondary, other_secondary], NEAREST, latency=9999999)
 
         # 3. PRIMARY UP, ONE SECONDARY DOWN -----------------------------------
         ha_tools.restart_members([killed])
@@ -804,30 +778,30 @@ class MotorTestReadPreference(unittest.TestCase):
         yield gen.Task(loop.add_timeout, time.time() + 2 * MONITOR_INTERVAL)
 
         #       PRIMARY
-        yield gen.Task(assertReadFrom, primary, PRIMARY)
+        yield assertReadFrom(primary, PRIMARY)
 
         #       PRIMARY_PREFERRED
-        yield gen.Task(assertReadFrom, primary, PRIMARY_PREFERRED)
+        yield assertReadFrom(primary, PRIMARY_PREFERRED)
 
         #       SECONDARY
-        yield gen.Task(assertReadFrom, other_secondary, SECONDARY)
-        yield gen.Task(assertReadFrom, other_secondary, SECONDARY, self.other_secondary_dc)
+        yield assertReadFrom(other_secondary, SECONDARY)
+        yield assertReadFrom(other_secondary, SECONDARY, self.other_secondary_dc)
 
         # Only the down secondary matches
-        yield gen.Task(assertReadFrom, None, SECONDARY, {'name': 'secondary'})
+        yield assertReadFrom(None, SECONDARY, {'name': 'secondary'})
 
         #       SECONDARY_PREFERRED
-        yield gen.Task(assertReadFrom, other_secondary, SECONDARY_PREFERRED)
-        yield gen.Task(assertReadFrom, 
+        yield assertReadFrom(other_secondary, SECONDARY_PREFERRED)
+        yield assertReadFrom(
             other_secondary, SECONDARY_PREFERRED, self.other_secondary_dc)
 
         # The secondary matching the tag is down, use primary
-        yield gen.Task(assertReadFrom, primary, SECONDARY_PREFERRED, {'name': 'secondary'})
+        yield assertReadFrom(primary, SECONDARY_PREFERRED, {'name': 'secondary'})
 
         #       NEAREST
-        yield gen.Task(assertReadFromAll, [primary, other_secondary], NEAREST, latency=9999999)
-        yield gen.Task(assertReadFrom, other_secondary, NEAREST, {'name': 'other_secondary'})
-        yield gen.Task(assertReadFrom, primary, NEAREST, {'name': 'primary'})
+        yield assertReadFromAll([primary, other_secondary], NEAREST, latency=9999999)
+        yield assertReadFrom(other_secondary, NEAREST, {'name': 'other_secondary'})
+        yield assertReadFrom(primary, NEAREST, {'name': 'primary'})
 
         # 4. PRIMARY UP, ALL SECONDARIES DOWN ---------------------------------
         ha_tools.kill_members([unpartition_node(other_secondary)], 2)
@@ -837,35 +811,34 @@ class MotorTestReadPreference(unittest.TestCase):
         ).admin.command('ismaster')['ismaster'])
 
         #       PRIMARY
-        yield gen.Task(assertReadFrom, primary, PRIMARY)
+        yield assertReadFrom(primary, PRIMARY)
 
         #       PRIMARY_PREFERRED
-        yield gen.Task(assertReadFrom, primary, PRIMARY_PREFERRED)
-        yield gen.Task(assertReadFrom, primary, PRIMARY_PREFERRED, self.secondary_dc)
+        yield assertReadFrom(primary, PRIMARY_PREFERRED)
+        yield assertReadFrom(primary, PRIMARY_PREFERRED, self.secondary_dc)
 
         #       SECONDARY
-        yield gen.Task(assertReadFrom, None, SECONDARY)
-        yield gen.Task(assertReadFrom, None, SECONDARY, self.other_secondary_dc)
-        yield gen.Task(assertReadFrom, None, SECONDARY, {'dc': 'ny'})
+        yield assertReadFrom(None, SECONDARY)
+        yield assertReadFrom(None, SECONDARY, self.other_secondary_dc)
+        yield assertReadFrom(None, SECONDARY, {'dc': 'ny'})
 
         #       SECONDARY_PREFERRED
-        yield gen.Task(assertReadFrom, primary, SECONDARY_PREFERRED)
-        yield gen.Task(assertReadFrom, primary, SECONDARY_PREFERRED, self.secondary_dc)
-        yield gen.Task(assertReadFrom, primary, SECONDARY_PREFERRED, {'name': 'secondary'})
-        yield gen.Task(assertReadFrom, primary, SECONDARY_PREFERRED, {'dc': 'ny'})
+        yield assertReadFrom(primary, SECONDARY_PREFERRED)
+        yield assertReadFrom(primary, SECONDARY_PREFERRED, self.secondary_dc)
+        yield assertReadFrom(primary, SECONDARY_PREFERRED, {'name': 'secondary'})
+        yield assertReadFrom(primary, SECONDARY_PREFERRED, {'dc': 'ny'})
 
         #       NEAREST
-        yield gen.Task(assertReadFrom, primary, NEAREST)
-        yield gen.Task(assertReadFrom, None, NEAREST, self.secondary_dc)
-        yield gen.Task(assertReadFrom, None, NEAREST, {'name': 'secondary'})
+        yield assertReadFrom(primary, NEAREST)
+        yield assertReadFrom(None, NEAREST, self.secondary_dc)
+        yield assertReadFrom(None, NEAREST, {'name': 'secondary'})
 
         # Even if primary's slow, still read from it
         self.set_ping_time(primary, 100)
-        yield gen.Task(assertReadFrom, primary, NEAREST)
-        yield gen.Task(assertReadFrom, None, NEAREST, self.secondary_dc)
+        yield assertReadFrom(primary, NEAREST)
+        yield assertReadFrom(None, NEAREST, self.secondary_dc)
 
         self.clear_ping_times()
-        done()
 
     def tearDown(self):
         self.c.close()
@@ -896,11 +869,11 @@ class MotorTestReplicaSetAuth(unittest.TestCase):
         self.c.admin.authenticate('admin', 'adminpass')
         self.c.pymongo_ha_auth.add_user('user', 'userpass')
 
-    @async_test_engine(timeout_sec=300)
-    def test_auth_during_failover(self, done):
+    @gen_test
+    def test_auth_during_failover(self):
         loop = IOLoop.instance()
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
-        c.open_sync()
+        c
         db = c.pymongo_ha_auth
         res = yield motor.Op(db.authenticate, 'user', 'userpass')
         self.assertTrue(res)
@@ -908,7 +881,7 @@ class MotorTestReplicaSetAuth(unittest.TestCase):
             {'foo': 'bar'},
             w=3, wtimeout=1000)
         yield motor.Op(db.logout)
-        with self.assertRaises(OperationFailure):
+        with assert_raises(OperationFailure):
             yield motor.Op(db.foo.find_one)
 
         primary = '%s:%d' % self.c.primary
@@ -926,7 +899,6 @@ class MotorTestReplicaSetAuth(unittest.TestCase):
         res = yield motor.Op(db.foo.find_one)
         self.assertEqual('bar', res['foo'])
         c.close()
-        done()
 
     def tearDown(self):
         self.c.close()
@@ -938,14 +910,14 @@ class MotorTestAlive(unittest.TestCase):
         members = [{}, {}]
         self.seed, self.name = ha_tools.start_replica_set(members)
 
-    @async_test_engine(timeout_sec=60)
-    def test_alive(self, done):
+    @gen_test
+    def test_alive(self):
         primary = ha_tools.get_primary()
         secondary = ha_tools.get_random_secondary()
-        primary_cx = motor.MotorClient(primary).open_sync()
-        secondary_cx = motor.MotorClient(secondary).open_sync()
+        primary_cx = motor.MotorClient(primary)
+        secondary_cx = motor.MotorClient(secondary)
         rsc = motor.MotorReplicaSetClient(
-            self.seed, replicaSet=self.name).open_sync()
+            self.seed, replicaSet=self.name)
         loop = IOLoop.instance()
 
         try:
@@ -971,8 +943,6 @@ class MotorTestAlive(unittest.TestCase):
         finally:
             rsc.close()
 
-        done()
-
     def tearDown(self):
         ha_tools.kill_all_members()
 
@@ -981,10 +951,10 @@ class MotorTestMongosHighAvailability(unittest.TestCase):
     def setUp(self):
         self.seed_list = ha_tools.create_sharded_cluster()
 
-    @async_test_engine(timeout_sec=60)
-    def test_mongos_ha(self, done):
+    @gen_test
+    def test_mongos_ha(self):
         dbname = 'pymongo_mongos_ha'
-        c = motor.MotorClient(self.seed_list).open_sync()
+        c = motor.MotorClient(self.seed_list)
         yield motor.Op(c.drop_database, dbname)
         coll = c[dbname].test
         yield motor.Op(coll.insert, {'foo': 'bar'})
@@ -992,7 +962,7 @@ class MotorTestMongosHighAvailability(unittest.TestCase):
         first = '%s:%d' % (c.host, c.port)
         ha_tools.kill_mongos(first)
         # Fail first attempt
-        with self.assertRaises(AutoReconnect):
+        with assert_raises(AutoReconnect):
             yield motor.Op(coll.count)
         # Find new mongos
         yield AssertEqual(1, coll.count)
@@ -1001,7 +971,7 @@ class MotorTestMongosHighAvailability(unittest.TestCase):
         self.assertNotEqual(first, second)
         ha_tools.kill_mongos(second)
         # Fail first attempt
-        with self.assertRaises(AutoReconnect):
+        with assert_raises(AutoReconnect):
             yield motor.Op(coll.count)
         # Find new mongos
         yield AssertEqual(1, coll.count)
@@ -1010,7 +980,7 @@ class MotorTestMongosHighAvailability(unittest.TestCase):
         self.assertNotEqual(second, third)
         ha_tools.kill_mongos(third)
         # Fail first attempt
-        with self.assertRaises(AutoReconnect):
+        with assert_raises(AutoReconnect):
             yield motor.Op(coll.count)
 
         # We've killed all three, restart one.
@@ -1018,7 +988,6 @@ class MotorTestMongosHighAvailability(unittest.TestCase):
 
         # Find new mongos
         yield AssertEqual(1, coll.count)
-        done()
 
     def tearDown(self):
         ha_tools.kill_all_members()

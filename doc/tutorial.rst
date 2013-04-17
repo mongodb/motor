@@ -286,19 +286,19 @@ callbacks:
   >>> db.test_collection.insert({'i': i}, callback=do_insert)
   >>> IOLoop.instance().start()
 
-You can simplify this code with ``gen.engine``.
+You can simplify this code with ``gen.coroutine``.
 
-Using Motor with `gen.engine`
+Using Motor with `gen.coroutine`
 -----------------------------
 The `tornado.gen module`_
 lets you use generators to simplify asynchronous code, combining operations and
 their callbacks in a single function. You must decorate the function with
-``@gen.engine`` and yield ``gen.Task`` instances to wait for operations to
+``@gen.coroutine`` and yield ``gen.Task`` instances to wait for operations to
 complete:
 
 .. doctest:: before-inserting-2000-docs
 
-  >>> @gen.engine
+  >>> @gen.coroutine
   ... def do_insert():
   ...     for i in range(2000):
   ...         arguments = yield gen.Task(db.test_collection.insert, {'i': i})
@@ -314,11 +314,11 @@ complete:
 Here ``arguments`` is an instance of `tornado.gen.Arguments`_
 containing the arguments :meth:`insert` passed to its callback function.
 Motor provides :class:`~motor.Op` to further simplify asynchronous operations
-with ``gen.engine``:
+with ``gen.coroutine``:
 
 .. doctest:: before-inserting-2000-docs
 
-  >>> @gen.engine
+  >>> @gen.coroutine
   ... def do_insert():
   ...     for i in range(2000):
   ...         result = yield motor.Op(db.test_collection.insert, {'i': i})
@@ -333,7 +333,7 @@ raises the error or returns the result. In the code above, ``result`` is the
 
 .. seealso:: `Bulk inserts in PyMongo <http://api.mongodb.org/python/current/tutorial.html?highlight=bulk%20inserts#bulk-inserts>`_
 
-.. seealso:: :ref:`Detailed example of Motor and gen.engine <generator-interface-example>`
+.. seealso:: :ref:`Detailed example of Motor and gen.coroutine <generator-interface-example>`
 
 .. _tornado.gen module: http://www.tornadoweb.org/documentation/gen.html
 
@@ -349,7 +349,7 @@ less than 2:
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.engine
+  >>> @gen.coroutine
   ... def do_find_one():
   ...     document = yield motor.Op(
   ...         db.test_collection.find_one, {'i': {'$lt': 2}})
@@ -379,7 +379,7 @@ To find all documents with "i" less than 5:
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.engine
+  >>> @gen.coroutine
   ... def do_find():
   ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
   ...     for document in (yield motor.Op(cursor.to_list)):
@@ -400,7 +400,7 @@ and :meth:`~motor.MotorCursor.next_object`:
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.engine
+  >>> @gen.coroutine
   ... def do_find():
   ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
   ...     while (yield cursor.fetch_next):
@@ -423,7 +423,7 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.engine
+  >>> @gen.coroutine
   ... def do_find():
   ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
   ...     # Modify the query before iterating
@@ -445,7 +445,7 @@ a collection, or the number of documents that match a query:
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.engine
+  >>> @gen.coroutine
   ... def do_count():
   ...     n = yield motor.Op(db.test_collection.find().count)
   ...     print n, 'documents in collection'
@@ -474,7 +474,7 @@ document, or it can update some fields of a document. To replace a document:
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.engine
+  >>> @gen.coroutine
   ... def do_replace():
   ...     coll = db.test_collection
   ...     old_document = yield motor.Op(coll.find_one, {'i': 50})
@@ -501,7 +501,7 @@ operator to set "key" to "value":
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.engine
+  >>> @gen.coroutine
   ... def do_update():
   ...     coll = db.test_collection
   ...     result = yield motor.Op(coll.update,
@@ -537,7 +537,7 @@ performs an :meth:`insert`.
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.engine
+  >>> @gen.coroutine
   ... def do_save():
   ...     coll = db.test_collection
   ...     doc = {'key': 'value'}
@@ -561,7 +561,7 @@ Removing Documents
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.engine
+  >>> @gen.coroutine
   ... def do_remove():
   ...     coll = db.test_collection
   ...     n = yield motor.Op(coll.count)
@@ -587,7 +587,7 @@ the :meth:`~motor.MotorDatabase.command` method on :class:`~motor.MotorDatabase`
 .. doctest:: after-inserting-2000-docs
 
   >>> from bson import SON
-  >>> @gen.engine
+  >>> @gen.coroutine
   ... def use_count_command():
   ...     response = yield motor.Op(
   ...         db.command, SON([("count", "test_collection")]))

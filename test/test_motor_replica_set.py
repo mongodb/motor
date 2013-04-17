@@ -18,18 +18,18 @@ import unittest
 
 import pymongo.errors
 import pymongo.mongo_replica_set_client
-from tornado import ioloop, iostream
+from tornado import iostream
+from tornado.testing import gen_test
 
 import motor
-from test import host, port, MotorReplicaSetTestBase
-from test import async_test_engine, AssertEqual
+from test import host, port, MotorReplicaSetTestBase, assert_raises
 
 
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
-    @async_test_engine()
-    def test_replica_set_client(self, done):
+    @gen_test
+    def test_replica_set_client(self):
         cx = motor.MotorReplicaSetClient(
-            '%s:%s' % (host, port), replicaSet=self.name)
+            '%s:%s' % (host, port), replicaSet=self.name, io_loop=self.io_loop)
 
         # Can't access databases before connecting
         self.assertRaises(
@@ -45,24 +45,30 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         result = yield motor.Op(cx.open)
         self.assertEqual(result, cx)
         self.assertTrue(cx.connected)
-        self.assertTrue(isinstance(cx.delegate._MongoReplicaSetClient__monitor,
+        self.assertTrue(isinstance(
+            cx.delegate._MongoReplicaSetClient__monitor,
             motor.MotorReplicaSetMonitor))
-        self.assertEqual(ioloop.IOLoop.instance(),
+
+        self.assertEqual(
+            self.io_loop,
             cx.delegate._MongoReplicaSetClient__monitor.io_loop)
-        done()
 
-    @async_test_engine()
-    def test_open_callback(self, done):
+    @gen_test
+    def test_open_callback(self):
         cx = motor.MotorReplicaSetClient(
-            '%s:%s' % (host, port), replicaSet=self.name)
-        yield motor.Op(self.check_optional_callback, cx.open)
-        done()
+            '%s:%s' % (host, port), replicaSet=self.name, io_loop=self.io_loop)
+        yield self.check_optional_callback(cx.open)
 
-    @async_test_engine()
-    def test_open_sync(self, done):
-        loop = ioloop.IOLoop.instance()
+    def test_io_loop(self):
+        with assert_raises(TypeError):
+            motor.MotorReplicaSetClient(
+                '%s:%s' % (host, port), replicaSet=self.name, io_loop='foo')
+
+    @gen_test
+    def test_open_sync(self):
         cx = motor.MotorReplicaSetClient(
-            '%s:%s' % (host, port), replicaSet=self.name)
+            host, port, replicaSet=self.name, io_loop=self.io_loop)
+
         self.assertFalse(cx.connected)
 
         # open_sync() creates a special IOLoop just to run the connection
@@ -71,108 +77,44 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         self.assertTrue(cx.connected)
 
         # IOLoop was restored?
-        self.assertEqual(loop, cx.io_loop)
-        self.assertTrue(isinstance(cx.delegate._MongoReplicaSetClient__monitor,
-            motor.MotorReplicaSetMonitor))
-        self.assertEqual(loop,
-            cx.delegate._MongoReplicaSetClient__monitor.io_loop)
+        self.assertEqual(self.io_loop, cx.io_loop)
 
         # Really connected?
-        result = yield motor.Op(cx.admin.command, "buildinfo")
-        self.assertEqual(int, type(result['bits']))
+        result = yield motor.Op(
+            cx.pymongo_test.test_collection.find_one, {'_id': 0})
 
-        yield motor.Op(cx.pymongo_test.test_collection.insert,
-            {'_id': 'test_open_sync'})
-        doc = yield motor.Op(
-            cx.pymongo_test.test_collection.find_one, {'_id': 'test_open_sync'})
-        self.assertEqual('test_open_sync', doc['_id'])
-        done()
+        self.assertEqual(0, result['_id'])
+        cx.close()
 
-    def test_open_sync_custom_io_loop(self):
-        # Check that we can create a MotorReplicaSetClient with a custom
-        # IOLoop, then call open_sync(), which uses a new loop, and the custom
-        # loop is restored.
-        loop = ioloop.IOLoop()
-        cx = motor.MotorReplicaSetClient(
-            '%s:%s' % (host, port), replicaSet=self.name, io_loop=loop)
-        self.assertEqual(cx, cx.open_sync())
-        self.assertTrue(cx.connected)
-
-        # Custom loop restored?
-        self.assertEqual(loop, cx.io_loop)
-        self.assertTrue(isinstance(cx.delegate._MongoReplicaSetClient__monitor,
-            motor.MotorReplicaSetMonitor))
-        self.assertEqual(loop,
-            cx.delegate._MongoReplicaSetClient__monitor.io_loop)
-
-        @async_test_engine(io_loop=loop)
-        def test(self, done):
-            # Custom loop works?
-            yield AssertEqual(
-                {'_id': 17, 's': hex(17)},
-                cx.pymongo_test.test_collection.find_one, {'_id': 17})
-
-            yield AssertEqual(
-                {'_id': 37, 's': hex(37)},
-                cx.pymongo_test.test_collection.find_one, {'_id': 37})
-
-            done()
-
-        test(self)
-
-    def test_custom_io_loop(self):
-        self.assertRaises(
-            TypeError,
-            lambda: motor.MotorReplicaSetClient(
-                '%s:%s' % (host, port), replicaSet=self.name, io_loop='foo')
-        )
-
-        loop = ioloop.IOLoop()
-
-        @async_test_engine(io_loop=loop)
-        def test(self, done):
-            # Make sure we can do async things with the custom loop
-            cx = motor.MotorReplicaSetClient(
-                '%s:%s' % (host, port), replicaSet=self.name, io_loop=loop)
-            yield AssertEqual(cx, cx.open)
-            self.assertTrue(cx.connected)
-            self.assertTrue(isinstance(
-                cx.delegate._MongoReplicaSetClient__monitor,
-                motor.MotorReplicaSetMonitor))
-            self.assertEqual(loop,
-                cx.delegate._MongoReplicaSetClient__monitor.io_loop)
-
-            doc = yield motor.Op(
-                cx.pymongo_test.test_collection.find_one, {'_id': 17})
-            self.assertEqual({'_id': 17, 's': hex(17)}, doc)
-            done()
-
-        test(self)
-
-    @async_test_engine()
-    def test_sync_client(self, done):
+    @gen_test
+    def test_sync_client(self):
         class DictSubclass(dict):
             pass
 
         args = ['%s:%s' % (host, port)]
         kwargs = dict(
             connectTimeoutMS=1000, socketTimeoutMS=1500, max_pool_size=23,
-            document_class=DictSubclass, tz_aware=True, replicaSet=self.name)
+            document_class=DictSubclass, tz_aware=True, replicaSet=self.name,
+            io_loop=self.io_loop)
 
         cx = yield motor.Op(motor.MotorReplicaSetClient(
             *args, **kwargs).open)
         sync_cx = cx.sync_client()
         self.assertTrue(isinstance(
             sync_cx, pymongo.mongo_replica_set_client.MongoReplicaSetClient))
-        self.assertFalse(isinstance(sync_cx._MongoReplicaSetClient__monitor,
+        self.assertFalse(isinstance(
+            sync_cx._MongoReplicaSetClient__monitor,
             motor.MotorReplicaSetMonitor))
-        self.assertEqual(1000,
+        self.assertEqual(
+            1000,
             sync_cx._MongoReplicaSetClient__conn_timeout * 1000.0)
-        self.assertEqual(1500,
+        self.assertEqual(
+            1500,
             sync_cx._MongoReplicaSetClient__net_timeout * 1000.0)
         self.assertEqual(23, sync_cx.max_pool_size)
         self.assertEqual(True, sync_cx._MongoReplicaSetClient__tz_aware)
-        self.assertEqual(DictSubclass,
+        self.assertEqual(
+            DictSubclass,
             sync_cx._MongoReplicaSetClient__document_class)
 
         # Make sure sync client works
@@ -180,31 +122,19 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             {'_id': 5, 's': hex(5)},
             sync_cx.pymongo_test.test_collection.find_one({'_id': 5}))
 
-        done()
-
-    @async_test_engine()
-    def test_auto_reconnect_exception_when_read_preference_is_secondary(
-        self, done
-    ):
-        cx = motor.MotorReplicaSetClient(
-            '%s:%s' % (host, port), replicaSet=self.name)
-
-        yield motor.Op(cx.open)
-        db = cx.pymongo_test
-
+    @gen_test
+    def test_auto_reconnect_exception_when_read_preference_is_secondary(self):
         old_write = iostream.IOStream.write
         iostream.IOStream.write = lambda self, data: self.close()
 
         try:
-            cursor = db.pymongo_test.find(
+            cursor = self.rsc.pymongo_test.test_collection.find(
                 read_preference=pymongo.ReadPreference.SECONDARY)
 
-            with self.assertRaises(pymongo.errors.AutoReconnect):
+            with assert_raises(pymongo.errors.AutoReconnect):
                 yield motor.Op(cursor.each)
         finally:
             iostream.IOStream.write = old_write
-
-        done()
 
 
 if __name__ == '__main__':

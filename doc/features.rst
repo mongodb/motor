@@ -29,7 +29,7 @@ Timeouts
 Unlike most non-blocking libraries for Tornado, Motor provides a convenient
 timeout interface::
 
-    @gen.engine
+    @gen.coroutine
     def f():
         try:
             document = yield motor.Op(

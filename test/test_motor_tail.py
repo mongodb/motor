@@ -19,9 +19,9 @@ import time
 import unittest
 
 from tornado import gen
-from tornado.ioloop import IOLoop
+from tornado.testing import gen_test
 
-from test import host, port, MotorTest, async_test_engine
+from test import MotorTest
 
 
 class MotorTailTest(MotorTest):
@@ -41,12 +41,9 @@ class MotorTailTest(MotorTest):
         def add_docs():
             i = 0
             for pause in pauses:
-                if pause == 'drop':
-                    self.sync_db.capped.drop()
-                else:
-                    time.sleep(pause)
-                    self.sync_db.capped.insert({'_id': i})
-                    i += 1
+                time.sleep(pause)
+                self.sync_db.capped.insert({'_id': i})
+                i += 1
 
         t = threading.Thread(target=add_docs)
         t.start()
@@ -56,12 +53,11 @@ class MotorTailTest(MotorTest):
     # getMore times out
     tail_pauses = (0, 1, 0, 1, 0, 5, 0, 0)
 
-    @async_test_engine(timeout_sec=sum(tail_pauses) + 30)
-    def test_tail(self, done):
+    @gen_test
+    def test_tail(self):
         expected = [{'_id': i} for i in range(len(self.tail_pauses))]
         t = self.start_insertion_thread(self.tail_pauses)
-        test_db = self.motor_client(host, port).pymongo_test
-        capped = test_db.capped
+        capped = self.cx.pymongo_test.capped
 
         cursor = capped.find(tailable=True, await_data=True)
         results = []
@@ -74,9 +70,8 @@ class MotorTailTest(MotorTest):
 
         # Clear cursor from this scope and from Runner
         cursor = None
-        yield gen.Task(IOLoop.instance().add_callback)
-        yield gen.Task(self.wait_for_cursors)
-        done()
+        yield gen.Task(self.io_loop.add_callback)
+        yield self.wait_for_cursors()
 
 
 if __name__ == '__main__':

@@ -19,15 +19,15 @@ import unittest
 from nose.plugins.skip import SkipTest
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
+from tornado.testing import gen_test
 
 import motor
-from test import host, port
-from test import MotorTest, async_test_engine
+from test import host, port, MotorTest
 
 
 class MotorIPv6Test(MotorTest):
-    @async_test_engine()
-    def test_ipv6(self, done):
+    @gen_test
+    def test_ipv6(self):
         assert host in ('localhost', '127.0.0.1'), (
             "This unittest isn't written to test IPv6 with host %s" % repr(host)
         )
@@ -42,19 +42,19 @@ class MotorIPv6Test(MotorTest):
         # Make sure we can connect over IPv6 using both open() and open_sync()
         for open_sync in (True, False):
             cx_string = "mongodb://[::1]:%d" % port
-            cx = motor.MotorClient(cx_string)
+            cx = motor.MotorClient(cx_string, io_loop=self.io_loop)
             if open_sync:
                 cx.open_sync()
             else:
                 yield motor.Op(cx.open)
 
             yield motor.Op(
-                cx.pymongo_test.pymongo_test.insert, {"dummy": "object"})
-            result = yield motor.Op(
-                cx.pymongo_test.pymongo_test.find_one, {"dummy": "object"})
-            self.assertEqual('object', result['dummy'])
+                self.cx.pymongo_test.pymongo_test.insert, {"dummy": "object"})
 
-        done()
+            result = yield motor.Op(
+                self.cx.pymongo_test.pymongo_test.find_one, {"dummy": "object"})
+
+            self.assertEqual('object', result['dummy'])
 
 if __name__ == '__main__':
     unittest.main()

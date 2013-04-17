@@ -21,7 +21,7 @@ from tornado import gen
 from pymongo.errors import AutoReconnect
 
 
-@gen.engine
+@gen.coroutine
 def read_from_which_host(
     rsc, mode,
     tag_sets=None, secondary_acceptable_latency_ms=15, callback=None,
@@ -51,7 +51,7 @@ def read_from_which_host(
         callback(None)
 
 
-@gen.engine
+@gen.coroutine
 def assertReadFrom(
     testcase, rsc, member, mode,
     tag_sets=None, secondary_acceptable_latency_ms=15, callback=None
@@ -85,7 +85,7 @@ def assertReadFrom(
         callback(None, None)
 
 
-@gen.engine
+@gen.coroutine
 def assertReadFromAll(
     testcase, rsc, members, mode,
     tag_sets=None, secondary_acceptable_latency_ms=15, callback=None

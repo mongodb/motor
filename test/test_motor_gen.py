@@ -20,11 +20,12 @@ import contextlib
 import datetime
 import unittest
 
-from tornado import gen, ioloop
+from tornado import gen
 from pymongo.errors import DuplicateKeyError
+from tornado.testing import gen_test
 
 import motor
-from test import host, port, MotorTest, async_test_engine
+from test import MotorTest
 
 
 class MotorGenTest(MotorTest):
@@ -32,10 +33,9 @@ class MotorGenTest(MotorTest):
         self.sync_db.test_collection2.drop()
         super(MotorGenTest, self).tearDown()
 
-    @async_test_engine()
-    def test_op(self, done):
-        cx = self.motor_client(host, port)
-        collection = cx.pymongo_test.test_collection
+    @gen_test
+    def test_op(self):
+        collection = self.cx.pymongo_test.test_collection
         doc = {'_id': 'jesse'}
         _id = yield motor.Op(collection.insert, doc)
         self.assertEqual('jesse', _id)
@@ -49,12 +49,10 @@ class MotorGenTest(MotorTest):
             error = e
 
         self.assertTrue(isinstance(error, DuplicateKeyError))
-        done()
 
-    @async_test_engine()
-    def test_wait_op(self, done):
-        cx = self.motor_client(host, port)
-        collection = cx.pymongo_test.test_collection
+    @gen_test
+    def test_wait_op(self):
+        collection = self.cx.pymongo_test.test_collection
         doc = {'_id': 'jesse'}
         collection.insert(doc, callback=(yield gen.Callback('insert_a')))
         _id = yield motor.WaitOp('insert_a')
@@ -74,12 +72,10 @@ class MotorGenTest(MotorTest):
             error = e
 
         self.assertTrue(isinstance(error, DuplicateKeyError))
-        done()
 
-    @async_test_engine()
-    def test_wait_all_ops(self, done):
-        cx = self.motor_client(host, port)
-        collection = cx.pymongo_test.test_collection2
+    @gen_test
+    def test_wait_all_ops(self):
+        collection = self.cx.pymongo_test.test_collection2
         collection.insert(
             {'_id': 'b'}, callback=(yield gen.Callback('insert_b')))
         collection.insert(
@@ -109,10 +105,9 @@ class MotorGenTest(MotorTest):
             error = e
 
         self.assertTrue(isinstance(error, DuplicateKeyError))
-        done()
 
-    @async_test_engine()
-    def test_wait_all_ops_exc(self, done):
+    @gen_test
+    def test_wait_all_ops_exc(self):
         cb0 = yield gen.Callback(0)
         cb1 = yield gen.Callback(1)
         cb2 = yield gen.Callback(2)
@@ -130,7 +125,7 @@ class MotorGenTest(MotorTest):
         def bar():
             cb3('bar', None)
 
-        loop = ioloop.IOLoop.instance()
+        loop = self.io_loop
         loop.add_timeout(datetime.timedelta(seconds=.04), bar)
         loop.add_timeout(datetime.timedelta(seconds=.03), raise_assertion_err)
         loop.add_timeout(datetime.timedelta(seconds=.02), foo)
@@ -160,7 +155,6 @@ class MotorGenTest(MotorTest):
             yield motor.WaitAllOps([2, 3])
 
         self.assertEqual('bar', (yield motor.WaitOp(3)))
-        done()
 
 
 if __name__ == '__main__':

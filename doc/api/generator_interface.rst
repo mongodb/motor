@@ -7,7 +7,7 @@ Generator Interface
 
 Motor provides yield points to be used with `tornado.gen
 <http://www.tornadoweb.org/documentation/gen.html>`_,
-within functions or methods decorated by ``@gen.engine``. These yield points
+within functions or methods decorated by ``@gen.coroutine``. These yield points
 extend Tornado's existing yield points with an exception-handling convention:
 they assume all async functions pass ``(result, error)`` to their callbacks.
 

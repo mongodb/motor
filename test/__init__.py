@@ -13,22 +13,19 @@
 # limitations under the License.
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
-
-from __future__ import with_statement
+import contextlib
 
 import datetime
 import functools
 import os
 import sys
 import time
-import unittest
 
 import pymongo
 import pymongo.errors
 from nose.plugins.skip import SkipTest
 from pymongo.mongo_client import _partition_node
-from tornado import gen, ioloop
-from tornado.stack_context import ExceptionStackContext
+from tornado import gen, testing
 
 import motor
 
@@ -44,59 +41,15 @@ host = os.environ.get("DB_IP", "localhost")
 port = int(os.environ.get("DB_PORT", 27017))
 
 
-def async_test_engine(timeout_sec=5, io_loop=None):
-    if timeout_sec is not None and not isinstance(timeout_sec, (int, float)):
-        raise TypeError("""\
-Expected int or float, got %r
-Use async_test_engine like:
-    @async_test_engine()
-or:
-    @async_test_engine(timeout_sec=10)""" % timeout_sec)
-
-    timeout_sec = max(float(os.environ.get('TIMEOUT_SEC', 0)), timeout_sec)
-
-    def decorator(func):
-        @functools.wraps(func)
-        def _async_test(self):
-            loop = io_loop or ioloop.IOLoop.instance()
-            start = time.time()
-            is_done = [False]
-            error = [None]
-
-            def on_exception(exc_type, exc_value, exc_traceback):
-                error[0] = exc_value
-                loop.stop()
-
-            def done():
-                is_done[0] = True
-                loop.stop()
-
-            def start_test():
-                gen.engine(func)(self, done)
-
-            def on_timeout():
-                error[0] = AssertionError(
-                    '%s timed out after %.2f seconds' % (
-                        func, time.time() - start))
-                loop.stop()
-
-            timeout = loop.add_timeout(start + timeout_sec, on_timeout)
-
-            with ExceptionStackContext(on_exception):
-                loop.add_callback(start_test)
-
-            loop.start()
-            loop.remove_timeout(timeout)
-            if error[0]:
-                raise error[0]
-
-            if not is_done[0]:
-                raise Exception('%s did not call done()' % func)
-
-        return _async_test
-    return decorator
-
-async_test_engine.__test__ = False  # Nose otherwise mistakes it for a test
+@contextlib.contextmanager
+def assert_raises(exc_class):
+    """Roughly a backport of Python 2.7's TestCase.assertRaises"""
+    try:
+        yield
+    except exc_class:
+        pass
+    else:
+        assert False, "%s not raised" % exc_class
 
 
 class AssertEqual(gen.Task):
@@ -126,7 +79,7 @@ class AssertFalse(AssertEqual):
         super(AssertFalse, self).__init__(False, func, *args, **kwargs)
 
 
-class MotorTest(unittest.TestCase):
+class MotorTest(testing.AsyncTestCase):
     longMessage = True  # Used by unittest.TestCase
     ssl = False  # If True, connect with SSL, skip if mongod isn't SSL
 
@@ -183,6 +136,7 @@ class MotorTest(unittest.TestCase):
             [{'_id': i, 's': hex(i)} for i in range(200)])
 
         self.open_cursors = self.get_open_cursors()
+        self.cx = self.motor_client_sync()
 
     def get_open_cursors(self):
         # TODO: we've found this unreliable in PyMongo testing; find instead a
@@ -190,13 +144,13 @@ class MotorTest(unittest.TestCase):
         output = self.sync_cx.admin.command('serverStatus')
         return output.get('cursors', {}).get('totalOpen', 0)
 
-    @gen.engine
-    def wait_for_cursors(self, callback):
+    @gen.coroutine
+    def wait_for_cursors(self):
         """Ensure any cursors opened during the test have been closed on the
         server. `yield motor.Op(cursor.close)` is usually simpler.
         """
         timeout_sec = float(os.environ.get('TIMEOUT_SEC', 5)) - 1
-        loop = ioloop.IOLoop.instance()
+        loop = self.io_loop
         start = time.time()
         while self.get_open_cursors() > self.open_cursors:
             if time.time() - start > timeout_sec:
@@ -204,16 +158,28 @@ class MotorTest(unittest.TestCase):
 
             yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
 
-        callback()
-
-    def motor_client(self, host, port, *args, **kwargs):
+    @gen.coroutine
+    def motor_client(self, host=host, port=port, *args, **kwargs):
         """Get an open MotorClient. Ignores self.ssl, you must pass 'ssl'
-           argument.
+        argument. You'll probably need to close the client to avoid
+        file-descriptor problems after AsyncTestCase calls
+        self.io_loop.close(all_fds=True).
         """
-        return motor.MotorClient(host, port, *args, **kwargs).open_sync()
+        client = motor.MotorClient(
+            host, port, *args, io_loop=self.io_loop, **kwargs)
 
-    @gen.engine
-    def check_callback_handling(self, fn, required, callback):
+        yield motor.Op(client.open)
+        raise gen.Return(client)
+
+    def motor_client_sync(self, host=host, port=port, *args, **kwargs):
+        """Get an open MotorClient. Ignores self.ssl, you must pass 'ssl'
+        argument.
+        """
+        return self.io_loop.run_sync(functools.partial(
+            self.motor_client, host, port, *args, **kwargs))
+
+    @gen.coroutine
+    def check_callback_handling(self, fn, required):
         """Take a function and verify that it accepts a 'callback' parameter
         and properly type-checks it. If 'required', check that fn requires
         a callback.
@@ -226,41 +192,32 @@ class MotorTest(unittest.TestCase):
           - `required`: Whether `fn` should require a callback or not
           - `callback`: To be called with ``(None, error)`` when done
         """
-        try:
-            self.assertRaises(TypeError, fn, callback='foo')
-            self.assertRaises(TypeError, fn, callback=1)
+        self.assertRaises(TypeError, fn, callback='foo')
+        self.assertRaises(TypeError, fn, callback=1)
 
-            if required:
-                self.assertRaises(TypeError, fn)
-                self.assertRaises(TypeError, fn, None)
-            else:
-                # Should not raise
-                fn(callback=None)
-
-                # Let it finish so it doesn't interfere with future tests
-                loop = ioloop.IOLoop.instance()
-                yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=1))
-
+        if required:
+            self.assertRaises(TypeError, fn)
+            self.assertRaises(TypeError, fn, None)
+        else:
             # Should not raise
-            yield motor.Op(fn)
-            callback(None, None)
-        except Exception, e:
-            callback(None, e)
+            fn(callback=None)
 
-    @gen.engine
+        # Should not raise
+        yield motor.Op(fn)
+
+    @gen.coroutine
     def check_required_callback(self, fn, *args, **kwargs):
-        callback = kwargs.pop('callback')
-        self.check_callback_handling(
-            functools.partial(fn, *args, **kwargs), True, callback=callback)
+        yield self.check_callback_handling(
+            functools.partial(fn, *args, **kwargs), True)
 
-    @gen.engine
+    @gen.coroutine
     def check_optional_callback(self, fn, *args, **kwargs):
-        callback = kwargs.pop('callback')
-        self.check_callback_handling(
-            functools.partial(fn, *args, **kwargs), False, callback=callback)
+        yield self.check_callback_handling(
+            functools.partial(fn, *args, **kwargs), False)
 
     def tearDown(self):
         self.sync_coll.drop()
+        self.cx.close()
 
         # Replication cursors come and go, making this check unreliable against
         # replica sets.
@@ -285,3 +242,30 @@ class MotorReplicaSetTestBase(MotorTest):
         super(MotorReplicaSetTestBase, self).setUp()
         if not self.is_replica_set:
             raise SkipTest("Not connected to a replica set")
+
+        self.rsc = self.motor_rsc_sync()
+
+    @gen.coroutine
+    def motor_rsc(self, host=host, port=port, *args, **kwargs):
+        """Get an open MotorReplicaSetClient. Ignores self.ssl, you must pass
+        'ssl' argument. You'll probably need to close the client to avoid
+        file-descriptor problems after AsyncTestCase calls
+        self.io_loop.close(all_fds=True).
+        """
+        client = motor.MotorReplicaSetClient(
+            '%s:%s' % (host, port), *args, io_loop=self.io_loop,
+            replicaSet=self.name, **kwargs)
+
+        yield motor.Op(client.open)
+        raise gen.Return(client)
+
+    def motor_rsc_sync(self, host=host, port=port, *args, **kwargs):
+        """Get an open MotorClient. Ignores self.ssl, you must pass 'ssl'
+        argument.
+        """
+        return self.io_loop.run_sync(functools.partial(
+            self.motor_rsc, host, port, *args, **kwargs))
+
+    def tearDown(self):
+        self.rsc.close()
+        super(MotorReplicaSetTestBase, self).tearDown()

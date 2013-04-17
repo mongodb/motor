@@ -13,7 +13,7 @@ Writing a file to GridFS with :meth:`~motor.MotorGridFS.put`
 
     db = motor.MotorClient().open_sync().test
 
-    @gen.engine
+    @gen.coroutine
     def write_file():
         fs = yield motor.Op(motor.MotorGridFS(db).open)
 
@@ -39,7 +39,7 @@ Streaming a file to GridFS with :class:`~motor.MotorGridIn`
 
     db = motor.MotorClient().open_sync().test
 
-    @gen.engine
+    @gen.coroutine
     def write_file_streaming():
         fs = yield motor.Op(motor.MotorGridFS(db).open)
 
@@ -78,7 +78,7 @@ Setting attributes on a :class:`~motor.MotorGridIn`
 
     db = motor.MotorClient().open_sync().test
 
-    @gen.engine
+    @gen.coroutine
     def set_attributes():
         fs = yield motor.Op(motor.MotorGridFS(db).open)
         gridin = yield motor.Op(fs.new_file)
@@ -107,7 +107,7 @@ Reading from GridFS with :class:`~motor.MotorGridOut`
 
     db = motor.MotorClient().open_sync().test
 
-    @gen.engine
+    @gen.coroutine
     def read_file(file_id):
         fs = yield motor.Op(motor.MotorGridFS(db).open)
 
