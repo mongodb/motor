@@ -138,7 +138,7 @@ class GridFSHandler(tornado.web.RequestHandler):
 
         self.set_header("Content-Length", gridout.length)
         if include_body:
-            yield motor.Op(gridout.stream_to_handler, self)
+            yield gridout.stream_to_handler(self)
 
         self.finish()
 

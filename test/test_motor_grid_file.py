@@ -361,7 +361,7 @@ class MotorGridFileTest(MotorTest):
             _id = yield motor.Op(fs.put, b('a') * content_length)
             gridout = yield motor.Op(fs.get, _id)
             handler = MockRequestHandler()
-            yield motor.Op(gridout.stream_to_handler, handler)
+            yield gridout.stream_to_handler(handler)
             self.assertEqual(content_length, handler.n_written)
             yield motor.Op(fs.delete, _id)
 
