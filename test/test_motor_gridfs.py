@@ -173,7 +173,7 @@ class MotorGridfsTest(MotorTest):
 class TestGridfsReplicaSet(MotorReplicaSetTestBase):
     @gen_test
     def test_gridfs_replica_set(self):
-        rsc = self.motor_rsc(
+        rsc = yield self.motor_rsc(
             w=self.w, wtimeout=5000,
             read_preference=ReadPreference.SECONDARY)
 
