@@ -427,8 +427,10 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
   {u'i': 2, u'_id': ObjectId('...')}
   {u'i': 1, u'_id': ObjectId('...')}
 
-``fetch_next`` doesn't actually retrieve a single document at a time from the
-server: it fetches them on demand in reasonably-sized batches.
+``fetch_next``does not actually retrieve each document from the server
+individually; it gets documents efficiently in `large batches`_.
+
+.. _`large batches`: http://docs.mongodb.org/manual/core/read-operations/#cursor-behaviors
 
 Counting Documents
 ------------------
