@@ -81,8 +81,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         self.assertEqual(self.io_loop, cx.io_loop)
 
         # Really connected?
-        result = yield motor.Op(
-            cx.pymongo_test.test_collection.find_one, {'_id': 0})
+        result = yield cx.pymongo_test.test_collection.find_one({'_id': 0})
 
         self.assertEqual(0, result['_id'])
         cx.close()
@@ -98,8 +97,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             document_class=DictSubclass, tz_aware=True, replicaSet=self.name,
             io_loop=self.io_loop)
 
-        cx = yield motor.Op(motor.MotorReplicaSetClient(
-            *args, **kwargs).open)
+        cx = yield motor.MotorReplicaSetClient(*args, **kwargs).open()
         sync_cx = cx.sync_client()
         self.assertTrue(isinstance(
             sync_cx, pymongo.mongo_replica_set_client.MongoReplicaSetClient))

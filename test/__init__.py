@@ -200,7 +200,7 @@ class MotorTest(testing.AsyncTestCase):
             # Wait for cursor to be closed server-side
             yield self.wait_for_cursor(collection, cursor_id, retrieved)
 
-        `yield motor.Op(cursor.close)` is usually simpler.
+        `yield cursor.close()` is usually simpler.
         """
         patience_seconds = 20
         start = time.time()

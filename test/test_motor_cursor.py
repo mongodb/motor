@@ -59,7 +59,7 @@ class MotorCursorTest(MotorTest):
         coll = self.cx.pymongo_test.test_collection
         yield self.check_optional_callback(coll.find().distinct, '_id')
         self.assertEqual(set(range(10)), set((
-            yield motor.Op(coll.find({'_id': {'$lt': 10}}).distinct, '_id'))))
+            yield coll.find({'_id': {'$lt': 10}}).distinct('_id'))))
 
     @gen_test
     def test_fetch_next(self):
@@ -176,7 +176,7 @@ class MotorCursorTest(MotorTest):
         cursor = coll.find({}, {'_id': 1}).sort([('_id', pymongo.ASCENDING)])
         expected = [{'_id': i} for i in range(200)]
         yield AssertEqual(expected, cursor.to_list, length=1000)
-        yield motor.Op(cursor.close)
+        yield cursor.close()
 
     @gen_test
     def test_to_list_with_length(self):
@@ -203,7 +203,7 @@ class MotorCursorTest(MotorTest):
         self.assertEqual(0, cursor.cursor_id)
 
         # Check that passing None explicitly is the same as no length
-        result = yield motor.Op(coll.find().to_list, None)
+        result = yield coll.find().to_list(None)
         self.assertEqual(200, len(result))
 
     def test_to_list_tailable(self):
@@ -223,7 +223,7 @@ class MotorCursorTest(MotorTest):
         coll = self.cx.pymongo_test.test_collection
 
         # Make sure our setup code made some documents
-        results = yield motor.Op(coll.find().to_list, length=1000)
+        results = yield coll.find().to_list(length=1000)
         self.assertTrue(len(results) > 0)
         self.assertEqual(False, (yield coll.find()[:0].fetch_next))
         self.assertEqual(False, (yield coll.find()[5:5].fetch_next))
@@ -239,7 +239,7 @@ class MotorCursorTest(MotorTest):
         cursor = collection.find()
         yield cursor.fetch_next
         self.assertTrue(cursor.alive)
-        yield motor.Op(cursor.close)
+        yield cursor.close()
 
         # Cursor reports it's alive because it has buffered data, even though
         # it's killed on the server
@@ -309,35 +309,35 @@ class MotorCursorTest(MotorTest):
         self.assertRaises(IndexError, lambda: coll.find()[1:2:2])
         self.assertRaises(IndexError, lambda: coll.find()[2:1])
 
-        result = yield motor.Op(coll.find()[0:].to_list, length=1000)
+        result = yield coll.find()[0:].to_list(length=1000)
         self.assertEqual(200, len(result))
 
-        result = yield motor.Op(coll.find()[20:].to_list, length=1000)
+        result = yield coll.find()[20:].to_list(length=1000)
         self.assertEqual(180, len(result))
 
-        result = yield motor.Op(coll.find()[99:].to_list, length=1000)
+        result = yield coll.find()[99:].to_list(length=1000)
         self.assertEqual(101, len(result))
 
-        result = yield motor.Op(coll.find()[1000:].to_list, length=1000)
+        result = yield coll.find()[1000:].to_list(length=1000)
         self.assertEqual(0, len(result))
 
-        result = yield motor.Op(coll.find()[20:25].to_list, length=1000)
+        result = yield coll.find()[20:25].to_list(length=1000)
         self.assertEqual(5, len(result))
 
         # Any slice overrides all previous slices
-        result = yield motor.Op(coll.find()[20:25][20:].to_list, length=1000)
+        result = yield coll.find()[20:25][20:].to_list(length=1000)
         self.assertEqual(180, len(result))
 
-        result = yield motor.Op(coll.find()[20:25].limit(0).skip(20).to_list, length=1000)
+        result = yield coll.find()[20:25].limit(0).skip(20).to_list(length=1000)
         self.assertEqual(180, len(result))
 
-        result = yield motor.Op(coll.find().limit(0).skip(20)[20:25].to_list, length=1000)
+        result = yield coll.find().limit(0).skip(20)[20:25].to_list(length=1000)
         self.assertEqual(5, len(result))
 
-        result = yield motor.Op(coll.find()[:1].to_list, length=1000)
+        result = yield coll.find()[:1].to_list(length=1000)
         self.assertEqual(1, len(result))
 
-        result = yield motor.Op(coll.find()[:5].to_list, length=1000)
+        result = yield coll.find()[:5].to_list(length=1000)
         self.assertEqual(5, len(result))
 
     @gen_test

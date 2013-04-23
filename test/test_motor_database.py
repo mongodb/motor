@@ -35,7 +35,7 @@ class MotorDatabaseTest(MotorTest):
         db = motor.MotorDatabase(self.cx, 'pymongo_test')
 
         # Make sure we got the right DB and it can do an operation
-        doc = yield motor.Op(db.test_collection.find_one, {'_id': 1})
+        doc = yield db.test_collection.find_one({'_id': 1})
         self.assertEqual(hex(1), doc['s'])
 
     def test_collection_named_delegate(self):
@@ -61,14 +61,14 @@ class MotorDatabaseTest(MotorTest):
         loop = self.io_loop
         for _ in range(10):
             yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.5))
-            if 'c' in (yield motor.Op(db.collection_names)):
+            if 'c' in (yield db.collection_names()):
                 break
 
         yield self.check_optional_callback(db.validate_collection, 'c')
 
     @gen_test
     def test_command(self):
-        result = yield motor.Op(self.cx.admin.command, "buildinfo")
+        result = yield self.cx.admin.command("buildinfo")
         self.assertEqual(int, type(result['bits']))
 
     @gen_test
@@ -76,25 +76,26 @@ class MotorDatabaseTest(MotorTest):
         # Test creating collection, return val is wrapped in MotorCollection,
         # creating it again raises CollectionInvalid.
         db = self.cx.pymongo_test
-        yield motor.Op(db.drop_collection, 'test_collection2')
-        collection = yield motor.Op(db.create_collection, 'test_collection2')
+        yield db.drop_collection('test_collection2')
+        collection = yield db.create_collection('test_collection2')
         self.assertTrue(isinstance(collection, motor.MotorCollection))
         self.assertTrue(
-            'test_collection2' in (yield motor.Op(db.collection_names)))
+            'test_collection2' in (yield db.collection_names()))
 
         with assert_raises(CollectionInvalid):
-            yield motor.Op(db.create_collection, 'test_collection2')
+            yield db.create_collection('test_collection2')
 
-        yield motor.Op(db.drop_collection, 'test_collection2')
+        yield db.drop_collection('test_collection2')
 
         # Test creating capped collection
-        collection = yield motor.Op(
-            db.create_collection, 'test_capped', capped=True, size=1000)
+        collection = yield db.create_collection(
+            'test_capped', capped=True, size=1000)
+
         self.assertTrue(isinstance(collection, motor.MotorCollection))
         self.assertEqual(
             {"capped": True, 'size': 1000},
-            (yield motor.Op(db.test_capped.options)))
-        yield motor.Op(db.drop_collection, 'test_capped')
+            (yield db.test_capped.options()))
+        yield db.drop_collection('test_capped')
 
     @gen_test
     def test_command_callback(self):
@@ -118,17 +119,17 @@ class MotorDatabaseTest(MotorTest):
         b = {"test": a}
         c = {"another test": b}
 
-        yield motor.Op(db.a.remove, {})
-        yield motor.Op(db.b.remove, {})
-        yield motor.Op(db.c.remove, {})
-        yield motor.Op(db.a.save, a)
-        yield motor.Op(db.b.save, b)
-        yield motor.Op(db.c.save, c)
+        yield db.a.remove({})
+        yield db.b.remove({})
+        yield db.c.remove({})
+        yield db.a.save(a)
+        yield db.b.save(b)
+        yield db.c.save(c)
         a["hello"] = "mike"
-        yield motor.Op(db.a.save, a)
-        result_a = yield motor.Op(db.a.find_one)
-        result_b = yield motor.Op(db.b.find_one)
-        result_c = yield motor.Op(db.c.find_one)
+        yield db.a.save(a)
+        result_a = yield db.a.find_one()
+        result_b = yield db.b.find_one()
+        result_c = yield db.c.find_one()
 
         self.assertEqual(a, result_a)
         self.assertEqual(a, result_b["test"])
@@ -141,9 +142,9 @@ class MotorDatabaseTest(MotorTest):
     def test_authenticate(self):
         db = self.cx.pymongo_test
 
-        yield motor.Op(db.system.users.remove)
-        yield motor.Op(db.add_user, "mike", "password")
-        users = yield motor.Op(db.system.users.find().to_list, length=10)
+        yield db.system.users.remove()
+        yield db.add_user("mike", "password")
+        users = yield db.system.users.find().to_list(length=10)
         self.assertTrue("mike" in [u['user'] for u in users])
 
         # We need to authenticate many times at once to make sure that
@@ -159,9 +160,9 @@ class MotorDatabaseTest(MotorTest):
                 raise error
 
         # just make sure there are no exceptions here
-        yield motor.Op(db.logout)
-        yield motor.Op(db.remove_user, "mike")
-        users = yield motor.Op(db.system.users.find().to_list, length=10)
+        yield db.logout()
+        yield db.remove_user("mike")
+        users = yield db.system.users.find().to_list(length=10)
         self.assertFalse("mike" in [u['user'] for u in users])
 
     @gen_test
@@ -169,17 +170,17 @@ class MotorDatabaseTest(MotorTest):
         db = self.cx.pymongo_test
 
         with assert_raises(TypeError):
-            yield motor.Op(db.validate_collection, 5)
+            yield db.validate_collection(5)
         with assert_raises(TypeError):
-            yield motor.Op(db.validate_collection, None)
+            yield db.validate_collection(None)
         with assert_raises(OperationFailure):
-            yield motor.Op(db.validate_collection, "test.doesnotexist")
+            yield db.validate_collection("test.doesnotexist")
         with assert_raises(OperationFailure):
-            yield motor.Op(db.validate_collection, db.test.doesnotexist)
+            yield db.validate_collection(db.test.doesnotexist)
 
-        yield motor.Op(db.test.save, {"dummy": u"object"})
-        self.assertTrue((yield motor.Op(db.validate_collection, "test")))
-        self.assertTrue((yield motor.Op(db.validate_collection, db.test)))
+        yield db.test.save({"dummy": u"object"})
+        self.assertTrue((yield db.validate_collection("test")))
+        self.assertTrue((yield db.validate_collection(db.test)))
 
 
 if __name__ == '__main__':

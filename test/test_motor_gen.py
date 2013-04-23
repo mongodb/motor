@@ -32,12 +32,17 @@ class MotorGenTest(MotorTest):
     def test_op(self):
         # motor.Op is deprecated in Motor 0.2, superseded by Tornado 3 Futures.
         # Just make sure it still works.
+
         collection = self.cx.pymongo_test.test_collection
         doc = {'_id': 'jesse'}
         _id = yield motor.Op(collection.insert, doc)
         self.assertEqual('jesse', _id)
         result = yield motor.Op(collection.find_one, doc)
         self.assertEqual(doc, result)
+
+        # Make sure it works with no args
+        result = yield motor.Op(collection.find_one)
+        self.assertTrue(isinstance(result, dict))
 
         with self.assertRaises(pymongo.errors.DuplicateKeyError):
             yield motor.Op(collection.insert, doc)
