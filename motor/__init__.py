@@ -24,6 +24,7 @@ import warnings
 import weakref
 
 from tornado import ioloop, iostream, gen, stack_context
+from tornado.concurrent import Future
 import greenlet
 
 import pymongo
@@ -69,11 +70,7 @@ def check_deprecated_kwargs(kwargs):
             "Motor does not support 'slave_okay', use read_preference")
 
 
-def check_callable(callback, required=False):
-    if required and not callback:
-        raise TypeError("callback is required")
-    if callback is not None and not callable(callback):
-        raise TypeError("callback must be a callable")
+callback_type_error = TypeError("callback must be a callable")
 
 
 def motor_sock_method(method):
@@ -365,64 +362,93 @@ class MotorPool(Pool):
             Pool._return_socket(self, sock_info)
 
 
-def asynchronize(
-    motor_class, sync_method, has_write_concern, callback_required,
-    doc=None
-):
-    """
-    Decorate `sync_method` so it's run on a child greenlet and executes
-    `callback` with (result, error) arguments when greenlet completes.
+def add_callback_to_future(callback, future):
+    """Add a callback with parameters (result, error) to the Future."""
+    def cb(future):
+        try:
+            result = future.result()
+        except Exception, e:
+            callback(None, e)
+            return
+
+        callback(result, None)
+
+    future.add_done_callback(cb)
+
+
+def callback_from_future(future):
+    """Return a callback that sets a Future's result or exception"""
+    def callback(result, error):
+        if error:
+            future.set_exception(error)
+        else:
+            future.set_result(result)
+
+    return callback
+
+
+def asynchronize(motor_class, sync_method, has_write_concern, doc=None):
+    """Decorate `sync_method` so it accepts a callback or returns a Future.
+
+    The method runs on a child greenlet and calls the callback or resolves
+    the Future when the greenlet completes.
 
     :Parameters:
      - `motor_class`:       Motor class being created, e.g. MotorClient.
      - `sync_method`:       Bound method of pymongo Collection, Database,
                             MongoClient, or Cursor
      - `has_write_concern`: Whether the method accepts getLastError options
-     - `callback_required`: If True, raise TypeError if no callback is passed
      - `doc`:               Optionally override sync_method's docstring
     """
     @functools.wraps(sync_method)
     def method(self, *args, **kwargs):
         check_deprecated_kwargs(kwargs)
+        loop = self.get_io_loop()
         callback = kwargs.pop('callback', None)
-        check_callable(callback, required=callback_required)
 
-        if has_write_concern:
-            # Pass w=1 if callback, else w=0, but don't replace e.g. w=4
-            _, gle_opts = self.delegate._get_write_mode(None, **kwargs)
-            if kwargs.get('w') != 0:
-                kwargs.setdefault(
-                    'w', gle_opts.get('w') or 1 if callback else 0)
+        if callback:
+            if not callable(callback):
+                raise callback_type_error
+            future = None
+        else:
+            future = Future()
 
         def call_method():
-            result, error = None, None
+            # Runs on child greenlet
+            # TODO: ew, performance?
             try:
                 result = sync_method(self.delegate, *args, **kwargs)
+                if callback:
+                    # Schedule callback(result, None) on main greenlet
+                    loop.add_callback(functools.partial(
+                        callback, result, None))
+                else:
+                    # Schedule future to be resolved on main greenlet
+                    loop.add_callback(functools.partial(
+                        future.set_result, result))
             except Exception, e:
-                error = e
-
-            # Schedule the callback to be run on the main greenlet
-            if callback:
-                self.get_io_loop().add_callback(
-                    functools.partial(callback, result, error))
-            elif error:
-                raise error
+                if callback:
+                    loop.add_callback(functools.partial(
+                        callback, None, e))
+                else:
+                    loop.add_callback(functools.partial(
+                        future.set_exception, e))
 
         # Start running the operation on a greenlet
         greenlet.greenlet(call_method).switch()
+        return future
 
     # This is for the benefit of motor_extensions.py, which needs this info to
     # generate documentation with Sphinx.
     method.is_async_method = True
     method.has_write_concern = has_write_concern
-    method.callback_required = callback_required
     name = sync_method.__name__
     if name.startswith('__') and not name.endswith("__"):
         # Mangle, e.g. Cursor.__die -> Cursor._Cursor__die
         classname = motor_class.__delegate_class__.__name__
         name = '_%s%s' % (classname, name)
-    method.pymongo_method_name = name
 
+    method.pymongo_method_name = name
     if doc is not None:
         method.__doc__ = doc
 
@@ -439,23 +465,20 @@ class MotorAttributeFactory(object):
 
 
 class Async(MotorAttributeFactory):
-    def __init__(self, has_write_concern, callback_required):
+    def __init__(self, has_write_concern):
         """A descriptor that wraps a PyMongo method, such as insert or remove,
-        and returns an asynchronous version of the method, which takes a
-        callback.
+        and returns an asynchronous version of the method, which accepts a
+        callback or returns a Future.
 
         :Parameters:
          - `has_write_concern`: Whether the method accepts getLastError options
-         - `callback_required`: Whether callback is required or optional
         """
         super(Async, self).__init__()
         self.has_write_concern = has_write_concern
-        self.callback_required = callback_required
 
     def create_attribute(self, cls, attr_name):
         method = getattr(cls.__delegate_class__, attr_name)
-        return asynchronize(
-            cls, method, self.has_write_concern, self.callback_required)
+        return asynchronize(cls, method, self.has_write_concern)
 
     def wrap(self, original_class):
         return WrapAsync(self, original_class)
@@ -472,18 +495,19 @@ class WrapBase(MotorAttributeFactory):
 
 class WrapAsync(WrapBase):
     def __init__(self, prop, original_class):
-        """Like Async, but before executing callback(result, error), checks if
-        result is a PyMongo class and wraps it in a Motor class. E.g., Motor's
-        map_reduce should pass a MotorCollection instead of a PyMongo
-        Collection to the callback. Uses the wrap() method on the owner object
-        to do the actual wrapping. E.g., Database.create_collection returns a
-        Collection, so MotorDatabase has:
+        """Like Async, but before it executes the callback or resolves the
+        Future, checks if result is a PyMongo class and wraps it in a Motor
+        class. E.g., Motor's map_reduce should pass a MotorCollection instead
+        of a PyMongo Collection to the Future. Uses the wrap() method on the
+        owner object to do the actual wrapping. E.g.,
+        Database.create_collection returns a Collection, so MotorDatabase has:
 
         create_collection = AsyncCommand().wrap(Collection)
 
         Once Database.create_collection is done, Motor calls
         MotorDatabase.wrap() on its result, transforming the result from
-        Collection to MotorCollection, which is passed to the callback.
+        Collection to MotorCollection, which is passed to the callback or
+        Future.
 
         :Parameters:
         - `prop`: An Async, the async method to call before wrapping its result
@@ -495,30 +519,38 @@ class WrapAsync(WrapBase):
     def create_attribute(self, cls, attr_name):
         async_method = self.property.create_attribute(cls, attr_name)
         original_class = self.original_class
-        callback_required = self.property.callback_required
 
         @functools.wraps(async_method)
-        def wrap(self, *args, **kwargs):
+        def wrapper(self, *args, **kwargs):
             callback = kwargs.pop('callback', None)
-            check_callable(callback, callback_required)
+
+            def done_callback(result, error):
+                if error:
+                    callback(None, error)
+                    return
+
+                # Don't call isinstance(), not checking subclasses
+                if result.__class__ == original_class:
+                    # Delegate to the current object to wrap the result
+                    new_object = self.wrap(result)
+                else:
+                    new_object = result
+
+                callback(new_object, None)
+
             if callback:
-                def _callback(result, error):
-                    if error:
-                        callback(None, error)
-                        return
+                if not callable(callback):
+                    raise callback_type_error
 
-                    # Don't call isinstance(), not checking subclasses
-                    if result.__class__ == original_class:
-                        # Delegate to the current object to wrap the result
-                        new_object = self.wrap(result)
-                    else:
-                        new_object = result
+                async_method(self, *args, callback=done_callback, **kwargs)
+            else:
+                future = Future()
+                # The final callback run from inside done_callback
+                callback = callback_from_future(future)
+                async_method(self, *args, callback=done_callback, **kwargs)
+                return future
 
-                    callback(new_object, None)
-                kwargs['callback'] = _callback
-            async_method(self, *args, **kwargs)
-
-        return wrap
+        return wrapper
 
 
 class UnwrapAsync(WrapBase):
@@ -563,25 +595,25 @@ class UnwrapAsync(WrapBase):
 class AsyncRead(Async):
     def __init__(self):
         """A descriptor that wraps a PyMongo read method like find_one() that
-        requires a callback.
+        returns a Future.
         """
-        Async.__init__(self, has_write_concern=False, callback_required=True)
+        Async.__init__(self, has_write_concern=False)
 
 
 class AsyncWrite(Async):
     def __init__(self):
         """A descriptor that wraps a PyMongo write method like update() that
-        accepts a callback and getLastError options.
+        accepts getLastError options and returns a Future.
         """
-        Async.__init__(self, has_write_concern=True, callback_required=False)
+        Async.__init__(self, has_write_concern=True)
 
 
 class AsyncCommand(Async):
     def __init__(self):
         """A descriptor that wraps a PyMongo command like copy_database() that
-        has an optional callback and no getLastError options.
+        returns a Future and does not accept getLastError options.
         """
-        Async.__init__(self, has_write_concern=False, callback_required=False)
+        Async.__init__(self, has_write_concern=False)
 
 
 def check_delegate(obj, attr_name):
@@ -677,8 +709,8 @@ class MotorBase(object):
 
 class MotorOpenable(object):
     """Base class for Motor objects that can be initialized in two stages:
-       basic setup in __init__ and setup requiring I/O in open(), which
-       creates the delegate object.
+    basic setup in __init__ and setup requiring I/O in open(), which
+    creates the delegate object.
     """
     __metaclass__ = MotorMeta
     __delegate_class__ = None
@@ -701,40 +733,35 @@ class MotorOpenable(object):
     def get_io_loop(self):
         return self.io_loop
 
-    def open(self, callback):
-        """
-        Actually initialize, passing self to a callback when complete.
+    def open(self, callback=None):
+        """Actually initialize. Takes an optional callback, or returns a Future
+        that resolves to self when opened.
 
         :Parameters:
          - `callback`: Optional function taking parameters (self, error)
         """
-        self._open(callback)
+        if callback and not callable(callback):
+            raise callback_type_error
+
+        if callback:
+            self._open(callback=callback)
+        else:
+            future = Future()
+            self._open(callback=callback_from_future(future))
+            return future
 
     def _open(self, callback):
-        check_callable(callback)
-
         if self.delegate:
-            # Already open
-            if callback:
-                self.io_loop.add_callback(
-                    functools.partial(callback, self, None))
-            return
+            callback(self, None)  # Already open
 
         def _connect():
             # Run on child greenlet
-            error = None
             try:
                 args, kwargs = self._delegate_init_args()
                 self.delegate = self.__delegate_class__(*args, **kwargs)
+                callback(self, None)
             except Exception, e:
-                error = e
-
-            if callback:
-                # Schedule callback to be executed on main greenlet, with
-                # (self, None) if no error, else (None, error)
-                self.io_loop.add_callback(
-                    functools.partial(
-                        callback, None if error else self, error))
+                callback(None, e)
 
         # Actually connect on a child greenlet
         gr = greenlet.greenlet(_connect)
@@ -783,16 +810,8 @@ class MotorClientBase(MotorOpenable, MotorBase):
         private_loop = ioloop.IOLoop()
         standard_loop, self.io_loop = self.io_loop, private_loop
         try:
-            outcome = {}
-
-            def callback(connection, error):
-                outcome['error'] = error
-                private_loop.stop()
-
-            self._open(callback)
-
-            # Returns once callback has been executed and loop stopped.
-            self.io_loop.start()
+            private_loop.run_sync(self.open)
+            return self
         finally:
             # Replace the private IOLoop with the default loop
             self.io_loop = standard_loop
@@ -807,11 +826,6 @@ class MotorClientBase(MotorOpenable, MotorBase):
 
             # Clean up file descriptors.
             private_loop.close()
-
-        if outcome['error']:
-            raise outcome['error']
-
-        return self
 
     def sync_client(self):
         """Get a PyMongo MongoClient / MongoReplicaSetClient with the same
@@ -886,37 +900,41 @@ class MotorClient(MotorClientBase):
         super(MotorClient, self).__init__(
             None, kwargs.pop('io_loop', None), *args, **kwargs)
 
-    def is_locked(self, callback):
-        """Passes ``True`` to the callback if this server is locked, otherwise
-        ``False``. While locked, all write operations are blocked, although
-        read operations may still be allowed.
+    def is_locked(self):
+        """Returns a Future that resolves to ``True`` if this server is locked,
+        otherwise ``False``. While locked, all write operations are blocked,
+        although read operations may still be allowed.
+
         Use :meth:`fsync` to lock, :meth:`unlock` to unlock::
 
             @gen.coroutine
             def lock_unlock():
-                c = yield motor.Op(motor.MotorClient().open)
-                locked = yield motor.Op(c.is_locked)
+                c = yield motor.MotorClient().open()
+                locked = yield c.is_locked()
                 assert locked is False
-                yield motor.Op(c.fsync, lock=True)
-                assert (yield motor.Op(c.is_locked)) is True
-                yield motor.Op(c.unlock)
-                assert (yield motor.Op(c.is_locked)) is False
-
-        :Parameters:
-          - `callback`:    function taking parameters (result, error)
+                yield c.fsync(lock=True)
+                assert (yield c.is_locked()) is True
+                yield c.unlock()
+                assert (yield c.is_locked()) is False
 
         .. note:: PyMongo's :attr:`~pymongo.mongo_client.MongoClient.is_locked`
            is a property that synchronously executes the `currentOp` command on
-           the server before returning. In Motor, `is_locked` must take a
-           callback and executes asynchronously.
+           the server before returning. In Motor, `is_locked` returns a Future
+           and executes asynchronously.
         """
-        def is_locked(result, error):
-            if error:
-                callback(None, error)
-            else:
-                callback(bool(result.get('fsyncLock')), None)
+        future = Future()
 
-        self.admin.current_op(callback=is_locked)
+        def is_locked(current_op_future):
+            try:
+                result = bool(current_op_future.result().get('fsyncLock', None))
+            except Exception, e:
+                future.set_exception(e)
+                return
+
+            future.set_result(result)
+
+        self.admin.current_op().add_done_callback(is_locked)
+        return future
 
     def _get_pools(self):
         # TODO: expose the PyMongo pool, or otherwise avoid this
@@ -971,10 +989,17 @@ class MotorReplicaSetClient(MotorClientBase):
         self.delegate._MongoReplicaSetClient__monitor.start_motor(self.io_loop)
         return self
 
-    def open(self, callback):
-        check_callable(callback)
+    def open(self, callback=None):
+        """Actually initialize. Takes an optional callback, or returns a Future
+        that resolves to self when opened.
 
-        def opened(result, error):
+        :Parameters:
+         - `callback`: Optional function taking parameters (self, error)
+        """
+        if callback and not callable(callback):
+            raise callback_type_error
+
+        def opened(self, error):
             if error:
                 callback(None, error)
             else:
@@ -982,14 +1007,18 @@ class MotorReplicaSetClient(MotorClientBase):
                     monitor = self.delegate._MongoReplicaSetClient__monitor
                     monitor.start_motor(self.io_loop)
                 except Exception, e:
-                    if callback:
-                        callback(None, e)
+                    callback(None, e)
                 else:
-                    # No errors
-                    if callback:
-                        callback(self, None)
+                    callback(self, None)  # No errors
 
-        super(MotorReplicaSetClient, self)._open(callback=opened)
+        if callback:
+            super(MotorReplicaSetClient, self)._open(callback=opened)
+        else:
+            future = Future()
+            # The final callback run from inside opened
+            callback = callback_from_future(future)
+            super(MotorReplicaSetClient, self)._open(callback=opened)
+            return future
 
     def _delegate_init_args(self):
         # This _monitor_class will be passed to PyMongo's
@@ -1264,8 +1293,7 @@ class MotorCursor(MotorBase):
         if not self.alive:
             raise pymongo.errors.InvalidOperation(
                 "Can't call get_more() on a MotorCursor that has been"
-                " exhausted or killed."
-            )
+                " exhausted or killed.")
 
         self.started = True
         self._refresh(callback=callback)
@@ -1306,9 +1334,29 @@ class MotorCursor(MotorBase):
 
         .. _`large batches`: http://docs.mongodb.org/manual/core/read-operations/#cursor-behaviors
         """
-        # TODO: optimize, always return same FetchNext instance? Or even make
-        #   this cursor a YieldPoint?
-        return FetchNext(self)
+        future = Future()
+
+        if not self._buffer_size() and self.alive:
+            if self.delegate._Cursor__empty:
+                # Special case, limit of 0
+                future.set_result(False)
+                return future
+
+            def cb(batch_size, error):
+                if error:
+                    future.set_exception(error)
+                else:
+                    future.set_result(bool(batch_size))
+
+            self._get_more(cb)
+            return future
+        elif self._buffer_size():
+            future.set_result(True)
+            return future
+        else:
+            # Dead
+            future.set_result(False)
+        return future
 
     def next_object(self):
         """Get a document from the most recently fetched batch, or ``None``.
@@ -1361,7 +1409,9 @@ class MotorCursor(MotorBase):
         :Parameters:
          - `callback`: function taking (document, error)
         """
-        check_callable(callback, required=True)
+        if not callable(callback):
+            raise callback_type_error
+
         self._each_got_more(callback, None, None)
 
     def _each_got_more(self, callback, batch_size, error):
@@ -1391,12 +1441,8 @@ class MotorCursor(MotorBase):
             # Complete
             add_callback(functools.partial(callback, None, None))
 
-    def to_list(self, length=None, callback=None):
+    def to_list(self, length, callback=None):
         """Get a list of documents.
-
-        The caller is responsible for making sure that there is enough memory
-        to store the results -- it is strongly recommended either that you
-        specify a ``length`` and loop until all documents are consumed:
 
         .. testsetup:: to_list
 
@@ -1445,9 +1491,7 @@ class MotorCursor(MotorBase):
         asynchronously with the list of documents.
 
         :Parameters:
-         - `length`: optional, maximum number of documents to return for this
-           call
-         - `callback`: function taking (documents, error)
+         - `length`: maximum number of documents to return for this call
         """
         length = pymongo.common.validate_positive_integer_or_none(
             'length', length)
@@ -1456,19 +1500,27 @@ class MotorCursor(MotorBase):
             raise pymongo.errors.InvalidOperation(
                 "Can't call to_list on tailable cursor")
 
-        check_callable(callback, required=True)
-        the_list = []
+        if callback and not callable(callback):
+            raise callback_type_error
 
-        # Special case
+        # Special case: limit of 0.
         if self.delegate._Cursor__empty:
-            callback([], None)
-            return
-        elif length is None and not self.delegate._Cursor__limit:
-            warnings.warn(
-                "Pass a length parameter or set a limit on this cursor to"
-                " avoid the risk of memory exhaustion", RuntimeWarning)
+            if callback:
+                callback([], None)
+            else:
+                future = Future()
+                future.set_result(None)
+                return future
 
-        self._to_list_got_more(callback, the_list, length, None, None)
+        the_list = []
+        if callback:
+            self._to_list_got_more(callback, the_list, length, None, None)
+        else:
+            future = Future()
+            self._to_list_got_more(
+                callback_from_future(future), the_list, length, None, None)
+
+            return future
 
     def _to_list_got_more(self, callback, the_list, length, batch_size, error):
         if error:
@@ -1483,11 +1535,9 @@ class MotorCursor(MotorBase):
             while self._buffer_size() > 0 and len(the_list) < length:
                 the_list.append(self.delegate._Cursor__data.popleft())
 
-        if (
-            not self.delegate._Cursor__killed
-            and (self.cursor_id or not self.started)
-            and (length is None or length > len(the_list))
-        ):
+        if (not self.delegate._Cursor__killed
+                and (self.cursor_id or not self.started)
+                and (length is None or length > len(the_list))):
             get_more_cb = functools.partial(
                 self._to_list_got_more, callback, the_list, length)
             self._get_more(callback=get_more_cb)
@@ -1509,10 +1559,10 @@ class MotorCursor(MotorBase):
 
     def close(self, callback=None):
         """Explicitly kill this cursor on the server, and cease iterating with
-        :meth:`each`.
+        :meth:`each`. Returns a Future.
         """
         self.closed = True
-        self._Cursor__die(callback=callback)
+        return self._Cursor__die(callback=callback)
 
     def __getitem__(self, index):
         """Get a slice of documents from this cursor.
@@ -1710,7 +1760,7 @@ class MotorGridOut(MotorOpenable):
         written = 0
         while written < self.length:
             # Reading chunk_size at a time minimizes buffering
-            chunk = yield Op(self.read, self.chunk_size)
+            chunk = yield self.read(self.chunk_size)
 
             # write() simply appends the output to a list; flush() sends it
             # over the network and minimizes buffering in the handler.
@@ -1789,7 +1839,7 @@ class MotorGridIn(MotorOpenable):
                 root_collection.delegate, **kwargs)
 
 MotorGridIn.set = asynchronize(
-    MotorGridIn, gridfs.GridIn.__setattr__, False, False, doc="""
+    MotorGridIn, gridfs.GridIn.__setattr__, False, doc="""
 Set an arbitrary metadata attribute on the file. Stores value on the server
 as a key-value pair within the file document once the file is closed. If
 the file is already closed, calling `set` will immediately update the file
@@ -1844,94 +1894,9 @@ class MotorGridFS(MotorOpenable):
             return MotorGridOut(obj, io_loop=self.get_io_loop())
 
 
-class Op(gen.Task):
-    """Subclass of `tornado.gen.Task`_. Runs a single asynchronous MongoDB
-    operation and resumes the generator with the result of the operation when
-    it is complete. :class:`motor.Op` adds an additional convenience to
-    ``Task``: it assumes the callback is passed the standard ``result, error``
-    pair, and if ``error`` is not ``None`` then ``Op`` raises the error.
-    Otherwise, ``result`` is returned from the ``yield`` expression:
-
-    .. testsetup:: op
-
-        sync_collection = MongoClient().doctest_test.test_collection
-        sync_collection.remove()
-        sync_collection.insert([{'_id': 1}, {'_id': 2}])
-
-    .. testcode:: op
-
-        @gen.coroutine
-        def get_some_documents(collection):
-            cursor = collection.find().sort('_id').limit(2)
-
-            try:
-                # to_list is passed a callback, which is later executed with
-                # arguments (result, error). If error is not None, it is raised
-                # from this line. Otherwise 'result' is the value of the yield
-                # expression.
-                documents = yield motor.Op(cursor.to_list)
-                print documents
-            except Exception, e:
-                print e
-
-    .. testcode:: op
-        :hide:
-
-        collection = MotorClient().open_sync().doctest_test.test_collection
-        get_some_documents(collection)
-        loop = IOLoop.current()
-        loop.add_timeout(timedelta(seconds=.1), loop.stop)
-        loop.start()
-
-    .. testoutput:: op
-        :hide:
-
-        [{u'_id': 1}, {u'_id': 2}]
-
-    .. _tornado.gen.Task: http://www.tornadoweb.org/documentation/gen.html#tornado.gen.Task
+def Op(fn, *args, **kwargs):
+    """TODO: update docs, raise DeprecationWarning
     """
-    def __init__(self, func, *args, **kwargs):
-        super(Op, self).__init__(func, *args, **kwargs)
-
-    def get_result(self):
-        (result, error), _ = super(Op, self).get_result()
-        if error:
-            raise error
-        return result
-
-
-class FetchNext(gen.YieldPoint):
-    def __init__(self, cursor):
-        self.cursor = cursor
-        self.error = None
-        self.ready = False
-        self.runner = None
-
-    def start(self, runner):
-        # If cursor's current batch is empty, start fetching next batch...
-        cursor = self.cursor
-        if not cursor._buffer_size() and cursor.alive:
-            self.ready = False
-            self.runner = runner
-            cursor._get_more(self.set_result)
-        else:
-            self.ready = True
-
-    def set_result(self, result, error):
-        # 'result' is _get_more's return value, the number of docs fetched
-        self.error = error
-        self.ready = True
-        runner, self.runner = self.runner, None  # Break cycle
-        runner.run()
-
-    def is_ready(self):
-        # True unless we're in the midst of a fetch
-        return self.ready
-
-    def get_result(self):
-        if self.error:
-            raise self.error
-        if self.cursor.delegate._Cursor__empty:
-            # Special case, limit of 0
-            return False
-        return bool(self.cursor._buffer_size())
+    result = fn(*args, **kwargs)
+    assert isinstance(result, Future)  # TODO: remove?
+    return result

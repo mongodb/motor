@@ -18,7 +18,6 @@ import contextlib
 import datetime
 import functools
 import os
-import sys
 import time
 
 import pymongo
@@ -39,6 +38,50 @@ except ImportError:
 
 host = os.environ.get("DB_IP", "localhost")
 port = int(os.environ.get("DB_PORT", 27017))
+
+
+def get_async_test_timeout():
+    """Backport of Tornado > 3.0.1's configurable gen_test timeout, remove this
+    once next Tornado is out.
+
+    See https://github.com/facebook/tornado/pull/723
+    """
+    try:
+        return float(os.environ.get('ASYNC_TEST_TIMEOUT'))
+    except (ValueError, TypeError):
+        return 5
+
+
+def motor_gen_test(func=None, timeout=None):
+    """Backport of Tornado > 3.0.1's configurable gen_test timeout, remove this
+    once next Tornado is out.
+
+    See https://github.com/facebook/tornado/pull/723
+    """
+    if timeout is None:
+        timeout = get_async_test_timeout()
+
+    def wrap(f):
+        f = gen.coroutine(f)
+
+        @functools.wraps(f)
+        def wrapper(self):
+            return self.io_loop.run_sync(
+                functools.partial(f, self), timeout=timeout)
+        return wrapper
+
+    if func is not None:
+        # Used like:
+        #     @gen_test
+        #     def f(self):
+        #         pass
+        return wrap(func)
+    else:
+        # Used like @gen_test(timeout=10)
+        return wrap
+
+
+motor_gen_test.__test__ = False  # Hide from Nose
 
 
 @contextlib.contextmanager
@@ -138,34 +181,39 @@ class MotorTest(testing.AsyncTestCase):
         self.cx = self.motor_client_sync()
 
     @gen.coroutine
-    def wait_for_cursor(self, collection, cursor_id):
+    def wait_for_cursor(self, collection, cursor_id, retrieved):
         """Ensure a cursor opened during the test is closed on the
         server, e.g. after dereferencing an open cursor on the client:
 
-            cursor = self.cx.pymongo_test.test_collection.find()
+            collection = self.cx.pymongo_test.test_collection
+            cursor = collection.find()
 
             # Open it server-side
             yield cursor.fetch_next
             cursor_id = cursor.cursor_id
+            retrieved = cursor.delegate._Cursor__retrieved
 
             # Clear cursor reference from this scope and from Runner
             del cursor
             yield gen.Task(self.io_loop.add_callback)
 
             # Wait for cursor to be closed server-side
-            yield self.wait_for_cursor(clone)
+            yield self.wait_for_cursor(collection, cursor_id, retrieved)
 
         `yield motor.Op(cursor.close)` is usually simpler.
         """
         patience_seconds = 20
-        start = self.io_loop.time()
-
-        cursor = collection.find()
-        cursor.delegate._Cursor__id = cursor_id
-
+        start = time.time()
+        collection_name = collection.name
+        db_name = collection.database.name
+        sync_collection = self.sync_cx[db_name][collection_name]
         while True:
+            sync_cursor = sync_collection.find()
+            sync_cursor._Cursor__id = cursor_id
+            sync_cursor._Cursor__retrieved = retrieved
+
             try:
-                yield cursor.fetch_next
+                next(sync_cursor)
             except pymongo.errors.OperationFailure, e:
                 # Let's check this error was because the cursor was killed,
                 # not a test bug. mongod reports "cursor id 'N' not valid at
@@ -176,18 +224,20 @@ class MotorTest(testing.AsyncTestCase):
                     "not valid at server" in e.args[0] or
                     "could not find cursor in cache" in e.args[0])
 
-                # Success; avoid spurious errors trying to close after loop is
-                # closed.
-                cursor.delegate._Cursor__id = None
+                # Success!
                 return
+            finally:
+                # Avoid spurious errors trying to close this cursor.
+                sync_cursor._Cursor__id = None
+
+            now = time.time()
+            if now - start > patience_seconds:
+                self.fail("Cursor not closed")
             else:
-                now = self.io_loop.time()
-                if now - start > patience_seconds:
-                    self.fail("Cursor not closed")
-                else:
-                    yield gen.Task(
-                        self.io_loop.add_timeout,
-                        datetime.timedelta(seconds=0.1))
+                # Let the loop run, might be working on closing the cursor
+                yield gen.Task(
+                    self.io_loop.add_timeout,
+                    datetime.timedelta(seconds=0.1))
 
     @gen.coroutine
     def motor_client(self, host=host, port=port, *args, **kwargs):
@@ -199,7 +249,7 @@ class MotorTest(testing.AsyncTestCase):
         client = motor.MotorClient(
             host, port, *args, io_loop=self.io_loop, **kwargs)
 
-        yield motor.Op(client.open)
+        yield client.open()
         raise gen.Return(client)
 
     def motor_client_sync(self, host=host, port=port, *args, **kwargs):
@@ -234,7 +284,9 @@ class MotorTest(testing.AsyncTestCase):
             fn(callback=None)
 
         # Should not raise
-        yield motor.Op(fn)
+        (result, error), _ = yield gen.Task(fn)
+        if error:
+            raise error
 
     @gen.coroutine
     def check_required_callback(self, fn, *args, **kwargs):
@@ -271,7 +323,7 @@ class MotorReplicaSetTestBase(MotorTest):
             '%s:%s' % (host, port), *args, io_loop=self.io_loop,
             replicaSet=self.name, **kwargs)
 
-        yield motor.Op(client.open)
+        yield client.open()
         raise gen.Return(client)
 
     def motor_rsc_sync(self, host=host, port=port, *args, **kwargs):

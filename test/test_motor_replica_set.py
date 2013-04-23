@@ -42,7 +42,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             lambda: cx['some_database_name']
         )
 
-        result = yield motor.Op(cx.open)
+        result = yield cx.open()
         self.assertEqual(result, cx)
         self.assertTrue(cx.connected)
         self.assertTrue(isinstance(
@@ -58,6 +58,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         cx = motor.MotorReplicaSetClient(
             '%s:%s' % (host, port), replicaSet=self.name, io_loop=self.io_loop)
         yield self.check_optional_callback(cx.open)
+        cx.close()
 
     def test_io_loop(self):
         with assert_raises(TypeError):
@@ -132,7 +133,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
                 read_preference=pymongo.ReadPreference.SECONDARY)
 
             with assert_raises(pymongo.errors.AutoReconnect):
-                yield motor.Op(cursor.each)
+                yield cursor.fetch_next
         finally:
             iostream.IOStream.write = old_write
 

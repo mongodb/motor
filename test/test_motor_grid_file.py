@@ -69,8 +69,8 @@ class MotorGridFileTest(MotorTest):
         yield self.check_optional_callback(g.open)
 
         g = yield motor.Op(motor.MotorGridOut(db.fs, f._id).open)
-        yield self.check_required_callback(g.read)
-        yield self.check_required_callback(g.readline)
+        yield self.check_optional_callback(g.read)
+        yield self.check_optional_callback(g.readline)
 
     @gen_test
     def test_basic(self):

@@ -15,7 +15,6 @@
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import unittest
-import warnings
 
 import greenlet
 import pymongo
@@ -36,9 +35,13 @@ class MotorCursorTest(MotorTest):
         self.assertFalse(cursor.started, "Cursor shouldn't start immediately")
 
     @gen_test
+    def test_count_callback(self):
+        coll = self.cx.pymongo_test.test_collection
+        yield self.check_optional_callback(coll.find().count)
+
+    @gen_test
     def test_count(self):
         coll = self.cx.pymongo_test.test_collection
-        yield self.check_required_callback(coll.find().count)
         yield AssertEqual(200, coll.find().count)
         yield AssertEqual(100, coll.find({'_id': {'$gt': 99}}).count)
         where = 'this._id % 2 == 0 && this._id >= 50'
@@ -54,7 +57,7 @@ class MotorCursorTest(MotorTest):
     @gen_test
     def test_distinct(self):
         coll = self.cx.pymongo_test.test_collection
-        yield self.check_required_callback(coll.find().distinct, '_id')
+        yield self.check_optional_callback(coll.find().distinct, '_id')
         self.assertEqual(set(range(10)), set((
             yield motor.Op(coll.find({'_id': {'$lt': 10}}).distinct, '_id'))))
 
@@ -66,7 +69,7 @@ class MotorCursorTest(MotorTest):
             [('_id', pymongo.ASCENDING)]).batch_size(75)
 
         self.assertEqual(None, cursor.cursor_id)
-        self.assertEqual(None, cursor.next_object()) # Haven't fetched yet
+        self.assertEqual(None, cursor.next_object())  # Haven't fetched yet
         i = 0
         while (yield cursor.fetch_next):
             self.assertEqual({'_id': i}, cursor.next_object())
@@ -83,14 +86,19 @@ class MotorCursorTest(MotorTest):
         self.assertEqual(0, cursor.cursor_id)
         self.assertEqual(200, i)
 
+    @gen_test
+    def test_fetch_next_delete(self):
+        coll = self.cx.pymongo_test.test_collection
+
         # Decref'ing the cursor eventually closes it on the server; yielding
         # clears the engine Runner's reference to the cursor.
         cursor = coll.find()
         yield cursor.fetch_next
         cursor_id = cursor.cursor_id
+        retrieved = cursor.delegate._Cursor__retrieved
         del cursor
         yield gen.Task(self.io_loop.add_callback)
-        yield self.wait_for_cursor(coll, cursor_id)
+        yield self.wait_for_cursor(coll, cursor_id, retrieved)
 
     @gen_test
     def test_fetch_next_without_results(self):
@@ -128,9 +136,13 @@ class MotorCursorTest(MotorTest):
         cursor.delegate._Cursor__id = None
 
     @gen_test
-    def test_each(self):
+    def test_each_callback(self):
         coll = self.cx.pymongo_test.test_collection
         yield self.check_required_callback(coll.find().each)
+
+    @gen_test
+    def test_each(self):
+        coll = self.cx.pymongo_test.test_collection
         cursor = coll.find({}, {'_id': 1}).sort([('_id', pymongo.ASCENDING)])
         yield_point = yield gen.Callback(0)
         results = []
@@ -152,7 +164,7 @@ class MotorCursorTest(MotorTest):
     def test_to_list_argument_checking(self):
         coll = self.cx.pymongo_test.test_collection
         cursor = coll.find()
-        yield self.check_required_callback(cursor.to_list, 10)
+        yield self.check_optional_callback(cursor.to_list, 10)
         cursor = coll.find()
         callback = lambda result, error: None
         self.assertRaises(ConfigurationError, cursor.to_list, -1, callback)
@@ -165,24 +177,6 @@ class MotorCursorTest(MotorTest):
         expected = [{'_id': i} for i in range(200)]
         yield AssertEqual(expected, cursor.to_list, length=1000)
         yield motor.Op(cursor.close)
-
-    def test_to_list_length_warning(self):
-        coll = self.motor_client_sync().pymongo_test.test_collection
-        callback = lambda result, error: None
-
-        with warnings.catch_warnings(record=True) as w:
-            # Cause all warnings to always be triggered.
-            warnings.simplefilter("always")
-
-            coll.find().to_list(length=None, callback=callback)
-            self.assertEqual(1, len(w))
-            self.assertTrue(issubclass(w[0].category, RuntimeWarning))
-
-            # No warnings
-            coll.find().to_list(length=0, callback=callback)
-            coll.find().to_list(length=1, callback=callback)
-            coll.find().limit(1).to_list(length=None, callback=callback)
-            coll.find().to_list(length=None, callback=callback)
 
     @gen_test
     def test_to_list_with_length(self):
@@ -219,7 +213,7 @@ class MotorCursorTest(MotorTest):
         # Can't call to_list on tailable cursor
         self.assertRaises(
             InvalidOperation,
-            cursor.to_list, callback=lambda result, error: None)
+            cursor.to_list, length=10, callback=lambda result, error: None)
 
     @gen_test
     def test_limit_zero(self):
@@ -235,8 +229,8 @@ class MotorCursorTest(MotorTest):
         self.assertEqual(False, (yield coll.find()[5:5].fetch_next))
         yield AssertEqual(None, coll.find()[:0].each)
         yield AssertEqual(None, coll.find()[5:5].each)
-        yield AssertEqual([], coll.find()[:0].to_list)
-        yield AssertEqual([], coll.find()[5:5].to_list)
+        yield AssertEqual([], coll.find()[:0].to_list, length=1000)
+        yield AssertEqual([], coll.find()[5:5].to_list, length=1000)
 
     @gen_test
     def test_cursor_explicit_close(self):
@@ -250,11 +244,12 @@ class MotorCursorTest(MotorTest):
         # Cursor reports it's alive because it has buffered data, even though
         # it's killed on the server
         self.assertTrue(cursor.alive)
-        yield self.wait_for_cursor(collection, cursor.cursor_id)
+        retrieved = cursor.delegate._Cursor__retrieved
+        yield self.wait_for_cursor(collection, cursor.cursor_id, retrieved)
 
     def test_each_cancel(self):
         loop = self.io_loop
-        collection = self.motor_client_sync().pymongo_test.test_collection
+        collection = self.cx.pymongo_test.test_collection
         results = []
 
         def cancel(result, error):
@@ -306,7 +301,6 @@ class MotorCursorTest(MotorTest):
     def test_cursor_slice(self):
         # This is an asynchronous copy of PyMongo's test_getitem_slice_index in
         # test_cursor.py
-        warnings.simplefilter("ignore")
 
         # test_collection was filled out in setUp()
         coll = self.cx.pymongo_test.test_collection
@@ -315,9 +309,6 @@ class MotorCursorTest(MotorTest):
         self.assertRaises(IndexError, lambda: coll.find()[1:2:2])
         self.assertRaises(IndexError, lambda: coll.find()[2:1])
 
-        # Since the cursor has no limit in this test, important to pass length
-        # and avoid raising to_list's RuntimeWarning; otherwise it isn't raised
-        # again and test_to_list_length_warning fails.
         result = yield motor.Op(coll.find()[0:].to_list, length=1000)
         self.assertEqual(200, len(result))
 
@@ -330,7 +321,7 @@ class MotorCursorTest(MotorTest):
         result = yield motor.Op(coll.find()[1000:].to_list, length=1000)
         self.assertEqual(0, len(result))
 
-        result = yield motor.Op(coll.find()[20:25].to_list)
+        result = yield motor.Op(coll.find()[20:25].to_list, length=1000)
         self.assertEqual(5, len(result))
 
         # Any slice overrides all previous slices
@@ -340,13 +331,13 @@ class MotorCursorTest(MotorTest):
         result = yield motor.Op(coll.find()[20:25].limit(0).skip(20).to_list, length=1000)
         self.assertEqual(180, len(result))
 
-        result = yield motor.Op(coll.find().limit(0).skip(20)[20:25].to_list)
+        result = yield motor.Op(coll.find().limit(0).skip(20)[20:25].to_list, length=1000)
         self.assertEqual(5, len(result))
 
-        result = yield motor.Op(coll.find()[:1].to_list)
+        result = yield motor.Op(coll.find()[:1].to_list, length=1000)
         self.assertEqual(1, len(result))
 
-        result = yield motor.Op(coll.find()[:5].to_list)
+        result = yield motor.Op(coll.find()[:5].to_list, length=1000)
         self.assertEqual(5, len(result))
 
     @gen_test
@@ -357,16 +348,16 @@ class MotorCursorTest(MotorTest):
         yield cursor.fetch_next
         self.assertEqual({'_id': 0, 's': hex(0)}, cursor.next_object())
 
-        yield AssertEqual(
+        self.assertEqual(
             [{'_id': 5, 's': hex(5)}],
-            coll.find().sort([('_id', 1)])[5].to_list)
+            (yield coll.find().sort([('_id', 1)])[5].to_list(100)))
 
         # Only 200 documents, so 1000th doc doesn't exist. PyMongo raises
         # IndexError here, but Motor simply returns None.
         cursor = coll.find()[1000]
-        yield cursor.fetch_next
+        self.assertFalse((yield cursor.fetch_next))
         self.assertEqual(None, cursor.next_object())
-        yield AssertEqual([], coll.find()[1000].to_list)
+        self.assertEqual([], (yield coll.find()[1000].to_list(100)))
 
     @gen_test
     def test_cursor_index_each(self):
@@ -437,12 +428,13 @@ class MotorCursorTest(MotorTest):
         cursor = collection.find()
         yield cursor.fetch_next
         cursor_id = cursor.cursor_id
+        retrieved = cursor.delegate._Cursor__retrieved
 
         # Clear the FetchNext reference from this gen.Runner so it's deleted
         # and decrefs the cursor
         yield gen.Task(self.io_loop.add_callback)
         del cursor
-        yield self.wait_for_cursor(collection, cursor_id)
+        yield self.wait_for_cursor(collection, cursor_id, retrieved)
 
     @gen_test
     def test_del_on_child_greenlet(self):
@@ -452,6 +444,7 @@ class MotorCursorTest(MotorTest):
         cursor = [collection.find()]
         yield cursor[0].fetch_next
         cursor_id = cursor[0].cursor_id
+        retrieved = cursor[0].delegate._Cursor__retrieved
 
         # Clear the FetchNext reference from this gen.Runner so it's deleted
         # and decrefs the cursor
@@ -463,7 +456,7 @@ class MotorCursorTest(MotorTest):
             del cursor[0]
 
         greenlet.greenlet(f).switch()
-        yield self.wait_for_cursor(collection, cursor_id)
+        yield self.wait_for_cursor(collection, cursor_id, retrieved)
 
 
 if __name__ == '__main__':

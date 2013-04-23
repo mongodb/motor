@@ -74,16 +74,16 @@ class MotorGridfsTest(MotorTest):
         yield self.check_optional_callback(fs.open)
 
         fs = yield motor.Op(motor.MotorGridFS(db).open)
-        yield self.check_required_callback(fs.new_file)
+        yield self.check_optional_callback(fs.new_file)
         yield self.check_optional_callback(partial(fs.put, b('a')))
 
         yield motor.Op(fs.put, b('foo'), _id=1, filename='f')
-        yield self.check_required_callback(fs.get, 1)
-        yield self.check_required_callback(fs.get_version, 'f')
-        yield self.check_required_callback(fs.get_last_version, 'f')
+        yield self.check_optional_callback(fs.get, 1)
+        yield self.check_optional_callback(fs.get_version, 'f')
+        yield self.check_optional_callback(fs.get_last_version, 'f')
         yield self.check_optional_callback(partial(fs.delete, 1))
-        yield self.check_required_callback(fs.list)
-        yield self.check_required_callback(fs.exists)
+        yield self.check_optional_callback(fs.list)
+        yield self.check_optional_callback(fs.exists)
 
     @gen_test
     def test_basic(self):

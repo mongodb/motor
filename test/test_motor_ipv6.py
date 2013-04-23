@@ -46,7 +46,7 @@ class MotorIPv6Test(MotorTest):
             if open_sync:
                 cx.open_sync()
             else:
-                yield motor.Op(cx.open)
+                yield cx.open()
 
             yield motor.Op(
                 self.cx.pymongo_test.pymongo_test.insert, {"dummy": "object"})

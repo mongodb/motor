@@ -64,7 +64,7 @@ class MotorDatabaseTest(MotorTest):
             if 'c' in (yield motor.Op(db.collection_names)):
                 break
 
-        yield self.check_required_callback(db.validate_collection, 'c')
+        yield self.check_optional_callback(db.validate_collection, 'c')
 
     @gen_test
     def test_command(self):

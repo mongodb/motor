@@ -16,7 +16,7 @@
 
 import unittest
 
-from pymongo.errors import DuplicateKeyError
+import pymongo.errors
 from tornado.testing import gen_test
 
 import motor
@@ -30,6 +30,8 @@ class MotorGenTest(MotorTest):
 
     @gen_test
     def test_op(self):
+        # motor.Op is deprecated in Motor 0.2, superseded by Tornado 3 Futures.
+        # Just make sure it still works.
         collection = self.cx.pymongo_test.test_collection
         doc = {'_id': 'jesse'}
         _id = yield motor.Op(collection.insert, doc)
@@ -37,13 +39,8 @@ class MotorGenTest(MotorTest):
         result = yield motor.Op(collection.find_one, doc)
         self.assertEqual(doc, result)
 
-        error = None
-        try:
+        with self.assertRaises(pymongo.errors.DuplicateKeyError):
             yield motor.Op(collection.insert, doc)
-        except Exception, e:
-            error = e
-
-        self.assertTrue(isinstance(error, DuplicateKeyError))
 
 
 if __name__ == '__main__':
