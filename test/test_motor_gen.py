@@ -20,7 +20,7 @@ import pymongo.errors
 from tornado.testing import gen_test
 
 import motor
-from test import MotorTest
+from test import MotorTest, assert_raises
 
 
 class MotorGenTest(MotorTest):
@@ -44,7 +44,7 @@ class MotorGenTest(MotorTest):
         result = yield motor.Op(collection.find_one)
         self.assertTrue(isinstance(result, dict))
 
-        with self.assertRaises(pymongo.errors.DuplicateKeyError):
+        with assert_raises(pymongo.errors.DuplicateKeyError):
             yield motor.Op(collection.insert, doc)
 
 
