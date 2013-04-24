@@ -136,6 +136,9 @@ class GridFSHandler(tornado.web.RequestHandler):
         if include_body:
             yield gridout.stream_to_handler(self)
 
+        # Needed until fix for Tornado bug 751 is released, see
+        # https://github.com/facebook/tornado/issues/751 and
+        # https://github.com/facebook/tornado/commit/5491685
         self.finish()
 
     def head(self, path):
