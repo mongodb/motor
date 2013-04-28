@@ -1158,12 +1158,6 @@ class MotorDatabase(MotorBase):
 
         self.delegate.add_son_manipulator(manipulator)
 
-    def _fix_outgoing(self, son, collection):
-        """Apply manipulators to a SON object as it comes out of the database.
-        """
-        # call the delegate's method
-        return self.delegate._fix_outgoing(son, collection)
-
     def get_io_loop(self):
         return self.connection.get_io_loop()
 
@@ -1532,18 +1526,18 @@ class MotorCursor(MotorBase):
         if error:
             callback(None, error)
             return
-        db = self.collection.database
-        def fix_outgoing(doc_data):
-            # wrapper around the db._fix_outgoing method
-            return db._fix_outgoing(doc_data, self.collection)
+
+        collection = self.collection
+        fix_outgoing = collection.database.delegate._fix_outgoing
 
         if length is None:
             # No maximum length, get all results, apply outgoing manipulators
-            the_list.extend(map(fix_outgoing, self.delegate._Cursor__data))
+            results = (fix_outgoing(data, collection) for data in self.delegate._Cursor__data)
+            the_list.extend(results)
             self.delegate._Cursor__data.clear()
         else:
             while self._buffer_size() > 0 and len(the_list) < length:
-                the_list.append(fix_outgoing(self.delegate._Cursor__data.popleft()))
+                the_list.append(fix_outgoing(self.delegate._Cursor__data.popleft(), collection))
 
         if (not self.delegate._Cursor__killed
                 and (self.cursor_id or not self.started)

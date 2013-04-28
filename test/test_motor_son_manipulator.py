@@ -70,3 +70,5 @@ class SONManipulatorTest(MotorTest):
         expected = [{'_id': _id1, 'added_field': 42}, {'_id': _id2, 'added_field': 42}]
         found = yield coll.find().sort([('_id', pymongo.ASCENDING)]).to_list(length=2)
         self.assertEqual(expected, found)
+        found = yield coll.find().sort([('_id', pymongo.ASCENDING)]).to_list(length=None)
+        self.assertEqual(expected, found)
