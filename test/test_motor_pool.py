@@ -141,10 +141,10 @@ class MotorPoolTest(MotorTest):
             collection.find_one({'$where': delay(where_delay)}, callback=cb)
             if max_wait_time and max_wait_time < where_delay:
                 with assert_raises(motor.MotorPoolTimeout):
-                    yield motor.Op(collection.find_one)
+                    yield collection.find_one()
             else:
                 # No error
-                yield motor.Op(collection.find_one)
+                yield collection.find_one()
             yield gen.Wait('find_one')
             cx.close()
 
@@ -153,7 +153,7 @@ class MotorPoolTest(MotorTest):
         # Verifying that unacknowledged writes don't open extra connections
         pool = self.cx.delegate._MongoClient__pool
         collection = self.cx.pymongo_test.test_collection
-        yield motor.Op(collection.drop)
+        yield collection.drop()
         self.assertEqual(1, pool.motor_sock_counter.count())
 
         nops = 10
@@ -165,14 +165,14 @@ class MotorPoolTest(MotorTest):
             self.assertEqual(1, len(pool.sockets))
 
         # Acknowledged write; uses same socket and blocks for all inserts
-        yield motor.Op(collection.insert, {'_id': nops - 1})
+        yield collection.insert({'_id': nops - 1})
         self.assertEqual(1, pool.motor_sock_counter.count())
 
         # Socket is back in the idle pool
         self.assertEqual(1, len(pool.sockets))
 
         # All ops completed
-        docs = yield motor.Op(collection.find().sort('_id').to_list, length=100)
+        docs = yield collection.find().sort('_id').to_list(length=100)
         self.assertEqual(list(range(nops)), [doc['_id'] for doc in docs])
 
     @gen_test
@@ -189,7 +189,7 @@ class MotorPoolTest(MotorTest):
         cx = yield self.motor_client(max_concurrent=1)
 
         # Open a socket
-        yield motor.Op(cx.pymongo_test.test_collection.find_one)
+        yield cx.pymongo_test.test_collection.find_one()
 
         pool = cx._get_pools()[0]
         self.assertEqual(1, len(pool.sockets))

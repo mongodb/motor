@@ -16,19 +16,21 @@
 
 from tornado.testing import gen_test
 
-import motor
+from motor import callback_type_error
 from test import MotorTest, assert_raises
 
 
+# Example functions to be tested, helps verify that check_optional_callback and
+# check_required_callback work.
 def require_callback(callback=None):
-    motor.check_callable(callback, True)
+    if not callable(callback):
+        raise callback_type_error
     callback(None, None)
 
 
 def dont_require_callback(callback=None):
-    motor.check_callable(callback, False)
     if callback is not None:
-        callback(None, None)
+        require_callback(callback)
 
 
 class MotorCallbackTestTest(MotorTest):

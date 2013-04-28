@@ -61,7 +61,7 @@ class GridFSHandler(tornado.web.RequestHandler):
         self.database = database
         self.root_collection = root_collection
 
-    def get_gridfs_file(self, fs, path, callback):
+    def get_gridfs_file(self, fs, path):
         """Overridable method to choose a GridFS file to serve at a URL.
 
         By default, if a URL pattern like ``"/static/(.*)"`` is mapped to this
@@ -69,24 +69,22 @@ class GridFSHandler(tornado.web.RequestHandler):
         filename, so a request for "/static/image.png" results in a call
         to `get_gridfs_file` with "image.png" as the ``path`` argument. To
         customize the mapping of path to GridFS file, override `get_gridfs_file`
-        and pass an open :class:`~motor.MotorGridOut` to ``callback``.
+        and return a Future :class:`~motor.MotorGridOut` from it.
 
         :Parameters:
           - `fs`: An open :class:`~motor.MotorGridFS` object
           - `path`: A string, the trailing portion of the URL pattern being
             served
-          - `callback`: A function taking arguments (gridout, error)
         """
-        fs.get_last_version(path, callback=callback)
+        return fs.get_last_version(path)  # A Future MotorGridOut
 
     @tornado.web.asynchronous
     @gen.coroutine
     def get(self, path, include_body=True):
-        fs = yield motor.Op(
-            motor.MotorGridFS(self.database, self.root_collection).open)
+        fs = yield motor.MotorGridFS(self.database, self.root_collection).open()
 
         try:
-            gridout = yield motor.Op(self.get_gridfs_file, fs, path)
+            gridout = yield self.get_gridfs_file(fs, path)
         except gridfs.NoFile:
             raise tornado.web.HTTPError(404)
 
@@ -126,20 +124,21 @@ class GridFSHandler(tornado.web.RequestHandler):
             if_since = datetime.datetime.fromtimestamp(time.mktime(date_tuple))
             if if_since >= modified:
                 self.set_status(304)
-                self.finish()
-                raise StopIteration
+                return
 
         # Same for Etag
         etag = self.request.headers.get("If-None-Match")
         if etag is not None and etag.strip('"') == gridout.md5:
             self.set_status(304)
-            self.finish()
-            raise StopIteration
+            return
 
         self.set_header("Content-Length", gridout.length)
         if include_body:
             yield gridout.stream_to_handler(self)
 
+        # Needed until fix for Tornado bug 751 is released, see
+        # https://github.com/facebook/tornado/issues/751 and
+        # https://github.com/facebook/tornado/commit/5491685
         self.finish()
 
     def head(self, path):

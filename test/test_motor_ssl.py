@@ -52,7 +52,7 @@ class MotorSSLTest(MotorTest):
 
         # Make sure the client works
         collection = cx.pymongo_test.test_collection
-        doc = yield motor.Op(collection.find_one, {'_id': 0})
+        doc = yield collection.find_one({'_id': 0})
         self.assertEqual(0, doc['_id'])
 
 

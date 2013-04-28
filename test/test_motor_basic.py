@@ -42,7 +42,7 @@ class MotorTestBasic(MotorTest):
         self.assertRaises(
             pymongo.errors.InvalidOperation, getattr, cx, 'write_concern')
 
-        yield motor.Op(cx.open)
+        yield cx.open()
 
         # Default empty dict means "w=1"
         self.assertEqual({}, cx.write_concern)
@@ -65,50 +65,46 @@ class MotorTestBasic(MotorTest):
             collection = db.test_collection
             self.assertEqual(expected_wc, collection.write_concern)
 
-            # Call GLE whenever passing a callback, even if
-            # collection.write_concern['w'] == 0
-            with assert_raises(pymongo.errors.DuplicateKeyError):
-                yield motor.Op(collection.insert, {'_id': 0})
+            if gle_options.get('w') == 0:
+                yield collection.insert({'_id': 0})  # No error
+            else:
+                with assert_raises(pymongo.errors.DuplicateKeyError):
+                    yield collection.insert({'_id': 0})
 
             # No error
-            yield motor.Op(collection.insert, {'_id': 0}, w=0)
+            yield collection.insert({'_id': 0}, w=0)
             cx.close()
 
         collection = cx.pymongo_test.test_collection
         collection.write_concern['w'] = 2
 
         # No error
-        yield motor.Op(collection.insert, {'_id': 0}, w=0)
+        yield collection.insert({'_id': 0}, w=0)
 
         cxw2 = yield self.motor_client(w=2)
-        yield motor.Op(
-            cxw2.pymongo_test.test_collection.insert, {'_id': 0}, w=0)
+        yield cxw2.pymongo_test.test_collection.insert({'_id': 0}, w=0)
 
         # Test write concerns passed to MotorClient, set on collection, or
         # passed to insert.
         if self.is_replica_set:
             with assert_raises(pymongo.errors.DuplicateKeyError):
-                yield motor.Op(
-                    cxw2.pymongo_test.test_collection.insert, {'_id': 0})
+                yield cxw2.pymongo_test.test_collection.insert({'_id': 0})
 
             with assert_raises(pymongo.errors.DuplicateKeyError):
-                yield motor.Op(collection.insert, {'_id': 0})
+                yield collection.insert({'_id': 0})
 
             with assert_raises(pymongo.errors.DuplicateKeyError):
-                yield motor.Op(
-                    cx.pymongo_test.test_collection.insert, {'_id': 0}, w=2)
+                yield cx.pymongo_test.test_collection.insert({'_id': 0}, w=2)
         else:
             # w > 1 and no replica set
             with assert_raises(pymongo.errors.OperationFailure):
-                yield motor.Op(
-                    cxw2.pymongo_test.test_collection.insert, {'_id': 0})
+                yield cxw2.pymongo_test.test_collection.insert({'_id': 0})
 
             with assert_raises(pymongo.errors.OperationFailure):
-                yield motor.Op(collection.insert, {'_id': 0})
+                yield collection.insert({'_id': 0})
 
             with assert_raises(pymongo.errors.OperationFailure):
-                yield motor.Op(
-                    cx.pymongo_test.test_collection.insert, {'_id': 0}, w=2)
+                yield cx.pymongo_test.test_collection.insert({'_id': 0}, w=2)
 
         # Important that the last operation on each MotorClient was
         # acknowledged, so lingering messages aren't delivered in the middle of
@@ -128,17 +124,16 @@ class MotorTestBasic(MotorTest):
             pymongo.errors.InvalidOperation, getattr, cx, 'read_preference')
 
         # Check the default
-        yield motor.Op(cx.open)
+        yield cx.open()
         self.assertEqual(ReadPreference.PRIMARY, cx.read_preference)
         cx.close()
 
         # We can set mode, tags, and latency, both with open() and open_sync()
         cx.close()
-        cx = yield motor.Op(motor.MotorClient(
-            host, port, io_loop=self.io_loop,
+        cx = yield self.motor_client(
             read_preference=ReadPreference.SECONDARY,
             tag_sets=[{'foo': 'bar'}],
-            secondary_acceptable_latency_ms=42).open)
+            secondary_acceptable_latency_ms=42)
 
         self.assertEqual(ReadPreference.SECONDARY, cx.read_preference)
         self.assertEqual([{'foo': 'bar'}], cx.tag_sets)

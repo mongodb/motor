@@ -47,8 +47,11 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
 
         # Record when we created the file, to check the Last-Modified header
         self.put_start = datetime.datetime.utcnow().replace(microsecond=0)
-        self.file_id = self.fs.put(
+        self.file_id = 'id'
+        self.fs.delete(self.file_id)
+        self.fs.put(
             self.contents, _id='id', filename='foo', content_type='my type')
+
         self.put_end = datetime.datetime.utcnow().replace(microsecond=0)
         self.assertTrue(self.fs.get_last_version('foo'))
 
@@ -174,11 +177,10 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
 class CustomGridFSHandlerTest(GridFSHandlerTestBase):
     def get_app(self):
         class CustomGridFSHandler(motor.web.GridFSHandler):
-            def get_gridfs_file(self, fs, path, callback):
+            def get_gridfs_file(self, fs, path):
                 # Test overriding the get_gridfs_file() method, path is
                 # interpreted as file_id instead of filename.
-                self.got_args = (fs, path, callback)
-                fs.get(file_id=path, callback=callback)
+                return fs.get(file_id=path)  # A Future MotorGridOut
 
             def get_cache_time(self, path, modified, mime_type):
                 return 10

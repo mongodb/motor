@@ -42,7 +42,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             lambda: cx['some_database_name']
         )
 
-        result = yield motor.Op(cx.open)
+        result = yield cx.open()
         self.assertEqual(result, cx)
         self.assertTrue(cx.connected)
         self.assertTrue(isinstance(
@@ -58,6 +58,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         cx = motor.MotorReplicaSetClient(
             '%s:%s' % (host, port), replicaSet=self.name, io_loop=self.io_loop)
         yield self.check_optional_callback(cx.open)
+        cx.close()
 
     def test_io_loop(self):
         with assert_raises(TypeError):
@@ -80,8 +81,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         self.assertEqual(self.io_loop, cx.io_loop)
 
         # Really connected?
-        result = yield motor.Op(
-            cx.pymongo_test.test_collection.find_one, {'_id': 0})
+        result = yield cx.pymongo_test.test_collection.find_one({'_id': 0})
 
         self.assertEqual(0, result['_id'])
         cx.close()
@@ -97,8 +97,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             document_class=DictSubclass, tz_aware=True, replicaSet=self.name,
             io_loop=self.io_loop)
 
-        cx = yield motor.Op(motor.MotorReplicaSetClient(
-            *args, **kwargs).open)
+        cx = yield motor.MotorReplicaSetClient(*args, **kwargs).open()
         sync_cx = cx.sync_client()
         self.assertTrue(isinstance(
             sync_cx, pymongo.mongo_replica_set_client.MongoReplicaSetClient))
@@ -132,7 +131,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
                 read_preference=pymongo.ReadPreference.SECONDARY)
 
             with assert_raises(pymongo.errors.AutoReconnect):
-                yield motor.Op(cursor.each)
+                yield cursor.fetch_next
         finally:
             iostream.IOStream.write = old_write
 

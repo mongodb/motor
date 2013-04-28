@@ -118,8 +118,9 @@ documents in memory.
 Using Tornado's generator interface
 -----------------------------------
 
-Motor provides the yield points :class:`~motor.Op`, :class:`~motor.WaitOp`, and
-:class:`~motor.WaitAllOps` for convenient use with the
+# TODO: REWRITE
+
+Motor provides the yield point :class:`~motor.Op` for convenient use with the
 `tornado.gen module <http://www.tornadoweb.org/documentation/gen.html>`_.
 These yield points raise any exception passed by Motor, otherwise they return
 the result. To use async methods without explicit callbacks:
