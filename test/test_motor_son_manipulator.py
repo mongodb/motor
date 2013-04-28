@@ -31,6 +31,10 @@ class SONManipulatorTest(MotorTest):
         self.sync_db.son_manipulator_test_collection.drop()
         self.coll = self.cx.pymongo_test.son_manipulator_test_collection
 
+    def tearDown(self):
+        self.sync_db.son_manipulator_test_collection.drop()
+        super(SONManipulatorTest, self).tearDown()
+
     @gen_test
     def test_with_find_one(self):
         coll = self.coll
