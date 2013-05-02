@@ -1527,13 +1527,17 @@ class MotorCursor(MotorBase):
             callback(None, error)
             return
 
+        collection = self.collection
+        fix_outgoing = collection.database.delegate._fix_outgoing
+
         if length is None:
-            # No maximum length, get all results
-            the_list.extend(self.delegate._Cursor__data)
+            # No maximum length, get all results, apply outgoing manipulators
+            results = (fix_outgoing(data, collection) for data in self.delegate._Cursor__data)
+            the_list.extend(results)
             self.delegate._Cursor__data.clear()
         else:
             while self._buffer_size() > 0 and len(the_list) < length:
-                the_list.append(self.delegate._Cursor__data.popleft())
+                the_list.append(fix_outgoing(self.delegate._Cursor__data.popleft(), collection))
 
         if (not self.delegate._Cursor__killed
                 and (self.cursor_id or not self.started)
