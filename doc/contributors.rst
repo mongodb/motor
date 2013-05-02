@@ -5,3 +5,4 @@ The following is a list of people who have contributed to
 (or send a pull request after adding yourself to the list):
 
 - A\. Jesse Jiryu Davis
+- Eren Güven
