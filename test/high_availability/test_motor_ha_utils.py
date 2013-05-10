@@ -23,9 +23,8 @@ from pymongo.errors import AutoReconnect
 
 @gen.coroutine
 def read_from_which_host(
-    rsc, mode,
-    tag_sets=None, secondary_acceptable_latency_ms=15, callback=None,
-):
+        rsc, mode,
+        tag_sets=None, secondary_acceptable_latency_ms=15):
     """Read from a MongoReplicaSetClient with the given Read Preference mode,
        tags, and acceptable latency. Return the 'host:port' which was read from.
 
@@ -34,7 +33,6 @@ def read_from_which_host(
       - `mode`: A ReadPreference
       - `tag_sets`: List of dicts of tags for data-center-aware reads
       - `secondary_acceptable_latency_ms`: a float
-      - `callback`: Function taking host:port or None
     """
     db = rsc.pymongo_test
     db.read_preference = mode
@@ -46,16 +44,17 @@ def read_from_which_host(
     cursor = db.test.find()
     try:
         yield cursor.fetch_next
-        callback(cursor.delegate._Cursor__connection_id)
+        host = cursor.delegate._Cursor__connection_id
     except AutoReconnect:
-        callback(None)
+        host = None
+
+    raise gen.Return(host)
 
 
 @gen.coroutine
 def assertReadFrom(
-    testcase, rsc, member, mode,
-    tag_sets=None, secondary_acceptable_latency_ms=15, callback=None
-):
+        testcase, rsc, member, mode,
+        tag_sets=None, secondary_acceptable_latency_ms=15):
     """Check that a query with the given mode, tag_sets, and
        secondary_acceptable_latency_ms reads from the expected replica-set
        member
@@ -70,26 +69,19 @@ def assertReadFrom(
       - `callback`: Function taking (None, error)
     """
     nsamples = 10
-    try:
-        for i in range(nsamples):
-            read_from_which_host(
-                rsc, mode, tag_sets, secondary_acceptable_latency_ms,
-                callback=(yield gen.Callback(i)))
+    used = yield [
+        read_from_which_host(
+            rsc, mode, tag_sets, secondary_acceptable_latency_ms)
+        for _ in range(nsamples)
+    ]
 
-        used = yield gen.WaitAll(range(nsamples))
-        testcase.assertEqual([member] * nsamples, used)
-    except Exception, e:
-        callback(None, e)
-    else:
-        # Success
-        callback(None, None)
+    testcase.assertEqual([member] * nsamples, used)
 
 
 @gen.coroutine
 def assertReadFromAll(
-    testcase, rsc, members, mode,
-    tag_sets=None, secondary_acceptable_latency_ms=15, callback=None
-):
+        testcase, rsc, members, mode,
+        tag_sets=None, secondary_acceptable_latency_ms=15):
     """Check that a query with the given mode, tag_sets, and
     secondary_acceptable_latency_ms reads from all members in a set, and
     only members in that set.
@@ -105,18 +97,10 @@ def assertReadFromAll(
     """
     nsamples = 100
     members = set(members)
-
-    for i in range(nsamples):
+    used = set((yield [
         read_from_which_host(
-            rsc, mode, tag_sets, secondary_acceptable_latency_ms,
-            callback=(yield gen.Callback(i)))
+            rsc, mode, tag_sets, secondary_acceptable_latency_ms)
+        for _ in range(nsamples)
+    ]))
 
-    used = set((yield gen.WaitAll(range(nsamples))))
-
-    try:
-        testcase.assertEqual(members, used)
-    except Exception, e:
-        callback(None, e)
-    else:
-        # Success
-        callback(None, None)
+    testcase.assertEqual(members, used)
