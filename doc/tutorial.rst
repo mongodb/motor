@@ -252,8 +252,6 @@ The first insert results in ``my_callback`` being called with result 1 and
 error ``None``. The second insert triggers ``my_callback`` with result None and
 a :class:`~pymongo.errors.DuplicateKeyError`.
 
-.. seealso:: :ref:`Acknowledged writes in Motor <motor-acknowledged-writes>`
-
 A typical beginner's mistake with Motor is to insert documents in a loop,
 not waiting for each insert to complete before beginning the next::
 
@@ -318,7 +316,7 @@ with ``gen.coroutine``:
   >>> @gen.coroutine
   ... def do_insert():
   ...     for i in range(2000):
-  ...         result = yield motor.Op(db.test_collection.insert, {'i': i})
+  ...         result = yield db.test_collection.insert({'i': i})
   ...
   >>> IOLoop.current().run_sync(do_insert)
 
@@ -346,8 +344,7 @@ less than 2:
 
   >>> @gen.coroutine
   ... def do_find_one():
-  ...     document = yield motor.Op(
-  ...         db.test_collection.find_one, {'i': {'$lt': 2}})
+  ...     document = yield db.test_collection.find_one({'i': {'$lt': 2}})
   ...     print document
   ...
   >>> IOLoop.current().run_sync(do_find_one)
@@ -375,7 +372,7 @@ To find all documents with "i" less than 5:
   >>> @gen.coroutine
   ... def do_find():
   ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
-  ...     for document in (yield motor.Op(cursor.to_list, length=100)):
+  ...     for document in (yield cursor.to_list(length=100)):
   ...         print document
   ...
   >>> IOLoop.current().run_sync(do_find)
@@ -427,7 +424,7 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
   {u'i': 2, u'_id': ObjectId('...')}
   {u'i': 1, u'_id': ObjectId('...')}
 
-``fetch_next``does not actually retrieve each document from the server
+``fetch_next`` does not actually retrieve each document from the server
 individually; it gets documents efficiently in `large batches`_.
 
 .. _`large batches`: http://docs.mongodb.org/manual/core/read-operations/#cursor-behaviors
@@ -441,7 +438,7 @@ a collection, or the number of documents that match a query:
 
   >>> @gen.coroutine
   ... def do_count():
-  ...     n = yield motor.Op(db.test_collection.find().count)
+  ...     n = yield db.test_collection.find().count()
   ...     print n, 'documents in collection'
   ...     n = yield motor.Op(
   ...         db.test_collection.find({'i': {'$gt': 1000}}).count)
@@ -469,12 +466,12 @@ document, or it can update some fields of a document. To replace a document:
   >>> @gen.coroutine
   ... def do_replace():
   ...     coll = db.test_collection
-  ...     old_document = yield motor.Op(coll.find_one, {'i': 50})
+  ...     old_document = yield coll.find_one({'i': 50})
   ...     print 'found document:', old_document
   ...     _id = old_document['_id']
-  ...     result = yield motor.Op(coll.update, {'_id': _id}, {'key': 'value'})
+  ...     result = yield coll.update({'_id': _id}, {'key': 'value'})
   ...     print 'replaced', result['n'], 'document'
-  ...     new_document = yield motor.Op(coll.find_one, {'_id': _id})
+  ...     new_document = yield coll.find_one({'_id': _id})
   ...     print 'document is now', new_document
   ...
   >>> IOLoop.current().run_sync(do_replace)
@@ -494,10 +491,9 @@ operator to set "key" to "value":
   >>> @gen.coroutine
   ... def do_update():
   ...     coll = db.test_collection
-  ...     result = yield motor.Op(coll.update,
-  ...         {'i': 51}, {'$set': {'key': 'value'}})
+  ...     result = yield coll.update({'i': 51}, {'$set': {'key': 'value'}})
   ...     print 'updated', result['n'], 'document'
-  ...     new_document = yield motor.Op(coll.find_one, {'i': 51})
+  ...     new_document = yield coll.find_one({'i': 51})
   ...     print 'document is now', new_document
   ...
   >>> IOLoop.current().run_sync(do_update)
@@ -509,8 +505,7 @@ operator to set "key" to "value":
 By default :meth:`update` only affects the first document it finds, you can
 update all of them with the ``multi`` flag::
 
-    yield motor.Op(coll.update,
-        {'i': {'$gt': 100}}, {'$set': {'key': 'value'}}, multi=True)
+    yield coll.update({'i': {'$gt': 100}}, {'$set': {'key': 'value'}}, multi=True)
 
 .. mongodoc:: update
 
@@ -529,11 +524,11 @@ performs an :meth:`insert`.
   ... def do_save():
   ...     coll = db.test_collection
   ...     doc = {'key': 'value'}
-  ...     yield motor.Op(coll.save, doc)
+  ...     yield coll.save(doc)
   ...     print 'document _id:', repr(doc['_id'])
   ...     doc['other_key'] = 'other_value'
-  ...     yield motor.Op(coll.save, doc)
-  ...     yield motor.Op(coll.remove, doc)
+  ...     yield coll.save(doc)
+  ...     yield coll.remove(doc)
   ...
   >>> IOLoop.current().run_sync(do_save)
   document _id: ObjectId('...')
@@ -550,11 +545,10 @@ Removing Documents
   >>> @gen.coroutine
   ... def do_remove():
   ...     coll = db.test_collection
-  ...     n = yield motor.Op(coll.count)
+  ...     n = yield coll.count()
   ...     print n, 'documents before calling remove()'
-  ...     result = yield motor.Op(db.test_collection.remove,
-  ...         {'i': {'$gte': 1000}})
-  ...     print (yield motor.Op(coll.count)), 'documents after'
+  ...     result = yield db.test_collection.remove({'i': {'$gte': 1000}})
+  ...     print (yield coll.count()), 'documents after'
   ...
   >>> IOLoop.current().run_sync(do_remove)
   2000 documents before calling remove()
@@ -573,8 +567,7 @@ the :meth:`~motor.MotorDatabase.command` method on :class:`~motor.MotorDatabase`
   >>> from bson import SON
   >>> @gen.coroutine
   ... def use_count_command():
-  ...     response = yield motor.Op(
-  ...         db.command, SON([("count", "test_collection")]))
+  ...     response = yield db.command(SON([("count", "test_collection")]))
   ...     print 'response:', response
   ...
   >>> IOLoop.current().run_sync(use_count_command)
@@ -584,8 +577,7 @@ Since the order of command parameters matters, don't use a Python dict to pass
 the command's parameters. Instead, make a habit of using :class:`bson.SON`,
 from the ``bson`` module included with PyMongo::
 
-    yield motor.Op(
-        db.command, SON([("distinct", "test_collection"), ("key", "my_key"]))
+    yield db.command(SON([("distinct", "test_collection"), ("key", "my_key"]))
 
 Many commands have special helper methods, such as
 :meth:`~motor.MotorDatabase.create_collection` or

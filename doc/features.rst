@@ -17,10 +17,10 @@ PyMongo features not implemented in Motor, see :doc:`differences`.
 
 Convenient With `tornado.gen`
 =============================
-The `tornado.gen module`_ lets you use generators to simplify asynchronous code,
+The `tornado.gen module`_ lets you use coroutines to simplify asynchronous code,
 combining operations and their callbacks in a single function. Motor provides
-yield points to be used with ``tornado.gen``.
-See :doc:`api/generator_interface`.
+yield points to be used with ``tornado.gen``. See
+:ref:`generator-interface-example`.
 
 .. _tornado.gen module: http://www.tornadoweb.org/documentation/gen.html
 
@@ -32,8 +32,7 @@ timeout interface::
     @gen.coroutine
     def f():
         try:
-            document = yield motor.Op(
-                db.collection.find_one, my_complex_query, network_timeout=5)
+            document = yield db.collection.find_one(my_complex_query, network_timeout=5)
         except pymongo.errors.ConnectionFailure:
             # find_one took more than 5 seconds
             pass

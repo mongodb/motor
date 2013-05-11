@@ -13,6 +13,5 @@ Motor API
     motor_collection
     motor_cursor
     gridfs
-    generator_interface
     web
     exceptions

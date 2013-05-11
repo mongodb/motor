@@ -1316,9 +1316,7 @@ class MotorCursor(MotorBase):
 
           >>> @gen.coroutine
           ... def f():
-          ...     yield motor.Op(collection.insert,
-          ...         [{'_id': i} for i in range(5)])
-          ...
+          ...     yield collection.insert([{'_id': i} for i in range(5)])
           ...     cursor = collection.find().sort([('_id', 1)])
           ...     while (yield cursor.fetch_next):
           ...         doc = cursor.next_object()
@@ -1384,6 +1382,8 @@ class MotorCursor(MotorBase):
 
         .. doctest:: each
 
+          >>> from tornado.ioloop import IOLoop
+          >>> collection = MotorClient().open_sync().test.collection
           >>> def inserted(result, error):
           ...     global cursor
           ...     if error:
@@ -1405,6 +1405,8 @@ class MotorCursor(MotorBase):
           ...     [{'_id': i} for i in range(5)], callback=inserted)
           >>> IOLoop.current().start()
           0, 1, 2, 3, 4, done
+
+        .. note:: :meth:`to_list` or :attr:`fetch_next` are much easier to use.
 
         :Parameters:
          - `callback`: function taking (document, error)
@@ -1453,13 +1455,12 @@ class MotorCursor(MotorBase):
 
           >>> @gen.coroutine
           ... def f():
-          ...     yield motor.Op(
-          ...         collection.insert, [{'_id': i} for i in range(4)])
+          ...     yield collection.insert([{'_id': i} for i in range(4)])
           ...     cursor = collection.find().sort([('_id', 1)])
-          ...     docs = yield motor.Op(cursor.to_list, length=2)
+          ...     docs = yield cursor.to_list(length=2)
           ...     while docs:
           ...         print docs
-          ...         docs = (yield motor.Op(cursor.to_list, 2))
+          ...         docs = (yield cursor.to_list(length=2))
           ...
           ...     print 'done'
           ...
@@ -1468,30 +1469,12 @@ class MotorCursor(MotorBase):
           [{u'_id': 2}, {u'_id': 3}]
           done
 
-        Or that you set a limit on the cursor:
-
-        .. doctest:: to_list
-
-          >>> @gen.coroutine
-          ... def f():
-          ...     yield motor.Op(
-          ...         collection.insert, [{'_id': i} for i in range(4, 400)])
-          ...     cursor = collection.find().sort([('_id', 1)]).limit(4)
-          ...     # No max length passed to 'to_list', but limit set on cursor
-          ...     docs = yield motor.Op(cursor.to_list)
-          ...     print docs
-          ...     print 'done'
-          ...     IOLoop.current().stop()
-          ...
-          >>> IOLoop.current().run_sync(f)
-          [{u'_id': 0}, {u'_id': 1}, {u'_id': 2}, {u'_id': 3}]
-          done
-
-        ``to_list`` returns immediately, and ``callback`` is executed
-        asynchronously with the list of documents.
-
         :Parameters:
          - `length`: maximum number of documents to return for this call
+         - `callback`: function taking (document, error)
+
+        .. versionchanged:: 0.2
+           `length` parameter is no longer optional.
         """
         length = pymongo.common.validate_positive_integer_or_none(
             'length', length)
@@ -1585,10 +1568,7 @@ class MotorCursor(MotorBase):
 
           >>> @gen.coroutine
           ... def fifth_item():
-          ...     yield motor.Op(
-          ...         collection.insert,
-          ...         [{'i': i} for i in range(10)])
-          ...
+          ...     yield collection.insert([{'i': i} for i in range(10)])
           ...     cursor = collection.find().sort([('i', 1)])[5]
           ...     yield cursor.fetch_next
           ...     doc = cursor.next_object()
@@ -1748,9 +1728,9 @@ class MotorGridOut(MotorOpenable):
                 @gen.coroutine
                 def get(self, filename):
                     db = self.settings['db']
-                    fs = yield motor.Op(motor.MotorGridFS(db).open)
+                    fs = yield motor.MotorGridFS(db()).open()
                     try:
-                        gridout = yield motor.Op(fs.get_last_version, filename)
+                        gridout = yield fs.get_last_version(filename)
                     except gridfs.NoFile:
                         raise tornado.web.HTTPError(404)
 

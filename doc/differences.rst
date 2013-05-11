@@ -35,11 +35,11 @@ To make a connection asynchronously once the application is running, call
 
     motor.MotorClient().open(opened)
 
-Callbacks
----------
+Callbacks and Futures
+---------------------
 
 Motor supports nearly every method PyMongo does, but Motor methods that
-do network I/O take a callback function. The callback must accept two
+do network I/O take an optional callback function. The callback must accept two
 parameters:
 
 .. code-block:: python
@@ -47,11 +47,10 @@ parameters:
     def callback(result, error):
         pass
 
-Motor's asynchronous methods return ``None`` immediately, and execute the
+Motor's asynchronous methods return immediately, and execute the
 callback, with either a result or an error, when the operation has completed.
-
-For example,
-:meth:`~pymongo.collection.Collection.find_one` is used in PyMongo like:
+For example, :meth:`~pymongo.collection.Collection.find_one` is used in PyMongo
+like:
 
 .. code-block:: python
 
@@ -59,7 +58,7 @@ For example,
     user = db.users.find_one({'name': 'Jesse'})
     print user
 
-But Motor's :meth:`~motor.MotorCollection.find_one` method works asynchronously:
+But Motor's :meth:`~motor.MotorCollection.find_one` method is asynchronous:
 
 .. code-block:: python
 
@@ -75,8 +74,7 @@ But Motor's :meth:`~motor.MotorCollection.find_one` method works asynchronously:
 
 The callback must be passed as a keyword argument, not a positional argument.
 
-To find multiple documents, Motor
-provides :meth:`~motor.MotorCursor.to_list`:
+To find multiple documents, Motor provides :meth:`~motor.MotorCursor.to_list`:
 
 .. code-block:: python
 
@@ -87,78 +85,12 @@ provides :meth:`~motor.MotorCursor.to_list`:
             for user in users:
                 print user
 
-    db.users.find().to_list(callback=got_users)
+    db.users.find().to_list(length=10, callback=got_users)
 
 .. seealso:: MotorCursor's :meth:`~motor.MotorCursor.fetch_next`
 
-.. _motor-acknowledged-writes:
-
-Acknowledged Writes
--------------------
-
-In Motor, writes are acknowledged by the server (they are "safe writes") if
-passed a callback:
-
-.. code-block:: python
-
-    def on_inserted(result, error):
-        if error:
-            print 'error inserting!', error
-        else:
-            print 'added user'
-
-    db.users.insert({'name': 'Bernie'}, callback=on_inserted) # Acknowledged
-
-On success, the ``result`` parameter to the callback contains the
-client-generated ``_id`` of the document for
-:meth:`~motor.MotorCollection.insert` or :meth:`~motor.MotorCollection.save`,
-and MongoDB's ``getLastError`` response for
-:meth:`~motor.MotorCollection.update` or :meth:`~motor.MotorCollection.remove`.
-On error, ``result`` is ``None`` and the ``error`` parameter is an Exception.
-
-With no callback, Motor does unacknowledged writes.
-
-One can pass ``w=0`` explicitly, along with a callback, to perform an
-unacknowledged write:
-
-.. code-block:: python
-
-    db.users.insert({'name': 'Jesse'}, callback=inserted, w=0)
-
-In this case the callback is executed as soon as the message has been written to
-the socket connected to MongoDB, but no response is expected from the server.
-Passing a callback and ``w=0`` can be useful to do fast writes without
-opening an excessive number of connections.
-
-Motor supports the same set of `write concerns`_ as PyMongo, but no matter what
-write concern is configured, a write is acknowledged if passed a callback,
-otherwise not.
-
-.. _write concerns: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient.write_concern
-
-Result Values for Acknowledged and Unacknowledged Writes
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-
-These are the values passed as the `result` parameter to your callback for
-acknowledged and unacknowledged writes with Motor:
-
-+-----------+-------------------------+--------------------------------+
-| Operation | With Callback           | With Callback and `w=0`        |
-+===========+=========================+================================+
-| insert    | New \_id                | New \_id                       |
-+-----------+-------------------------+--------------------------------+
-| save      | \_id                    | \_id                           |
-+-----------+-------------------------+--------------------------------+
-| update    | ``{'ok': 1.0, 'n': 1}`` | ``None``                       |
-+-----------+-------------------------+--------------------------------+
-| remove    | ``{'ok': 1.0, 'n': 1}`` | ``None``                       |
-+-----------+-------------------------+--------------------------------+
-
-Unacknowledged Writes With gen.coroutine
-''''''''''''''''''''''''''''''''''''''''
-
-When using Motor with `tornado.gen`_, each Motor operation is passed an implicit
-callback and is therefore acknowledged ("safe"):
+If you pass no callback to an asynchronous method, it returns a Future for use
+in a `coroutine`_:
 
 .. code-block:: python
 
@@ -166,24 +98,12 @@ callback and is therefore acknowledged ("safe"):
 
     @gen.coroutine
     def f():
-        # Acknowledged
-        yield motor.Op(motor_db.collection.insert, {'name': 'Randall'})
+        yield motor_db.collection.insert({'name': 'Randall'})
+        doc = yield motor_db.collection.find_one()
 
-You can override this behavior and do unacknowledged writes by passing
-``w=0``:
+.. _coroutine: http://www.tornadoweb.org/documentation/gen.html
 
-.. code-block:: python
-
-    from tornado import gen
-
-    @gen.coroutine
-    def f():
-        # Unacknowledged
-        yield motor.Op(motor_db.collection.insert, {'name': 'Ross'}, w=0)
-
-.. _tornado.gen: http://www.tornadoweb.org/documentation/gen.html
-
-.. seealso:: :ref:`generator-interface`
+See :ref:`generator-interface-example`.
 
 max_concurrent and max_wait_time
 --------------------------------
@@ -221,7 +141,7 @@ PyMongo code::
     @gen.coroutine
     def f():
         try:
-            user = yield motor.Op(db.users.find_one, {'name': 'Jesse'})
+            user = yield db.users.find_one({'name': 'Jesse'})
             print user
         except AutoReconnect:
             print 'timed out'
@@ -232,11 +152,11 @@ As in PyMongo, the default ``connectTimeoutMS`` is 20 seconds, and the default
 Requests
 --------
 
-PyMongo provides "requests" to ensure that a series
-of operations are performed in order by the MongoDB server, even with
-unacknowledged writes. Motor does not support requests, so the only way to
-guarantee order is by doing acknowledged writes. Register a callback
-for each operation and perform the next operation in the callback::
+PyMongo provides "requests" to ensure that a series of operations are performed
+in order by the MongoDB server, even with unacknowledged writes (writes with
+``w=0``). Motor does not support requests, so the only way to guarantee order
+is by doing acknowledged writes. Register a callback for each operation and
+perform the next operation in the callback::
 
     def inserted(result, error):
         if error:
@@ -251,15 +171,15 @@ for each operation and perform the next operation in the callback::
         print result
 
     # Acknowledged insert:
-    db.users.insert({'name': 'Ben', 'author': 'Tornado'}, callback=inserted)
+    db.users.insert({'name': 'Ben', 'maintains': 'Tornado'}, callback=inserted)
 
 This ensures ``find_one`` isn't run until ``insert`` has been acknowledged by
 the server. Obviously, this code is improved by `tornado.gen`_::
 
     @gen.coroutine
     def f():
-        yield motor.Op(db.users.insert, {'name': 'Ben', 'author': 'Tornado'})
-        result = yield motor.Op(db.users.find_one, {'name': 'Ben'})
+        yield db.users.insert({'name': 'Ben', 'maintains': 'Tornado'})
+        result = yield db.users.find_one({'name': 'Ben'})
         print result
 
 Motor ignores the ``auto_start_request`` parameter to
@@ -294,6 +214,8 @@ will raise :exc:`~pymongo.errors.ConfigurationError` if you use them.
 
 .. _read preferences: http://api.mongodb.org/python/current/examples/high_availability.html#secondary-reads
 
+.. _write concerns: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient.write_concern
+
 MasterSlaveConnection
 ---------------------
 
@@ -317,7 +239,7 @@ GridFS
     :class:`~gridfs.grid_file.GridOut` strive to act like Python's built-in
     file objects, so they can be passed to many functions that expect files.
     But the I/O methods of :class:`~motor.MotorGridIn` and
-    :class:`~motor.MotorGridOut` require callbacks, so they cannot obey the
+    :class:`~motor.MotorGridOut` are asynchronous, so they cannot obey the
     file API and aren't suitable in the same circumstances as files.
 
 - Iteration
@@ -344,18 +266,20 @@ GridFS
 
         grid_in = fs.new_file()
         grid_in.close()
-        grid_in.my_field = 'my_value'
+        grid_in.my_field = 'my_value'  # Sends update to server.
 
-    Updating metadata on a :class:`~motor.MotorGridIn` requires a callback, so
+    Updating metadata on a :class:`~motor.MotorGridIn` is asynchronous, so
     the API is different::
 
         @gen.coroutine
         def f():
             fs = motor.MotorGridFS(db)
-            yield motor.Op(fs.open)
-            grid_in = yield motor.Op(fs.new_file)
-            yield motor.Op(grid_in.close)
-            yield motor.Op(grid_in.set, 'my_field', 'my_value')
+            yield fs.open()
+            grid_in = yield fs.new_file()
+            yield grid_in.close()
+
+            # Sends update to server.
+            yield grid_in.set('my_field', 'my_value')
 
     .. seealso:: :ref:`setting-attributes-on-a-motor-gridin`
 
@@ -367,14 +291,14 @@ GridFS
         with fs.new_file() as grid_in:
             grid_in.write('data')
 
-    But ``MotorGridIn``'s :meth:`~motor.MotorGridIn.close` takes a callback, so
-    it must be called explicitly.
+    But ``MotorGridIn``'s :meth:`~motor.MotorGridIn.close` method is
+    asynchronous, so it must be called explicitly.
 
 is_locked
 ---------
 
-:meth:`~motor.MotorClient.is_locked` in Motor is a method requiring a
-callback, whereas in PyMongo it is a property of
+:meth:`~motor.MotorClient.is_locked` in Motor is a method returning a Future
+or accepting a callback, whereas in PyMongo it is a *property* of
 :class:`~pymongo.mongo_client.MongoClient`.
 
 system_js
@@ -388,27 +312,7 @@ PyMongo supports Javascript procedures stored in MongoDB with syntax like:
     >>> db.system_js.my_func(2)
     4.0
 
-Motor does not. One should use ``system.js`` as a regular collection with Motor:
-
-.. code-block:: python
-
-    def saved(result, error):
-        if error:
-            print 'error saving function!', error
-        else:
-            db.eval('my_func(2)', callback=evaluated)
-
-    def evaluated(result, error):
-        if error:
-            print 'eval error!', error
-        else:
-            print 'eval result:', result # This will be 4.0
-
-    db.system.js.save(
-        {'_id': 'my_func', 'value': Code('function(x) { return x * x; }')},
-        callback=saved)
-
-.. seealso:: `Server-side code execution <http://docs.mongodb.org/manual/applications/server-side-javascript/>`_
+Motor does not.
 
 Cursor slicing
 --------------
@@ -418,17 +322,20 @@ than 101 documents:
 
 .. code-block:: python
 
-    db.collection.find()[100]
+    # Can raise IndexError.
+    doc = db.collection.find()[100]
 
 In Motor, however, no exception is raised. The query simply has no results:
 
 .. code-block:: python
 
-    def callback(result, error):
-        # 'result' is [ ] and 'error' is None
-        print result, error
+    @gen.coroutine
+    def f():
+        cursor = db.collection.find()[100]
 
-    db.collection.find()[100].to_list(callback)
+        # Iterates zero or one times.
+        while (yield cursor.fetch_next):
+            doc = cursor.next_object()
 
 The difference arises because the PyMongo :class:`~pymongo.cursor.Cursor`'s
 slicing operator blocks until it has queried the MongoDB server, and determines

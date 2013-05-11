@@ -28,7 +28,7 @@ starting the IOLoop::
 
     @gen.coroutine
     def login(c):
-        yield motor.Op(c.my_database.authenticate, "user", "pass")
+        yield c.my_database.authenticate("user", "pass")
 
 After you've logged in to a database with a given :class:`~motor.MotorClient`
 or :class:`~motor.MotorReplicaSetClient`, all further operations on that

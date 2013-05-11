@@ -7,7 +7,7 @@ using raw callbacks. Here's an example that shows the difference.
 With callbacks
 --------------
 
-Here's an example of an application that can create and display short messages:
+An application that can create and display short messages:
 
 .. code-block:: python
 
@@ -16,7 +16,7 @@ Here's an example of an application that can create and display short messages:
 
     class NewMessageHandler(tornado.web.RequestHandler):
         def get(self):
-            """Show a 'compose message' form"""
+            """Show a 'compose message' form."""
             self.write('''
             <form method="post">
                 <input type="text" name="msg">
@@ -26,8 +26,7 @@ Here's an example of an application that can create and display short messages:
         # Method exits before the HTTP request completes, thus "asynchronous"
         @tornado.web.asynchronous
         def post(self):
-            """Insert a message
-            """
+            """Insert a message."""
             msg = self.get_argument('msg')
 
             # Async insert; callback is executed when insert completes
@@ -45,8 +44,7 @@ Here's an example of an application that can create and display short messages:
     class MessagesHandler(tornado.web.RequestHandler):
         @tornado.web.asynchronous
         def get(self):
-            """Display all messages
-            """
+            """Display all messages."""
             self.write('<a href="/compose">Compose a message</a><br>')
             self.write('<ul>')
             db = self.settings['db']
@@ -100,7 +98,7 @@ with templates because the callback receives the entire result at once:
             (db.messages.find()
                 .sort([('_id', -1)])
                 .limit(10)
-                .to_list(self._got_messages))
+                .to_list(length=10, self._got_messages))
 
         def _got_messages(self, messages, error):
             if error:
@@ -109,21 +107,17 @@ with templates because the callback receives the entire result at once:
                 self.write(messages_template.generate(messages=messages))
             self.finish()
 
-It is extremely important to use :meth:`~motor.MotorCursor.limit` with
-:meth:`~motor.MotorCursor.to_list` to avoid buffering an unbounded number of
-documents in memory.
+To protect you from buffering huge numbers of documents in memory, ``to_list``
+always requires a maximum ``length`` argument.
 
 .. _generator-interface-example:
 
 Using Tornado's generator interface
 -----------------------------------
 
-# TODO: REWRITE
-
-Motor provides the yield point :class:`~motor.Op` for convenient use with the
-`tornado.gen module <http://www.tornadoweb.org/documentation/gen.html>`_.
-These yield points raise any exception passed by Motor, otherwise they return
-the result. To use async methods without explicit callbacks:
+Motor's asynchronous methods return `Futures
+<http://www.tornadoweb.org/documentation/gen.html>`_. Yield a Future to resolve
+it into a result or an exception:
 
 .. code-block:: python
 
@@ -133,13 +127,12 @@ the result. To use async methods without explicit callbacks:
         @tornado.web.asynchronous
         @gen.coroutine
         def post(self):
-            """Insert a message
-            """
+            """Insert a message."""
             msg = self.get_argument('msg')
             db = self.settings['db']
 
-            # motor.Op raises an exception on error, otherwise returns result
-            result = yield motor.Op(db.messages.insert, {'msg': msg})
+            # insert() returns a Future. Yield the Future to get the result.
+            result = yield db.messages.insert({'msg': msg})
 
             # Success
             self.redirect('/')
@@ -149,8 +142,7 @@ the result. To use async methods without explicit callbacks:
         @tornado.web.asynchronous
         @gen.coroutine
         def get(self):
-            """Display all messages
-            """
+            """Display all messages."""
             self.write('<a href="/compose">Compose a message</a><br>')
             self.write('<ul>')
             db = self.settings['db']
@@ -163,24 +155,18 @@ the result. To use async methods without explicit callbacks:
             self.write('</ul>')
             self.finish()
 
-As you can see, using Motor's yield points, it is no longer necessary to check
-explicitly if each operation caused an error.
-
-One can also parallelize operations and wait for all to complete. To query for
+One can parallelize operations and wait for all to complete. To query for
 two messages at once and wait for both:
 
 .. code-block:: python
 
-    msg = yield motor.Op(db.messages.find_one, {'_id': msg_id})
+    msg = yield db.messages.find_one({'_id': msg_id})
 
-    # Get previous
-    db.messages.find_one(
-        {'_id': {'$lt': msg_id}},
-        callback=(yield gen.Callback('prev')))
+    # Start getting the previous. find_one returns a Future.
+    prev_future = db.messages.find_one({'_id': {'$lt': msg_id}})
 
-    # Get next
-    db.messages.find_one(
-        {'_id': {'$gt': msg_id}},
-        callback=(yield gen.Callback('next')))
+    # Start getting the next.
+    next_future = db.messages.find_one({'_id': {'$gt': msg_id}})
 
-    previous_msg, next_msg = yield motor.WaitAllOps(['prev', 'next'])
+    # Wait for both to complete by yielding the Futures.
+    previous_msg, next_msg = yield [prev_future, next_future]
