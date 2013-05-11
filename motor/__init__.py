@@ -1491,7 +1491,7 @@ class MotorCursor(MotorBase):
                 callback([], None)
             else:
                 future = Future()
-                future.set_result(None)
+                future.set_result([])
                 return future
 
         the_list = []
