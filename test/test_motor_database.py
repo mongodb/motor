@@ -14,7 +14,6 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-import datetime
 import unittest
 
 import pymongo.database
@@ -58,9 +57,8 @@ class MotorDatabaseTest(MotorTest):
         db.create_collection('c', callback=None)
         
         # Wait for create_collection to complete
-        loop = self.io_loop
         for _ in range(10):
-            yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.5))
+            yield self.pause(0.5)
             if 'c' in (yield db.collection_names()):
                 break
 

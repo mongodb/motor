@@ -154,6 +154,11 @@ class MotorTest(testing.AsyncTestCase):
         self.cx = self.motor_client_sync()
 
     @gen.coroutine
+    def pause(self, seconds):
+        yield gen.Task(
+            self.io_loop.add_timeout, datetime.timedelta(seconds=seconds))
+
+    @gen.coroutine
     def wait_for_cursor(self, collection, cursor_id, retrieved):
         """Ensure a cursor opened during the test is closed on the
         server, e.g. after dereferencing an open cursor on the client:
@@ -208,9 +213,7 @@ class MotorTest(testing.AsyncTestCase):
                 self.fail("Cursor not closed")
             else:
                 # Let the loop run, might be working on closing the cursor
-                yield gen.Task(
-                    self.io_loop.add_timeout,
-                    datetime.timedelta(seconds=0.1))
+                yield self.pause(0.1)
 
     @gen.coroutine
     def motor_client(self, host=host, port=port, *args, **kwargs):

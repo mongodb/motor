@@ -14,7 +14,6 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-import datetime
 import functools
 import greenlet
 import random
@@ -226,8 +225,7 @@ class MotorPoolTest(MotorTest):
             loop.add_callback(greenlet.greenlet(get_socket).switch)
 
         greenlet.greenlet(return_socket).switch()
-
-        yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
+        yield self.pause(0.1)
 
         # 'return_sock_exc' was *not* added to history, because stack context
         # wasn't leaked from return_socket to get_socket.

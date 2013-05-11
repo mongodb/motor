@@ -14,7 +14,6 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-import datetime
 import unittest
 
 import bson
@@ -285,9 +284,8 @@ class MotorCollectionTest(MotorTest):
         coll.remove({'_id': 116})
         coll.remove({'_id': 117})
         # Wait for them to complete
-        loop = self.io_loop
         while ndocs():
-            yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
+            yield self.pause(0.1)
 
         coll.database.connection.close()
 
@@ -303,9 +301,8 @@ class MotorCollectionTest(MotorTest):
         coll.insert({'_id': 201})
 
         # the insert is eventually executed
-        loop = self.io_loop
         while not self.sync_db.test_collection.find({'_id': 201}).count():
-            yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
+            yield self.pause(0.1)
 
         # DuplicateKeyError not raised
         coll.insert({'_id': 201})
@@ -318,9 +315,8 @@ class MotorCollectionTest(MotorTest):
         coll = self.cx.pymongo_test.test_collection
         coll.save({'_id': 201})
 
-        loop = self.io_loop
         while not self.sync_db.test_collection.find({'_id': 201}).count():
-            yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
+            yield self.pause(0.1)
 
         # DuplicateKeyError not raised
         coll.save({'_id': 201})
@@ -333,9 +329,8 @@ class MotorCollectionTest(MotorTest):
         coll = self.cx.pymongo_test.test_collection
         coll.update({'_id': 100}, {'$set': {'a': 1}})
 
-        loop = self.io_loop
         while not self.sync_db.test_collection.find({'a': 1}).count():
-            yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=0.1))
+            yield self.pause(0.1)
 
         coll.database.connection.close()
 
