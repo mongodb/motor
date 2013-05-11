@@ -14,14 +14,9 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-import unittest
-
-import pymongo
-from bson import objectid
-from tornado import gen
+import pymongo.son_manipulator
 from tornado.testing import gen_test
 
-import motor
 from test import MotorTest, AssertEqual
 
 
