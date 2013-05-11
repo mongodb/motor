@@ -32,7 +32,7 @@ import motor
 import ha_tools
 from test.utils import one
 from test import assert_raises
-from test_motor_ha_utils import assertReadFrom, assertReadFromAll
+from test_motor_ha_utils import assert_read_from, assert_read_from_all
 
 
 # Override default 30-second interval for faster testing
@@ -178,11 +178,12 @@ class MotorTestPassiveAndHidden(MotorHATestCase):
         self.assertEqual(self.c.secondaries, set(passives))
 
         for mode in SECONDARY, SECONDARY_PREFERRED:
-            yield assertReadFromAll(self, self.c, passives, mode)
+            yield assert_read_from_all(self, self.c, passives, mode)
 
         ha_tools.kill_members(ha_tools.get_passives(), 2)
         yield gen.Task(loop.add_timeout, time.time() + 2 * MONITOR_INTERVAL)
-        yield assertReadFrom(self, self.c, self.c.primary, SECONDARY_PREFERRED)
+        yield assert_read_from(
+            self, self.c, self.c.primary, SECONDARY_PREFERRED)
 
     def tearDown(self):
         self.c.close()
@@ -209,7 +210,8 @@ class MotorTestMonitorRemovesRecoveringMember(MotorHATestCase):
 
         for mode in SECONDARY, SECONDARY_PREFERRED:
             partitioned_secondaries = [_partition_node(s) for s in secondaries]
-            yield assertReadFromAll(self, self.c, partitioned_secondaries, mode)
+            yield assert_read_from_all(
+                self, self.c, partitioned_secondaries, mode)
 
         secondary, recovering_secondary = secondaries
         ha_tools.set_maintenance(recovering_secondary, True)
@@ -218,7 +220,8 @@ class MotorTestMonitorRemovesRecoveringMember(MotorHATestCase):
 
         for mode in SECONDARY, SECONDARY_PREFERRED:
             # Don't read from recovering member
-            yield assertReadFrom(self, self.c, _partition_node(secondary), mode)
+            yield assert_read_from(
+                self, self.c, _partition_node(secondary), mode)
 
     def tearDown(self):
         self.c.close()
@@ -609,13 +612,13 @@ class MotorTestReadPreference(MotorHATestCase):
                 raise gen.Return(None)
 
         @gen.coroutine
-        def assertReadFrom(member, *args, **kwargs):
+        def assert_read_from(member, *args, **kwargs):
             for _ in range(10):
                 used = yield read_from_which_host(c, *args, **kwargs)
                 self.assertEqual(member, used)
 
         @gen.coroutine
-        def assertReadFromAll(members, *args, **kwargs):
+        def assert_read_from_all(members, *args, **kwargs):
             members = set(members)
             all_used = set()
             for _ in range(100):
@@ -626,7 +629,7 @@ class MotorTestReadPreference(MotorHATestCase):
 
             # This will fail
             self.assertEqual(members, all_used)
-            
+
         def unpartition_node(node):
             host, port = node
             return '%s:%s' % (host, port)
@@ -639,83 +642,93 @@ class MotorTestReadPreference(MotorHATestCase):
 
         # 1. THREE MEMBERS UP -------------------------------------------------
         #       PRIMARY
-        yield assertReadFrom(primary, PRIMARY)
+        yield assert_read_from(primary, PRIMARY)
 
         #       PRIMARY_PREFERRED
         # Trivial: mode and tags both match
-        yield assertReadFrom(primary, PRIMARY_PREFERRED, self.primary_dc)
+        yield assert_read_from(primary, PRIMARY_PREFERRED, self.primary_dc)
 
         # Secondary matches but not primary, choose primary
-        yield assertReadFrom(primary, PRIMARY_PREFERRED, self.secondary_dc)
+        yield assert_read_from(primary, PRIMARY_PREFERRED, self.secondary_dc)
 
         # Chooses primary, ignoring tag sets
-        yield assertReadFrom(primary, PRIMARY_PREFERRED, self.primary_dc)
+        yield assert_read_from(primary, PRIMARY_PREFERRED, self.primary_dc)
 
         # Chooses primary, ignoring tag sets
-        yield assertReadFrom(primary, PRIMARY_PREFERRED, bad_tag)
-        yield assertReadFrom(primary, PRIMARY_PREFERRED, [bad_tag, {}])
+        yield assert_read_from(primary, PRIMARY_PREFERRED, bad_tag)
+        yield assert_read_from(primary, PRIMARY_PREFERRED, [bad_tag, {}])
 
         #       SECONDARY
-        yield assertReadFromAll([secondary, other_secondary], SECONDARY, latency=9999999)
+        yield assert_read_from_all(
+            [secondary, other_secondary], SECONDARY, latency=9999999)
 
         #       SECONDARY_PREFERRED
-        yield assertReadFromAll([secondary, other_secondary], SECONDARY_PREFERRED, latency=9999999)
+        yield assert_read_from_all(
+            [secondary, other_secondary], SECONDARY_PREFERRED, latency=9999999)
 
         # Multiple tags
-        yield assertReadFrom(secondary, SECONDARY_PREFERRED, self.secondary_tags)
+        yield assert_read_from(
+            secondary, SECONDARY_PREFERRED, self.secondary_tags)
 
         # Fall back to primary if it's the only one matching the tags
-        yield assertReadFrom(primary, SECONDARY_PREFERRED, {'name': 'primary'})
+        yield assert_read_from(
+            primary, SECONDARY_PREFERRED, {'name': 'primary'})
 
         # No matching secondaries
-        yield assertReadFrom(primary, SECONDARY_PREFERRED, bad_tag)
+        yield assert_read_from(primary, SECONDARY_PREFERRED, bad_tag)
 
         # Fall back from non-matching tag set to matching set
-        yield assertReadFromAll([secondary, other_secondary],
+        yield assert_read_from_all(
+            [secondary, other_secondary],
             SECONDARY_PREFERRED, [bad_tag, {}], latency=9999999)
 
-        yield assertReadFrom(other_secondary,
+        yield assert_read_from(
+            other_secondary,
             SECONDARY_PREFERRED, [bad_tag, {'dc': 'ny'}])
 
         #       NEAREST
         self.clear_ping_times()
 
-        yield assertReadFromAll([primary, secondary, other_secondary], NEAREST, latency=9999999)
+        yield assert_read_from_all(
+            [primary, secondary, other_secondary], NEAREST, latency=9999999)
 
-        yield assertReadFromAll([primary, other_secondary],
+        yield assert_read_from_all(
+            [primary, other_secondary],
             NEAREST, [bad_tag, {'dc': 'ny'}], latency=9999999)
 
         self.set_ping_time(primary, 0)
-        self.set_ping_time(secondary, .03) # 30 ms
+        self.set_ping_time(secondary, .03)  # 30 milliseconds.
         self.set_ping_time(other_secondary, 10)
 
         # Nearest member, no tags
-        yield assertReadFrom(primary, NEAREST)
+        yield assert_read_from(primary, NEAREST)
 
         # Tags override nearness
-        yield assertReadFrom(primary, NEAREST, {'name': 'primary'})
-        yield assertReadFrom(secondary, NEAREST, self.secondary_dc)
+        yield assert_read_from(primary, NEAREST, {'name': 'primary'})
+        yield assert_read_from(secondary, NEAREST, self.secondary_dc)
 
         # Make secondary fast
-        self.set_ping_time(primary, .03) # 30 ms
+        self.set_ping_time(primary, .03)  # 30 milliseconds.
         self.set_ping_time(secondary, 0)
 
-        yield assertReadFrom(secondary, NEAREST)
+        yield assert_read_from(secondary, NEAREST)
 
         # Other secondary fast
         self.set_ping_time(secondary, 10)
         self.set_ping_time(other_secondary, 0)
 
-        yield assertReadFrom(other_secondary, NEAREST)
+        yield assert_read_from(other_secondary, NEAREST)
 
         # High secondaryAcceptableLatencyMS, should read from all members
-        yield assertReadFromAll(
+        yield assert_read_from_all(
             [primary, secondary, other_secondary],
             NEAREST, latency=9999999)
 
         self.clear_ping_times()
 
-        yield assertReadFromAll([primary, other_secondary], NEAREST, [{'dc': 'ny'}], latency=9999999)
+        yield assert_read_from_all(
+            [primary, other_secondary], NEAREST, [{'dc': 'ny'}],
+            latency=9999999)
 
         # 2. PRIMARY DOWN -----------------------------------------------------
         killed = ha_tools.kill_primary()
@@ -724,35 +737,42 @@ class MotorTestReadPreference(MotorHATestCase):
         yield gen.Task(loop.add_timeout, time.time() + 2 * MONITOR_INTERVAL)
 
         #       PRIMARY
-        yield assertReadFrom(None, PRIMARY)
+        yield assert_read_from(None, PRIMARY)
 
         #       PRIMARY_PREFERRED
         # No primary, choose matching secondary
-        yield assertReadFromAll([secondary, other_secondary], PRIMARY_PREFERRED, latency=9999999)
-        yield assertReadFrom(secondary, PRIMARY_PREFERRED, {'name': 'secondary'})
+        yield assert_read_from_all(
+            [secondary, other_secondary], PRIMARY_PREFERRED, latency=9999999)
+
+        yield assert_read_from(
+            secondary, PRIMARY_PREFERRED, {'name': 'secondary'})
 
         # No primary or matching secondary
-        yield assertReadFrom(None, PRIMARY_PREFERRED, bad_tag)
+        yield assert_read_from(None, PRIMARY_PREFERRED, bad_tag)
 
         #       SECONDARY
-        yield assertReadFromAll([secondary, other_secondary], SECONDARY, latency=9999999)
+        yield assert_read_from_all(
+            [secondary, other_secondary], SECONDARY, latency=9999999)
 
         # Only primary matches
-        yield assertReadFrom(None, SECONDARY, {'name': 'primary'})
+        yield assert_read_from(None, SECONDARY, {'name': 'primary'})
 
         # No matching secondaries
-        yield assertReadFrom(None, SECONDARY, bad_tag)
+        yield assert_read_from(None, SECONDARY, bad_tag)
 
         #       SECONDARY_PREFERRED
-        yield assertReadFromAll([secondary, other_secondary], SECONDARY_PREFERRED, latency=9999999)
+        yield assert_read_from_all(
+            [secondary, other_secondary], SECONDARY_PREFERRED, latency=9999999)
 
         # Mode and tags both match
-        yield assertReadFrom(secondary, SECONDARY_PREFERRED, {'name': 'secondary'})
+        yield assert_read_from(
+            secondary, SECONDARY_PREFERRED, {'name': 'secondary'})
 
         #       NEAREST
         self.clear_ping_times()
 
-        yield assertReadFromAll([secondary, other_secondary], NEAREST, latency=9999999)
+        yield assert_read_from_all(
+            [secondary, other_secondary], NEAREST, latency=9999999)
 
         # 3. PRIMARY UP, ONE SECONDARY DOWN -----------------------------------
         ha_tools.restart_members([killed])
@@ -773,30 +793,36 @@ class MotorTestReadPreference(MotorHATestCase):
         yield gen.Task(loop.add_timeout, time.time() + 2 * MONITOR_INTERVAL)
 
         #       PRIMARY
-        yield assertReadFrom(primary, PRIMARY)
+        yield assert_read_from(primary, PRIMARY)
 
         #       PRIMARY_PREFERRED
-        yield assertReadFrom(primary, PRIMARY_PREFERRED)
+        yield assert_read_from(primary, PRIMARY_PREFERRED)
 
         #       SECONDARY
-        yield assertReadFrom(other_secondary, SECONDARY)
-        yield assertReadFrom(other_secondary, SECONDARY, self.other_secondary_dc)
+        yield assert_read_from(other_secondary, SECONDARY)
+        yield assert_read_from(
+            other_secondary, SECONDARY, self.other_secondary_dc)
 
         # Only the down secondary matches
-        yield assertReadFrom(None, SECONDARY, {'name': 'secondary'})
+        yield assert_read_from(None, SECONDARY, {'name': 'secondary'})
 
         #       SECONDARY_PREFERRED
-        yield assertReadFrom(other_secondary, SECONDARY_PREFERRED)
-        yield assertReadFrom(
+        yield assert_read_from(other_secondary, SECONDARY_PREFERRED)
+        yield assert_read_from(
             other_secondary, SECONDARY_PREFERRED, self.other_secondary_dc)
 
         # The secondary matching the tag is down, use primary
-        yield assertReadFrom(primary, SECONDARY_PREFERRED, {'name': 'secondary'})
+        yield assert_read_from(
+            primary, SECONDARY_PREFERRED, {'name': 'secondary'})
 
         #       NEAREST
-        yield assertReadFromAll([primary, other_secondary], NEAREST, latency=9999999)
-        yield assertReadFrom(other_secondary, NEAREST, {'name': 'other_secondary'})
-        yield assertReadFrom(primary, NEAREST, {'name': 'primary'})
+        yield assert_read_from_all(
+            [primary, other_secondary], NEAREST, latency=9999999)
+
+        yield assert_read_from(
+            other_secondary, NEAREST, {'name': 'other_secondary'})
+
+        yield assert_read_from(primary, NEAREST, {'name': 'primary'})
 
         # 4. PRIMARY UP, ALL SECONDARIES DOWN ---------------------------------
         ha_tools.kill_members([unpartition_node(other_secondary)], 2)
@@ -806,32 +832,34 @@ class MotorTestReadPreference(MotorHATestCase):
         ).admin.command('ismaster')['ismaster'])
 
         #       PRIMARY
-        yield assertReadFrom(primary, PRIMARY)
+        yield assert_read_from(primary, PRIMARY)
 
         #       PRIMARY_PREFERRED
-        yield assertReadFrom(primary, PRIMARY_PREFERRED)
-        yield assertReadFrom(primary, PRIMARY_PREFERRED, self.secondary_dc)
+        yield assert_read_from(primary, PRIMARY_PREFERRED)
+        yield assert_read_from(primary, PRIMARY_PREFERRED, self.secondary_dc)
 
         #       SECONDARY
-        yield assertReadFrom(None, SECONDARY)
-        yield assertReadFrom(None, SECONDARY, self.other_secondary_dc)
-        yield assertReadFrom(None, SECONDARY, {'dc': 'ny'})
+        yield assert_read_from(None, SECONDARY)
+        yield assert_read_from(None, SECONDARY, self.other_secondary_dc)
+        yield assert_read_from(None, SECONDARY, {'dc': 'ny'})
 
         #       SECONDARY_PREFERRED
-        yield assertReadFrom(primary, SECONDARY_PREFERRED)
-        yield assertReadFrom(primary, SECONDARY_PREFERRED, self.secondary_dc)
-        yield assertReadFrom(primary, SECONDARY_PREFERRED, {'name': 'secondary'})
-        yield assertReadFrom(primary, SECONDARY_PREFERRED, {'dc': 'ny'})
+        yield assert_read_from(primary, SECONDARY_PREFERRED)
+        yield assert_read_from(primary, SECONDARY_PREFERRED, self.secondary_dc)
+        yield assert_read_from(
+            primary, SECONDARY_PREFERRED, {'name': 'secondary'})
+
+        yield assert_read_from(primary, SECONDARY_PREFERRED, {'dc': 'ny'})
 
         #       NEAREST
-        yield assertReadFrom(primary, NEAREST)
-        yield assertReadFrom(None, NEAREST, self.secondary_dc)
-        yield assertReadFrom(None, NEAREST, {'name': 'secondary'})
+        yield assert_read_from(primary, NEAREST)
+        yield assert_read_from(None, NEAREST, self.secondary_dc)
+        yield assert_read_from(None, NEAREST, {'name': 'secondary'})
 
         # Even if primary's slow, still read from it
         self.set_ping_time(primary, 100)
-        yield assertReadFrom(primary, NEAREST)
-        yield assertReadFrom(None, NEAREST, self.secondary_dc)
+        yield assert_read_from(primary, NEAREST)
+        yield assert_read_from(None, NEAREST, self.secondary_dc)
 
         self.clear_ping_times()
 

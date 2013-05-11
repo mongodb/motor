@@ -52,7 +52,7 @@ def read_from_which_host(
 
 
 @gen.coroutine
-def assertReadFrom(
+def assert_read_from(
         testcase, rsc, member, mode,
         tag_sets=None, secondary_acceptable_latency_ms=15):
     """Check that a query with the given mode, tag_sets, and
@@ -79,7 +79,7 @@ def assertReadFrom(
 
 
 @gen.coroutine
-def assertReadFromAll(
+def assert_read_from_all(
         testcase, rsc, members, mode,
         tag_sets=None, secondary_acceptable_latency_ms=15):
     """Check that a query with the given mode, tag_sets, and
