@@ -81,5 +81,3 @@ class SONManipulatorTest(MotorTest):
 
         found = yield coll.find().sort([('_id', 1)]).to_list(length=2)
         self.assertEqual(expected, found)
-        found = yield coll.find().sort([('_id', 1)]).to_list(length=None)
-        self.assertEqual(expected, found)

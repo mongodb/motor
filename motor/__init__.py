@@ -1476,8 +1476,7 @@ class MotorCursor(MotorBase):
         .. versionchanged:: 0.2
            `length` parameter is no longer optional.
         """
-        length = pymongo.common.validate_positive_integer_or_none(
-            'length', length)
+        length = pymongo.common.validate_positive_integer('length', length)
 
         if self.delegate._Cursor__tailable:
             raise pymongo.errors.InvalidOperation(

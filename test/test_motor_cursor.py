@@ -169,6 +169,7 @@ class MotorCursorTest(MotorTest):
         callback = lambda result, error: None
         self.assertRaises(ConfigurationError, cursor.to_list, -1, callback)
         self.assertRaises(ConfigurationError, cursor.to_list, 'foo', callback)
+        self.assertRaises(TypeError, cursor.to_list, None, callback)
 
     @gen_test
     def test_to_list(self):
@@ -201,10 +202,6 @@ class MotorCursorTest(MotorTest):
         # Only 95 docs left, make sure length=100 doesn't error or hang
         yield AssertEqual(expected(105, 200), cursor.to_list, 100)
         self.assertEqual(0, cursor.cursor_id)
-
-        # Check that passing None explicitly is the same as no length
-        result = yield coll.find().to_list(None)
-        self.assertEqual(200, len(result))
 
     def test_to_list_tailable(self):
         coll = self.cx.pymongo_test.test_collection
