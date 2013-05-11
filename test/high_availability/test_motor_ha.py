@@ -31,7 +31,7 @@ from tornado.testing import gen_test
 import motor
 import ha_tools
 from test.utils import one
-from test import AssertEqual, AssertTrue, AssertFalse, assert_raises
+from test import assert_raises
 from test_motor_ha_utils import assertReadFrom, assertReadFromAll
 
 
@@ -437,7 +437,7 @@ class MotorTestReadWithFailover(MotorHATestCase):
         db.test.remove({}, w=w)
         # Force replication
         yield db.test.insert([{'foo': i} for i in xrange(10)], w=w)
-        yield AssertEqual(10, db.test.count)
+        self.assertEqual(10, (yield db.test.count()))
 
         db.read_preference = SECONDARY
         cursor = db.test.find().batch_size(5)
@@ -915,25 +915,23 @@ class MotorTestAlive(MotorHATestCase):
         loop = IOLoop.current()
 
         try:
-            yield AssertTrue(primary_cx.alive)
-            yield AssertTrue(secondary_cx.alive)
-            yield AssertTrue(rsc.alive)
+            self.assertTrue((yield primary_cx.alive()))
+            self.assertTrue((yield secondary_cx.alive()))
+            self.assertTrue((yield rsc.alive()))
 
             ha_tools.kill_primary()
             yield gen.Task(loop.add_timeout, time.time() + 0.5)
 
-            yield AssertFalse(primary_cx.alive)
-            yield AssertTrue(secondary_cx.alive)
-
-            # Sometimes KeyError: https://jira.mongodb.org/browse/PYTHON-467
-            yield AssertFalse(rsc.alive)
+            self.assertFalse((yield primary_cx.alive()))
+            self.assertTrue((yield secondary_cx.alive()))
+            self.assertFalse((yield rsc.alive()))
 
             ha_tools.kill_members([secondary], 2)
             yield gen.Task(loop.add_timeout, time.time() + 0.5)
 
-            yield AssertFalse(primary_cx.alive)
-            yield AssertFalse(secondary_cx.alive)
-            yield AssertFalse(rsc.alive)
+            self.assertFalse((yield primary_cx.alive()))
+            self.assertFalse((yield secondary_cx.alive()))
+            self.assertFalse((yield rsc.alive()))
         finally:
             rsc.close()
 
@@ -957,7 +955,7 @@ class MotorTestMongosHighAvailability(MotorHATestCase):
         with assert_raises(AutoReconnect):
             yield coll.count()
         # Find new mongos
-        yield AssertEqual(1, coll.count)
+        self.assertEqual(1, (yield coll.count()))
 
         second = '%s:%d' % (c.host, c.port)
         self.assertNotEqual(first, second)
@@ -966,7 +964,7 @@ class MotorTestMongosHighAvailability(MotorHATestCase):
         with assert_raises(AutoReconnect):
             yield coll.count()
         # Find new mongos
-        yield AssertEqual(1, coll.count)
+        self.assertEqual(1, (yield coll.count()))
 
         third = '%s:%d' % (c.host, c.port)
         self.assertNotEqual(second, third)
@@ -979,7 +977,7 @@ class MotorTestMongosHighAvailability(MotorHATestCase):
         ha_tools.restart_mongos(first)
 
         # Find new mongos
-        yield AssertEqual(1, coll.count)
+        self.assertEqual(1, (yield coll.count()))
 
 
 if __name__ == '__main__':
