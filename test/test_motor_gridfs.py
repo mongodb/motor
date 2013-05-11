@@ -27,7 +27,6 @@ from tornado.testing import gen_test
 
 import motor
 from test import host, port, MotorTest, MotorReplicaSetTestBase, assert_raises
-from test import AssertEqual
 
 
 class MotorGridfsTest(MotorTest):
@@ -91,21 +90,21 @@ class MotorGridfsTest(MotorTest):
         fs = yield motor.MotorGridFS(db).open()
         oid = yield fs.put(b("hello world"))
         out = yield fs.get(oid)
-        yield AssertEqual(b("hello world"), out.read)
-        yield AssertEqual(1, db.fs.files.count)
-        yield AssertEqual(1, db.fs.chunks.count)
+        self.assertEqual(b("hello world"), (yield out.read()))
+        self.assertEqual(1, (yield db.fs.files.count()))
+        self.assertEqual(1, (yield db.fs.chunks.count()))
 
         yield fs.delete(oid)
         with assert_raises(NoFile):
             yield fs.get(oid)
-        yield AssertEqual(0, db.fs.files.count)
-        yield AssertEqual(0, db.fs.chunks.count)
+        self.assertEqual(0, (yield db.fs.files.count()))
+        self.assertEqual(0, (yield db.fs.chunks.count()))
 
         with assert_raises(NoFile):
             yield fs.get("foo")
-        yield AssertEqual("foo", fs.put, b("hello world"), _id="foo")
+        self.assertEqual("foo", (yield fs.put(b("hello world"), _id="foo")))
         gridout = yield fs.get("foo")
-        yield AssertEqual(b("hello world"), gridout.read)
+        self.assertEqual(b("hello world"), (yield gridout.read()))
 
     @gen_test
     def test_list(self):

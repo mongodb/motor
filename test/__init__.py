@@ -95,33 +95,6 @@ def assert_raises(exc_class):
         assert False, "%s not raised" % exc_class
 
 
-class AssertEqual(gen.Task):
-    def __init__(self, expected, func, *args, **kwargs):
-        super(AssertEqual, self).__init__(func, *args, **kwargs)
-        self.expected = expected
-
-    def get_result(self):
-        (result, error), _ = self.runner.pop_result(self.key)
-        if error:
-            raise error
-
-        if self.expected != result:
-            raise AssertionError("%s returned %s\nnot\n%s" % (
-                self.func, repr(result), repr(self.expected)))
-
-        return result
-
-
-class AssertTrue(AssertEqual):
-    def __init__(self, func, *args, **kwargs):
-        super(AssertTrue, self).__init__(True, func, *args, **kwargs)
-
-
-class AssertFalse(AssertEqual):
-    def __init__(self, func, *args, **kwargs):
-        super(AssertFalse, self).__init__(False, func, *args, **kwargs)
-
-
 class MotorTest(testing.AsyncTestCase):
     longMessage = True  # Used by unittest.TestCase
     ssl = False  # If True, connect with SSL, skip if mongod isn't SSL

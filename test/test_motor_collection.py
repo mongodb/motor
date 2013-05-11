@@ -25,7 +25,7 @@ from test.utils import delay
 from tornado.testing import gen_test
 
 import motor
-from test import MotorTest, AssertEqual, assert_raises
+from test import MotorTest, assert_raises
 
 
 class MotorCollectionTest(MotorTest):
@@ -185,10 +185,11 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     def test_insert_many(self):
-        yield AssertEqual(
+        collection = self.cx.pymongo_test.test_collection
+        self.assertEqual(
             range(201, 211),
-            self.cx.pymongo_test.test_collection.insert,
-            [{'_id': i, 's': hex(i)} for i in range(201, 211)])
+            (yield collection.insert(
+                [{'_id': i, 's': hex(i)} for i in range(201, 211)])))
 
     @gen_test
     def test_insert_bad(self):
@@ -198,24 +199,24 @@ class MotorCollectionTest(MotorTest):
             yield self.cx.pymongo_test.test_collection.insert({'s': hex(4)})
 
     def test_insert_many_one_bad(self):
+        collection = self.cx.pymongo_test.test_collection
+
         # Violate a unique index in one of many updates, handle error.
         with assert_raises(DuplicateKeyError):
-            yield self.cx.pymongo_test.test_collection.insert([
+            yield collection.insert([
                 {'_id': 201, 's': hex(201)},
                 {'_id': 202, 's': hex(4)},  # Already exists
                 {'_id': 203, 's': hex(203)}])
 
         # First insert should have succeeded.
-        yield AssertEqual(
+        self.assertEqual(
             [{'_id': 201, 's': hex(201)}],
-            self.sync_db.test_collection.find({'_id': 201}).to_list,
-            length=1000)
+            (yield collection.find({'_id': 201}).to_list(length=1000)))
 
         # Final insert didn't execute, since second failed.
-        yield AssertEqual(
+        self.assertEqual(
             [],
-            self.sync_db.test_collection.find({'_id': 203}).to_list,
-            length=1000)
+            (yield collection.find({'_id': 203}).to_list(length=1000)))
 
     @gen_test
     def test_save_callback(self):
@@ -224,15 +225,15 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     def test_save_with_id(self):
-        # save() returns the _id, in this case 5
-        yield AssertEqual(
+        # save() returns the _id, in this case 5.
+        self.assertEqual(
             5,
-            self.cx.pymongo_test.test_collection.save,
-            {'_id': 5})
+            (yield self.cx.pymongo_test.test_collection.save({'_id': 5})))
 
     @gen_test
     def test_save_without_id(self):
-        result = yield self.cx.pymongo_test.test_collection.save({'fiddle': 'faddle'})
+        collection = self.cx.pymongo_test.test_collection
+        result = yield collection.save({'fiddle': 'faddle'})
 
         # save() returns the new _id
         self.assertTrue(isinstance(result, ObjectId))

@@ -24,7 +24,7 @@ from pymongo.errors import OperationFailure
 from tornado.testing import gen_test
 
 import motor
-from test import MotorTest, AssertEqual, assert_raises
+from test import MotorTest, assert_raises
 
 
 class MotorCursorTest(MotorTest):
@@ -42,17 +42,18 @@ class MotorCursorTest(MotorTest):
     @gen_test
     def test_count(self):
         coll = self.cx.pymongo_test.test_collection
-        yield AssertEqual(200, coll.find().count)
-        yield AssertEqual(100, coll.find({'_id': {'$gt': 99}}).count)
+        self.assertEqual(200, (yield coll.find().count()))
+        self.assertEqual(100, (yield coll.find({'_id': {'$gt': 99}}).count()))
         where = 'this._id % 2 == 0 && this._id >= 50'
-        yield AssertEqual(75, coll.find({'$where': where}).count)
-        yield AssertEqual(75, coll.find().where(where).count)
-        yield AssertEqual(
+        self.assertEqual(75, (yield coll.find({'$where': where}).count()))
+        self.assertEqual(75, (yield coll.find().where(where).count()))
+        self.assertEqual(
             25,
-            coll.find({'_id': {'$lt': 100}}).where(where).count)
-        yield AssertEqual(
+            (yield coll.find({'_id': {'$lt': 100}}).where(where).count()))
+
+        self.assertEqual(
             25,
-            coll.find({'_id': {'$lt': 100}, '$where': where}).count)
+            (yield coll.find({'_id': {'$lt': 100}, '$where': where}).count()))
 
     @gen_test
     def test_distinct(self):
@@ -176,31 +177,31 @@ class MotorCursorTest(MotorTest):
         coll = self.cx.pymongo_test.test_collection
         cursor = coll.find({}, {'_id': 1}).sort([('_id', pymongo.ASCENDING)])
         expected = [{'_id': i} for i in range(200)]
-        yield AssertEqual(expected, cursor.to_list, length=1000)
+        self.assertEqual(expected, (yield cursor.to_list(length=1000)))
         yield cursor.close()
 
     @gen_test
     def test_to_list_with_length(self):
         coll = self.cx.pymongo_test.test_collection
         cursor = coll.find({}, {'_id': 1}).sort([('_id', pymongo.ASCENDING)])
-        yield AssertEqual([], cursor.to_list, 0)
+        self.assertEqual([], (yield cursor.to_list(0)))
 
         def expected(start, stop):
             return [{'_id': i} for i in range(start, stop)]
 
-        yield AssertEqual(expected(0, 10), cursor.to_list, 10)
-        yield AssertEqual(expected(10, 100), cursor.to_list, 90)
+        self.assertEqual(expected(0, 10), (yield cursor.to_list(10)))
+        self.assertEqual(expected(10, 100), (yield cursor.to_list(90)))
 
         # Test particularly rigorously around the 101-doc mark, since this is
         # where the first batch ends
-        yield AssertEqual(expected(100, 101), cursor.to_list, 1)
-        yield AssertEqual(expected(101, 102), cursor.to_list, 1)
-        yield AssertEqual(expected(102, 103), cursor.to_list, 1)
-        yield AssertEqual([], cursor.to_list, 0)
-        yield AssertEqual(expected(103, 105), cursor.to_list, 2)
+        self.assertEqual(expected(100, 101), (yield cursor.to_list(1)))
+        self.assertEqual(expected(101, 102), (yield cursor.to_list(1)))
+        self.assertEqual(expected(102, 103), (yield cursor.to_list(1)))
+        self.assertEqual([], (yield cursor.to_list(0)))
+        self.assertEqual(expected(103, 105), (yield cursor.to_list(2)))
 
         # Only 95 docs left, make sure length=100 doesn't error or hang
-        yield AssertEqual(expected(105, 200), cursor.to_list, 100)
+        self.assertEqual(expected(105, 200), (yield cursor.to_list(100)))
         self.assertEqual(0, cursor.cursor_id)
 
     def test_to_list_tailable(self):
@@ -224,10 +225,15 @@ class MotorCursorTest(MotorTest):
         self.assertTrue(len(results) > 0)
         self.assertEqual(False, (yield coll.find()[:0].fetch_next))
         self.assertEqual(False, (yield coll.find()[5:5].fetch_next))
-        yield AssertEqual(None, coll.find()[:0].each)
-        yield AssertEqual(None, coll.find()[5:5].each)
-        yield AssertEqual([], coll.find()[:0].to_list, length=1000)
-        yield AssertEqual([], coll.find()[5:5].to_list, length=1000)
+
+        # each() with limit 0 runs its callback once with args (None, None).
+        (result, error), _ = yield gen.Task(coll.find()[:0].each)
+        self.assertEqual((None, None), (result, error))
+        (result, error), _ = yield gen.Task(coll.find()[:0].each)
+        self.assertEqual((None, None), (result, error))
+
+        self.assertEqual([], (yield coll.find()[:0].to_list(length=1000)))
+        self.assertEqual([], (yield coll.find()[5:5].to_list(length=1000)))
 
     @gen_test
     def test_cursor_explicit_close(self):

@@ -17,7 +17,7 @@
 import pymongo.son_manipulator
 from tornado.testing import gen_test
 
-from test import MotorTest, AssertEqual
+from test import MotorTest
 
 
 class CustomSONManipulator(pymongo.son_manipulator.SONManipulator):
@@ -47,14 +47,15 @@ class SONManipulatorTest(MotorTest):
     def test_with_find_one(self):
         coll = self.coll
         _id = yield coll.insert({'foo': 'bar'})
-        yield AssertEqual(
+        self.assertEqual(
             {'_id': _id, 'foo': 'bar'},
-            coll.find_one)
+            (yield coll.find_one()))
+
         # Add SONManipulator and test again.
         coll.database.add_son_manipulator(CustomSONManipulator())
-        yield AssertEqual(
+        self.assertEqual(
             {'_id': _id, 'foo': 'bar', 'added_field': 42},
-            coll.find_one)
+            (yield coll.find_one()))
 
     @gen_test
     def test_with_fetch_next(self):
