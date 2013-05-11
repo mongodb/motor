@@ -50,7 +50,7 @@ class SONManipulatorTest(MotorTest):
         yield AssertEqual(
             {'_id': _id, 'foo': 'bar'},
             coll.find_one)
-        # add SONManipulator and test again
+        # Add SONManipulator and test again.
         coll.database.add_son_manipulator(CustomSONManipulator())
         yield AssertEqual(
             {'_id': _id, 'foo': 'bar', 'added_field': 42},
@@ -71,12 +71,15 @@ class SONManipulatorTest(MotorTest):
     def test_with_to_list(self):
         coll = self.coll
         _id1, _id2 = yield coll.insert([{}, {}])
-        found = yield coll.find().sort([('_id', pymongo.ASCENDING)]).to_list(length=2)
+        found = yield coll.find().sort([('_id', 1)]).to_list(length=2)
         self.assertEqual([{'_id': _id1}, {'_id': _id2}], found)
 
         coll.database.add_son_manipulator(CustomSONManipulator())
-        expected = [{'_id': _id1, 'added_field': 42}, {'_id': _id2, 'added_field': 42}]
-        found = yield coll.find().sort([('_id', pymongo.ASCENDING)]).to_list(length=2)
+        expected = [
+            {'_id': _id1, 'added_field': 42},
+            {'_id': _id2, 'added_field': 42}]
+
+        found = yield coll.find().sort([('_id', 1)]).to_list(length=2)
         self.assertEqual(expected, found)
-        found = yield coll.find().sort([('_id', pymongo.ASCENDING)]).to_list(length=None)
+        found = yield coll.find().sort([('_id', 1)]).to_list(length=None)
         self.assertEqual(expected, found)
