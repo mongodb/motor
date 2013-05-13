@@ -20,7 +20,6 @@ import inspect
 import socket
 import time
 import sys
-import warnings
 import weakref
 
 from tornado import ioloop, iostream, gen, stack_context
