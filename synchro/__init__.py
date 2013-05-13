@@ -385,7 +385,8 @@ class MongoClient(Synchro):
 
     @property
     def is_locked(self):
-        return self.synchronize(self.delegate.is_locked)()
+        result = self.synchronize(self.admin.current_op)()
+        return bool(result.get('fsyncLock', None))
 
     def __enter__(self):
         return self
