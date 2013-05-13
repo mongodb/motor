@@ -17,12 +17,11 @@ PyMongo features not implemented in Motor, see :doc:`differences`.
 
 Convenient With `tornado.gen`
 =============================
-The `tornado.gen module`_ lets you use coroutines to simplify asynchronous code,
-combining operations and their callbacks in a single function. Motor provides
-yield points to be used with ``tornado.gen``. See
-:ref:`generator-interface-example`.
+The `tornado.gen module`_ lets you use coroutines to simplify asynchronous
+code. Motor methods return Futures that are convenient to use with coroutines.
+See :ref:`generator-interface-example`.
 
-.. _tornado.gen module: http://www.tornadoweb.org/documentation/gen.html
+.. _tornado.gen module: http://tornadoweb.org/en/stable/gen.html
 
 Timeouts
 ========
@@ -51,7 +50,7 @@ argument to :class:`~motor.MotorClient`
 or :class:`~motor.MotorReplicaSetClient` to configure the loop for a
 client instance.
 
-.. _IOLoops: http://www.tornadoweb.org/documentation/ioloop.html
+.. _IOLoops: http://tornadoweb.org/en/stable/ioloop.html
 
 Opens Connections Synchronously or Asynchronously
 =================================================
@@ -69,4 +68,4 @@ the :class:`~motor.web.GridFSHandler` class.
 
 .. _GridFS: http://docs.mongodb.org/manual/applications/gridfs/
 
-.. _RequestHandler: http://www.tornadoweb.org/documentation/web.html#request-handlers
+.. _RequestHandler: http://tornadoweb.org/en/stable/web.html#request-handlers

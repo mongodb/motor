@@ -55,7 +55,7 @@ class GridFSHandler(tornado.web.RequestHandler):
        <http://docs.mongodb.org/manual/applications/gridfs/>`_
 
     .. seealso:: `StaticFileHandler
-       <http://www.tornadoweb.org/documentation/web.html#tornado.web.StaticFileHandler>`_
+       <http://tornadoweb.org/en/stable/web.html#tornado.web.StaticFileHandler>`_
     """
     def initialize(self, database, root_collection='fs'):
         self.database = database

@@ -101,7 +101,7 @@ in a `coroutine`_:
         yield motor_db.collection.insert({'name': 'Randall'})
         doc = yield motor_db.collection.find_one()
 
-.. _coroutine: http://www.tornadoweb.org/documentation/gen.html
+.. _coroutine: http://tornadoweb.org/en/stable/gen.html
 
 See :ref:`generator-interface-example`.
 
@@ -133,10 +133,9 @@ in time::
         print 'timed out'
 
 :class:`~motor.MotorClient` and :class:`~motor.MotorReplicaSetClient`
-support the same options. The exception isn't raised, instead it's passed to
-the callback as the ``error`` parameter, and the ``result`` parameter will be
-``None``. Code using `tornado.gen`_ ends up looking very similar to the
-PyMongo code::
+support the same options::
+
+    db = MotorClient(socketTimeoutMS=500).open_sync().test
 
     @gen.coroutine
     def f():
@@ -185,7 +184,7 @@ the server. Obviously, this code is improved by `tornado.gen`_::
 Motor ignores the ``auto_start_request`` parameter to
 :class:`~motor.MotorClient` or :class:`~motor.MotorReplicaSetClient`.
 
-.. _tornado.gen: http://www.tornadoweb.org/documentation/gen.html
+.. _tornado.gen: http://tornadoweb.org/en/stable/gen.html
 
 Threading and forking
 ---------------------
@@ -194,7 +193,7 @@ Multithreading and forking are not supported; Motor is intended to be used in
 a single-threaded Tornado application. See Tornado's documentation on
 `running Tornado in production`_ to take advantage of multiple cores.
 
-.. _`running Tornado in production`: http://www.tornadoweb.org/documentation/overview.html#running-tornado-in-production
+.. _`running Tornado in production`: http://tornadoweb.org/en/stable/overview.html#running-tornado-in-production
 
 Minor differences
 =================

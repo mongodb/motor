@@ -1290,7 +1290,7 @@ class MotorCursor(MotorBase):
         server if necessary. Yields ``False`` if there are no more documents,
         otherwise :meth:`next_object` is guaranteed to return a document.
 
-        .. _`gen.coroutine`: http://www.tornadoweb.org/documentation/gen.html
+        .. _`gen.coroutine`: http://tornadoweb.org/en/stable/gen.html
 
         .. testsetup:: fetch_next
 
@@ -1726,7 +1726,7 @@ class MotorGridOut(MotorOpenable):
                     yield gridout.stream_to_handler(self)
                     self.finish()
 
-        .. seealso:: Tornado `RequestHandler <http://www.tornadoweb.org/documentation/web.html#request-handlers>`_
+        .. seealso:: Tornado `RequestHandler <http://tornadoweb.org/en/stable/web.html#request-handlers>`_
         """
         written = 0
         while written < self.length:

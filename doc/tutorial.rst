@@ -121,7 +121,8 @@ dot-notation or bracket-notation:
   >>> db = client.test_database
   >>> db = client['test_database']
 
-Creating a reference to a database does no I/O and does not require a callback.
+Creating a reference to a database does no I/O and does not accept a callback
+or return a Future.
 
 Tornado Application Startup Sequence
 ------------------------------------
@@ -173,7 +174,7 @@ multiple subprocesses, you must create the client object **after** calling
   when your application starts and reuse that one client for the lifetime
   of the process, as shown in these examples.
 
-.. _start() method: http://www.tornadoweb.org/documentation/netutil.html#tornado.netutil.TCPServer.start
+.. _start() method: http://tornadoweb.org/en/stable/netutil.html#tornado.netutil.TCPServer.start
 
 Getting a Collection
 --------------------
@@ -188,7 +189,7 @@ collection in Motor works the same as getting a database:
   >>> collection = db['test_collection']
 
 Just like getting a reference to a database, getting a reference to a
-collection does no I/O and doesn't require a callback.
+collection does no I/O and doesn't accept a callback or return a Future.
 
 Inserting a Document
 --------------------
@@ -318,7 +319,7 @@ In the code above, ``result`` is the ``_id`` of each inserted document.
 
 .. seealso:: :ref:`Detailed example of Motor and gen.coroutine <generator-interface-example>`
 
-.. _tornado.gen module: http://www.tornadoweb.org/documentation/gen.html
+.. _tornado.gen module: http://tornadoweb.org/en/stable/gen.html
 
 .. mongodoc:: insert
 

@@ -14,9 +14,9 @@ Motor
 About
 =====
 
-Motor presents a Tornado_ callback-based API for non-blocking access to
-MongoDB. The source is `on GitHub <https://github.com/mongodb/motor>`_ and the
-docs are on ReadTheDocs_.
+Motor presents a Tornado_callback- or Future-based API for non-blocking access
+to MongoDB. The source is `on GitHub <https://github.com/mongodb/motor>`_
+and the docs are on ReadTheDocs_.
 
     "Motor uses a clever greenlet-based approach to fully support both
     synchronous and asynchronous interfaces from a single codebase. It's great
@@ -46,11 +46,9 @@ requires:
 * Unix, including Mac OS X. Microsoft Windows is not officially supported.
 * PyMongo_
 * Tornado_
-* `Greenlet <http://pypi.python.org/pypi/greenlet>`_
+* Greenlet_
 * CPython 2.6, 2.7, 3.2, or 3.3
-* Although Motor works with PyPy 1.9, limitations with greenlets and PyPy's
-  JIT compiler make PyPy applications that use Motor too slow to use. We
-  eagerly await improvements in PyPy 2.0.
+* PyPy 2.0 (greenlets were very slow in earlier PyPy versions)
 
 Additional dependencies are:
 
@@ -97,6 +95,8 @@ run ``nosetests``::
 .. _MongoDB: http://mongodb.org/
 
 .. _Tornado: http://tornadoweb.org/
+
+.. _Greenlet: http://pypi.python.org/pypi/greenlet/
 
 .. _ReadTheDocs: http://motor.readthedocs.org/
 

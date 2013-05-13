@@ -1,12 +1,11 @@
-Examples With Callbacks And Generators
+Examples With Callbacks And Coroutines
 ======================================
 
-Programming with Motor is far easier using Tornado's ``gen`` module than when
-using raw callbacks. Here's an example that shows the difference.
+Programming with Motor is far easier with Tornado coroutines than with
+raw callbacks. Here's an example that shows the difference.
 
 With callbacks
 --------------
-
 An application that can create and display short messages:
 
 .. code-block:: python
@@ -108,15 +107,14 @@ with templates because the callback receives the entire result at once:
             self.finish()
 
 To protect you from buffering huge numbers of documents in memory, ``to_list``
-always requires a maximum ``length`` argument.
+requires a maximum ``length`` argument.
 
-.. _generator-interface-example:
+.. _coroutine-example:
 
-Using Tornado's generator interface
------------------------------------
-
+With coroutines
+---------------
 Motor's asynchronous methods return `Futures
-<http://www.tornadoweb.org/documentation/gen.html>`_. Yield a Future to resolve
+<http://tornadoweb.org/en/stable/gen.html>`_. Yield a Future to resolve
 it into a result or an exception:
 
 .. code-block:: python

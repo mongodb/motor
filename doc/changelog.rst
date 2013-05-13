@@ -1,14 +1,16 @@
 Changelog
 =========
 
+.. currentmodule:: motor
+
 Next release
 ------------
 
 **Changes**
 
-All Motor asynchronous methods (except ``MotorCursor``'s
-:meth:`~motor.MotorCursor.each``) now return a `Future
-<http://www.tornadoweb.org/documentation/gen.html>`_. The callback argument
+All Motor asynchronous methods (except
+:meth:`MotorCursor.each`) now return a `Future
+<http://tornadoweb.org/en/stable/gen.html>`_. The callback argument
 to these methods is now optional. If a callback is passed, it will be
 executed with the (result, error) of the operation as in Motor 0.1. If no
 callback is passed, a Future is returned that resolves to the method's
@@ -20,12 +22,11 @@ message queues when a purpose-built message queue is more appropriate. An
 example of tailing a capped collection is provided:
 :doc:`examples/tailable-cursors`.
 
-The ``length`` argument to ``MotorCursor``'s
-:meth:`~motor.MotorCursor.to_list`` is no longer optional.
+The ``length`` argument to :meth:`MotorCursor.to_list` is no longer optional.
 
 Dropped Python 2.5 support (since Tornado 3.0 has dropped it).
 
-``GridFSHandler``'s :meth:`~motor.web.GridFSHandler.get_gridfs_file` now
+:meth:`~web.GridFSHandler.get_gridfs_file` now
 returns Future instead of accepting a callback.
 
 **Bugfixes**

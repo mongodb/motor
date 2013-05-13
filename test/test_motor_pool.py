@@ -176,7 +176,7 @@ class MotorPoolTest(MotorTest):
 
     @gen_test
     def test_stack_context(self):
-        # See http://www.tornadoweb.org/documentation/stack_context.html
+        # See http://tornadoweb.org/en/stable/stack_context.html
         # MotorPool.get_socket can block waiting for a callback in another
         # context to return a socket. We verify MotorPool's stack-context
         # handling by testing that exceptions raised in get_socket's
