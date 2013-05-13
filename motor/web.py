@@ -65,16 +65,29 @@ class GridFSHandler(tornado.web.RequestHandler):
         """Overridable method to choose a GridFS file to serve at a URL.
 
         By default, if a URL pattern like ``"/static/(.*)"`` is mapped to this
-        `GridFSHandler`, then the trailing portion of the URL is used as the
+        ``GridFSHandler``, then the trailing portion of the URL is used as the
         filename, so a request for "/static/image.png" results in a call
-        to `get_gridfs_file` with "image.png" as the ``path`` argument. To
-        customize the mapping of path to GridFS file, override `get_gridfs_file`
-        and return a Future :class:`~motor.MotorGridOut` from it.
+        to ``get_gridfs_file`` with "image.png" as the ``path`` argument. To
+        customize the mapping of path to GridFS file, override
+        ``get_gridfs_file`` and return a Future :class:`~motor.MotorGridOut`
+        from it.
+
+        For example, to retrieve the file by ``_id`` instead of filename::
+
+            class CustomGridFSHandler(motor.web.GridFSHandler):
+                def get_gridfs_file(self, fs, path):
+                    # Path is interpreted as _id instead of name.
+                    # Return a Future MotorGridOut.
+                    return fs.get(file_id=path)
 
         :Parameters:
           - `fs`: An open :class:`~motor.MotorGridFS` object
           - `path`: A string, the trailing portion of the URL pattern being
             served
+
+        .. versionchanged:: 0.2
+           ``get_gridfs_file`` no longer accepts a callback, instead returns
+           a Future.
         """
         return fs.get_last_version(path)  # A Future MotorGridOut
 
