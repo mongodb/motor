@@ -392,9 +392,6 @@ and :meth:`~motor.MotorCursor.next_object`:
   {u'i': 3, u'_id': ObjectId('...')}
   {u'i': 4, u'_id': ObjectId('...')}
 
-.. note:: ``fetch_next`` doesn't need to be used with ``yield motor.Op``; it's
-  already a yieldable object so you simply ``yield cursor.fetch_next``.
-
 You can apply a sort, limit, or skip to a query before you begin iterating:
 
 .. doctest:: after-inserting-2000-docs
@@ -428,8 +425,7 @@ a collection, or the number of documents that match a query:
   ... def do_count():
   ...     n = yield db.test_collection.find().count()
   ...     print n, 'documents in collection'
-  ...     n = yield motor.Op(
-  ...         db.test_collection.find({'i': {'$gt': 1000}}).count)
+  ...     n = yield db.test_collection.find({'i': {'$gt': 1000}}).count()
   ...     print n, 'documents where i > 1000'
   ...
   >>> IOLoop.current().run_sync(do_count)
