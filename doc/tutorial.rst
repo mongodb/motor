@@ -288,49 +288,37 @@ You can simplify this code with ``gen.coroutine``.
 
 Using Motor with `gen.coroutine`
 --------------------------------
-The `tornado.gen module`_
-lets you use generators to simplify asynchronous code, combining operations and
-their callbacks in a single function. You must decorate the function with
-``@gen.coroutine`` and yield ``gen.Task`` instances to wait for operations to
-complete:
+The `tornado.gen module`_ lets you use generators to simplify asynchronous
+code. There are two parts to coding with ``gen``: ``gen.coroutine`` and
+``Future``.
+
+First, decorate your generator function with ``@gen.coroutine``:
+
+  >>> @gen.coroutine
+  ... def do_insert():
+  ...     pass
+
+If you pass no callback to one of Motor's asynchronous methods, it returns a
+``Future``. Yield the ``Future`` instance to wait for an operation to complete
+and obtain its result:
 
 .. doctest:: before-inserting-2000-docs
 
   >>> @gen.coroutine
   ... def do_insert():
   ...     for i in range(2000):
-  ...         arguments = yield gen.Task(db.test_collection.insert, {'i': i})
-  ...         result, error = arguments.args
-  ...         if error:
-  ...             raise error
+  ...         future = db.test_collection.insert({'i': i})
+  ...         result = yield future
   ...
   >>> IOLoop.current().run_sync(do_insert)
 
-Here ``arguments`` is an instance of `tornado.gen.Arguments`_
-containing the arguments :meth:`insert` passed to its callback function.
-Motor provides :class:`~motor.Op` to further simplify asynchronous operations
-with ``gen.coroutine``:
-
-.. doctest:: before-inserting-2000-docs
-
-  >>> @gen.coroutine
-  ... def do_insert():
-  ...     for i in range(2000):
-  ...         result = yield db.test_collection.insert({'i': i})
-  ...
-  >>> IOLoop.current().run_sync(do_insert)
-
-:class:`~motor.Op` receives the ``result`` and ``error`` parameters and either
-raises the error or returns the result. In the code above, ``result`` is the
-``_id`` of each inserted document.
+In the code above, ``result`` is the ``_id`` of each inserted document.
 
 .. seealso:: `Bulk inserts in PyMongo <http://api.mongodb.org/python/current/tutorial.html?highlight=bulk%20inserts#bulk-inserts>`_
 
 .. seealso:: :ref:`Detailed example of Motor and gen.coroutine <generator-interface-example>`
 
 .. _tornado.gen module: http://www.tornadoweb.org/documentation/gen.html
-
-.. _tornado.gen.Arguments: http://www.tornadoweb.org/documentation/gen.html#tornado.gen.Arguments
 
 .. mongodoc:: insert
 

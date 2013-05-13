@@ -138,7 +138,7 @@ def motor_sock_method(method):
             # will pass the result of the socket operation (data for recv,
             # number of bytes written for sendall) to us.
             return main.switch()
-        except socket.error:
+        except socket.error:  # TODO: delete
             raise
         except IOError, e:
             # If IOStream raises generic IOError (e.g., if operation
@@ -1406,7 +1406,10 @@ class MotorCursor(MotorBase):
           >>> IOLoop.current().start()
           0, 1, 2, 3, 4, done
 
-        .. note:: :meth:`to_list` or :attr:`fetch_next` are much easier to use.
+        .. note:: Unlike other Motor methods, ``each`` requires a callback and
+           does not return a Future, so it cannot be used with
+           ``gen.coroutine.`` :meth:`to_list` or :attr:`fetch_next` are much
+           easier to use.
 
         :Parameters:
          - `callback`: function taking (document, error)
