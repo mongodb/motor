@@ -370,7 +370,7 @@ To find all documents with "i" less than 5:
   {u'i': 3, u'_id': ObjectId('...')}
   {u'i': 4, u'_id': ObjectId('...')}
 
-A ``length`` argument is encouraged when you call to_list to prevent Motor from
+A ``length`` argument is required when you call to_list to prevent Motor from
 buffering an unlimited number of documents.
 
 To get one document at a time with :attr:`~motor.MotorCursor.fetch_next`
