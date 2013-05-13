@@ -20,6 +20,7 @@ import inspect
 import socket
 import time
 import sys
+import warnings
 import weakref
 
 from tornado import ioloop, iostream, gen, stack_context
@@ -1866,8 +1867,17 @@ class MotorGridFS(MotorOpenable):
 
 
 def Op(fn, *args, **kwargs):
-    """TODO: update docs, raise DeprecationWarning
+    """Obsolete; here for backwards compatibility with Motor 0.1.
+
+    Op had been necessary for ease-of-use with Tornado 2 and @gen.engine. But
+    Motor 0.2 is built for Tornado 3, @gen.coroutine, and Futures, so motor.Op
+    is deprecated.
     """
+    msg = (
+        "motor.Op is deprecated, simply call %s and yield its Future."
+        % fn.__name__)
+
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
     result = fn(*args, **kwargs)
-    assert isinstance(result, Future)  # TODO: remove?
+    assert isinstance(result, Future)
     return result

@@ -15,6 +15,7 @@
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import unittest
+import warnings
 
 import pymongo.errors
 from tornado.testing import gen_test
@@ -35,12 +36,26 @@ class MotorGenTest(MotorTest):
 
         collection = self.cx.pymongo_test.test_collection
         doc = {'_id': 'jesse'}
-        _id = yield motor.Op(collection.insert, doc)
-        self.assertEqual('jesse', _id)
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+
+            # Op works.
+            _id = yield motor.Op(collection.insert, doc)
+            self.assertEqual('jesse', _id)
+
+            # Raised a DeprecationWarning.
+            self.assertEqual(1, len(w))
+            warning = w[-1]
+            self.assertTrue(issubclass(warning.category, DeprecationWarning))
+            message = str(warning.message)
+            self.assertTrue("deprecated" in message)
+            self.assertTrue("insert" in message)
+
         result = yield motor.Op(collection.find_one, doc)
         self.assertEqual(doc, result)
 
-        # Make sure it works with no args
+        # Make sure it works with no args.
         result = yield motor.Op(collection.find_one)
         self.assertTrue(isinstance(result, dict))
 
