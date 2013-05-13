@@ -361,20 +361,6 @@ class MotorPool(Pool):
             Pool._return_socket(self, sock_info)
 
 
-def add_callback_to_future(callback, future):
-    """Add a callback with parameters (result, error) to the Future."""
-    def cb(future):
-        try:
-            result = future.result()
-        except Exception, e:
-            callback(None, e)
-            return
-
-        callback(result, None)
-
-    future.add_done_callback(cb)
-
-
 def callback_from_future(future):
     """Return a callback that sets a Future's result or exception"""
     def callback(result, error):
