@@ -293,6 +293,17 @@ class MotorClientTest(MotorTest):
         self.assertTrue((yield self.cx.is_locked()) is False)
 
     @gen_test
+    def test_is_locked_callback(self):
+        if self.cx.is_mongos:
+            raise SkipTest('fsync/lock not supported by mongos')
+
+        self.assertTrue((yield gen.Task(self.cx.is_locked)) is False)
+        yield self.cx.fsync(lock=True)
+        self.assertTrue((yield gen.Task(self.cx.is_locked)) is True)
+        yield self.cx.unlock()
+        self.assertTrue((yield gen.Task(self.cx.is_locked)) is False)
+
+    @gen_test
     def test_timeout(self):
         # Launch two slow find_ones. The one with a timeout should get an error
         no_timeout = yield self.motor_client()

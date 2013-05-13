@@ -885,6 +885,7 @@ class MotorClient(MotorClientBase):
         super(MotorClient, self).__init__(
             None, kwargs.pop('io_loop', None), *args, **kwargs)
 
+    @gen.coroutine
     def is_locked(self):
         """Returns a Future that resolves to ``True`` if this server is locked,
         otherwise ``False``. While locked, all write operations are blocked,
@@ -907,19 +908,8 @@ class MotorClient(MotorClientBase):
            the server before returning. In Motor, `is_locked` returns a Future
            and executes asynchronously.
         """
-        future = Future()
-
-        def is_locked(current_op_future):
-            try:
-                result = bool(current_op_future.result().get('fsyncLock', None))
-            except Exception, e:
-                future.set_exception(e)
-                return
-
-            future.set_result(result)
-
-        self.admin.current_op().add_done_callback(is_locked)
-        return future
+        result = yield self.admin.current_op()
+        raise gen.Return(bool(result.get('fsyncLock', None)))
 
     def _get_pools(self):
         # TODO: expose the PyMongo pool, or otherwise avoid this
