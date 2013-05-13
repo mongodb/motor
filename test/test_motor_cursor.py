@@ -105,7 +105,7 @@ class MotorCursorTest(MotorTest):
     def test_fetch_next_without_results(self):
         coll = self.cx.pymongo_test.test_collection
         # Nothing matches this query
-        cursor = coll.find({'foo':'bar'})
+        cursor = coll.find({'foo': 'bar'})
         self.assertEqual(None, cursor.next_object())
         self.assertEqual(False, (yield cursor.fetch_next))
         self.assertEqual(None, cursor.next_object())
