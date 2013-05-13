@@ -296,9 +296,13 @@ GridFS
 is_locked
 ---------
 
-:meth:`~motor.MotorClient.is_locked` in Motor is a coroutine returning a
-Future, whereas in PyMongo it is a *property* of
-:class:`~pymongo.mongo_client.MongoClient`.
+In PyMongo ``is_locked`` is a property of
+:class:`~pymongo.mongo_client.MongoClient`. Since determining whether the
+server has been fsyncLocked requires I/O, Motor has no such convenience method.
+The equivalent in Motor is::
+
+    result = yield client.admin.current_op()
+    locked = bool(result.get('fsyncLock', None))
 
 system_js
 ---------
