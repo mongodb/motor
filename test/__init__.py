@@ -95,7 +95,14 @@ def assert_raises(exc_class):
         assert False, "%s not raised" % exc_class
 
 
-class MotorTest(testing.AsyncTestCase):
+class PauseMixin(object):
+    @gen.coroutine
+    def pause(self, seconds):
+        yield gen.Task(
+            self.io_loop.add_timeout, datetime.timedelta(seconds=seconds))
+
+
+class MotorTest(PauseMixin, testing.AsyncTestCase):
     longMessage = True  # Used by unittest.TestCase
     ssl = False  # If True, connect with SSL, skip if mongod isn't SSL
 
@@ -152,11 +159,6 @@ class MotorTest(testing.AsyncTestCase):
             [{'_id': i, 's': hex(i)} for i in range(200)])
 
         self.cx = self.motor_client_sync()
-
-    @gen.coroutine
-    def pause(self, seconds):
-        yield gen.Task(
-            self.io_loop.add_timeout, datetime.timedelta(seconds=seconds))
 
     @gen.coroutine
     def wait_for_cursor(self, collection, cursor_id, retrieved):

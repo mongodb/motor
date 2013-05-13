@@ -20,8 +20,6 @@ import time
 import unittest
 from tornado import gen, testing
 
-from tornado.ioloop import IOLoop
-
 import pymongo
 from pymongo import ReadPreference
 from pymongo.mongo_replica_set_client import Member, Monitor, _partition_node
@@ -31,7 +29,7 @@ from tornado.testing import gen_test
 import motor
 import ha_tools
 from test.utils import one
-from test import assert_raises
+from test import assert_raises, PauseMixin
 from test_motor_ha_utils import assert_read_from, assert_read_from_all
 
 
@@ -47,7 +45,7 @@ SECONDARY_PREFERRED = ReadPreference.SECONDARY_PREFERRED
 NEAREST = ReadPreference.NEAREST
 
 
-class MotorHATestCase(testing.AsyncTestCase):
+class MotorHATestCase(PauseMixin, testing.AsyncTestCase):
     """A test case for Motor connections to replica sets or mongos."""
 
     def tearDown(self):
@@ -169,7 +167,6 @@ class MotorTestPassiveAndHidden(MotorHATestCase):
 
     @gen_test
     def test_passive_and_hidden(self):
-        loop = self.io_loop
         self.c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield self.c.open()
 
@@ -181,7 +178,7 @@ class MotorTestPassiveAndHidden(MotorHATestCase):
             yield assert_read_from_all(self, self.c, passives, mode)
 
         ha_tools.kill_members(ha_tools.get_passives(), 2)
-        yield gen.Task(loop.add_timeout, time.time() + 2 * MONITOR_INTERVAL)
+        yield self.pause(2 * MONITOR_INTERVAL)
         yield assert_read_from(
             self, self.c, self.c.primary, SECONDARY_PREFERRED)
 
@@ -215,8 +212,7 @@ class MotorTestMonitorRemovesRecoveringMember(MotorHATestCase):
 
         secondary, recovering_secondary = secondaries
         ha_tools.set_maintenance(recovering_secondary, True)
-        yield gen.Task(
-            self.io_loop.add_timeout, time.time() + 2 * MONITOR_INTERVAL)
+        yield self.pause(2 * MONITOR_INTERVAL)
 
         for mode in SECONDARY, SECONDARY_PREFERRED:
             # Don't read from recovering member
@@ -268,8 +264,7 @@ class MotorTestTriggeredRefresh(MotorHATestCase):
 
         # Wait for the immediate refresh to complete - we're not waiting for
         # the periodic refresh, which has been disabled
-        yield gen.Task(
-            self.io_loop.add_timeout, time.time() + 1)
+        yield self.pause(1)
 
         for c in self.c_find_one, self.c_count:
             self.assertFalse(c.secondaries)
@@ -289,7 +284,7 @@ class MotorTestTriggeredRefresh(MotorHATestCase):
         ha_tools.stepdown_primary()
 
         # Make sure the stepdown completes
-        yield gen.Task(self.io_loop.add_timeout, time.time() + 1)
+        yield self.pause(1)
 
         # Trigger a refresh
         with assert_raises(AutoReconnect):
@@ -297,7 +292,7 @@ class MotorTestTriggeredRefresh(MotorHATestCase):
 
         # Wait for the immediate refresh to complete - we're not waiting for
         # the periodic refresh, which has been disabled
-        yield gen.Task(self.io_loop.add_timeout, time.time() + 1)
+        yield self.pause(1)
 
         # We've detected the stepdown
         self.assertTrue(
@@ -317,7 +312,6 @@ class MotorTestHealthMonitor(MotorHATestCase):
 
     @gen_test
     def test_primary_failure(self):
-        loop = self.io_loop
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
         self.assertTrue(c.secondaries)
@@ -325,20 +319,19 @@ class MotorTestHealthMonitor(MotorHATestCase):
         secondaries = c.secondaries
         killed = ha_tools.kill_primary()
         self.assertTrue(bool(len(killed)))
-        yield gen.Task(loop.add_timeout, time.time() + 1)
+        yield self.pause(1)
 
         # Wait for new primary to step up, and for MotorReplicaSetClient
         # to detect it.
         for _ in xrange(30):
             if c.primary != primary and c.secondaries != secondaries:
                 break
-            yield gen.Task(loop.add_timeout, time.time() + 1)
+            yield self.pause(1)
         else:
             self.fail("New primary not detected")
 
     @gen_test
     def test_secondary_failure(self):
-        loop = self.io_loop
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
         self.assertTrue(c.secondaries)
@@ -348,7 +341,7 @@ class MotorTestHealthMonitor(MotorHATestCase):
         self.assertTrue(bool(len(killed)))
         self.assertEqual(primary, c.primary)
 
-        yield gen.Task(loop.add_timeout, time.time() + 2 * MONITOR_INTERVAL)
+        yield self.pause(2 * MONITOR_INTERVAL)
         secondaries = c.secondaries
 
         ha_tools.restart_members([killed])
@@ -359,13 +352,12 @@ class MotorTestHealthMonitor(MotorHATestCase):
         for _ in xrange(30):
             if c.secondaries != secondaries:
                 break
-            yield gen.Task(loop.add_timeout, time.time() + 1)
+            yield self.pause(1)
         else:
             self.fail("Dead secondary not detected")
 
     @gen_test
     def test_primary_stepdown(self):
-        loop = self.io_loop
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
         self.assertTrue(bool(len(c.secondaries)))
@@ -378,7 +370,7 @@ class MotorTestHealthMonitor(MotorHATestCase):
         for _ in xrange(30):
             if c.primary != primary and secondaries != c.secondaries:
                 break
-            yield gen.Task(loop.add_timeout, time.time() + 1)
+            yield self.pause(1)
         else:
             self.fail("New primary not detected")
 
@@ -391,7 +383,6 @@ class MotorTestWritesWithFailover(MotorHATestCase):
 
     @gen_test
     def test_writes_with_failover(self):
-        loop = self.io_loop
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
         primary = c.primary
@@ -404,7 +395,7 @@ class MotorTestWritesWithFailover(MotorHATestCase):
 
         killed = ha_tools.kill_primary(9)
         self.assertTrue(bool(len(killed)))
-        yield gen.Task(loop.add_timeout, time.time() + 2)
+        yield self.pause(2)
 
         for _ in xrange(30):
             try:
@@ -413,7 +404,7 @@ class MotorTestWritesWithFailover(MotorHATestCase):
                 # Success
                 break
             except AutoReconnect:
-                yield gen.Task(loop.add_timeout, time.time() + 1)
+                yield self.pause(1)
         else:
             self.fail("Couldn't insert after primary killed")
 
@@ -430,7 +421,6 @@ class MotorTestReadWithFailover(MotorHATestCase):
 
     @gen_test
     def test_read_with_failover(self):
-        loop = self.io_loop
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
         self.assertTrue(c.secondaries)
@@ -449,7 +439,7 @@ class MotorTestReadWithFailover(MotorHATestCase):
         for i in range(5):
             cursor.next_object()
         ha_tools.kill_primary()
-        yield gen.Task(loop.add_timeout, time.time() + 2)
+        yield self.pause(2)
 
         # Primary failure shouldn't interrupt the cursor
         yield cursor.fetch_next
@@ -466,7 +456,6 @@ class MotorTestShipOfTheseus(MotorHATestCase):
 
     @gen_test
     def test_ship_of_theseus(self):
-        loop = self.io_loop
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
         db = c.pymongo_test
@@ -484,7 +473,7 @@ class MotorTestShipOfTheseus(MotorHATestCase):
             if ha_tools.get_primary() and len(ha_tools.get_secondaries()) == 4:
                 break
 
-            yield gen.Task(loop.add_timeout, time.time() + 1)
+            yield self.pause(1)
         else:
             self.fail("New secondaries didn't join")
 
@@ -495,18 +484,18 @@ class MotorTestShipOfTheseus(MotorHATestCase):
             if ha_tools.get_primary() and len(ha_tools.get_secondaries()) == 2:
                 break
 
-            yield gen.Task(loop.add_timeout, time.time() + 1)
+            yield self.pause(1)
         else:
             self.fail("No failover")
 
         # Ensure monitor picks up new members
-        yield gen.Task(loop.add_timeout, time.time() + 2 * MONITOR_INTERVAL)
+        yield self.pause(2 * MONITOR_INTERVAL)
 
         try:
             yield db.test.find_one()
         except AutoReconnect:
             # Might take one try to reconnect
-            yield gen.Task(loop.add_timeout, time.time() + 1)
+            yield self.pause(1)
 
         # No error
         yield db.test.find_one()
@@ -586,7 +575,6 @@ class MotorTestReadPreference(MotorHATestCase):
         #
         # For each state, we verify the behavior of PRIMARY,
         # PRIMARY_PREFERRED, SECONDARY, SECONDARY_PREFERRED, and NEAREST
-        loop = self.io_loop
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
 
@@ -734,7 +722,7 @@ class MotorTestReadPreference(MotorHATestCase):
         killed = ha_tools.kill_primary()
 
         # Let monitor notice primary's gone
-        yield gen.Task(loop.add_timeout, time.time() + 2 * MONITOR_INTERVAL)
+        yield self.pause(2 * MONITOR_INTERVAL)
 
         #       PRIMARY
         yield assert_read_from(None, PRIMARY)
@@ -780,7 +768,7 @@ class MotorTestReadPreference(MotorHATestCase):
         for _ in range(30):
             if ha_tools.get_primary():
                 break
-            yield gen.Task(loop.add_timeout, time.time() + 1)
+            yield self.pause(1)
         else:
             self.fail("Primary didn't come back up")
 
@@ -790,7 +778,7 @@ class MotorTestReadPreference(MotorHATestCase):
             slave_okay=True
         ).admin.command('ismaster')['ismaster'])
 
-        yield gen.Task(loop.add_timeout, time.time() + 2 * MONITOR_INTERVAL)
+        yield self.pause(2 * MONITOR_INTERVAL)
 
         #       PRIMARY
         yield assert_read_from(primary, PRIMARY)
@@ -894,7 +882,6 @@ class MotorTestReplicaSetAuth(MotorHATestCase):
 
     @gen_test
     def test_auth_during_failover(self):
-        loop = self.io_loop
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
         db = c.pymongo_ha_auth
@@ -909,7 +896,7 @@ class MotorTestReplicaSetAuth(MotorHATestCase):
         ha_tools.kill_members([primary], 2)
 
         # Let monitor notice primary's gone
-        yield gen.Task(loop.add_timeout, time.time() + 2 * MONITOR_INTERVAL)
+        yield self.pause(2 * MONITOR_INTERVAL)
 
         # Make sure we can still authenticate
         res = yield db.authenticate('user', 'userpass')
@@ -940,22 +927,20 @@ class MotorTestAlive(MotorHATestCase):
         secondary_cx = yield motor.MotorClient(secondary).open()
         rsc = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield rsc.open()
-        loop = IOLoop.current()
-
         try:
             self.assertTrue((yield primary_cx.alive()))
             self.assertTrue((yield secondary_cx.alive()))
             self.assertTrue((yield rsc.alive()))
 
             ha_tools.kill_primary()
-            yield gen.Task(loop.add_timeout, time.time() + 0.5)
+            yield self.pause(0.5)
 
             self.assertFalse((yield primary_cx.alive()))
             self.assertTrue((yield secondary_cx.alive()))
             self.assertFalse((yield rsc.alive()))
 
             ha_tools.kill_members([secondary], 2)
-            yield gen.Task(loop.add_timeout, time.time() + 0.5)
+            yield self.pause(0.5)
 
             self.assertFalse((yield primary_cx.alive()))
             self.assertFalse((yield secondary_cx.alive()))
