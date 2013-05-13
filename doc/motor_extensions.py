@@ -52,7 +52,7 @@ def get_parameter_names(parameters_node):
     return parameter_names
 
 
-def insert_callback(parameters_node, callback_required):
+def insert_callback(parameters_node):
     # We need to know what params are here already
     parameter_names = get_parameter_names(parameters_node)
 
@@ -67,8 +67,9 @@ def insert_callback(parameters_node, callback_required):
         else:
             kwargs_pos = len(parameter_names)
 
-        doc = (" (%s): function taking (result, error), to execute when operation"
-            " completes" % ("required" if callback_required else "optional"))
+        doc = (
+            " (optional): function taking (result, error), executed when"
+            " operation completes")
 
         new_item = list_item(
             '', paragraph(
@@ -105,22 +106,30 @@ def process_motor_nodes(app, doctree):
                 if obj_motor_info.get('is_async_method'):
                     try:
                         # Find the parameter list, a bullet_list instance
-                        parameters_node = find_by_path(desc_content_node,
+                        parameters_node = find_by_path(
+                            desc_content_node,
                             [field_list, field, field_body, bullet_list])[0]
                     except IndexError:
                         # PyMongo method has no parameters, create an empty
                         # params list
                         parameters_node = bullet_list()
-                        parameters_field_list_node = field_list('',
-                            field('',
+                        parameters_field_list_node = field_list(
+                            '',
+                            field(
+                                '',
                                 field_name('', 'Parameters '),
-                                field_body('',
-                                    parameters_node)))
+                                field_body('', parameters_node)))
 
                         desc_content_node.append(parameters_field_list_node)
 
-                    insert_callback(
-                        parameters_node, obj_motor_info['callback_required'])
+                    insert_callback(parameters_node)
+
+                    callback_future_text = (
+                        "If a callback is passed, returns None, else returns a"
+                        " Future.")
+
+                    desc_content_node.append(
+                        paragraph('', Text(callback_future_text)))
 
                 if obj_motor_info['is_pymongo_docstring']:
                     # Remove all "versionadded", "versionchanged" and
@@ -160,9 +169,9 @@ def get_motor_attr(motor_class, name, *defargs):
     motor_info[full_name] = {
         # These sub-attributes are set in motor.asynchronize()
         'is_async_method': is_async_method,
-        'callback_required': getattr(attr, 'callback_required', False),
         'is_pymongo_docstring': is_pymongo_docstring,
-        'pymongo_method': pymongo_method }
+        'pymongo_method': pymongo_method,
+    }
 
     return attr
 
@@ -181,7 +190,7 @@ def get_motor_argspec(pymongo_method, is_async_method):
         args.append('callback')
         defaults.append(None)
 
-    return (args, varargs, kwargs, defaults)
+    return args, varargs, kwargs, defaults
 
 
 # Adapted from MethodDocumenter.format_args
@@ -192,13 +201,14 @@ def format_motor_args(pymongo_method, is_async_method):
     return formatted_argspec.replace('\\', '\\\\')
 
 
-def process_motor_signature(app, what, name, obj, options, signature, return_annotation):
+def process_motor_signature(
+        app, what, name, obj, options, signature, return_annotation):
     if name in motor_info and motor_info[name].get('pymongo_method'):
         # Real sig obscured by decorator, reconstruct it
         pymongo_method = motor_info[name]['pymongo_method']
         is_async_method = motor_info[name]['is_async_method']
         args = format_motor_args(pymongo_method, is_async_method)
-        return (args, return_annotation)
+        return args, return_annotation
 
 
 def setup(app):
