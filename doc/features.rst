@@ -19,7 +19,7 @@ Convenient With `tornado.gen`
 =============================
 The `tornado.gen module`_ lets you use coroutines to simplify asynchronous
 code. Motor methods return Futures that are convenient to use with coroutines.
-See :ref:`generator-interface-example`.
+See :ref:`coroutine-example`.
 
 .. _tornado.gen module: http://tornadoweb.org/en/stable/gen.html
 

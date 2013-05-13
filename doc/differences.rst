@@ -103,7 +103,7 @@ in a `coroutine`_:
 
 .. _coroutine: http://tornadoweb.org/en/stable/gen.html
 
-See :ref:`generator-interface-example`.
+See :ref:`coroutine-example`.
 
 max_concurrent and max_wait_time
 --------------------------------
