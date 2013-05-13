@@ -96,6 +96,18 @@ class MotorDatabaseTest(MotorTest):
         yield db.drop_collection('test_capped')
 
     @gen_test
+    def test_drop_collection(self):
+        # Make sure we can pass a MotorCollection instance to drop_collection
+        db = self.cx.pymongo_test
+        collection = db.test_drop_collection
+        yield collection.insert({})
+        names = yield db.collection_names()
+        self.assertTrue('test_drop_collection' in names)
+        yield db.drop_collection(collection)
+        names = yield db.collection_names()
+        self.assertFalse('test_drop_collection' in names)
+
+    @gen_test
     def test_command_callback(self):
         yield self.check_optional_callback(
             self.cx.admin.command, 'buildinfo', check=False)

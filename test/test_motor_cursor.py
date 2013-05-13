@@ -173,12 +173,17 @@ class MotorCursorTest(MotorTest):
         self.assertRaises(TypeError, cursor.to_list, None, callback)
 
     @gen_test
-    def test_to_list(self):
+    def test_to_list_callback(self):
         coll = self.cx.pymongo_test.test_collection
         cursor = coll.find({}, {'_id': 1}).sort([('_id', pymongo.ASCENDING)])
         expected = [{'_id': i} for i in range(200)]
-        self.assertEqual(expected, (yield cursor.to_list(length=1000)))
-        yield cursor.close()
+        (result, error), _ = yield gen.Task(cursor.to_list, length=1000)
+        self.assertEqual(expected, result)
+
+        cursor = coll.find().where('return foo')
+        (result, error), _ = yield gen.Task(cursor.to_list, length=1000)
+        self.assertEqual(None, result)
+        self.assertTrue(isinstance(error, OperationFailure))
 
     @gen_test
     def test_to_list_with_length(self):

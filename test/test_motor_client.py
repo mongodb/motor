@@ -406,6 +406,17 @@ class MotorClientTest(MotorTest):
         self.assertEqual(n_inserts, self.sync_db.insert_collection.count())
         self.sync_db.insert_collection.drop()
 
+    @gen_test
+    def test_drop_database(self):
+        # Make sure we can pass a MotorDatabase instance to drop_database
+        db = self.cx.test_drop_database
+        yield db.test_collection.insert({})
+        names = yield self.cx.database_names()
+        self.assertTrue('test_drop_database' in names)
+        yield self.cx.drop_database(db)
+        names = yield self.cx.database_names()
+        self.assertFalse('test_drop_database' in names)
+
 
 if __name__ == '__main__':
     unittest.main()
