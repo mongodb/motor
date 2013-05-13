@@ -296,8 +296,8 @@ GridFS
 is_locked
 ---------
 
-:meth:`~motor.MotorClient.is_locked` in Motor is a method returning a Future
-or accepting a callback, whereas in PyMongo it is a *property* of
+:meth:`~motor.MotorClient.is_locked` in Motor is a coroutine returning a
+Future, whereas in PyMongo it is a *property* of
 :class:`~pymongo.mongo_client.MongoClient`.
 
 system_js
