@@ -1196,9 +1196,11 @@ class MotorCollection(MotorBase):
         """Create a :class:`MotorCursor`. Same parameters as for
         PyMongo's `find`_.
 
-        Note that :meth:`find` does not take a `callback` parameter--pass
-        a callback to the :class:`MotorCursor`'s methods such as
-        :meth:`MotorCursor.to_list` or :meth:`MotorCursor.count`.
+        Note that :meth:`find` does not take a `callback` parameter, nor does
+        it return a Future, because :meth:`find` merely creates a
+        :class:`MotorCursor` without performing any operations on the server.
+        :class:`MotorCursor` methods such as :meth:`~MotorCursor.to_list` or
+        :meth:`~MotorCursor.count` perform actual operations.
 
         .. _find: http://api.mongodb.org/python/current/api/pymongo/collection.html#pymongo.collection.Collection.find
         """
@@ -1285,10 +1287,11 @@ class MotorCursor(MotorBase):
 
     @property
     def fetch_next(self):
-        """Used with `gen.coroutine`_ to asynchronously retrieve the next
-        document in the result set, fetching a batch of documents from the
-        server if necessary. Yields ``False`` if there are no more documents,
-        otherwise :meth:`next_object` is guaranteed to return a document.
+        """A Future used with `gen.coroutine`_ to asynchronously retrieve the
+        next document in the result set, fetching a batch of documents from the
+        server if necessary. Resolves to ``False`` if there are no more
+        documents, otherwise :meth:`next_object` is guaranteed to return a
+        document.
 
         .. _`gen.coroutine`: http://tornadoweb.org/en/stable/gen.html
 
@@ -1448,7 +1451,7 @@ class MotorCursor(MotorBase):
           ...     docs = yield cursor.to_list(length=2)
           ...     while docs:
           ...         print docs
-          ...         docs = (yield cursor.to_list(length=2))
+          ...         docs = yield cursor.to_list(length=2)
           ...
           ...     print 'done'
           ...
@@ -1459,7 +1462,9 @@ class MotorCursor(MotorBase):
 
         :Parameters:
          - `length`: maximum number of documents to return for this call
-         - `callback`: function taking (document, error)
+         - `callback` (optional): function taking (document, error)
+
+        If a callback is passed, returns None, else returns a Future.
 
         .. versionchanged:: 0.2
            `length` parameter is no longer optional.
@@ -1532,8 +1537,13 @@ class MotorCursor(MotorBase):
         return self.collection.get_io_loop()
 
     def close(self, callback=None):
-        """Explicitly kill this cursor on the server, and cease iterating with
-        :meth:`each`. Returns a Future.
+        """Explicitly kill this cursor on the server. If iterating with
+        :meth:`each`, cease.
+
+        :Parameters:
+         - `callback` (optional): function taking (result, error).
+
+        If a callback is passed, returns None, else returns a Future.
         """
         self.closed = True
         return self._Cursor__die(callback=callback)
