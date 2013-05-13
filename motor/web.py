@@ -78,7 +78,7 @@ class GridFSHandler(tornado.web.RequestHandler):
                 def get_gridfs_file(self, fs, path):
                     # Path is interpreted as _id instead of name.
                     # Return a Future MotorGridOut.
-                    return fs.get(file_id=path)
+                    return fs.get(file_id=ObjectId(path))
 
         :Parameters:
           - `fs`: An open :class:`~motor.MotorGridFS` object
