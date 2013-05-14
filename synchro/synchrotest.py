@@ -39,7 +39,7 @@ excluded_modules = [
     'test.test_motor_',
 
     # Not worth simulating PyMongo's crazy deprecation semantics for safe and
-    # slave_okay in Synchro
+    # slave_okay in Synchro.
     'test.test_common',
 
     # Exclude some PyMongo tests that can't be applied to Synchro.
@@ -53,21 +53,21 @@ excluded_modules = [
 ]
 
 excluded_tests = [
-    # Synchro can't simulate requests, so test copy_db in Motor directly
+    # Synchro can't simulate requests, so test copy_db in Motor directly.
     '*.test_copy_db',
 
-    # use_greenlets is always True with Motor
+    # use_greenlets is always True with Motor.
     '*.test_use_greenlets',
 
-    # Motor's reprs aren't the same as PyMongo's
+    # Motor's reprs aren't the same as PyMongo's.
     '*.test_repr',
 
     # Not worth simulating PyMongo's crazy deprecation semantics for safe and
-    # slave_okay in Synchro
+    # slave_okay in Synchro.
     'TestClient.test_from_uri',
     'TestReplicaSetClient.test_properties',
 
-    # Motor doesn't do requests
+    # Motor doesn't do requests.
     '*.test_auto_start_request',
     '*.test_nested_request',
     '*.test_request_threads',
@@ -78,16 +78,16 @@ excluded_tests = [
     'TestGridfs.test_gridfs_request',
 
     # We test this directly, because it requires monkey-patching either socket
-    # or IOStream, depending on whether it's PyMongo or Motor
+    # or IOStream, depending on whether it's PyMongo or Motor.
     'TestReplicaSetClient.test_auto_reconnect_exception_when_read_preference_is_secondary',
 
-    # No pinning in Motor since there are no requests
+    # No pinning in Motor since there are no requests.
     'TestReplicaSetClient.test_pinned_member',
 
-    # test_read_preference: requires patching MongoReplicaSetClient specially
+    # test_read_preference: requires patching MongoReplicaSetClient specially.
     'TestCommandAndReadPreference.*',
 
-    # Motor doesn't support forking or threading
+    # Motor doesn't support forking or threading.
     '*.test_interrupt_signal',
     '*.test_fork',
     'TestCollection.test_ensure_unique_index_threaded',
@@ -95,28 +95,28 @@ excluded_tests = [
     'TestGridfs.test_threaded_reads',
 
     # Motor doesn't support PyMongo's syntax, db.system_js['my_func'] = "code",
-    # users should just use system.js as a regular collection
+    # users should just use system.js as a regular collection.
     'TestDatabase.test_system_js',
     'TestDatabase.test_system_js_list',
 
     # Motor can't raise an index error if a cursor slice is out of range; it
-    # just gets no results
+    # just gets no results.
     'TestCursor.test_getitem_index_out_of_range',
 
-    # Motor's tailing works differently
+    # Motor's tailing works differently.
     'TestCursor.test_tailable',
 
-    # No context-manager protocol for MotorCursor
+    # No context-manager protocol for MotorCursor.
     'TestCursor.test_with_statement',
 
-    # Can't iterate a GridOut in Motor
+    # Can't iterate a GridOut in Motor.
     'TestGridfs.test_missing_length_iter',
     'TestGridFile.test_iterator',
 
-    # Don't need to check that GridFile is deprecated
+    # Don't need to check that GridFile is deprecated.
     'TestGridFile.test_grid_file',
 
-    # No context-manager protocol for MotorGridIn, and can't set attrs
+    # No context-manager protocol for MotorGridIn, and can't set attrs.
     'TestGridFile.test_context_manager',
     'TestGridFile.test_grid_in_default_opts',
     'TestGridFile.test_set_after_close',
@@ -196,7 +196,7 @@ class SynchroModuleFinder(object):
             if fullname.endswith(module_name):
                 return SynchroModuleLoader(path)
 
-        # Let regular module search continue
+        # Let regular module search continue.
         return None
 
 
@@ -210,11 +210,11 @@ class SynchroModuleLoader(object):
 
 if __name__ == '__main__':
     # Monkey-patch all pymongo's unittests so they think Synchro is the
-    # real PyMongo
+    # real PyMongo.
     sys.meta_path[0:0] = [SynchroModuleFinder()]
 
     # Ensure time.sleep() acts as PyMongo's tests expect: background tasks
-    # can run to completion while foreground pauses
+    # can run to completion while foreground pauses.
     sys.modules['time'] = synchro.TimeModule()
 
     nose.main(

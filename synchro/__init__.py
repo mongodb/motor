@@ -130,8 +130,9 @@ class Sync(object):
 
 class WrapOutgoing(object):
     def __get__(self, obj, objtype):
-        # self.name is set by SynchroMeta
+        # self.name is set by SynchroMeta.
         name = self.name
+
         def synchro_method(*args, **kwargs):
             motor_method = getattr(obj.delegate, name)
             return wrap_synchro(motor_method)(*args, **kwargs)
@@ -148,11 +149,11 @@ class SynchroProperty(object):
         self.name = None
 
     def __get__(self, obj, objtype):
-        # self.name is set by SynchroMeta
+        # self.name is set by SynchroMeta.
         return getattr(obj.delegate.delegate, self.name)
 
     def __set__(self, obj, val):
-        # self.name is set by SynchroMeta
+        # self.name is set by SynchroMeta.
         return setattr(obj.delegate.delegate, self.name, val)
 
 
@@ -174,10 +175,10 @@ class SynchroMeta(type):
     """
 
     def __new__(cls, name, bases, attrs):
-        # Create the class, e.g. the Synchro MongoClient or Database class
+        # Create the class, e.g. the Synchro MongoClient or Database class.
         new_class = type.__new__(cls, name, bases, attrs)
 
-        # delegate_class is a Motor class like MotorClient
+        # delegate_class is a Motor class like MotorClient.
         delegate_class = new_class.__delegate_class__
 
         if delegate_class:
@@ -193,13 +194,13 @@ class SynchroMeta(type):
                 if attrname not in attrs:
                     if getattr(
                             delegate_attr, 'is_async_method', False):
-                        # Re-synchronize the method
+                        # Re-synchronize the method.
                         sync_method = Sync(
                             attrname, delegate_attr.has_write_concern)
                         setattr(new_class, attrname, sync_method)
                     elif isinstance(
                             delegate_attr, motor.UnwrapAsync):
-                        # Re-synchronize the method
+                        # Re-synchronize the method.
                         sync_method = Sync(
                             attrname, delegate_attr.prop.has_write_concern)
                         setattr(new_class, attrname, sync_method)
@@ -207,16 +208,16 @@ class SynchroMeta(type):
                             delegate_attr,
                             'is_motorcursor_chaining_method',
                             False):
-                        # Wrap MotorCursors in Synchro Cursors
+                        # Wrap MotorCursors in Synchro Cursors.
                         wrapper = WrapOutgoing()
                         wrapper.name = attrname
                         setattr(new_class, attrname, wrapper)
                     elif isinstance(
                             delegate_attr, motor.ReadOnlyPropertyDescriptor):
-                        # Delegate the property from Synchro to Motor
+                        # Delegate the property from Synchro to Motor.
                         setattr(new_class, attrname, delegate_attr)
 
-        # Set DelegateProperties' and SynchroProperties' names
+        # Set DelegateProperties' and SynchroProperties' names.
         for name, attr in attrs.items():
             if isinstance(attr, (
                 motor.MotorAttributeFactory, SynchroProperty, WrapOutgoing)
@@ -313,7 +314,7 @@ class Synchro(object):
         return synchronized_method
 
     # Motor doesn't support these deprecated attrs, but PyMongo still tests
-    # that its classes do
+    # that its classes do.
     @property
     def safe(self):
         try:
@@ -339,12 +340,12 @@ class MongoClient(Synchro):
     __delegate_class__ = motor.MotorClient
 
     def __init__(self, host=None, port=None, *args, **kwargs):
-        # Motor doesn't implement auto_start_request
+        # Motor doesn't implement auto_start_request.
         kwargs.pop('auto_start_request', None)
 
         if 'read_preference' not in kwargs and (
                 kwargs.get('tag_sets') not in (None, [], [{}])):
-            # Make test_mongos_connection.TestMongosConnection pass
+            # Make test_mongos_connection.TestMongosConnection pass.
             raise ConfigurationError()
 
         # Motor doesn't support deprecated options slave_okay and safe; but
@@ -364,7 +365,7 @@ class MongoClient(Synchro):
         if gle_opts:
             kwargs['w'] = 1
 
-        # So that TestClient.test_constants and test_types work
+        # So that TestClient.test_constants and test_types work.
         host = host if host is not None else self.HOST
         port = port if port is not None else self.PORT
         self.delegate = kwargs.pop('delegate', None)
@@ -396,7 +397,7 @@ class MongoClient(Synchro):
 
     def __getattr__(self, name):
         # If this is like client.db, then wrap the outgoing object with
-        # Synchro's Database
+        # Synchro's Database.
         return Database(self, name)
 
     __getitem__ = __getattr__
@@ -416,7 +417,7 @@ class MongoReplicaSetClient(MongoClient):
     __delegate_class__ = motor.MotorReplicaSetClient
 
     def __init__(self, *args, **kwargs):
-        # Motor doesn't implement auto_start_request
+        # Motor doesn't implement auto_start_request.
         kwargs.pop('auto_start_request', None)
         self.delegate = self.__delegate_class__(*args, **kwargs)
         self.synchro_connect()
@@ -532,7 +533,7 @@ class Cursor(Synchro):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-        # Don't suppress exceptions
+        # Don't suppress exceptions.
         return False
 
     _Cursor__id                = SynchroProperty()
@@ -576,7 +577,7 @@ class GridIn(Synchro):
 
     def __init__(self, collection, **kwargs):
         """Can be created with collection and kwargs like a PyMongo GridIn,
-           or with a 'delegate' keyword arg, where delegate is a MotorGridIn.
+        or with a 'delegate' keyword arg, where delegate is a MotorGridIn.
         """
         delegate = kwargs.pop('delegate', None)
         if delegate:
@@ -600,7 +601,7 @@ class GridOut(Synchro):
         self, root_collection, file_id=None, file_document=None, delegate=None
     ):
         """Can be created with collection and kwargs like a PyMongo GridOut,
-           or with a 'delegate' keyword arg, where delegate is a MotorGridOut.
+        or with a 'delegate' keyword arg, where delegate is a MotorGridOut.
         """
         if delegate:
             self.delegate = delegate
@@ -619,7 +620,8 @@ class GridOut(Synchro):
 
 class TimeModule(object):
     """Fake time module so time.sleep() lets other tasks run on the IOLoop.
-       See e.g. test_schedule_refresh() in test_replica_set_client.py.
+
+    See e.g. test_schedule_refresh() in test_replica_set_client.py.
     """
     def __getattr__(self, item):
         def sleep(seconds):
