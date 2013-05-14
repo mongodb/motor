@@ -17,9 +17,6 @@ top of Motor, passes the same unittests as PyMongo.
 
 This program monkey-patches sys.modules, so run it alone, rather than as part
 of a larger test suite.
-
-The environment variable TIMEOUT_SEC controls how long Synchro waits for each
-Motor operation to complete, default 5 seconds.
 """
 
 import sys

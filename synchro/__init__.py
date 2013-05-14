@@ -33,10 +33,12 @@ import motor
 # importing * won't pick up underscore-prefixed attrs.
 from gridfs.errors import *
 from pymongo import *
+from pymongo import son_manipulator
 from pymongo.common import *
 from pymongo.cursor import *
 from pymongo.cursor import _QUERY_OPTIONS
 from pymongo.errors import *
+from pymongo.mongo_replica_set_client import PRIMARY, SECONDARY, OTHER
 from pymongo.read_preferences import *
 from pymongo.son_manipulator import *
 from pymongo.uri_parser import *
@@ -64,8 +66,6 @@ have_gevent = False
 
 from pymongo.pool import NO_REQUEST, NO_SOCKET_YET, SocketInfo, Pool, _closed
 from pymongo.mongo_replica_set_client import _partition_node, Member, Monitor
-
-timeout_sec = float(os.environ.get('TIMEOUT_SEC', 10))
 
 
 def unwrap_synchro(fn):
@@ -122,10 +122,7 @@ class Sync(object):
 
     def __get__(self, obj, objtype):
         async_method = getattr(obj.delegate, self.name)
-        return wrap_synchro(
-            unwrap_synchro(
-                obj.synchronize(
-                    async_method, has_write_concern=self.has_write_concern)))
+        return wrap_synchro(unwrap_synchro(obj.synchronize(async_method)))
 
 
 class WrapOutgoing(object):
@@ -241,75 +238,24 @@ class Synchro(object):
     _BaseObject__set_slave_okay = SynchroProperty()
     _BaseObject__set_safe       = SynchroProperty()
 
-    def synchronize(self, async_method, has_write_concern=False):
+    def synchronize(self, async_method):
         """
         @param async_method:        Bound method of a MotorClient,
                                     MotorDatabase, etc.
-        @param has_write_concern:   Method accepts getLastError options?
         @return:                    A synchronous wrapper around the method
         """
         @functools.wraps(async_method)
         def synchronized_method(*args, **kwargs):
-            assert 'callback' not in kwargs, (
-                "Cannot pass callback to synchronized method")
+            # Motor doesn't support 'safe'; simulate it.
+            if 'safe' in kwargs:
+                safe = kwargs.pop('safe')
+                if not isinstance(safe, bool):
+                    raise TypeError('%r not valid for "safe"' % safe)
 
-            # In Motor, passing a callback is like passing w=1 unless
-            # overridden explicitly with a w=0 kwarg. To emulate PyMongo, pass
-            # w=0 if necessary.
-            safe, opts = False, {}
-            try:
-                gle_opts = dict([(k, v)
-                    for k, v in kwargs.items()
-                    if k in SAFE_OPTIONS.union(set(['safe']))])
+                kwargs['w'] = 1 if safe else 0
 
-                safe, opts = self.delegate.delegate._get_write_mode(**gle_opts)
-            except (AttributeError, InvalidOperation):
-                pass
-
-            if has_write_concern:
-                kwargs['w'] = opts.get('w', 1) if safe else 0
-
-            kwargs.pop('safe', None)
-
-            loop = IOLoop.instance()
-            assert not loop.running(), \
-                "Loop already running in method %s" % async_method.func_name
-            loop._callbacks[:] = []
-            loop._timeouts[:] = []
-            outcome = {}
-    
-            def raise_timeout_err():
-                loop.stop()
-                outcome['error'] = TimeoutError("timeout")
-    
-            timeout = loop.add_timeout(
-                time.time() + timeout_sec, raise_timeout_err)
-    
-            def callback(result, error):
-                try:
-                    loop.stop()
-                    loop.remove_timeout(timeout)
-                    outcome['result'] = result
-                    outcome['error'] = error
-                except Exception:
-                    traceback.print_exc(sys.stderr)
-                    raise
-
-            kwargs['callback'] = callback
-
-            if getattr(async_method, 'has_write_concern', False):
-                kwargs.setdefault('w', self.write_concern.get('w', 1))
-
-            async_method(*args, **kwargs)
-            try:
-                loop.start()
-                if outcome.get('error'):
-                    raise outcome['error']
-    
-                return outcome['result']
-            finally:
-                if loop.running():
-                    loop.stop()
+            return IOLoop.current().run_sync(
+                functools.partial(async_method, *args, **kwargs))
     
         return synchronized_method
 
@@ -625,8 +571,7 @@ class TimeModule(object):
     """
     def __getattr__(self, item):
         def sleep(seconds):
-            loop = IOLoop.instance()
-            assert not loop.running()
+            loop = IOLoop.current()
             loop.add_timeout(time.time() + seconds, loop.stop)
             loop.start()
 
