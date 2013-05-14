@@ -332,7 +332,9 @@ class MongoClient(Synchro):
 
     @property
     def is_locked(self):
-        result = self.synchronize(self.admin.current_op)()
+        # MotorClient doesn't support the is_locked property.
+        # Synchro has already synchronized current_op; use it.
+        result = self.admin.current_op()
         return bool(result.get('fsyncLock', None))
 
     def __enter__(self):
