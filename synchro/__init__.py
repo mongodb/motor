@@ -466,7 +466,8 @@ class Cursor(Synchro):
         if isinstance(index, slice):
             return Cursor(self.delegate[index])
         else:
-            return self.synchronize(self.delegate[index].to_list)()[0]
+            to_list = self.synchronize(self.delegate[index].to_list)
+            return to_list(length=10000)[0]
 
     @property
     @wrap_synchro
