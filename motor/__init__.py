@@ -683,6 +683,8 @@ class MotorBase(object):
         return NotImplemented
 
     name                            = ReadOnlyProperty()
+    get_document_class              = ReadOnlyProperty()
+    set_document_class              = ReadOnlyProperty()
     document_class                  = ReadWriteProperty()
     read_preference                 = ReadWriteProperty()
     tag_sets                        = ReadWriteProperty()
