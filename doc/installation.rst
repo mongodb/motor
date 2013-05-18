@@ -18,7 +18,7 @@ Prerequisites
 * Although Motor works with PyPy 2.0-beta1, limitations with greenlets and
   PyPy's JIT compiler make PyPy applications that use Motor too slow for
   regular use
-* PyMongo_ 2.5 or later
+* PyMongo_ 2.5.1 or later
 * Tornado_
 * Greenlet_
 
