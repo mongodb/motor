@@ -10,3 +10,4 @@ nosetests.xml
 setup.cfg
 *.egg
 .tox
+doc/_build/
