@@ -18,7 +18,8 @@ import inspect
 
 from docutils.nodes import field, list_item, paragraph, title_reference
 from docutils.nodes import field_list, field_body, bullet_list, Text, field_name
-from sphinx.addnodes import desc, desc_content, versionmodified, desc_signature
+from sphinx.addnodes import (desc, desc_content, versionmodified,
+                             desc_signature, seealso)
 from sphinx.util.inspect import safe_getattr
 
 import motor
@@ -140,6 +141,14 @@ def process_motor_nodes(app, doctree):
 
                     for version_node in version_nodes:
                         version_node.parent.remove(version_node)
+
+                    # Remove all "seealso" directives that contain :doc:
+                    # references from PyMongo's docs
+                    seealso_nodes = find_by_path(desc_content_node, [seealso])
+
+                    for seealso_node in seealso_nodes:
+                        if 'reftype="doc"' in str(seealso_node):
+                            seealso_node.parent.remove(seealso_node)
 
 
 def get_motor_attr(motor_class, name, *defargs):
