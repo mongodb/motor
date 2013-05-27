@@ -43,14 +43,25 @@ syntax yielding a Future is preferred::
     document = yield collection.find_one()
 
 Code that uses explicit callbacks with Motor 0.2 works the same as in Motor
-0.1.
+0.1::
+
+    def callback(document, error):
+        if error:
+            logging.error("Oh no!")
+        else:
+            print document
+
+    collection.find_one(callback=callback)
 
 Any calls to :meth:`MotorCursor.to_list` that omitted the ``length``
 argument must now include it::
 
     result = yield collection.find().to_list(100)
 
-:meth:`MotorClient.is_locked` has been removed. If you called it like::
+If you relied on ``MotorCursor.tail``, see :doc:`examples/tailable-cursors`
+for an example of tailing a capped collection with Motor using a coroutine.
+
+If you called ``MotorClient.is_locked`` like::
 
     locked = yield motor.Op(client.is_locked)
 
