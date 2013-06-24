@@ -8,8 +8,8 @@ Install Motor from PyPI_ with pip_::
 
   $ pip install motor
 
-Pip automatically installs Motor's prerequisite packages, PyMongo_, Greenlet_,
-and Tornado_.
+Pip automatically installs Motor's prerequisite packages, `PyMongo 2.5.0`_,
+Greenlet_, and Tornado_.
 
 Prerequisites
 -------------
@@ -18,7 +18,7 @@ Prerequisites
 * Although Motor works with PyPy 2.0-beta1, limitations with greenlets and
   PyPy's JIT compiler make PyPy applications that use Motor too slow for
   regular use
-* PyMongo_ 2.4.2 or later
+* `PyMongo 2.5.0`_ exactly
 * Tornado_
 * Greenlet_
 
@@ -28,7 +28,7 @@ Tests require Nose_ and generating the docs_ requires Sphinx_.
 
 .. _pip: http://pip-installer.org
 
-.. _PyMongo: https://pypi.python.org/pypi/pymongo/
+.. _PyMongo 2.5.0: https://pypi.python.org/pypi/pymongo/2.5
 
 .. _Tornado: http://www.tornadoweb.org
 
