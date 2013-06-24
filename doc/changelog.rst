@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Changes In Next Version
------------------------
+Motor 0.1.1
+-----------
 
 Fixes issue `MOTOR-12`_ by pinning its PyMongo dependency to PyMongo version
 2.5.0 exactly.
