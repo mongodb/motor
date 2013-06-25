@@ -1814,6 +1814,37 @@ class MotorGridFS(MotorOpenable):
     list                = AsyncRead()
     exists              = AsyncRead()
     put                 = AsyncCommand()
+    """Put data into GridFS as a new file.
+
+    Equivalent to doing:
+
+    .. code-block:: python
+
+        @gen.coroutine
+        def f(data, **kwargs):
+            try:
+                f = yield my_gridfs.new_file(**kwargs)
+                yield f.write(data)
+            finally
+                yield f.close()
+
+    `data` can be either an instance of :class:`str` (:class:`bytes`
+    in python 3) or a file-like object providing a :meth:`read` method.
+    If an `encoding` keyword argument is passed, `data` can also be a
+    :class:`unicode` (:class:`str` in python 3) instance, which will
+    be encoded as `encoding` before being written. Any keyword arguments
+    will be passed through to the created file - see
+    :meth:`~MotorGridIn` for possible arguments. Returns the
+    ``"_id"`` of the created file.
+
+    If the ``"_id"`` of the file is manually specified, it must
+    not already exist in GridFS. Otherwise
+    :class:`~gridfs.errors.FileExists` is raised.
+
+    :Parameters:
+      - `data`: data to be written as a file.
+      - `**kwargs` (optional): keyword arguments for file creation
+    """
     delete              = AsyncCommand()
 
     def __init__(self, database, collection="fs"):
