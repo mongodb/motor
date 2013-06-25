@@ -1825,7 +1825,7 @@ class MotorGridFS(MotorOpenable):
             try:
                 f = yield my_gridfs.new_file(**kwargs)
                 yield f.write(data)
-            finally
+            finally:
                 yield f.close()
 
     `data` can be either an instance of :class:`str` (:class:`bytes`
