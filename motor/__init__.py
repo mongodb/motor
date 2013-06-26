@@ -19,7 +19,6 @@ import functools
 import inspect
 import socket
 import time
-import sys
 import warnings
 import weakref
 
