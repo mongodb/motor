@@ -90,6 +90,7 @@ def process_motor_nodes(app, doctree):
     #      a parameter-list from scratch, otherwise we edit PyMongo's list.
     #   2. Remove all version annotations like "New in version 2.0" since
     #      PyMongo's version numbers are meaningless in Motor's docs.
+    #   3. Remove "seealso" directives that reference PyMongo's docs.
     #
     # We do this here, rather than by registering a callback to Sphinx's
     # 'autodoc-process-signature' event, because it's way easier to handle the
