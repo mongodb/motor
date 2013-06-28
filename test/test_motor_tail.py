@@ -18,7 +18,9 @@ import threading
 import time
 import unittest
 
-from test import MotorTest, motor_gen_test
+from tornado.testing import gen_test
+
+from test import MotorTest
 
 
 class MotorTailTest(MotorTest):
@@ -51,7 +53,7 @@ class MotorTailTest(MotorTest):
     tail_pauses = (0, 1, 0, 1, 0, 5, 0, 0)
     expected_duration = sum(tail_pauses) + 10  # Add 10 sec of fudge
 
-    @motor_gen_test(timeout=expected_duration)
+    @gen_test(timeout=expected_duration)
     def test_tail(self):
         expected = [{'_id': i} for i in range(len(self.tail_pauses))]
         t = self.start_insertion_thread(self.tail_pauses)

@@ -40,50 +40,6 @@ host = os.environ.get("DB_IP", "localhost")
 port = int(os.environ.get("DB_PORT", 27017))
 
 
-def get_async_test_timeout():
-    """Backport of Tornado > 3.0.1's configurable gen_test timeout, remove this
-    once next Tornado is out.
-
-    See https://github.com/facebook/tornado/pull/723
-    """
-    try:
-        return float(os.environ.get('ASYNC_TEST_TIMEOUT'))
-    except (ValueError, TypeError):
-        return 5
-
-
-def motor_gen_test(func=None, timeout=None):
-    """Backport of Tornado > 3.0.1's configurable gen_test timeout, remove this
-    once next Tornado is out.
-
-    See https://github.com/facebook/tornado/pull/723
-    """
-    if timeout is None:
-        timeout = get_async_test_timeout()
-
-    def wrap(f):
-        f = gen.coroutine(f)
-
-        @functools.wraps(f)
-        def wrapper(self):
-            return self.io_loop.run_sync(
-                functools.partial(f, self), timeout=timeout)
-        return wrapper
-
-    if func is not None:
-        # Used like:
-        #     @gen_test
-        #     def f(self):
-        #         pass
-        return wrap(func)
-    else:
-        # Used like @gen_test(timeout=10)
-        return wrap
-
-
-motor_gen_test.__test__ = False  # Hide from Nose
-
-
 @contextlib.contextmanager
 def assert_raises(exc_class):
     """Roughly a backport of Python 2.7's TestCase.assertRaises"""

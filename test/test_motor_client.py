@@ -28,7 +28,7 @@ from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import motor
-from test import host, port, assert_raises, MotorTest, motor_gen_test
+from test import host, port, assert_raises, MotorTest
 from test.utils import server_is_master_with_slave, delay
 from test.utils import server_started_with_auth
 
@@ -203,7 +203,7 @@ class MotorClientTest(MotorTest):
         with assert_raises(pymongo.errors.InvalidName):
             yield self.cx.copy_database("foo", "$foo")
 
-    @motor_gen_test(timeout=300)
+    @gen_test(timeout=300)
     def test_copy_db(self):
         # 1. Drop old test DBs
         # 2. Copy a test DB N times at once (we need to do it many times at
