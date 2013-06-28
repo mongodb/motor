@@ -63,7 +63,7 @@ setup(name='motor',
       url='https://github.com/mongodb/motor/',
       install_requires=[
           'pymongo >= 2.5.1',
-          'tornado >= 3',
+          'tornado >= 3.1',
           'greenlet >= 0.4.0',
       ],
       license='http://www.apache.org/licenses/LICENSE-2.0',
