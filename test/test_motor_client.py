@@ -16,6 +16,7 @@
 
 import os
 import socket
+import time
 import unittest
 import sys
 
@@ -203,18 +204,48 @@ class MotorClientTest(MotorTest):
         with assert_raises(pymongo.errors.InvalidName):
             yield self.cx.copy_database("foo", "$foo")
 
+    def drop_databases(self, database_names):
+        for test_db_name in database_names:
+            # Setup code has configured a short timeout, and the copying
+            # has put Mongo under enough load that we risk timeouts here
+            # unless we override. command() takes no network_timeout but
+            # find_one does.
+            self.sync_cx[test_db_name]['$cmd'].find_one(
+                {'dropDatabase': 1}, network_timeout=30)
+
+        # Due to SERVER-2329, databases may not disappear from a master
+        # in a master-slave pair.
+        if not server_is_master_with_slave(self.sync_cx):
+            start = time.time()
+            
+            # There may be a race condition in the server's dropDatabase. Wait
+            # for it to update its namespaces.
+            db_names = self.sync_cx.database_names()
+            while time.time() - start < 10:
+                remaining_test_dbs = (
+                    set(database_names).intersection(db_names))
+                
+                if not remaining_test_dbs:
+                    # All test DBs are removed.
+                    break
+
+                db_names = self.sync_cx.database_names()
+                
+            for test_db_name in database_names:
+                self.assertFalse(
+                    test_db_name in db_names,
+                    "%s not dropped" % test_db_name)
+
     @gen_test(timeout=300)
     def test_copy_db(self):
         # 1. Drop old test DBs
         # 2. Copy a test DB N times at once (we need to do it many times at
-        #   once to make sure that GreenletPool's start_request() is properly
-        #   isolating operations from each other)
+        #   once to make sure the pool's start_request() is properly isolating
+        #   operations from each other)
         # 3. Create a username and password
         # 4. Copy a database using name and password
-        is_ms = server_is_master_with_slave(self.sync_cx)
         ncopies = 10
-        nrange = list(range(ncopies))
-        test_db_names = ['pymongo_test%s' % i for i in nrange]
+        test_db_names = ['pymongo_test%s' % i for i in range(ncopies)]
 
         def check_copydb_results():
             db_names = self.sync_cx.database_names()
@@ -222,29 +253,13 @@ class MotorClientTest(MotorTest):
                 self.assertTrue(test_db_name in db_names)
                 result = self.sync_cx[test_db_name].test_collection.find_one()
                 self.assertTrue(result, "No results in %s" % test_db_name)
-                self.assertEqual("bar", result.get("foo"),
+                self.assertEqual(
+                    "bar", result.get("foo"),
                     "Wrong result from %s: %s" % (test_db_name, result))
-
-        def drop_all():
-            for test_db_name in test_db_names:
-                # Setup code has configured a short timeout, and the copying
-                # has put Mongo under enough load that we risk timeouts here
-                # unless we override.
-                self.sync_cx[test_db_name]['$cmd'].find_one(
-                    {'dropDatabase': 1}, network_timeout=30)
-
-            if not is_ms:
-                # Due to SERVER-2329, databases may not disappear from a master
-                # in a master-slave pair
-                db_names = self.sync_cx.database_names()
-                for test_db_name in test_db_names:
-                    self.assertFalse(
-                        test_db_name in db_names,
-                        "%s not dropped" % test_db_name)
 
         # 1. Drop old test DBs
         yield self.cx.drop_database('pymongo_test')
-        drop_all()
+        self.drop_databases(test_db_names)
 
         # 2. Copy a test DB N times at once
         yield self.cx.pymongo_test.test_collection.insert({"foo": "bar"})
@@ -253,7 +268,7 @@ class MotorClientTest(MotorTest):
             for test_db_name in test_db_names]
 
         check_copydb_results()
-        drop_all()
+        self.drop_databases(test_db_names)
 
         # 3. Create a username and password
         yield self.cx.pymongo_test.add_user("mike", "password")
@@ -279,7 +294,7 @@ class MotorClientTest(MotorTest):
 
             check_copydb_results()
 
-        drop_all()
+        self.drop_databases(test_db_names)
 
     @gen_test
     def test_timeout(self):
