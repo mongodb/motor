@@ -127,9 +127,9 @@ class MotorPoolTest(MotorTest):
     @gen_test
     def test_max_wait(self):
         # Do a find_one that takes 1 second, and set max_wait_time to .5 sec,
-        # 1 sec, and None. Verify timeout iff max_wait_time < 1 sec.
+        # 5 sec, and None. Verify timeout iff max_wait_time < 1 sec.
         where_delay = 1
-        for max_wait_time in .5, 2, None:
+        for max_wait_time in .5, 5, None:
             cx = yield self.motor_client(
                 max_concurrent=1, max_wait_time=max_wait_time)
 
