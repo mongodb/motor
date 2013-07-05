@@ -190,6 +190,10 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         """Get an open MotorClient. Ignores self.ssl, you must pass 'ssl'
         argument.
         """
+        assert not self.io_loop._running, (
+            "Don't call motor_client_sync from within gen_test,"
+            " yield self.motor_client() instead")
+
         return self.io_loop.run_sync(functools.partial(
             self.motor_client, host, port, *args, **kwargs))
 
