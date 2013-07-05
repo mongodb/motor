@@ -150,7 +150,8 @@ class MotorDatabaseTest(MotorTest):
 
     @gen_test
     def test_authenticate(self):
-        db = self.cx.pymongo_test
+        cx = yield self.motor_client(max_pool_size=200)
+        db = cx.pymongo_test
 
         yield db.system.users.remove()
         yield db.add_user("mike", "password")
