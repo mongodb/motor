@@ -45,6 +45,7 @@ __all__ = ['MotorClient', 'MotorReplicaSetClient', 'Op']
 
 version_tuple = (0, 1, '+')
 
+
 def get_version_string():
     if isinstance(version_tuple[-1], basestring):
         return '.'.join(map(str, version_tuple[:-1])) + version_tuple[-1]
