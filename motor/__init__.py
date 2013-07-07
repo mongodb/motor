@@ -1002,6 +1002,7 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
             self, rsc, event_class=object)
 
         self.timeout_obj = None
+        self.started = False
 
     def shutdown(self, dummy=None):
         if self.timeout_obj:
@@ -1031,6 +1032,7 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
 
     def start_motor(self, io_loop):
         self.io_loop = io_loop
+        self.started = True
         self.timeout_obj = self.io_loop.add_timeout(
             time.time() + self._refresh_interval, self.async_refresh)
 
