@@ -982,9 +982,8 @@ class MotorReplicaSetClient(MotorClientBase):
 
     def _get_pools(self):
         # TODO: expose the PyMongo RSC members, or otherwise avoid this
-        return [
-            member.pool for member in
-            self.delegate._MongoReplicaSetClient__members.values()]
+        rs_state = self.delegate._MongoReplicaSetClient__rs_state
+        return [member.pool for member in rs_state._members]
 
 
 # PyMongo uses a background thread to regularly inspect the replica set and
