@@ -21,6 +21,7 @@ import pymongo
 from tornado import gen
 from pymongo.errors import InvalidOperation, ConfigurationError
 from pymongo.errors import OperationFailure
+from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import motor
@@ -145,20 +146,22 @@ class MotorCursorTest(MotorTest):
     def test_each(self):
         coll = self.cx.pymongo_test.test_collection
         cursor = coll.find({}, {'_id': 1}).sort([('_id', pymongo.ASCENDING)])
-        yield_point = yield gen.Callback(0)
+        future = Future()
         results = []
 
         def callback(result, error):
             if error:
                 raise error
 
-            results.append(result)
-            if not result:
-                yield_point()
+            if result is not None:
+                results.append(result)
+            else:
+                # Done iterating.
+                future.set_result(True)
 
         cursor.each(callback)
-        yield gen.Wait(0)
-        expected = [{'_id': i} for i in range(200)] + [None]
+        yield future
+        expected = [{'_id': i} for i in range(200)]
         self.assertEqual(expected, results)
 
     @gen_test
