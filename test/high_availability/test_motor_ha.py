@@ -310,7 +310,7 @@ class MotorTestHealthMonitor(MotorHATestCase):
         res = ha_tools.start_replica_set([{}, {}, {}])
         self.seed, self.name = res
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_primary_failure(self):
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
@@ -381,7 +381,7 @@ class MotorTestWritesWithFailover(MotorHATestCase):
         res = ha_tools.start_replica_set([{}, {}, {}])
         self.seed, self.name = res
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_writes_with_failover(self):
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
@@ -454,7 +454,7 @@ class MotorTestShipOfTheseus(MotorHATestCase):
         res = ha_tools.start_replica_set([{}, {}])
         self.seed, self.name = res
 
-    @gen_test
+    @gen_test(timeout=240)
     def test_ship_of_theseus(self):
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
@@ -562,7 +562,7 @@ class MotorTestReadPreference(MotorHATestCase):
     def clear_ping_times(self):
         Member._host_to_ping_time.clear()
 
-    @gen_test
+    @gen_test(timeout=240)
     def test_read_preference(self):
         # This is long, but we put all the tests in one function to save time
         # on setUp, which takes about 30 seconds to bring up a replica set.
