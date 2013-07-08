@@ -32,7 +32,7 @@ import pymongo.errors
 import pymongo.mongo_client
 import pymongo.mongo_replica_set_client
 import pymongo.son_manipulator
-from pymongo.pool import Pool
+from pymongo.pool import NO_SOCKET_YET, NO_REQUEST, _closed, SocketInfo
 import gridfs
 
 from pymongo.database import Database
@@ -40,6 +40,7 @@ from pymongo.collection import Collection
 from pymongo.cursor import Cursor
 from gridfs import grid_file
 
+import util
 
 __all__ = ['MotorClient', 'MotorReplicaSetClient', 'Op']
 
@@ -58,6 +59,13 @@ version = get_version_string()
 # TODO: ensure we're doing
 #   timeouts as efficiently as possible, test performance hit with timeouts
 #   from registering and cancelling timeouts
+
+HAS_SSL = True
+try:
+    import ssl
+except ImportError:
+    ssl = None
+    HAS_SSL = False
 
 
 def check_deprecated_kwargs(kwargs):
@@ -158,10 +166,17 @@ class MotorSocket(object):
 
     We only implement those socket methods actually used by pymongo.
     """
-    def __init__(self, sock, io_loop, use_ssl=False):
+    def __init__(
+            self, sock, io_loop, use_ssl,
+            certfile, keyfile, ca_certs, cert_reqs):
         self.use_ssl = use_ssl
+        self.certfile = certfile
+        self.keyfile = keyfile
+        self.ca_certs = ca_certs
+        self.cert_reqs = cert_reqs
         self.timeout = None
         if self.use_ssl:
+            # TODO: use full SSL options.
             self.stream = iostream.SSLIOStream(sock, io_loop=io_loop)
         else:
             self.stream = iostream.IOStream(sock, io_loop=io_loop)
@@ -236,39 +251,104 @@ class InstanceCounter(object):
         return len(self.refs)
 
 
-class MotorPoolTimeout(pymongo.errors.OperationFailure):
-    """An operation waited too long to acquire a socket from the pool"""
-    pass
+class MotorPool(object):
+    def __init__(
+            self, io_loop, pair, max_size, net_timeout, conn_timeout, use_ssl,
+            use_greenlets, # TODO: DELETE?
+            ssl_keyfile=None, ssl_certfile=None,
+            ssl_cert_reqs=None, ssl_ca_certs=None,
+            wait_queue_timeout=None, wait_queue_multiple=None):
+        """
+        A pool of MotorSockets.
 
-
-class MotorPool(Pool):
-    """A pool of MotorSockets.
-
-    Note this sets use_greenlets=True so that when PyMongo internally calls
-    start_request, e.g. in MongoClient.copy_database(), this pool assigns a
-    socket to the current greenlet for the duration of the method. Request
-    semantics are not exposed to Motor's users.
-    """
-    def __init__(self, io_loop, max_concurrent, max_wait_time, *args, **kwargs):
-        kwargs['use_greenlets'] = True
-        Pool.__init__(self, *args, **kwargs)
+        :Parameters:
+          - `io_loop`: An IOLoop instance
+          - `pair`: a (hostname, port) tuple
+          - `max_size`: The maximum number of open sockets. Calls to
+            `get_socket` will block if this is set, this pool has opened
+            `max_size` sockets, and there are none idle. Set to `None` to
+             disable.
+          - `net_timeout`: timeout in seconds for operations on open connection
+          - `conn_timeout`: timeout in seconds for establishing connection
+          - `use_ssl`: bool, if True use an encrypted connection
+          - `use_greenlets`: ignored.
+          - `ssl_keyfile`: The private keyfile used to identify the local
+            connection against mongod.  If included with the ``certfile` then
+            only the ``ssl_certfile`` is needed.  Implies ``ssl=True``.
+          - `ssl_certfile`: The certificate file used to identify the local
+            connection against mongod. Implies ``ssl=True``.
+          - `ssl_cert_reqs`: Specifies whether a certificate is required from
+            the other side of the connection, and whether it will be validated
+            if provided. It must be one of the three values ``ssl.CERT_NONE``
+            (certificates ignored), ``ssl.CERT_OPTIONAL``
+            (not required, but validated if provided), or ``ssl.CERT_REQUIRED``
+            (required and validated). If the value of this parameter is not
+            ``ssl.CERT_NONE``, then the ``ssl_ca_certs`` parameter must point
+            to a file of CA certificates. Implies ``ssl=True``.
+          - `ssl_ca_certs`: The ca_certs file contains a set of concatenated
+            "certification authority" certificates, which are used to validate
+            certificates passed from the other end of the connection.
+            Implies ``ssl=True``.
+          - `wait_queue_timeout`: (integer) How long (in milliseconds) a
+            callback will wait for a socket from the pool if the pool has no
+            free sockets.
+          - `wait_queue_multiple`: (integer) Multiplied by max_pool_size to
+            give the number of callbacks allowed to wait for a socket at one
+            time.
+        """
         self.io_loop = io_loop
-        self.motor_sock_counter = InstanceCounter()
-        self.queue = collections.deque()
-        self.waiter_timeouts = {}
-        self.max_concurrent = pymongo.common.validate_positive_integer(
-            'max_concurrent', max_concurrent)
+        self.sockets = set()
+        self.pair = pair
+        self.max_size = max_size
+        self.net_timeout = net_timeout
+        self.conn_timeout = conn_timeout
+        self.wait_queue_timeout = wait_queue_timeout
+        self.wait_queue_multiple = wait_queue_multiple
+        self.use_ssl = use_ssl
+        self.ssl_keyfile = ssl_keyfile
+        self.ssl_certfile = ssl_certfile
+        self.ssl_cert_reqs = ssl_cert_reqs
+        self.ssl_ca_certs = ssl_ca_certs
 
-        self.max_wait_time = max_wait_time
-        if self.max_wait_time is not None:
-            pymongo.common.validate_positive_float(
-                'max_wait_time', self.max_wait_time)
+        # Keep track of resets, so we notice sockets created before the most
+        # recent reset and close them.
+        self.pool_id = 0
+
+        if HAS_SSL and use_ssl and not ssl_cert_reqs:
+            self.ssl_cert_reqs = ssl.CERT_NONE
+
+        # Tracks the current greenlet.
+        self._ident = util.MotorGreenletIdent()
+
+        # Map self._ident.get() -> request socket.
+        self._tid_to_sock = {}
+
+        # Count the number of calls to start_request() per greenlet.
+        self._request_counter = util.MotorGreenletCounter()
+
+        self.motor_sock_counter = 0
+        self.queue = collections.deque()
+
+        # Timeout handles to expire waiters after wait_queue_timeout.
+        self.waiter_timeouts = {}
+        if self.wait_queue_multiple is None:
+            self.max_waiters = None
+        else:
+            self.max_waiters = self.max_size * self.wait_queue_multiple
+
+    def reset(self):
+        self.pool_id += 1
+
+        sockets, self.sockets = self.sockets, set()
+        for sock_info in sockets:
+            sock_info.close()
 
     def create_connection(self, pair):
-        """Copy of Pool.create_connection()
+        """Connect to `pair` and return the socket object.
+
+        This is a modified version of create_connection from
+        CPython >=2.6.
         """
-        # TODO: refactor all this with Pool, use a new hook to wrap the
-        #   socket with MotorSocket before attempting connect().
         host, port = pair or self.pair
 
         # Check if dealing with a unix domain socket
@@ -276,6 +356,7 @@ class MotorPool(Pool):
             if not hasattr(socket, "AF_UNIX"):
                 raise pymongo.errors.ConnectionFailure(
                     "UNIX-sockets are not supported on this system")
+
             addrinfos = [(socket.AF_UNIX, socket.SOCK_STREAM, 0, host)]
 
         else:
@@ -286,59 +367,69 @@ class MotorPool(Pool):
             if socket.has_ipv6 and host != 'localhost':
                 family = socket.AF_UNSPEC
 
+            # TODO: use Tornado 3's async resolver.
             addrinfos = [
                 (af, socktype, proto, sa) for af, socktype, proto, dummy, sa in
                 socket.getaddrinfo(host, port, family, socket.SOCK_STREAM)]
 
         err = None
-        motor_sock = None
-        for af, socktype, proto, sa in addrinfos:
+        for res in addrinfos:
+            af, socktype, proto, sa = res
+            sock = None
             try:
                 sock = socket.socket(af, socktype, proto)
                 motor_sock = MotorSocket(
-                    sock, self.io_loop, use_ssl=self.use_ssl)
+                    sock, self.io_loop, use_ssl=self.use_ssl,
+                    certfile=self.ssl_certfile, keyfile=self.ssl_keyfile,
+                    ca_certs=self.ssl_ca_certs, cert_reqs=self.ssl_cert_reqs)
 
                 if af != getattr(socket, 'AF_UNIX', None):
                     sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                     motor_sock.settimeout(self.conn_timeout or 20.0)
 
-                # Important to increment the count before beginning to connect
-                self.motor_sock_counter.track(motor_sock)
-
-                # MotorSocket pauses this greenlet and resumes when connected
+                # Important to increment the count before beginning to connect.
+                self.motor_sock_counter += 1
+                # MotorSocket pauses this greenlet and resumes when connected.
                 motor_sock.connect(sa)
-
                 return motor_sock
             except socket.error, e:
+                self.motor_sock_counter -= 1
                 err = e
-                if motor_sock is not None:
-                    motor_sock.close()
+                if sock is not None:
+                    sock.close()
 
         if err is not None:
             raise err
         else:
             # This likely means we tried to connect to an IPv6 only
             # host with an OS/kernel or Python interpreter that doesn't
-            # support IPv6.
+            # support IPv6. The test case is Jython2.5.1 which doesn't
+            # support IPv6 at all.
             raise socket.error('getaddrinfo failed')
 
     def connect(self, pair):
-        """Copy of Pool.connect(), avoiding call to ssl.wrap_socket which
-           is inappropriate for Motor.
-           TODO: refactor, extra hooks in Pool
+        """Connect to Mongo and return a new connected MotorSocket. Note that
+        the pool does not keep a reference to the socket -- you must call
+        maybe_return_socket() when you're done with it.
         """
         child_gr = greenlet.getcurrent()
         main = child_gr.parent
         assert main, "Should be on child greenlet"
 
-        if self.motor_sock_counter.count() >= self.max_concurrent:
+        if self.max_size and self.motor_sock_counter >= self.max_size:
+            if self.max_waiters and len(self.queue) >= self.max_waiters:
+                raise self._create_wait_queue_timeout()
+
             waiter = stack_context.wrap(child_gr.switch)
             self.queue.append(waiter)
 
-            if self.max_wait_time:
-                deadline = time.time() + self.max_wait_time
+            if self.wait_queue_timeout is not None:
+                deadline = time.time() + self.wait_queue_timeout
                 timeout = self.io_loop.add_timeout(deadline, functools.partial(
-                    child_gr.throw, MotorPoolTimeout, "timeout"))
+                    child_gr.throw,
+                    pymongo.errors.ConnectionFailure,
+                    self._create_wait_queue_timeout()))
+
                 self.waiter_timeouts[waiter] = timeout
 
             # Yield until maybe_return_socket passes spare socket in.
@@ -346,9 +437,107 @@ class MotorPool(Pool):
         else:
             motor_sock = self.create_connection(pair)
             motor_sock.settimeout(self.net_timeout)
-            return pymongo.pool.SocketInfo(motor_sock, self.pool_id)
+            return SocketInfo(motor_sock, self.pool_id)
+
+    def get_socket(self, pair=None, force=False):
+        """Get a socket from the pool.
+
+        Returns a :class:`SocketInfo` object wrapping a connected
+        :class:`MotorSocket`, and a bool saying whether the socket was from
+        the pool or freshly created.
+
+        :Parameters:
+          - `pair`: optional (hostname, port) tuple
+          - `force`: optional boolean, forces a connection to be returned
+              without blocking, even if `max_size` has been reached.
+        """
+        # Have we assigned a socket to this greenlet?
+        req_state = self._get_request_state()
+        if req_state not in (NO_SOCKET_YET, NO_REQUEST):
+            # There's a socket for this greenlet, check it and return it
+            checked_sock = self._check(req_state, pair)
+            if checked_sock != req_state:
+                self._set_request_state(checked_sock)
+
+            checked_sock.last_checkout = time.time()
+            return checked_sock
+
+        forced = False
+        # We're not in a request, just get any free socket or create one
+        if force:
+            # If we're doing an internal operation, attempt to play nicely with
+            # max_size, but if there is no open "slot" force the connection
+            # and mark it as forced so we don't decrement motor_sock_counter
+            # when it's returned.
+            if self.motor_sock_counter >= self.max_size:
+                forced = True
+
+        if self.sockets:
+            sock_info, from_pool = self.sockets.pop(), True
+            sock_info = self._check(sock_info, pair)
+        else:
+            sock_info, from_pool = self.connect(pair), False
+
+        sock_info.forced = forced
+
+        if req_state == NO_SOCKET_YET:
+            # start_request has been called but we haven't assigned a socket to
+            # the request yet. Let's use this socket for this request until
+            # end_request.
+            self._set_request_state(sock_info)
+
+        sock_info.last_checkout = time.time()
+        return sock_info
+
+    def start_request(self):
+        if self._get_request_state() == NO_REQUEST:
+            # Add a placeholder value so we know we're in a request, but we
+            # have no socket assigned to the request yet.
+            self._set_request_state(NO_SOCKET_YET)
+
+        self._request_counter.inc()
+
+    def in_request(self):
+        return bool(self._request_counter.get())
+
+    def end_request(self):
+        # Check if start_request has ever been called in this thread / greenlet
+        count = self._request_counter.get()
+        if count:
+            self._request_counter.dec()
+            if count == 1:
+                # End request
+                sock_info = self._get_request_state()
+                self._set_request_state(NO_REQUEST)
+                if sock_info not in (NO_REQUEST, NO_SOCKET_YET):
+                    self._return_socket(sock_info)
+
+    def discard_socket(self, sock_info):
+        """Close and discard the active socket.
+        """
+        if sock_info not in (NO_REQUEST, NO_SOCKET_YET):
+            sock_info.close()
+
+            if sock_info == self._get_request_state():
+                # Discarding request socket; prepare to use a new request
+                # socket on next get_socket().
+                self._set_request_state(NO_SOCKET_YET)
+
+    def maybe_return_socket(self, sock_info):
+        """Return the socket to the pool unless it's the request socket.
+        """
+        if sock_info not in (NO_REQUEST, NO_SOCKET_YET):
+            if sock_info.closed:
+                if not sock_info.forced:
+                    self.motor_sock_counter -= 1
+                return
+
+            if sock_info != self._get_request_state():
+                self._return_socket(sock_info)
 
     def _return_socket(self, sock_info):
+        """Return socket to the pool. If pool is full the socket is discarded.
+        """
         # This is *not* a request socket. Give it to the greenlet at the head
         # of the line, or return it to the pool, or discard it.
         if self.queue:
@@ -358,8 +547,116 @@ class MotorPool(Pool):
 
             with stack_context.NullContext():
                 self.io_loop.add_callback(functools.partial(waiter, sock_info))
+
+        elif (len(self.sockets) < self.max_size
+                and sock_info.pool_id == self.pool_id):
+            self.sockets.add(sock_info)
+
         else:
-            Pool._return_socket(self, sock_info)
+            sock_info.close()
+            if not sock_info.forced:
+                self.motor_sock_counter -= 1
+
+        if sock_info.forced:
+            sock_info.forced = False
+
+    def _check(self, sock_info, pair):
+        """This side-effecty function checks if this pool has been reset since
+        the last time this socket was used, or if the socket has been closed by
+        some external network error, and if so, attempts to create a new socket.
+        If this connection attempt fails we reset the pool and reraise the
+        error.
+
+        Checking sockets lets us avoid seeing *some*
+        :class:`~pymongo.errors.AutoReconnect` exceptions on server
+        hiccups, etc. We only do this if it's been > 1 second since
+        the last socket checkout, to keep performance reasonable - we
+        can't avoid AutoReconnects completely anyway.
+        """
+        error = False
+
+        if sock_info.closed:
+            error = True
+
+        elif self.pool_id != sock_info.pool_id:
+            sock_info.close()
+            error = True
+
+        elif time.time() - sock_info.last_checkout > 1:
+            if _closed(sock_info.sock):
+                sock_info.close()
+                error = True
+
+        if not error:
+            return sock_info
+        else:
+            try:
+                return self.connect(pair)
+            except socket.error:
+                self.reset()
+                raise
+
+    def _set_request_state(self, sock_info):
+        # This is a copy of PyMongo's Pool's complex _set_request_state.
+        # Where the comments refer to threads, we mean greenlets.
+        ident = self._ident
+        tid = ident.get()
+
+        if sock_info == NO_REQUEST:
+            # Ending a request
+            ident.unwatch(tid)
+            self._tid_to_sock.pop(tid, None)
+        else:
+            self._tid_to_sock[tid] = sock_info
+
+            if not ident.watching():
+                # Closure over tid, poolref, and ident. Don't refer directly to
+                # self, otherwise there's a cycle.
+
+                # Do not access threadlocals in this function, or any
+                # function it calls! In the case of the Pool subclass and
+                # mod_wsgi 2.x, on_thread_died() is triggered when mod_wsgi
+                # calls PyThreadState_Clear(), which deferences the
+                # ThreadVigil and triggers the weakref callback. Accessing
+                # thread locals in this function, while PyThreadState_Clear()
+                # is in progress can cause leaks, see PYTHON-353.
+                poolref = weakref.ref(self)
+
+                def on_thread_died(ref):
+                    try:
+                        ident.unwatch(tid)
+                        pool = poolref()
+                        if pool:
+                            # End the request
+                            request_sock = pool._tid_to_sock.pop(tid, None)
+
+                            # Was thread ever assigned a socket before it died?
+                            if request_sock not in (NO_REQUEST, NO_SOCKET_YET):
+                                pool._return_socket(request_sock)
+                    except:
+                        # Random exceptions on interpreter shutdown.
+                        pass
+
+                ident.watch(on_thread_died)
+
+    def _get_request_state(self):
+        tid = self._ident.get()
+        return self._tid_to_sock.get(tid, NO_REQUEST)
+
+    def __del__(self):
+        # Avoid ResourceWarnings in Python 3
+        for sock_info in self.sockets:
+            sock_info.close()
+
+        for request_sock in self._tid_to_sock.values():
+            if request_sock not in (NO_REQUEST, NO_SOCKET_YET):
+                request_sock.close()
+
+    def _create_wait_queue_timeout(self):
+        raise pymongo.errors.ConnectionFailure(
+            'Timed out waiting for socket from pool with max_size %r and'
+            ' wait_queue_timeout %r' % (
+                self.max_size, self.wait_queue_timeout))
 
 
 def callback_from_future(future):
@@ -779,8 +1076,6 @@ class MotorClientBase(MotorOpenable, MotorBase):
 
     def __init__(self, delegate, io_loop, *args, **kwargs):
         check_deprecated_kwargs(kwargs)
-        self._max_concurrent = kwargs.pop('max_concurrent', 100)
-        self._max_wait_time = kwargs.pop('max_wait_time', None)
         super(MotorClientBase, self).__init__(
             delegate, io_loop, *args, **kwargs)
 
@@ -805,8 +1100,7 @@ class MotorClientBase(MotorOpenable, MotorBase):
             self.io_loop = standard_loop
             if self.delegate:
                 self.delegate.pool_class = functools.partial(
-                    MotorPool, self.io_loop,
-                    self._max_concurrent, self._max_wait_time)
+                    MotorPool, self.io_loop)
 
                 for pool in self._get_pools():
                     pool.io_loop = self.io_loop
@@ -849,8 +1143,7 @@ class MotorClientBase(MotorOpenable, MotorBase):
         """
         kwargs = self._init_kwargs.copy()
         kwargs['auto_start_request'] = False
-        kwargs['_pool_class'] = functools.partial(
-            MotorPool, self.io_loop, self._max_concurrent, self._max_wait_time)
+        kwargs['_pool_class'] = functools.partial(MotorPool, self.io_loop)
         return self._init_args, kwargs
 
 
@@ -877,11 +1170,6 @@ class MotorClient(MotorClientBase):
         :Parameters:
           - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
             instance to use instead of default
-          - `max_concurrent` (optional): Most connections open at once, default
-            100.
-          - `max_wait_time` (optional): How long an operation can wait for a
-            connection before raising :exc:`MotorPoolTimeout`, default no
-            timeout.
 
         .. _MongoClient: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html
         """
@@ -916,11 +1204,6 @@ class MotorReplicaSetClient(MotorClientBase):
         :Parameters:
           - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
             instance to use instead of default
-          - `max_concurrent` (optional): Most connections open at once, default
-            100.
-          - `max_wait_time` (optional): How long an operation can wait for a
-            connection before raising :exc:`MotorPoolTimeout`, default no
-            timeout.
 
         .. _MongoReplicaSetClient: http://api.mongodb.org/python/current/api/pymongo/mongo_replica_set_client.html
         """
@@ -991,15 +1274,17 @@ class MotorReplicaSetClient(MotorClientBase):
 # monitor the set.
 class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
     def __init__(self, rsc):
+        # TODO: fix.
         assert isinstance(
             rsc, pymongo.mongo_replica_set_client.MongoReplicaSetClient
         ), (
             "First argument to MotorReplicaSetMonitor must be"
             " MongoReplicaSetClient, not %r" % rsc)
 
-        # Fake the event_class: we won't use it
+        # Super makes two MotorGreenletEvents: self.event and self.refreshed.
+        # We only use self.refreshed.
         pymongo.mongo_replica_set_client.Monitor.__init__(
-            self, rsc, event_class=object)
+            self, rsc, event_class=util.MotorGreenletEvent)
 
         self.timeout_obj = None
         self.started = False
@@ -1007,6 +1292,7 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
     def shutdown(self, dummy=None):
         if self.timeout_obj:
             self.io_loop.remove_timeout(self.timeout_obj)
+            self.stopped = True
 
     def refresh(self):
         assert greenlet.getcurrent().parent, "Should be on child greenlet"
@@ -1017,7 +1303,13 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
         # RSC has been collected or there
         # was an unexpected error.
         except:
+            # TODO: remove.
+            import traceback
+            traceback.print_exc()
             return
+        finally:
+            # Switch to greenlets blocked in wait_for_refresh().
+            self.refreshed.set(self.io_loop)
 
         self.timeout_obj = self.io_loop.add_timeout(
             time.time() + self._refresh_interval, self.async_refresh)
@@ -1037,6 +1329,7 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
             time.time() + self._refresh_interval, self.async_refresh)
 
     def schedule_refresh(self):
+        self.refreshed.clear()
         if self.io_loop and self.async_refresh:
             if self.timeout_obj:
                 self.io_loop.remove_timeout(self.timeout_obj)
@@ -1048,6 +1341,14 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
         # shutdown works immediately and join is unnecessary
         pass
 
+    def wait_for_refresh(self, timeout_seconds):
+        # self.refreshed is a util.MotorGreenletEvent.
+        self.refreshed.wait(self.io_loop, timeout_seconds)
+
+    def is_alive(self):
+        return self.started and not self.stopped
+
+    isAlive = is_alive
 
 class MotorDatabase(MotorBase):
     __delegate_class__ = Database

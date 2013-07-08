@@ -363,14 +363,15 @@ class MotorClientTest(MotorTest):
 
     @gen_test
     def test_high_concurrency(self):
+        concurrency = 100
+        cx = yield self.motor_client(max_pool_size=concurrency)
         self.sync_db.insert_collection.drop()
         self.assertEqual(200, self.sync_coll.count())
-        concurrency = 100
         expected_finds = 200 * concurrency
         n_inserts = 100
 
-        collection = self.cx.pymongo_test.test_collection
-        insert_collection = self.cx.pymongo_test.insert_collection
+        collection = cx.pymongo_test.test_collection
+        insert_collection = cx.pymongo_test.insert_collection
 
         ndocs = [0]
         insert_future = Future()
