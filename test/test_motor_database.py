@@ -150,7 +150,7 @@ class MotorDatabaseTest(MotorTest):
 
     @gen_test
     def test_authenticate(self):
-        cx = yield self.motor_client(max_pool_size=200)
+        cx = yield self.motor_client(max_pool_size=100)
         db = cx.pymongo_test
 
         yield db.system.users.remove()
@@ -160,15 +160,8 @@ class MotorDatabaseTest(MotorTest):
 
         # We need to authenticate many times at once to make sure that
         # Pool's start_request() is properly isolating operations
-        for i in range(100):
-            db.authenticate(
-                "mike", "password", callback=(yield gen.Callback(i)))
-
-        # TODO: remove after copy_authenticate
-        outcomes = yield gen.WaitAll(range(100))
-        for (result, error), _ in outcomes:
-            if error:
-                raise error
+        futures = [db.authenticate("mike", "password") for _ in range(100)]
+        outcomes = yield futures
 
         # just make sure there are no exceptions here
         yield db.logout()
