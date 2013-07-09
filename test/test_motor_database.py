@@ -150,7 +150,7 @@ class MotorDatabaseTest(MotorTest):
 
     @gen_test
     def test_authenticate(self):
-        cx = yield self.motor_client(max_pool_size=100)
+        cx = yield self.motor_client()
         db = cx.pymongo_test
 
         yield db.system.users.remove()
@@ -160,8 +160,7 @@ class MotorDatabaseTest(MotorTest):
 
         # We need to authenticate many times at once to make sure that
         # Pool's start_request() is properly isolating operations
-        futures = [db.authenticate("mike", "password") for _ in range(100)]
-        outcomes = yield futures
+        yield [db.authenticate("mike", "password") for _ in range(100)]
 
         # just make sure there are no exceptions here
         yield db.logout()
