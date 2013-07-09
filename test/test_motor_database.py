@@ -19,7 +19,6 @@ import unittest
 import pymongo.database
 from pymongo.errors import OperationFailure, CollectionInvalid
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
-from tornado import gen
 from tornado.testing import gen_test
 
 import motor
