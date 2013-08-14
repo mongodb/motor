@@ -44,6 +44,7 @@ from pymongo.son_manipulator import *
 from pymongo.uri_parser import *
 from pymongo.uri_parser import _partition,_rpartition
 
+# TODO:
 try:
     from pymongo import auth
     from pymongo.auth import *
@@ -60,7 +61,6 @@ except ImportError:
 
 from gridfs.grid_file import DEFAULT_CHUNK_SIZE, _SEEK_CUR, _SEEK_END
 
-GreenletPool = None
 GridFile = None
 have_gevent = False
 
@@ -254,8 +254,11 @@ class Synchro(object):
 
                 kwargs['w'] = 1 if safe else 0
 
-            return IOLoop.current().run_sync(
-                functools.partial(async_method, *args, **kwargs))
+            @functools.wraps(async_method)
+            def partial():
+                return async_method(*args, **kwargs)
+
+            return IOLoop.current().run_sync(partial)
     
         return synchronized_method
 

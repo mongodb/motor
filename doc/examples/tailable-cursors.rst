@@ -6,6 +6,8 @@ A cursor on a capped collection can be tailed using
 
 .. code-block:: python
 
+    # TODO: add a 'ts' arg, see Rick's post and Motor-Blog's tail().
+
     @gen.coroutine
     def tail_example():
         results = []
@@ -13,6 +15,7 @@ A cursor on a capped collection can be tailed using
         cursor = collection.find(tailable=True, await_data=True)
         while True:
             if not cursor.alive:
+                now = datetime.datetime.utcnow()
                 # While collection is empty, tailable cursor dies immediately
                 yield gen.Task(loop.add_timeout, datetime.timedelta(seconds=1))
                 cursor = collection.find(tailable=True, await_data=True)
