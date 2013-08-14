@@ -1322,6 +1322,11 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
            the monitor separately to ensure it uses the right IOLoop"""
         pass
 
+    def start_sync(self):
+        """No-op: PyMongo thinks this starts the monitor, but Motor starts
+           the monitor separately to ensure it uses the right IOLoop"""
+        pass
+
     def start_motor(self, io_loop):
         self.io_loop = io_loop
         self.started = True
