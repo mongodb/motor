@@ -578,7 +578,7 @@ def asynchronize(motor_class, sync_method, has_write_concern, doc=None):
 
     :Parameters:
      - `motor_class`:       Motor class being created, e.g. MotorClient.
-     - `sync_method`:       Bound method of pymongo Collection, Database,
+     - `sync_method`:       Unbound method of pymongo Collection, Database,
                             MongoClient, or Cursor
      - `has_write_concern`: Whether the method accepts getLastError options
      - `doc`:               Optionally override sync_method's docstring
