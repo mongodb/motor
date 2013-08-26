@@ -1054,6 +1054,63 @@ class MotorClientBase(MotorOpenable, MotorBase):
         """True after :meth:`open` or :meth:`open_sync` completes"""
         return self.delegate is not None
 
+    @gen.coroutine
+    def _copy_database(
+            self, _callback, from_name, to_name, from_host, username,
+            password):
+        pool, sock_info = None, None
+        try:
+            if not isinstance(from_name, basestring):
+                raise TypeError("from_name must be an instance "
+                                "of %s" % (basestring.__name__,))
+    
+            if not isinstance(to_name, basestring):
+                raise TypeError("to_name must be an instance "
+                                "of %s" % (basestring.__name__,))
+    
+            pymongo.database._check_name(to_name)
+
+            yield self._ensure_connected(True)
+            pool = self._get_primary_pool()
+            sock_info = yield self._async_get_socket(pool)
+
+            copydb_command = bson.SON([
+                ('copydb', 1),
+                ('fromdb', from_name),
+                ('todb', to_name)])
+    
+            if from_host is not None:
+                copydb_command['fromhost'] = from_host
+
+            if username is not None:
+                getnonce_command = bson.SON(
+                    [('copydbgetnonce', 1), ('fromhost', from_host)])
+
+                response, ms = yield self._simple_command(
+                    sock_info, 'admin', getnonce_command)
+
+                nonce = response['nonce']
+                copydb_command['username'] = username
+                copydb_command['nonce'] = nonce
+                copydb_command['key'] = pymongo.auth._auth_key(
+                    nonce, username, password)
+
+            result = yield self._simple_command(
+                sock_info, 'admin', copydb_command)
+
+            if _callback:
+                _callback(result, None)
+            else:
+                raise gen.Return(result)
+        except Exception, e:
+            if _callback:
+                _callback(None, e)
+            else:
+                raise
+        finally:
+            if pool and sock_info:
+                pool.maybe_return_socket(sock_info)
+
     def copy_database(
             self, from_name, to_name, from_host=None, username=None,
             password=None, callback=None):
@@ -1079,64 +1136,13 @@ class MotorClientBase(MotorOpenable, MotorBase):
           - `callback`: Optional function taking parameters (response, error)
         """
         # PyMongo's implementation uses requests, so rewrite for Motor.
-        if not isinstance(from_name, basestring):
-            raise TypeError("from_name must be an instance "
-                            "of %s" % (basestring.__name__,))
-
-        if not isinstance(to_name, basestring):
-            raise TypeError("to_name must be an instance "
-                            "of %s" % (basestring.__name__,))
-
-        pymongo.database._check_name(to_name)
-
-        copydb_command = bson.SON([
-            ('copydb', 1),
-            ('fromdb', from_name),
-            ('todb', to_name)])
-
-        if from_host is not None:
-            copydb_command['fromhost'] = from_host
-
         if callback:
             if not callable(callback):
                 raise callback_type_error
 
-        # TODO: do at module-load time.
-        @gen.coroutine
-        def _copy_database():
-            yield self._ensure_connected(True)
-            pool = self._get_primary_pool()
-            sock_info = yield self._async_get_socket(pool)
-            try:
-                if username is not None:
-                    getnonce_command = bson.SON(
-                        [('copydbgetnonce', 1), ('fromhost', from_host)])
+        future = self._copy_database(
+            callback, from_name, to_name, from_host, username, password)
 
-                    response, ms = yield self._simple_command(
-                        sock_info, 'admin', getnonce_command)
-
-                    nonce = response['nonce']
-                    copydb_command['username'] = username
-                    copydb_command['nonce'] = nonce
-                    copydb_command['key'] = pymongo.auth._auth_key(
-                        nonce, username, password)
-
-                result = yield self._simple_command(
-                    sock_info, 'admin', copydb_command)
-
-                if callback:
-                    callback(result, None)
-                else:
-                    raise gen.Return(result)
-            except Exception, e:
-                if callback:
-                    callback(None, e)
-                else:
-                    raise
-            finally:
-                pool.maybe_return_socket(sock_info)
-
-        future = _copy_database()
         if not callback:
             return future
 
