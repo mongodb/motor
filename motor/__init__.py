@@ -980,6 +980,7 @@ class MotorClientBase(MotorOpenable, MotorBase):
     is_mongos      = ReadOnlyProperty()
     max_bson_size  = ReadOnlyProperty()
     max_pool_size  = ReadOnlyProperty()
+    get_default_database = DelegateMethod()
     _ensure_connected = AsyncCommand()
 
     def __init__(self, delegate, io_loop, *args, **kwargs):
