@@ -2254,9 +2254,8 @@ def Op(fn, *args, **kwargs):
     Motor 0.2 is built for Tornado 3, @gen.coroutine, and Futures, so motor.Op
     is deprecated.
     """
-    msg = (
-        "motor.Op is deprecated, simply call %s and yield its Future."
-        % fn.__name__)
+    msg = "motor.Op is deprecated, simply call %s and yield its Future." % (
+        fn.__name__)
 
     warnings.warn(msg, DeprecationWarning, stacklevel=2)
     result = fn(*args, **kwargs)
