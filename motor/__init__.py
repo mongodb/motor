@@ -1306,12 +1306,12 @@ class MotorReplicaSetClient(MotorClientBase):
 # monitor the set.
 class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
     def __init__(self, rsc):
-        # TODO: fix.
-        assert isinstance(
-            rsc, pymongo.mongo_replica_set_client.MongoReplicaSetClient
-        ), (
+        msg = (
             "First argument to MotorReplicaSetMonitor must be"
             " MongoReplicaSetClient, not %r" % rsc)
+
+        assert isinstance(
+            rsc, pymongo.mongo_replica_set_client.MongoReplicaSetClient), msg
 
         # Super makes two MotorGreenletEvents: self.event and self.refreshed.
         # We only use self.refreshed.
