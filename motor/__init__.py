@@ -644,7 +644,7 @@ class MotorPool(object):
         return self._tid_to_sock.get(tid, NO_REQUEST)
 
     def __del__(self):
-        # Avoid ResourceWarnings in Python 3
+        # Avoid ResourceWarnings in Python 3.
         for sock_info in self.sockets:
             sock_info.close()
 
@@ -697,16 +697,16 @@ def asynchronize(motor_class, sync_method, has_write_concern, doc=None):
             future = Future()
 
         def call_method():
-            # Runs on child greenlet
+            # Runs on child greenlet.
             # TODO: ew, performance?
             try:
                 result = sync_method(self.delegate, *args, **kwargs)
                 if callback:
-                    # Schedule callback(result, None) on main greenlet
+                    # Schedule callback(result, None) on main greenlet.
                     loop.add_callback(functools.partial(
                         callback, result, None))
                 else:
-                    # Schedule future to be resolved on main greenlet
+                    # Schedule future to be resolved on main greenlet.
                     loop.add_callback(functools.partial(
                         future.set_result, result))
             except Exception, e:
@@ -717,7 +717,7 @@ def asynchronize(motor_class, sync_method, has_write_concern, doc=None):
                     loop.add_callback(functools.partial(
                         future.set_exception, e))
 
-        # Start running the operation on a greenlet
+        # Start running the operation on a greenlet.
         greenlet.greenlet(call_method).switch()
         return future
 
@@ -812,9 +812,9 @@ class WrapAsync(WrapBase):
                     callback(None, error)
                     return
 
-                # Don't call isinstance(), not checking subclasses
+                # Don't call isinstance(), not checking subclasses.
                 if result.__class__ == original_class:
-                    # Delegate to the current object to wrap the result
+                    # Delegate to the current object to wrap the result.
                     new_object = self.wrap(result)
                 else:
                     new_object = result
@@ -828,7 +828,7 @@ class WrapAsync(WrapBase):
                 async_method(self, *args, callback=done_callback, **kwargs)
             else:
                 future = Future()
-                # The final callback run from inside done_callback
+                # The final callback run from inside done_callback.
                 callback = callback_from_future(future)
                 async_method(self, *args, callback=done_callback, **kwargs)
                 return future
@@ -857,7 +857,7 @@ class UnwrapAsync(WrapBase):
                 actual_motor_class = globals()[motor_class]
             else:
                 actual_motor_class = motor_class
-            # Don't call isinstance(), not checking subclasses
+            # Don't call isinstance(), not checking subclasses.
             if obj.__class__ == actual_motor_class:
                 return obj.delegate
             else:
@@ -866,7 +866,7 @@ class UnwrapAsync(WrapBase):
         @functools.wraps(f)
         def _f(*args, **kwargs):
 
-            # Call _unwrap_obj on each arg and kwarg before invoking f
+            # Call _unwrap_obj on each arg and kwarg before invoking f.
             args = [_unwrap_obj(arg) for arg in args]
             kwargs = dict([
                 (key, _unwrap_obj(value)) for key, value in kwargs.items()])
@@ -1264,7 +1264,7 @@ class MotorReplicaSetClient(MotorClientBase):
         return args, kwargs
 
     def _get_pools(self):
-        # TODO: expose the PyMongo RSC members, or otherwise avoid this
+        # TODO: expose the PyMongo RSC members, or otherwise avoid this.
         rs_state = self.delegate._MongoReplicaSetClient__rs_state
         return [member.pool for member in rs_state._members]
 
@@ -1354,6 +1354,7 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
         return self.started and not self.stopped
 
     isAlive = is_alive
+
 
 class MotorDatabase(MotorBase):
     __delegate_class__ = Database
@@ -2087,8 +2088,9 @@ class MotorGridIn(MotorOpenable):
                     "First argument to MotorGridIn must be "
                     "MotorCollection, not %r" % root_collection)
 
-            assert 'io_loop' not in kwargs, \
-                "Can't override IOLoop for MotorGridIn"
+            assert 'io_loop' not in kwargs, (
+                "Can't override IOLoop for MotorGridIn")
+
             MotorOpenable.__init__(
                 self, None, root_collection.get_io_loop(),
                 root_collection.delegate, **kwargs)
