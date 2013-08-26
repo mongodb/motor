@@ -240,20 +240,6 @@ class MotorSocket(object):
         return self.stream.socket.fileno()
 
 
-class InstanceCounter(object):
-    def __init__(self):
-        self.refs = set()
-
-    def track(self, instance):
-        self.refs.add(weakref.ref(instance, self.untrack))
-
-    def untrack(self, ref):
-        self.refs.remove(ref)
-
-    def count(self):
-        return len(self.refs)
-
-
 class MotorPool(object):
     def __init__(
             self, io_loop, pair, max_size, net_timeout, conn_timeout, use_ssl,
