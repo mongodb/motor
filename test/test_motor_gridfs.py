@@ -21,7 +21,7 @@ from functools import partial
 from bson.py3compat import b, StringIO
 from gridfs.errors import FileExists, NoFile
 from pymongo import MongoClient
-from pymongo.errors import AutoReconnect
+from pymongo.errors import AutoReconnect, ConfigurationError
 from pymongo.read_preferences import ReadPreference
 from tornado.testing import gen_test
 
@@ -167,6 +167,27 @@ class MotorGridfsTest(MotorTest):
         oid = yield fs.put(b("hello"))
         with assert_raises(FileExists):
             yield fs.put(b("world"), _id=oid)
+
+    @gen_test
+    def test_put_kwargs(self):
+        db = self.cx.pymongo_test
+        fs = yield motor.MotorGridFS(db).open()
+
+        # 'w' is not special here.
+        oid = yield fs.put(b("hello"), foo='bar', w=0)
+        gridout = yield fs.get(oid)
+        self.assertEqual('bar', gridout.foo)
+        self.assertEqual(0, gridout.w)
+
+    @gen_test
+    def test_put_unacknowledged(self):
+        client = yield self.motor_client(w=0)
+        db = client.pymongo_test
+        fs = yield motor.MotorGridFS(db).open()
+        with assert_raises(ConfigurationError):
+            yield fs.put(b("hello"))
+
+        client.close()
 
 
 class TestGridfsReplicaSet(MotorReplicaSetTestBase):

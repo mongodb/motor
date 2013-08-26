@@ -2173,6 +2173,32 @@ class MotorGridFS(MotorOpenable):
         MotorOpenable.__init__(
             self, None, database.get_io_loop(), database.delegate, collection)
 
+    @gen.coroutine
+    def _put(self, data, _callback, **kwargs):
+        try:
+            grid_file = yield MotorGridIn(self.collection, **kwargs).open()
+
+            # w >= 1 necessary to avoid running 'filemd5' command before
+            # all data is written, especially with sharding.
+            if 0 == self.collection.write_concern.get('w'):
+                raise pymongo.errors.ConfigurationError(
+                    "Motor does not allow unacknowledged put() to GridFS")
+
+            try:
+                yield grid_file.write(data)
+            finally:
+                yield grid_file.close()
+        except Exception, e:
+            if _callback:
+                _callback(None, e)
+            else:
+                raise
+        else:
+            if _callback:
+                _callback(grid_file._id, None)
+            else:
+                raise gen.Return(grid_file._id)
+
     def put(self, data, callback=None, **kwargs):
         """Put data into GridFS as a new file.
 
@@ -2210,32 +2236,7 @@ class MotorGridFS(MotorOpenable):
         if callback and not callable(callback):
             raise callback_type_error
 
-        # TODO: do at module-load time.
-        @gen.coroutine
-        def _put():
-            try:
-                grid_file = yield MotorGridIn(self.collection, **kwargs).open()
-
-                # w >= 1 necessary to avoid running 'filemd5' command before
-                # all data is written, especially with sharding.
-                assert 0 != kwargs.get('w')
-
-                try:
-                    yield grid_file.write(data)
-                finally:
-                    yield grid_file.close()
-            except Exception, e:
-                if callback:
-                    callback(None, e)
-                else:
-                    raise
-            else:
-                if callback:
-                    callback(grid_file._id, None)
-                else:
-                    raise gen.Return(grid_file._id)
-
-        future = _put()
+        future = self._put(data, _callback=callback, **kwargs)
         if not callback:
             return future
 
