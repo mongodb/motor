@@ -490,33 +490,14 @@ class MotorPool(object):
         return sock_info
 
     def start_request(self):
-        if self._get_request_state() == NO_REQUEST:
-            # Add a placeholder value so we know we're in a request, but we
-            # have no socket assigned to the request yet.
-            self._set_request_state(NO_SOCKET_YET)
-
-        self._request_counter.inc()
-
-    def in_request(self):
-        return bool(self._request_counter.get())
-
-    def end_request(self):
-        # Check if start_request has ever been called in this thread / greenlet
-        count = self._request_counter.get()
-        if count:
-            self._request_counter.dec()
-            if count == 1:
-                # End request
-                sock_info = self._get_request_state()
-                self._set_request_state(NO_REQUEST)
-                if sock_info not in (NO_REQUEST, NO_SOCKET_YET):
-                    self._return_socket(sock_info)
+        raise NotImplementedError("Motor doesn't implement requests")
 
     def discard_socket(self, sock_info):
         """Close and discard the active socket.
         """
         if sock_info not in (NO_REQUEST, NO_SOCKET_YET):
             sock_info.close()
+    in_request = end_request = start_request
 
             if sock_info == self._get_request_state():
                 # Discarding request socket; prepare to use a new request
@@ -1126,11 +1107,6 @@ class MotorClientBase(MotorOpenable, MotorBase):
         return MotorDatabase(self, name)
 
     __getitem__ = __getattr__
-
-    def start_request(self):
-        raise NotImplementedError("Motor doesn't implement requests")
-
-    in_request = end_request = start_request
 
     @property
     def connected(self):

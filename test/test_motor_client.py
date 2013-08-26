@@ -359,7 +359,7 @@ class MotorClientTest(MotorTest):
 
     def test_requests(self):
         for method in 'start_request', 'in_request', 'end_request':
-            self.assertRaises(NotImplementedError, getattr(self.cx, method))
+            self.assertRaises(TypeError, getattr(self.cx, method))
 
     @gen_test
     def test_high_concurrency(self):
