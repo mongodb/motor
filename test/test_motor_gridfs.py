@@ -39,6 +39,8 @@ class MotorGridfsTest(MotorTest):
     def setUp(self):
         super(MotorGridfsTest, self).setUp()
         self._reset()
+        self.fs = motor.MotorGridFS(self.cx.pymongo_test)
+        self.io_loop.run_sync(self.fs.open)
 
     def tearDown(self):
         self._reset()
@@ -48,22 +50,20 @@ class MotorGridfsTest(MotorTest):
     def test_gridfs(self):
         self.assertRaises(TypeError, motor.MotorGridFS, "foo")
         self.assertRaises(TypeError, motor.MotorGridFS, 5)
-        db = self.cx.pymongo_test
-        fs = yield motor.MotorGridFS(db).open()
 
         # new_file should be an already-open MotorGridIn.
-        gin = yield fs.new_file(_id=1, filename='foo')
+        gin = yield self.fs.new_file(_id=1, filename='foo')
         self.assertTrue(gin.delegate)
         yield gin.write(b('a'))  # No error
         yield gin.close()
 
         # get, get_version, and get_last_version should be already-open
         # MotorGridOut instances
-        gout = yield fs.get(1)
+        gout = yield self.fs.get(1)
         self.assertTrue(gout.delegate)
-        gout = yield fs.get_version('foo')
+        gout = yield self.fs.get_version('foo')
         self.assertTrue(gout.delegate)
-        gout = yield fs.get_last_version('foo')
+        gout = yield self.fs.get_last_version('foo')
         self.assertTrue(gout.delegate)
 
     @gen_test
@@ -87,39 +87,39 @@ class MotorGridfsTest(MotorTest):
     @gen_test
     def test_basic(self):
         db = self.cx.pymongo_test
-        fs = yield motor.MotorGridFS(db).open()
-        oid = yield fs.put(b("hello world"))
-        out = yield fs.get(oid)
+        oid = yield self.fs.put(b("hello world"))
+        out = yield self.fs.get(oid)
         self.assertEqual(b("hello world"), (yield out.read()))
         self.assertEqual(1, (yield db.fs.files.count()))
         self.assertEqual(1, (yield db.fs.chunks.count()))
 
-        yield fs.delete(oid)
+        yield self.fs.delete(oid)
         with assert_raises(NoFile):
-            yield fs.get(oid)
+            yield self.fs.get(oid)
         self.assertEqual(0, (yield db.fs.files.count()))
         self.assertEqual(0, (yield db.fs.chunks.count()))
 
         with assert_raises(NoFile):
-            yield fs.get("foo")
-        self.assertEqual("foo", (yield fs.put(b("hello world"), _id="foo")))
-        gridout = yield fs.get("foo")
+            yield self.fs.get("foo")
+        
+        self.assertEqual(
+            "foo", (yield self.fs.put(b("hello world"), _id="foo")))
+        
+        gridout = yield self.fs.get("foo")
         self.assertEqual(b("hello world"), (yield gridout.read()))
 
     @gen_test
     def test_list(self):
-        db = self.cx.pymongo_test
-        fs = yield motor.MotorGridFS(db).open()
-        self.assertEqual([], (yield fs.list()))
-        yield fs.put(b("hello world"))
-        self.assertEqual([], (yield fs.list()))
+        self.assertEqual([], (yield self.fs.list()))
+        yield self.fs.put(b("hello world"))
+        self.assertEqual([], (yield self.fs.list()))
 
-        yield fs.put(b(""), filename="mike")
-        yield fs.put(b("foo"), filename="test")
-        yield fs.put(b(""), filename="hello world")
+        yield self.fs.put(b(""), filename="mike")
+        yield self.fs.put(b("foo"), filename="test")
+        yield self.fs.put(b(""), filename="hello world")
 
         self.assertEqual(set(["mike", "test", "hello world"]),
-                         set((yield fs.list())))
+                         set((yield self.fs.list())))
 
     @gen_test
     def test_alt_collection(self):
@@ -153,37 +153,29 @@ class MotorGridfsTest(MotorTest):
 
     @gen_test
     def test_put_filelike(self):
-        db = self.cx.pymongo_test
-        fs = yield motor.MotorGridFS(db).open()
-        oid = yield fs.put(StringIO(b("hello world")), chunk_size=1)
-        self.assertEqual(11, (yield db.fs.chunks.count()))
-        gridout = yield fs.get(oid)
+        oid = yield self.fs.put(StringIO(b("hello world")), chunk_size=1)
+        self.assertEqual(11, (yield self.cx.pymongo_test.fs.chunks.count()))
+        gridout = yield self.fs.get(oid)
         self.assertEqual(b("hello world"), (yield gridout.read()))
 
     @gen_test
     def test_put_duplicate(self):
-        db = self.cx.pymongo_test
-        fs = yield motor.MotorGridFS(db).open()
-        oid = yield fs.put(b("hello"))
+        oid = yield self.fs.put(b("hello"))
         with assert_raises(FileExists):
-            yield fs.put(b("world"), _id=oid)
+            yield self.fs.put(b("world"), _id=oid)
 
     @gen_test
     def test_put_kwargs(self):
-        db = self.cx.pymongo_test
-        fs = yield motor.MotorGridFS(db).open()
-
         # 'w' is not special here.
-        oid = yield fs.put(b("hello"), foo='bar', w=0)
-        gridout = yield fs.get(oid)
+        oid = yield self.fs.put(b("hello"), foo='bar', w=0)
+        gridout = yield self.fs.get(oid)
         self.assertEqual('bar', gridout.foo)
         self.assertEqual(0, gridout.w)
 
     @gen_test
     def test_put_unacknowledged(self):
         client = yield self.motor_client(w=0)
-        db = client.pymongo_test
-        fs = yield motor.MotorGridFS(db).open()
+        fs = yield motor.MotorGridFS(client.pymongo_test).open()
         with assert_raises(ConfigurationError):
             yield fs.put(b("hello"))
 
@@ -214,7 +206,6 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
             read_preference=ReadPreference.SECONDARY)
 
         yield primary_client.pymongo_test.drop_collection("fs.files")
-
         yield primary_client.pymongo_test.drop_collection("fs.chunks")
 
         # Should detect it's connected to secondary and not attempt to
