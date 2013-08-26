@@ -243,7 +243,7 @@ class MotorSocket(object):
 class MotorPool(object):
     def __init__(
             self, io_loop, pair, max_size, net_timeout, conn_timeout, use_ssl,
-            use_greenlets, # TODO: DELETE?
+            use_greenlets,
             ssl_keyfile=None, ssl_certfile=None,
             ssl_cert_reqs=None, ssl_ca_certs=None,
             wait_queue_timeout=None, wait_queue_multiple=None):
