@@ -238,10 +238,8 @@ class MotorClientTest(MotorTest):
 
     @gen_test(timeout=300)
     def test_copy_db(self):
-        # 1. Drop old test DBs
-        # 2. Copy a test DB N times at once (we need to do it many times at
-        #   once to make sure the pool's start_request() is properly isolating
-        #   operations from each other)
+        # 1. Drop old DBs
+        # 2. Copy a DB N times at once, to test for concurrency bugs
         # 3. Create a username and password
         # 4. Copy a database using name and password
         ncopies = 10
