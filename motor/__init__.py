@@ -662,19 +662,27 @@ class MotorAttributeFactory(object):
 
 
 class Async(MotorAttributeFactory):
-    def __init__(self, has_write_concern):
+    def __init__(self, attr_name, has_write_concern):
         """A descriptor that wraps a PyMongo method, such as insert or remove,
         and returns an asynchronous version of the method, which accepts a
         callback or returns a Future.
 
         :Parameters:
+         - `attr_name`: The name of the attribute on the PyMongo class, if
+           different from attribute on the Motor class
          - `has_write_concern`: Whether the method accepts getLastError options
         """
         super(Async, self).__init__()
+        self.attr_name = attr_name
         self.has_write_concern = has_write_concern
 
     def create_attribute(self, cls, attr_name):
-        method = getattr(cls.__delegate_class__, attr_name)
+        name = self.attr_name or attr_name
+        if name.startswith('__'):
+            # Mangle: __simple_command becomes _MongoClient__simple_command.
+            name = '_%s%s' % (cls.__delegate_class__.__name__, name)
+
+        method = getattr(cls.__delegate_class__, name)
         return asynchronize(cls, method, self.has_write_concern)
 
     def wrap(self, original_class):
@@ -790,27 +798,27 @@ class UnwrapAsync(WrapBase):
 
 
 class AsyncRead(Async):
-    def __init__(self):
+    def __init__(self, attr_name=None):
         """A descriptor that wraps a PyMongo read method like find_one() that
         returns a Future.
         """
-        Async.__init__(self, has_write_concern=False)
+        Async.__init__(self, attr_name=attr_name, has_write_concern=False)
 
 
 class AsyncWrite(Async):
-    def __init__(self):
+    def __init__(self, attr_name=None):
         """A descriptor that wraps a PyMongo write method like update() that
         accepts getLastError options and returns a Future.
         """
-        Async.__init__(self, has_write_concern=True)
+        Async.__init__(self, attr_name=attr_name, has_write_concern=True)
 
 
 class AsyncCommand(Async):
-    def __init__(self):
+    def __init__(self, attr_name=None):
         """A descriptor that wraps a PyMongo command like copy_database() that
         returns a Future and does not accept getLastError options.
         """
-        Async.__init__(self, has_write_concern=False)
+        Async.__init__(self, attr_name=attr_name, has_write_concern=False)
 
 
 def check_delegate(obj, attr_name):
@@ -904,12 +912,6 @@ class MotorBase(object):
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.delegate)
-
-    def _private_delegate_method(self, method_name):
-        """Get an unbound private method descriptor"""
-        delegate_class = self.__delegate_class__
-        mangled_name = '_%s__%s' % (delegate_class.__name__, method_name)
-        return getattr(delegate_class, mangled_name)
 
 
 class MotorOpenable(object):
@@ -1095,12 +1097,6 @@ class MotorClientBase(MotorOpenable, MotorBase):
         if from_host is not None:
             copydb_command['fromhost'] = from_host
 
-        # TODO: do at module-load time.
-        simple_command = asynchronize(
-            self.__class__,
-            self._private_delegate_method('simple_command'),
-            False)
-
         if callback:
             if not callable(callback):
                 raise callback_type_error
@@ -1116,8 +1112,8 @@ class MotorClientBase(MotorOpenable, MotorBase):
                     getnonce_command = bson.SON(
                         [('copydbgetnonce', 1), ('fromhost', from_host)])
 
-                    response, ms = yield simple_command(
-                        self, sock_info, 'admin', getnonce_command)
+                    response, ms = yield self._simple_command(
+                        sock_info, 'admin', getnonce_command)
 
                     nonce = response['nonce']
                     copydb_command['username'] = username
@@ -1125,8 +1121,8 @@ class MotorClientBase(MotorOpenable, MotorBase):
                     copydb_command['key'] = pymongo.auth._auth_key(
                         nonce, username, password)
 
-                result = yield simple_command(
-                    self, sock_info, 'admin', copydb_command)
+                result = yield self._simple_command(
+                    sock_info, 'admin', copydb_command)
 
                 if callback:
                     callback(result, None)
@@ -1163,6 +1159,7 @@ class MotorClient(MotorClientBase):
     nodes        = ReadOnlyProperty()
     host         = ReadOnlyProperty()
     port         = ReadOnlyProperty()
+    _simple_command = AsyncCommand(attr_name='__simple_command')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -1207,6 +1204,7 @@ class MotorReplicaSetClient(MotorClientBase):
     hosts       = ReadOnlyProperty()
     seeds       = ReadOnlyProperty()
     close       = DelegateMethod()
+    _simple_command = AsyncCommand(attr_name='__simple_command')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a MongoDB replica set.
