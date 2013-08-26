@@ -26,18 +26,21 @@ from tornado import ioloop, iostream, gen, stack_context
 from tornado.concurrent import Future
 import greenlet
 
+import bson
 import pymongo
+import pymongo.auth
 import pymongo.common
+import pymongo.database
 import pymongo.errors
 import pymongo.mongo_client
 import pymongo.mongo_replica_set_client
 import pymongo.son_manipulator
-from pymongo.pool import NO_SOCKET_YET, NO_REQUEST, _closed, SocketInfo
+from pymongo.pool import _closed, SocketInfo
 import gridfs
 
 from pymongo.database import Database
 from pymongo.collection import Collection
-from pymongo.cursor import Cursor
+from pymongo.cursor import Cursor, _QUERY_OPTIONS
 from gridfs import grid_file
 
 import util
@@ -317,15 +320,6 @@ class MotorPool(object):
         if HAS_SSL and use_ssl and not ssl_cert_reqs:
             self.ssl_cert_reqs = ssl.CERT_NONE
 
-        # Tracks the current greenlet.
-        self._ident = util.MotorGreenletIdent()
-
-        # Map self._ident.get() -> request socket.
-        self._tid_to_sock = {}
-
-        # Count the number of calls to start_request() per greenlet.
-        self._request_counter = util.MotorGreenletCounter()
-
         self.motor_sock_counter = 0
         self.queue = collections.deque()
 
@@ -425,10 +419,12 @@ class MotorPool(object):
 
             if self.wait_queue_timeout is not None:
                 deadline = time.time() + self.wait_queue_timeout
-                timeout = self.io_loop.add_timeout(deadline, functools.partial(
-                    child_gr.throw,
-                    pymongo.errors.ConnectionFailure,
-                    self._create_wait_queue_timeout()))
+                timeout = self.io_loop.add_timeout(
+                    deadline,
+                    functools.partial(
+                        child_gr.throw,
+                        pymongo.errors.ConnectionFailure,
+                        self._create_wait_queue_timeout()))
 
                 self.waiter_timeouts[waiter] = timeout
 
@@ -451,19 +447,7 @@ class MotorPool(object):
           - `force`: optional boolean, forces a connection to be returned
               without blocking, even if `max_size` has been reached.
         """
-        # Have we assigned a socket to this greenlet?
-        req_state = self._get_request_state()
-        if req_state not in (NO_SOCKET_YET, NO_REQUEST):
-            # There's a socket for this greenlet, check it and return it
-            checked_sock = self._check(req_state, pair)
-            if checked_sock != req_state:
-                self._set_request_state(checked_sock)
-
-            checked_sock.last_checkout = time.time()
-            return checked_sock
-
         forced = False
-        # We're not in a request, just get any free socket or create one
         if force:
             # If we're doing an internal operation, attempt to play nicely with
             # max_size, but if there is no open "slot" force the connection
@@ -479,48 +463,48 @@ class MotorPool(object):
             sock_info, from_pool = self.connect(pair), False
 
         sock_info.forced = forced
-
-        if req_state == NO_SOCKET_YET:
-            # start_request has been called but we haven't assigned a socket to
-            # the request yet. Let's use this socket for this request until
-            # end_request.
-            self._set_request_state(sock_info)
-
         sock_info.last_checkout = time.time()
         return sock_info
+
+    def async_get_socket(self, pair=None):
+        """Get a ``Future`` which will resolve to a socket."""
+        loop = self.io_loop
+        future = Future()
+
+        def _get_socket():
+            # Runs on child greenlet.
+            try:
+                result = self.get_socket(pair)
+                loop.add_callback(functools.partial(future.set_result, result))
+            except Exception, e:
+                loop.add_callback(functools.partial(future.set_exception, e))
+
+        # Start running the operation on a greenlet.
+        greenlet.greenlet(_get_socket).switch()
+        return future
 
     def start_request(self):
         raise NotImplementedError("Motor doesn't implement requests")
 
-    def discard_socket(self, sock_info):
-        """Close and discard the active socket.
-        """
-        if sock_info not in (NO_REQUEST, NO_SOCKET_YET):
-            sock_info.close()
     in_request = end_request = start_request
 
-            if sock_info == self._get_request_state():
-                # Discarding request socket; prepare to use a new request
-                # socket on next get_socket().
-                self._set_request_state(NO_SOCKET_YET)
+    def discard_socket(self, sock_info):
+        """Close and discard the active socket."""
+        sock_info.close()
 
     def maybe_return_socket(self, sock_info):
-        """Return the socket to the pool unless it's the request socket.
-        """
-        if sock_info not in (NO_REQUEST, NO_SOCKET_YET):
-            if sock_info.closed:
-                if not sock_info.forced:
-                    self.motor_sock_counter -= 1
-                return
+        """Return the socket to the pool.
 
-            if sock_info != self._get_request_state():
-                self._return_socket(sock_info)
-
-    def _return_socket(self, sock_info):
-        """Return socket to the pool. If pool is full the socket is discarded.
+        In PyMongo this method only returns the socket if it's not the request
+        socket, but Motor doesn't do requests.
         """
-        # This is *not* a request socket. Give it to the greenlet at the head
-        # of the line, or return it to the pool, or discard it.
+        if sock_info.closed:
+            if not sock_info.forced:
+                self.motor_sock_counter -= 1
+            return
+
+        # Give it to the greenlet at the head of the line, or return it to the
+        # pool, or discard it.
         if self.queue:
             waiter = self.queue.popleft()
             if waiter in self.waiter_timeouts:
@@ -577,64 +561,13 @@ class MotorPool(object):
                 self.reset()
                 raise
 
-    def _set_request_state(self, sock_info):
-        # This is a copy of PyMongo's Pool's complex _set_request_state.
-        # Where the comments refer to threads, we mean greenlets.
-        ident = self._ident
-        tid = ident.get()
-
-        if sock_info == NO_REQUEST:
-            # Ending a request
-            ident.unwatch(tid)
-            self._tid_to_sock.pop(tid, None)
-        else:
-            self._tid_to_sock[tid] = sock_info
-
-            if not ident.watching():
-                # Closure over tid, poolref, and ident. Don't refer directly to
-                # self, otherwise there's a cycle.
-
-                # Do not access threadlocals in this function, or any
-                # function it calls! In the case of the Pool subclass and
-                # mod_wsgi 2.x, on_thread_died() is triggered when mod_wsgi
-                # calls PyThreadState_Clear(), which deferences the
-                # ThreadVigil and triggers the weakref callback. Accessing
-                # thread locals in this function, while PyThreadState_Clear()
-                # is in progress can cause leaks, see PYTHON-353.
-                poolref = weakref.ref(self)
-
-                def on_thread_died(ref):
-                    try:
-                        ident.unwatch(tid)
-                        pool = poolref()
-                        if pool:
-                            # End the request
-                            request_sock = pool._tid_to_sock.pop(tid, None)
-
-                            # Was thread ever assigned a socket before it died?
-                            if request_sock not in (NO_REQUEST, NO_SOCKET_YET):
-                                pool._return_socket(request_sock)
-                    except:
-                        # Random exceptions on interpreter shutdown.
-                        pass
-
-                ident.watch(on_thread_died)
-
-    def _get_request_state(self):
-        tid = self._ident.get()
-        return self._tid_to_sock.get(tid, NO_REQUEST)
-
     def __del__(self):
         # Avoid ResourceWarnings in Python 3.
         for sock_info in self.sockets:
             sock_info.close()
 
-        for request_sock in self._tid_to_sock.values():
-            if request_sock not in (NO_REQUEST, NO_SOCKET_YET):
-                request_sock.close()
-
     def _create_wait_queue_timeout(self):
-        raise pymongo.errors.ConnectionFailure(
+        return pymongo.errors.ConnectionFailure(
             'Timed out waiting for socket from pool with max_size %r and'
             ' wait_queue_timeout %r' % (
                 self.max_size, self.wait_queue_timeout))
@@ -972,6 +905,12 @@ class MotorBase(object):
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.delegate)
 
+    def _private_delegate_method(self, method_name):
+        """Get an unbound private method descriptor"""
+        delegate_class = self.__delegate_class__
+        mangled_name = '_%s__%s' % (delegate_class.__name__, method_name)
+        return getattr(delegate_class, mangled_name)
+
 
 class MotorOpenable(object):
     """Base class for Motor objects that can be initialized in two stages:
@@ -1045,7 +984,6 @@ class MotorClientBase(MotorOpenable, MotorBase):
     server_info    = AsyncRead()
     alive          = AsyncRead()
     close_cursor   = AsyncCommand()
-    copy_database  = AsyncCommand()
     drop_database  = AsyncCommand().unwrap('MotorDatabase')
     disconnect     = DelegateMethod()
     tz_aware       = ReadOnlyProperty()
@@ -1054,6 +992,7 @@ class MotorClientBase(MotorOpenable, MotorBase):
     is_mongos      = ReadOnlyProperty()
     max_bson_size  = ReadOnlyProperty()
     max_pool_size  = ReadOnlyProperty()
+    _ensure_connected = AsyncCommand()
 
     def __init__(self, delegate, io_loop, *args, **kwargs):
         check_deprecated_kwargs(kwargs)
@@ -1113,6 +1052,98 @@ class MotorClientBase(MotorOpenable, MotorBase):
         """True after :meth:`open` or :meth:`open_sync` completes"""
         return self.delegate is not None
 
+    def copy_database(
+            self, from_name, to_name, from_host=None, username=None,
+            password=None, callback=None):
+        """Copy a database, potentially from another host.
+
+        Accepts an optional callback, and returns a ``Future``.
+
+        Raises :class:`~pymongo.errors.InvalidName` if `to_name` is
+        not a valid database name.
+
+        If `from_host` is ``None`` the current host is used as the
+        source. Otherwise the database is copied from `from_host`.
+
+        If the source database requires authentication, `username` and
+        `password` must be specified.
+
+        :Parameters:
+          - `from_name`: the name of the source database
+          - `to_name`: the name of the target database
+          - `from_host` (optional): host name to copy from
+          - `username` (optional): username for source database
+          - `password` (optional): password for source database
+          - `callback`: Optional function taking parameters (response, error)
+        """
+        # PyMongo's implementation uses requests, so rewrite for Motor.
+        if not isinstance(from_name, basestring):
+            raise TypeError("from_name must be an instance "
+                            "of %s" % (basestring.__name__,))
+
+        if not isinstance(to_name, basestring):
+            raise TypeError("to_name must be an instance "
+                            "of %s" % (basestring.__name__,))
+
+        pymongo.database._check_name(to_name)
+
+        copydb_command = bson.SON([
+            ('copydb', 1),
+            ('fromdb', from_name),
+            ('todb', to_name)])
+
+        if from_host is not None:
+            copydb_command['fromhost'] = from_host
+
+        # TODO: do at module-load time.
+        simple_command = asynchronize(
+            self.__class__,
+            self._private_delegate_method('simple_command'),
+            False)
+
+        if callback:
+            if not callable(callback):
+                raise callback_type_error
+
+        # TODO: do at module-load time.
+        @gen.coroutine
+        def _copy_database():
+            yield self._ensure_connected(True)
+            pool = self._get_primary_pool()
+            sock_info = yield self._async_get_socket(pool)
+            try:
+                if username is not None:
+                    getnonce_command = bson.SON(
+                        [('copydbgetnonce', 1), ('fromhost', from_host)])
+
+                    response, ms = yield simple_command(
+                        self, sock_info, 'admin', getnonce_command)
+
+                    nonce = response['nonce']
+                    copydb_command['username'] = username
+                    copydb_command['nonce'] = nonce
+                    copydb_command['key'] = pymongo.auth._auth_key(
+                        nonce, username, password)
+
+                result = yield simple_command(
+                    self, sock_info, 'admin', copydb_command)
+
+                if callback:
+                    callback(result, None)
+                else:
+                    raise gen.Return(result)
+            except Exception, e:
+                if callback:
+                    callback(None, e)
+                else:
+                    raise
+            finally:
+                pool.maybe_return_socket(sock_info)
+
+        future = _copy_database()
+        if not callback:
+            return future
+
     def _delegate_init_args(self):
         """Override MotorOpenable._delegate_init_args to ensure
            auto_start_request is False and _pool_class is MotorPool.
@@ -1155,6 +1186,16 @@ class MotorClient(MotorClientBase):
     def _get_pools(self):
         # TODO: expose the PyMongo pool, or otherwise avoid this
         return [self.delegate._MongoClient__pool]
+
+    def _get_primary_pool(self):
+        # TODO: expose the PyMongo pool, or otherwise avoid this
+        return self.delegate._MongoClient__pool
+
+    def _async_get_socket(self, pool):
+        """Return a ``Future`` that will resolve to a socket."""
+        # MongoClient passes host and port into the pool for each call to
+        # get_socket.
+        return pool.async_get_socket((self.host, self.port))
 
 
 class MotorReplicaSetClient(MotorClientBase):
@@ -1243,6 +1284,17 @@ class MotorReplicaSetClient(MotorClientBase):
         # TODO: expose the PyMongo RSC members, or otherwise avoid this.
         rs_state = self.delegate._MongoReplicaSetClient__rs_state
         return [member.pool for member in rs_state._members]
+
+    def _get_primary_pool(self):
+        # TODO: expose the PyMongo RSC members, or otherwise avoid this.
+        rs_state = self.delegate._MongoReplicaSetClient__rs_state
+        if rs_state.primary_member:
+            return rs_state.primary_member.pool
+
+    def _async_get_socket(self, pool):
+        """Return a ``Future`` that will resolve to a socket."""
+        # MongoReplicaSetClient sets pools' host and port when it creates them.
+        return pool.async_get_socket()
 
 
 # PyMongo uses a background thread to regularly inspect the replica set and
@@ -1706,7 +1758,7 @@ class MotorCursor(MotorBase):
           ...
           ...     print 'done'
           ...
-          >>> IOLoop.current().run_sync(f)
+          >>> ioloop.IOLoop.current().run_sync(f)
           [{u'_id': 0}, {u'_id': 1}]
           [{u'_id': 2}, {u'_id': 3}]
           done
@@ -1722,7 +1774,8 @@ class MotorCursor(MotorBase):
         """
         length = pymongo.common.validate_positive_integer('length', length)
 
-        if self.delegate._Cursor__tailable:
+        if (self.delegate._Cursor__query_flags
+                & _QUERY_OPTIONS['tailable_cursor']):
             raise pymongo.errors.InvalidOperation(
                 "Can't call to_list on tailable cursor")
 
@@ -2098,38 +2151,6 @@ class MotorGridFS(MotorOpenable):
     get_last_version    = AsyncRead().wrap(grid_file.GridOut)
     list                = AsyncRead()
     exists              = AsyncRead()
-    put                 = AsyncCommand()
-    """Put data into GridFS as a new file.
-
-    Equivalent to doing:
-
-    .. code-block:: python
-
-        @gen.coroutine
-        def f(data, **kwargs):
-            try:
-                f = yield my_gridfs.new_file(**kwargs)
-                yield f.write(data)
-            finally:
-                yield f.close()
-
-    `data` can be either an instance of :class:`str` (:class:`bytes`
-    in python 3) or a file-like object providing a :meth:`read` method.
-    If an `encoding` keyword argument is passed, `data` can also be a
-    :class:`unicode` (:class:`str` in python 3) instance, which will
-    be encoded as `encoding` before being written. Any keyword arguments
-    will be passed through to the created file - see
-    :meth:`~MotorGridIn` for possible arguments. Returns the
-    ``"_id"`` of the created file.
-
-    If the ``"_id"`` of the file is manually specified, it must
-    not already exist in GridFS. Otherwise
-    :class:`~gridfs.errors.FileExists` is raised.
-
-    :Parameters:
-      - `data`: data to be written as a file.
-      - `**kwargs` (optional): keyword arguments for file creation
-    """
     delete              = AsyncCommand()
 
     def __init__(self, database, collection="fs"):
@@ -2148,8 +2169,75 @@ class MotorGridFS(MotorOpenable):
             raise TypeError("First argument to MotorGridFS must be "
                             "MotorDatabase, not %r" % database)
 
+        self.collection = database[collection]
         MotorOpenable.__init__(
             self, None, database.get_io_loop(), database.delegate, collection)
+
+    def put(self, data, callback=None, **kwargs):
+        """Put data into GridFS as a new file.
+
+        Equivalent to doing:
+
+        .. code-block:: python
+
+            @gen.coroutine
+            def f(data, **kwargs):
+                try:
+                    f = yield my_gridfs.new_file(**kwargs)
+                    yield f.write(data)
+                finally:
+                    yield f.close()
+
+        `data` can be either an instance of :class:`str` (:class:`bytes`
+        in python 3) or a file-like object providing a :meth:`read` method.
+        If an `encoding` keyword argument is passed, `data` can also be a
+        :class:`unicode` (:class:`str` in python 3) instance, which will
+        be encoded as `encoding` before being written. Any keyword arguments
+        will be passed through to the created file - see
+        :meth:`~MotorGridIn` for possible arguments. Returns the
+        ``"_id"`` of the created file.
+
+        If the ``"_id"`` of the file is manually specified, it must
+        not already exist in GridFS. Otherwise
+        :class:`~gridfs.errors.FileExists` is raised.
+
+        :Parameters:
+          - `data`: data to be written as a file.
+          - `callback`: Optional function taking parameters (_id, error)
+          - `**kwargs` (optional): keyword arguments for file creation
+        """
+        # PyMongo's implementation uses requests, so rewrite for Motor.
+        if callback and not callable(callback):
+            raise callback_type_error
+
+        # TODO: do at module-load time.
+        @gen.coroutine
+        def _put():
+            try:
+                grid_file = yield MotorGridIn(self.collection, **kwargs).open()
+
+                # w >= 1 necessary to avoid running 'filemd5' command before
+                # all data is written, especially with sharding.
+                assert 0 != kwargs.get('w')
+
+                try:
+                    yield grid_file.write(data)
+                finally:
+                    yield grid_file.close()
+            except Exception, e:
+                if callback:
+                    callback(None, e)
+                else:
+                    raise
+            else:
+                if callback:
+                    callback(grid_file._id, None)
+                else:
+                    raise gen.Return(grid_file._id)
+
+        future = _put()
+        if not callback:
+            return future
 
     def wrap(self, obj):
         if obj.__class__ is grid_file.GridIn:
