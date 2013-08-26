@@ -1335,9 +1335,6 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
         # RSC has been collected or there
         # was an unexpected error.
         except:
-            # TODO: remove.
-            import traceback
-            traceback.print_exc()
             return
         finally:
             # Switch to greenlets blocked in wait_for_refresh().
