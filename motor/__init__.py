@@ -879,11 +879,9 @@ class MotorBase(object):
     __metaclass__ = MotorMeta
 
     def __eq__(self, other):
-        if (
-            isinstance(other, self.__class__)
-            and hasattr(self, 'delegate')
-            and hasattr(other, 'delegate')
-        ):
+        if (isinstance(other, self.__class__)
+                and hasattr(self, 'delegate')
+                and hasattr(other, 'delegate')):
             return self.delegate == other.delegate
         return NotImplemented
 
