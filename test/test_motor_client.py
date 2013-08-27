@@ -50,7 +50,7 @@ class MotorClientTest(MotorTest):
         self.assertEqual(result, cx)
         self.assertTrue(cx.connected)
 
-        # Ensure future is marked done if already connected
+        # Ensure future is marked done if already connected.
         self.assertEqual(cx, (yield cx.open()))
         self.assertEqual(cx, cx.open_sync())
         cx.close()
@@ -82,12 +82,12 @@ class MotorClientTest(MotorTest):
 
         yield client.pymongo_test.test.save({"dummy": "object"})
 
-        # Confirm we can read via the socket
+        # Confirm we can read via the socket.
         dbs = yield client.database_names()
         self.assertTrue("pymongo_test" in dbs)
         client.close()
 
-        # Confirm it fails with a missing socket
+        # Confirm it fails with a missing socket.
         client = motor.MotorClient(
             "mongodb:///tmp/non-existent.sock", io_loop=self.io_loop)
 
