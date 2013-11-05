@@ -44,13 +44,29 @@ example of tailing a capped collection is provided:
 ``MotorClient.is_locked`` has been removed since calling it from Motor would be
 bizarre. See "Migration" below for a workaround.
 
-WaitOp, WaitAllOps
+The yield-point classes ``WaitOp`` and ``WaitAllOps`` have been removed, since
+Tornado 3's ``Future`` interface has equivalent functionality.
 
 :meth:`~web.GridFSHandler.get_gridfs_file` now
 returns Future instead of accepting a callback.
 
 Migration
 ~~~~~~~~~
+
+``open``, ``open_sync``
+'''''''''''''''''''''''
+
+``open`` is now optional, and ``open_sync`` has been removed. You can remove
+calls to these methods from your application. The one remaining use for these
+calls is to test if the MongoDB server is available before continuing your
+application's startup. This is still possible with ``IOLoop.run_sync``::
+
+    loop = tornado.ioloop.IOLoop.current()
+    client = motor.MotorClient(host, port)
+    try:
+        loop.run_sync(client.open)
+    except pymongo.errors.AutoReconnect:
+        print "Can't connect"
 
 Futures
 '''''''
@@ -70,6 +86,66 @@ Code that uses explicit callbacks with Motor 0.2 works the same as in Motor
             print document
 
     collection.find_one(callback=callback)
+
+``WaitOp`` and ``WaitAllOps``
+'''''''''''''''''''''''''''''
+
+``WaitOp`` and ``WaitAllOps`` have been removed. Code that used them can now
+yield a ``Future`` or a list of them. Consider this function written for
+Tornado 2 and Motor 0.1::
+
+    @gen.engine
+    def get_some_documents():
+        cursor = collection.find().sort('_id').limit(2)
+        cursor.to_list(callback=(yield gen.Callback('key')))
+        do_something_while_we_wait()
+        try:
+            documents = yield motor.WaitOp('key')
+            print documents
+        except Exception, e:
+            print e
+
+The function now becomes::
+
+    @gen.coroutine
+    def f():
+        cursor = collection.find().sort('_id').limit(2)
+        future = cursor.to_list()
+        do_something_while_we_wait()
+        try:
+            documents = yield future
+            print documents
+        except Exception, e:
+            print e
+
+Similarly, a function written like so for Tornado 2 and Motor 0.1::
+
+    @gen.engine
+    def get_two_documents_in_parallel(collection):
+        collection.find_one(
+            {'_id': 1}, callback=(yield gen.Callback('one')))
+
+        collection.find_one(
+            {'_id': 2}, callback=(yield gen.Callback('two')))
+
+        try:
+            doc_one, doc_two = yield motor.WaitAllOps(['one', 'two'])
+            print doc_one, doc_two
+        except Exception, e:
+            print e
+
+Now it becomes::
+
+    @gen.coroutine
+    def get_two_documents_in_parallel(collection):
+        future_0 = collection.find_one({'_id': 1})
+        future_1 = collection.find_one({'_id': 2})
+
+        try:
+            doc_one, doc_two = yield [future_0, future_1]
+            print doc_one, doc_two
+        except Exception, e:
+            print e
 
 Pool options
 ''''''''''''
