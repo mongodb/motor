@@ -54,17 +54,12 @@ except ImportError:
     # auth module will land in PyMongo 2.5
     print "Warning: Can't import pymongo.auth"
 
-try:
-    from pymongo import GEOSPHERE, HASHED
-except ImportError:
-    # PyMongo 2.5
-    print "Warning: Can't import GEOSPHERE and HASHED"
-
 from gridfs.grid_file import DEFAULT_CHUNK_SIZE, _SEEK_CUR, _SEEK_END
 
 GridFile = None
 have_gevent = False
 
+from pymongo import GEOSPHERE, HASHED
 from pymongo.pool import NO_REQUEST, NO_SOCKET_YET, SocketInfo, Pool, _closed
 from pymongo.mongo_replica_set_client import _partition_node, Member, Monitor
 
