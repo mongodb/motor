@@ -1169,7 +1169,7 @@ class MotorReplicaSetClient(MotorClientBase):
         if 'io_loop' in kwargs:
             io_loop = kwargs['io_loop']
         else:
-            ioloop = ioloop.IOLoop.current()
+            io_loop = ioloop.IOLoop.current()
 
         kwargs['_monitor_class'] = functools.partial(
             MotorReplicaSetMonitor, io_loop)
