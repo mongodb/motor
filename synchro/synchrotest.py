@@ -47,6 +47,9 @@ excluded_modules = [
     'test.test_paired',
     'test.test_master_slave_connection',
     'test.test_legacy_connections',
+
+    # Complex PyMongo-specific mocking.
+    'test.test_replica_set_reconfig',
 ]
 
 excluded_tests = [
@@ -63,6 +66,14 @@ excluded_tests = [
     # slave_okay in Synchro.
     'TestClient.test_from_uri',
     'TestReplicaSetClient.test_properties',
+
+    # Motor's pool is different, we test it separately.
+    '*.test_waitQueueMultiple',
+
+    # Lazy-connection tests require multithreading.
+    '_TestLazyConnectMixin.*',
+    'TestClientLazyConnect.*',
+    'TestReplicaSetClientLazyConnect.*',
 
     # Motor doesn't do requests.
     '*.test_auto_start_request',
@@ -117,6 +128,9 @@ excluded_tests = [
     'TestGridFile.test_context_manager',
     'TestGridFile.test_grid_in_default_opts',
     'TestGridFile.test_set_after_close',
+
+    # Testing a deprecated PyMongo API, Motor can skip it.
+    'TestCollection.test_insert_message_creation',
 ]
 
 
@@ -174,6 +188,7 @@ pymongo_modules = set([
     'pymongo.connection',
     'pymongo.cursor',
     'pymongo.database',
+    'pymongo.helpers',
     'pymongo.errors',
     'pymongo.master_slave_connection',
     'pymongo.mongo_client',

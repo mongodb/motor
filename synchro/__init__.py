@@ -34,6 +34,7 @@ import motor
 from gridfs.errors import *
 from pymongo import *
 from pymongo import son_manipulator
+from pymongo.helpers import _unpack_response, _check_command_response
 from pymongo.common import *
 from pymongo.cursor import *
 from pymongo.cursor import _QUERY_OPTIONS
@@ -295,6 +296,10 @@ class MongoClient(Synchro):
     __delegate_class__ = motor.MotorClient
 
     def __init__(self, host=None, port=None, *args, **kwargs):
+        # Make a unittest happy.
+        self.use_greenlets = True
+        self.auto_start_request = True
+
         # Motor doesn't implement auto_start_request.
         kwargs.pop('auto_start_request', None)
 
@@ -327,12 +332,23 @@ class MongoClient(Synchro):
 
         if not self.delegate:
             self.delegate = self.__delegate_class__(host, port, *args, **kwargs)
-            self.synchro_connect()
+            if kwargs.get('_connect', True):
+                self.synchro_connect()
 
     def synchro_connect(self):
         # Try to connect the MotorClient before continuing; raise
         # ConnectionFailure if it times out.
-        self.synchronize(self.delegate.open)()
+        try:
+            self.synchronize(self.delegate.open)()
+        except OperationFailure, exc:
+            # Emulate PyMongo's behavior: auth failure during initialization
+            # is translated to ConfigurationError.
+            if 'auth fails' in str(exc):
+                raise ConfigurationError(str(exc))
+
+            raise
+        except AutoReconnect, e:
+            raise ConnectionFailure(str(e))
 
     def start_request(self):
         raise NotImplementedError()
@@ -517,6 +533,8 @@ class Cursor(Synchro):
     _Cursor__fields            = SynchroProperty()
     _Cursor__spec              = SynchroProperty()
     _Cursor__hint              = SynchroProperty()
+    _Cursor__exhaust           = SynchroProperty()
+    _Cursor__compile_re        = SynchroProperty()
     _Cursor__secondary_acceptable_latency_ms = SynchroProperty()
 
 
@@ -530,6 +548,9 @@ class GridFS(Synchro):
 
         self.delegate = self.synchronize(
             motor.MotorGridFS(database.delegate, collection).open)()
+
+    def put(self, *args, **kwargs):
+        return self.synchronize(self.delegate.put)(*args, **kwargs)
 
 
 class GridIn(Synchro):
