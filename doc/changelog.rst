@@ -114,7 +114,7 @@ The function now becomes::
     @gen.coroutine
     def f():
         cursor = collection.find().sort('_id').limit(2)
-        future = cursor.to_list()
+        future = cursor.to_list(2)
         do_something_while_we_wait()
         try:
             documents = yield future
