@@ -14,13 +14,14 @@
 
 """Test Motor's test helpers."""
 
+from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 from motor import callback_type_error
 from test import MotorTest, assert_raises
 
 
-# Example functions to be tested, helps verify that check_optional_callback and
+# Example function to be tested, helps verify that check_optional_callback and
 # check_required_callback work.
 def require_callback(callback=None):
     if not callable(callback):
@@ -29,8 +30,15 @@ def require_callback(callback=None):
 
 
 def dont_require_callback(callback=None):
-    if callback is not None:
-        require_callback(callback)
+    if callback:
+        if not callable(callback):
+            raise callback_type_error
+
+        callback(None, None)
+    else:
+        future = Future()
+        future.set_result(None)
+        return future
 
 
 class MotorCallbackTestTest(MotorTest):
