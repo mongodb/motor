@@ -581,6 +581,15 @@ def callback_from_future(future, default_result=no_result):
     return callback
 
 
+def mangle_delegate_name(motor_class, name):
+    if name.startswith('__') and not name.endswith("__"):
+        # Mangle, e.g. Cursor.__die -> Cursor._Cursor__die
+        classname = motor_class.__delegate_class__.__name__
+        return '_%s%s' % (classname, name)
+    else:
+        return name
+
+
 def asynchronize(motor_class, sync_method, has_write_concern, doc=None):
     """Decorate `sync_method` so it accepts a callback or returns a Future.
 
@@ -637,12 +646,7 @@ def asynchronize(motor_class, sync_method, has_write_concern, doc=None):
     method.is_async_method = True
     method.has_write_concern = has_write_concern
     name = sync_method.__name__
-    if name.startswith('__') and not name.endswith("__"):
-        # Mangle, e.g. Cursor.__die -> Cursor._Cursor__die
-        classname = motor_class.__delegate_class__.__name__
-        name = '_%s%s' % (classname, name)
-
-    method.pymongo_method_name = name
+    method.pymongo_method_name = mangle_delegate_name(motor_class, name)
     if doc is not None:
         method.__doc__ = doc
 
@@ -969,7 +973,6 @@ class MotorClientBase(MotorOpenable, MotorBase):
     is_mongos      = ReadOnlyProperty()
     max_bson_size  = ReadOnlyProperty()
     max_pool_size  = ReadOnlyProperty()
-    get_default_database = DelegateMethod()
     _ensure_connected = AsyncCommand()
 
     def __init__(self, *args, **kwargs):
@@ -1076,6 +1079,28 @@ class MotorClientBase(MotorOpenable, MotorBase):
 
         if not callback:
             return future
+
+    def get_default_database(self):
+        """Get the database named in the MongoDB connection URI.
+
+        >>> uri = 'mongodb://host/my_database'
+        >>> client = MotorClient(uri)
+        >>> db = client.get_default_database()
+        >>> assert db.name == 'my_database'
+
+        Useful in scripts where you want to choose which database to use
+        based only on the URI in a configuration file.
+        """
+        attr_name = mangle_delegate_name(
+            self.__class__,
+            '__default_database_name')
+
+        default_db_name = getattr(self.delegate, attr_name)
+        if default_db_name is None:
+            raise pymongo.errors.ConfigurationError(
+                'No default database defined')
+
+        return self[default_db_name]
 
 
 class MotorClient(MotorClientBase):

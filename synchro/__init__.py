@@ -101,6 +101,9 @@ def wrap_synchro(fn):
             client = MongoClient(delegate=motor_obj.database.connection)
             database = Database(client, motor_obj.database.name)
             return Collection(database, motor_obj.name)
+        if isinstance(motor_obj, motor.MotorDatabase):
+            client = MongoClient(delegate=motor_obj.connection)
+            return Database(client, motor_obj.name)
         if isinstance(motor_obj, motor.MotorCursor):
             return Cursor(motor_obj)
         if isinstance(motor_obj, motor.MotorGridFS):
@@ -279,6 +282,9 @@ class Synchro(object):
         except (AttributeError, InvalidOperation):
             return False
 
+    def __eq__(self, other):
+        return self.delegate == other.delegate
+
     get_lasterror_options = SynchroProperty()
 
 
@@ -353,6 +359,7 @@ class MongoClient(Synchro):
 
     __getitem__ = __getattr__
 
+    get_default_database      = WrapOutgoing()
     _MongoClient__pool        = SynchroProperty()
     _MongoClient__net_timeout = SynchroProperty()
 
@@ -373,6 +380,7 @@ class MongoReplicaSetClient(MongoClient):
         self.delegate = self.__delegate_class__(*args, **kwargs)
         self.synchro_connect()
 
+    get_default_database                     = WrapOutgoing()
     _MongoReplicaSetClient__writer           = SynchroProperty()
     _MongoReplicaSetClient__members          = SynchroProperty()
     _MongoReplicaSetClient__schedule_refresh = SynchroProperty()
