@@ -174,7 +174,7 @@ class MotorGridfsTest(MotorTest):
 
     @gen_test
     def test_put_unacknowledged(self):
-        client = yield self.motor_client(w=0)
+        client = self.motor_client(w=0)
         fs = yield motor.MotorGridFS(client.pymongo_test).open()
         with assert_raises(ConfigurationError):
             yield fs.put(b("hello"))
@@ -198,10 +198,10 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
     @gen_test
     def test_gridfs_secondary(self):
         primary_host, primary_port = self.primary
-        primary_client = yield self.motor_client(primary_host, primary_port)
+        primary_client = self.motor_client(primary_host, primary_port)
 
         secondary_host, secondary_port = self.secondaries[0]
-        secondary_client = yield self.motor_client(
+        secondary_client = self.motor_client(
             secondary_host, secondary_port,
             read_preference=ReadPreference.SECONDARY)
 

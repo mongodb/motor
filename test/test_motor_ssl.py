@@ -48,7 +48,7 @@ class MotorSSLTest(MotorTest):
         if not HAVE_SSL:
             raise SkipTest("SSL not compiled into Python")
 
-        cx = yield self.motor_client(ssl=True)
+        cx = self.motor_client(ssl=True)
 
         # Make sure the client works
         collection = cx.pymongo_test.test_collection

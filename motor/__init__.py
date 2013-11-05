@@ -20,7 +20,6 @@ import inspect
 import socket
 import time
 import warnings
-import weakref
 
 from tornado import ioloop, iostream, gen, stack_context
 from tornado.concurrent import Future
@@ -79,6 +78,10 @@ def check_deprecated_kwargs(kwargs):
     if 'slave_okay' in kwargs or 'slaveok' in kwargs:
         raise pymongo.errors.ConfigurationError(
             "Motor does not support 'slave_okay', use read_preference")
+
+    if 'auto_start_request' in kwargs:
+        raise pymongo.errors.ConfigurationError(
+            "Motor does not support requests")
 
 
 callback_type_error = TypeError("callback must be a callable")
@@ -558,14 +561,22 @@ class MotorPool(object):
             ' wait_queue_timeout %r' % (
                 self.max_size, self.wait_queue_timeout))
 
+no_result = object()
 
-def callback_from_future(future):
-    """Return a callback that sets a Future's result or exception"""
+
+def callback_from_future(future, default_result=no_result):
+    """Return a callback that sets a Future's result or exception.
+
+    `default_result`, if passed, overrides any result passed to the callback.
+    """
     def callback(result, error):
         if error:
             future.set_exception(error)
         else:
-            future.set_result(result)
+            if default_result is no_result:
+                future.set_result(result)
+            else:
+                future.set_result(default_result)
 
     return callback
 
@@ -807,20 +818,12 @@ class AsyncCommand(Async):
         Async.__init__(self, attr_name=attr_name, has_write_concern=False)
 
 
-def check_delegate(obj, attr_name):
-    if not obj.delegate:
-        raise pymongo.errors.InvalidOperation(
-            "Call open() on %s before accessing attribute '%s'" % (
-                obj.__class__.__name__, attr_name))
-
-
 class ReadOnlyPropertyDescriptor(object):
     def __init__(self, attr_name):
         self.attr_name = attr_name
 
     def __get__(self, obj, objtype):
         if obj:
-            check_delegate(obj, self.attr_name)
             return getattr(obj.delegate, self.attr_name)
         else:
             # We're accessing this property on a class, e.g. when Sphinx wants
@@ -844,7 +847,6 @@ synchronously"""
 
 class ReadWritePropertyDescriptor(ReadOnlyPropertyDescriptor):
     def __set__(self, obj, val):
-        check_delegate(obj, self.attr_name)
         setattr(obj.delegate, self.attr_name, val)
 
 
@@ -894,19 +896,21 @@ class MotorBase(object):
     secondary_acceptable_latency_ms = ReadWriteProperty()
     write_concern                   = ReadWriteProperty()
 
+    def __init__(self, delegate):
+        self.delegate = delegate
+
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, self.delegate)
 
 
 class MotorOpenable(object):
     """Base class for Motor objects that can be initialized in two stages:
-    basic setup in __init__ and setup requiring I/O in open(), which
-    creates the delegate object.
+    basic setup in __init__ and setup requiring I/O in open().
     """
     __metaclass__ = MotorMeta
     __delegate_class__ = None
 
-    def __init__(self, delegate, io_loop, *args, **kwargs):
+    def __init__(self, delegate, io_loop):
         if io_loop:
             if not isinstance(io_loop, ioloop.IOLoop):
                 raise TypeError(
@@ -917,50 +921,37 @@ class MotorOpenable(object):
 
         self.delegate = delegate
 
-        # Store args and kwargs for when open() is called
-        self._init_args = args
-        self._init_kwargs = kwargs
-
     def get_io_loop(self):
         return self.io_loop
 
     def open(self, callback=None):
-        """Actually initialize. Takes an optional callback, or returns a Future
-        that resolves to self when opened.
+        """Connect to the server. Takes an optional callback, or returns a
+        Future that resolves to self when opened.
 
         :Parameters:
          - `callback`: Optional function taking parameters (self, error)
         """
-        if callback and not callable(callback):
-            raise callback_type_error
-
         if callback:
-            self._open(callback=callback)
+            if not callable(callback):
+                raise callback_type_error
+
+            future = None
+
+            def _callback(_, error):
+                if error:
+                    callback(None, error)
+                else:
+                    callback(self, None)
         else:
             future = Future()
-            self._open(callback=callback_from_future(future))
-            return future
+            _callback = callback_from_future(future, default_result=self)
 
-    def _open(self, callback):
-        if self.delegate:
-            callback(self, None)  # Already open
+        self._ensure_connected(True, callback=_callback)
+        return future
 
-        def _connect():
-            # Run on child greenlet
-            try:
-                args, kwargs = self._delegate_init_args()
-                self.delegate = self.__delegate_class__(*args, **kwargs)
-                callback(self, None)
-            except Exception, e:
-                callback(None, e)
-
-        # Actually connect on a child greenlet
-        gr = greenlet.greenlet(_connect)
-        gr.switch()
-
-    def _delegate_init_args(self):
-        """Return args, kwargs to create a delegate object"""
-        return self._init_args, self._init_kwargs
+    # TODO: rename, shouldn't be confused w/ pymongo method.
+    def _ensure_connected(self, _, callback=None):
+        raise NotImplementedError()
 
 
 class MotorClientBase(MotorOpenable, MotorBase):
@@ -981,63 +972,18 @@ class MotorClientBase(MotorOpenable, MotorBase):
     get_default_database = DelegateMethod()
     _ensure_connected = AsyncCommand()
 
-    def __init__(self, delegate, io_loop, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         check_deprecated_kwargs(kwargs)
-        super(MotorClientBase, self).__init__(
-            delegate, io_loop, *args, **kwargs)
-
-    def open_sync(self):
-        """Synchronous open(), returning self.
-
-        Under the hood, this method creates a new Tornado IOLoop, runs
-        :meth:`open` on the loop, and deletes the loop when :meth:`open`
-        completes.
-        """
-        if self.connected:
-            return self
-
-        # Run a private IOLoop until connected or error
-        private_loop = ioloop.IOLoop()
-        standard_loop, self.io_loop = self.io_loop, private_loop
-        try:
-            private_loop.run_sync(self.open)
-            return self
-        finally:
-            # Replace the private IOLoop with the default loop
-            self.io_loop = standard_loop
-            if self.delegate:
-                self.delegate.pool_class = functools.partial(
-                    MotorPool, self.io_loop)
-
-                for pool in self._get_pools():
-                    pool.io_loop = self.io_loop
-                    pool.reset()
-
-            # Clean up file descriptors.
-            private_loop.close()
-
-    def sync_client(self):
-        """Get a PyMongo MongoClient / MongoReplicaSetClient with the same
-        configuration as this MotorClient / MotorReplicaSetClient.
-        """
-        return self.__delegate_class__(
-            *self._init_args, **self._init_kwargs)
+        io_loop = kwargs.pop('io_loop', None)
+        kwargs['_pool_class'] = functools.partial(MotorPool, io_loop)
+        kwargs['_connect'] = False
+        delegate = self.__delegate_class__(*args, **kwargs)
+        super(MotorClientBase, self).__init__(delegate, io_loop)
 
     def __getattr__(self, name):
-        if not self.connected:
-            msg = (
-                "Can't access attribute '%s' on %s before calling open()"
-                " or open_sync()" % (name, self.__class__.__name__))
-            raise pymongo.errors.InvalidOperation(msg)
-
         return MotorDatabase(self, name)
 
     __getitem__ = __getattr__
-
-    @property
-    def connected(self):
-        """True after :meth:`open` or :meth:`open_sync` completes"""
-        return self.delegate is not None
 
     @gen.coroutine
     def _copy_database(
@@ -1131,15 +1077,6 @@ class MotorClientBase(MotorOpenable, MotorBase):
         if not callback:
             return future
 
-    def _delegate_init_args(self):
-        """Override MotorOpenable._delegate_init_args to ensure
-           auto_start_request is False and _pool_class is MotorPool.
-        """
-        kwargs = self._init_kwargs.copy()
-        kwargs['auto_start_request'] = False
-        kwargs['_pool_class'] = functools.partial(MotorPool, self.io_loop)
-        return self._init_args, kwargs
-
 
 class MotorClient(MotorClientBase):
     __delegate_class__ = pymongo.mongo_client.MongoClient
@@ -1155,10 +1092,6 @@ class MotorClient(MotorClientBase):
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
 
-        :meth:`open` or :meth:`open_sync` must be called before using a new
-        MotorClient. No property access is allowed before the connection
-        is opened.
-
         MotorClient takes the same constructor arguments as
         `MongoClient`_, as well as:
 
@@ -1168,8 +1101,7 @@ class MotorClient(MotorClientBase):
 
         .. _MongoClient: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html
         """
-        super(MotorClient, self).__init__(
-            None, kwargs.pop('io_loop', None), *args, **kwargs)
+        super(MotorClient, self).__init__(*args, **kwargs)
 
     def _get_pools(self):
         # TODO: expose the PyMongo pool, or otherwise avoid this
@@ -1200,10 +1132,6 @@ class MotorReplicaSetClient(MotorClientBase):
     def __init__(self, *args, **kwargs):
         """Create a new connection to a MongoDB replica set.
 
-        :meth:`open` or :meth:`open_sync` must be called before using a new
-        MotorReplicaSetClient. No property access is allowed before the
-        connection is opened.
-
         MotorReplicaSetClient takes the same constructor arguments as
         `MongoReplicaSetClient`_, as well as:
 
@@ -1213,61 +1141,15 @@ class MotorReplicaSetClient(MotorClientBase):
 
         .. _MongoReplicaSetClient: http://api.mongodb.org/python/current/api/pymongo/mongo_replica_set_client.html
         """
-        super(MotorReplicaSetClient, self).__init__(
-            None, kwargs.pop('io_loop', None), *args, **kwargs)
-
-    def open_sync(self):
-        """Synchronous open(), returning self.
-
-        Under the hood, this method creates a new Tornado IOLoop, runs
-        :meth:`open` on the loop, and deletes the loop when :meth:`open`
-        completes.
-        """
-        super(MotorReplicaSetClient, self).open_sync()
-
-        # We need to wait for open_sync() to complete and restore the
-        # original IOLoop before starting the monitor.
-        self.delegate._MongoReplicaSetClient__monitor.start_motor(self.io_loop)
-        return self
-
-    def open(self, callback=None):
-        """Actually initialize. Takes an optional callback, or returns a Future
-        that resolves to self when opened.
-
-        :Parameters:
-         - `callback`: Optional function taking parameters (self, error)
-        """
-        if callback and not callable(callback):
-            raise callback_type_error
-
-        def opened(self, error):
-            if error:
-                callback(None, error)
-            else:
-                try:
-                    monitor = self.delegate._MongoReplicaSetClient__monitor
-                    monitor.start_motor(self.io_loop)
-                except Exception, e:
-                    callback(None, e)
-                else:
-                    callback(self, None)  # No errors
-
-        if callback:
-            super(MotorReplicaSetClient, self)._open(callback=opened)
+        if 'io_loop' in kwargs:
+            io_loop = kwargs['io_loop']
         else:
-            future = Future()
-            # The final callback run from inside opened
-            callback = callback_from_future(future)
-            super(MotorReplicaSetClient, self)._open(callback=opened)
-            return future
+            ioloop = ioloop.IOLoop.current()
 
-    def _delegate_init_args(self):
-        # This _monitor_class will be passed to PyMongo's
-        # MongoReplicaSetClient when we create it.
-        args, kwargs = super(
-            MotorReplicaSetClient, self)._delegate_init_args()
-        kwargs['_monitor_class'] = MotorReplicaSetMonitor
-        return args, kwargs
+        kwargs['_monitor_class'] = functools.partial(
+            MotorReplicaSetMonitor, io_loop)
+
+        super(MotorReplicaSetClient, self).__init__(*args, **kwargs)
 
     def _get_pools(self):
         # TODO: expose the PyMongo RSC members, or otherwise avoid this.
@@ -1290,7 +1172,7 @@ class MotorReplicaSetClient(MotorClientBase):
 # monitor it for changes. In Motor, use a periodic callback on the IOLoop to
 # monitor the set.
 class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
-    def __init__(self, rsc):
+    def __init__(self, io_loop, rsc):
         msg = (
             "First argument to MotorReplicaSetMonitor must be"
             " MongoReplicaSetClient, not %r" % rsc)
@@ -1305,8 +1187,9 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
 
         self.timeout_obj = None
         self.started = False
+        self.io_loop = io_loop
 
-    def shutdown(self, dummy=None):
+    def shutdown(self, _=None):
         if self.timeout_obj:
             self.io_loop.remove_timeout(self.timeout_obj)
             self.stopped = True
@@ -1332,20 +1215,11 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
         greenlet.greenlet(self.refresh).switch()
 
     def start(self):
-        """No-op: PyMongo thinks this starts the monitor, but Motor starts
-           the monitor separately to ensure it uses the right IOLoop."""
-        pass
-
-    def start_sync(self):
-        """No-op: PyMongo thinks this starts the monitor, but Motor starts
-           the monitor separately to ensure it uses the right IOLoop."""
-        pass
-
-    def start_motor(self, io_loop):
-        self.io_loop = io_loop
         self.started = True
         self.timeout_obj = self.io_loop.add_timeout(
             time.time() + self._refresh_interval, self.async_refresh)
+
+    start_sync = start
 
     def schedule_refresh(self):
         self.refreshed.clear()
@@ -1361,6 +1235,7 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
         pass
 
     def wait_for_refresh(self, timeout_seconds):
+        assert greenlet.getcurrent().parent, "Should be on child greenlet"
         # self.refreshed is a util.MotorGreenletEvent.
         self.refreshed.wait(self.io_loop, timeout_seconds)
 
@@ -1464,15 +1339,14 @@ class MotorCollection(MotorBase):
     full_name         = ReadOnlyProperty()
 
     def __init__(self, database, name=None, *args, **kwargs):
-        if isinstance(database, Collection):
-            # Short cut
-            self.delegate = Collection
-        elif not isinstance(database, MotorDatabase):
+        # TODO: test *args, **kwargs, creation
+        if not isinstance(database, MotorDatabase):
             raise TypeError("First argument to MotorCollection must be "
                             "MotorDatabase, not %r" % database)
-        else:
-            self.database = database
-            self.delegate = Collection(self.database.delegate, name)
+
+        delegate = Collection(database.delegate, name)
+        super(MotorCollection, self).__init__(delegate)
+        self.database = database
 
     def __getattr__(self, name):
         # dotted collection name, like foo.bar
@@ -1554,7 +1428,7 @@ class MotorCursor(MotorBase):
           automatically closed by the client when the :class:`MotorCursor` is
           cleaned up by the garbage collector.
         """
-        self.delegate = cursor
+        super(MotorCursor, self).__init__(cursor)
         self.collection = collection
         self.started = False
         self.closed = False
@@ -1999,8 +1873,44 @@ class MotorGridOut(MotorOpenable):
                 "Can't override IOLoop for MotorGridOut"
 
             super(MotorGridOut, self).__init__(
-                None, root_collection.get_io_loop(), root_collection.delegate,
-                file_id, file_document)
+                None, root_collection.get_io_loop())
+
+            self.__root_collection = root_collection
+            self.__file_id = file_id
+            self.__file_document = file_document
+
+    # TODO: refactor
+    def _ensure_connected(self, _, callback=None):
+        if callback:
+            future = None
+            _callback = callback
+        else:
+            future = Future()
+            _callback = callback_from_future(future)
+
+        if self.delegate:
+            _callback(self, None)
+            return
+
+        def _connect():
+            # Run on child greenlet
+            try:
+                self.delegate = self.__delegate_class__(
+                    self.__root_collection.delegate,
+                    self.__file_id,
+                    self.__file_document)
+
+                del self.__root_collection
+                del self.__file_document
+                del self.__file_id
+                _callback(self, None)
+            except Exception, e:
+                _callback(None, e)
+
+        # Actually connect on a child greenlet
+        gr = greenlet.greenlet(_connect)
+        gr.switch()
+        return future
 
     @gen.coroutine
     def stream_to_handler(self, request_handler):
@@ -2063,10 +1973,9 @@ class MotorGridIn(MotorOpenable):
 
     def __init__(self, root_collection, **kwargs):
         """
-        Class to write data to GridFS. If instantiating directly, you must call
-        :meth:`open` before using the `MotorGridIn` object. However,
-        application developers should not generally need to instantiate this
-        class - see :meth:`~motor.MotorGridFS.new_file`.
+        Class to write data to GridFS. Application developers should not
+        generally need to instantiate this class - see
+        :meth:`~motor.MotorGridFS.new_file`.
 
         Any of the file level options specified in the `GridFS Spec
         <http://dochub.mongodb.org/core/gridfsspec>`_ may be passed as
@@ -2110,9 +2019,43 @@ class MotorGridIn(MotorOpenable):
             assert 'io_loop' not in kwargs, (
                 "Can't override IOLoop for MotorGridIn")
 
-            MotorOpenable.__init__(
-                self, None, root_collection.get_io_loop(),
-                root_collection.delegate, **kwargs)
+            MotorOpenable.__init__(self, None, root_collection.get_io_loop())
+            self.__root_collection = root_collection
+            self.__kwargs = kwargs
+
+    def _ensure_connected(self, _, callback=None):
+        if callback:
+            if not callable(callback):
+                raise callback_type_error
+
+            future = None
+            _callback = callback
+        else:
+            future = Future()
+            _callback = callback_from_future(future, default_result=self)
+
+        if self.delegate:
+            _callback(self, None)
+            return
+
+        def _connect():
+            # Run on child greenlet
+            try:
+                self.delegate = self.__delegate_class__(
+                    self.__root_collection.delegate,
+                    **self.__kwargs)
+
+                del self.__root_collection
+                del self.__kwargs
+                _callback(self, None)
+            except Exception, e:
+                _callback(None, e)
+
+        # Actually connect on a child greenlet
+        gr = greenlet.greenlet(_connect)
+        gr.switch()
+        return future
+
 
 MotorGridIn.set = asynchronize(
     MotorGridIn, gridfs.GridIn.__setattr__, False, doc="""
@@ -2160,8 +2103,42 @@ class MotorGridFS(MotorOpenable):
                             "MotorDatabase, not %r" % database)
 
         self.collection = database[collection]
-        MotorOpenable.__init__(
-            self, None, database.get_io_loop(), database.delegate, collection)
+        MotorOpenable.__init__(self, None, database.get_io_loop())
+
+        self.__database = database
+        self.__collection = collection
+
+    def _ensure_connected(self, _, callback=None):
+        if callback:
+            if not callable(callback):
+                raise callback_type_error
+
+            future = None
+            _callback = callback
+        else:
+            future = Future()
+            _callback = callback_from_future(future, default_result=self)
+
+        if self.delegate:
+            _callback(self, None)
+            return
+
+        def _connect():
+            # Run on child greenlet
+            try:
+                self.delegate = self.__delegate_class__(
+                    self.__database.delegate, self.__collection)
+
+                del self.__database
+                del self.__collection
+                _callback(self, None)
+            except Exception, e:
+                _callback(None, e)
+
+        # Actually connect on a child greenlet
+        gr = greenlet.greenlet(_connect)
+        gr.switch()
+        return future
 
     @gen.coroutine
     def _put(self, data, _callback, **kwargs):

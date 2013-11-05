@@ -22,10 +22,11 @@ import sys
 
 from nose.plugins.skip import SkipTest
 import pymongo
-from pymongo.errors import InvalidOperation, ConfigurationError
+from pymongo.errors import ConfigurationError
 from pymongo.errors import ConnectionFailure
 from tornado import gen
 from tornado.concurrent import Future
+from tornado.ioloop import IOLoop
 from tornado.testing import gen_test
 
 import motor
@@ -36,28 +37,34 @@ from test.utils import server_started_with_auth
 
 class MotorClientTest(MotorTest):
     @gen_test
-    def test_client(self):
+    def test_client_open(self):
         cx = motor.MotorClient(host, port, io_loop=self.io_loop)
-
-        # Can't access databases before connecting
-        with assert_raises(pymongo.errors.InvalidOperation):
-            cx.some_database_name
-
-        with assert_raises(pymongo.errors.InvalidOperation):
-            cx['some_database_name']
-
         result = yield cx.open()
         self.assertEqual(result, cx)
-        self.assertTrue(cx.connected)
 
         # Ensure future is marked done if already connected.
         self.assertEqual(cx, (yield cx.open()))
-        self.assertEqual(cx, cx.open_sync())
+        cx.close()
+
+    @gen_test
+    def test_client_lazy_connect(self):
+        # TODO: insert update save find remove command.
+        self.sync_cx.pymongo_test.test_client_lazy_connect.remove()
+
+        # Create client without connecting; connect on demand.
+        cx = motor.MotorClient(host, port, io_loop=self.io_loop)
+        collection = cx.pymongo_test.test_client_lazy_connect
+        future0 = collection.insert({'foo': 'bar'})
+        future1 = collection.insert({'foo': 'bar'})
+        yield [future0, future1]
+
+        self.assertEqual(2, (yield collection.find({'foo': 'bar'}).count()))
+
         cx.close()
 
     @gen_test
     def test_disconnect(self):
-        cx = yield self.motor_client()
+        cx = self.motor_client()
         cx.disconnect()
         self.assertEqual(0, len(cx.delegate._MongoClient__pool.sockets))
 
@@ -94,99 +101,14 @@ class MotorClientTest(MotorTest):
         with assert_raises(ConnectionFailure):
             yield client.open()
 
-    @gen_test
-    def test_sync_client(self):
-        class DictSubclass(dict):
-            pass
-
-        kwargs = dict(
-            connectTimeoutMS=1000, socketTimeoutMS=1500, max_pool_size=23,
-            document_class=DictSubclass, tz_aware=True)
-
-        cx = yield self.motor_client(host, port, **kwargs)
-        sync_cx = cx.sync_client()
-        self.assertTrue(isinstance(sync_cx, pymongo.mongo_client.MongoClient))
-        self.assertEqual(host, sync_cx.host)
-        self.assertEqual(port, sync_cx.port)
-        self.assertEqual(1000, sync_cx._MongoClient__conn_timeout * 1000.0)
-        self.assertEqual(1500, sync_cx._MongoClient__net_timeout * 1000.0)
-        self.assertEqual(23, sync_cx._MongoClient__max_pool_size)
-        self.assertEqual(True, sync_cx._MongoClient__tz_aware)
-        self.assertEqual(DictSubclass, sync_cx._MongoClient__document_class)
-
-        # Make sure sync client works
-        self.assertEqual(
-            {'_id': 5, 's': hex(5)},
-            sync_cx.pymongo_test.test_collection.find_one({'_id': 5}))
-
-        cx.close()
-
-    @gen_test
-    def test_open_sync(self):
-        cx = motor.MotorClient(host, port, io_loop=self.io_loop)
-        self.assertFalse(cx.connected)
-
-        # open_sync() creates a special IOLoop just to run the connection
-        # code to completion
-        self.assertEqual(cx, cx.open_sync())
-        self.assertTrue(cx.connected)
-
-        # IOLoop was restored?
-        self.assertEqual(self.io_loop, cx.io_loop)
-
-        # Really connected?
-        result = yield cx.pymongo_test.test_collection.find_one({'_id': 0})
-
-        self.assertEqual(0, result['_id'])
-        cx.close()
-
-    def test_open_sync_auth_from_uri(self):
-        if not server_started_with_auth(self.sync_cx):
-            raise SkipTest("Server not started with auth")
-
-        self.sync_cx.admin.system.users.remove({})
-        self.sync_cx.pymongo_test.system.users.remove({})
-        self.sync_cx.admin.add_user("admin", "pass")
-        self.sync_cx.admin.authenticate("admin", "pass")
-        self.sync_cx.pymongo_test.add_user("user", "pass")
-
-        try:
-            uri = "mongodb://foo:bar@%s:%d" % (host, port)
-            self.assertRaises(ConfigurationError, motor.MotorClient(
-                uri, io_loop=self.io_loop).open_sync)
-
-            uri = "mongodb://admin:bar@%s:%d" % (host, port)
-            self.assertRaises(ConfigurationError, motor.MotorClient(
-                uri, io_loop=self.io_loop).open_sync)
-
-            uri = "mongodb://user:pass@%s:%d" % (host, port)
-            self.assertRaises(ConfigurationError, motor.MotorClient(
-                uri, io_loop=self.io_loop).open_sync)
-
-            # Works
-            uri = "mongodb://admin:pass@%s:%d" % (host, port)
-            cx = motor.MotorClient(uri, io_loop=self.io_loop).open_sync()
-            cx.close()
-
-            uri = "mongodb://admin:pass@%s:%d/pymongo_test"
-            self.assertRaises(ConfigurationError, motor.MotorClient(
-                uri, io_loop=self.io_loop).open_sync)
-
-            uri = "mongodb://user:foo@%s:%d/pymongo_test" % (host, port)
-            self.assertRaises(ConfigurationError, motor.MotorClient(
-                uri, io_loop=self.io_loop).open_sync)
-
-            uri = "mongodb://user:pass@%s:%d/pymongo_test" % (host, port)
-            cx = motor.MotorClient(uri, io_loop=self.io_loop).open_sync()
-            cx.close()
-
-        finally:
-            self.sync_cx.admin.system.users.remove({})
-            self.sync_cx.pymongo_test.system.users.remove({})
-
     def test_io_loop(self):
         with assert_raises(TypeError):
             motor.MotorClient(host, port, io_loop='foo')
+
+    def test_open_sync(self):
+        loop = IOLoop()
+        cx = loop.run_sync(motor.MotorClient(host, port, io_loop=loop).open)
+        self.assertTrue(isinstance(cx, motor.MotorClient))
 
     def test_database_named_delegate(self):
         self.assertTrue(
@@ -297,8 +219,8 @@ class MotorClientTest(MotorTest):
     @gen_test
     def test_timeout(self):
         # Launch two slow find_ones. The one with a timeout should get an error
-        no_timeout = yield self.motor_client()
-        timeout = yield self.motor_client(host, port, socketTimeoutMS=100)
+        no_timeout = self.motor_client()
+        timeout = self.motor_client(host, port, socketTimeoutMS=100)
         query = {'$where': delay(0.5), '_id': 1}
 
         timeout_fut = timeout.pymongo_test.test_collection.find_one(query)
@@ -336,22 +258,15 @@ class MotorClientTest(MotorTest):
 
     @gen_test
     def test_max_pool_size_validation(self):
-        cx = motor.MotorClient(
-            host=host, port=port, max_pool_size=-1, io_loop=self.io_loop)
+        with assert_raises(ConfigurationError):
+            motor.MotorClient(host=host, port=port, max_pool_size=-1)
 
         with assert_raises(ConfigurationError):
-            yield cx.open()
-
-        cx = motor.MotorClient(
-            host=host, port=port, max_pool_size='foo', io_loop=self.io_loop)
-
-        with assert_raises(ConfigurationError):
-            yield cx.open()
+            motor.MotorClient(host=host, port=port, max_pool_size='foo')
 
         cx = motor.MotorClient(
             host=host, port=port, max_pool_size=100, io_loop=self.io_loop)
 
-        yield cx.open()
         self.assertEqual(cx.max_pool_size, 100)
         cx.close()
 
@@ -362,7 +277,7 @@ class MotorClientTest(MotorTest):
     @gen_test
     def test_high_concurrency(self):
         concurrency = 100
-        cx = yield self.motor_client(max_pool_size=concurrency)
+        cx = self.motor_client(max_pool_size=concurrency)
         self.sync_db.insert_collection.drop()
         self.assertEqual(200, self.sync_coll.count())
         expected_finds = 200 * concurrency

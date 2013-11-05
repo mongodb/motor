@@ -39,19 +39,12 @@ class MotorIPv6Test(MotorTest):
             # or the OS doesn't support it (or both).
             raise SkipTest("No IPV6")
 
-        # Make sure we can connect over IPv6 using both open() and open_sync()
-        for open_sync in (True, False):
-            cx_string = "mongodb://[::1]:%d" % port
-            cx = motor.MotorClient(cx_string, io_loop=self.io_loop)
-            if open_sync:
-                cx.open_sync()
-            else:
-                yield cx.open()
+        cx_string = "mongodb://[::1]:%d" % port
+        cx = motor.MotorClient(cx_string, io_loop=self.io_loop)
+        collection = cx.pymongo_test.pymongo_test
+        yield collection.insert({"dummy": "object"})
+        self.assertTrue((yield collection.find_one({"dummy": "object"})))
 
-            collection = self.cx.pymongo_test.pymongo_test
-            yield collection.insert({"dummy": "object"})
-            result = yield collection.find_one({"dummy": "object"})
-            self.assertEqual('object', result['dummy'])
 
 if __name__ == '__main__':
     unittest.main()

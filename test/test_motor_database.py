@@ -37,7 +37,7 @@ class MotorDatabaseTest(MotorTest):
         self.assertEqual(hex(1), doc['s'])
 
     def test_collection_named_delegate(self):
-        db = self.motor_client_sync().pymongo_test
+        db = self.motor_client().pymongo_test
         self.assertTrue(isinstance(db.delegate, pymongo.database.Database))
         self.assertTrue(isinstance(db['delegate'], motor.MotorCollection))
         db.connection.close()
@@ -149,7 +149,7 @@ class MotorDatabaseTest(MotorTest):
 
     @gen_test
     def test_authenticate(self):
-        cx = yield self.motor_client()
+        cx = self.motor_client()
         db = cx.pymongo_test
 
         yield db.system.users.remove()

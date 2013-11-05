@@ -36,17 +36,8 @@ class MotorTestBasic(MotorTest):
     @gen_test
     def test_write_concern(self):
         cx = motor.MotorClient(host, port, io_loop=self.io_loop)
-
-        # An implementation quirk of Motor, can't access properties until
-        # connected
-        self.assertRaises(
-            pymongo.errors.InvalidOperation, getattr, cx, 'write_concern')
-
-        yield cx.open()
-
         # Default empty dict means "w=1"
         self.assertEqual({}, cx.write_concern)
-        cx.close()
 
         for gle_options in [
             {},
@@ -55,7 +46,7 @@ class MotorTestBasic(MotorTest):
             {'wtimeout': 1000},
             {'j': True},
         ]:
-            cx = yield self.motor_client(host, port, **gle_options)
+            cx = self.motor_client(host, port, **gle_options)
             expected_wc = gle_options.copy()
             self.assertEqual(expected_wc, cx.write_concern)
 
@@ -81,7 +72,7 @@ class MotorTestBasic(MotorTest):
         # No error
         yield collection.insert({'_id': 0}, w=0)
 
-        cxw2 = yield self.motor_client(w=2)
+        cxw2 = self.motor_client(w=2)
         yield cxw2.pymongo_test.test_collection.insert({'_id': 0}, w=0)
 
         # Test write concerns passed to MotorClient, set on collection, or
@@ -116,31 +107,12 @@ class MotorTestBasic(MotorTest):
 
     @gen_test
     def test_read_preference(self):
-        cx = motor.MotorClient(host, port, io_loop=self.io_loop)
-
-        # An implementation quirk of Motor, can't access properties until
-        # connected
-        self.assertRaises(
-            pymongo.errors.InvalidOperation, getattr, cx, 'read_preference')
-
         # Check the default
-        yield cx.open()
+        cx = motor.MotorClient(host, port, io_loop=self.io_loop)
         self.assertEqual(ReadPreference.PRIMARY, cx.read_preference)
-        cx.close()
 
-        # We can set mode, tags, and latency, both with open() and open_sync()
-        cx.close()
-        cx = yield self.motor_client(
-            read_preference=ReadPreference.SECONDARY,
-            tag_sets=[{'foo': 'bar'}],
-            secondary_acceptable_latency_ms=42)
-
-        self.assertEqual(ReadPreference.SECONDARY, cx.read_preference)
-        self.assertEqual([{'foo': 'bar'}], cx.tag_sets)
-        self.assertEqual(42, cx.secondary_acceptable_latency_ms)
-
-        cx.close()
-        cx = yield self.motor_client(
+        # We can set mode, tags, and latency.
+        cx = self.motor_client(
             read_preference=ReadPreference.SECONDARY,
             tag_sets=[{'foo': 'bar'}],
             secondary_acceptable_latency_ms=42)
@@ -161,7 +133,6 @@ class MotorTestBasic(MotorTest):
 
         self.assertEqual([{'yay': 'jesse'}], cursor._Cursor__tag_sets)
         self.assertEqual(17, cursor._Cursor__secondary_acceptable_latency_ms)
-        cx.close()
 
     @gen_test
     def test_safe(self):

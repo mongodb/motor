@@ -56,8 +56,7 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
         self.assertTrue(self.fs.get_last_version('foo'))
 
     def motor_db(self):
-        return motor.MotorClient(
-            host, port, io_loop=self.io_loop).open_sync().pymongo_test
+        return motor.MotorClient(host, port, io_loop=self.io_loop).pymongo_test
 
     def tearDown(self):
         self.fs.delete(self.file_id)

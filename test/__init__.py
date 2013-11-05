@@ -114,7 +114,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         self.sync_coll.insert(
             [{'_id': i, 's': hex(i)} for i in range(200)])
 
-        self.cx = self.motor_client_sync()
+        self.cx = self.motor_client()
 
     @gen.coroutine
     def wait_for_cursor(self, collection, cursor_id, retrieved):
@@ -173,29 +173,15 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
                 # Let the loop run, might be working on closing the cursor
                 yield self.pause(0.1)
 
-    @gen.coroutine
     def motor_client(self, host=host, port=port, *args, **kwargs):
-        """Get an open MotorClient. Ignores self.ssl, you must pass 'ssl'
-        argument. You'll probably need to close the client to avoid
-        file-descriptor problems after AsyncTestCase calls
-        self.io_loop.close(all_fds=True).
+        """Get a MotorClient.
+
+        Ignores self.ssl, you must pass 'ssl' argument. You'll probably need to
+        close the client to avoid file-descriptor problems after AsyncTestCase
+        calls self.io_loop.close(all_fds=True).
         """
-        client = motor.MotorClient(
+        return motor.MotorClient(
             host, port, *args, io_loop=self.io_loop, **kwargs)
-
-        yield client.open()
-        raise gen.Return(client)
-
-    def motor_client_sync(self, host=host, port=port, *args, **kwargs):
-        """Get an open MotorClient. Ignores self.ssl, you must pass 'ssl'
-        argument.
-        """
-        assert not self.io_loop._running, (
-            "Don't call motor_client_sync from within gen_test,"
-            " yield self.motor_client() instead")
-
-        return self.io_loop.run_sync(functools.partial(
-            self.motor_client, host, port, *args, **kwargs))
 
     @gen.coroutine
     def check_callback_handling(self, fn, required):
@@ -216,10 +202,10 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
 
         if required:
             self.assertRaises(TypeError, fn)
-            self.assertRaises(TypeError, fn, None)
+            self.assertRaises(TypeError, fn, callback=None)
         else:
             # Should not raise
-            fn(callback=None)
+            yield fn(callback=None)
 
         # Should not raise
         (result, error), _ = yield gen.Task(fn)

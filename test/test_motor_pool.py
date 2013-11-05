@@ -21,7 +21,7 @@ import unittest
 
 import pymongo.errors
 from nose.plugins.skip import SkipTest
-from tornado import gen, stack_context
+from tornado import stack_context
 from tornado.concurrent import Future
 from tornado.testing import gen_test
 
@@ -44,12 +44,14 @@ class MotorPoolTest(MotorTest):
             raise SkipTest("Need multithreaded Javascript in mongod for test")
 
         max_pool_size = 5
-        cx = yield self.motor_client(max_pool_size=max_pool_size)
+        cx = self.motor_client(max_pool_size=max_pool_size)
 
         pool = cx._get_pools()[0]
         self.assertEqual(max_pool_size, pool.max_size)
 
-        # Start with the socket used for isMaster
+        # Lazy connection.
+        self.assertEqual(0, len(pool.sockets))
+        yield cx.db.collection.find_one()
         self.assertEqual(1, len(pool.sockets))
         self.assertEqual(1, pool.motor_sock_counter)
 
@@ -93,8 +95,8 @@ class MotorPoolTest(MotorTest):
         # Do a find_one that takes 1 second, and set waitQueueTimeoutMS to 500,
         # 5000, and None. Verify timeout iff max_wait_time < 1 sec.
         where_delay = 1
-        for waitQueueTimeoutMS in [500]:#500, 5000, None:
-            cx = yield self.motor_client(
+        for waitQueueTimeoutMS in (500, 5000, None):
+            cx = self.motor_client(
                 max_pool_size=1, waitQueueTimeoutMS=waitQueueTimeoutMS)
 
             pool = cx._get_pools()[0]
@@ -105,15 +107,15 @@ class MotorPoolTest(MotorTest):
                 self.assertTrue(pool.wait_queue_timeout is None)
 
             collection = cx.pymongo_test.test_collection
-            cb = yield gen.Callback('find_one')
-            collection.find_one({'$where': delay(where_delay)}, callback=cb)
+            self.assertTrue((yield collection.count()) > 0)
+            future = collection.find_one({'$where': delay(where_delay)})
             if waitQueueTimeoutMS and waitQueueTimeoutMS < where_delay * 1000:
                 with assert_raises(pymongo.errors.ConnectionFailure):
                     yield collection.find_one()
             else:
                 # No error
                 yield collection.find_one()
-            yield gen.Wait('find_one')
+            yield future
             cx.close()
 
     @gen_test
@@ -154,7 +156,7 @@ class MotorPoolTest(MotorTest):
 
         loop = self.io_loop
         history = []
-        cx = yield self.motor_client(max_pool_size=1)
+        cx = self.motor_client(max_pool_size=1)
 
         # Open a socket
         yield cx.pymongo_test.test_collection.find_one()
