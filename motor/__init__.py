@@ -404,7 +404,7 @@ class MotorPool(object):
             self.queue.append(waiter)
 
             if self.wait_queue_timeout is not None:
-                deadline = time.time() + self.wait_queue_timeout
+                deadline = self.io_loop.time() + self.wait_queue_timeout
                 timeout = self.io_loop.add_timeout(
                     deadline,
                     functools.partial(
