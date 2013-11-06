@@ -18,11 +18,12 @@ import unittest
 
 import pymongo.errors
 import pymongo.mongo_replica_set_client
+from nose.plugins.skip import SkipTest
 from tornado import iostream
 from tornado.testing import gen_test
 
 import motor
-from test import host, port, MotorReplicaSetTestBase, assert_raises
+from test import host, port, MotorReplicaSetTestBase, assert_raises, MotorTest
 
 
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
@@ -65,6 +66,25 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
                 yield cursor.fetch_next
         finally:
             iostream.IOStream.write = old_write
+
+
+class TestReplicaSetClientAgainstStandalone(MotorTest):
+    """This is a funny beast -- we want to run tests for MotorReplicaSetClient
+    but only if the database at DB_IP and DB_PORT is a standalone.
+    """
+    def setUp(self):
+        super(TestReplicaSetClientAgainstStandalone, self).setUp()
+        response = self.sync_cx.admin.command('ismaster')
+        if 'setName' in response:
+            raise SkipTest(
+                "Connected to a replica set, not a standalone mongod")
+
+    @gen_test
+    def test_connect(self):
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            yield motor.MotorReplicaSetClient(
+                '%s:%s' % (host, port), replicaSet='anything',
+                connectTimeoutMS=600).test.test.find_one()
 
 
 if __name__ == '__main__':
