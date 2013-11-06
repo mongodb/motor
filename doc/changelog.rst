@@ -16,7 +16,7 @@ Motor 0.2 drops Python 2.5 support (since Tornado 3 has dropped it).
 
 It is no longer necessary to explicitly "open" a MotorClient or
 MotorReplicaSetClient. The ``open_sync`` method is removed and calling ``open``
-is now optional. Clients now connect to MongoDB on demand.
+is now optional. Motor clients now connect to MongoDB on demand.
 
 All Motor asynchronous methods (except
 :meth:`MotorCursor.each`) now return a `Future
@@ -42,7 +42,7 @@ Motor somewhat from PyMongo changes.
 The ``MotorCursor.tail`` method has been removed. It was complex, diverged from
 PyMongo's feature set, and encouraged overuse of MongoDB capped collections as
 message queues when a purpose-built message queue is more appropriate. An
-example of tailing a capped collection is provided:
+example of tailing a capped collection is provided instead:
 :doc:`examples/tailable-cursors`.
 
 ``MotorClient.is_locked`` has been removed since calling it from Motor would be
@@ -52,7 +52,7 @@ The yield-point classes ``WaitOp`` and ``WaitAllOps`` have been removed, since
 Tornado 3's ``Future`` interface has equivalent functionality.
 
 :meth:`~web.GridFSHandler.get_gridfs_file` now
-returns Future instead of accepting a callback.
+returns a Future instead of accepting a callback.
 
 Migration
 ~~~~~~~~~
