@@ -93,6 +93,10 @@ excluded_tests = [
     # No pinning in Motor since there are no requests.
     'TestReplicaSetClient.test_pinned_member',
 
+    # We don't make the same guarantee as PyMongo when connecting an
+    # RS client to a standalone.
+    'TestReplicaSetClientAgainstStandalone.test_connect',
+
     # test_read_preference: requires patching MongoReplicaSetClient specially.
     'TestCommandAndReadPreference.*',
 
