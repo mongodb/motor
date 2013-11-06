@@ -87,7 +87,8 @@ excluded_tests = [
 
     # We test this directly, because it requires monkey-patching either socket
     # or IOStream, depending on whether it's PyMongo or Motor.
-    'TestReplicaSetClient.test_auto_reconnect_exception_when_read_preference_is_secondary',
+    ('TestReplicaSetClient.'
+     'test_auto_reconnect_exception_when_read_preference_is_secondary'),
 
     # No pinning in Motor since there are no requests.
     'TestReplicaSetClient.test_pinned_member',
