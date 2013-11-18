@@ -30,8 +30,10 @@ from test.utils import delay
 
 
 class MotorPoolTest(MotorTest):
+    @gen_test
     def test_max_size_default(self):
-        pool = self.cx.delegate._MongoClient__pool
+        yield self.cx.open()
+        pool = self.cx._get_primary_pool()
 
         # Current defaults
         self.assertEqual(100, pool.max_size)
@@ -46,12 +48,11 @@ class MotorPoolTest(MotorTest):
         max_pool_size = 5
         cx = self.motor_client(max_pool_size=max_pool_size)
 
-        pool = cx._get_pools()[0]
-        self.assertEqual(max_pool_size, pool.max_size)
-
         # Lazy connection.
-        self.assertEqual(0, len(pool.sockets))
+        self.assertEqual(None, cx._get_primary_pool())
         yield cx.db.collection.find_one()
+        pool = cx._get_primary_pool()
+        self.assertEqual(max_pool_size, pool.max_size)
         self.assertEqual(1, len(pool.sockets))
         self.assertEqual(1, pool.motor_sock_counter)
 
@@ -99,7 +100,8 @@ class MotorPoolTest(MotorTest):
             cx = self.motor_client(
                 max_pool_size=1, waitQueueTimeoutMS=waitQueueTimeoutMS)
 
-            pool = cx._get_pools()[0]
+            yield cx.open()
+            pool = cx._get_primary_pool()
             if waitQueueTimeoutMS:
                 self.assertEqual(
                     waitQueueTimeoutMS, pool.wait_queue_timeout * 1000)
@@ -121,9 +123,9 @@ class MotorPoolTest(MotorTest):
     @gen_test
     def test_connections_unacknowledged_writes(self):
         # Verifying that unacknowledged writes don't open extra connections
-        pool = self.cx.delegate._MongoClient__pool
         collection = self.cx.pymongo_test.test_collection
         yield collection.drop()
+        pool = self.cx._get_primary_pool()
         self.assertEqual(1, pool.motor_sock_counter)
 
         nops = 10
@@ -161,7 +163,7 @@ class MotorPoolTest(MotorTest):
         # Open a socket
         yield cx.pymongo_test.test_collection.find_one()
 
-        pool = cx._get_pools()[0]
+        pool = cx._get_primary_pool()
         self.assertEqual(1, len(pool.sockets))
         sock_info = pool.get_socket()
 

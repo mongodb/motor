@@ -66,7 +66,7 @@ class MotorClientTest(MotorTest):
     def test_disconnect(self):
         cx = self.motor_client()
         cx.disconnect()
-        self.assertEqual(0, len(cx.delegate._MongoClient__pool.sockets))
+        self.assertEqual(None, cx._get_primary_pool())
 
     @gen_test
     def test_unix_socket(self):

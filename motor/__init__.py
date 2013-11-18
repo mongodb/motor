@@ -936,6 +936,7 @@ class MotorOpenable(object):
         :Parameters:
          - `callback`: Optional function taking parameters (self, error)
         """
+        # Arrange to replace the result with 'self' once complete.
         if callback:
             if not callable(callback):
                 raise callback_type_error
@@ -951,12 +952,8 @@ class MotorOpenable(object):
             future = Future()
             _callback = callback_from_future(future, default_result=self)
 
-        self._ensure_connected(True, callback=_callback)
+        self._ensure_connected(callback=_callback)
         return future
-
-    # TODO: rename, shouldn't be confused w/ pymongo method.
-    def _ensure_connected(self, _, callback=None):
-        raise NotImplementedError()
 
 
 class MotorClientBase(MotorOpenable, MotorBase):
@@ -976,9 +973,8 @@ class MotorClientBase(MotorOpenable, MotorBase):
     max_pool_size  = ReadOnlyProperty()
     _ensure_connected = AsyncCommand()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, io_loop, *args, **kwargs):
         check_deprecated_kwargs(kwargs)
-        io_loop = kwargs.pop('io_loop', None)
         kwargs['_pool_class'] = functools.partial(MotorPool, io_loop)
         kwargs['_connect'] = False
         delegate = self.__delegate_class__(*args, **kwargs)
@@ -1005,9 +1001,10 @@ class MotorClientBase(MotorOpenable, MotorBase):
     
             pymongo.database._check_name(to_name)
 
+            # Make sure there *is* a primary pool.
             yield self._ensure_connected(True)
             pool = self._get_primary_pool()
-            sock_info = yield self._async_get_socket(pool)
+            sock_info = yield pool.async_get_socket()
 
             copydb_command = bson.SON([
                 ('copydb', 1),
@@ -1127,21 +1124,22 @@ class MotorClient(MotorClientBase):
 
         .. _MongoClient: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html
         """
-        super(MotorClient, self).__init__(*args, **kwargs)
+        if 'io_loop' in kwargs:
+            io_loop = kwargs.pop('io_loop')
+        else:
+            io_loop = ioloop.IOLoop.current()
+
+        event_class = functools.partial(util.MotorGreenletEvent, io_loop)
+        kwargs['_event_class'] = event_class
+        super(MotorClient, self).__init__(io_loop, *args, **kwargs)
 
     def _get_pools(self):
         # TODO: expose the PyMongo pool, or otherwise avoid this
-        return [self.delegate._MongoClient__pool]
+        member = self.delegate._MongoClient__member
+        return [member.pool] if member else [None]
 
     def _get_primary_pool(self):
-        # TODO: expose the PyMongo pool, or otherwise avoid this
-        return self.delegate._MongoClient__pool
-
-    def _async_get_socket(self, pool):
-        """Return a ``Future`` that will resolve to a socket."""
-        # MongoClient passes host and port into the pool for each call to
-        # get_socket.
-        return pool.async_get_socket((self.host, self.port))
+        return self._get_pools()[0]
 
 
 class MotorReplicaSetClient(MotorClientBase):
@@ -1168,14 +1166,14 @@ class MotorReplicaSetClient(MotorClientBase):
         .. _MongoReplicaSetClient: http://api.mongodb.org/python/current/api/pymongo/mongo_replica_set_client.html
         """
         if 'io_loop' in kwargs:
-            io_loop = kwargs['io_loop']
+            io_loop = kwargs.pop('io_loop')
         else:
             io_loop = ioloop.IOLoop.current()
 
         kwargs['_monitor_class'] = functools.partial(
             MotorReplicaSetMonitor, io_loop)
 
-        super(MotorReplicaSetClient, self).__init__(*args, **kwargs)
+        super(MotorReplicaSetClient, self).__init__(io_loop, *args, **kwargs)
 
     def _get_pools(self):
         # TODO: expose the PyMongo RSC members, or otherwise avoid this.
@@ -1187,11 +1185,6 @@ class MotorReplicaSetClient(MotorClientBase):
         rs_state = self.delegate._MongoReplicaSetClient__rs_state
         if rs_state.primary_member:
             return rs_state.primary_member.pool
-
-    def _async_get_socket(self, pool):
-        """Return a ``Future`` that will resolve to a socket."""
-        # MongoReplicaSetClient sets pools' host and port when it creates them.
-        return pool.async_get_socket()
 
 
 # PyMongo uses a background thread to regularly inspect the replica set and
@@ -1208,8 +1201,9 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
 
         # Super makes two MotorGreenletEvents: self.event and self.refreshed.
         # We only use self.refreshed.
+        event_class = functools.partial(util.MotorGreenletEvent, io_loop)
         pymongo.mongo_replica_set_client.Monitor.__init__(
-            self, rsc, event_class=util.MotorGreenletEvent)
+            self, rsc, event_class=event_class)
 
         self.timeout_obj = None
         self.started = False
@@ -1232,7 +1226,7 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
             return
         finally:
             # Switch to greenlets blocked in wait_for_refresh().
-            self.refreshed.set(self.io_loop)
+            self.refreshed.set()
 
         self.timeout_obj = self.io_loop.add_timeout(
             time.time() + self._refresh_interval, self.async_refresh)
@@ -1263,7 +1257,7 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
     def wait_for_refresh(self, timeout_seconds):
         assert greenlet.getcurrent().parent, "Should be on child greenlet"
         # self.refreshed is a util.MotorGreenletEvent.
-        self.refreshed.wait(self.io_loop, timeout_seconds)
+        self.refreshed.wait(timeout_seconds)
 
     def is_alive(self):
         return self.started and not self.stopped
@@ -2049,7 +2043,7 @@ class MotorGridIn(MotorOpenable):
             self.__root_collection = root_collection
             self.__kwargs = kwargs
 
-    def _ensure_connected(self, _, callback=None):
+    def open(self, callback=None):
         if callback:
             if not callable(callback):
                 raise callback_type_error
@@ -2134,7 +2128,7 @@ class MotorGridFS(MotorOpenable):
         self.__database = database
         self.__collection = collection
 
-    def _ensure_connected(self, _, callback=None):
+    def open(self, callback=None):
         if callback:
             if not callable(callback):
                 raise callback_type_error

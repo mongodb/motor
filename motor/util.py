@@ -99,17 +99,13 @@ class MotorGreenletCounter(object):
         return self._counters.get(self.ident.get(), 0)
 
 
-# TODO: remove?
-class ExceededMaxWaiters(Exception):
-    pass
-
-
 # TODO: test.
 class MotorGreenletEvent(object):
     """An Event-like class for greenlets."""
-    def __init__(self):
+    def __init__(self, io_loop):
+        self.io_loop = io_loop
         self._flag = False
-        self._waiters = set()
+        self._waiters = set()  # TODO: a list instead?
         self._timeouts = set()
 
     def is_set(self):
@@ -117,20 +113,21 @@ class MotorGreenletEvent(object):
 
     isSet = is_set
 
-    def set(self, io_loop):
+    def set(self):
         self._flag = True
         timeouts, self._timeouts = self._timeouts, set()
         for timeout in timeouts:
-            io_loop.remove_timeout(timeout)
+            self.io_loop.remove_timeout(timeout)
 
         waiters, self._waiters = self._waiters, set()
         for waiter in waiters:
-            waiter.switch()
+            # Defer execution.
+            self.io_loop.add_callback(waiter.switch)
 
     def clear(self):
         self._flag = False
 
-    def wait(self, io_loop, timeout_seconds):
+    def wait(self, timeout_seconds=None):
         current = greenlet.getcurrent()
         parent = current.parent
         assert parent, "Should be on child greenlet"
@@ -143,8 +140,9 @@ class MotorGreenletEvent(object):
                 self._timeouts.remove(timeout)
                 current.switch()
 
-            timeout = io_loop.add_timeout(
-                datetime.timedelta(seconds=timeout_seconds), on_timeout)
+            if timeout_seconds is not None:
+                timeout = self.io_loop.add_timeout(
+                    datetime.timedelta(seconds=timeout_seconds), on_timeout)
 
-            self._timeouts.add(timeout)
+                self._timeouts.add(timeout)
             parent.switch()
