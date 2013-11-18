@@ -288,6 +288,7 @@ class MotorPool(object):
             give the number of callbacks allowed to wait for a socket at one
             time.
         """
+        assert isinstance(pair, tuple), "pair must be a tuple"
         self.io_loop = io_loop
         self.sockets = set()
         self.pair = pair
@@ -455,7 +456,7 @@ class MotorPool(object):
         sock_info.last_checkout = time.time()
         return sock_info
 
-    def async_get_socket(self, pair=None):
+    def async_get_socket(self):
         """Get a ``Future`` which will resolve to a socket."""
         loop = self.io_loop
         future = Future()
@@ -463,7 +464,7 @@ class MotorPool(object):
         def _get_socket():
             # Runs on child greenlet.
             try:
-                result = self.get_socket(pair)
+                result = self.get_socket()
                 loop.add_callback(functools.partial(future.set_result, result))
             except Exception, e:
                 loop.add_callback(functools.partial(future.set_exception, e))
