@@ -17,8 +17,6 @@ Store blobs of data in `GridFS <http://docs.mongodb.org/manual/applications/grid
 .. autoclass:: MotorGridIn
   :members:
 
-  .. automethod:: set
-
 
 .. autoclass:: MotorGridOut
   :members:
