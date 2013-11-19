@@ -105,49 +105,6 @@ in a `coroutine`_:
 
 See :ref:`coroutine-example`.
 
-max_concurrent and max_wait_time
---------------------------------
-
-PyMongo allows the number of connections to MongoDB to grow to match the number
-of threads performing concurrent operations. (PyMongo's ``max_pool_size``
-merely caps the number of *idle* sockets kept open. [#max_pool_size]_)
-:class:`~motor.MotorClient` and :class:`~motor.MotorReplicaSetClient` provide
-an additional option, ``max_concurrent``, which caps the total number of
-sockets per host, per client. The default is 100. Once the cap is reached,
-operations yield to the IOLoop while waiting for a free socket. The optional
-``max_wait_time`` allows operations to raise a :exc:`~motor.MotorPoolTimeout`
-if they can't acquire a socket before the deadline.
-
-Timeouts
---------
-
-In PyMongo, you can set a network timeout which causes an
-:exc:`~pymongo.errors.AutoReconnect` exception if an operation does not complete
-in time::
-
-    db = MongoClient(socketTimeoutMS=500).test
-    try:
-        user = db.users.find_one({'name': 'Jesse'})
-        print user
-    except AutoReconnect:
-        print 'timed out'
-
-:class:`~motor.MotorClient` and :class:`~motor.MotorReplicaSetClient`
-support the same options::
-
-    db = MotorClient(socketTimeoutMS=500).open_sync().test
-
-    @gen.coroutine
-    def f():
-        try:
-            user = yield db.users.find_one({'name': 'Jesse'})
-            print user
-        except AutoReconnect:
-            print 'timed out'
-
-As in PyMongo, the default ``connectTimeoutMS`` is 20 seconds, and the default
-``socketTimeoutMS`` is no timeout.
-
 Requests
 --------
 
