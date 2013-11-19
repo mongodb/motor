@@ -1977,7 +1977,8 @@ class MotorGridOut(object):
             written += len(chunk)
 
 
-class MotorGridIn(MotorOpenable):
+class MotorGridIn(object):
+    __metaclass__ = MotorMeta
     __delegate_class__ = gridfs.GridIn
 
     __getattr__     = DelegateMethod()
@@ -1994,7 +1995,7 @@ class MotorGridIn(MotorOpenable):
     chunk_size      = ReadOnlyProperty()
     upload_date     = ReadOnlyProperty()
 
-    def __init__(self, root_collection, **kwargs):
+    def __init__(self, root_collection, delegate=None, **kwargs):
         """
         Class to write data to GridFS. Application developers should not
         generally need to instantiate this class - see
@@ -2029,55 +2030,22 @@ class MotorGridIn(MotorOpenable):
              to write to
           - `**kwargs` (optional): file level options (see above)
         """
-        if isinstance(root_collection, grid_file.GridIn):
-            # Short cut
-            MotorOpenable.__init__(
-                self, root_collection, kwargs.pop('io_loop', None))
+        if not isinstance(root_collection, MotorCollection):
+            raise TypeError(
+                "First argument to MotorGridIn must be "
+                "MotorCollection, not %r" % root_collection)
+
+        self.io_loop = root_collection.get_io_loop()
+        if delegate:
+            # Short cut.
+            self.delegate = delegate
         else:
-            if not isinstance(root_collection, MotorCollection):
-                raise TypeError(
-                    "First argument to MotorGridIn must be "
-                    "MotorCollection, not %r" % root_collection)
+            self.delegate = self.__delegate_class__(
+                root_collection.delegate,
+                **kwargs)
 
-            assert 'io_loop' not in kwargs, (
-                "Can't override IOLoop for MotorGridIn")
-
-            MotorOpenable.__init__(self, None, root_collection.get_io_loop())
-            self.__root_collection = root_collection
-            self.__kwargs = kwargs
-
-    def open(self, callback=None):
-        if callback:
-            if not callable(callback):
-                raise callback_type_error
-
-            future = None
-            _callback = callback
-        else:
-            future = Future()
-            _callback = callback_from_future(future, default_result=self)
-
-        if self.delegate:
-            _callback(self, None)
-            return
-
-        def _connect():
-            # Run on child greenlet
-            try:
-                self.delegate = self.__delegate_class__(
-                    self.__root_collection.delegate,
-                    **self.__kwargs)
-
-                del self.__root_collection
-                del self.__kwargs
-                _callback(self, None)
-            except Exception, e:
-                _callback(None, e)
-
-        # Actually connect on a child greenlet
-        gr = greenlet.greenlet(_connect)
-        gr.switch()
-        return future
+    def get_io_loop(self):
+        return self.io_loop
 
 
 MotorGridIn.set = asynchronize(
@@ -2166,7 +2134,7 @@ class MotorGridFS(MotorOpenable):
     @gen.coroutine
     def _put(self, data, _callback, **kwargs):
         try:
-            grid_file = yield MotorGridIn(self.collection, **kwargs).open()
+            grid_file = MotorGridIn(self.collection, **kwargs)
 
             # w >= 1 necessary to avoid running 'filemd5' command before
             # all data is written, especially with sharding.
@@ -2230,7 +2198,10 @@ class MotorGridFS(MotorOpenable):
 
     def wrap(self, obj):
         if obj.__class__ is grid_file.GridIn:
-            return MotorGridIn(obj, io_loop=self.get_io_loop())
+            return MotorGridIn(
+                root_collection=self.collection,
+                delegate=obj)
+
         elif obj.__class__ is grid_file.GridOut:
             return MotorGridOut(
                 root_collection=self.collection,

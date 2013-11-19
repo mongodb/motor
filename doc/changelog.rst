@@ -15,8 +15,11 @@ still available for Tornado 2 users.
 Motor 0.2 drops Python 2.5 support (since Tornado 3 has dropped it).
 
 It is no longer necessary to explicitly "open" a MotorClient or
-MotorReplicaSetClient. The ``open_sync`` method is removed and calling ``open``
-is now optional. Motor clients now connect to MongoDB on demand.
+MotorReplicaSetClient. The ``open_sync`` method is removed and calling
+``open`` is now optional. Motor clients now connect to MongoDB on demand.
+
+Similarly, :meth:`MotorGridOut.open` is optional, and :class:`MotorGridIn`
+now has no ``open`` method at all.
 
 All Motor asynchronous methods (except
 :meth:`MotorCursor.each`) now return a `Future

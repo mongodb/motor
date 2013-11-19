@@ -48,10 +48,7 @@ class MotorGridFileTest(MotorTest):
     def test_grid_in_callback(self):
         db = self.cx.pymongo_test
         f = motor.MotorGridIn(db.fs, filename="test")
-        yield self.check_optional_callback(f.open)
-        f = yield motor.MotorGridIn(db.fs, filename="test").open()
         yield self.check_optional_callback(partial(f.set, 'name', 'value'))
-
         yield self.check_optional_callback(partial(f.write, b('a')))
         yield self.check_optional_callback(partial(f.writelines, [b('a')]))
 
@@ -63,7 +60,7 @@ class MotorGridFileTest(MotorTest):
     def test_grid_out_callback(self):
         # Some setup: we need to make a GridOut.
         db = self.cx.pymongo_test
-        f = yield motor.MotorGridIn(db.fs, filename="test").open()
+        f = motor.MotorGridIn(db.fs, filename="test")
         yield f.close()
 
         g = motor.MotorGridOut(db.fs, f._id)
@@ -76,8 +73,11 @@ class MotorGridFileTest(MotorTest):
     @gen_test
     def test_attributes(self):
         db = self.cx.pymongo_test
-        f = yield motor.MotorGridIn(
-            db.fs, filename="test", foo="bar", content_type="text").open()
+        f = motor.MotorGridIn(
+            db.fs,
+            filename="test",
+            foo="bar",
+            content_type="text")
 
         yield f.close()
 
@@ -115,7 +115,7 @@ class MotorGridFileTest(MotorTest):
     @gen_test
     def test_basic(self):
         db = self.cx.pymongo_test
-        f = yield motor.MotorGridIn(db.fs, filename="test").open()
+        f = motor.MotorGridIn(db.fs, filename="test")
         yield f.write(b("hello world"))
         yield f.close()
         self.assertEqual(1, (yield db.fs.files.find().count()))
@@ -124,7 +124,7 @@ class MotorGridFileTest(MotorTest):
         g = motor.MotorGridOut(db.fs, f._id)
         self.assertEqual(b("hello world"), (yield g.read()))
 
-        f = yield motor.MotorGridIn(db.fs, filename="test").open()
+        f = motor.MotorGridIn(db.fs, filename="test")
         yield f.close()
         self.assertEqual(2, (yield db.fs.files.find().count()))
         self.assertEqual(1, (yield db.fs.chunks.find().count()))
@@ -138,7 +138,7 @@ class MotorGridFileTest(MotorTest):
         yield db.alt.files.remove()
         yield db.alt.chunks.remove()
 
-        f = yield motor.MotorGridIn(db.alt).open()
+        f = motor.MotorGridIn(db.alt)
         yield f.write(b("hello world"))
         yield f.close()
 
@@ -156,7 +156,7 @@ class MotorGridFileTest(MotorTest):
         db = self.cx.pymongo_test
         self.assertRaises(TypeError, motor.MotorGridIn, "foo")
 
-        a = yield motor.MotorGridIn(db.fs).open()
+        a = motor.MotorGridIn(db.fs)
 
         self.assertTrue(isinstance(a._id, ObjectId))
         self.assertRaises(AttributeError, setattr, a, "_id", 5)
@@ -227,11 +227,10 @@ class MotorGridFileTest(MotorTest):
         self.assertRaises(TypeError, motor.MotorGridIn, "foo")
 
         db = self.cx.pymongo_test
-        a = yield motor.MotorGridIn(
+        a = motor.MotorGridIn(
             db.fs, _id=5, filename="my_file",
             contentType="text/html", chunkSize=1000, aliases=["foo"],
-            metadata={"foo": 1, "bar": 2}, bar=3, baz="hello"
-        ).open()
+            metadata={"foo": 1, "bar": 2}, bar=3, baz="hello")
 
         self.assertEqual(5, a._id)
         self.assertEqual("my_file", a.filename)
@@ -243,8 +242,11 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual("hello", a.baz)
         self.assertRaises(AttributeError, getattr, a, "mike")
 
-        b = yield motor.MotorGridIn(
-            db.fs, content_type="text/html", chunk_size=1000, baz=100).open()
+        b = motor.MotorGridIn(
+            db.fs,
+            content_type="text/html",
+            chunk_size=1000,
+            baz=100)
 
         self.assertEqual("text/html", b.content_type)
         self.assertEqual(1000, b.chunk_size)
@@ -259,7 +261,7 @@ class MotorGridFileTest(MotorTest):
         with assert_raises(NoFile):
             yield gout.open()
 
-        a = yield motor.MotorGridIn(db.fs).open()
+        a = motor.MotorGridIn(db.fs)
         yield a.close()
 
         b = yield motor.MotorGridOut(db.fs, a._id).open()
@@ -277,11 +279,10 @@ class MotorGridFileTest(MotorTest):
     def test_grid_out_custom_opts(self):
         db = self.cx.pymongo_test
 
-        one = yield motor.MotorGridIn(
+        one = motor.MotorGridIn(
             db.fs, _id=5, filename="my_file",
             contentType="text/html", chunkSize=1000, aliases=["foo"],
-            metadata={"foo": 1, "bar": 2}, bar=3, baz="hello"
-        ).open()
+            metadata={"foo": 1, "bar": 2}, bar=3, baz="hello")
 
         yield one.write(b("hello world"))
         yield one.close()
@@ -301,7 +302,7 @@ class MotorGridFileTest(MotorTest):
     @gen_test
     def test_grid_out_file_document(self):
         db = self.cx.pymongo_test
-        one = yield motor.MotorGridIn(db.fs).open()
+        one = motor.MotorGridIn(db.fs)
         yield one.write(b("foo bar"))
         yield one.close()
 
@@ -319,12 +320,12 @@ class MotorGridFileTest(MotorTest):
     @gen_test
     def test_write_file_like(self):
         db = self.cx.pymongo_test
-        one = yield motor.MotorGridIn(db.fs).open()
+        one = motor.MotorGridIn(db.fs)
         yield one.write(b("hello world"))
         yield one.close()
 
         two = motor.MotorGridOut(db.fs, one._id)
-        three = yield motor.MotorGridIn(db.fs).open()
+        three = motor.MotorGridIn(db.fs)
         yield three.write(two)
         yield three.close()
 
@@ -334,7 +335,7 @@ class MotorGridFileTest(MotorTest):
     @gen_test
     def test_set_after_close(self):
         db = self.cx.pymongo_test
-        f = yield motor.MotorGridIn(db.fs, _id="foo", bar="baz").open()
+        f = motor.MotorGridIn(db.fs, _id="foo", bar="baz")
 
         self.assertEqual("foo", f._id)
         self.assertEqual("baz", f.bar)
