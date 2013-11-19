@@ -1068,9 +1068,8 @@ class MotorClientBase(MotorOpenable, MotorBase):
           - `callback`: Optional function taking parameters (response, error)
         """
         # PyMongo's implementation uses requests, so rewrite for Motor.
-        if callback:
-            if not callable(callback):
-                raise callback_type_error
+        if callback and not callable(callback):
+            raise callback_type_error
 
         future = self._copy_database(
             callback, from_name, to_name, from_host, username, password)
@@ -2120,8 +2119,7 @@ class MotorGridFS(object):
         :class:`unicode` (:class:`str` in python 3) instance, which will
         be encoded as `encoding` before being written. Any keyword arguments
         will be passed through to the created file - see
-        :meth:`~MotorGridIn` for possible arguments. Returns the
-        ``"_id"`` of the created file.
+        :meth:`~MotorGridIn` for possible arguments.
 
         If the ``"_id"`` of the file is manually specified, it must
         not already exist in GridFS. Otherwise
@@ -2131,12 +2129,18 @@ class MotorGridFS(object):
           - `data`: data to be written as a file.
           - `callback`: Optional function taking parameters (_id, error)
           - `**kwargs` (optional): keyword arguments for file creation
+
+        If no callback is provided, returns a Future that resolves to the
+        ``"_id"`` of the created file. Otherwise, executes the callback
+        with arguments (_id, error).
         """
         # PyMongo's implementation uses requests, so rewrite for Motor.
         if callback and not callable(callback):
             raise callback_type_error
 
-        return self._put(data, _callback=callback, **kwargs)
+        future = self._put(data, _callback=callback, **kwargs)
+        if not callback:
+            return future
 
     def wrap(self, obj):
         if obj.__class__ is grid_file.GridIn:
