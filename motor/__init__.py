@@ -994,11 +994,11 @@ class MotorClientBase(MotorOpenable, MotorBase):
             if not isinstance(from_name, basestring):
                 raise TypeError("from_name must be an instance "
                                 "of %s" % (basestring.__name__,))
-    
+
             if not isinstance(to_name, basestring):
                 raise TypeError("to_name must be an instance "
                                 "of %s" % (basestring.__name__,))
-    
+
             pymongo.database._check_name(to_name)
 
             # Make sure there *is* a primary pool.
@@ -1010,7 +1010,7 @@ class MotorClientBase(MotorOpenable, MotorBase):
                 ('copydb', 1),
                 ('fromdb', from_name),
                 ('todb', to_name)])
-    
+
             if from_host is not None:
                 copydb_command['fromhost'] = from_host
 
