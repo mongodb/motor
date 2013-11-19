@@ -20,6 +20,7 @@ from pymongo.read_preferences import ReadPreference
 from tornado.testing import gen_test
 
 import motor
+import test
 from test import host, port, assert_raises, MotorTest
 
 
@@ -77,7 +78,7 @@ class MotorTestBasic(MotorTest):
 
         # Test write concerns passed to MotorClient, set on collection, or
         # passed to insert.
-        if self.is_replica_set:
+        if test.is_replica_set:
             with assert_raises(pymongo.errors.DuplicateKeyError):
                 yield cxw2.pymongo_test.test_collection.insert({'_id': 0})
 

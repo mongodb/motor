@@ -186,7 +186,7 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
     @gen_test
     def test_gridfs_replica_set(self):
         rsc = yield self.motor_rsc(
-            w=self.w, wtimeout=5000,
+            w=test.w, wtimeout=5000,
             read_preference=ReadPreference.SECONDARY)
 
         fs = motor.MotorGridFS(rsc.pymongo_test)
@@ -197,10 +197,10 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
 
     @gen_test
     def test_gridfs_secondary(self):
-        primary_host, primary_port = self.primary
+        primary_host, primary_port = test.primary
         primary_client = self.motor_client(primary_host, primary_port)
 
-        secondary_host, secondary_port = self.secondaries[0]
+        secondary_host, secondary_port = test.secondaries[0]
         secondary_client = self.motor_client(
             secondary_host, secondary_port,
             read_preference=ReadPreference.SECONDARY)

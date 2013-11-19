@@ -31,7 +31,9 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
     @gen_test
     def test_replica_set_client(self):
         cx = motor.MotorReplicaSetClient(
-            '%s:%s' % (host, port), replicaSet=self.name, io_loop=self.io_loop)
+            '%s:%s' % (host, port),
+            replicaSet=test.rs_name,
+            io_loop=self.io_loop)
 
         self.assertEqual(cx, (yield cx.open()))
         self.assertTrue(isinstance(
@@ -45,14 +47,19 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
     @gen_test
     def test_open_callback(self):
         cx = motor.MotorReplicaSetClient(
-            '%s:%s' % (host, port), replicaSet=self.name, io_loop=self.io_loop)
+            '%s:%s' % (host, port),
+            replicaSet=test.rs_name,
+            io_loop=self.io_loop)
+
         yield self.check_optional_callback(cx.open)
         cx.close()
 
     def test_io_loop(self):
         with assert_raises(TypeError):
             motor.MotorReplicaSetClient(
-                '%s:%s' % (host, port), replicaSet=self.name, io_loop='foo')
+                '%s:%s' % (host, port),
+                replicaSet=test.rs_name,
+                io_loop='foo')
 
     @gen_test
     def test_auto_reconnect_exception_when_read_preference_is_secondary(self):
@@ -75,8 +82,7 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
     """
     def setUp(self):
         super(TestReplicaSetClientAgainstStandalone, self).setUp()
-        response = test.sync_cx.admin.command('ismaster')
-        if 'setName' in response:
+        if test.is_replica_set:
             raise SkipTest(
                 "Connected to a replica set, not a standalone mongod")
 

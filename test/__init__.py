@@ -43,6 +43,13 @@ mongod_started_with_ssl = False
 sync_cx = None
 sync_db = None
 sync_coll = None
+is_replica_set = False
+rs_name = None
+w = None
+hosts = None
+arbiters = None
+primary = None
+secondaries = None
 
 
 def setup_package():
@@ -50,6 +57,13 @@ def setup_package():
     global sync_cx
     global sync_db
     global sync_coll
+    global is_replica_set
+    global rs_name
+    global w
+    global hosts
+    global arbiters
+    global primary
+    global secondaries
 
     connectTimeoutMS = socketTimeoutMS = 30 * 1000
 
@@ -73,6 +87,26 @@ def setup_package():
     sync_db = sync_cx.pymongo_test
     sync_coll = sync_db.test_collection
 
+    is_replica_set = False
+    response = sync_cx.admin.command('ismaster')
+    if 'setName' in response:
+        is_replica_set = True
+        rs_name = str(response['setName'])
+        w = len(response['hosts'])
+        hosts = set([_partition_node(h) for h in response["hosts"]])
+        arbiters = set([
+            _partition_node(h) for h in response.get("arbiters", [])])
+
+        repl_set_status = sync_cx.admin.command('replSetGetStatus')
+        primary_info = [
+            m for m in repl_set_status['members']
+            if m['stateStr'] == 'PRIMARY'][0]
+
+        primary = _partition_node(primary_info['name'])
+        secondaries = [
+            _partition_node(m['name']) for m in repl_set_status['members']
+            if m['stateStr'] == 'SECONDARY']
+        
 
 @contextlib.contextmanager
 def assert_raises(exc_class):
@@ -102,26 +136,6 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         if self.ssl and not mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")
 
-        self.is_replica_set = False
-        response = sync_cx.admin.command('ismaster')
-        if 'setName' in response:
-            self.is_replica_set = True
-            self.name = str(response['setName'])
-            self.w = len(response['hosts'])
-            self.hosts = set([_partition_node(h) for h in response["hosts"]])
-            self.arbiters = set([
-                _partition_node(h) for h in response.get("arbiters", [])])
-
-            repl_set_status = sync_cx.admin.command('replSetGetStatus')
-            primary_info = [
-                m for m in repl_set_status['members']
-                if m['stateStr'] == 'PRIMARY'][0]
-
-            self.primary = _partition_node(primary_info['name'])
-            self.secondaries = [
-                _partition_node(m['name']) for m in repl_set_status['members']
-                if m['stateStr'] == 'SECONDARY']
-            
         sync_coll.drop()
 
         # Make some test data
@@ -246,7 +260,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
 class MotorReplicaSetTestBase(MotorTest):
     def setUp(self):
         super(MotorReplicaSetTestBase, self).setUp()
-        if not self.is_replica_set:
+        if not is_replica_set:
             raise SkipTest("Not connected to a replica set")
 
         self.rsc = self.motor_rsc_sync()
@@ -260,9 +274,9 @@ class MotorReplicaSetTestBase(MotorTest):
         """
         client = motor.MotorReplicaSetClient(
             '%s:%s' % (host, port), *args, io_loop=self.io_loop,
-            replicaSet=self.name, **kwargs)
+            replicaSet=rs_name, **kwargs)
 
-        yield client.open()
+        yield client.open()  # TODO remove
         raise gen.Return(client)
 
     def motor_rsc_sync(self, host=host, port=port, *args, **kwargs):
@@ -273,5 +287,5 @@ class MotorReplicaSetTestBase(MotorTest):
             self.motor_rsc, host, port, *args, **kwargs))
 
     def tearDown(self):
-        self.rsc.close()
+        self.rsc.close()  # TODO remove?
         super(MotorReplicaSetTestBase, self).tearDown()
