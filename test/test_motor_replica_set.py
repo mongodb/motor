@@ -81,7 +81,7 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
 
     @gen_test
     def test_connect(self):
-        with self.assertRaises(pymongo.errors.ConnectionFailure):
+        with assert_raises(pymongo.errors.ConnectionFailure):
             yield motor.MotorReplicaSetClient(
                 '%s:%s' % (host, port), replicaSet='anything',
                 connectTimeoutMS=600).test.test.find_one()
