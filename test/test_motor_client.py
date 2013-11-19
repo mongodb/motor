@@ -123,6 +123,25 @@ class MotorClientTest(MotorTest):
         with assert_raises(pymongo.errors.InvalidName):
             yield self.cx.copy_database('foo', '$foo')
 
+    @gen_test
+    def test_copy_db_callback(self):
+        yield self.cx.drop_database('target')
+        name = self.db.name
+        (result, error), _ = yield gen.Task(
+            self.cx.copy_database, name, 'target')
+
+        self.assertTrue(isinstance(result, dict))
+        self.assertEqual(error, None)
+
+        yield self.cx.drop_database('target')
+
+        client = motor.MotorClient('doesntexist')
+        (result, error), _ = yield gen.Task(
+            client.copy_database, name, 'target')
+
+        self.assertEqual(result, None)
+        self.assertTrue(isinstance(error, Exception))
+
     def drop_databases(self, database_names):
         for test_db_name in database_names:
             # Setup code has configured a short timeout, and the copying
@@ -180,11 +199,12 @@ class MotorClientTest(MotorTest):
         self.drop_databases(test_db_names)
 
         # 2. Copy a test DB N times at once
-        yield self.cx.pymongo_test.test_collection.insert({"foo": "bar"})
-        yield [
+        yield self.collection.insert({"foo": "bar"})
+        results = yield [
             self.cx.copy_database("pymongo_test", test_db_name)
             for test_db_name in test_db_names]
 
+        self.assertTrue(all(isinstance(i, dict) for i in results))
         check_copydb_results()
         self.drop_databases(test_db_names)
 

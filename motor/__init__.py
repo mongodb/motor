@@ -1021,7 +1021,7 @@ class MotorClientBase(MotorOpenable, MotorBase):
                 copydb_command['key'] = pymongo.auth._auth_key(
                     nonce, username, password)
 
-            result = yield self._simple_command(
+            result, duration = yield self._simple_command(
                 sock_info, 'admin', copydb_command)
 
             if _callback:
@@ -1042,7 +1042,7 @@ class MotorClientBase(MotorOpenable, MotorBase):
             password=None, callback=None):
         """Copy a database, potentially from another host.
 
-        Accepts an optional callback, and returns a ``Future``.
+        Accepts an optional callback, or returns a ``Future``.
 
         Raises :class:`~pymongo.errors.InvalidName` if `to_name` is
         not a valid database name.
