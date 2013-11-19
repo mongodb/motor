@@ -58,7 +58,7 @@ class MotorTailTest(MotorTest):
     def test_tail(self):
         expected = [{'_id': i} for i in range(len(self.tail_pauses))]
         t = self.start_insertion_thread(self.tail_pauses)
-        capped = self.cx.pymongo_test.capped
+        capped = self.db.capped
         results = []
         time = self.io_loop.time
         start = time()

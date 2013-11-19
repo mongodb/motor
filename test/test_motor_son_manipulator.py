@@ -37,11 +37,10 @@ class CustomSONManipulator(pymongo.son_manipulator.SONManipulator):
 class SONManipulatorTest(MotorTest):
     def setUp(self):
         super(SONManipulatorTest, self).setUp()
-        test.sync_db.son_manipulator_test_collection.drop()
         self.coll = self.cx.pymongo_test.son_manipulator_test_collection
 
     def tearDown(self):
-        test.sync_db.son_manipulator_test_collection.drop()
+        test.sync_db.son_manipulator_test_collection.remove()
         super(SONManipulatorTest, self).tearDown()
 
     @gen_test

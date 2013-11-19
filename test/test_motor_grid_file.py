@@ -39,7 +39,6 @@ class MotorGridFileTest(MotorTest):
 
     def setUp(self):
         super(MotorGridFileTest, self).setUp()
-        self.db = self.cx.pymongo_test
         self._reset()
 
     def tearDown(self):

@@ -19,6 +19,7 @@ import unittest
 import pymongo.database
 from pymongo.errors import OperationFailure, CollectionInvalid
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
+import test
 from tornado.testing import gen_test
 
 import motor
@@ -33,8 +34,10 @@ class MotorDatabaseTest(MotorTest):
         db = motor.MotorDatabase(self.cx, 'pymongo_test')
 
         # Make sure we got the right DB and it can do an operation
+        self.assertEqual('pymongo_test', db.name)
+        test.sync_collection.insert({'_id': 1})
         doc = yield db.test_collection.find_one({'_id': 1})
-        self.assertEqual(hex(1), doc['s'])
+        self.assertEqual(1, doc['_id'])
 
     def test_collection_named_delegate(self):
         db = self.motor_client().pymongo_test

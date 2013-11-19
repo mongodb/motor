@@ -35,7 +35,7 @@ class MotorGenTest(MotorTest):
         # motor.Op is deprecated in Motor 0.2, superseded by Tornado 3 Futures.
         # Just make sure it still works.
 
-        collection = self.cx.pymongo_test.test_collection
+        collection = self.collection
         doc = {'_id': 'jesse'}
 
         with warnings.catch_warnings(record=True) as w:

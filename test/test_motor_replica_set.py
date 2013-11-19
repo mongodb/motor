@@ -36,6 +36,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             io_loop=self.io_loop)
 
         self.assertEqual(cx, (yield cx.open()))
+        self.assertEqual(cx, (yield cx.open()))  # Same the second time.
         self.assertTrue(isinstance(
             cx.delegate._MongoReplicaSetClient__monitor,
             motor.MotorReplicaSetMonitor))
@@ -43,6 +44,8 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         self.assertEqual(
             self.io_loop,
             cx.delegate._MongoReplicaSetClient__monitor.io_loop)
+
+        cx.close()
 
     @gen_test
     def test_open_callback(self):

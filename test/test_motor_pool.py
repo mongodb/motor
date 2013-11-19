@@ -69,6 +69,8 @@ class MotorPoolTest(MotorTest):
                 ops_completed.set_result(None)
 
         collection = cx.pymongo_test.test_collection
+        yield collection.insert({})  # Need a document.
+
         for i in range(nops):
             # Introduce random delay, avg 5ms, just to make sure we're async.
             collection.find_one(
@@ -97,6 +99,7 @@ class MotorPoolTest(MotorTest):
         # Do a find_one that takes 1 second, and set waitQueueTimeoutMS to 500,
         # 5000, and None. Verify timeout iff max_wait_time < 1 sec.
         where_delay = 1
+        yield self.collection.insert({})
         for waitQueueTimeoutMS in (500, 5000, None):
             cx = self.motor_client(
                 max_pool_size=1, waitQueueTimeoutMS=waitQueueTimeoutMS)
@@ -110,7 +113,6 @@ class MotorPoolTest(MotorTest):
                 self.assertTrue(pool.wait_queue_timeout is None)
 
             collection = cx.pymongo_test.test_collection
-            self.assertTrue((yield collection.count()) > 0)
             future = collection.find_one({'$where': delay(where_delay)})
             if waitQueueTimeoutMS and waitQueueTimeoutMS < where_delay * 1000:
                 with assert_raises(pymongo.errors.ConnectionFailure):

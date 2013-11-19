@@ -27,18 +27,17 @@ from test import host, port, assert_raises, MotorTest
 class MotorTestBasic(MotorTest):
     def test_repr(self):
         self.assertTrue(repr(self.cx).startswith('MotorClient'))
-        db = self.cx.pymongo_test
-        self.assertTrue(repr(db).startswith('MotorDatabase'))
-        coll = db.test_collection
-        self.assertTrue(repr(coll).startswith('MotorCollection'))
-        cursor = coll.find()
+        self.assertTrue(repr(self.db).startswith('MotorDatabase'))
+        self.assertTrue(repr(self.collection).startswith('MotorCollection'))
+        cursor = self.collection.find()
         self.assertTrue(repr(cursor).startswith('MotorCursor'))
 
     @gen_test
     def test_write_concern(self):
-        cx = motor.MotorClient(host, port, io_loop=self.io_loop)
         # Default empty dict means "w=1"
-        self.assertEqual({}, cx.write_concern)
+        self.assertEqual({}, self.cx.write_concern)
+
+        yield self.collection.insert({'_id': 0})
 
         for gle_options in [
             {},
@@ -67,7 +66,7 @@ class MotorTestBasic(MotorTest):
             yield collection.insert({'_id': 0}, w=0)
             cx.close()
 
-        collection = cx.pymongo_test.test_collection
+        collection = self.db.test_collection
         collection.write_concern['w'] = 2
 
         # No error
@@ -146,12 +145,11 @@ class MotorTestBasic(MotorTest):
             ConfigurationError,
             motor.MotorClient, host, port, io_loop=self.io_loop, safe=False)
 
-        collection = self.cx.pymongo_test.test_collection
         self.assertRaises(
-            ConfigurationError, collection.insert, {}, safe=False)
+            ConfigurationError, self.collection.insert, {}, safe=False)
 
         self.assertRaises(
-            ConfigurationError, collection.insert, {}, safe=True)
+            ConfigurationError, self.collection.insert, {}, safe=True)
 
     @gen_test
     def test_slave_okay(self):

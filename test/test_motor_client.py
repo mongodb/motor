@@ -40,12 +40,8 @@ class MotorClientTest(MotorTest):
     @gen_test
     def test_client_open(self):
         cx = motor.MotorClient(host, port, io_loop=self.io_loop)
-        result = yield cx.open()
-        self.assertEqual(result, cx)
-
-        # Ensure future is marked done if already connected.
         self.assertEqual(cx, (yield cx.open()))
-        cx.close()
+        self.assertEqual(cx, (yield cx.open()))  # Same the second time.
 
     @gen_test
     def test_client_lazy_connect(self):
@@ -225,6 +221,8 @@ class MotorClientTest(MotorTest):
         timeout = self.motor_client(host, port, socketTimeoutMS=100)
         query = {'$where': delay(0.5), '_id': 1}
 
+        # Need a document, or the $where clause isn't executed.
+        yield no_timeout.pymongo_test.test_collection.insert({'_id': 1})
         timeout_fut = timeout.pymongo_test.test_collection.find_one(query)
         notimeout_fut = no_timeout.pymongo_test.test_collection.find_one(query)
 
@@ -235,7 +233,7 @@ class MotorClientTest(MotorTest):
             error = e
 
         self.assertEqual(str(error), 'timed out')
-        self.assertEqual({'_id': 1, 's': hex(1)}, notimeout_fut.result())
+        self.assertEqual({'_id': 1}, notimeout_fut.result())
         no_timeout.close()
         timeout.close()
 
@@ -278,10 +276,12 @@ class MotorClientTest(MotorTest):
 
     @gen_test
     def test_high_concurrency(self):
+        self.make_test_data()
+
         concurrency = 100
         cx = self.motor_client(max_pool_size=concurrency)
         test.sync_db.insert_collection.drop()
-        self.assertEqual(200, test.sync_coll.count())
+        self.assertEqual(200, test.sync_collection.count())
         expected_finds = 200 * concurrency
         n_inserts = 100
 

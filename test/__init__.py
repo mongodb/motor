@@ -42,7 +42,7 @@ port = int(os.environ.get("DB_PORT", 27017))
 mongod_started_with_ssl = False
 sync_cx = None
 sync_db = None
-sync_coll = None
+sync_collection = None
 is_replica_set = False
 rs_name = None
 w = None
@@ -56,7 +56,7 @@ def setup_package():
     global mongod_started_with_ssl
     global sync_cx
     global sync_db
-    global sync_coll
+    global sync_collection
     global is_replica_set
     global rs_name
     global w
@@ -85,7 +85,7 @@ def setup_package():
             ssl=False)
 
     sync_db = sync_cx.pymongo_test
-    sync_coll = sync_db.test_collection
+    sync_collection = sync_db.test_collection
 
     is_replica_set = False
     response = sync_cx.admin.command('ismaster')
@@ -136,14 +136,14 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         if self.ssl and not mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")
 
-        sync_coll.drop()
+        self.cx = self.motor_client(ssl=self.ssl)
+        self.db = self.cx.pymongo_test
+        self.collection = self.db.test_collection
 
-        # Make some test data
-        sync_coll.ensure_index([('s', pymongo.ASCENDING)], unique=True)
-        sync_coll.insert(
-            [{'_id': i, 's': hex(i)} for i in range(200)])
+    def make_test_data(self):
+        sync_collection.insert([{'_id': i} for i in range(200)])
 
-        self.cx = self.motor_client()
+    make_test_data.__test__ = False
 
     @gen.coroutine
     def wait_for_cursor(self, collection, cursor_id, retrieved):
@@ -252,7 +252,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
             functools.partial(fn, *args, **kwargs), False)
 
     def tearDown(self):
-        sync_coll.drop()
+        sync_collection.remove()
         self.cx.close()
         super(MotorTest, self).tearDown()
 
