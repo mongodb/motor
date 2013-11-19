@@ -39,7 +39,8 @@ class MotorGridfsTest(MotorTest):
     def setUp(self):
         super(MotorGridfsTest, self).setUp()
         self._reset()
-        self.fs = motor.MotorGridFS(self.cx.pymongo_test)
+        self.db = self.cx.pymongo_test
+        self.fs = motor.MotorGridFS(self.db)
 
     def tearDown(self):
         self._reset()
@@ -50,50 +51,51 @@ class MotorGridfsTest(MotorTest):
         self.assertRaises(TypeError, motor.MotorGridFS, "foo")
         self.assertRaises(TypeError, motor.MotorGridFS, 5)
 
-        # new_file should be an already-open MotorGridIn.
-        gin = yield self.fs.new_file(_id=1, filename='foo')
-        self.assertTrue(gin.delegate)
-        yield gin.write(b('a'))  # No error
+    @gen_test
+    def test_get_version(self):
+        # new_file creates a MotorGridIn.
+        gin = yield self.fs.new_file(_id=1, filename='foo', field=0)
+        yield gin.write(b('a'))
         yield gin.close()
 
-        # get, get_version, and get_last_version should be already-open
-        # MotorGridOut instances
-        gout = yield self.fs.get(1)
-        self.assertTrue(gout.delegate)
+        yield self.fs.put('', filename='foo', field=1)
+        yield self.fs.put('', filename='foo', field=2)
+
         gout = yield self.fs.get_version('foo')
-        self.assertTrue(gout.delegate)
+        self.assertEqual(2, gout.field)
+        gout = yield self.fs.get_version('foo', -3)
+        self.assertEqual(0, gout.field)
+
         gout = yield self.fs.get_last_version('foo')
-        self.assertTrue(gout.delegate)
+        self.assertEqual(2, gout.field)
 
     @gen_test
     def test_gridfs_callback(self):
-        db = self.cx.pymongo_test
-        fs = motor.MotorGridFS(db)
-        yield self.check_optional_callback(fs.new_file)
-        yield self.check_optional_callback(partial(fs.put, b('a')))
+        yield self.check_optional_callback(self.fs.new_file)
+        yield self.check_optional_callback(partial(self.fs.put, b('a')))
 
-        yield fs.put(b('foo'), _id=1, filename='f')
-        yield self.check_optional_callback(fs.get, 1)
-        yield self.check_optional_callback(fs.get_version, 'f')
-        yield self.check_optional_callback(fs.get_last_version, 'f')
-        yield self.check_optional_callback(partial(fs.delete, 1))
-        yield self.check_optional_callback(fs.list)
-        yield self.check_optional_callback(fs.exists)
+        yield self.fs.put(b('foo'), _id=1, filename='f')
+        yield self.check_optional_callback(self.fs.get, 1)
+        yield self.check_optional_callback(self.fs.get_version, 'f')
+        yield self.check_optional_callback(self.fs.get_last_version, 'f')
+        yield self.check_optional_callback(partial(self.fs.delete, 1))
+        yield self.check_optional_callback(self.fs.list)
+        yield self.check_optional_callback(self.fs.exists)
 
     @gen_test
     def test_basic(self):
-        db = self.cx.pymongo_test
         oid = yield self.fs.put(b("hello world"))
         out = yield self.fs.get(oid)
         self.assertEqual(b("hello world"), (yield out.read()))
-        self.assertEqual(1, (yield db.fs.files.count()))
-        self.assertEqual(1, (yield db.fs.chunks.count()))
+        self.assertEqual(1, (yield self.db.fs.files.count()))
+        self.assertEqual(1, (yield self.db.fs.chunks.count()))
 
         yield self.fs.delete(oid)
         with assert_raises(NoFile):
             yield self.fs.get(oid)
-        self.assertEqual(0, (yield db.fs.files.count()))
-        self.assertEqual(0, (yield db.fs.chunks.count()))
+
+        self.assertEqual(0, (yield self.db.fs.files.count()))
+        self.assertEqual(0, (yield self.db.fs.chunks.count()))
 
         with assert_raises(NoFile):
             yield self.fs.get("foo")
@@ -124,14 +126,15 @@ class MotorGridfsTest(MotorTest):
         oid = yield alt.put(b("hello world"))
         gridout = yield alt.get(oid)
         self.assertEqual(b("hello world"), (yield gridout.read()))
-        self.assertEqual(1, (yield db.alt.files.count()))
-        self.assertEqual(1, (yield db.alt.chunks.count()))
+        self.assertEqual(1, (yield self.db.alt.files.count()))
+        self.assertEqual(1, (yield self.db.alt.chunks.count()))
 
         yield alt.delete(oid)
         with assert_raises(NoFile):
             yield alt.get(oid)
-        self.assertEqual(0, (yield db.alt.files.count()))
-        self.assertEqual(0, (yield db.alt.chunks.count()))
+
+        self.assertEqual(0, (yield self.db.alt.files.count()))
+        self.assertEqual(0, (yield self.db.alt.chunks.count()))
 
         with assert_raises(NoFile):
             yield alt.get("foo")
