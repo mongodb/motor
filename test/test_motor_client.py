@@ -115,13 +115,13 @@ class MotorClientTest(MotorTest):
     @gen_test
     def test_copy_db_argument_checking(self):
         with assert_raises(TypeError):
-            yield self.cx.copy_database(4, "foo")
+            yield self.cx.copy_database(4, 'foo')
 
         with assert_raises(TypeError):
-            yield self.cx.copy_database("foo", 4)
+            yield self.cx.copy_database('foo', 4)
 
         with assert_raises(pymongo.errors.InvalidName):
-            yield self.cx.copy_database("foo", "$foo")
+            yield self.cx.copy_database('foo', '$foo')
 
     def drop_databases(self, database_names):
         for test_db_name in database_names:
