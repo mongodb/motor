@@ -30,6 +30,7 @@ from tornado.ioloop import IOLoop
 from tornado.testing import gen_test
 
 import motor
+import test
 from test import host, port, assert_raises, MotorTest
 from test.utils import server_is_master_with_slave, delay
 from test.utils import server_started_with_auth
@@ -49,7 +50,7 @@ class MotorClientTest(MotorTest):
     @gen_test
     def test_client_lazy_connect(self):
         # TODO: insert update save find remove command.
-        self.sync_cx.pymongo_test.test_client_lazy_connect.remove()
+        test.sync_cx.pymongo_test.test_client_lazy_connect.remove()
 
         # Create client without connecting; connect on demand.
         cx = motor.MotorClient(host, port, io_loop=self.io_loop)
@@ -74,7 +75,7 @@ class MotorClientTest(MotorTest):
             raise SkipTest("UNIX-sockets are not supported on this system")
 
         if (sys.platform == 'darwin' and
-                server_started_with_auth(self.sync_cx)):
+                server_started_with_auth(test.sync_cx)):
             raise SkipTest("SERVER-8492")
 
         mongodb_socket = '/tmp/mongodb-27017.sock'
@@ -132,17 +133,17 @@ class MotorClientTest(MotorTest):
             # has put Mongo under enough load that we risk timeouts here
             # unless we override. command() takes no network_timeout but
             # find_one does.
-            self.sync_cx[test_db_name]['$cmd'].find_one(
+            test.sync_cx[test_db_name]['$cmd'].find_one(
                 {'dropDatabase': 1}, network_timeout=30)
 
         # Due to SERVER-2329, databases may not disappear from a master
         # in a master-slave pair.
-        if not server_is_master_with_slave(self.sync_cx):
+        if not server_is_master_with_slave(test.sync_cx):
             start = time.time()
             
             # There may be a race condition in the server's dropDatabase. Wait
             # for it to update its namespaces.
-            db_names = self.sync_cx.database_names()
+            db_names = test.sync_cx.database_names()
             while time.time() - start < 10:
                 remaining_test_dbs = (
                     set(database_names).intersection(db_names))
@@ -151,7 +152,7 @@ class MotorClientTest(MotorTest):
                     # All test DBs are removed.
                     break
 
-                db_names = self.sync_cx.database_names()
+                db_names = test.sync_cx.database_names()
                 
             for test_db_name in database_names:
                 self.assertFalse(
@@ -168,10 +169,10 @@ class MotorClientTest(MotorTest):
         test_db_names = ['pymongo_test%s' % i for i in range(ncopies)]
 
         def check_copydb_results():
-            db_names = self.sync_cx.database_names()
+            db_names = test.sync_cx.database_names()
             for test_db_name in test_db_names:
                 self.assertTrue(test_db_name in db_names)
-                result = self.sync_cx[test_db_name].test_collection.find_one()
+                result = test.sync_cx[test_db_name].test_collection.find_one()
                 self.assertTrue(result, "No results in %s" % test_db_name)
                 self.assertEqual(
                     "bar", result.get("foo"),
@@ -278,8 +279,8 @@ class MotorClientTest(MotorTest):
     def test_high_concurrency(self):
         concurrency = 100
         cx = self.motor_client(max_pool_size=concurrency)
-        self.sync_db.insert_collection.drop()
-        self.assertEqual(200, self.sync_coll.count())
+        test.sync_db.insert_collection.drop()
+        self.assertEqual(200, test.sync_coll.count())
         expected_finds = 200 * concurrency
         n_inserts = 100
 
@@ -310,8 +311,8 @@ class MotorClientTest(MotorTest):
         yield [find() for _ in range(concurrency)]
         yield insert_future
         self.assertEqual(expected_finds, ndocs[0])
-        self.assertEqual(n_inserts, self.sync_db.insert_collection.count())
-        self.sync_db.insert_collection.drop()
+        self.assertEqual(n_inserts, test.sync_db.insert_collection.count())
+        test.sync_db.insert_collection.drop()
 
     @gen_test
     def test_drop_database(self):

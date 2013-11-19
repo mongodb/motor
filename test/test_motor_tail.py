@@ -20,19 +20,20 @@ import unittest
 
 from tornado.testing import gen_test
 
+import test
 from test import MotorTest
 
 
 class MotorTailTest(MotorTest):
     def setUp(self):
         super(MotorTailTest, self).setUp()
-        self.sync_db.capped.drop()
+        test.sync_db.capped.drop()
         # autoIndexId catches test bugs that try to insert duplicate _id's
-        self.sync_db.create_collection(
+        test.sync_db.create_collection(
             'capped', capped=True, size=1000, autoIndexId=True)
 
-        self.sync_db.uncapped.drop()
-        self.sync_db.uncapped.insert({})
+        test.sync_db.uncapped.drop()
+        test.sync_db.uncapped.insert({})
 
     def start_insertion_thread(self, pauses):
         """A thread that gradually inserts documents into a capped collection
@@ -41,7 +42,7 @@ class MotorTailTest(MotorTest):
             i = 0
             for pause in pauses:
                 time.sleep(pause)
-                self.sync_db.capped.insert({'_id': i})
+                test.sync_db.capped.insert({'_id': i})
                 i += 1
 
         t = threading.Thread(target=add_docs)

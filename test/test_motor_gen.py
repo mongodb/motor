@@ -21,12 +21,13 @@ import pymongo.errors
 from tornado.testing import gen_test
 
 import motor
+import test
 from test import MotorTest, assert_raises
 
 
 class MotorGenTest(MotorTest):
     def tearDown(self):
-        self.sync_db.test_collection2.drop()
+        test.sync_db.test_collection2.drop()
         super(MotorGenTest, self).tearDown()
 
     @gen_test

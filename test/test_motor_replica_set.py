@@ -23,6 +23,7 @@ from tornado import iostream
 from tornado.testing import gen_test
 
 import motor
+import test
 from test import host, port, MotorReplicaSetTestBase, assert_raises, MotorTest
 
 
@@ -74,7 +75,7 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
     """
     def setUp(self):
         super(TestReplicaSetClientAgainstStandalone, self).setUp()
-        response = self.sync_cx.admin.command('ismaster')
+        response = test.sync_cx.admin.command('ismaster')
         if 'setName' in response:
             raise SkipTest(
                 "Connected to a replica set, not a standalone mongod")

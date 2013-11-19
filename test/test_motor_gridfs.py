@@ -26,15 +26,16 @@ from pymongo.read_preferences import ReadPreference
 from tornado.testing import gen_test
 
 import motor
+import test
 from test import host, port, MotorTest, MotorReplicaSetTestBase, assert_raises
 
 
 class MotorGridfsTest(MotorTest):
     def _reset(self):
-        self.sync_db.drop_collection("fs.files")
-        self.sync_db.drop_collection("fs.chunks")
-        self.sync_db.drop_collection("alt.files")
-        self.sync_db.drop_collection("alt.chunks")
+        test.sync_db.drop_collection("fs.files")
+        test.sync_db.drop_collection("fs.chunks")
+        test.sync_db.drop_collection("alt.files")
+        test.sync_db.drop_collection("alt.chunks")
 
     def setUp(self):
         super(MotorGridfsTest, self).setUp()

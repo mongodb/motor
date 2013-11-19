@@ -25,6 +25,7 @@ from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import motor
+import test
 from test import MotorTest, assert_raises
 
 
@@ -298,7 +299,7 @@ class MotorCursorTest(MotorTest):
         cursor.each(cancel)
         loop.start()
 
-        self.assertEqual(self.sync_coll.count(), len(results))
+        self.assertEqual(test.sync_coll.count(), len(results))
 
     def test_cursor_slice_argument_checking(self):
         collection = self.cx.pymongo_test.test_collection

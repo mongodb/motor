@@ -17,6 +17,7 @@
 import pymongo.son_manipulator
 from tornado.testing import gen_test
 
+import test
 from test import MotorTest
 
 
@@ -36,11 +37,11 @@ class CustomSONManipulator(pymongo.son_manipulator.SONManipulator):
 class SONManipulatorTest(MotorTest):
     def setUp(self):
         super(SONManipulatorTest, self).setUp()
-        self.sync_db.son_manipulator_test_collection.drop()
+        test.sync_db.son_manipulator_test_collection.drop()
         self.coll = self.cx.pymongo_test.son_manipulator_test_collection
 
     def tearDown(self):
-        self.sync_db.son_manipulator_test_collection.drop()
+        test.sync_db.son_manipulator_test_collection.drop()
         super(SONManipulatorTest, self).tearDown()
 
     @gen_test

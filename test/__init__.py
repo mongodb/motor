@@ -39,6 +39,40 @@ except ImportError:
 host = os.environ.get("DB_IP", "localhost")
 port = int(os.environ.get("DB_PORT", 27017))
 
+mongod_started_with_ssl = False
+sync_cx = None
+sync_db = None
+sync_coll = None
+
+
+def setup_package():
+    global mongod_started_with_ssl
+    global sync_cx
+    global sync_db
+    global sync_coll
+
+    connectTimeoutMS = socketTimeoutMS = 30 * 1000
+
+    # Store a regular synchronous pymongo MongoClient for convenience while
+    # testing. Try over SSL first.
+    try:
+        sync_cx = pymongo.MongoClient(
+            host, port,
+            connectTimeoutMS=connectTimeoutMS,
+            socketTimeoutMS=socketTimeoutMS,
+            ssl=True)
+
+        mongod_started_with_ssl = True
+    except pymongo.errors.ConnectionFailure:
+        sync_cx = pymongo.MongoClient(
+            host, port,
+            connectTimeoutMS=connectTimeoutMS,
+            socketTimeoutMS=socketTimeoutMS,
+            ssl=False)
+
+    sync_db = sync_cx.pymongo_test
+    sync_coll = sync_db.test_collection
+
 
 @contextlib.contextmanager
 def assert_raises(exc_class):
@@ -65,28 +99,11 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
     def setUp(self):
         super(MotorTest, self).setUp()
 
-        # Store a regular synchronous pymongo MongoClient for convenience while
-        # testing. Set a timeout so we don't hang a test because, say, Mongo
-        # isn't up or is hung by a long-running $where clause.
-        connectTimeoutMS = socketTimeoutMS = 30 * 1000
-        if self.ssl:
-            if not HAVE_SSL:
-                raise SkipTest("Python compiled without SSL")
-            try:
-                self.sync_cx = pymongo.MongoClient(
-                    host, port, connectTimeoutMS=connectTimeoutMS,
-                    socketTimeoutMS=socketTimeoutMS,
-                    ssl=True)
-            except pymongo.errors.ConnectionFailure:
-                raise SkipTest("mongod doesn't support SSL, or is down")
-        else:
-            self.sync_cx = pymongo.MongoClient(
-                host, port, connectTimeoutMS=connectTimeoutMS,
-                socketTimeoutMS=socketTimeoutMS,
-                ssl=False)
+        if self.ssl and not mongod_started_with_ssl:
+            raise SkipTest("mongod doesn't support SSL, or is down")
 
         self.is_replica_set = False
-        response = self.sync_cx.admin.command('ismaster')
+        response = sync_cx.admin.command('ismaster')
         if 'setName' in response:
             self.is_replica_set = True
             self.name = str(response['setName'])
@@ -95,7 +112,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
             self.arbiters = set([
                 _partition_node(h) for h in response.get("arbiters", [])])
 
-            repl_set_status = self.sync_cx.admin.command('replSetGetStatus')
+            repl_set_status = sync_cx.admin.command('replSetGetStatus')
             primary_info = [
                 m for m in repl_set_status['members']
                 if m['stateStr'] == 'PRIMARY'][0]
@@ -105,13 +122,11 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
                 _partition_node(m['name']) for m in repl_set_status['members']
                 if m['stateStr'] == 'SECONDARY']
             
-        self.sync_db = self.sync_cx.pymongo_test
-        self.sync_coll = self.sync_db.test_collection
-        self.sync_coll.drop()
+        sync_coll.drop()
 
         # Make some test data
-        self.sync_coll.ensure_index([('s', pymongo.ASCENDING)], unique=True)
-        self.sync_coll.insert(
+        sync_coll.ensure_index([('s', pymongo.ASCENDING)], unique=True)
+        sync_coll.insert(
             [{'_id': i, 's': hex(i)} for i in range(200)])
 
         self.cx = self.motor_client()
@@ -142,7 +157,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         start = time.time()
         collection_name = collection.name
         db_name = collection.database.name
-        sync_collection = self.sync_cx[db_name][collection_name]
+        sync_collection = sync_cx[db_name][collection_name]
         while True:
             sync_cursor = sync_collection.find()
             sync_cursor._Cursor__id = cursor_id
@@ -223,7 +238,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
             functools.partial(fn, *args, **kwargs), False)
 
     def tearDown(self):
-        self.sync_coll.drop()
+        sync_coll.drop()
         self.cx.close()
         super(MotorTest, self).tearDown()
 

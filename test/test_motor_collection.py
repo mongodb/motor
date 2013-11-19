@@ -24,6 +24,7 @@ from test.utils import delay
 from tornado.testing import gen_test
 
 import motor
+import test
 from test import MotorTest, assert_raises
 
 
@@ -274,7 +275,7 @@ class MotorCollectionTest(MotorTest):
     def test_unacknowledged_remove(self):
         # Test that unsafe removes with no callback still work
         def ndocs():
-            return self.sync_coll.find(
+            return test.sync_coll.find(
                 {'_id': {'$gte': 115, '$lte': 117}}).count()
 
         self.assertEqual(3, ndocs(), msg="Test setup should have 3 documents")
@@ -294,14 +295,14 @@ class MotorCollectionTest(MotorTest):
         # Test that unsafe inserts with no callback still work
 
         # id 201 not present
-        self.assertEqual(0, self.sync_coll.find({'_id': 201}).count())
+        self.assertEqual(0, test.sync_coll.find({'_id': 201}).count())
 
         # insert id 201 without a callback or w=1
         coll = self.cx.pymongo_test.test_collection
         coll.insert({'_id': 201})
 
         # the insert is eventually executed
-        while not self.sync_db.test_collection.find({'_id': 201}).count():
+        while not test.sync_db.test_collection.find({'_id': 201}).count():
             yield self.pause(0.1)
 
         # DuplicateKeyError not raised
@@ -315,7 +316,7 @@ class MotorCollectionTest(MotorTest):
         coll = self.cx.pymongo_test.test_collection
         coll.save({'_id': 201})
 
-        while not self.sync_db.test_collection.find({'_id': 201}).count():
+        while not test.sync_db.test_collection.find({'_id': 201}).count():
             yield self.pause(0.1)
 
         # DuplicateKeyError not raised
@@ -329,7 +330,7 @@ class MotorCollectionTest(MotorTest):
         coll = self.cx.pymongo_test.test_collection
         coll.update({'_id': 100}, {'$set': {'a': 1}})
 
-        while not self.sync_db.test_collection.find({'a': 1}).count():
+        while not test.sync_db.test_collection.find({'a': 1}).count():
             yield self.pause(0.1)
 
         coll.database.connection.close()

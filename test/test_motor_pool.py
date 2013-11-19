@@ -25,6 +25,7 @@ from tornado import stack_context
 from tornado.concurrent import Future
 from tornado.testing import gen_test
 
+import test
 from test import MotorTest, assert_raises
 from test.utils import delay
 
@@ -42,7 +43,7 @@ class MotorPoolTest(MotorTest):
 
     @gen_test
     def test_max_size(self):
-        if not self.sync_cx.server_info().get('javascriptEngine') == 'V8':
+        if not test.sync_cx.server_info().get('javascriptEngine') == 'V8':
             raise SkipTest("Need multithreaded Javascript in mongod for test")
 
         max_pool_size = 5
