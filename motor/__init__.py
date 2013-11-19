@@ -152,8 +152,6 @@ def motor_sock_method(method):
             # will pass the result of the socket operation (data for recv,
             # number of bytes written for sendall) to us.
             return main.switch()
-        except socket.error:  # TODO: delete
-            raise
         except IOError, e:
             # If IOStream raises generic IOError (e.g., if operation
             # attempted on closed IOStream), then substitute socket.error,
