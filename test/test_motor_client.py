@@ -144,7 +144,7 @@ class MotorClientTest(MotorTest):
             # There may be a race condition in the server's dropDatabase. Wait
             # for it to update its namespaces.
             db_names = test.sync_cx.database_names()
-            while time.time() - start < 10:
+            while time.time() - start < 30:
                 remaining_test_dbs = (
                     set(database_names).intersection(db_names))
                 
@@ -152,6 +152,7 @@ class MotorClientTest(MotorTest):
                     # All test DBs are removed.
                     break
 
+                time.sleep(.1)
                 db_names = test.sync_cx.database_names()
                 
             for test_db_name in database_names:
