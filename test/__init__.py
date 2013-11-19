@@ -276,7 +276,6 @@ class MotorReplicaSetTestBase(MotorTest):
             '%s:%s' % (host, port), *args, io_loop=self.io_loop,
             replicaSet=rs_name, **kwargs)
 
-        yield client.open()  # TODO remove
         raise gen.Return(client)
 
     def motor_rsc_sync(self, host=host, port=port, *args, **kwargs):
@@ -287,5 +286,4 @@ class MotorReplicaSetTestBase(MotorTest):
             self.motor_rsc, host, port, *args, **kwargs))
 
     def tearDown(self):
-        self.rsc.close()  # TODO remove?
         super(MotorReplicaSetTestBase, self).tearDown()
