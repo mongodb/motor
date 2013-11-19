@@ -105,7 +105,7 @@ class MotorGridFileTest(MotorTest):
     @gen_test
     def test_iteration(self):
         db = self.cx.pymongo_test
-        fs = yield motor.MotorGridFS(db).open()
+        fs = motor.MotorGridFS(db)
         _id = yield fs.put('foo')
         g = motor.MotorGridOut(db.fs, _id)
 
@@ -382,7 +382,7 @@ class MotorGridFileTest(MotorTest):
                 pass
 
         db = self.cx.pymongo_test
-        fs = yield motor.MotorGridFS(db).open()
+        fs = motor.MotorGridFS(db)
 
         for content_length in (0, 1, 100, 100 * 1000):
             _id = yield fs.put(b('a') * content_length)

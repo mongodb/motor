@@ -40,7 +40,6 @@ class MotorGridfsTest(MotorTest):
         super(MotorGridfsTest, self).setUp()
         self._reset()
         self.fs = motor.MotorGridFS(self.cx.pymongo_test)
-        self.io_loop.run_sync(self.fs.open)
 
     def tearDown(self):
         self._reset()
@@ -70,9 +69,6 @@ class MotorGridfsTest(MotorTest):
     def test_gridfs_callback(self):
         db = self.cx.pymongo_test
         fs = motor.MotorGridFS(db)
-        yield self.check_optional_callback(fs.open)
-
-        fs = yield motor.MotorGridFS(db).open()
         yield self.check_optional_callback(fs.new_file)
         yield self.check_optional_callback(partial(fs.put, b('a')))
 
@@ -124,7 +120,7 @@ class MotorGridfsTest(MotorTest):
     @gen_test
     def test_alt_collection(self):
         db = self.cx.pymongo_test
-        alt = yield motor.MotorGridFS(db, 'alt').open()
+        alt = motor.MotorGridFS(db, 'alt')
         oid = yield alt.put(b("hello world"))
         gridout = yield alt.get(oid)
         self.assertEqual(b("hello world"), (yield gridout.read()))
@@ -175,7 +171,7 @@ class MotorGridfsTest(MotorTest):
     @gen_test
     def test_put_unacknowledged(self):
         client = self.motor_client(w=0)
-        fs = yield motor.MotorGridFS(client.pymongo_test).open()
+        fs = motor.MotorGridFS(client.pymongo_test)
         with assert_raises(ConfigurationError):
             yield fs.put(b("hello"))
 
@@ -189,7 +185,7 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
             w=self.w, wtimeout=5000,
             read_preference=ReadPreference.SECONDARY)
 
-        fs = yield motor.MotorGridFS(rsc.pymongo_test).open()
+        fs = motor.MotorGridFS(rsc.pymongo_test)
         oid = yield fs.put(b('foo'))
         gridout = yield fs.get(oid)
         content = yield gridout.read()
@@ -210,7 +206,7 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
 
         # Should detect it's connected to secondary and not attempt to
         # create index
-        fs = yield motor.MotorGridFS(secondary_client.pymongo_test).open()
+        fs = motor.MotorGridFS(secondary_client.pymongo_test)
 
         # This won't detect secondary, raises error
         with assert_raises(AutoReconnect):

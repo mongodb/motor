@@ -94,7 +94,7 @@ class GridFSHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.coroutine
     def get(self, path, include_body=True):
-        fs = yield motor.MotorGridFS(self.database, self.root_collection).open()
+        fs = motor.MotorGridFS(self.database, self.root_collection)
 
         try:
             gridout = yield self.get_gridfs_file(fs, path)

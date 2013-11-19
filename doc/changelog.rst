@@ -18,8 +18,8 @@ It is no longer necessary to explicitly "open" a MotorClient or
 MotorReplicaSetClient. The ``open_sync`` method is removed and calling
 ``open`` is now optional. Motor clients now connect to MongoDB on demand.
 
-Similarly, :meth:`MotorGridOut.open` is optional, and :class:`MotorGridIn`
-now has no ``open`` method at all.
+Similarly, :meth:`MotorGridOut.open` is optional. :class:`MotorGridIn`
+and :class:`MotorGridFS` now have no ``open`` method at all.
 
 All Motor asynchronous methods (except
 :meth:`MotorCursor.each`) now return a `Future

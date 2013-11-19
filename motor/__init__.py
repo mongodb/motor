@@ -2066,7 +2066,8 @@ object created from the file.
 """)
 
 
-class MotorGridFS(MotorOpenable):
+class MotorGridFS(object):
+    __metaclass__ = MotorMeta
     __delegate_class__ = gridfs.GridFS
 
     new_file            = AsyncRead().wrap(grid_file.GridIn)
@@ -2079,8 +2080,7 @@ class MotorGridFS(MotorOpenable):
 
     def __init__(self, database, collection="fs"):
         """
-        An instance of GridFS on top of a single Database. You must call
-        :meth:`open` before using the `MotorGridFS` object.
+        An instance of GridFS on top of a single Database.
 
         :Parameters:
           - `database`: a :class:`MotorDatabase`
@@ -2093,43 +2093,15 @@ class MotorGridFS(MotorOpenable):
             raise TypeError("First argument to MotorGridFS must be "
                             "MotorDatabase, not %r" % database)
 
+        self.io_loop = database.get_io_loop()
         self.collection = database[collection]
-        MotorOpenable.__init__(self, None, database.get_io_loop())
+        self.delegate = self.__delegate_class__(
+            database.delegate,
+            collection,
+            _connect=False)
 
-        self.__database = database
-        self.__collection = collection
-
-    def open(self, callback=None):
-        if callback:
-            if not callable(callback):
-                raise callback_type_error
-
-            future = None
-            _callback = callback
-        else:
-            future = Future()
-            _callback = callback_from_future(future, default_result=self)
-
-        if self.delegate:
-            _callback(self, None)
-            return
-
-        def _connect():
-            # Run on child greenlet
-            try:
-                self.delegate = self.__delegate_class__(
-                    self.__database.delegate, self.__collection)
-
-                del self.__database
-                del self.__collection
-                _callback(self, None)
-            except Exception, e:
-                _callback(None, e)
-
-        # Actually connect on a child greenlet
-        gr = greenlet.greenlet(_connect)
-        gr.switch()
-        return future
+    def get_io_loop(self):
+        return self.io_loop
 
     @gen.coroutine
     def _put(self, data, _callback, **kwargs):
