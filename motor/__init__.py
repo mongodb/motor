@@ -922,6 +922,10 @@ class MotorOpenable(object):
     def get_io_loop(self):
         return self.io_loop
 
+    def _motor_ensure_connected(self, callback):
+        # Subclasses do I/O here to initialize the delegate object.
+        raise NotImplementedError()
+
     def open(self, callback=None):
         """Connect to the server. Takes an optional callback, or returns a
         Future that resolves to self when opened.
@@ -945,7 +949,7 @@ class MotorOpenable(object):
             future = Future()
             _callback = callback_from_future(future, default_result=self)
 
-        self._ensure_connected(callback=_callback)
+        self._motor_ensure_connected(callback=_callback)
         return future
 
 
@@ -972,6 +976,9 @@ class MotorClientBase(MotorOpenable, MotorBase):
         kwargs['_connect'] = False
         delegate = self.__delegate_class__(*args, **kwargs)
         super(MotorClientBase, self).__init__(delegate, io_loop)
+
+    def _motor_ensure_connected(self, callback):
+        self._ensure_connected(callback=callback)
 
     def __getattr__(self, name):
         return MotorDatabase(self, name)
@@ -1844,7 +1851,7 @@ class MotorCursor(MotorBase):
                 self.close()
 
 
-class MotorGridOut(object):
+class MotorGridOut(MotorOpenable):
     """Class to read data out of GridFS.
 
     MotorGridOut supports the same attributes as PyMongo's
@@ -1856,7 +1863,6 @@ class MotorGridOut(object):
     instantiated directly, call :meth:`open`, :meth:`read`, or
     :meth:`readline` before accessing its attributes.
     """
-    __metaclass__ = MotorMeta
     __delegate_class__ = gridfs.GridOut
 
     tell            = DelegateMethod()
@@ -1877,16 +1883,16 @@ class MotorGridOut(object):
                 "First argument to MotorGridOut must be "
                 "MotorCollection, not %r" % root_collection)
 
-        self.io_loop = root_collection.get_io_loop()
-        if delegate:
-            # Short cut.
-            self.delegate = delegate
-        else:
-            self.delegate = self.__delegate_class__(
+        if not delegate:
+            delegate = self.__delegate_class__(
                 root_collection.delegate,
                 file_id,
                 file_document,
                 _connect=False)
+
+        super(MotorGridOut, self).__init__(
+            delegate,
+            root_collection.get_io_loop())
 
     def __getattr__(self, item):
         if not self.delegate._file:
@@ -1896,37 +1902,8 @@ class MotorGridOut(object):
 
         return getattr(self.delegate, item)
 
-    def get_io_loop(self):
-        return self.io_loop
-
-    def open(self, callback=None):
-        """Load the underlying MongoDB document.
-
-        Takes an optional callback, or returns a Future that resolves to
-        self when opened.
-
-        :Parameters:
-         - `callback`: Optional function taking parameters (self, error)
-        """
-        # TODO: refactor.
-        # Arrange to replace the result with 'self' once complete.
-        if callback:
-            if not callable(callback):
-                raise callback_type_error
-
-            future = None
-
-            def _callback(_, error):
-                if error:
-                    callback(None, error)
-                else:
-                    callback(self, None)
-        else:
-            future = Future()
-            _callback = callback_from_future(future, default_result=self)
-
-        self._ensure_file(callback=_callback)
-        return future
+    def _motor_ensure_connected(self, callback):
+        self._ensure_file(callback=callback)
 
     @gen.coroutine
     def stream_to_handler(self, request_handler):
