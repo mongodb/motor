@@ -832,7 +832,7 @@ class ReadOnlyPropertyDescriptor(object):
             return getattr(obj.delegate, self.attr_name)
         else:
             # We're accessing this property on a class, e.g. when Sphinx wants
-            # MotorGridOut.md5.__doc__
+            # MotorClient.read_preference.__doc__.
             return getattr(objtype.__delegate_class__, self.attr_name)
 
     def __set__(self, obj, val):
@@ -1851,85 +1851,88 @@ class MotorCursor(MotorBase):
                 self.close()
 
 
-class MotorGridOut(MotorOpenable):
+class MotorGridOut(object):
     """Class to read data out of GridFS.
 
-       Application developers should generally not need to
-       instantiate this class directly - instead see the methods
-       provided by :class:`~motor.MotorGridFS`.
+    MotorGridOut supports the same attributes as PyMongo's
+    :class:`~gridfs.grid_file.GridOut`, such as ``_id``, ``content_type``,
+    etc.
+
+    You don't need to instantiate this class directly - use the
+    methods provided by :class:`~motor.MotorGridFS`. If it **is**
+    instantiated directly, call :meth:`open`, :meth:`read`, or
+    :meth:`readline` before accessing its attributes.
     """
+    __metaclass__ = MotorMeta
     __delegate_class__ = gridfs.GridOut
 
-    __getattr__     = DelegateMethod()
-    _id             = ReadOnlyProperty()
-    filename        = ReadOnlyProperty()
-    name            = ReadOnlyProperty()
-    content_type    = ReadOnlyProperty()
-    length          = ReadOnlyProperty()
-    chunk_size      = ReadOnlyProperty()
-    upload_date     = ReadOnlyProperty()
-    aliases         = ReadOnlyProperty()
-    metadata        = ReadOnlyProperty()
-    md5             = ReadOnlyProperty()
     tell            = DelegateMethod()
     seek            = DelegateMethod()
     read            = AsyncRead()
     readline        = AsyncRead()
+    _ensure_file    = AsyncCommand()
 
     def __init__(
-        self, root_collection, file_id=None, file_document=None,
-        io_loop=None
+        self,
+        root_collection,
+        file_id=None,
+        file_document=None,
+        delegate=None
     ):
-        if isinstance(root_collection, grid_file.GridOut):
-            # Short cut
-            super(MotorGridOut, self).__init__(root_collection, io_loop)
+        if not isinstance(root_collection, MotorCollection):
+            raise TypeError(
+                "First argument to MotorGridOut must be "
+                "MotorCollection, not %r" % root_collection)
+
+        self.io_loop = root_collection.get_io_loop()
+        if delegate:
+            # Short cut.
+            self.delegate = delegate
         else:
-            if not isinstance(root_collection, MotorCollection):
-                raise TypeError(
-                    "First argument to MotorGridOut must be "
-                    "MotorCollection, not %r" % root_collection)
+            self.delegate = self.__delegate_class__(
+                root_collection.delegate,
+                file_id,
+                file_document,
+                _connect=False)
 
-            assert io_loop is None, \
-                "Can't override IOLoop for MotorGridOut"
+    def __getattr__(self, item):
+        if not self.delegate._file:
+            raise pymongo.errors.InvalidOperation(
+                "You must call MotorGridOut.open() before accessing "
+                "the %s property" % item)
 
-            super(MotorGridOut, self).__init__(
-                None, root_collection.get_io_loop())
+        return getattr(self.delegate, item)
 
-            self.__root_collection = root_collection
-            self.__file_id = file_id
-            self.__file_document = file_document
+    def get_io_loop(self):
+        return self.io_loop
 
-    # TODO: refactor
-    def _ensure_connected(self, _, callback=None):
+    def open(self, callback=None):
+        """Load the underlying MongoDB document.
+
+        Takes an optional callback, or returns a Future that resolves to
+        self when opened.
+
+        :Parameters:
+         - `callback`: Optional function taking parameters (self, error)
+        """
+        # TODO: refactor.
+        # Arrange to replace the result with 'self' once complete.
         if callback:
+            if not callable(callback):
+                raise callback_type_error
+
             future = None
-            _callback = callback
+
+            def _callback(_, error):
+                if error:
+                    callback(None, error)
+                else:
+                    callback(self, None)
         else:
             future = Future()
-            _callback = callback_from_future(future)
+            _callback = callback_from_future(future, default_result=self)
 
-        if self.delegate:
-            _callback(self, None)
-            return
-
-        def _connect():
-            # Run on child greenlet
-            try:
-                self.delegate = self.__delegate_class__(
-                    self.__root_collection.delegate,
-                    self.__file_id,
-                    self.__file_document)
-
-                del self.__root_collection
-                del self.__file_document
-                del self.__file_id
-                _callback(self, None)
-            except Exception, e:
-                _callback(None, e)
-
-        # Actually connect on a child greenlet
-        gr = greenlet.greenlet(_connect)
-        gr.switch()
+        self._ensure_file(callback=_callback)
         return future
 
     @gen.coroutine
@@ -2223,15 +2226,15 @@ class MotorGridFS(MotorOpenable):
         if callback and not callable(callback):
             raise callback_type_error
 
-        future = self._put(data, _callback=callback, **kwargs)
-        if not callback:
-            return future
+        return self._put(data, _callback=callback, **kwargs)
 
     def wrap(self, obj):
         if obj.__class__ is grid_file.GridIn:
             return MotorGridIn(obj, io_loop=self.get_io_loop())
         elif obj.__class__ is grid_file.GridOut:
-            return MotorGridOut(obj, io_loop=self.get_io_loop())
+            return MotorGridOut(
+                root_collection=self.collection,
+                delegate=obj)
 
 
 def Op(fn, *args, **kwargs):

@@ -175,5 +175,7 @@ autodoc_default_flags = ['inherited-members']
 autodoc_member_order = 'groupwise'
 
 intersphinx_mapping = {
+    'bson': ('http://api.mongodb.org/python/current/', None),
+    'gridfs': ('http://api.mongodb.org/python/current/', None),
     'pymongo': ('http://api.mongodb.org/python/current/', None),
 }
