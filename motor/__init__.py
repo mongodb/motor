@@ -613,7 +613,6 @@ def asynchronize(motor_class, sync_method, has_write_concern, doc=None):
 
         def call_method():
             # Runs on child greenlet.
-            # TODO: ew, performance?
             try:
                 result = sync_method(self.delegate, *args, **kwargs)
                 if callback:
