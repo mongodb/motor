@@ -325,13 +325,10 @@ class MotorPool(object):
         for sock_info in sockets:
             sock_info.close()
 
-    def create_connection(self, pair):
-        """Connect to `pair` and return the socket object.
-
-        This is a modified version of create_connection from
-        CPython >=2.6.
+    def create_connection(self):
+        """Connect and return a socket object.
         """
-        host, port = pair or self.pair
+        host, port = self.pair
 
         # Check if dealing with a unix domain socket
         if host.endswith('.sock'):
@@ -389,7 +386,7 @@ class MotorPool(object):
             # support IPv6 at all.
             raise socket.error('getaddrinfo failed')
 
-    def connect(self, pair):
+    def connect(self):
         """Connect to Mongo and return a new connected MotorSocket. Note that
         the pool does not keep a reference to the socket -- you must call
         maybe_return_socket() when you're done with it.
@@ -419,11 +416,11 @@ class MotorPool(object):
             # Yield until maybe_return_socket passes spare socket in.
             return main.switch()
         else:
-            motor_sock = self.create_connection(pair)
+            motor_sock = self.create_connection()
             motor_sock.settimeout(self.net_timeout)
             return SocketInfo(motor_sock, self.pool_id)
 
-    def get_socket(self, pair=None, force=False):
+    def get_socket(self, force=False):
         """Get a socket from the pool.
 
         Returns a :class:`SocketInfo` object wrapping a connected
@@ -431,7 +428,6 @@ class MotorPool(object):
         the pool or freshly created.
 
         :Parameters:
-          - `pair`: optional (hostname, port) tuple
           - `force`: optional boolean, forces a connection to be returned
               without blocking, even if `max_size` has been reached.
         """
@@ -446,9 +442,9 @@ class MotorPool(object):
 
         if self.sockets:
             sock_info, from_pool = self.sockets.pop(), True
-            sock_info = self._check(sock_info, pair)
+            sock_info = self._check(sock_info)
         else:
-            sock_info, from_pool = self.connect(pair), False
+            sock_info, from_pool = self.connect(), False
 
         sock_info.forced = forced
         sock_info.last_checkout = time.time()
@@ -513,7 +509,7 @@ class MotorPool(object):
         if sock_info.forced:
             sock_info.forced = False
 
-    def _check(self, sock_info, pair):
+    def _check(self, sock_info):
         """This side-effecty function checks if this pool has been reset since
         the last time this socket was used, or if the socket has been closed by
         some external network error, and if so, attempts to create a new socket.
@@ -544,7 +540,7 @@ class MotorPool(object):
             return sock_info
         else:
             try:
-                return self.connect(pair)
+                return self.connect()
             except socket.error:
                 self.reset()
                 raise
