@@ -181,7 +181,7 @@ class MotorPoolTest(MotorTest):
             return True  # Don't propagate
 
         def get_socket():
-            # Blocks until socket is available, since max_concurrent is 1
+            # Blocks until socket is available, since max_pool_size is 1.
             pool.get_socket()
             loop.add_callback(raise_callback)
 

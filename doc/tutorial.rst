@@ -239,7 +239,7 @@ not waiting for each insert to complete before beginning the next::
 
 In PyMongo this would insert each document in turn using a single socket, but
 Motor attempts to run all the :meth:`insert` operations at once. This requires
-up to ``max_concurrent`` [#max_concurrent]_ open sockets connected to MongoDB,
+up to ``max_pool_size`` open sockets connected to MongoDB,
 which taxes the client and server. To ensure instead that all inserts use a
 single connection, wait for acknowledgment of each. This is a bit complex using
 callbacks:
@@ -559,6 +559,3 @@ Learning to use the MongoDB driver is just the beginning, of course. For
 in-depth instruction in MongoDB itself, see `The MongoDB Manual`_.
 
 .. _The MongoDB Manual: http://docs.mongodb.org/manual/
-
-.. [#max_concurrent] ``max_concurrent`` is set when creating a
-  :class:`~motor.MotorClient` or :class:`~motor.MotorReplicaSetClient`.
