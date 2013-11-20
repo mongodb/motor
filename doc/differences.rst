@@ -138,30 +138,25 @@ Deprecated classes and options
 ------------------------------
 
 PyMongo deprecated the ``slave_okay`` / ``slaveok`` option in favor of
-`read preferences`_ in version 2.3. It deprecated
+:ref:`read preferences <secondary-reads>` in version 2.3. It deprecated
 :class:`~pymongo.connection.Connection` and
 :class:`~pymongo.replica_set_connection.ReplicaSetConnection` in favor of
 :class:`~pymongo.mongo_client.MongoClient` and
 :class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient` in version
-2.4, as well as deprecating the ``safe`` option in favor of `write concerns`_.
+2.4, as well as deprecating the ``safe`` option in favor of
+:attr:`~motor.MotorClient.write_concern`.
 Motor supports none of PyMongo's deprecated options and classes at all, and
 will raise :exc:`~pymongo.errors.ConfigurationError` if you use them.
-
-.. _read preferences: http://api.mongodb.org/python/current/examples/high_availability.html#secondary-reads
-
-.. _write concerns: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient.write_concern
 
 MasterSlaveConnection
 ---------------------
 
 PyMongo's :class:`~pymongo.master_slave_connection.MasterSlaveConnection`
-offers a few conveniences when connected to a MongoDB `master-slave pair`_.
-Master-slave replication has long been superseded by `replica sets`_, so Motor
+offers a few conveniences when connected to a MongoDB `master-slave pair
+<http://dochub.mongodb.org/core/masterslave>`_.
+Master-slave replication has long been superseded by `replica sets
+<http://dochub.mongodb.org/core/rs>`_, so Motor
 has no equivalent to MasterSlaveConnection.
-
-.. _master-slave pair: http://docs.mongodb.org/manual/administration/master-slave/
-
-.. _replica sets: http://docs.mongodb.org/manual/core/replication/
 
 .. _gridfs-differences:
 

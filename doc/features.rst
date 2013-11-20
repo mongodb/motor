@@ -19,7 +19,7 @@ Convenient With `tornado.gen`
 =============================
 The `tornado.gen module`_ lets you use coroutines to simplify asynchronous
 code. Motor methods return Futures that are convenient to use with coroutines.
-See :ref:`coroutine-example`.
+See :ref:`the coroutine example <coroutine-example>`.
 
 .. _tornado.gen module: http://tornadoweb.org/en/stable/gen.html
 
@@ -47,10 +47,9 @@ client instance.
 
 Streams Static Files from GridFS
 ================================
-Motor can stream data from GridFS_ to a Tornado RequestHandler_
+Motor can stream data from `GridFS <http://dochub.mongodb.org/core/gridfs>`_
+to a Tornado RequestHandler_
 using :meth:`~motor.MotorGridOut.stream_to_handler` or
 the :class:`~motor.web.GridFSHandler` class.
-
-.. _GridFS: http://docs.mongodb.org/manual/applications/gridfs/
 
 .. _RequestHandler: http://tornadoweb.org/en/stable/web.html#request-handlers

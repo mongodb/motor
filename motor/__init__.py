@@ -1115,13 +1115,11 @@ class MotorClient(MotorClientBase):
         """Create a new connection to a single MongoDB instance at *host:port*.
 
         MotorClient takes the same constructor arguments as
-        `MongoClient`_, as well as:
+        :class:`~pymongo.mongo_client.MongoClient`, as well as:
 
         :Parameters:
           - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
             instance to use instead of default
-
-        .. _MongoClient: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html
         """
         if 'io_loop' in kwargs:
             io_loop = kwargs.pop('io_loop')
@@ -1156,13 +1154,12 @@ class MotorReplicaSetClient(MotorClientBase):
         """Create a new connection to a MongoDB replica set.
 
         MotorReplicaSetClient takes the same constructor arguments as
-        `MongoReplicaSetClient`_, as well as:
+        :class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient`,
+        as well as:
 
         :Parameters:
           - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
             instance to use instead of default
-
-        .. _MongoReplicaSetClient: http://api.mongodb.org/python/current/api/pymongo/mongo_replica_set_client.html
         """
         if 'io_loop' in kwargs:
             io_loop = kwargs.pop('io_loop')
@@ -1375,15 +1372,13 @@ class MotorCollection(MotorBase):
 
     def find(self, *args, **kwargs):
         """Create a :class:`MotorCursor`. Same parameters as for
-        PyMongo's `find`_.
+        PyMongo's :meth:`~pymongo.collection.Collection.find`.
 
-        Note that :meth:`find` does not take a `callback` parameter, nor does
-        it return a Future, because :meth:`find` merely creates a
+        Note that ``find`` does not take a `callback` parameter, nor does
+        it return a Future, because ``find`` merely creates a
         :class:`MotorCursor` without performing any operations on the server.
-        :class:`MotorCursor` methods such as :meth:`~MotorCursor.to_list` or
+        ``MotorCursor`` methods such as :meth:`~MotorCursor.to_list` or
         :meth:`~MotorCursor.count` perform actual operations.
-
-        .. _find: http://api.mongodb.org/python/current/api/pymongo/collection.html#pymongo.collection.Collection.find
         """
         if 'callback' in kwargs:
             raise pymongo.errors.InvalidOperation(
@@ -1970,7 +1965,7 @@ class MotorGridIn(object):
         :meth:`~motor.MotorGridFS.new_file`.
 
         Any of the file level options specified in the `GridFS Spec
-        <http://dochub.mongodb.org/core/gridfsspec>`_ may be passed as
+        <http://dochub.mongodb.org/core/gridfs>`_ may be passed as
         keyword arguments. Any additional keyword arguments will be
         set as additional fields on the file document. Valid keyword
         arguments include:

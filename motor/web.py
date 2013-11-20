@@ -52,7 +52,7 @@ class GridFSHandler(tornado.web.RequestHandler):
     MongoDB. Override :meth:`get_cache_time` in a subclass to customize this.
 
     .. seealso:: MongoDB and `GridFS
-       <http://docs.mongodb.org/manual/applications/gridfs/>`_
+       <http://dochub.mongodb.org/core/gridfs>`_
 
     .. seealso:: `StaticFileHandler
        <http://tornadoweb.org/en/stable/web.html#tornado.web.StaticFileHandler>`_
