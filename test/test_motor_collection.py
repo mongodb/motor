@@ -17,7 +17,6 @@
 import unittest
 
 import bson
-from tornado import gen
 from bson.objectid import ObjectId
 from pymongo.errors import DuplicateKeyError
 from tornado.concurrent import Future
