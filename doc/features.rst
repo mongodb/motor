@@ -17,11 +17,9 @@ PyMongo features not implemented in Motor, see :doc:`differences`.
 
 Convenient With `tornado.gen`
 =============================
-The `tornado.gen module`_ lets you use coroutines to simplify asynchronous
+The :mod:`tornado.gen` module lets you use coroutines to simplify asynchronous
 code. Motor methods return Futures that are convenient to use with coroutines.
 See :ref:`the coroutine example <coroutine-example>`.
-
-.. _tornado.gen module: http://tornadoweb.org/en/stable/gen.html
 
 Timeouts
 ========
@@ -38,18 +36,15 @@ timeout interface::
 
 Configurable IOLoops
 ====================
-Motor supports Tornado applications with multiple IOLoops_. Pass the ``io_loop``
+Motor supports Tornado applications with multiple
+:class:`IOLoops <tornado.ioloop.IOLoop>`. Pass the ``io_loop``
 argument to :class:`~motor.MotorClient`
 or :class:`~motor.MotorReplicaSetClient` to configure the loop for a
 client instance.
 
-.. _IOLoops: http://tornadoweb.org/en/stable/ioloop.html
-
 Streams Static Files from GridFS
 ================================
 Motor can stream data from `GridFS <http://dochub.mongodb.org/core/gridfs>`_
-to a Tornado RequestHandler_
+to a Tornado :class:`~tornado.web.RequestHandler`
 using :meth:`~motor.MotorGridOut.stream_to_handler` or
 the :class:`~motor.web.GridFSHandler` class.
-
-.. _RequestHandler: http://tornadoweb.org/en/stable/web.html#request-handlers

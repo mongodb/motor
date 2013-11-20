@@ -22,8 +22,7 @@ Similarly, :meth:`MotorGridOut.open` is optional. :class:`MotorGridIn`
 and :class:`MotorGridFS` now have no ``open`` method at all.
 
 All Motor asynchronous methods (except
-:meth:`MotorCursor.each`) now return a `Future
-<http://tornadoweb.org/en/stable/gen.html>`_. The callback argument
+:meth:`MotorCursor.each`) now return a :class:`~tornado.concurrent.Future`. The callback argument
 to these methods is now optional. If a callback is passed, it will be
 executed with the (result, error) of the operation as in Motor 0.1. If no
 callback is passed, a Future is returned that resolves to the method's

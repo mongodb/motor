@@ -69,7 +69,7 @@ To find multiple documents, Motor provides :meth:`~motor.MotorCursor.to_list`:
 .. seealso:: MotorCursor's :meth:`~motor.MotorCursor.fetch_next`
 
 If you pass no callback to an asynchronous method, it returns a Future for use
-in a `coroutine`_:
+in a :func:`coroutine <tornado.gen.coroutine>`:
 
 .. code-block:: python
 
@@ -80,9 +80,7 @@ in a `coroutine`_:
         yield motor_db.collection.insert({'name': 'Randall'})
         doc = yield motor_db.collection.find_one()
 
-.. _coroutine: http://tornadoweb.org/en/stable/gen.html
-
-See :ref:`coroutine-example`.
+See :ref:`the coroutine example <coroutine-example>`.
 
 Requests
 --------
@@ -109,7 +107,7 @@ perform the next operation in the callback::
     db.users.insert({'name': 'Ben', 'maintains': 'Tornado'}, callback=inserted)
 
 This ensures ``find_one`` isn't run until ``insert`` has been acknowledged by
-the server. Obviously, this code is improved by `tornado.gen`_::
+the server. Obviously, this code is improved by :mod:`tornado.gen`::
 
     @gen.coroutine
     def f():
@@ -119,8 +117,6 @@ the server. Obviously, this code is improved by `tornado.gen`_::
 
 Motor ignores the ``auto_start_request`` parameter to
 :class:`~motor.MotorClient` or :class:`~motor.MotorReplicaSetClient`.
-
-.. _tornado.gen: http://tornadoweb.org/en/stable/gen.html
 
 Threading and forking
 ---------------------

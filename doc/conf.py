@@ -178,4 +178,5 @@ intersphinx_mapping = {
     'bson': ('http://api.mongodb.org/python/current/', None),
     'gridfs': ('http://api.mongodb.org/python/current/', None),
     'pymongo': ('http://api.mongodb.org/python/current/', None),
+    'tornado': ('http://www.tornadoweb.org/en/stable/', None),
 }

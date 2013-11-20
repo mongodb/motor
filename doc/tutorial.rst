@@ -263,9 +263,10 @@ You can simplify this code with ``gen.coroutine``.
 
 Using Motor with `gen.coroutine`
 --------------------------------
-The `tornado.gen module`_ lets you use generators to simplify asynchronous
-code. There are two parts to coding with ``gen``: ``gen.coroutine`` and
-``Future``.
+The :mod:`tornado.gen` module lets you use generators to simplify asynchronous
+code. There are two parts to coding with generators:
+:func:`coroutine <tornado.gen.coroutine>` and
+:class:`~tornado.concurrent.Future`.
 
 First, decorate your generator function with ``@gen.coroutine``:
 
@@ -292,8 +293,6 @@ In the code above, ``result`` is the ``_id`` of each inserted document.
 .. seealso:: `Bulk inserts in PyMongo <http://api.mongodb.org/python/current/tutorial.html?highlight=bulk%20inserts#bulk-inserts>`_
 
 .. seealso:: :ref:`Detailed example of Motor and gen.coroutine <coroutine-example>`
-
-.. _tornado.gen module: http://tornadoweb.org/en/stable/gen.html
 
 .. mongodoc:: insert
 

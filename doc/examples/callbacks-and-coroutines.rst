@@ -113,8 +113,8 @@ requires a maximum ``length`` argument.
 
 With coroutines
 ---------------
-Motor's asynchronous methods return `Futures
-<http://tornadoweb.org/en/stable/gen.html>`_. Yield a Future to resolve
+Motor's asynchronous methods return
+:class:`Futures <tornado.concurrent.Future>`. Yield a Future to resolve
 it into a result or an exception:
 
 .. code-block:: python
