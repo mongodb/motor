@@ -1357,8 +1357,7 @@ class MotorCollection(MotorBase):
     uuid_subtype      = ReadWriteProperty()
     full_name         = ReadOnlyProperty()
 
-    def __init__(self, database, name=None, *args, **kwargs):
-        # TODO: test *args, **kwargs, creation
+    def __init__(self, database, name):
         if not isinstance(database, MotorDatabase):
             raise TypeError("First argument to MotorCollection must be "
                             "MotorDatabase, not %r" % database)

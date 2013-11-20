@@ -42,6 +42,13 @@ class MotorCollectionTest(MotorTest):
         doc = yield collection.find_one({'_id': 1})
         self.assertEqual(1, doc['_id'])
 
+        # If you pass kwargs to PyMongo's Collection(), it calls
+        # db.create_collection(). Motor can't do I/O in a constructor
+        # so this is prohibited.
+        self.assertRaises(
+            TypeError,
+            motor.MotorCollection, self.db, 'test_collection', capped=True)
+
     @gen_test
     def test_dotted_collection_name(self):
         # Ensure that remove, insert, and find work on collections with dots

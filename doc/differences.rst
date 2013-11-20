@@ -304,3 +304,35 @@ if a document exists at the desired offset; Motor simply returns a new
 
 .. [#max_pool_size] See `PyMongo's max_pool_size
   <http://api.mongodb.org/python/current/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient.max_pool_size>`_
+
+Creating a collection
+---------------------
+
+There are two ways to create a capped collection using PyMongo:
+
+.. code-block:: python
+
+    # Typical:
+    db.create_collection(
+        'collection1',
+        capped=True,
+        size=1000)
+
+    # Unusual:
+    collection = Collection(
+        db,
+        'collection2',
+        capped=True,
+        size=1000)
+
+Motor can't do I/O in a constructor, so the unusual style is prohibited and
+only the typical style is allowed:
+
+.. code-block:: python
+
+    @gen.coroutine
+    def f():
+        yield db.create_collection(
+            'collection1',
+            capped=True,
+            size=1000)
