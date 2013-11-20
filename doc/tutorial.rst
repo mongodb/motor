@@ -150,8 +150,6 @@ makes it available to request handlers::
   when your application starts and reuse that one client for the lifetime
   of the process, as shown in these examples.
 
-.. _start() method: http://tornadoweb.org/en/stable/netutil.html#tornado.netutil.TCPServer.start
-
 Getting a Collection
 --------------------
 A `collection <http://docs.mongodb.org/manual/reference/glossary/#term-collection>`_
