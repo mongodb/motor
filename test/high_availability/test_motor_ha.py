@@ -68,7 +68,7 @@ class MotorTestDirectConnection(MotorHATestCase):
             self.seed, replicaSet=self.name).open()
 
         self.assertTrue(bool(len(self.c.secondaries)))
-        db = self.c.pymongo_test
+        db = self.c.motor_test
         yield db.test.remove({}, w=len(self.c.secondaries))
 
         # Wait for replication...
@@ -100,7 +100,7 @@ class MotorTestDirectConnection(MotorHATestCase):
             self.assertTrue(client.is_primary)
 
             # Direct connection to primary can be queried with any read pref
-            self.assertTrue((yield client.pymongo_test.test.find_one()))
+            self.assertTrue((yield client.motor_test.test.find_one()))
 
             client = yield motor.MotorClient(
                 secondary_host, secondary_port, **kwargs).open()
@@ -112,16 +112,16 @@ class MotorTestDirectConnection(MotorHATestCase):
             # but PRIMARY
             if kwargs.get('read_preference') != PRIMARY:
                 self.assertTrue((
-                    yield client.pymongo_test.test.find_one()))
+                    yield client.motor_test.test.find_one()))
             else:
                 with assert_raises(AutoReconnect):
-                    yield client.pymongo_test.test.find_one()
+                    yield client.motor_test.test.find_one()
 
             # Since an attempt at an acknowledged write to a secondary from a
             # direct connection raises AutoReconnect('not master'), MotorClient
             # should do the same for unacknowledged writes.
             try:
-                yield client.pymongo_test.test.insert({}, w=0)
+                yield client.motor_test.test.insert({}, w=0)
             except AutoReconnect, e:
                 self.assertEqual('not master', e.args[0])
             else:
@@ -139,7 +139,7 @@ class MotorTestDirectConnection(MotorHATestCase):
 
             # See explanation above
             try:
-                yield client.pymongo_test.test.insert({}, w=0)
+                yield client.motor_test.test.insert({}, w=0)
             except AutoReconnect, e:
                 self.assertEqual('not master', e.message)
             else:
@@ -386,7 +386,7 @@ class MotorTestWritesWithFailover(MotorHATestCase):
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
         primary = c.primary
-        db = c.pymongo_test
+        db = c.motor_test
         w = len(c.secondaries) + 1
         yield db.test.remove(w=w)
         yield db.test.insert({'foo': 'bar'}, w=w)
@@ -425,7 +425,7 @@ class MotorTestReadWithFailover(MotorHATestCase):
         yield c.open()
         self.assertTrue(c.secondaries)
 
-        db = c.pymongo_test
+        db = c.motor_test
         w = len(c.secondaries) + 1
         db.test.remove({}, w=w)
         # Force replication
@@ -458,7 +458,7 @@ class MotorTestShipOfTheseus(MotorHATestCase):
     def test_ship_of_theseus(self):
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
-        db = c.pymongo_test
+        db = c.motor_test
         w = len(c.secondaries) + 1
         db.test.insert({}, w=w)
 
@@ -548,7 +548,7 @@ class MotorTestReadPreference(MotorHATestCase):
         # Synchronous PyMongo interfaces for convenience
         self.c = pymongo.mongo_replica_set_client.MongoReplicaSetClient(
             self.seed, replicaSet=self.name)
-        self.db = self.c.pymongo_test
+        self.db = self.c.motor_test
         self.w = len(self.c.secondaries) + 1
         self.db.test.remove({}, w=self.w)
         self.db.test.insert(
@@ -585,7 +585,7 @@ class MotorTestReadPreference(MotorHATestCase):
             tag_sets=None,
             latency=15,
         ):
-            db = rsc.pymongo_test
+            db = rsc.motor_test
             db.read_preference = mode
             if isinstance(tag_sets, dict):
                 tag_sets = [tag_sets]

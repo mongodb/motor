@@ -37,7 +37,6 @@ class CustomSONManipulator(pymongo.son_manipulator.SONManipulator):
 class SONManipulatorTest(MotorTest):
     def setUp(self):
         super(SONManipulatorTest, self).setUp()
-        self.coll = self.cx.pymongo_test.son_manipulator_test_collection
 
     def tearDown(self):
         test.sync_db.son_manipulator_test_collection.remove()
@@ -45,7 +44,7 @@ class SONManipulatorTest(MotorTest):
 
     @gen_test
     def test_with_find_one(self):
-        coll = self.coll
+        coll = self.cx.motor_test.son_manipulator_test_collection
         _id = yield coll.insert({'foo': 'bar'})
         self.assertEqual(
             {'_id': _id, 'foo': 'bar'},
@@ -59,7 +58,7 @@ class SONManipulatorTest(MotorTest):
 
     @gen_test
     def test_with_fetch_next(self):
-        coll = self.coll
+        coll = self.cx.motor_test.son_manipulator_test_collection
         coll.database.add_son_manipulator(CustomSONManipulator())
         _id = yield coll.insert({'foo': 'bar'})
         cursor = coll.find()
@@ -70,7 +69,7 @@ class SONManipulatorTest(MotorTest):
 
     @gen_test
     def test_with_to_list(self):
-        coll = self.coll
+        coll = self.cx.motor_test.son_manipulator_test_collection
         _id1, _id2 = yield coll.insert([{}, {}])
         found = yield coll.find().sort([('_id', 1)]).to_list(length=2)
         self.assertEqual([{'_id': _id1}, {'_id': _id2}], found)

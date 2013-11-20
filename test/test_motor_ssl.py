@@ -51,7 +51,7 @@ class MotorSSLTest(MotorTest):
         cx = self.motor_client(ssl=True)
 
         # Make sure the client works
-        collection = cx.pymongo_test.test_collection
+        collection = cx.motor_test.test_collection
         doc = yield collection.find_one({'_id': 0})
         self.assertEqual(0, doc['_id'])
 

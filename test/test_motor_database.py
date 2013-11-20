@@ -31,23 +31,23 @@ class MotorDatabaseTest(MotorTest):
     def test_database(self):
         # Test that we can create a db directly, not just from MotorClient's
         # accessors
-        db = motor.MotorDatabase(self.cx, 'pymongo_test')
+        db = motor.MotorDatabase(self.cx, 'motor_test')
 
         # Make sure we got the right DB and it can do an operation
-        self.assertEqual('pymongo_test', db.name)
+        self.assertEqual('motor_test', db.name)
         test.sync_collection.insert({'_id': 1})
         doc = yield db.test_collection.find_one({'_id': 1})
         self.assertEqual(1, doc['_id'])
 
     def test_collection_named_delegate(self):
-        db = self.motor_client().pymongo_test
+        db = self.db
         self.assertTrue(isinstance(db.delegate, pymongo.database.Database))
         self.assertTrue(isinstance(db['delegate'], motor.MotorCollection))
         db.connection.close()
 
     @gen_test
     def test_database_callbacks(self):
-        db = self.cx.pymongo_test
+        db = self.db
         yield self.check_optional_callback(db.drop_collection, 'c')
 
         # check_optional_callback would call create_collection twice, and the
@@ -75,7 +75,7 @@ class MotorDatabaseTest(MotorTest):
     def test_create_collection(self):
         # Test creating collection, return val is wrapped in MotorCollection,
         # creating it again raises CollectionInvalid.
-        db = self.cx.pymongo_test
+        db = self.db
         yield db.drop_collection('test_collection2')
         collection = yield db.create_collection('test_collection2')
         self.assertTrue(isinstance(collection, motor.MotorCollection))
@@ -100,7 +100,7 @@ class MotorDatabaseTest(MotorTest):
     @gen_test
     def test_drop_collection(self):
         # Make sure we can pass a MotorCollection instance to drop_collection
-        db = self.cx.pymongo_test
+        db = self.db
         collection = db.test_drop_collection
         yield collection.insert({})
         names = yield db.collection_names()
@@ -120,7 +120,7 @@ class MotorDatabaseTest(MotorTest):
         # implementation for Motor for async is a little complex so we test
         # that it works here, and we don't just rely on synchrotest
         # to cover it.
-        db = self.cx.pymongo_test
+        db = self.db
 
         # We test a special hack where add_son_manipulator corrects our mistake
         # if we pass a MotorDatabase, instead of Database, to AutoReference.
@@ -152,9 +152,7 @@ class MotorDatabaseTest(MotorTest):
 
     @gen_test
     def test_authenticate(self):
-        cx = self.motor_client()
-        db = cx.pymongo_test
-
+        db = self.db
         yield db.system.users.remove()
         yield db.add_user("mike", "password")
         users = yield db.system.users.find().to_list(length=10)
@@ -172,7 +170,7 @@ class MotorDatabaseTest(MotorTest):
 
     @gen_test
     def test_validate_collection(self):
-        db = self.cx.pymongo_test
+        db = self.db
 
         with assert_raises(TypeError):
             yield db.validate_collection(5)

@@ -50,7 +50,7 @@ class MotorTestBasic(MotorTest):
             expected_wc = gle_options.copy()
             self.assertEqual(expected_wc, cx.write_concern)
 
-            db = cx.pymongo_test
+            db = cx.motor_test
             self.assertEqual(expected_wc, db.write_concern)
 
             collection = db.test_collection
@@ -73,29 +73,29 @@ class MotorTestBasic(MotorTest):
         yield collection.insert({'_id': 0}, w=0)
 
         cxw2 = self.motor_client(w=2)
-        yield cxw2.pymongo_test.test_collection.insert({'_id': 0}, w=0)
+        yield cxw2.motor_test.test_collection.insert({'_id': 0}, w=0)
 
         # Test write concerns passed to MotorClient, set on collection, or
         # passed to insert.
         if test.is_replica_set:
             with assert_raises(pymongo.errors.DuplicateKeyError):
-                yield cxw2.pymongo_test.test_collection.insert({'_id': 0})
+                yield cxw2.motor_test.test_collection.insert({'_id': 0})
 
             with assert_raises(pymongo.errors.DuplicateKeyError):
                 yield collection.insert({'_id': 0})
 
             with assert_raises(pymongo.errors.DuplicateKeyError):
-                yield cx.pymongo_test.test_collection.insert({'_id': 0}, w=2)
+                yield cx.motor_test.test_collection.insert({'_id': 0}, w=2)
         else:
             # w > 1 and no replica set
             with assert_raises(pymongo.errors.OperationFailure):
-                yield cxw2.pymongo_test.test_collection.insert({'_id': 0})
+                yield cxw2.motor_test.test_collection.insert({'_id': 0})
 
             with assert_raises(pymongo.errors.OperationFailure):
                 yield collection.insert({'_id': 0})
 
             with assert_raises(pymongo.errors.OperationFailure):
-                yield cx.pymongo_test.test_collection.insert({'_id': 0}, w=2)
+                yield cx.motor_test.test_collection.insert({'_id': 0}, w=2)
 
         # Important that the last operation on each MotorClient was
         # acknowledged, so lingering messages aren't delivered in the middle of
@@ -122,7 +122,7 @@ class MotorTestBasic(MotorTest):
         self.assertEqual(42, cx.secondary_acceptable_latency_ms)
 
         # Make a MotorCursor and get its PyMongo Cursor
-        cursor = cx.pymongo_test.test_collection.find(
+        cursor = cx.motor_test.test_collection.find(
             io_loop=self.io_loop,
             read_preference=ReadPreference.NEAREST,
             tag_sets=[{'yay': 'jesse'}],
@@ -174,7 +174,7 @@ class MotorTestBasic(MotorTest):
             motor.MotorClient, host, port,
             io_loop=self.io_loop, slaveok=False)
 
-        collection = self.cx.pymongo_test.test_collection
+        collection = self.cx.motor_test.test_collection
 
         self.assertRaises(
             ConfigurationError,

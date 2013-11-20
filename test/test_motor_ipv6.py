@@ -41,7 +41,7 @@ class MotorIPv6Test(MotorTest):
 
         cx_string = "mongodb://[::1]:%d" % port
         cx = motor.MotorClient(cx_string, io_loop=self.io_loop)
-        collection = cx.pymongo_test.pymongo_test
+        collection = cx.motor_test.test_collection
         yield collection.insert({"dummy": "object"})
         self.assertTrue((yield collection.find_one({"dummy": "object"})))
 

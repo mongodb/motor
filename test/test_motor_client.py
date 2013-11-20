@@ -46,11 +46,11 @@ class MotorClientTest(MotorTest):
     @gen_test
     def test_client_lazy_connect(self):
         # TODO: insert update save find remove command.
-        test.sync_cx.pymongo_test.test_client_lazy_connect.remove()
+        test.sync_cx.motor_test.test_client_lazy_connect.remove()
 
         # Create client without connecting; connect on demand.
         cx = motor.MotorClient(host, port, io_loop=self.io_loop)
-        collection = cx.pymongo_test.test_client_lazy_connect
+        collection = cx.motor_test.test_client_lazy_connect
         future0 = collection.insert({'foo': 'bar'})
         future1 = collection.insert({'foo': 'bar'})
         yield [future0, future1]
@@ -84,11 +84,11 @@ class MotorClientTest(MotorTest):
         client = yield motor.MotorClient(
             "mongodb://%s" % mongodb_socket, io_loop=self.io_loop).open()
 
-        yield client.pymongo_test.test.save({"dummy": "object"})
+        yield client.motor_test.test.save({"dummy": "object"})
 
         # Confirm we can read via the socket.
         dbs = yield client.database_names()
-        self.assertTrue("pymongo_test" in dbs)
+        self.assertTrue("motor_test" in dbs)
         client.close()
 
         # Confirm it fails with a missing socket.
@@ -182,7 +182,7 @@ class MotorClientTest(MotorTest):
         # 3. Create a username and password
         # 4. Copy a database using name and password
         ncopies = 10
-        test_db_names = ['pymongo_test%s' % i for i in range(ncopies)]
+        test_db_names = ['motor_test%s' % i for i in range(ncopies)]
 
         def check_copydb_results():
             db_names = test.sync_cx.database_names()
@@ -195,13 +195,13 @@ class MotorClientTest(MotorTest):
                     "Wrong result from %s: %s" % (test_db_name, result))
 
         # 1. Drop old test DBs
-        yield self.cx.drop_database('pymongo_test')
+        yield self.cx.drop_database('motor_test')
         self.drop_databases(test_db_names)
 
         # 2. Copy a test DB N times at once
         yield self.collection.insert({"foo": "bar"})
         results = yield [
-            self.cx.copy_database("pymongo_test", test_db_name)
+            self.cx.copy_database("motor_test", test_db_name)
             for test_db_name in test_db_names]
 
         self.assertTrue(all(isinstance(i, dict) for i in results))
@@ -209,16 +209,16 @@ class MotorClientTest(MotorTest):
         self.drop_databases(test_db_names)
 
         # 3. Create a username and password
-        yield self.cx.pymongo_test.add_user("mike", "password")
+        yield self.cx.motor_test.add_user("mike", "password")
 
         with assert_raises(pymongo.errors.OperationFailure):
             yield self.cx.copy_database(
-                "pymongo_test", "pymongo_test0",
+                "motor_test", "motor_test0",
                 username="foo", password="bar")
 
         with assert_raises(pymongo.errors.OperationFailure):
             yield self.cx.copy_database(
-                "pymongo_test", "pymongo_test0",
+                "motor_test", "motor_test0",
                 username="mike", password="bar")
 
         # 4. Copy a database using name and password
@@ -226,7 +226,7 @@ class MotorClientTest(MotorTest):
             # See SERVER-6427
             yield [
                 self.cx.copy_database(
-                    "pymongo_test", test_db_name,
+                    "motor_test", test_db_name,
                     username="mike", password="password")
                 for test_db_name in test_db_names]
 
@@ -242,9 +242,9 @@ class MotorClientTest(MotorTest):
         query = {'$where': delay(0.5), '_id': 1}
 
         # Need a document, or the $where clause isn't executed.
-        yield no_timeout.pymongo_test.test_collection.insert({'_id': 1})
-        timeout_fut = timeout.pymongo_test.test_collection.find_one(query)
-        notimeout_fut = no_timeout.pymongo_test.test_collection.find_one(query)
+        yield no_timeout.motor_test.test_collection.insert({'_id': 1})
+        timeout_fut = timeout.motor_test.test_collection.find_one(query)
+        notimeout_fut = no_timeout.motor_test.test_collection.find_one(query)
 
         error = None
         try:
@@ -305,8 +305,8 @@ class MotorClientTest(MotorTest):
         expected_finds = 200 * concurrency
         n_inserts = 100
 
-        collection = cx.pymongo_test.test_collection
-        insert_collection = cx.pymongo_test.insert_collection
+        collection = cx.motor_test.test_collection
+        insert_collection = cx.motor_test.insert_collection
 
         ndocs = [0]
         insert_future = Future()

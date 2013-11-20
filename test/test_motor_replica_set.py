@@ -70,7 +70,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         iostream.IOStream.write = lambda self, data: self.close()
 
         try:
-            cursor = self.rsc.pymongo_test.test_collection.find(
+            cursor = self.rsc.motor_test.test_collection.find(
                 read_preference=pymongo.ReadPreference.SECONDARY)
 
             with assert_raises(pymongo.errors.AutoReconnect):

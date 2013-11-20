@@ -40,7 +40,6 @@ class MotorGridfsTest(MotorTest):
     def setUp(self):
         super(MotorGridfsTest, self).setUp()
         self._reset()
-        self.db = self.cx.pymongo_test
         self.fs = motor.MotorGridFS(self.db)
 
     def tearDown(self):
@@ -122,7 +121,7 @@ class MotorGridfsTest(MotorTest):
 
     @gen_test
     def test_alt_collection(self):
-        db = self.cx.pymongo_test
+        db = self.db
         alt = motor.MotorGridFS(db, 'alt')
         oid = yield alt.put(b("hello world"))
         gridout = yield alt.get(oid)
@@ -154,7 +153,7 @@ class MotorGridfsTest(MotorTest):
     @gen_test
     def test_put_filelike(self):
         oid = yield self.fs.put(StringIO(b("hello world")), chunk_size=1)
-        self.assertEqual(11, (yield self.cx.pymongo_test.fs.chunks.count()))
+        self.assertEqual(11, (yield self.cx.motor_test.fs.chunks.count()))
         gridout = yield self.fs.get(oid)
         self.assertEqual(b("hello world"), (yield gridout.read()))
 
@@ -175,7 +174,7 @@ class MotorGridfsTest(MotorTest):
     @gen_test
     def test_put_unacknowledged(self):
         client = self.motor_client(w=0)
-        fs = motor.MotorGridFS(client.pymongo_test)
+        fs = motor.MotorGridFS(client.motor_test)
         with assert_raises(ConfigurationError):
             yield fs.put(b("hello"))
 
@@ -189,7 +188,7 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
             w=test.w, wtimeout=5000,
             read_preference=ReadPreference.SECONDARY)
 
-        fs = motor.MotorGridFS(rsc.pymongo_test)
+        fs = motor.MotorGridFS(rsc.motor_test)
         oid = yield fs.put(b('foo'))
         gridout = yield fs.get(oid)
         content = yield gridout.read()
@@ -205,12 +204,12 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
             secondary_host, secondary_port,
             read_preference=ReadPreference.SECONDARY)
 
-        yield primary_client.pymongo_test.drop_collection("fs.files")
-        yield primary_client.pymongo_test.drop_collection("fs.chunks")
+        yield primary_client.motor_test.drop_collection("fs.files")
+        yield primary_client.motor_test.drop_collection("fs.chunks")
 
         # Should detect it's connected to secondary and not attempt to
         # create index
-        fs = motor.MotorGridFS(secondary_client.pymongo_test)
+        fs = motor.MotorGridFS(secondary_client.motor_test)
 
         # This won't detect secondary, raises error
         with assert_raises(AutoReconnect):
@@ -218,8 +217,8 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
 
     def tearDown(self):
         c = MongoClient(host, port)
-        c.pymongo_test.drop_collection('fs.files')
-        c.pymongo_test.drop_collection('fs.chunks')
+        c.motor_test.drop_collection('fs.files')
+        c.motor_test.drop_collection('fs.chunks')
 
 
 if __name__ == "__main__":

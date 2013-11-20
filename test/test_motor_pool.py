@@ -68,7 +68,7 @@ class MotorPoolTest(MotorTest):
             if len(results) == nops:
                 ops_completed.set_result(None)
 
-        collection = cx.pymongo_test.test_collection
+        collection = cx.motor_test.test_collection
         yield collection.insert({})  # Need a document.
 
         for i in range(nops):
@@ -112,7 +112,7 @@ class MotorPoolTest(MotorTest):
             else:
                 self.assertTrue(pool.wait_queue_timeout is None)
 
-            collection = cx.pymongo_test.test_collection
+            collection = cx.motor_test.test_collection
             future = collection.find_one({'$where': delay(where_delay)})
             if waitQueueTimeoutMS and waitQueueTimeoutMS < where_delay * 1000:
                 with assert_raises(pymongo.errors.ConnectionFailure):
@@ -126,7 +126,7 @@ class MotorPoolTest(MotorTest):
     @gen_test
     def test_connections_unacknowledged_writes(self):
         # Verifying that unacknowledged writes don't open extra connections
-        collection = self.cx.pymongo_test.test_collection
+        collection = self.cx.motor_test.test_collection
         yield collection.drop()
         pool = self.cx._get_primary_pool()
         self.assertEqual(1, pool.motor_sock_counter)
@@ -164,7 +164,7 @@ class MotorPoolTest(MotorTest):
         cx = self.motor_client(max_pool_size=1)
 
         # Open a socket
-        yield cx.pymongo_test.test_collection.find_one()
+        yield cx.motor_test.test_collection.find_one()
 
         pool = cx._get_primary_pool()
         self.assertEqual(1, len(pool.sockets))

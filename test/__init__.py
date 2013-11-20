@@ -84,7 +84,7 @@ def setup_package():
             socketTimeoutMS=socketTimeoutMS,
             ssl=False)
 
-    sync_db = sync_cx.pymongo_test
+    sync_db = sync_cx.motor_test
     sync_collection = sync_db.test_collection
 
     is_replica_set = False
@@ -137,7 +137,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
             raise SkipTest("mongod doesn't support SSL, or is down")
 
         self.cx = self.motor_client(ssl=self.ssl)
-        self.db = self.cx.pymongo_test
+        self.db = self.cx.motor_test
         self.collection = self.db.test_collection
 
     def make_test_data(self):
@@ -150,7 +150,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         """Ensure a cursor opened during the test is closed on the
         server, e.g. after dereferencing an open cursor on the client:
 
-            collection = self.cx.pymongo_test.test_collection
+            collection = self.cx.motor_test.test_collection
             cursor = collection.find()
 
             # Open it server-side
@@ -184,7 +184,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
                 # not a test bug. mongod reports "cursor id 'N' not valid at
                 # server", mongos says:
                 # "database error: could not find cursor in cache for id N
-                # over collection pymongo_test.test_collection".
+                # over collection motor_test.test_collection".
                 self.assertTrue(
                     "not valid at server" in e.args[0] or
                     "could not find cursor in cache" in e.args[0])

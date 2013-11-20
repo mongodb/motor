@@ -34,7 +34,7 @@ def read_from_which_host(
       - `tag_sets`: List of dicts of tags for data-center-aware reads
       - `secondary_acceptable_latency_ms`: a float
     """
-    db = rsc.pymongo_test
+    db = rsc.motor_test
     db.read_preference = mode
     if isinstance(tag_sets, dict):
         tag_sets = [tag_sets]
