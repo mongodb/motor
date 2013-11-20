@@ -374,9 +374,7 @@ class MotorCursorTest(MotorTest):
         coll = self.collection
 
         results = set()
-        yield_points = []
-        for i in range(3):
-            yield_points.append((yield gen.Callback(i)))
+        futures = [Future() for _ in range(3)]
 
         def each(result, error):
             if error:
@@ -385,7 +383,7 @@ class MotorCursorTest(MotorTest):
             if result:
                 results.add(result['_id'])
             else:
-                yield_points.pop()()
+                futures.pop().set_result(None)
 
         coll.find({}, {'_id': 1}).sort([('_id', 1)])[0].each(each)
         coll.find({}, {'_id': 1}).sort([('_id', 1)])[5].each(each)
@@ -395,7 +393,7 @@ class MotorCursorTest(MotorTest):
         # in results.
         coll.find()[1000].each(each)
 
-        yield gen.WaitAll(list(range(3)))
+        yield futures
         self.assertEqual(set([0, 5]), results)
 
     @gen_test
