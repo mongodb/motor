@@ -276,9 +276,6 @@ slicing operator blocks until it has queried the MongoDB server, and determines
 if a document exists at the desired offset; Motor simply returns a new
 :class:`~motor.MotorCursor` with a skip and limit applied.
 
-.. [#max_pool_size] See `PyMongo's max_pool_size
-  <http://api.mongodb.org/python/current/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient.max_pool_size>`_
-
 Creating a collection
 ---------------------
 
