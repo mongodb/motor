@@ -215,9 +215,6 @@ Bugfixes
 <https://jira.mongodb.org/browse/MOTOR-8>`_. (Thanks to Eren Güven for the
 report and the fix.)
 
-Changelog
-=========
-
 Motor 0.1.2
 -----------
 
