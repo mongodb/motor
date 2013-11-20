@@ -5,35 +5,14 @@ Differences between Motor and PyMongo
 Major differences
 =================
 
-Creating a connection
+Connecting to MongoDB
 ---------------------
 
-PyMongo's :class:`~pymongo.mongo_client.MongoClient` and
-:class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient` constructors
-block until they have established a connection to MongoDB. A
-:class:`~motor.MotorClient` or :class:`~motor.MotorReplicaSetClient`,
-however, is created unconnected. One should call
-:meth:`~motor.MotorClient.open_sync` at the beginning of a Tornado web
-application, before accepting requests:
-
-.. code-block:: python
-
-    import motor
-    client = motor.MotorClient().open_sync()
-
-To make a connection asynchronously once the application is running, call
-:meth:`~motor.MotorClient.open`:
-
-.. code-block:: python
-
-    def opened(client, error):
-        if error:
-            print 'Error connecting!', error
-        else:
-            # Use the client
-            pass
-
-    motor.MotorClient().open(opened)
+PyMongo's connection classes are called
+:class:`~pymongo.mongo_client.MongoClient` and
+:class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient`.
+Motor provides a
+:class:`~motor.MotorClient` and :class:`~motor.MotorReplicaSetClient`.
 
 Callbacks and Futures
 ---------------------
@@ -62,7 +41,7 @@ But Motor's :meth:`~motor.MotorCollection.find_one` method is asynchronous:
 
 .. code-block:: python
 
-    db = MotorClient().open_sync().test
+    db = MotorClient().test
 
     def got_user(user, error):
         if error:

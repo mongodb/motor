@@ -11,7 +11,7 @@ Writing a file to GridFS with :meth:`~motor.MotorGridFS.put`
     from tornado import gen
     import motor
 
-    db = motor.MotorClient().open_sync().test
+    db = motor.MotorClient().test
 
     @gen.coroutine
     def write_file():
@@ -37,7 +37,7 @@ Streaming a file to GridFS with :class:`~motor.MotorGridIn`
     from tornado import gen
     import motor
 
-    db = motor.MotorClient().open_sync().test
+    db = motor.MotorClient().test
 
     @gen.coroutine
     def write_file_streaming():
@@ -76,7 +76,7 @@ Setting attributes on a :class:`~motor.MotorGridIn`
     from tornado import gen
     import motor
 
-    db = motor.MotorClient().open_sync().test
+    db = motor.MotorClient().test
 
     @gen.coroutine
     def set_attributes():
@@ -105,7 +105,7 @@ Reading from GridFS with :class:`~motor.MotorGridOut`
     from tornado import gen
     import motor
 
-    db = motor.MotorClient().open_sync().test
+    db = motor.MotorClient().test
 
     @gen.coroutine
     def read_file(file_id):

@@ -52,14 +52,6 @@ client instance.
 
 .. _IOLoops: http://tornadoweb.org/en/stable/ioloop.html
 
-Opens Connections Synchronously or Asynchronously
-=================================================
-A :class:`~motor.MotorClient` or :class:`~motor.MotorReplicaSetClient`
-can be opened synchronously with :meth:`~motor.MotorClient.open_sync`
-before your application begins serving requests, or can be opened
-asynchronously with :meth:`~motor.MotorClient.open` to make the connection
-to MongoDB without blocking the Tornado IOLoop.
-
 Streams Static Files from GridFS
 ================================
 Motor can stream data from GridFS_ to a Tornado RequestHandler_

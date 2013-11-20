@@ -1479,7 +1479,7 @@ class MotorCursor(MotorBase):
         .. testsetup:: fetch_next
 
           MongoClient().test.test_collection.remove()
-          collection = MotorClient().open_sync().test.test_collection
+          collection = MotorClient().test.test_collection
 
         .. doctest:: fetch_next
 
@@ -1546,13 +1546,12 @@ class MotorCursor(MotorBase):
 
         .. testsetup:: each
 
+          from tornado.ioloop import IOLoop
           MongoClient().test.test_collection.remove()
-          collection = MotorClient().open_sync().test.test_collection
+          collection = MotorClient().test.test_collection
 
         .. doctest:: each
 
-          >>> from tornado.ioloop import IOLoop
-          >>> collection = MotorClient().open_sync().test.collection
           >>> def inserted(result, error):
           ...     global cursor
           ...     if error:
@@ -1621,7 +1620,8 @@ class MotorCursor(MotorBase):
         .. testsetup:: to_list
 
           MongoClient().test.test_collection.remove()
-          collection = MotorClient().open_sync().test.test_collection
+          collection = MotorClient().test.test_collection
+          from tornado import ioloop
 
         .. doctest:: to_list
 
@@ -1745,7 +1745,7 @@ class MotorCursor(MotorBase):
         .. testsetup:: getitem
 
           MongoClient().test.test_collection.remove()
-          collection = MotorClient().open_sync().test.test_collection
+          collection = MotorClient().test.test_collection
 
         .. doctest:: getitem
 

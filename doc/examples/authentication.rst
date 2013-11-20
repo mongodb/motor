@@ -14,17 +14,17 @@ To create an authenticated :class:`~motor.MotorClient` before starting the
 IOLoop, use a `MongoDB connection URI`_::
 
     admin_uri = "mongodb://admin:pass@localhost:27017"
-    client = motor.MotorClient(admin_uri).open_sync()
+    client = motor.MotorClient(admin_uri)
 
     normal_uri = "mongodb://user:pass@localhost:27017/database_name"
-    client = motor.MotorClient(normal_uri).open_sync()
+    client = motor.MotorClient(normal_uri)
 
 Asynchronous Authentication
 ---------------------------
 Use the non-blocking :meth:`~motor.MotorDatabase.authenticate` to log in after
 starting the IOLoop::
 
-    client = motor.MotorClient('localhost', 27017).open_sync()
+    client = motor.MotorClient('localhost', 27017)
 
     @gen.coroutine
     def login(c):

@@ -14,7 +14,7 @@ Motor Tutorial
   import tornado.web
   from tornado.ioloop import IOLoop
   from tornado import gen
-  db = motor.MotorClient().open_sync().test_database
+  db = motor.MotorClient().test_database
 
 .. testsetup:: after-inserting-2000-docs
 
@@ -23,7 +23,7 @@ Motor Tutorial
   import tornado.web
   from tornado.ioloop import IOLoop
   from tornado import gen
-  db = motor.MotorClient().open_sync().test_database
+  db = motor.MotorClient().test_database
   pymongo.MongoClient().test_database.test_collection.insert(
       [{'i': i} for i in range(2000)])
 
@@ -87,23 +87,20 @@ or :class:`~motor.MotorReplicaSetClient` at the time your application starts
 up. (See `high availability and PyMongo`_ for an introduction to
 MongoDB replica sets and how PyMongo connects to them.)
 
-You must call :meth:`~motor.MotorClient.open_sync` on this client object
-before any other operations on it:
-
 .. doctest:: before-inserting-2000-docs
 
-  >>> client = motor.MotorClient().open_sync()
+  >>> client = motor.MotorClient()
 
 This connects to a ``mongod`` listening on the default host and port. You can
 specify the host and port like:
 
 .. doctest:: before-inserting-2000-docs
 
-  >>> client = motor.MotorClient('localhost', 27017).open_sync()
+  >>> client = motor.MotorClient('localhost', 27017)
 
 Motor also supports `connection URIs`_::
 
-  >>> client = motor.MotorClient('mongodb://localhost:27017').open_sync()
+  >>> client = motor.MotorClient('mongodb://localhost:27017')
 
 .. _high availability and PyMongo: http://api.mongodb.org/python/current/examples/high_availability.html
 
@@ -127,13 +124,9 @@ or return a Future.
 Tornado Application Startup Sequence
 ------------------------------------
 Now that we can create a client and get a database, we're ready to start
-a Tornado application that uses Motor.
+a Tornado application that uses Motor::
 
-:meth:`~motor.MotorClient.open_sync` is a blocking operation so it should
-be called before listening for HTTP requests. Here's an example startup
-sequence for a Tornado web application::
-
-    db = motor.MotorClient().open_sync().test_database
+    db = motor.MotorClient().test_database
 
     application = tornado.web.Application([
         (r'/', MainHandler)
@@ -142,32 +135,15 @@ sequence for a Tornado web application::
     application.listen(8888)
     tornado.ioloop.IOLoop.instance().start()
 
-Passing the database as the ``db`` keyword argument to ``Application`` makes it
-available to request handlers::
+There are two things to note in this code. First, the ``MotorClient``
+constructor doesn't actually connect to the server; the client will
+initiate a connection when you attempt the first operation.
+Second, passing the database as the ``db`` keyword argument to ``Application``
+makes it available to request handlers::
 
     class MainHandler(tornado.web.RequestHandler):
         def get(self):
             db = self.settings['db']
-
-If you want to use the Tornado HTTP server's `start() method`_ to fork
-multiple subprocesses, you must create the client object **after** calling
-``start()``, since a client created before forking isn't valid after::
-
-    application = tornado.web.Application([
-        (r'/', MainHandler)
-    ])
-
-    server = tornado.httpserver.HTTPServer(application)
-    server.bind(8888)
-
-    # start(0) starts a subprocess for each CPU core
-    server.start(0)
-
-    db = motor.MotorClient().open_sync().test_database
-
-    # Delayed initialization of settings
-    application.settings['db'] = db
-    tornado.ioloop.IOLoop.instance().start()
 
 .. warning:: It is a common mistake to create a new client object for every
   request; this comes at a dire performance cost. Create the client
