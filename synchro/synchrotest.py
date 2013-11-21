@@ -67,6 +67,10 @@ excluded_tests = [
     'TestClient.test_from_uri',
     'TestReplicaSetClient.test_properties',
 
+    # MotorClient(uri).open() doesn't raise ConfigurationError if the URI has
+    # the wrong auth credentials.
+    'TestClient.test_auth_from_uri',
+
     # Motor's pool is different, we test it separately.
     '*.test_waitQueueMultiple',
 
