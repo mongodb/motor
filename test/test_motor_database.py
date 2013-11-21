@@ -158,9 +158,8 @@ class MotorDatabaseTest(MotorTest):
         users = yield db.system.users.find().to_list(length=10)
         self.assertTrue("mike" in [u['user'] for u in users])
 
-        # We need to authenticate many times at once to make sure that
-        # Pool's start_request() is properly isolating operations
-        yield [db.authenticate("mike", "password") for _ in range(100)]
+        # Authenticate many times at once to test concurrency.
+        yield [db.authenticate("mike", "password") for _ in range(10)]
 
         # just make sure there are no exceptions here
         yield db.logout()
