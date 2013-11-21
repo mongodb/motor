@@ -100,6 +100,8 @@ specify the host and port like:
 
 Motor also supports `connection URIs`_::
 
+.. doctest:: before-inserting-2000-docs
+
   >>> client = motor.MotorClient('mongodb://localhost:27017')
 
 .. _high availability and PyMongo: http://api.mongodb.org/python/current/examples/high_availability.html

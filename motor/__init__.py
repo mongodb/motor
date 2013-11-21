@@ -1094,10 +1094,12 @@ class MotorClientBase(MotorOpenable, MotorBase):
     def get_default_database(self):
         """Get the database named in the MongoDB connection URI.
 
-        >>> uri = 'mongodb://host/my_database'
-        >>> client = MotorClient(uri)
-        >>> db = client.get_default_database()
-        >>> assert db.name == 'my_database'
+        .. doctest::
+
+          >>> uri = 'mongodb://localhost/my_database'
+          >>> client = MotorClient(uri)
+          >>> db = client.get_default_database()
+          >>> assert db.name == 'my_database'
 
         Useful in scripts where you want to choose which database to use
         based only on the URI in a configuration file.
