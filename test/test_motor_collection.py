@@ -121,7 +121,7 @@ class MotorCollectionTest(MotorTest):
 
         yield cursor.close()
 
-    @gen_test
+    @gen_test(timeout=10)
     def test_find_one_is_async(self):
         # Confirm find_one() is async by launching two operations which will
         # finish out of order.
