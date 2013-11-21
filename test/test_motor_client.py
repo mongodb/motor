@@ -22,7 +22,7 @@ import sys
 
 from nose.plugins.skip import SkipTest
 import pymongo
-from pymongo.errors import ConfigurationError
+from pymongo.errors import ConfigurationError, AutoReconnect, OperationFailure
 from pymongo.errors import ConnectionFailure
 from tornado import gen
 from tornado.concurrent import Future
@@ -345,6 +345,45 @@ class MotorClientTest(MotorTest):
         yield self.cx.drop_database(db)
         names = yield self.cx.database_names()
         self.assertFalse('test_drop_database' in names)
+
+    @gen_test
+    def test_auth_from_uri(self):
+        if not server_started_with_auth(test.sync_cx):
+            raise SkipTest('Authentication is not enabled on server')
+
+        yield self.cx.admin.add_user('admin', 'pass')
+        yield self.cx.admin.authenticate('admin', 'pass')
+
+        db = self.db
+        yield db.system.users.remove()
+        try:
+            yield db.add_user(
+                'mike', 'password',
+                roles=['userAdmin', 'readWrite'])
+
+            client = motor.MotorClient('mongodb://foo:bar@%s:%d' % (host, port))
+
+            # Note: open() only calls ismaster, doesn't throw auth errors.
+            yield client.open()
+
+            with assert_raises(OperationFailure):
+                yield client.db.collection.find_one()
+
+            client = motor.MotorClient(
+                'mongodb://user:pass@%s:%d/%s' %
+                (host, port, db.name))
+
+            yield client.open()
+
+            client = motor.MotorClient(
+                'mongodb://mike:password@%s:%d/%s' %
+                (host, port, db.name))
+
+            yield client[db.name].collection.find_one()
+
+        finally:
+            yield db.remove_user('mike')
+            yield self.cx.admin.remove_user('admin')
 
 
 if __name__ == '__main__':

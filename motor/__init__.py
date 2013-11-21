@@ -927,8 +927,22 @@ class MotorOpenable(object):
         raise NotImplementedError()
 
     def open(self, callback=None):
-        """Connect to the server. Takes an optional callback, or returns a
-        Future that resolves to self when opened.
+        """Connect to the server.
+
+        Takes an optional callback, or returns a Future that resolves to
+        ``self`` when opened. This is convenient for checking at program
+        startup time whether you can connect.
+
+        .. doctest::
+
+          >>> client = MotorClient()
+          >>> # run_sync() returns the open client.
+          >>> IOLoop.current().run_sync(client.open)
+          MotorClient(MongoClient('localhost', 27017))
+
+        ``open`` raises a :exc:`~pymongo.errors.ConnectionFailure` if it
+        cannot connect, but note that auth failures aren't revealed until
+        you attempt an operation on the open client.
 
         :Parameters:
          - `callback`: Optional function taking parameters (self, error)
