@@ -14,6 +14,9 @@ PyMongo's connection classes are called
 Motor provides a
 :class:`~motor.MotorClient` and :class:`~motor.MotorReplicaSetClient`.
 
+Motor's client classes do no I/O in their constructors; they connect
+on demand, when you first attempt an operation.
+
 Callbacks and Futures
 ---------------------
 
