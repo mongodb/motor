@@ -1366,7 +1366,7 @@ class MotorCollection(MotorBase):
     distinct          = AsyncRead()
     inline_map_reduce = AsyncRead()
     find_one          = AsyncRead()
-    aggregate         = AsyncRead()
+    aggregate         = AsyncRead().wrap(Cursor)
     uuid_subtype      = ReadWriteProperty()
     full_name         = ReadOnlyProperty()
 
@@ -1403,9 +1403,14 @@ class MotorCollection(MotorBase):
         cursor = self.delegate.find(*args, **kwargs)
         return MotorCursor(cursor, self)
 
-    def wrap(self, collection):
-        # Replace pymongo.collection.Collection with MotorCollection
-        return self.database[collection.name]
+    def wrap(self, obj):
+        if obj.__class__ is Collection:
+            # Replace pymongo.collection.Collection with MotorCollection
+            return self.database[obj.name]
+        elif obj.__class__ is Cursor:
+            return MotorCursor(obj, self)
+        else:
+            return obj
 
     def get_io_loop(self):
         return self.database.get_io_loop()

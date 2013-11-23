@@ -18,6 +18,7 @@ import unittest
 
 import bson
 from bson.objectid import ObjectId
+from nose.plugins.skip import SkipTest
 from pymongo.errors import DuplicateKeyError
 from tornado.concurrent import Future
 from test.utils import delay
@@ -25,7 +26,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import MotorTest, assert_raises
+from test import MotorTest, assert_raises, version
 
 
 class MotorCollectionTest(MotorTest):
@@ -411,6 +412,26 @@ class MotorCollectionTest(MotorTest):
             info['key'] == [('bar', 1)] for info in index_info.values()]))
 
         # Don't test drop_index or drop_indexes -- Synchro tests them
+
+    @gen_test
+    def test_aggregation_cursor(self):
+        if not version.at_least(test.sync_cx, (2, 5, 1)):
+            raise SkipTest("Aggregation cursor requires MongoDB >= 2.5.1")
+        db = self.db
+
+        # A small collection which returns only an initial batch,
+        # and a larger one that requires a getMore.
+        for collection_size in (10, 1000):
+            yield db.drop_collection("test")
+            yield db.test.insert([{'_id': i} for i in range(collection_size)])
+            expected_sum = sum(range(collection_size))
+            cursor = yield db.test.aggregate(
+                {'$project': {'_id': '$_id'}}, cursor={})
+
+            docs = yield cursor.to_list(collection_size)
+            self.assertEqual(
+                expected_sum,
+                sum(doc['_id'] for doc in docs))
 
 
 if __name__ == '__main__':
