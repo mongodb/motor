@@ -1448,6 +1448,7 @@ class MotorCursor(MotorBase):
     sort          = MotorCursorChainingMethod()
     hint          = MotorCursorChainingMethod()
     where         = MotorCursorChainingMethod()
+    max_time_ms   = MotorCursorChainingMethod()
 
     _Cursor__die  = AsyncCommand()
 

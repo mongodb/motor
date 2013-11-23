@@ -530,6 +530,7 @@ class Cursor(Synchro):
     _Cursor__hint              = SynchroProperty()
     _Cursor__exhaust           = SynchroProperty()
     _Cursor__compile_re        = SynchroProperty()
+    _Cursor__max_time_ms       = SynchroProperty()
     _Cursor__secondary_acceptable_latency_ms = SynchroProperty()
 
 
