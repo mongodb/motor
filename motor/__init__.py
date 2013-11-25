@@ -992,7 +992,8 @@ class MotorClientBase(MotorOpenable, MotorBase):
         super(MotorClientBase, self).__init__(delegate, io_loop)
 
     def _motor_ensure_connected(self, callback):
-        self._ensure_connected(callback=callback)
+        # The first param, True, is 'sync' if this is MongoReplicaSetClient.
+        self._ensure_connected(True, callback=callback)
 
     def __getattr__(self, name):
         return MotorDatabase(self, name)
