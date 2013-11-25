@@ -19,10 +19,11 @@ import unittest
 import pymongo.database
 from pymongo.errors import OperationFailure, CollectionInvalid
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
-import test
 from tornado.testing import gen_test
 
 import motor
+import test
+from test import version
 from test import MotorTest, assert_raises
 
 
@@ -152,20 +153,35 @@ class MotorDatabaseTest(MotorTest):
 
     @gen_test
     def test_authenticate(self):
-        db = self.db
-        yield db.system.users.remove()
-        yield db.add_user("mike", "password")
-        users = yield db.system.users.find().to_list(length=10)
-        self.assertTrue("mike" in [u['user'] for u in users])
+        try:
+            yield self.cx.admin.add_user("admin", "password")
+            yield self.cx.admin.authenticate("admin", "password")
+            db = self.db
+            yield db.add_user("mike", "password")
 
-        # Authenticate many times at once to test concurrency.
-        yield [db.authenticate("mike", "password") for _ in range(10)]
+            # Authenticate many times at once to test concurrency.
+            yield [db.authenticate("mike", "password") for _ in range(10)]
 
-        # just make sure there are no exceptions here
-        yield db.logout()
-        yield db.remove_user("mike")
-        users = yield db.system.users.find().to_list(length=10)
-        self.assertFalse("mike" in [u['user'] for u in users])
+            # just make sure there are no exceptions here
+            yield db.remove_user("mike")
+            yield db.logout()
+            if version.at_least(test.sync_cx, (2, 5, 4)):
+                info = yield db.command("usersInfo", "mike")
+                users = info.get('users', [])
+            else:
+                users = yield db.system.users.find().to_list(length=10)
+
+            self.assertFalse("mike" in [u['user'] for u in users])
+
+        finally:
+            # TODO: refactor.
+            if version.at_least(test.sync_cx, (2, 5, 4)):
+                yield self.db.command({"dropAllUsersFromDatabase": 1})
+            else:
+                yield self.db.system.users.remove()
+            yield self.cx.admin.remove_user("admin")
+            yield self.cx.admin.logout()
+            test.sync_cx.disconnect()
 
     @gen_test
     def test_validate_collection(self):
