@@ -122,11 +122,13 @@ class MotorTestBasic(MotorTest):
         self.assertEqual(42, cx.secondary_acceptable_latency_ms)
 
         # Make a MotorCursor and get its PyMongo Cursor
-        cursor = cx.motor_test.test_collection.find(
+        motor_cursor = cx.motor_test.test_collection.find(
             io_loop=self.io_loop,
             read_preference=ReadPreference.NEAREST,
             tag_sets=[{'yay': 'jesse'}],
-            secondary_acceptable_latency_ms=17).delegate
+            secondary_acceptable_latency_ms=17)
+
+        cursor = motor_cursor.delegate
 
         self.assertEqual(
             ReadPreference.NEAREST, cursor._Cursor__read_preference)
