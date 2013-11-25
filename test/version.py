@@ -14,6 +14,8 @@
 
 """Some tools for running tests based on MongoDB server version."""
 
+from tornado import gen
+
 
 def _padded(iter, length, padding=0):
     l = list(iter)
@@ -46,10 +48,13 @@ def _parse_version_string(version_string):
     return tuple(version)
 
 
-# Note this is probably broken for very old versions of the database...
+@gen.coroutine
 def version(client):
-    return _parse_version_string(client.server_info()["version"])
+    info = yield client.server_info()
+    raise gen.Return(_parse_version_string(info["version"]))
 
 
+@gen.coroutine
 def at_least(client, min_version):
-    return version(client) >= tuple(_padded(min_version, 4))
+    client_version = yield version(client)
+    raise gen.Return(client_version >= tuple(_padded(min_version, 4)))

@@ -14,6 +14,9 @@
 
 """Utilities for testing Motor
 """
+
+from tornado import gen
+
 from test import version
 
 
@@ -27,23 +30,29 @@ def delay(sec):
     return 'sleep(%s * 1000); return true' % sec
 
 
+@gen.coroutine
 def get_command_line(client):
-    command_line = client.admin.command('getCmdLineOpts')
+    command_line = yield client.admin.command('getCmdLineOpts')
     assert command_line['ok'] == 1, "getCmdLineOpts() failed"
-    return command_line['argv']
+    raise gen.Return(command_line['argv'])
 
 
+@gen.coroutine
 def server_started_with_auth(client):
-    argv = get_command_line(client)
-    return '--auth' in argv or '--keyFile' in argv
+    argv = yield get_command_line(client)
+    raise gen.Return('--auth' in argv or '--keyFile' in argv)
 
 
+@gen.coroutine
 def server_is_master_with_slave(client):
-    return '--master' in get_command_line(client)
+    command_line = yield get_command_line(client)
+    raise gen.Return('--master' in command_line)
 
 
-def remove_all_users(sync_db):
-    if version.at_least(sync_db.connection, (2, 5, 3, -1)):
-        sync_db.command({"dropAllUsersFromDatabase": 1})
+@gen.coroutine
+def remove_all_users(db):
+    version_check = yield version.at_least(db.connection, (2, 5, 4))
+    if version_check:
+        yield db.command({"dropAllUsersFromDatabase": 1})
     else:
-        sync_db.system.users.remove({})
+        yield db.system.users.remove({})

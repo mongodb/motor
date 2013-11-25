@@ -165,7 +165,7 @@ class MotorDatabaseTest(MotorTest):
             # just make sure there are no exceptions here
             yield db.remove_user("mike")
             yield db.logout()
-            if version.at_least(test.sync_cx, (2, 5, 4)):
+            if (yield version.at_least(self.cx, (2, 5, 4))):
                 info = yield db.command("usersInfo", "mike")
                 users = info.get('users', [])
             else:
@@ -175,7 +175,7 @@ class MotorDatabaseTest(MotorTest):
 
         finally:
             # TODO: refactor.
-            if version.at_least(test.sync_cx, (2, 5, 4)):
+            if (yield version.at_least(self.cx, (2, 5, 4))):
                 yield self.db.command({"dropAllUsersFromDatabase": 1})
             else:
                 yield self.db.system.users.remove()

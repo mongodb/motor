@@ -71,7 +71,7 @@ class MotorClientTest(MotorTest):
             raise SkipTest("UNIX-sockets are not supported on this system")
 
         if (sys.platform == 'darwin' and
-                server_started_with_auth(test.sync_cx)):
+                (yield server_started_with_auth(self.cx))):
             raise SkipTest("SERVER-8492")
 
         mongodb_socket = '/tmp/mongodb-27017.sock'
@@ -153,7 +153,7 @@ class MotorClientTest(MotorTest):
 
         # Due to SERVER-2329, databases may not disappear from a master
         # in a master-slave pair.
-        if not server_is_master_with_slave(test.sync_cx):
+        if not (yield server_is_master_with_slave(self.cx)):
             start = time.time()
             
             # There may be a race condition in the server's dropDatabase. Wait
@@ -348,7 +348,7 @@ class MotorClientTest(MotorTest):
 
     @gen_test
     def test_auth_from_uri(self):
-        if not server_started_with_auth(test.sync_cx):
+        if not (yield server_started_with_auth(self.cx)):
             raise SkipTest('Authentication is not enabled on server')
 
         yield self.cx.admin.add_user('admin', 'pass')

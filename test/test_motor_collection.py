@@ -415,8 +415,9 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     def test_aggregation_cursor(self):
-        if not version.at_least(test.sync_cx, (2, 5, 1)):
+        if not (yield version.at_least(self.cx, (2, 5, 1))):
             raise SkipTest("Aggregation cursor requires MongoDB >= 2.5.1")
+
         db = self.db
 
         # A small collection which returns only an initial batch,
