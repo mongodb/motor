@@ -21,18 +21,22 @@ def one(s):
     """Get one element of a set"""
     return iter(s).next()
 
+
 def delay(sec):
     # Javascript sleep() available in MongoDB since version ~1.9
     return 'sleep(%s * 1000); return true' % sec
+
 
 def get_command_line(client):
     command_line = client.admin.command('getCmdLineOpts')
     assert command_line['ok'] == 1, "getCmdLineOpts() failed"
     return command_line['argv']
 
+
 def server_started_with_auth(client):
     argv = get_command_line(client)
     return '--auth' in argv or '--keyFile' in argv
+
 
 def server_is_master_with_slave(client):
     return '--master' in get_command_line(client)
