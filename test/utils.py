@@ -14,6 +14,8 @@
 
 """Utilities for testing Motor
 """
+from test import version
+
 
 def one(s):
     """Get one element of a set"""
@@ -34,3 +36,10 @@ def server_started_with_auth(client):
 
 def server_is_master_with_slave(client):
     return '--master' in get_command_line(client)
+
+
+def remove_all_users(sync_db):
+    if version.at_least(sync_db.connection, (2, 5, 3, -1)):
+        sync_db.command({"dropAllUsersFromDatabase": 1})
+    else:
+        sync_db.system.users.remove({})
