@@ -22,7 +22,7 @@ import sys
 
 from nose.plugins.skip import SkipTest
 import pymongo
-from pymongo.errors import ConfigurationError, AutoReconnect, OperationFailure
+from pymongo.errors import ConfigurationError, OperationFailure
 from pymongo.errors import ConnectionFailure
 from tornado import gen
 from tornado.concurrent import Future
