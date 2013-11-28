@@ -346,7 +346,7 @@ class MotorCollectionTest(MotorTest):
     @gen_test
     def test_map_reduce(self):
         # Count number of documents with even and odd _id
-        self.make_test_data()
+        yield self.make_test_data()
         expected_result = [{'_id': 0, 'value': 100}, {'_id': 1, 'value': 100}]
         map_fn = bson.Code('function map() { emit(this._id % 2, 1); }')
         reduce_fn = bson.Code('''

@@ -296,7 +296,7 @@ class MotorClientTest(MotorTest):
 
     @gen_test
     def test_high_concurrency(self):
-        self.make_test_data()
+        yield self.make_test_data()
 
         concurrency = 100
         cx = self.motor_client(max_pool_size=concurrency)

@@ -140,8 +140,9 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         self.db = self.cx.motor_test
         self.collection = self.db.test_collection
 
+    @gen.coroutine
     def make_test_data(self):
-        sync_collection.insert([{'_id': i} for i in range(200)])
+        yield self.collection.insert([{'_id': i} for i in range(200)])
 
     make_test_data.__test__ = False
 

@@ -41,7 +41,7 @@ class MotorCursorTest(MotorTest):
 
     @gen_test
     def test_count(self):
-        self.make_test_data()
+        yield self.make_test_data()
         coll = self.collection
         self.assertEqual(200, (yield coll.find().count()))
         self.assertEqual(100, (yield coll.find({'_id': {'$gt': 99}}).count()))
@@ -58,7 +58,7 @@ class MotorCursorTest(MotorTest):
 
     @gen_test
     def test_fetch_next(self):
-        self.make_test_data()
+        yield self.make_test_data()
         coll = self.collection
         # 200 results, only including _id field, sorted by _id
         cursor = coll.find({}, {'_id': 1}).sort(
@@ -111,7 +111,7 @@ class MotorCursorTest(MotorTest):
     @gen_test
     def test_fetch_next_is_idempotent(self):
         # Subsequent calls to fetch_next don't do anything
-        self.make_test_data()
+        yield self.make_test_data()
         coll = self.collection
         cursor = coll.find()
         self.assertEqual(None, cursor.cursor_id)
@@ -139,7 +139,7 @@ class MotorCursorTest(MotorTest):
 
     @gen_test
     def test_each(self):
-        self.make_test_data()
+        yield self.make_test_data()
         cursor = self.collection.find({}, {'_id': 1})
         cursor.sort([('_id', pymongo.ASCENDING)])
         future = Future()
@@ -173,7 +173,7 @@ class MotorCursorTest(MotorTest):
 
     @gen_test
     def test_to_list_callback(self):
-        self.make_test_data()
+        yield self.make_test_data()
         cursor = self.collection.find({}, {'_id': 1})
         cursor.sort([('_id', pymongo.ASCENDING)])
         expected = [{'_id': i} for i in range(200)]
@@ -187,7 +187,7 @@ class MotorCursorTest(MotorTest):
 
     @gen_test
     def test_to_list_with_length(self):
-        self.make_test_data()
+        yield self.make_test_data()
         coll = self.collection
         cursor = coll.find({}, {'_id': 1}).sort([('_id', pymongo.ASCENDING)])
         self.assertEqual([], (yield cursor.to_list(0)))
@@ -241,7 +241,7 @@ class MotorCursorTest(MotorTest):
 
     @gen_test
     def test_cursor_explicit_close(self):
-        self.make_test_data()
+        yield self.make_test_data()
         collection = self.collection
         yield self.check_optional_callback(collection.find().close)
         cursor = collection.find()
@@ -256,7 +256,7 @@ class MotorCursorTest(MotorTest):
         yield self.wait_for_cursor(collection, cursor.cursor_id, retrieved)
 
     def test_each_cancel(self):
-        self.make_test_data()
+        yield self.make_test_data()
         loop = self.io_loop
         collection = self.collection
         results = []
@@ -310,8 +310,7 @@ class MotorCursorTest(MotorTest):
     def test_cursor_slice(self):
         # This is an asynchronous copy of PyMongo's test_getitem_slice_index in
         # test_cursor.py
-
-        self.make_test_data()
+        yield self.make_test_data()
         coll = self.collection
 
         self.assertRaises(IndexError, lambda: coll.find()[-1])
@@ -351,7 +350,7 @@ class MotorCursorTest(MotorTest):
 
     @gen_test
     def test_cursor_index(self):
-        self.make_test_data()
+        yield self.make_test_data()
         coll = self.collection
         cursor = coll.find().sort([('_id', 1)])[0]
         yield cursor.fetch_next
@@ -370,7 +369,7 @@ class MotorCursorTest(MotorTest):
 
     @gen_test
     def test_cursor_index_each(self):
-        self.make_test_data()
+        yield self.make_test_data()
         coll = self.collection
 
         results = set()
@@ -432,7 +431,7 @@ class MotorCursorTest(MotorTest):
     def test_del_on_main_greenlet(self):
         # Since __del__ can happen on any greenlet, MotorCursor must be
         # prepared to close itself correctly on main or a child.
-        self.make_test_data()
+        yield self.make_test_data()
         collection = self.collection
         cursor = collection.find()
         yield cursor.fetch_next
@@ -449,7 +448,7 @@ class MotorCursorTest(MotorTest):
     def test_del_on_child_greenlet(self):
         # Since __del__ can happen on any greenlet, MotorCursor must be
         # prepared to close itself correctly on main or a child.
-        self.make_test_data()
+        yield self.make_test_data()
         collection = self.collection
         cursor = [collection.find()]
         yield cursor[0].fetch_next
