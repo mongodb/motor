@@ -369,17 +369,21 @@ class MotorClientTest(MotorTest):
             with assert_raises(OperationFailure):
                 yield client.db.collection.find_one()
 
+            client.close()
+
             client = motor.MotorClient(
                 'mongodb://user:pass@%s:%d/%s' %
                 (host, port, db.name))
 
             yield client.open()
+            client.close()
 
             client = motor.MotorClient(
                 'mongodb://mike:password@%s:%d/%s' %
                 (host, port, db.name))
 
             yield client[db.name].collection.find_one()
+            client.close()
 
         finally:
             yield db.remove_user('mike')

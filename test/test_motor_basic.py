@@ -186,5 +186,3 @@ class MotorTestBasic(MotorTest):
         self.assertRaises(
             ConfigurationError,
             collection.find_one, slaveok=True)
-
-        self.cx.close()
