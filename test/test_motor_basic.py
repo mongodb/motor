@@ -85,7 +85,7 @@ class MotorTestBasic(MotorTest):
                 yield collection.insert({'_id': 0})
 
             with assert_raises(pymongo.errors.DuplicateKeyError):
-                yield cx.motor_test.test_collection.insert({'_id': 0}, w=2)
+                yield self.collection.insert({'_id': 0}, w=2)
         else:
             # w > 1 and no replica set
             with assert_raises(pymongo.errors.OperationFailure):
@@ -95,14 +95,13 @@ class MotorTestBasic(MotorTest):
                 yield collection.insert({'_id': 0})
 
             with assert_raises(pymongo.errors.OperationFailure):
-                yield cx.motor_test.test_collection.insert({'_id': 0}, w=2)
+                yield self.collection.insert({'_id': 0}, w=2)
 
         # Important that the last operation on each MotorClient was
         # acknowledged, so lingering messages aren't delivered in the middle of
         # the next test. Also, a quirk of tornado.testing.AsyncTestCase:  we
         # must relinquish all file descriptors before its tearDown calls
         # self.io_loop.close(all_fds=True).
-        cx.close()
         cxw2.close()
 
     @gen_test
@@ -135,6 +134,8 @@ class MotorTestBasic(MotorTest):
 
         self.assertEqual([{'yay': 'jesse'}], cursor._Cursor__tag_sets)
         self.assertEqual(17, cursor._Cursor__secondary_acceptable_latency_ms)
+
+        cx.close()
 
     @gen_test
     def test_safe(self):
