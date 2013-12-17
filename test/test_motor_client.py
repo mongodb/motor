@@ -31,9 +31,9 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import host, port, assert_raises, MotorTest
+from test import host, port, assert_raises, MotorTest, version
 from test.utils import server_is_master_with_slave, delay
-from test.utils import server_started_with_auth
+from test.utils import server_started_with_auth, remove_all_users
 
 
 class MotorClientTest(MotorTest):
@@ -142,14 +142,10 @@ class MotorClientTest(MotorTest):
         self.assertEqual(result, None)
         self.assertTrue(isinstance(error, Exception))
 
+    @gen.coroutine
     def drop_databases(self, database_names):
         for test_db_name in database_names:
-            # Setup code has configured a short timeout, and the copying
-            # has put Mongo under enough load that we risk timeouts here
-            # unless we override. command() takes no network_timeout but
-            # find_one does.
-            test.sync_cx[test_db_name]['$cmd'].find_one(
-                {'dropDatabase': 1}, network_timeout=30)
+            yield self.cx.drop_database(test_db_name)
 
         # Due to SERVER-2329, databases may not disappear from a master
         # in a master-slave pair.
@@ -158,7 +154,7 @@ class MotorClientTest(MotorTest):
             
             # There may be a race condition in the server's dropDatabase. Wait
             # for it to update its namespaces.
-            db_names = test.sync_cx.database_names()
+            db_names = yield self.cx.database_names()
             while time.time() - start < 30:
                 remaining_test_dbs = (
                     set(database_names).intersection(db_names))
@@ -167,72 +163,145 @@ class MotorClientTest(MotorTest):
                     # All test DBs are removed.
                     break
 
-                time.sleep(.1)
-                db_names = test.sync_cx.database_names()
+                yield self.pause(0.1)
+                db_names = yield self.cx.database_names()
                 
             for test_db_name in database_names:
                 self.assertFalse(
                     test_db_name in db_names,
                     "%s not dropped" % test_db_name)
 
-    @gen_test(timeout=300)
-    def test_copy_db(self):
-        # 1. Drop old DBs
-        # 2. Copy a DB N times at once, to test for concurrency bugs
-        # 3. Create a username and password
-        # 4. Copy a database using name and password
-        ncopies = 10
-        test_db_names = ['motor_test%s' % i for i in range(ncopies)]
+    @gen.coroutine
+    def check_copydb_results(self, doc, test_db_names):
+        for test_db_name in test_db_names:
+            self.assertEqual(
+                doc,
+                (yield self.cx[test_db_name].test_collection.find_one()))
 
-        def check_copydb_results():
-            db_names = test.sync_cx.database_names()
-            for test_db_name in test_db_names:
-                self.assertTrue(test_db_name in db_names)
-                result = test.sync_cx[test_db_name].test_collection.find_one()
-                self.assertTrue(result, "No results in %s" % test_db_name)
-                self.assertEqual(
-                    "bar", result.get("foo"),
-                    "Wrong result from %s: %s" % (test_db_name, result))
+    @gen_test
+    def test_copy_db(self):
+        target_db_name = 'motor_test_2'
+
+        yield self.cx.drop_database(target_db_name)
+        yield self.collection.insert({'_id': 1})
+        result = yield self.cx.copy_database("motor_test", target_db_name)
+        self.assertTrue(isinstance(result, dict))
+        self.assertEqual(
+            {'_id': 1},
+            (yield self.cx[target_db_name].test_collection.find_one()))
+
+        yield self.cx.drop_database(target_db_name)
+
+    @gen_test(timeout=300)
+    def test_copy_db_concurrent(self):
+        # Copy a DB N times at once, to test for concurrency bugs.
+        n_copies = 10
+        target_db_names = ['motor_test_%s' % i for i in range(n_copies)]
 
         # 1. Drop old test DBs
         yield self.cx.drop_database('motor_test')
-        self.drop_databases(test_db_names)
+        yield self.drop_databases(target_db_names)
 
         # 2. Copy a test DB N times at once
-        yield self.collection.insert({"foo": "bar"})
+        yield self.collection.insert({'_id': 1})
         results = yield [
-            self.cx.copy_database("motor_test", test_db_name)
-            for test_db_name in test_db_names]
+            self.cx.copy_database('motor_test', test_db_name)
+            for test_db_name in target_db_names]
 
         self.assertTrue(all(isinstance(i, dict) for i in results))
-        check_copydb_results()
-        self.drop_databases(test_db_names)
+        yield self.check_copydb_results({'_id': 1}, target_db_names)
+        yield self.drop_databases(target_db_names)
 
-        # 3. Create a username and password
-        yield self.cx.motor_test.add_user("mike", "password")
+    @gen_test
+    def test_copy_db_auth(self):
+        # See SERVER-6427.
+        if self.cx.is_mongos:
+            raise SkipTest("Can't copy database with auth via mongos.")
 
-        with assert_raises(pymongo.errors.OperationFailure):
+        target_db_name = 'motor_test_2'
+
+        yield self.collection.remove()
+        yield self.collection.insert({'_id': 1})
+
+        yield self.cx.admin.add_user('admin', 'password')
+        yield self.cx.admin.authenticate('admin', 'password')
+
+        try:
+            yield self.db.add_user('mike', 'password')
+
+            with assert_raises(pymongo.errors.OperationFailure):
+                yield self.cx.copy_database(
+                    'motor_test', target_db_name,
+                    username='foo', password='bar')
+
+            with assert_raises(pymongo.errors.OperationFailure):
+                yield self.cx.copy_database(
+                    'motor_test', target_db_name,
+                    username='mike', password='bar')
+
+            # Copy a database using name and password.
             yield self.cx.copy_database(
-                "motor_test", "motor_test0",
-                username="foo", password="bar")
+                'motor_test', target_db_name,
+                username='mike', password='password')
 
-        with assert_raises(pymongo.errors.OperationFailure):
-            yield self.cx.copy_database(
-                "motor_test", "motor_test0",
-                username="mike", password="bar")
+            self.assertEqual(
+                {'_id': 1},
+                (yield self.cx[target_db_name].test_collection.find_one()))
 
-        # 4. Copy a database using name and password
-        if not self.cx.is_mongos:
-            # See SERVER-6427
-            yield [
+            yield self.cx.drop_database(target_db_name)
+        finally:
+            # Cleanup
+            # TODO: refactor.
+            if (yield version.at_least(self.cx, (2, 5, 4))):
+                yield self.db.command({'dropAllUsersFromDatabase': 1})
+            else:
+                yield self.db.system.users.remove()
+
+            yield self.cx.admin.remove_user('admin')
+
+    @gen_test(timeout=300)
+    def test_copy_db_auth_concurrent(self):
+        # Copy a DB with auth N times at once, to test for concurrency bugs.
+        if self.cx.is_mongos:
+            # See SERVER-6427.
+            raise SkipTest("Can't copy database with auth via mongos.")
+
+        n_copies = 2
+        test_db_names = ['motor_test_%s' % i for i in range(n_copies)]
+
+        # 1. Drop old test DBs
+        yield self.cx.drop_database('motor_test')
+        yield self.drop_databases(test_db_names)
+
+        # 2. Copy a test DB N times at once
+        yield self.collection.remove()
+        yield self.collection.insert({'_id': 1})
+
+        yield self.cx.admin.add_user('admin', 'password')
+        yield self.cx.admin.authenticate('admin', 'password')
+
+        try:
+            yield self.db.add_user('mike', 'password')
+
+            results = yield [
                 self.cx.copy_database(
-                    "motor_test", test_db_name,
-                    username="mike", password="password")
+                    'motor_test', test_db_name,
+                    username='mike', password='password')
                 for test_db_name in test_db_names]
 
-            check_copydb_results()
+            self.assertTrue(all(isinstance(i, dict) for i in results))
+            yield self.check_copydb_results({'_id': 1}, test_db_names)
 
-        self.drop_databases(test_db_names)
+        finally:
+            # Cleanup
+            # TODO: refactor.
+            if (yield version.at_least(self.cx, (2, 5, 4))):
+                yield self.db.command({'dropAllUsersFromDatabase': 1})
+            else:
+                yield self.db.system.users.remove()
+
+            yield self.cx.admin.remove_user('admin')
+            yield self.drop_databases(test_db_names)
 
     @gen_test
     def test_timeout(self):
@@ -351,11 +420,12 @@ class MotorClientTest(MotorTest):
         if not (yield server_started_with_auth(self.cx)):
             raise SkipTest('Authentication is not enabled on server')
 
+        yield remove_all_users(self.db)
+        yield remove_all_users(self.cx.admin)
         yield self.cx.admin.add_user('admin', 'pass')
         yield self.cx.admin.authenticate('admin', 'pass')
 
         db = self.db
-        yield db.system.users.remove()
         try:
             yield db.add_user(
                 'mike', 'password',
