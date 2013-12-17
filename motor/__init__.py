@@ -1018,8 +1018,8 @@ class MotorClientBase(MotorOpenable, MotorBase):
 
             # Make sure there *is* a primary pool.
             yield self._ensure_connected(True)
-            pool = self._get_primary_pool()
-            sock_info = yield pool.async_get_socket()
+            member = self._get_member()
+            sock_info = yield self._socket(member)
 
             copydb_command = bson.SON([
                 ('copydb', 1),
@@ -1126,7 +1126,9 @@ class MotorClient(MotorClientBase):
     nodes        = ReadOnlyProperty()
     host         = ReadOnlyProperty()
     port         = ReadOnlyProperty()
+
     _simple_command = AsyncCommand(attr_name='__simple_command')
+    _socket         = AsyncCommand(attr_name='__socket')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -1147,9 +1149,12 @@ class MotorClient(MotorClientBase):
         kwargs['_event_class'] = event_class
         super(MotorClient, self).__init__(io_loop, *args, **kwargs)
 
+    def _get_member(self):
+        # TODO: expose the PyMongo Member, or otherwise avoid this.
+        return self.delegate._MongoClient__member
+
     def _get_pools(self):
-        # TODO: expose the PyMongo pool, or otherwise avoid this
-        member = self.delegate._MongoClient__member
+        member = self._get_member()
         return [member.pool] if member else [None]
 
     def _get_primary_pool(self):
@@ -1165,7 +1170,9 @@ class MotorReplicaSetClient(MotorClientBase):
     hosts       = ReadOnlyProperty()
     seeds       = ReadOnlyProperty()
     close       = DelegateMethod()
+
     _simple_command = AsyncCommand(attr_name='__simple_command')
+    _socket         = AsyncCommand(attr_name='__socket')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a MongoDB replica set.
@@ -1188,16 +1195,19 @@ class MotorReplicaSetClient(MotorClientBase):
 
         super(MotorReplicaSetClient, self).__init__(io_loop, *args, **kwargs)
 
+    def _get_member(self):
+        # TODO: expose the PyMongo RSC members, or otherwise avoid this.
+        rs_state = self.delegate._MongoReplicaSetClient__get_rs_state()
+        return rs_state.primary_member
+
     def _get_pools(self):
         # TODO: expose the PyMongo RSC members, or otherwise avoid this.
-        rs_state = self.delegate._MongoReplicaSetClient__rs_state
+        rs_state = self.delegate._MongoReplicaSetClient__get_rs_state()
         return [member.pool for member in rs_state._members]
 
     def _get_primary_pool(self):
-        # TODO: expose the PyMongo RSC members, or otherwise avoid this.
-        rs_state = self.delegate._MongoReplicaSetClient__rs_state
-        if rs_state.primary_member:
-            return rs_state.primary_member.pool
+        primary_member = self._get_member()
+        return primary_member.pool if primary_member else None
 
 
 # PyMongo uses a background thread to regularly inspect the replica set and
