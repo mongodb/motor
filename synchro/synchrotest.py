@@ -50,13 +50,15 @@ excluded_modules = [
 
     # Complex PyMongo-specific mocking.
     'test.test_replica_set_reconfig',
+    'test.test_mongos_ha',
 ]
 
 excluded_tests = [
-    # Synchro can't simulate requests, so test copy_db in Motor directly.
+    # Depends on requests.
     '*.test_copy_db',
+    'TestCollection.test_insert_large_batch',
 
-    # use_greenlets is always True with Motor.
+    # Motor always uses greenlets.
     '*.test_use_greenlets',
 
     # Motor's reprs aren't the same as PyMongo's.
@@ -74,10 +76,14 @@ excluded_tests = [
     # Motor's pool is different, we test it separately.
     '*.test_waitQueueMultiple',
 
-    # Lazy-connection tests require multithreading.
+    # Lazy-connection tests require multithreading; we test concurrent
+    # lazy connection directly.
     '_TestLazyConnectMixin.*',
     'TestClientLazyConnect.*',
+    'TestClientLazyConnectOneGoodSeed.*',
+    'TestClientLazyConnectBadSeeds.*',
     'TestReplicaSetClientLazyConnect.*',
+    'TestReplicaSetClientLazyConnectBadSeeds.*',
 
     # Motor doesn't do requests.
     '*.test_auto_start_request',
@@ -96,6 +102,9 @@ excluded_tests = [
 
     # No pinning in Motor since there are no requests.
     'TestReplicaSetClient.test_pinned_member',
+
+    # Not allowed to call schedule_refresh directly in Motor.
+    'TestReplicaSetClient.test_schedule_refresh',
 
     # We don't make the same guarantee as PyMongo when connecting an
     # RS client to a standalone.
@@ -140,6 +149,12 @@ excluded_tests = [
 
     # Testing a deprecated PyMongo API, Motor can skip it.
     'TestCollection.test_insert_message_creation',
+
+    # Complex PyMongo-specific mocking.
+    'TestMongoClientFailover.*',
+    'TestReplicaSetClientInternalIPs.*',
+    'TestClient.test_wire_version_mongos_ha',
+    '*.test_wire_version',
 ]
 
 
@@ -200,6 +215,7 @@ pymongo_modules = set([
     'pymongo.helpers',
     'pymongo.errors',
     'pymongo.master_slave_connection',
+    'pymongo.member',
     'pymongo.mongo_client',
     'pymongo.mongo_replica_set_client',
     'pymongo.pool',

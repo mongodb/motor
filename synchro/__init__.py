@@ -34,16 +34,17 @@ import motor
 from gridfs.errors import *
 from pymongo import *
 from pymongo import son_manipulator
+from pymongo import member
 from pymongo.helpers import _unpack_response, _check_command_response
 from pymongo.common import *
 from pymongo.cursor import *
 from pymongo.cursor import _QUERY_OPTIONS
 from pymongo.errors import *
-from pymongo.mongo_replica_set_client import PRIMARY, SECONDARY, OTHER
+from pymongo.member import PRIMARY, SECONDARY, OTHER
 from pymongo.read_preferences import *
 from pymongo.son_manipulator import *
 from pymongo.uri_parser import *
-from pymongo.uri_parser import _partition,_rpartition
+from pymongo.uri_parser import _partition, _rpartition
 
 # TODO:
 try:
@@ -137,7 +138,7 @@ class WrapOutgoing(object):
 
 
 class SynchroProperty(object):
-    """Used to fake private properties like Cursor.__slave_okay - don't use
+    """Used to fake private properties like MongoClient.__member - don't use
     for real properties like write_concern or you'll mask missing features in
     Motor!
     """
@@ -271,16 +272,29 @@ class Synchro(object):
         except (AttributeError, InvalidOperation):
             return True
 
+    @safe.setter
+    def safe(self, value):
+        if value:
+            # Set Motor object's write_concern. Safe by default with no 'w'.
+            self.delegate.write_concern.pop('w', None)
+        else:
+            # Unsafe.
+            self.delegate.write_concern['w'] = 0
+
     @property
     def slave_okay(self):
-        try:
-            return self.delegate.read_preference != ReadPreference.PRIMARY
-        except (AttributeError, InvalidOperation):
-            return False
+        motor_obj = self.delegate
+        pymongo_obj = motor_obj.delegate
+
+        pref = getattr(motor_obj, 'read_preference', ReadPreference.PRIMARY)
+        slave_okay = getattr(pymongo_obj, 'slave_okay', False)
+
+        return (pref != ReadPreference.PRIMARY) or slave_okay
 
     def __eq__(self, other):
         return self.delegate == other.delegate
 
+    _get_write_mode       = SynchroProperty()
     get_lasterror_options = SynchroProperty()
 
 
@@ -317,8 +331,13 @@ class MongoClient(Synchro):
             (k, v) for k, v in kwargs.items()
             if k in SAFE_OPTIONS])
 
-        if gle_opts:
+        if gle_opts and 'w' not in gle_opts:
             kwargs['w'] = 1
+
+        if 'safe' in kwargs:
+            safe = kwargs.pop('safe')
+            if not safe:
+                kwargs.setdefault('w', 0)
 
         # So that TestClient.test_constants and test_types work.
         host = host if host is not None else self.HOST
@@ -371,7 +390,7 @@ class MongoClient(Synchro):
     __getitem__ = __getattr__
 
     get_default_database      = WrapOutgoing()
-    _MongoClient__pool        = SynchroProperty()
+    _MongoClient__member      = SynchroProperty()
     _MongoClient__net_timeout = SynchroProperty()
 
 
@@ -393,7 +412,7 @@ class MongoReplicaSetClient(MongoClient):
 
     get_default_database                     = WrapOutgoing()
     _MongoReplicaSetClient__writer           = SynchroProperty()
-    _MongoReplicaSetClient__members          = SynchroProperty()
+    _MongoReplicaSetClient__rs_state         = SynchroProperty()
     _MongoReplicaSetClient__schedule_refresh = SynchroProperty()
     _MongoReplicaSetClient__net_timeout      = SynchroProperty()
 
@@ -507,6 +526,14 @@ class Cursor(Synchro):
         # Don't suppress exceptions.
         return False
 
+    @property
+    def _Cursor__slave_okay(self):
+        pymongo_cursor = self.delegate.delegate
+        pref = pymongo_cursor._Cursor__read_preference
+        return (
+            pymongo_cursor._Cursor__slave_okay
+            or pref != ReadPreference.PRIMARY)
+
     _Cursor__id                = SynchroProperty()
     _Cursor__query_options     = SynchroProperty()
     _Cursor__query_spec        = SynchroProperty()
@@ -517,7 +544,6 @@ class Cursor(Synchro):
     _Cursor__snapshot          = SynchroProperty()
     _Cursor__tailable          = SynchroProperty()
     _Cursor__as_class          = SynchroProperty()
-    _Cursor__slave_okay        = SynchroProperty()
     _Cursor__await_data        = SynchroProperty()
     _Cursor__partial           = SynchroProperty()
     _Cursor__manipulate        = SynchroProperty()
@@ -531,6 +557,7 @@ class Cursor(Synchro):
     _Cursor__exhaust           = SynchroProperty()
     _Cursor__compile_re        = SynchroProperty()
     _Cursor__max_time_ms       = SynchroProperty()
+    _Cursor__comment           = SynchroProperty()
     _Cursor__secondary_acceptable_latency_ms = SynchroProperty()
 
 
@@ -542,8 +569,7 @@ class GridFS(Synchro):
             raise TypeError(
                 "Expected Database, got %s" % repr(database))
 
-        self.delegate = self.synchronize(
-            motor.MotorGridFS(database.delegate, collection).open)()
+        self.delegate = motor.MotorGridFS(database.delegate, collection)
 
     def put(self, *args, **kwargs):
         return self.synchronize(self.delegate.put)(*args, **kwargs)
@@ -565,7 +591,6 @@ class GridIn(Synchro):
                     "Expected Collection, got %s" % repr(collection))
 
             self.delegate = motor.MotorGridIn(collection.delegate, **kwargs)
-            self.synchronize(self.delegate.open)()
 
     def __getattr__(self, item):
         return getattr(self.delegate, item)
@@ -575,8 +600,8 @@ class GridOut(Synchro):
     __delegate_class__ = motor.MotorGridOut
 
     def __init__(
-        self, root_collection, file_id=None, file_document=None, delegate=None
-    ):
+            self, root_collection, file_id=None, file_document=None,
+            _connect=True, delegate=None):
         """Can be created with collection and kwargs like a PyMongo GridOut,
         or with a 'delegate' keyword arg, where delegate is a MotorGridOut.
         """
@@ -589,10 +614,23 @@ class GridOut(Synchro):
 
             self.delegate = motor.MotorGridOut(
                 root_collection.delegate, file_id, file_document)
-            self.synchronize(self.delegate.open)()
+
+            if _connect:
+                self.synchronize(self.delegate.open)()
 
     def __getattr__(self, item):
+        self.synchronize(self.delegate.open)()
         return getattr(self.delegate, item)
+
+    def __setattr__(self, key, value):
+        # PyMongo's GridOut prohibits setting these values; do the same
+        # to make PyMongo's assertRaises tests pass.
+        if key in (
+                "_id", "name", "content_type", "length", "chunk_size",
+                "upload_date", "aliases", "metadata", "md5"):
+            raise AttributeError()
+
+        super(GridOut, self).__setattr__(key, value)
 
 
 class TimeModule(object):
