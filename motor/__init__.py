@@ -903,14 +903,31 @@ class MotorBase(object):
         return '%s(%r)' % (self.__class__.__name__, self.delegate)
 
 
-class MotorOpenable(object):
-    """Base class for Motor objects that can be initialized in two stages:
-    basic setup in __init__ and setup requiring I/O in open().
-    """
-    __metaclass__ = MotorMeta
-    __delegate_class__ = None
+class MotorClientBase(MotorBase):
+    """MotorClient and MotorReplicaSetClient common functionality."""
+    database_names   = AsyncRead()
+    server_info      = AsyncRead()
+    alive            = AsyncRead()
+    close_cursor     = AsyncCommand()
+    drop_database    = AsyncCommand().unwrap('MotorDatabase')
+    disconnect       = DelegateMethod()
+    tz_aware         = ReadOnlyProperty()
+    close            = DelegateMethod()
+    is_primary       = ReadOnlyProperty()
+    is_mongos        = ReadOnlyProperty()
+    max_bson_size    = ReadOnlyProperty()
+    max_message_size = ReadOnlyProperty()
+    min_wire_version = ReadOnlyProperty()
+    max_wire_version = ReadOnlyProperty()
+    max_pool_size    = ReadOnlyProperty()
+    _ensure_connected = AsyncCommand()
 
-    def __init__(self, delegate, io_loop):
+    def __init__(self, io_loop, *args, **kwargs):
+        check_deprecated_kwargs(kwargs)
+        kwargs['_pool_class'] = functools.partial(MotorPool, io_loop)
+        kwargs['_connect'] = False
+        delegate = self.__delegate_class__(*args, **kwargs)
+        super(MotorClientBase, self).__init__(delegate)
         if io_loop:
             if not isinstance(io_loop, ioloop.IOLoop):
                 raise TypeError(
@@ -918,15 +935,6 @@ class MotorOpenable(object):
             self.io_loop = io_loop
         else:
             self.io_loop = ioloop.IOLoop.current()
-
-        self.delegate = delegate
-
-    def get_io_loop(self):
-        return self.io_loop
-
-    def _motor_ensure_connected(self, callback):
-        # Subclasses do I/O here to initialize the delegate object.
-        raise NotImplementedError()
 
     def open(self, callback=None):
         """Connect to the server.
@@ -968,36 +976,10 @@ class MotorOpenable(object):
         self._motor_ensure_connected(callback=_callback)
         return future
 
-
-class MotorClientBase(MotorOpenable, MotorBase):
-    """MotorClient and MotorReplicaSetClient common functionality.
-    """
-    database_names   = AsyncRead()
-    server_info      = AsyncRead()
-    alive            = AsyncRead()
-    close_cursor     = AsyncCommand()
-    drop_database    = AsyncCommand().unwrap('MotorDatabase')
-    disconnect       = DelegateMethod()
-    tz_aware         = ReadOnlyProperty()
-    close            = DelegateMethod()
-    is_primary       = ReadOnlyProperty()
-    is_mongos        = ReadOnlyProperty()
-    max_bson_size    = ReadOnlyProperty()
-    max_message_size = ReadOnlyProperty()
-    min_wire_version = ReadOnlyProperty()
-    max_wire_version = ReadOnlyProperty()
-    max_pool_size    = ReadOnlyProperty()
-    _ensure_connected = AsyncCommand()
-
-    def __init__(self, io_loop, *args, **kwargs):
-        check_deprecated_kwargs(kwargs)
-        kwargs['_pool_class'] = functools.partial(MotorPool, io_loop)
-        kwargs['_connect'] = False
-        delegate = self.__delegate_class__(*args, **kwargs)
-        super(MotorClientBase, self).__init__(delegate, io_loop)
+    def get_io_loop(self):
+        return self.io_loop
 
     def _motor_ensure_connected(self, callback):
-        # The first param, True, is 'sync' if this is MongoReplicaSetClient.
         self._ensure_connected(True, callback=callback)
 
     def __getattr__(self, name):
@@ -1214,6 +1196,20 @@ class MotorReplicaSetClient(MotorClientBase):
         primary_member = self._get_member()
         return primary_member.pool if primary_member else None
 
+    def _motor_ensure_connected(self, callback):
+        def _callback(_, error):
+            if error:
+                callback(None, error)
+            else:
+                try:
+                    if not self._get_member():
+                        raise pymongo.errors.AutoReconnect("no primary")
+
+                    callback(self, None)  # Success.
+                except Exception, e:
+                    callback(None, e)
+
+        self._ensure_connected(True, callback=_callback)
 
 # PyMongo uses a background thread to regularly inspect the replica set and
 # monitor it for changes. In Motor, use a periodic callback on the IOLoop to
@@ -1885,7 +1881,7 @@ class MotorCursor(MotorBase):
                 self.close()
 
 
-class MotorGridOut(MotorOpenable):
+class MotorGridOut(object):
     """Class to read data out of GridFS.
 
     MotorGridOut supports the same attributes as PyMongo's
@@ -1897,6 +1893,7 @@ class MotorGridOut(MotorOpenable):
     instantiated directly, call :meth:`open`, :meth:`read`, or
     :meth:`readline` before accessing its attributes.
     """
+    __metaclass__ = MotorMeta
     __delegate_class__ = gridfs.GridOut
 
     tell            = DelegateMethod()
@@ -1910,23 +1907,23 @@ class MotorGridOut(MotorOpenable):
         root_collection,
         file_id=None,
         file_document=None,
-        delegate=None
+        delegate=None,
     ):
         if not isinstance(root_collection, MotorCollection):
             raise TypeError(
                 "First argument to MotorGridOut must be "
                 "MotorCollection, not %r" % root_collection)
 
-        if not delegate:
-            delegate = self.__delegate_class__(
+        if delegate:
+            self.delegate = delegate
+        else:
+            self.delegate = self.__delegate_class__(
                 root_collection.delegate,
                 file_id,
                 file_document,
                 _connect=False)
 
-        super(MotorGridOut, self).__init__(
-            delegate,
-            root_collection.get_io_loop())
+        self.io_loop = root_collection.get_io_loop()
 
     def __getattr__(self, item):
         if not self.delegate._file:
@@ -1936,8 +1933,35 @@ class MotorGridOut(MotorOpenable):
 
         return getattr(self.delegate, item)
 
-    def _motor_ensure_connected(self, callback):
-        self._ensure_file(callback=callback)
+    def open(self, callback=None):
+        """Retrieve this file's attributes from the server.
+
+        Takes an optional callback, or returns a Future.
+
+        :Parameters:
+         - `callback`: Optional function taking parameters (self, error)
+        """
+        # TODO: refactor with clients' open().
+        if callback:
+            if not callable(callback):
+                raise callback_type_error
+
+            def _callback(result, error):
+                if error:
+                    callback(None, error)
+                else:
+                    callback(self, None)
+
+            future = None
+        else:
+            future = Future()
+            _callback = callback_from_future(future, default_result=self)
+
+        self._ensure_file(callback=_callback)
+        return future
+
+    def get_io_loop(self):
+        return self.io_loop
 
     @gen.coroutine
     def stream_to_handler(self, request_handler):
