@@ -298,13 +298,11 @@ class Synchro(object):
     get_lasterror_options = SynchroProperty()
 
 
-class MongoClient(Synchro):
-    HOST = 'localhost'
-    PORT = 27017
+class MongoClientBase(Synchro):
+    get_default_database = WrapOutgoing()
+    max_pool_size = SynchroProperty()
 
-    __delegate_class__ = motor.MotorClient
-
-    def __init__(self, host=None, port=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         # Make a unittest happy.
         self.use_greenlets = True
         self.auto_start_request = True
@@ -339,13 +337,10 @@ class MongoClient(Synchro):
             if not safe:
                 kwargs.setdefault('w', 0)
 
-        # So that TestClient.test_constants and test_types work.
-        host = host if host is not None else self.HOST
-        port = port if port is not None else self.PORT
         self.delegate = kwargs.pop('delegate', None)
 
         if not self.delegate:
-            self.delegate = self.__delegate_class__(host, port, *args, **kwargs)
+            self.delegate = self.__delegate_class__(*args, **kwargs)
             if kwargs.get('_connect', True):
                 self.synchro_connect()
 
@@ -389,7 +384,20 @@ class MongoClient(Synchro):
 
     __getitem__ = __getattr__
 
-    get_default_database      = WrapOutgoing()
+
+class MongoClient(MongoClientBase):
+    __delegate_class__ = motor.MotorClient
+
+    HOST = 'localhost'
+    PORT = 27017
+
+    def __init__(self, host=None, port=None, *args, **kwargs):
+        # So that TestClient.test_constants and test_types work.
+        host = host if host is not None else self.HOST
+        port = port if port is not None else self.PORT
+
+        super(MongoClient, self).__init__(host, port, *args, **kwargs)
+
     _MongoClient__member      = SynchroProperty()
     _MongoClient__net_timeout = SynchroProperty()
 
@@ -401,14 +409,8 @@ class MasterSlaveConnection(object):
     pass
 
 
-class MongoReplicaSetClient(MongoClient):
+class MongoReplicaSetClient(MongoClientBase):
     __delegate_class__ = motor.MotorReplicaSetClient
-
-    def __init__(self, *args, **kwargs):
-        # Motor doesn't implement auto_start_request.
-        kwargs.pop('auto_start_request', None)
-        self.delegate = self.__delegate_class__(*args, **kwargs)
-        self.synchro_connect()
 
     get_default_database                     = WrapOutgoing()
     _MongoReplicaSetClient__writer           = SynchroProperty()
@@ -421,8 +423,9 @@ class Database(Synchro):
     __delegate_class__ = motor.MotorDatabase
 
     def __init__(self, client, name):
-        assert isinstance(client, MongoClient), (
-            "Expected MongoClient, got %s" % repr(client))
+        assert isinstance(client, (MongoClient, MongoReplicaSetClient)), (
+            "Expected MongoClient or MongoReplicaSetClient, got %s"
+            % repr(client))
 
         self.connection = client
 
