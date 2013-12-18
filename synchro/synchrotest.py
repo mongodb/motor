@@ -147,6 +147,9 @@ excluded_tests = [
     'TestGridFile.test_grid_in_default_opts',
     'TestGridFile.test_set_after_close',
 
+    # GridFS always connects lazily in Motor.
+    'TestGridfs.test_gridfs_lazy_connect',
+
     # Testing a deprecated PyMongo API, Motor can skip it.
     'TestCollection.test_insert_message_creation',
 
