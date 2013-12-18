@@ -569,7 +569,7 @@ class Cursor(Synchro):
 class GridFS(Synchro):
     __delegate_class__ = motor.MotorGridFS
 
-    def __init__(self, database, collection='fs'):
+    def __init__(self, database, collection='fs', _connect=True):
         if not isinstance(database, Database):
             raise TypeError(
                 "Expected Database, got %s" % repr(database))
