@@ -1949,7 +1949,7 @@ class MotorGridOut(object):
     @gen.coroutine
     def stream_to_handler(self, request_handler):
         """Write the contents of this file to a
-        :class:`tornado.web.RequestHandler`. This method will call `flush` on
+        :class:`tornado.web.RequestHandler`. This method calls `flush` on
         the RequestHandler, so ensure all headers have already been set.
         For a more complete example see the implementation of
         :class:`~motor.web.GridFSHandler`.
