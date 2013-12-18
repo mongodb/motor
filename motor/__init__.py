@@ -541,6 +541,33 @@ class MotorPool(object):
             ' wait_queue_timeout %r' % (
                 self.max_size, self.wait_queue_timeout))
 
+
+def motor_coroutine(f):
+    """A coroutine that accepts an optional callback.
+
+    Given a callback, the function returns None, and the callback is run
+    with (result, error). Without a callback the function returns a Future.
+    """
+    coro = gen.coroutine(f)
+
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        callback = kwargs.pop('callback', None)
+        if callback and not callable(callback):
+            raise callback_type_error
+        future = coro(*args, **kwargs)
+        if callback:
+            def _callback(future):
+                try:
+                    result = future.result()
+                    callback(result, None)
+                except Exception, e:
+                    callback(None, e)
+            future.add_done_callback(_callback)
+        else:
+            return future
+    return wrapper
+
 no_result = object()
 
 
@@ -919,61 +946,40 @@ class MotorClientBase(MotorBase):
         else:
             self.io_loop = ioloop.IOLoop.current()
 
-    def open(self, callback=None):
-        """Connect to the server.
-
-        Takes an optional callback, or returns a Future that resolves to
-        ``self`` when opened. This is convenient for checking at program
-        startup time whether you can connect.
-
-        .. doctest::
-
-          >>> client = MotorClient()
-          >>> # run_sync() returns the open client.
-          >>> IOLoop.current().run_sync(client.open)
-          MotorClient(MongoClient('localhost', 27017))
-
-        ``open`` raises a :exc:`~pymongo.errors.ConnectionFailure` if it
-        cannot connect, but note that auth failures aren't revealed until
-        you attempt an operation on the open client.
-
-        :Parameters:
-         - `callback`: Optional function taking parameters (self, error)
-        """
-        # Arrange to replace the result with 'self' once complete.
-        if callback:
-            if not callable(callback):
-                raise callback_type_error
-
-            future = None
-
-            def _callback(_, error):
-                if error:
-                    callback(None, error)
-                else:
-                    callback(self, None)
-        else:
-            future = Future()
-            _callback = callback_from_future(future, default_result=self)
-
-        self._motor_ensure_connected(callback=_callback)
-        return future
-
     def get_io_loop(self):
         return self.io_loop
-
-    def _motor_ensure_connected(self, callback):
-        self._ensure_connected(True, callback=callback)
 
     def __getattr__(self, name):
         return MotorDatabase(self, name)
 
     __getitem__ = __getattr__
 
-    @gen.coroutine
-    def _copy_database(
-            self, _callback, from_name, to_name, from_host, username,
-            password):
+    @motor_coroutine
+    def copy_database(
+            self, from_name, to_name, from_host=None, username=None,
+            password=None):
+        """Copy a database, potentially from another host.
+
+        Accepts an optional callback, or returns a ``Future``.
+
+        Raises :class:`~pymongo.errors.InvalidName` if `to_name` is
+        not a valid database name.
+
+        If `from_host` is ``None`` the current host is used as the
+        source. Otherwise the database is copied from `from_host`.
+
+        If the source database requires authentication, `username` and
+        `password` must be specified.
+
+        :Parameters:
+          - `from_name`: the name of the source database
+          - `to_name`: the name of the target database
+          - `from_host` (optional): host name to copy from
+          - `username` (optional): username for source database
+          - `password` (optional): password for source database
+          - `callback`: Optional function taking parameters (response, error)
+        """
+        # PyMongo's implementation uses requests, so rewrite for Motor.
         pool, sock_info = None, None
         try:
             if not isinstance(from_name, basestring):
@@ -1015,52 +1021,10 @@ class MotorClientBase(MotorBase):
             result, duration = yield self._simple_command(
                 sock_info, 'admin', copydb_command)
 
-            if _callback:
-                _callback(result, None)
-            else:
-                raise gen.Return(result)
-        except Exception, e:
-            if _callback:
-                _callback(None, e)
-            else:
-                raise
+            raise gen.Return(result)
         finally:
             if pool and sock_info:
                 pool.maybe_return_socket(sock_info)
-
-    def copy_database(
-            self, from_name, to_name, from_host=None, username=None,
-            password=None, callback=None):
-        """Copy a database, potentially from another host.
-
-        Accepts an optional callback, or returns a ``Future``.
-
-        Raises :class:`~pymongo.errors.InvalidName` if `to_name` is
-        not a valid database name.
-
-        If `from_host` is ``None`` the current host is used as the
-        source. Otherwise the database is copied from `from_host`.
-
-        If the source database requires authentication, `username` and
-        `password` must be specified.
-
-        :Parameters:
-          - `from_name`: the name of the source database
-          - `to_name`: the name of the target database
-          - `from_host` (optional): host name to copy from
-          - `username` (optional): username for source database
-          - `password` (optional): password for source database
-          - `callback`: Optional function taking parameters (response, error)
-        """
-        # PyMongo's implementation uses requests, so rewrite for Motor.
-        if callback and not callable(callback):
-            raise callback_type_error
-
-        future = self._copy_database(
-            callback, from_name, to_name, from_host, username, password)
-
-        if not callback:
-            return future
 
     def get_default_database(self):
         """Get the database named in the MongoDB connection URI.
@@ -1119,6 +1083,31 @@ class MotorClient(MotorClientBase):
         kwargs['_event_class'] = event_class
         super(MotorClient, self).__init__(io_loop, *args, **kwargs)
 
+    @motor_coroutine
+    def open(self):
+        """Connect to the server.
+
+        Takes an optional callback, or returns a Future that resolves to
+        ``self`` when opened. This is convenient for checking at program
+        startup time whether you can connect.
+
+        .. doctest::
+
+          >>> client = MotorClient()
+          >>> # run_sync() returns the open client.
+          >>> IOLoop.current().run_sync(client.open)
+          MotorClient(MongoClient('localhost', 27017))
+
+        ``open`` raises a :exc:`~pymongo.errors.ConnectionFailure` if it
+        cannot connect, but note that auth failures aren't revealed until
+        you attempt an operation on the open client.
+
+        :Parameters:
+         - `callback`: Optional function taking parameters (self, error)
+        """
+        yield self._ensure_connected()
+        raise gen.Return(self)
+
     def _get_member(self):
         # TODO: expose the PyMongo Member, or otherwise avoid this.
         return self.delegate._MongoClient__member
@@ -1165,34 +1154,48 @@ class MotorReplicaSetClient(MotorClientBase):
 
         super(MotorReplicaSetClient, self).__init__(io_loop, *args, **kwargs)
 
+    @motor_coroutine
+    def open(self):
+        """Connect to the server.
+
+        Takes an optional callback, or returns a Future that resolves to
+        ``self`` when opened. This is convenient for checking at program
+        startup time whether you can connect.
+
+        .. doctest::
+
+          >>> client = MotorClient()
+          >>> # run_sync() returns the open client.
+          >>> IOLoop.current().run_sync(client.open)
+          MotorClient(MongoClient('localhost', 27017))
+
+        ``open`` raises a :exc:`~pymongo.errors.ConnectionFailure` if it
+        cannot connect, but note that auth failures aren't revealed until
+        you attempt an operation on the open client.
+
+        :Parameters:
+         - `callback`: Optional function taking parameters (self, error)
+        """
+        yield self._ensure_connected(True)
+        primary = self._get_member()
+        if not primary:
+            raise pymongo.errors.AutoReconnect('no primary is available')
+        raise gen.Return(self)
+
     def _get_member(self):
         # TODO: expose the PyMongo RSC members, or otherwise avoid this.
+        # This raises if the RSState's error is set.
         rs_state = self.delegate._MongoReplicaSetClient__get_rs_state()
         return rs_state.primary_member
 
     def _get_pools(self):
-        # TODO: expose the PyMongo RSC members, or otherwise avoid this.
-        rs_state = self.delegate._MongoReplicaSetClient__get_rs_state()
+        rs_state = self._get_member()
         return [member.pool for member in rs_state._members]
 
     def _get_primary_pool(self):
         primary_member = self._get_member()
         return primary_member.pool if primary_member else None
 
-    def _motor_ensure_connected(self, callback):
-        def _callback(_, error):
-            if error:
-                callback(None, error)
-            else:
-                try:
-                    if not self._get_member():
-                        raise pymongo.errors.AutoReconnect("no primary")
-
-                    callback(self, None)  # Success.
-                except Exception, e:
-                    callback(None, e)
-
-        self._ensure_connected(True, callback=_callback)
 
 # PyMongo uses a background thread to regularly inspect the replica set and
 # monitor it for changes. In Motor, use a periodic callback on the IOLoop to
@@ -1737,7 +1740,8 @@ class MotorCursor(MotorBase):
     def get_io_loop(self):
         return self.collection.get_io_loop()
 
-    def close(self, callback=None):
+    @motor_coroutine
+    def close(self):
         """Explicitly kill this cursor on the server. If iterating with
         :meth:`each`, cease.
 
@@ -1747,7 +1751,7 @@ class MotorCursor(MotorBase):
         If a callback is passed, returns None, else returns a Future.
         """
         self.closed = True
-        return self._Cursor__die(callback=callback)
+        yield self._Cursor__die()
 
     def __getitem__(self, index):
         """Get a slice of documents from this cursor.
@@ -1916,7 +1920,8 @@ class MotorGridOut(object):
 
         return getattr(self.delegate, item)
 
-    def open(self, callback=None):
+    @motor_coroutine
+    def open(self):
         """Retrieve this file's attributes from the server.
 
         Takes an optional callback, or returns a Future.
@@ -1924,29 +1929,13 @@ class MotorGridOut(object):
         :Parameters:
          - `callback`: Optional function taking parameters (self, error)
         """
-        # TODO: refactor with clients' open().
-        if callback:
-            if not callable(callback):
-                raise callback_type_error
-
-            def _callback(result, error):
-                if error:
-                    callback(None, error)
-                else:
-                    callback(self, None)
-
-            future = None
-        else:
-            future = Future()
-            _callback = callback_from_future(future, default_result=self)
-
-        self._ensure_file(callback=_callback)
-        return future
+        yield self._ensure_file()
+        raise gen.Return(self)
 
     def get_io_loop(self):
         return self.io_loop
 
-    @gen.coroutine
+    @motor_coroutine
     def stream_to_handler(self, request_handler):
         """Write the contents of this file to a
         :class:`tornado.web.RequestHandler`. This method calls `flush` on
@@ -1954,7 +1943,10 @@ class MotorGridOut(object):
         For a more complete example see the implementation of
         :class:`~motor.web.GridFSHandler`.
 
-        Returns a Future.
+        Takes an optional callback, or returns a Future.
+
+        :Parameters:
+         - `callback`: Optional function taking parameters (self, error)
 
         .. code-block:: python
 
@@ -2114,33 +2106,8 @@ class MotorGridFS(object):
     def get_io_loop(self):
         return self.io_loop
 
-    @gen.coroutine
-    def _put(self, data, _callback, **kwargs):
-        try:
-            grid_file = MotorGridIn(self.collection, **kwargs)
-
-            # w >= 1 necessary to avoid running 'filemd5' command before
-            # all data is written, especially with sharding.
-            if 0 == self.collection.write_concern.get('w'):
-                raise pymongo.errors.ConfigurationError(
-                    "Motor does not allow unacknowledged put() to GridFS")
-
-            try:
-                yield grid_file.write(data)
-            finally:
-                yield grid_file.close()
-        except Exception, e:
-            if _callback:
-                _callback(None, e)
-            else:
-                raise
-        else:
-            if _callback:
-                _callback(grid_file._id, None)
-            else:
-                raise gen.Return(grid_file._id)
-
-    def put(self, data, callback=None, **kwargs):
+    @motor_coroutine
+    def put(self, data, **kwargs):
         """Put data into GridFS as a new file.
 
         Equivalent to doing:
@@ -2177,12 +2144,20 @@ class MotorGridFS(object):
         with arguments (_id, error).
         """
         # PyMongo's implementation uses requests, so rewrite for Motor.
-        if callback and not callable(callback):
-            raise callback_type_error
+        grid_file = MotorGridIn(self.collection, **kwargs)
 
-        future = self._put(data, _callback=callback, **kwargs)
-        if not callback:
-            return future
+        # w >= 1 necessary to avoid running 'filemd5' command before
+        # all data is written, especially with sharding.
+        if 0 == self.collection.write_concern.get('w'):
+            raise pymongo.errors.ConfigurationError(
+                "Motor does not allow unacknowledged put() to GridFS")
+
+        try:
+            yield grid_file.write(data)
+        finally:
+            yield grid_file.close()
+
+        raise gen.Return(grid_file._id)
 
     def wrap(self, obj):
         if obj.__class__ is grid_file.GridIn:
