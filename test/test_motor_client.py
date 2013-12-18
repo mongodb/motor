@@ -138,8 +138,15 @@ class MotorClientTest(MotorTest):
     def test_connection_failure(self):
         # Assuming there isn't anything actually running on this port
         client = motor.MotorClient('localhost', 8765, io_loop=self.io_loop)
+
+        # Test the Future interface.
         with assert_raises(ConnectionFailure):
             yield client.open()
+
+        # Test with a callback.
+        (result, error), _ = yield gen.Task(client.open)
+        self.assertEqual(None, result)
+        self.assertTrue(isinstance(error, ConnectionFailure))
 
     @gen_test
     def test_connection_timeout(self):
