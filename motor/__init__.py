@@ -452,23 +452,6 @@ class MotorPool(object):
         sock_info.last_checkout = time.time()
         return sock_info
 
-    def async_get_socket(self):
-        """Get a ``Future`` which will resolve to a socket."""
-        loop = self.io_loop
-        future = Future()
-
-        def _get_socket():
-            # Runs on child greenlet.
-            try:
-                result = self.get_socket()
-                loop.add_callback(functools.partial(future.set_result, result))
-            except Exception, e:
-                loop.add_callback(functools.partial(future.set_exception, e))
-
-        # Start running the operation on a greenlet.
-        greenlet.greenlet(_get_socket).switch()
-        return future
-
     def start_request(self):
         raise NotImplementedError("Motor doesn't implement requests")
 
