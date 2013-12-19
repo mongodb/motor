@@ -215,7 +215,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
             host, port, *args, io_loop=self.io_loop, **kwargs)
 
     @gen.coroutine
-    def check_callback_handling(self, fn, required):
+    def check_optional_callback(self, fn, *args, **kwargs):
         """Take a function and verify that it accepts a 'callback' parameter
         and properly type-checks it. If 'required', check that fn requires
         a callback.
@@ -228,30 +228,17 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
           - `required`: Whether `fn` should require a callback or not
           - `callback`: To be called with ``(None, error)`` when done
         """
-        self.assertRaises(TypeError, fn, callback='foo')
-        self.assertRaises(TypeError, fn, callback=1)
-
-        if required:
-            self.assertRaises(TypeError, fn)
-            self.assertRaises(TypeError, fn, callback=None)
-        else:
-            # Should not raise
-            yield fn(callback=None)
+        partial_fn = functools.partial(fn, *args, **kwargs)
+        self.assertRaises(TypeError, partial_fn, callback='foo')
+        self.assertRaises(TypeError, partial_fn, callback=1)
 
         # Should not raise
-        (result, error), _ = yield gen.Task(fn)
+        yield partial_fn(callback=None)
+
+        # Should not raise
+        (result, error), _ = yield gen.Task(partial_fn)
         if error:
             raise error
-
-    @gen.coroutine
-    def check_required_callback(self, fn, *args, **kwargs):
-        yield self.check_callback_handling(
-            functools.partial(fn, *args, **kwargs), True)
-
-    @gen.coroutine
-    def check_optional_callback(self, fn, *args, **kwargs):
-        yield self.check_callback_handling(
-            functools.partial(fn, *args, **kwargs), False)
 
     def tearDown(self):
         sync_collection.remove()

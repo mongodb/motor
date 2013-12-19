@@ -135,7 +135,15 @@ class MotorCursorTest(MotorTest):
 
     @gen_test
     def test_each_callback(self):
-        yield self.check_required_callback(self.collection.find().each)
+        cursor = self.collection.find()
+        self.assertRaises(TypeError, cursor.each, callback='foo')
+        self.assertRaises(TypeError, cursor.each, callback=None)
+        self.assertRaises(TypeError, cursor.each)  # No callback.
+
+        # Should not raise
+        (result, error), _ = yield gen.Task(cursor.each)
+        if error:
+            raise error
 
     @gen_test
     def test_each(self):

@@ -43,12 +43,6 @@ def dont_require_callback(callback=None):
 
 class MotorCallbackTestTest(MotorTest):
     @gen_test
-    def test_check_required_callback(self):
-        yield self.check_required_callback(require_callback)
-        with assert_raises(Exception):
-            yield self.check_required_callback(dont_require_callback)
-
-    @gen_test
     def test_check_optional_callback(self):
         yield self.check_optional_callback(dont_require_callback)
         with assert_raises(Exception):
