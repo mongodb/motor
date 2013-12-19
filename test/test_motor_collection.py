@@ -159,7 +159,7 @@ class MotorCollectionTest(MotorTest):
         self.assertEqual(1, result['ok'])
         self.assertEqual(True, result['updatedExisting'])
         self.assertEqual(1, result['n'])
-        self.assertEqual(None, result['err'])
+        self.assertEqual(None, result.get('err'))
 
     @gen_test
     def test_update_bad(self):
