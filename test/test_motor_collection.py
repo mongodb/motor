@@ -244,14 +244,14 @@ class MotorCollectionTest(MotorTest):
         # First time we remove, n = 1
         self.assertEqual(1, result['n'])
         self.assertEqual(1, result['ok'])
-        self.assertEqual(None, result['err'])
+        self.assertEqual(None, result.get('err'))
 
         result = yield self.collection.remove({'_id': 1})
 
         # Second time, document is already gone, n = 0
         self.assertEqual(0, result['n'])
         self.assertEqual(1, result['ok'])
-        self.assertEqual(None, result['err'])
+        self.assertEqual(None, result.get('err'))
 
     @gen_test
     def test_remove_callback(self):
