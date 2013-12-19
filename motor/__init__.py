@@ -58,10 +58,6 @@ version = get_version_string()
 """Current version of Motor."""
 
 
-# TODO: ensure we're doing
-#   timeouts as efficiently as possible, test performance hit with timeouts
-#   from registering and cancelling timeouts
-
 HAS_SSL = True
 try:
     import ssl
