@@ -2122,6 +2122,9 @@ class MotorGridFS(object):
         If no callback is provided, returns a Future that resolves to the
         ``"_id"`` of the created file. Otherwise, executes the callback
         with arguments (_id, error).
+
+        Note that PyMongo allows unacknowledged ("w=0") puts to GridFS,
+        but Motor does not.
         """
         # PyMongo's implementation uses requests, so rewrite for Motor.
         grid_file = MotorGridIn(self.collection, **kwargs)
