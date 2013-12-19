@@ -103,7 +103,7 @@ class MotorGridFileTest(MotorTest):
     @gen_test
     def test_iteration(self):
         fs = motor.MotorGridFS(self.db)
-        _id = yield fs.put('foo')
+        _id = yield fs.put(b('foo'))
         g = motor.MotorGridOut(self.db.fs, _id)
 
         # Iteration is prohibited.
