@@ -129,9 +129,6 @@ excluded_tests = [
     # just gets no results.
     'TestCursor.test_getitem_index_out_of_range',
 
-    # Motor's tailing works differently.
-    'TestCursor.test_tailable',
-
     # No context-manager protocol for MotorCursor.
     'TestCursor.test_with_statement',
 
