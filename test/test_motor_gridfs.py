@@ -60,8 +60,8 @@ class MotorGridfsTest(MotorTest):
         yield gin.write(b('a'))
         yield gin.close()
 
-        yield self.fs.put('', filename='foo', field=1)
-        yield self.fs.put('', filename='foo', field=2)
+        yield self.fs.put(b(''), filename='foo', field=1)
+        yield self.fs.put(b(''), filename='foo', field=2)
 
         gout = yield self.fs.get_version('foo')
         self.assertEqual(2, gout.field)
