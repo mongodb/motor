@@ -33,23 +33,9 @@ major, minor = sys.version_info[:2]
 
 kwargs = {}
 if major >= 3:
-    sys.stdout.write('using 2to3\n')
     kwargs['use_2to3'] = True
 
-# HACK: implement "setup.py build --test" to work around
-# https://github.com/nose-devs/nose/issues/556, which causes e.g.
-# "python setup.py nosetests --tests test.test_motor_ssl" to run all the tests,
-# not just the ones specified.
-
-# For now, "setup.py build --test" builds Motor and its tests, so you can then
-# "cd build/lib; nosetests test.test_motor_ssl" and test specific modules in
-# the built package.
-
 packages = ['motor']
-if 'test' in sys.argv or 'nosetests' in sys.argv or '--test' in sys.argv:
-    if '--test' in sys.argv:
-        sys.stdout.write('including test modules\n')
-        sys.argv.remove('--test')
 
     packages.append('test')
 
