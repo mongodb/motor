@@ -36,7 +36,11 @@ if major >= 3:
     kwargs['use_2to3'] = True
 
 packages = ['motor']
+if 'test' in sys.argv:
+    sys.argv.remove('test')
+    sys.argv.append('nosetests')
 
+if 'nosetests' in sys.argv:
     packages.append('test')
 
 pymongo_url = (
@@ -62,7 +66,7 @@ setup(name='motor',
       keywords=[
           "mongo", "mongodb", "pymongo", "gridfs", "bson", "motor", "tornado",
       ],
-      # use 'python setup.py test' to test
+      # Use 'python setup.py test' or 'python setup.py nosetests' to test.
       setup_requires=['nose'],
       test_suite='nose.main',
       zip_safe=False,
