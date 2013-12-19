@@ -1632,7 +1632,8 @@ class MotorCursor(MotorBase):
             # Complete
             add_callback(functools.partial(callback, None, None))
 
-    def to_list(self, length, callback=None):
+    @motor_coroutine
+    def to_list(self, length):
         """Get a list of documents.
 
         .. testsetup:: to_list
@@ -1660,72 +1661,51 @@ class MotorCursor(MotorBase):
           done
 
         :Parameters:
-         - `length`: maximum number of documents to return for this call
+         - `length`: maximum number of documents to return for this call, or
+           None
          - `callback` (optional): function taking (document, error)
 
         If a callback is passed, returns None, else returns a Future.
 
         .. versionchanged:: 0.2
+           `callback` must be passed as a keyword argument, like
+           ``to_list(10, callback=callback)``, and the
            `length` parameter is no longer optional.
         """
-        length = pymongo.common.validate_positive_integer('length', length)
+        if length is not None:
+            if not isinstance(length, int):
+                raise TypeError('length must be an int, not %r' % length)
+            elif length < 0:
+                raise ValueError('length must be non-negative')
 
         if (self.delegate._Cursor__query_flags
                 & _QUERY_OPTIONS['tailable_cursor']):
             raise pymongo.errors.InvalidOperation(
                 "Can't call to_list on tailable cursor")
 
-        if callback and not callable(callback):
-            raise callback_type_error
-
         # Special case: limit of 0.
         if self.delegate._Cursor__empty:
-            if callback:
-                callback([], None)
-            else:
-                future = Future()
-                future.set_result([])
-                return future
+            raise gen.Return([])
 
         the_list = []
-        if callback:
-            self._to_list_got_more(callback, the_list, length, None, None)
-        else:
-            future = Future()
-            self._to_list_got_more(
-                callback_from_future(future), the_list, length, None, None)
-
-            return future
-
-    def _to_list_got_more(self, callback, the_list, length, batch_size, error):
-        if error:
-            callback(None, error)
-            return
-
         collection = self.collection
         fix_outgoing = collection.database.delegate._fix_outgoing
 
-        if length is None:
-            # No maximum length, get all results, apply outgoing manipulators
-            results = (
-                fix_outgoing(data, collection)
-                for data in self.delegate._Cursor__data)
+        self.started = True
+        while True:
+            yield self._refresh()
+            while (self._buffer_size() > 0
+                   and (length is None or len(the_list) < length)):
 
-            the_list.extend(results)
-            self.delegate._Cursor__data.clear()
-        else:
-            while self._buffer_size() > 0 and len(the_list) < length:
-                the_list.append(fix_outgoing(
-                    self.delegate._Cursor__data.popleft(), collection))
+                doc = self.delegate._Cursor__data.popleft()
+                the_list.append(fix_outgoing(doc, collection))
 
-        if (not self.delegate._Cursor__killed
-                and (self.cursor_id or not self.started)
-                and (length is None or length > len(the_list))):
-            get_more_cb = functools.partial(
-                self._to_list_got_more, callback, the_list, length)
-            self._get_more(callback=get_more_cb)
-        else:
-            callback(the_list, None)
+            if ((length is not None and len(the_list) >= length)
+                    or not self.cursor_id
+                    or self.delegate._Cursor__killed):
+                break
+
+        raise gen.Return(the_list)
 
     def clone(self):
         """Get a clone of this cursor."""

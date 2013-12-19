@@ -19,7 +19,7 @@ import unittest
 import greenlet
 import pymongo
 from tornado import gen
-from pymongo.errors import InvalidOperation, ConfigurationError
+from pymongo.errors import InvalidOperation
 from pymongo.errors import OperationFailure
 from tornado.concurrent import Future
 from tornado.testing import gen_test
@@ -162,14 +162,17 @@ class MotorCursorTest(MotorTest):
 
     @gen_test
     def test_to_list_argument_checking(self):
+        # We need more than 10 documents so the cursor stays alive.
+        yield self.make_test_data()
         coll = self.collection
         cursor = coll.find()
         yield self.check_optional_callback(cursor.to_list, 10)
         cursor = coll.find()
-        callback = lambda result, error: None
-        self.assertRaises(ConfigurationError, cursor.to_list, -1, callback)
-        self.assertRaises(ConfigurationError, cursor.to_list, 'foo', callback)
-        self.assertRaises(TypeError, cursor.to_list, None, callback)
+        with assert_raises(ValueError):
+            yield cursor.to_list(-1)
+
+        with assert_raises(TypeError):
+            yield cursor.to_list('foo')
 
     @gen_test
     def test_to_list_callback(self):
@@ -210,14 +213,22 @@ class MotorCursorTest(MotorTest):
         self.assertEqual(expected(105, 200), (yield cursor.to_list(100)))
         self.assertEqual(0, cursor.cursor_id)
 
+    @gen_test
+    def test_to_list_with_length_of_none(self):
+        yield self.make_test_data()
+        collection = self.collection
+        cursor = collection.find()
+        docs = yield cursor.to_list(None)  # Unlimited.
+        count = yield collection.count()
+        self.assertEqual(count, len(docs))
+
     def test_to_list_tailable(self):
         coll = self.collection
         cursor = coll.find(tailable=True)
 
-        # Can't call to_list on tailable cursor
-        self.assertRaises(
-            InvalidOperation,
-            cursor.to_list, length=10, callback=lambda result, error: None)
+        # Can't call to_list on tailable cursor.
+        with assert_raises(InvalidOperation):
+            yield cursor.to_list(10)
 
     @gen_test
     def test_limit_zero(self):
