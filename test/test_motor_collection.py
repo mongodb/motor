@@ -260,6 +260,7 @@ class MotorCollectionTest(MotorTest):
     @gen_test
     def test_unacknowledged_remove(self):
         coll = self.collection
+        yield coll.remove()
         yield coll.insert([{'_id': i} for i in range(3)])
 
         # We're not yield the futures.
