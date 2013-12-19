@@ -17,12 +17,14 @@
 
 import unittest
 from functools import partial
+from bson import ObjectId
 
 from bson.py3compat import b, StringIO
 from gridfs.errors import FileExists, NoFile
 from pymongo import MongoClient
 from pymongo.errors import AutoReconnect, ConfigurationError
 from pymongo.read_preferences import ReadPreference
+from tornado import gen
 from tornado.testing import gen_test
 
 import motor
@@ -156,6 +158,16 @@ class MotorGridfsTest(MotorTest):
         self.assertEqual(11, (yield self.cx.motor_test.fs.chunks.count()))
         gridout = yield self.fs.get(oid)
         self.assertEqual(b("hello world"), (yield gridout.read()))
+
+    @gen_test
+    def test_put_callback(self):
+        (oid, error), _ = yield gen.Task(self.fs.put, b("hello"))
+        self.assertTrue(isinstance(oid, ObjectId))
+        self.assertEqual(None, error)
+
+        (result, error), _ = yield gen.Task(self.fs.put, b("hello"), _id=oid)
+        self.assertEqual(None, result)
+        self.assertTrue(isinstance(error, FileExists))
 
     @gen_test
     def test_put_duplicate(self):
