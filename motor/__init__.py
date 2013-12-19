@@ -564,25 +564,6 @@ def motor_coroutine(f):
             return future
     return wrapper
 
-no_result = object()
-
-
-def callback_from_future(future, default_result=no_result):
-    """Return a callback that sets a Future's result or exception.
-
-    `default_result`, if passed, overrides any result passed to the callback.
-    """
-    def callback(result, error):
-        if error:
-            future.set_exception(error)
-        else:
-            if default_result is no_result:
-                future.set_result(result)
-            else:
-                future.set_result(default_result)
-
-    return callback
-
 
 def mangle_delegate_name(motor_class, name):
     if name.startswith('__') and not name.endswith("__"):
@@ -729,34 +710,16 @@ class WrapAsync(WrapBase):
         original_class = self.original_class
 
         @functools.wraps(async_method)
+        @motor_coroutine
         def wrapper(self, *args, **kwargs):
-            callback = kwargs.pop('callback', None)
+            result = yield async_method(self, *args, **kwargs)
 
-            def done_callback(result, error):
-                if error:
-                    callback(None, error)
-                    return
-
-                # Don't call isinstance(), not checking subclasses.
-                if result.__class__ == original_class:
-                    # Delegate to the current object to wrap the result.
-                    new_object = self.wrap(result)
-                else:
-                    new_object = result
-
-                callback(new_object, None)
-
-            if callback:
-                if not callable(callback):
-                    raise callback_type_error
-
-                async_method(self, *args, callback=done_callback, **kwargs)
+            # Don't call isinstance(), not checking subclasses.
+            if result.__class__ == original_class:
+                # Delegate to the current object to wrap the result.
+                raise gen.Return(self.wrap(result))
             else:
-                future = Future()
-                # The final callback run from inside done_callback.
-                callback = callback_from_future(future)
-                async_method(self, *args, callback=done_callback, **kwargs)
-                return future
+                raise gen.Return(result)
 
         return wrapper
 
