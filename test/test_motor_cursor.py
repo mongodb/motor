@@ -192,7 +192,7 @@ class MotorCursorTest(MotorTest):
     def test_to_list_with_length(self):
         yield self.make_test_data()
         coll = self.collection
-        cursor = coll.find({}, {'_id': 1}).sort([('_id', pymongo.ASCENDING)])
+        cursor = coll.find().sort('_id')
         self.assertEqual([], (yield cursor.to_list(0)))
 
         def expected(start, stop):
