@@ -1268,7 +1268,8 @@ class MotorDatabase(MotorBase):
                             "MotorClientBase, not %r" % connection)
 
         self.connection = connection
-        self.delegate = Database(connection.delegate, name)
+        delegate = Database(connection.delegate, name)
+        super(MotorDatabase, self).__init__(delegate)
 
     def __getattr__(self, name):
         return MotorCollection(self, name)
