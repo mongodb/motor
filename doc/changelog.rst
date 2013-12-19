@@ -14,6 +14,9 @@ still available for Tornado 2 users.
 
 Motor 0.2 drops Python 2.5 support (since Tornado 3 has dropped it).
 
+Motor 0.2 requires PyMongo 2.7, whereas Motor 0.1 required PyMongo 2.5.0
+exactly.
+
 It is no longer necessary to explicitly "open" a MotorClient or
 MotorReplicaSetClient. The ``open_sync`` method is removed and calling
 ``open`` is now optional. Motor clients now connect to MongoDB on demand.
@@ -22,7 +25,8 @@ Similarly, :meth:`MotorGridOut.open` is optional. :class:`MotorGridIn`
 and :class:`MotorGridFS` now have no ``open`` method at all.
 
 All Motor asynchronous methods (except
-:meth:`MotorCursor.each`) now return a :class:`~tornado.concurrent.Future`. The callback argument
+:meth:`MotorCursor.each`) now return a :class:`~tornado.concurrent.Future`.
+The callback argument
 to these methods is now optional. If a callback is passed, it will be
 executed with the (result, error) of the operation as in Motor 0.1. If no
 callback is passed, a Future is returned that resolves to the method's
@@ -156,7 +160,7 @@ Now it becomes::
 Pool options
 ''''''''''''
 
-Recently, PyMongo 2.6 updated its connection pooling options. Motor's options
+PyMongo 2.6 updated its connection pooling options. Motor's options
 have changed for increased consistency with PyMongo.
 
 :class:`MotorClient` and :class:`MotorReplicaSetClient` have an option
@@ -186,6 +190,8 @@ Any calls to :meth:`MotorCursor.to_list` that omitted the ``length``
 argument must now include it::
 
     result = yield collection.find().to_list(100)
+
+``None`` is acceptable, meaning "unlimited." Use with caution.
 
 tail
 ''''

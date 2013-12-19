@@ -283,6 +283,10 @@ class MotorPool(object):
           - `wait_queue_multiple`: (integer) Multiplied by max_pool_size to
             give the number of callbacks allowed to wait for a socket at one
             time.
+
+        .. versionchanged:: 0.2
+           ``max_size`` is now a hard cap. ``wait_queue_timeout`` and
+           ``wait_queue_multiple`` have been added.
         """
         assert isinstance(pair, tuple), "pair must be a tuple"
         self.io_loop = io_loop
@@ -1063,6 +1067,10 @@ class MotorClient(MotorClientBase):
 
         :Parameters:
          - `callback`: Optional function taking parameters (self, error)
+
+        .. versionchanged:: 0.2
+           :class:`MotorClient` now opens itself on demand, calling ``open``
+           explicitly is now optional.
         """
         yield self._ensure_connected()
         raise gen.Return(self)
@@ -1134,6 +1142,10 @@ class MotorReplicaSetClient(MotorClientBase):
 
         :Parameters:
          - `callback`: Optional function taking parameters (self, error)
+
+        .. versionchanged:: 0.2
+           :class:`MotorReplicaSetClient` now opens itself on demand, calling
+           ``open`` explicitly is now optional.
         """
         yield self._ensure_connected(True)
         primary = self._get_member()
@@ -1868,6 +1880,10 @@ class MotorGridOut(object):
 
         :Parameters:
          - `callback`: Optional function taking parameters (self, error)
+
+        .. versionchanged:: 0.2
+           :class:`MotorGridOut` now opens itself on demand, calling
+           ``open`` explicitly is rarely needed.
         """
         yield self._ensure_file()
         raise gen.Return(self)
@@ -1972,6 +1988,9 @@ class MotorGridIn(object):
           - `root_collection`: A :class:`MotorCollection`, the root collection
              to write to
           - `**kwargs` (optional): file level options (see above)
+
+        .. versionchanged:: 0.2
+           ``open`` method removed, no longer needed.
         """
         if not isinstance(root_collection, MotorCollection):
             raise TypeError(
@@ -2031,6 +2050,9 @@ class MotorGridFS(object):
             such as "fs" or "my_files"
 
         .. mongodoc:: gridfs
+
+        .. versionchanged:: 0.2
+           ``open`` method removed; no longer needed.
         """
         if not isinstance(database, MotorDatabase):
             raise TypeError("First argument to MotorGridFS must be "
