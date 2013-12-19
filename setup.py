@@ -53,6 +53,10 @@ if 'test' in sys.argv or 'nosetests' in sys.argv or '--test' in sys.argv:
 
     packages.append('test')
 
+pymongo_url = (
+    'https://github.com/mongodb/mongo-python-driver/tarball/f4f693e5'
+    '#egg=pymongo')
+
 setup(name='motor',
       version='0.1+',
       packages=packages,
@@ -62,10 +66,11 @@ setup(name='motor',
       author_email='jesse@10gen.com',
       url='https://github.com/mongodb/motor/',
       install_requires=[
-          'pymongo >= 2.6',
           'tornado >= 3.1',
           'greenlet >= 0.4.0',
+          'pymongo',
       ],
+      dependency_links=[pymongo_url],
       license='http://www.apache.org/licenses/LICENSE-2.0',
       classifiers=filter(None, classifiers.split('\n')),
       keywords=[
