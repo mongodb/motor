@@ -25,7 +25,6 @@ except ImportError:
 import greenlet
 
 
-# TODO: test.
 class MotorGreenletEvent(object):
     """An Event-like class for greenlets."""
     def __init__(self, io_loop):
