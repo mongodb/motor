@@ -31,7 +31,7 @@ class MotorGreenletEvent(object):
     def __init__(self, io_loop):
         self.io_loop = io_loop
         self._flag = False
-        self._waiters = set()  # TODO: a list instead?
+        self._waiters = []
         self._timeouts = set()
 
     def is_set(self):
@@ -45,7 +45,7 @@ class MotorGreenletEvent(object):
         for timeout in timeouts:
             self.io_loop.remove_timeout(timeout)
 
-        waiters, self._waiters = self._waiters, set()
+        waiters, self._waiters = self._waiters, []
         for waiter in waiters:
             # Defer execution.
             self.io_loop.add_callback(waiter.switch)
@@ -58,7 +58,7 @@ class MotorGreenletEvent(object):
         parent = current.parent
         assert parent, "Should be on child greenlet"
         if not self._flag:
-            self._waiters.add(current)
+            self._waiters.append(current)
 
             def on_timeout():
                 # Called from IOLoop on main greenlet.
