@@ -282,11 +282,11 @@ class MotorCollectionTest(MotorTest):
         coll = self.db.test_unacknowledged_insert
         coll.insert({'_id': 1})
 
-        # the insert is eventually executed
-        while not test.sync_collection.find({'_id': 1}).count():
+        # The insert is eventually executed.
+        while not (yield coll.count()):
             yield self.pause(0.1)
 
-        # DuplicateKeyError not raised
+        # DuplicateKeyError not raised.
         future = coll.insert({'_id': 1})
         yield coll.insert({'_id': 1}, w=0)
 
