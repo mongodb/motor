@@ -279,7 +279,7 @@ class MotorCollectionTest(MotorTest):
         # Test that unsafe inserts with no callback still work
 
         # Insert id 1 without a callback or w=1.
-        coll = self.collection
+        coll = self.db.test_unacknowledged_insert
         coll.insert({'_id': 1})
 
         # the insert is eventually executed
