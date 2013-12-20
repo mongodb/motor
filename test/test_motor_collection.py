@@ -263,7 +263,7 @@ class MotorCollectionTest(MotorTest):
         yield coll.remove()
         yield coll.insert([{'_id': i} for i in range(3)])
 
-        # We're not yield the futures.
+        # Don't yield the futures.
         coll.remove({'_id': 0})
         coll.remove({'_id': 1})
         coll.remove({'_id': 2})
