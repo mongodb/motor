@@ -13,18 +13,17 @@
 # limitations under the License.
 
 """Generic tests for MotorClient and MotorReplicaSetClient."""
+import time
 
 import pymongo.errors
 import pymongo.mongo_replica_set_client
 from nose.plugins.skip import SkipTest
-import time
-from test import version
-from test.utils import server_is_master_with_slave
 from tornado import gen
 from tornado.testing import gen_test
 
 import motor
 from test import assert_raises
+from test.utils import server_is_master_with_slave, remove_all_users
 
 
 class MotorClientTestMixin(object):
@@ -181,13 +180,7 @@ class MotorClientTestMixin(object):
 
             yield cx.drop_database(target_db_name)
         finally:
-            # Cleanup
-            # TODO: refactor.
-            if (yield version.at_least(cx, (2, 5, 4))):
-                yield cx.motor_test.command({'dropAllUsersFromDatabase': 1})
-            else:
-                yield cx.motor_test.system.users.remove()
-
+            yield remove_all_users(cx.motor_test)
             yield cx.admin.remove_user('admin')
 
     @gen_test(timeout=30)
@@ -225,12 +218,6 @@ class MotorClientTestMixin(object):
             yield self.check_copydb_results({'_id': 1}, test_db_names)
 
         finally:
-            # Cleanup
-            # TODO: refactor.
-            if (yield version.at_least(cx, (2, 5, 4))):
-                yield cx.motor_test.command({'dropAllUsersFromDatabase': 1})
-            else:
-                yield cx.motor_test.system.users.remove()
-
+            yield remove_all_users(cx.motor_test)
             yield cx.admin.remove_user('admin')
             yield self.drop_databases(test_db_names)

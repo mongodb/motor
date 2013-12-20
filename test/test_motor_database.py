@@ -23,8 +23,8 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import version
-from test import MotorTest, assert_raises
+from test import version, MotorTest, assert_raises
+from test.utils import remove_all_users
 
 
 class MotorDatabaseTest(MotorTest):
@@ -153,10 +153,10 @@ class MotorDatabaseTest(MotorTest):
 
     @gen_test
     def test_authenticate(self):
+        db = self.db
         try:
             yield self.cx.admin.add_user("admin", "password")
             yield self.cx.admin.authenticate("admin", "password")
-            db = self.db
             yield db.add_user("mike", "password")
 
             # Authenticate many times at once to test concurrency.
@@ -174,13 +174,8 @@ class MotorDatabaseTest(MotorTest):
             self.assertFalse("mike" in [u['user'] for u in users])
 
         finally:
-            # TODO: refactor.
-            if (yield version.at_least(self.cx, (2, 5, 4))):
-                yield self.db.command({"dropAllUsersFromDatabase": 1})
-            else:
-                yield self.db.system.users.remove()
-            yield self.cx.admin.remove_user("admin")
-            yield self.cx.admin.logout()
+            yield remove_all_users(db)
+            yield self.cx.admin.remove_user('admin')
             test.sync_cx.disconnect()
 
     @gen_test
