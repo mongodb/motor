@@ -45,16 +45,9 @@ from pymongo.read_preferences import *
 from pymongo.son_manipulator import *
 from pymongo.uri_parser import *
 from pymongo.uri_parser import _partition, _rpartition
-
-# TODO:
-try:
-    from pymongo import auth
-    from pymongo.auth import *
-    from pymongo.auth import _password_digest
-except ImportError:
-    # auth module will land in PyMongo 2.5
-    print "Warning: Can't import pymongo.auth"
-
+from pymongo import auth
+from pymongo.auth import *
+from pymongo.auth import _password_digest
 from gridfs.grid_file import DEFAULT_CHUNK_SIZE, _SEEK_CUR, _SEEK_END
 
 GridFile = None
