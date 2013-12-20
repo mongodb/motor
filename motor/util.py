@@ -15,7 +15,6 @@
 """A version of PyMongo's thread_util for Motor."""
 
 
-import weakref
 import datetime
 
 try:
