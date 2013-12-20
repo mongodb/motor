@@ -6,8 +6,6 @@ A cursor on a capped collection can be tailed using
 
 .. code-block:: python
 
-    # TODO: add a 'ts' arg, see Rick's post and Motor-Blog's tail().
-
     @gen.coroutine
     def tail_example():
         results = []
