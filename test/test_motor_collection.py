@@ -295,7 +295,7 @@ class MotorCollectionTest(MotorTest):
     @gen_test
     def test_unacknowledged_save(self):
         # Test that unsafe saves with no callback still work
-        coll = self.collection
+        coll = self.db.test_unacknowledged_save
         coll.save({'_id': 201})
 
         while not test.sync_db.test_collection.find({'_id': 201}).count():
