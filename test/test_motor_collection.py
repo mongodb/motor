@@ -164,7 +164,6 @@ class MotorCollectionTest(MotorTest):
     @gen_test
     def test_update_bad(self):
         # Violate a unique index, make sure we handle error well
-        # There's already a document with s: hex(4)
         coll = self.db.unique_collection
         yield coll.ensure_index('s', unique=True)
 
