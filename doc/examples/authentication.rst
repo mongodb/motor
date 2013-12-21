@@ -8,21 +8,19 @@ optionally normal users or read-only users.
 .. seealso:: `MongoDB Authentication
   <http://docs.mongodb.org/manual/tutorial/control-access-to-mongodb-with-authentication/>`_
 
-Synchronous Authentication
---------------------------
-To create an authenticated :class:`~motor.MotorClient` before starting the
-IOLoop, use a `MongoDB connection URI`_::
+Authentication at Startup
+-------------------------
+To create an authenticated connection use a `MongoDB connection URI`_::
 
-    admin_uri = "mongodb://admin:pass@localhost:27017"
-    client = motor.MotorClient(admin_uri)
+    uri = "mongodb://user:pass@localhost:27017/database_name"
+    client = motor.MotorClient(uri)
 
-    normal_uri = "mongodb://user:pass@localhost:27017/database_name"
-    client = motor.MotorClient(normal_uri)
+Motor logs in to the server on demand, when you first attempt an operation.
 
 Asynchronous Authentication
 ---------------------------
-Use the non-blocking :meth:`~motor.MotorDatabase.authenticate` to log in after
-starting the IOLoop::
+Use the non-blocking :meth:`~motor.MotorDatabase.authenticate` method to log
+in after starting the IOLoop::
 
     client = motor.MotorClient('localhost', 27017)
 
