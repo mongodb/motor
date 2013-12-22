@@ -14,8 +14,8 @@ and Tornado_.
 Prerequisites
 -------------
 
-* CPython 2.6, 2.7, or 3.3
-* PyPy 2.0 (greenlets were very slow in earlier PyPy versions)
+* CPython 2.6, 2.7, or 3.3, or PyPy 2.0 (greenlets were very slow in earlier
+  PyPy versions)
 * PyMongo_ 2.5.1 or later
 * Tornado_
 * Greenlet_
