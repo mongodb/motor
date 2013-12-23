@@ -21,8 +21,8 @@ from motor import callback_type_error
 from test import MotorTest, assert_raises
 
 
-# Example function to be tested, helps verify that check_optional_callback and
-# check_required_callback work.
+# Example function to be tested, helps verify that check_optional_callback
+# works.
 def require_callback(callback=None):
     if not callable(callback):
         raise callback_type_error
