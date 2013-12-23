@@ -39,7 +39,13 @@ except ImportError:
 host = os.environ.get("DB_IP", "localhost")
 port = int(os.environ.get("DB_PORT", 27017))
 
+CERT_PATH = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), 'certificates')
+CLIENT_PEM = os.path.join(CERT_PATH, 'client.pem')
+CA_PEM = os.path.join(CERT_PATH, 'ca.pem')
+
 mongod_started_with_ssl = False
+mongod_validates_client_cert = False
 sync_cx = None
 sync_db = None
 sync_collection = None
@@ -54,6 +60,7 @@ secondaries = None
 
 def setup_package():
     global mongod_started_with_ssl
+    global mongod_validates_client_cert
     global sync_cx
     global sync_db
     global sync_collection
@@ -78,11 +85,21 @@ def setup_package():
 
         mongod_started_with_ssl = True
     except pymongo.errors.ConnectionFailure:
-        sync_cx = pymongo.MongoClient(
-            host, port,
-            connectTimeoutMS=connectTimeoutMS,
-            socketTimeoutMS=socketTimeoutMS,
-            ssl=False)
+        try:
+            sync_cx = pymongo.MongoClient(
+                host, port,
+                connectTimeoutMS=connectTimeoutMS,
+                socketTimeoutMS=socketTimeoutMS,
+                ssl_certfile=CLIENT_PEM)
+
+            mongod_started_with_ssl = True
+            mongod_validates_client_cert = True
+        except pymongo.errors.ConnectionFailure:
+            sync_cx = pymongo.MongoClient(
+                host, port,
+                connectTimeoutMS=connectTimeoutMS,
+                socketTimeoutMS=socketTimeoutMS,
+                ssl=False)
 
     sync_db = sync_cx.motor_test
     sync_collection = sync_db.test_collection

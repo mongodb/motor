@@ -172,14 +172,16 @@ class MotorSocket(object):
             self, sock, io_loop, use_ssl,
             certfile, keyfile, ca_certs, cert_reqs):
         self.use_ssl = use_ssl
-        self.certfile = certfile
-        self.keyfile = keyfile
-        self.ca_certs = ca_certs
-        self.cert_reqs = cert_reqs
         self.timeout = None
         if self.use_ssl:
-            # TODO: use full SSL options.
-            self.stream = iostream.SSLIOStream(sock, io_loop=io_loop)
+            ssl_options = {
+                'certfile': certfile,
+                'keyfile': keyfile,
+                'ca_certs': ca_certs,
+                'cert_reqs': cert_reqs}
+
+            self.stream = iostream.SSLIOStream(
+                sock, ssl_options=ssl_options, io_loop=io_loop)
         else:
             self.stream = iostream.IOStream(sock, io_loop=io_loop)
 
@@ -195,12 +197,13 @@ class MotorSocket(object):
         self.timeout = timeout
 
     @motor_sock_method
-    def connect(self, pair, callback):
+    def connect(self, pair, server_hostname=None, callback=None):
         """
         :Parameters:
          - `pair`: A tuple, (host, port)
         """
-        self.stream.connect(pair, callback)
+        # 'server_hostname' is used for optional certificate validation.
+        self.stream.connect(pair, callback, server_hostname=server_hostname)
 
     def sendall(self, data):
         assert greenlet.getcurrent().parent, "Should be on child greenlet"
@@ -371,7 +374,7 @@ class MotorPool(object):
                 # Important to increment the count before beginning to connect.
                 self.motor_sock_counter += 1
                 # MotorSocket pauses this greenlet and resumes when connected.
-                motor_sock.connect(sa)
+                motor_sock.connect(sa, server_hostname=host)
                 return motor_sock
             except socket.error, e:
                 self.motor_sock_counter -= 1
