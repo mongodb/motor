@@ -36,9 +36,11 @@ if major >= 3:
     kwargs['use_2to3'] = True
 
 packages = ['motor']
+package_data = {}
 if 'test' in sys.argv:
     sys.argv.remove('test')
     sys.argv.append('nosetests')
+    package_data['test'] = ['certificates/*']
 
 if 'nosetests' in sys.argv:
     packages.append('test')
@@ -50,6 +52,7 @@ pymongo_url = (
 setup(name='motor',
       version='0.1+',
       packages=packages,
+      package_data=package_data,
       description=description,
       long_description=long_description,
       author='A. Jesse Jiryu Davis',
