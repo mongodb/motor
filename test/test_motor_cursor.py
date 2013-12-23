@@ -14,6 +14,7 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+import sys
 import unittest
 
 import greenlet
@@ -26,7 +27,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import MotorTest, assert_raises
+from test import MotorTest, assert_raises, host, port
 
 
 class MotorCursorTest(MotorTest):
@@ -485,6 +486,66 @@ class MotorCursorTest(MotorTest):
 
         greenlet.greenlet(f).switch()
         yield self.wait_for_cursor(collection, cursor_id, retrieved)
+
+    @gen_test
+    def test_exhaust(self):
+
+        if self.cx.is_mongos:
+            self.assertRaises(InvalidOperation,
+                              self.db.test.find, exhaust=True)
+            return
+
+        self.assertRaises(TypeError, self.db.test.find, exhaust=5)
+
+        cur = self.db.test.find(exhaust=True)
+        self.assertRaises(InvalidOperation, cur.limit, 5)
+        cur = self.db.test.find(limit=5)
+        self.assertRaises(InvalidOperation, cur.add_option, 64)
+        cur = self.db.test.find()
+        cur.add_option(64)
+        self.assertRaises(InvalidOperation, cur.limit, 5)
+
+        yield self.db.drop_collection("test")
+
+        # Insert enough documents to require more than one batch.
+        yield self.db.test.insert([{} for _ in range(150)])
+
+        client = motor.MotorClient(host, port, max_pool_size=1)
+        # Ensure a pool.
+        yield client.db.collection.find_one()
+        socks = client._get_primary_pool().sockets
+
+        # Make sure the socket is returned after exhaustion.
+        cur = client[self.db.name].test.find(exhaust=True)
+        has_next = yield cur.fetch_next
+        self.assertTrue(has_next)
+        self.assertEqual(0, len(socks))
+
+        while (yield cur.fetch_next):
+            cur.next_object()
+
+        self.assertEqual(1, len(socks))
+
+        # Same as previous but with to_list instead of next_object.
+        docs = yield client[self.db.name].test.find(exhaust=True).to_list(None)
+        self.assertEqual(1, len(socks))
+        self.assertEqual(
+            (yield self.db.test.count()),
+            len(docs))
+
+        # If the Cursor instance is discarded before being
+        # completely iterated we have to close and
+        # discard the socket.
+        cur = client[self.db.name].test.find(exhaust=True)
+        has_next = yield cur.fetch_next
+        self.assertTrue(has_next)
+        self.assertEqual(0, len(socks))
+        if 'PyPy' in sys.version:
+            # Don't wait for GC or use gc.collect(), it's unreliable.
+            cur.close()
+        cur = None
+        # The socket should be discarded.
+        self.assertEqual(0, len(socks))
 
 
 if __name__ == '__main__':
