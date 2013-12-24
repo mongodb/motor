@@ -21,7 +21,7 @@ import socket
 import time
 import warnings
 
-from tornado import ioloop, iostream, gen, stack_context
+from tornado import ioloop, iostream, gen, stack_context, netutil
 from tornado.concurrent import Future
 import greenlet
 
@@ -293,6 +293,7 @@ class MotorPool(object):
         """
         assert isinstance(pair, tuple), "pair must be a tuple"
         self.io_loop = io_loop
+        self.resolver = netutil.Resolver(io_loop=io_loop)
         self.sockets = set()
         self.pair = pair
         self.max_size = max_size
@@ -330,6 +331,26 @@ class MotorPool(object):
         for sock_info in sockets:
             sock_info.close()
 
+    def resolve(self, host, port, family):
+        """Return list of (family, address) pairs."""
+        child_gr = greenlet.getcurrent()
+        main = child_gr.parent
+        assert main, "Should be on child greenlet"
+
+        def handler(exc_typ, exc_val, exc_tb):
+            # Depending on the resolver implementation, we could be on any
+            # thread or greenlet. Return to the loop's thread and raise the
+            # exception on the calling greenlet from there.
+            self.io_loop.add_callback(functools.partial(
+                child_gr.throw, exc_typ, exc_val, exc_tb))
+
+            return True  # Don't propagate the exception.
+
+        with stack_context.ExceptionStackContext(handler):
+            self.resolver.resolve(host, port, family, callback=child_gr.switch)
+
+        return main.switch()
+
     def create_connection(self):
         """Connect and return a socket object.
         """
@@ -351,10 +372,10 @@ class MotorPool(object):
             if socket.has_ipv6 and host != 'localhost':
                 family = socket.AF_UNSPEC
 
-            # TODO: use Tornado 3's async resolver.
+            # resolve() returns list of (family, address) pairs.
             addrinfos = [
-                (af, socktype, proto, sa) for af, socktype, proto, dummy, sa in
-                socket.getaddrinfo(host, port, family, socket.SOCK_STREAM)]
+                (af, socket.SOCK_STREAM, 0, sa) for af, sa in
+                self.resolve(host, port, family)]
 
         err = None
         for res in addrinfos:
@@ -537,6 +558,8 @@ class MotorPool(object):
         # Avoid ResourceWarnings in Python 3.
         for sock_info in self.sockets:
             sock_info.close()
+
+        self.resolver.close()
 
     def _create_wait_queue_timeout(self):
         return pymongo.errors.ConnectionFailure(

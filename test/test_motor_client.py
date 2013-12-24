@@ -26,7 +26,7 @@ from pymongo.errors import ConnectionFailure
 from tornado import gen
 from tornado.concurrent import Future
 from tornado.ioloop import IOLoop
-from tornado.testing import gen_test
+from tornado.testing import gen_test, netutil
 
 import motor
 import test
@@ -269,6 +269,61 @@ class MotorClientTest(MotorTest):
         finally:
             yield db.remove_user('mike')
             yield self.cx.admin.remove_user('admin')
+
+
+class MotorResolverTest(MotorTest):
+    # Helper method.
+    @gen.coroutine
+    def test_resolver(self, resolver_name):
+        config = netutil.Resolver._save_configuration()
+        try:
+            netutil.Resolver.configure(resolver_name)
+            client = motor.MotorClient(host, port, io_loop=self.io_loop)
+            yield client.open()  # No error.
+
+            with assert_raises(pymongo.errors.ConnectionFailure):
+                client = motor.MotorClient(
+                    'doesntexist',
+                    connectTimeoutMS=100,
+                    io_loop=self.io_loop)
+
+                yield client.open()
+
+        finally:
+            netutil.Resolver._restore_configuration(config)
+
+    test_resolver.__test__ = False
+
+    @gen_test
+    def test_blocking_resolver(self):
+        yield self.test_resolver('tornado.netutil.BlockingResolver')
+
+    @gen_test
+    def test_threaded_resolver(self):
+        try:
+            import concurrent.futures
+        except ImportError:
+            raise SkipTest('concurrent.futures module not available')
+
+        yield self.test_resolver('tornado.netutil.ThreadedResolver')
+
+    @gen_test
+    def test_twisted_resolver(self):
+        raise SkipTest('Awaiting Tornado pull request 965')
+        try:
+            import twisted
+        except ImportError:
+            raise SkipTest('Twisted not installed')
+        yield self.test_resolver('tornado.platform.twisted.TwistedResolver')
+
+    @gen_test
+    def test_cares_resolver(self):
+        try:
+            import pycares
+        except ImportError:
+            raise SkipTest('pycares not installed')
+        yield self.test_resolver(
+            'tornado.platform.caresresolver.CaresResolver')
 
 
 class MotorClientTestGeneric(MotorClientTestMixin, MotorTest):

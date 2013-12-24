@@ -77,13 +77,6 @@ class MotorPoolTest(MotorTest):
                 {'$where': delay(random.random() / 10)},
                 callback=functools.partial(callback, i))
 
-            # Active sockets tops out at max_pool_size.
-            expected_active_socks = min(max_pool_size, i + 1)
-            self.assertEqual(
-                expected_active_socks, pool.motor_sock_counter)
-
-            self.assertEqual(0, len(pool.sockets))
-
         yield ops_completed
 
         # All ops completed, but not in order.
