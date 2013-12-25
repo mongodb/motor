@@ -272,23 +272,21 @@ class MotorSSLTest(MotorTest):
             host, port, ssl=True, ssl_certfile=CLIENT_PEM)
 
         response = yield client.admin.command('ismaster')
-        single_server = 'setName' not in response
+        try:
+            # Create client with hostname 'localhost' or whatever, not
+            # the name 'server', which is what the server cert presents.
+            client = motor.MotorClient(
+                host, port,
+                ssl_certfile=CLIENT_PEM,
+                ssl_cert_reqs=ssl.CERT_REQUIRED,
+                ssl_ca_certs=CA_PEM)
 
-        if single_server:
-            try:
-                # Create client with hostname 'localhost' or whatever, not
-                # the name 'server', which is what the server cert presents.
-                client = motor.MotorClient(
-                    host, port,
-                    ssl_certfile=CLIENT_PEM,
-                    ssl_cert_reqs=ssl.CERT_REQUIRED,
-                    ssl_ca_certs=CA_PEM)
+            yield client.db.collection.find_one()
+            self.fail("Invalid hostname should have failed")
+        except ConnectionFailure:
+            pass
 
-                yield client.db.collection.find_one()
-                self.fail("Invalid hostname should have failed")
-            except ConnectionFailure:
-                pass
-        else:
+        if 'setName' in response:
             try:
                 client = motor.MotorReplicaSetClient(
                     '%s:%d' % (host, port),
