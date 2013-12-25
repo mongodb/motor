@@ -44,7 +44,6 @@ class MotorClientTest(MotorTest):
 
     @gen_test
     def test_client_lazy_connect(self):
-        # TODO: insert update save find remove command.
         test.sync_cx.motor_test.test_client_lazy_connect.remove()
 
         # Create client without connecting; connect on demand.
