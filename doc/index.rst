@@ -13,7 +13,7 @@ the docs are on `ReadTheDocs <http://motor.readthedocs.org/>`_.
 
     "Motor uses a clever greenlet-based approach to fully support both
     synchronous and asynchronous interfaces from a single codebase. It's great
-    to see companies like 10gen produce first-party asynchronous drivers for
+    to see companies like MongoDB produce first-party asynchronous drivers for
     their products."
 
     --*Ben Darnell, Tornado maintainer*
