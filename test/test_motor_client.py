@@ -1,4 +1,4 @@
-# Copyright 2012 10gen, Inc.
+# Copyright 2012 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -308,7 +308,6 @@ class MotorResolverTest(MotorTest):
 
     @gen_test
     def test_twisted_resolver(self):
-        raise SkipTest('Awaiting Tornado pull request 965')
         try:
             import twisted
         except ImportError:
