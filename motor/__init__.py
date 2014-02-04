@@ -25,6 +25,12 @@ from tornado import ioloop, iostream, gen, stack_context, netutil
 from tornado.concurrent import Future
 import greenlet
 
+DomainError = None
+try:
+    from twisted.names.error import DomainError
+except ImportError:
+    pass
+
 import bson
 import pymongo
 import pymongo.auth
@@ -338,6 +344,11 @@ class MotorPool(object):
         assert main, "Should be on child greenlet"
 
         def handler(exc_typ, exc_val, exc_tb):
+            # If netutil.Resolver is configured to use TwistedResolver.
+            if DomainError and issubclass(exc_typ, DomainError):
+                exc_typ = socket.gaierror
+                exc_val = socket.gaierror(str(exc_val))
+
             # Depending on the resolver implementation, we could be on any
             # thread or greenlet. Return to the loop's thread and raise the
             # exception on the calling greenlet from there.
