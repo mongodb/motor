@@ -34,12 +34,12 @@ import pymongo.errors
 import pymongo.mongo_client
 import pymongo.mongo_replica_set_client
 import pymongo.son_manipulator
-from pymongo.pool import _closed, SocketInfo
 import gridfs
 
 from pymongo.database import Database
 from pymongo.collection import Collection
 from pymongo.cursor import Cursor, _QUERY_OPTIONS
+from pymongo.pool import _closed, SocketInfo
 from gridfs import grid_file
 
 import util
