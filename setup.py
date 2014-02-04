@@ -44,6 +44,7 @@ if 'test' in sys.argv:
 
 if 'nosetests' in sys.argv:
     packages.append('test')
+    package_data['test'] = ['certificates/ca.pem', 'certificates/client.pem']
 
 pymongo_url = (
     'https://github.com/mongodb/mongo-python-driver/tarball/4307f225'
