@@ -46,7 +46,7 @@ if 'nosetests' in sys.argv:
     packages.append('test')
 
 pymongo_url = (
-    'https://github.com/mongodb/mongo-python-driver/tarball/f4f693e5'
+    'https://github.com/mongodb/mongo-python-driver/tarball/4307f225'
     '#egg=pymongo')
 
 setup(name='motor',
