@@ -566,6 +566,12 @@ class CommandCursor(Cursor):
     __delegate_class__ = motor.MotorCommandCursor
 
 
+class CursorManager(object):
+    """Motor doesn't support cursor managers, just avoid ImportError.
+    """
+    pass
+
+
 class GridFS(Synchro):
     __delegate_class__ = motor.MotorGridFS
 
