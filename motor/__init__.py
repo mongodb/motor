@@ -45,6 +45,7 @@ import gridfs
 from pymongo.database import Database
 from pymongo.collection import Collection
 from pymongo.cursor import Cursor, _QUERY_OPTIONS
+from pymongo.command_cursor import CommandCursor
 from pymongo.pool import _closed, SocketInfo
 from gridfs import grid_file
 
@@ -1373,7 +1374,7 @@ class MotorCollection(MotorBase):
     distinct          = AsyncRead()
     inline_map_reduce = AsyncRead()
     find_one          = AsyncRead()
-    aggregate         = AsyncRead().wrap(Cursor)
+    aggregate         = AsyncRead().wrap(CommandCursor)
     uuid_subtype      = ReadWriteProperty()
     full_name         = ReadOnlyProperty()
 
@@ -1416,6 +1417,8 @@ class MotorCollection(MotorBase):
             return self.database[obj.name]
         elif obj.__class__ is Cursor:
             return MotorCursor(obj, self)
+        elif obj.__class__ is CommandCursor:
+            return MotorCommandCursor(obj, self)
         else:
             return obj
 
@@ -1438,33 +1441,16 @@ class MotorCursorChainingMethod(MotorAttributeFactory):
         return return_clone
 
 
-class MotorCursor(MotorBase):
-    __delegate_class__ = Cursor
-    count         = AsyncRead()
-    distinct      = AsyncRead()
-    explain       = AsyncRead()
+class _MotorBaseCursor(MotorBase):
+    """Base class for MotorCursor and MotorCommandCursor"""
     _refresh      = AsyncRead()
     cursor_id     = ReadOnlyProperty()
     alive         = ReadOnlyProperty()
     batch_size    = MotorCursorChainingMethod()
-    add_option    = MotorCursorChainingMethod()
-    remove_option = MotorCursorChainingMethod()
-    limit         = MotorCursorChainingMethod()
-    skip          = MotorCursorChainingMethod()
-    max_scan      = MotorCursorChainingMethod()
-    sort          = MotorCursorChainingMethod()
-    hint          = MotorCursorChainingMethod()
-    where         = MotorCursorChainingMethod()
-    max_time_ms   = MotorCursorChainingMethod()
-    min           = MotorCursorChainingMethod()
-    max           = MotorCursorChainingMethod()
-    comment       = MotorCursorChainingMethod()
-
-    _Cursor__die  = AsyncCommand()
 
     def __init__(self, cursor, collection):
-        """You don't construct a MotorCursor yourself, but acquire one from
-        :meth:`MotorCollection.find`.
+        """Don't construct a cursor yourself, but acquire one from methods like
+        :meth:`MotorCollection.find` or :meth:`MotorCollection.aggregate`.
 
         .. note::
           There is no need to manually close cursors; they are closed
@@ -1473,7 +1459,8 @@ class MotorCursor(MotorBase):
           automatically closed by the client when the :class:`MotorCursor` is
           cleaned up by the garbage collector.
         """
-        super(MotorCursor, self).__init__(cursor)
+        # cursor is a PyMongo Cursor or CommandCursor.
+        super(_MotorBaseCursor, self).__init__(cursor)
         self.collection = collection
         self.started = False
         self.closed = False
@@ -1531,7 +1518,7 @@ class MotorCursor(MotorBase):
         future = Future()
 
         if not self._buffer_size() and self.alive:
-            if self.delegate._Cursor__empty:
+            if self._empty():
                 # Special case, limit of 0
                 future.set_result(False)
                 return future
@@ -1557,7 +1544,7 @@ class MotorCursor(MotorBase):
         See :attr:`fetch_next`.
         """
         # __empty is a special case: limit of 0
-        if self.delegate._Cursor__empty or not self._buffer_size():
+        if self._empty() or not self._buffer_size():
             return None
         return self.delegate.next()
 
@@ -1687,13 +1674,12 @@ class MotorCursor(MotorBase):
             elif length < 0:
                 raise ValueError('length must be non-negative')
 
-        if (self.delegate._Cursor__query_flags
-                & _QUERY_OPTIONS['tailable_cursor']):
+        if self._query_flags() & _QUERY_OPTIONS['tailable_cursor']:
             raise pymongo.errors.InvalidOperation(
                 "Can't call to_list on tailable cursor")
 
         # Special case: limit of 0.
-        if self.delegate._Cursor__empty:
+        if self._empty():
             raise gen.Return([])
 
         the_list = []
@@ -1706,25 +1692,14 @@ class MotorCursor(MotorBase):
             while (self._buffer_size() > 0
                    and (length is None or len(the_list) < length)):
 
-                doc = self.delegate._Cursor__data.popleft()
+                doc = self._data().popleft()
                 the_list.append(fix_outgoing(doc, collection))
 
             if ((length is not None and len(the_list) >= length)
-                    or not self.cursor_id
-                    or self.delegate._Cursor__killed):
+                    or not self.alive):
                 break
 
         raise gen.Return(the_list)
-
-    def clone(self):
-        """Get a clone of this cursor."""
-        return MotorCursor(self.delegate.clone(), self.collection)
-
-    def rewind(self):
-        """Rewind this cursor to its unevaluated state."""
-        self.delegate.rewind()
-        self.started = False
-        return self
 
     def get_io_loop(self):
         return self.collection.get_io_loop()
@@ -1740,7 +1715,69 @@ class MotorCursor(MotorBase):
         If a callback is passed, returns None, else returns a Future.
         """
         self.closed = True
-        yield self._Cursor__die()
+        yield self._close()
+
+    def _buffer_size(self):
+        return len(self._data())
+
+    def __del__(self):
+        # This MotorCursor is deleted on whatever greenlet does the last
+        # decref, or (if it's referenced from a cycle) whichever is current
+        # when the GC kicks in. We may need to send the server a killCursors
+        # message, but in Motor only direct children of the main greenlet can
+        # do I/O. First, do a quick check whether the cursor is still alive on
+        # the server:
+        if self.cursor_id and self.alive:
+            if greenlet.getcurrent().parent:
+                # We're on a child greenlet, send the message.
+                self.delegate.close()
+            else:
+                # We're on the main greenlet, start the operation on a child.
+                self.close()
+
+    # Paper over some differences between PyMongo Cursor and CommandCursor.
+    def _empty(self):
+        raise NotImplementedError()
+
+    def _query_flags(self):
+        raise NotImplementedError()
+
+    def _data(self):
+        raise NotImplementedError()
+
+    def _close(self):
+        raise NotImplementedError()
+
+
+class MotorCursor(_MotorBaseCursor):
+    __delegate_class__ = Cursor
+    count         = AsyncRead()
+    distinct      = AsyncRead()
+    explain       = AsyncRead()
+    add_option    = MotorCursorChainingMethod()
+    remove_option = MotorCursorChainingMethod()
+    limit         = MotorCursorChainingMethod()
+    skip          = MotorCursorChainingMethod()
+    max_scan      = MotorCursorChainingMethod()
+    sort          = MotorCursorChainingMethod()
+    hint          = MotorCursorChainingMethod()
+    where         = MotorCursorChainingMethod()
+    max_time_ms   = MotorCursorChainingMethod()
+    min           = MotorCursorChainingMethod()
+    max           = MotorCursorChainingMethod()
+    comment       = MotorCursorChainingMethod()
+
+    _Cursor__die  = AsyncCommand()
+
+    def rewind(self):
+        """Rewind this cursor to its unevaluated state."""
+        self.delegate.rewind()
+        self.started = False
+        return self
+
+    def clone(self):
+        """Get a clone of this cursor."""
+        return MotorCursor(self.delegate.clone(), self.collection)
 
     def __getitem__(self, index):
         """Get a slice of documents from this cursor.
@@ -1811,7 +1848,10 @@ class MotorCursor(MotorBase):
         :Parameters:
           - `index`: An integer or slice index to be applied to this cursor
         """
-        self._check_not_started()
+        if self.started:
+            raise pymongo.errors.InvalidOperation(
+                "MotorCursor already started")
+
         if isinstance(index, slice):
             # Slicing a cursor does no I/O - it just sets skip and limit - so
             # we can slice it immediately.
@@ -1826,35 +1866,42 @@ class MotorCursor(MotorBase):
             # immediately
             return self[self.delegate._Cursor__skip + index:].limit(-1)
 
-    def _buffer_size(self):
-        # TODO: expose so we don't have to use double-underscore hack
-        return len(self.delegate._Cursor__data)
-
-    def _check_not_started(self):
-        if self.started:
-            raise pymongo.errors.InvalidOperation(
-                "MotorCursor already started")
-
     def __copy__(self):
         return MotorCursor(self.delegate.__copy__(), self.collection)
 
     def __deepcopy__(self, memo):
         return MotorCursor(self.delegate.__deepcopy__(memo), self.collection)
 
-    def __del__(self):
-        # This MotorCursor is deleted on whatever greenlet does the last
-        # decref, or (if it's referenced from a cycle) whichever is current
-        # when the GC kicks in. We may need to send the server a killCursors
-        # message, but in Motor only direct children of the main greenlet can
-        # do I/O. First, do a quick check whether the cursor is still alive on
-        # the server:
-        if self.cursor_id and self.alive:
-            if greenlet.getcurrent().parent:
-                # We're on a child greenlet, send the message.
-                self.delegate.close()
-            else:
-                # We're on the main greenlet, start the operation on a child.
-                self.close()
+    def _empty(self):
+        return self.delegate._Cursor__empty
+
+    def _query_flags(self):
+        return self.delegate._Cursor__query_flags
+
+    def _data(self):
+        return self.delegate._Cursor__data
+
+    def _close(self):
+        # Returns a Future.
+        return self._Cursor__die()
+
+
+class MotorCommandCursor(_MotorBaseCursor):
+    __delegate_class__ = CommandCursor
+    _CommandCursor__die = AsyncCommand()
+
+    def _empty(self):
+        return False
+
+    def _query_flags(self):
+        return 0
+
+    def _data(self):
+        return self.delegate._CommandCursor__data
+
+    def _close(self):
+        # Returns a Future.
+        return self._CommandCursor__die()
 
 
 class MotorGridOut(object):
