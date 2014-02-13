@@ -210,6 +210,7 @@ pymongo_modules = set([
     'pymongo.collection',
     'pymongo.common',
     'pymongo.connection',
+    'pymongo.command_cursor',
     'pymongo.cursor',
     'pymongo.database',
     'pymongo.helpers',

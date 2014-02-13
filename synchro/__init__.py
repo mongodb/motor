@@ -94,6 +94,8 @@ def wrap_synchro(fn):
         if isinstance(motor_obj, motor.MotorDatabase):
             client = MongoClient(delegate=motor_obj.connection)
             return Database(client, motor_obj.name)
+        if isinstance(motor_obj, motor.MotorCommandCursor):
+            return CommandCursor(motor_obj)
         if isinstance(motor_obj, motor.MotorCursor):
             return Cursor(motor_obj)
         if isinstance(motor_obj, motor.MotorGridFS):
@@ -488,8 +490,7 @@ class Cursor(Synchro):
 
     def next(self):
         cursor = self.delegate
-        # Hack, sorry
-        if cursor.delegate._Cursor__empty:
+        if cursor._empty():
             raise StopIteration
 
         if cursor._buffer_size():
@@ -524,6 +525,8 @@ class Cursor(Synchro):
 
     @property
     def _Cursor__slave_okay(self):
+        # Another hack; PyMongo's tests don't check this field on
+        # CommandCursor, so assume self.delegate is a regular Cursor.
         pymongo_cursor = self.delegate.delegate
         pref = pymongo_cursor._Cursor__read_preference
         return (
@@ -557,6 +560,10 @@ class Cursor(Synchro):
     _Cursor__min               = SynchroProperty()
     _Cursor__max               = SynchroProperty()
     _Cursor__secondary_acceptable_latency_ms = SynchroProperty()
+
+
+class CommandCursor(Cursor):
+    __delegate_class__ = motor.MotorCommandCursor
 
 
 class GridFS(Synchro):
