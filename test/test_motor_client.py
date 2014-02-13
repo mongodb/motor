@@ -314,7 +314,7 @@ class MotorResolverTest(MotorTest):
             raise SkipTest('Twisted not installed')
         yield self.test_resolver('tornado.platform.twisted.TwistedResolver')
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_cares_resolver(self):
         try:
             import pycares

@@ -41,7 +41,7 @@ class MotorPoolTest(MotorTest):
         self.assertEqual(None, pool.wait_queue_timeout)
         self.assertEqual(None, pool.wait_queue_multiple)
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_max_size(self):
         if not test.sync_cx.server_info().get('javascriptEngine') == 'V8':
             raise SkipTest("Need multithreaded Javascript in mongod for test")
@@ -51,7 +51,7 @@ class MotorPoolTest(MotorTest):
 
         # Lazy connection.
         self.assertEqual(None, cx._get_primary_pool())
-        yield cx.db.collection.find_one()
+        yield cx.motor_test.test_collection.remove()
         pool = cx._get_primary_pool()
         self.assertEqual(max_pool_size, pool.max_size)
         self.assertEqual(1, len(pool.sockets))
