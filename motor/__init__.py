@@ -1695,8 +1695,8 @@ class _MotorBaseCursor(MotorBase):
                 doc = self._data().popleft()
                 the_list.append(fix_outgoing(doc, collection))
 
-            if ((length is not None and len(the_list) >= length)
-                    or not self.alive):
+            reached_length = (length is not None and len(the_list) >= length)
+            if reached_length or not self.alive:
                 break
 
         raise gen.Return(the_list)
