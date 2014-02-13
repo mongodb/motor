@@ -33,8 +33,8 @@ import motor
 # importing * won't pick up underscore-prefixed attrs.
 from gridfs.errors import *
 from pymongo import *
-from pymongo import son_manipulator
 from pymongo import member
+from pymongo import son_manipulator
 from pymongo.helpers import _unpack_response, _check_command_response
 from pymongo.common import *
 from pymongo.cursor import *
