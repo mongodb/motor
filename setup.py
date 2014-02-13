@@ -47,7 +47,7 @@ if 'nosetests' in sys.argv:
     package_data['test'] = ['certificates/ca.pem', 'certificates/client.pem']
 
 pymongo_url = (
-    'https://github.com/mongodb/mongo-python-driver/tarball/4307f225'
+    'https://github.com/mongodb/mongo-python-driver/tarball/0b831cb8'
     '#egg=pymongo')
 
 setup(name='motor',
