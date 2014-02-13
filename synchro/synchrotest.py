@@ -129,6 +129,9 @@ excluded_tests = [
     # just gets no results.
     'TestCursor.test_getitem_index_out_of_range',
 
+    # Weird use-case.
+    'TestCursor.test_cursor_transfer',
+
     # No context-manager protocol for MotorCursor.
     'TestCursor.test_with_statement',
 
@@ -212,6 +215,7 @@ pymongo_modules = set([
     'pymongo.connection',
     'pymongo.command_cursor',
     'pymongo.cursor',
+    'pymongo.cursor_manager',
     'pymongo.database',
     'pymongo.helpers',
     'pymongo.errors',
