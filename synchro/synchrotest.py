@@ -227,6 +227,7 @@ pymongo_modules = set([
     'pymongo.read_preferences',
     'pymongo.replica_set_connection',
     'pymongo.son_manipulator',
+    'pymongo.ssl_match_hostname',
     'pymongo.thread_util',
     'pymongo.uri_parser',
 ])
