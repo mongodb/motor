@@ -120,6 +120,9 @@ excluded_tests = [
     'TestGridfs.test_threaded_writes',
     'TestGridfs.test_threaded_reads',
 
+    # Relies on threads; tested directly.
+    'TestCollection.test_parallel_scan',
+
     # Motor doesn't support PyMongo's syntax, db.system_js['my_func'] = "code",
     # users should just use system.js as a regular collection.
     'TestDatabase.test_system_js',
