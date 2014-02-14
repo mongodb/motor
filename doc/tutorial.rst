@@ -223,7 +223,7 @@ unique id:
   >>> db.test_collection.insert(document, callback=my_callback)
   >>> IOLoop.instance().start()
   result 1 error None
-  result None error DuplicateKeyError(u'E11000 duplicate key error index: test_database.test_collection.$_id_  dup key: { : 1 }',)
+  result None error DuplicateKeyError(...)
 
 The first insert results in ``my_callback`` being called with result 1 and
 error ``None``. The second insert triggers ``my_callback`` with result None and
