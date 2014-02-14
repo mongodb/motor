@@ -292,7 +292,7 @@ and obtain its result:
 
 In the code above, ``result`` is the ``_id`` of each inserted document.
 
-.. seealso:: `Bulk inserts in PyMongo <http://api.mongodb.org/python/current/tutorial.html?highlight=bulk%20inserts#bulk-inserts>`_
+.. seealso:: :doc:`examples/bulk`.
 
 .. seealso:: :ref:`Detailed example of Motor and gen.coroutine <coroutine-example>`
 

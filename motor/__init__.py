@@ -1457,12 +1457,31 @@ class MotorCollection(MotorBase):
         raise gen.Return(motor_command_cursors)
 
     def initialize_unordered_bulk_op(self):
-        """TODO
+        """Initialize an unordered batch of write operations.
+
+        Operations will be performed on the server in arbitrary order,
+        possibly in parallel. All operations will be attempted.
+
+        Returns a :class:`~motor.MotorBulkOperationBuilder` instance.
+
+        See :ref:`unordered_bulk` for examples.
+
+        .. versionadded:: 0.2
         """
         return MotorBulkOperationBuilder(self, ordered=False)
 
     def initialize_ordered_bulk_op(self):
-        """TODO
+        """Initialize an ordered batch of write operations.
+
+        Operations will be performed on the server serially, in the
+        order provided. If an error occurs all remaining operations
+        are aborted.
+
+        Returns a :class:`~motor.MotorBulkOperationBuilder` instance.
+
+        See :ref:`ordered_bulk` for examples.
+
+        .. versionadded:: 0.2
         """
         return MotorBulkOperationBuilder(self, ordered=True)
 

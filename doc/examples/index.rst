@@ -8,6 +8,7 @@ Motor Examples
 .. toctree::
 
    callbacks-and-coroutines
+   bulk
    gridfs
    tailable-cursors
    authentication
