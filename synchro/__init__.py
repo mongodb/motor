@@ -99,6 +99,8 @@ def wrap_synchro(fn):
             return CommandCursor(motor_obj)
         if isinstance(motor_obj, motor.MotorCursor):
             return Cursor(motor_obj)
+        if isinstance(motor_obj, motor.MotorBulkOperationBuilder):
+            return BulkOperationBuilder(motor_obj)
         if isinstance(motor_obj, motor.MotorGridFS):
             return GridFS(motor_obj)
         if isinstance(motor_obj, motor.MotorGridIn):
@@ -447,7 +449,9 @@ class Database(Synchro):
 class Collection(Synchro):
     __delegate_class__ = motor.MotorCollection
 
-    find = WrapOutgoing()
+    find                            = WrapOutgoing()
+    initialize_unordered_bulk_op    = WrapOutgoing()
+    initialize_ordered_bulk_op      = WrapOutgoing()
 
     def __init__(self, database, name):
         assert isinstance(database, Database), (
@@ -571,6 +575,21 @@ class CursorManager(object):
     """Motor doesn't support cursor managers, just avoid ImportError.
     """
     pass
+
+
+class BulkOperationBuilder(Synchro):
+    __delegate_class__ = motor.MotorBulkOperationBuilder
+
+    # execute     = Sync()
+    # find        = WrapOutgoing()
+    # insert      = WrapOutgoing()
+
+    def __init__(self, motor_bob):
+        if not isinstance(motor_bob, motor.MotorBulkOperationBuilder):
+            raise TypeError(
+                "Expected MotorBulkOperationBuilder, got %r" % motor_bob)
+
+        self.delegate = motor_bob
 
 
 class GridFS(Synchro):
