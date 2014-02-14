@@ -44,7 +44,6 @@ class MotorTestBasic(MotorTest):
             {'w': 0},
             {'w': 1},
             {'wtimeout': 1000},
-            {'j': True},
         ]:
             cx = self.motor_client(host, port, **gle_options)
             expected_wc = gle_options.copy()
