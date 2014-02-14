@@ -42,6 +42,7 @@ import pymongo.mongo_replica_set_client
 import pymongo.son_manipulator
 import gridfs
 
+from pymongo.bulk import BulkOperationBuilder
 from pymongo.database import Database
 from pymongo.collection import Collection
 from pymongo.cursor import Cursor, _QUERY_OPTIONS
@@ -1455,6 +1456,16 @@ class MotorCollection(MotorBase):
 
         raise gen.Return(motor_command_cursors)
 
+    def initialize_unordered_bulk_op(self):
+        """TODO
+        """
+        return MotorBulkOperationBuilder(self, ordered=False)
+
+    def initialize_ordered_bulk_op(self):
+        """TODO
+        """
+        return MotorBulkOperationBuilder(self, ordered=True)
+
     def wrap(self, obj):
         if obj.__class__ is Collection:
             # Replace pymongo.collection.Collection with MotorCollection
@@ -1946,6 +1957,22 @@ class MotorCommandCursor(_MotorBaseCursor):
     def _close(self):
         # Returns a Future.
         return self._CommandCursor__die()
+
+
+class MotorBulkOperationBuilder(MotorBase):
+    __delegate_class__ = BulkOperationBuilder
+
+    find        = ReadOnlyProperty()
+    insert      = ReadOnlyProperty()
+    execute     = AsyncCommand()
+
+    def __init__(self, collection, ordered):
+        self.io_loop = collection.get_io_loop()
+        delegate = BulkOperationBuilder(collection.delegate, ordered)
+        super(MotorBulkOperationBuilder, self).__init__(delegate)
+
+    def get_io_loop(self):
+        return self.io_loop
 
 
 class MotorGridOut(object):
