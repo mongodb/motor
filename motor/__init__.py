@@ -1378,6 +1378,8 @@ class MotorCollection(MotorBase):
     uuid_subtype      = ReadWriteProperty()
     full_name         = ReadOnlyProperty()
 
+    __parallel_scan   = AsyncCommand(attr_name='parallel_scan')
+
     def __init__(self, database, name):
         if not isinstance(database, MotorDatabase):
             raise TypeError("First argument to MotorCollection must be "
@@ -1410,6 +1412,48 @@ class MotorCollection(MotorBase):
 
         cursor = self.delegate.find(*args, **kwargs)
         return MotorCursor(cursor, self)
+
+    @motor_coroutine
+    def parallel_scan(self, num_cursors, **kwargs):
+        """Scan this entire collection in parallel.
+
+        Returns a list of up to ``num_cursors`` cursors that can be iterated
+        concurrently. As long as the collection is not modified during
+        scanning, each document appears once in one of the cursors' result
+        sets.
+
+        For example, to process each document in a collection using some
+        function ``process_document()``::
+
+            @gen.coroutine
+            def process_cursor(cursor):
+                while (yield cursor.fetch_next):
+                    process_document(document)
+
+            # Get up to 4 cursors.
+            cursors = yield collection.parallel_scan(4)
+            yield [process_cursor(cursor) for cursor in cursors]
+
+            # All documents have now been processed.
+
+        If ``process_document()`` is a coroutine, do
+        ``yield process_document(document)``.
+
+        With :class:`MotorReplicaSetClient`, pass `read_preference` of
+        :attr:`~pymongo.read_preference.ReadPreference.SECONDARY_PREFERRED`
+        to scan a secondary.
+
+        :Parameters:
+          - `num_cursors`: the number of cursors to return
+
+        .. note:: Requires server version **>= 2.5.5**.
+        """
+        command_cursors = yield self.__parallel_scan(num_cursors, **kwargs)
+        motor_command_cursors = [
+            MotorCommandCursor(cursor, self)
+            for cursor in command_cursors]
+
+        raise gen.Return(motor_command_cursors)
 
     def wrap(self, obj):
         if obj.__class__ is Collection:

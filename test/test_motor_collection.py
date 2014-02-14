@@ -19,7 +19,9 @@ import unittest
 import bson
 from bson.objectid import ObjectId
 from nose.plugins.skip import SkipTest
+from pymongo import ReadPreference
 from pymongo.errors import DuplicateKeyError
+from tornado import gen
 from tornado.concurrent import Future
 from test.utils import delay
 from tornado.testing import gen_test
@@ -435,6 +437,39 @@ class MotorCollectionTest(MotorTest):
                 expected_sum,
                 sum(doc['_id'] for doc in docs))
 
+    @gen_test(timeout=30)
+    def test_parallel_scan(self):
+        if not (yield version.at_least(self.cx, (2, 5, 5))):
+            raise SkipTest("Requires MongoDB >= 2.5.5")
+
+        collection = self.collection
+
+        # Enough documents that each cursor requires multiple batches.
+        yield collection.remove()
+        yield collection.insert(({'_id': i} for i in xrange(8000)), w=test.w)
+        if test.is_replica_set:
+            client = motor.MotorReplicaSetClient(
+                '%s:%s' % (test.host, test.port),
+                io_loop=self.io_loop,
+                replicaSet=test.rs_name)
+
+            # Test that getMore messages are sent to the right server.
+            client.read_preference = ReadPreference.SECONDARY
+
+            collection = client.motor_test.test_collection
+
+        docs = []
+
+        @gen.coroutine
+        def f(cursor):
+            self.assertTrue(isinstance(cursor, motor.MotorCommandCursor))
+
+            while (yield cursor.fetch_next):
+                docs.append(cursor.next_object())
+
+        cursors = yield collection.parallel_scan(3)
+        yield [f(cursor) for cursor in cursors]
+        self.assertEqual(len(docs), (yield collection.count()))
 
 if __name__ == '__main__':
     unittest.main()
