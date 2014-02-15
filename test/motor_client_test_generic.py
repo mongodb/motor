@@ -67,8 +67,8 @@ class MotorClientTestMixin(object):
         self.assertTrue(isinstance(error, Exception))
 
     @gen.coroutine
-    def drop_databases(self, database_names):
-        cx = self.get_client()
+    def drop_databases(self, database_names, authenticated_client=None):
+        cx = authenticated_client or self.get_client()
         for test_db_name in database_names:
             yield cx.drop_database(test_db_name)
 
@@ -202,7 +202,7 @@ class MotorClientTestMixin(object):
         yield collection.remove()
         yield collection.insert({'_id': 1})
 
-        yield cx.admin.add_user('admin', 'password')
+        yield cx.admin.add_user('admin', 'password', )
         yield cx.admin.authenticate('admin', 'password')
 
         try:
@@ -219,5 +219,5 @@ class MotorClientTestMixin(object):
 
         finally:
             yield remove_all_users(cx.motor_test)
+            yield self.drop_databases(test_db_names, authenticated_client=cx)
             yield cx.admin.remove_user('admin')
-            yield self.drop_databases(test_db_names)
