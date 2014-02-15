@@ -744,6 +744,7 @@ class WrapAsync(WrapBase):
         :Parameters:
         - `prop`: An Async, the async method to call before wrapping its result
           in a Motor class.
+        - `original_class`: A PyMongo class to be wrapped.
         """
         super(WrapAsync, self).__init__(prop)
         self.original_class = original_class
@@ -772,6 +773,11 @@ class UnwrapAsync(WrapBase):
         """Like Async, but checks if arguments are Motor classes and unwraps
         them. E.g., Motor's drop_database takes a MotorDatabase, unwraps it,
         and passes a PyMongo Database instead.
+
+        :Parameters:
+        - `prop`: An Async, the async method to call before wrapping its result
+          in a Motor class.
+        - `motor_class`: A Motor class to be unwrapped.
         """
         super(UnwrapAsync, self).__init__(prop)
         self.motor_class = motor_class
