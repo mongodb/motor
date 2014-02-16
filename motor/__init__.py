@@ -1538,8 +1538,13 @@ class _MotorBaseCursor(MotorBase):
           automatically closed by the client when the :class:`MotorCursor` is
           cleaned up by the garbage collector.
         """
-        # cursor is a PyMongo Cursor or CommandCursor.
-        super(_MotorBaseCursor, self).__init__(cursor)
+        # 'cursor' is a PyMongo Cursor, CommandCursor, or GridOutCursor. The
+        # lattermost inherits from Cursor.
+        if not isinstance(cursor, (Cursor, CommandCursor)):
+            raise TypeError(
+                "cursor must be a Cursor or CommandCursor, not %r" % cursor)
+
+        super(_MotorBaseCursor, self).__init__(delegate=cursor)
         self.collection = collection
         self.started = False
         self.closed = False
