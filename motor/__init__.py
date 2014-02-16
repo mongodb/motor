@@ -775,8 +775,7 @@ class UnwrapAsync(WrapBase):
         and passes a PyMongo Database instead.
 
         :Parameters:
-        - `prop`: An Async, the async method to call before wrapping its result
-          in a Motor class.
+        - `prop`: An Async, the async method to call with unwrapped arguments.
         - `motor_class`: A Motor class to be unwrapped.
         """
         super(UnwrapAsync, self).__init__(prop)
