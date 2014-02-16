@@ -857,9 +857,9 @@ class ReadOnlyProperty(MotorAttributeFactory):
         return ReadOnlyPropertyDescriptor(attr_name)
 
 
-DelegateMethod = ReadOnlyProperty
-"""A method on the wrapped PyMongo object that does no I/O and can be called
-synchronously"""
+class DelegateMethod(ReadOnlyProperty):
+    """A method on the wrapped PyMongo object that does no I/O and can be called
+    synchronously"""
 
 
 class ReadWritePropertyDescriptor(ReadOnlyPropertyDescriptor):
