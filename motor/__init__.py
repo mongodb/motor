@@ -716,7 +716,7 @@ class Async(MotorAttributeFactory):
         return WrapAsync(self, original_class)
 
     def unwrap(self, motor_class):
-        return UnwrapAsync(self, motor_class)
+        return Unwrap(self, motor_class)
 
 
 class WrapBase(MotorAttributeFactory):
@@ -768,9 +768,9 @@ class WrapAsync(WrapBase):
         return wrapper
 
 
-class UnwrapAsync(WrapBase):
+class Unwrap(WrapBase):
     def __init__(self, prop, motor_class):
-        """Like Async, but checks if arguments are Motor classes and unwraps
+        """A descriptor that checks if arguments are Motor classes and unwraps
         them. E.g., Motor's drop_database takes a MotorDatabase, unwraps it,
         and passes a PyMongo Database instead.
 
@@ -778,7 +778,7 @@ class UnwrapAsync(WrapBase):
         - `prop`: An Async, the async method to call with unwrapped arguments.
         - `motor_class`: A Motor class to be unwrapped.
         """
-        super(UnwrapAsync, self).__init__(prop)
+        super(Unwrap, self).__init__(prop)
         self.motor_class = motor_class
 
     def create_attribute(self, cls, attr_name):

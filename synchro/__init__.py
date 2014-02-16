@@ -196,7 +196,7 @@ class SynchroMeta(type):
                             attrname, delegate_attr.has_write_concern)
                         setattr(new_class, attrname, sync_method)
                     elif isinstance(
-                            delegate_attr, motor.UnwrapAsync):
+                            delegate_attr, motor.Unwrap):
                         # Re-synchronize the method.
                         sync_method = Sync(
                             attrname, delegate_attr.prop.has_write_concern)
