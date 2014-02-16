@@ -192,6 +192,30 @@ class MotorGridfsTest(MotorTest):
 
         client.close()
 
+    @gen_test
+    def test_gridfs_find(self):
+        yield self.fs.put(b("test2"), filename="two")
+        yield self.fs.put(b("test2+"), filename="two")
+        yield self.fs.put(b("test1"), filename="one")
+        yield self.fs.put(b("test2++"), filename="two")
+        cursor = self.fs.find().sort("_id", -1).skip(1).limit(2)
+        self.assertTrue((yield cursor.fetch_next))
+        grid_out = cursor.next_object()
+        self.assertTrue(isinstance(grid_out, motor.MotorGridOut))
+        self.assertEqual(b("test1"), (yield grid_out.read()))
+
+        cursor.rewind()
+        self.assertTrue((yield cursor.fetch_next))
+        grid_out = cursor.next_object()
+        self.assertEqual(b("test1"), (yield grid_out.read()))
+        self.assertTrue((yield cursor.fetch_next))
+        grid_out = cursor.next_object()
+        self.assertEqual(b("test2+"), (yield grid_out.read()))
+        self.assertFalse((yield cursor.fetch_next))
+        self.assertEqual(None, cursor.next_object())
+
+        self.assertRaises(TypeError, self.fs.find, {}, {"_id": True})
+
 
 class TestGridfsReplicaSet(MotorReplicaSetTestBase):
     @gen_test

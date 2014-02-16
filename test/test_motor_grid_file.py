@@ -129,6 +129,27 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual(b(""), (yield g.read()))
 
     @gen_test
+    def test_readchunk(self):
+        in_data = b('a') * 10
+        f = motor.MotorGridIn(self.db.fs, chunkSize=3)
+        yield f.write(in_data)
+        yield f.close()
+
+        g = motor.MotorGridOut(self.db.fs, f._id)
+
+        # This is starting to look like Lisp.
+        self.assertEqual(3, len((yield g.readchunk())))
+
+        self.assertEqual(2, len((yield g.read(2))))
+        self.assertEqual(1, len((yield g.readchunk())))
+
+        self.assertEqual(3, len((yield g.read(3))))
+
+        self.assertEqual(1, len((yield g.readchunk())))
+
+        self.assertEqual(0, len((yield g.readchunk())))
+
+    @gen_test
     def test_alternate_collection(self):
         yield self.db.alt.files.remove()
         yield self.db.alt.chunks.remove()
