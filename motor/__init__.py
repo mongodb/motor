@@ -905,8 +905,8 @@ class MotorBase(object):
         return NotImplemented
 
     name                            = ReadOnlyProperty()
-    get_document_class              = ReadOnlyProperty()
-    set_document_class              = ReadOnlyProperty()
+    get_document_class              = DelegateMethod()
+    set_document_class              = DelegateMethod()
     document_class                  = ReadWriteProperty()
     read_preference                 = ReadWriteProperty()
     tag_sets                        = ReadWriteProperty()
@@ -1138,7 +1138,7 @@ class MotorReplicaSetClient(MotorClientBase):
     secondaries = ReadOnlyProperty()
     arbiters    = ReadOnlyProperty()
     hosts       = ReadOnlyProperty()
-    seeds       = ReadOnlyProperty()
+    seeds       = DelegateMethod()
     close       = DelegateMethod()
 
     _simple_command = AsyncCommand(attr_name='__simple_command')
@@ -2040,8 +2040,8 @@ class MotorGridOutCursor(_MotorBaseCursor):
 class MotorBulkOperationBuilder(MotorBase):
     __delegate_class__ = BulkOperationBuilder
 
-    find        = ReadOnlyProperty()
-    insert      = ReadOnlyProperty()
+    find        = DelegateMethod()
+    insert      = DelegateMethod()
     execute     = AsyncCommand()
 
     def __init__(self, collection, ordered):
