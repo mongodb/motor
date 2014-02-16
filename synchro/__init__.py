@@ -107,6 +107,8 @@ def wrap_synchro(fn):
             return GridIn(None, delegate=motor_obj)
         if isinstance(motor_obj, motor.MotorGridOut):
             return GridOut(None, delegate=motor_obj)
+        if isinstance(motor_obj, motor.MotorGridOutCursor):
+            return GridOutCursor(motor_obj)
         else:
             return motor_obj
 
@@ -454,15 +456,18 @@ class Collection(Synchro):
     initialize_ordered_bulk_op      = WrapOutgoing()
 
     def __init__(self, database, name):
-        assert isinstance(database, Database), (
-            "First argument to synchro Collection must be synchro Database,"
-            " not %s" % repr(database))
-        self.database = database
+        if not isinstance(database, Database):
+            raise TypeError(
+                "First argument to synchro Collection must be synchro "
+                "Database, not %s" % repr(database))
 
+        self.database = database
         self.delegate = database.delegate[name]
-        assert isinstance(self.delegate, motor.MotorCollection), (
-            "Expected to get synchro Collection from Database,"
-            " got %s" % repr(self.delegate))
+
+        if not isinstance(self.delegate, motor.MotorCollection):
+            raise TypeError(
+                "Expected to get synchro Collection from Database,"
+                " got %s" % repr(self.delegate))
 
     def __getattr__(self, name):
         # Access to collections with dotted names, like db.test.mike
@@ -476,6 +481,7 @@ class Cursor(Synchro):
 
     rewind                     = WrapOutgoing()
     clone                      = WrapOutgoing()
+    close                      = SynchroProperty()
 
     def __init__(self, motor_cursor):
         self.delegate = motor_cursor
@@ -571,6 +577,24 @@ class CommandCursor(Cursor):
     __delegate_class__ = motor.MotorCommandCursor
 
 
+class GridOutCursor(Cursor):
+    __delegate_class__ = motor.MotorGridOutCursor
+
+    def __init__(self, delegate):
+        if not isinstance(delegate, motor.MotorGridOutCursor):
+            raise TypeError(
+                "Expected MotorGridOutCursor, got %r" % delegate)
+
+        self.delegate = delegate
+
+    def next(self):
+        motor_grid_out = super(GridOutCursor, self).next()
+        if motor_grid_out:
+            return GridOut(self.collection, delegate=motor_grid_out)
+
+    _Cursor__secondary_acceptable_latency_ms = SynchroProperty()
+
+
 class CursorManager(object):
     """Motor doesn't support cursor managers, just avoid ImportError.
     """
@@ -604,6 +628,11 @@ class GridFS(Synchro):
 
     def put(self, *args, **kwargs):
         return self.synchronize(self.delegate.put)(*args, **kwargs)
+
+    def find(self, *args, **kwargs):
+        motor_method = self.delegate.find
+        unwrapping_method = wrap_synchro(unwrap_synchro(motor_method))
+        return unwrapping_method(*args, **kwargs)
 
 
 class GridIn(Synchro):
