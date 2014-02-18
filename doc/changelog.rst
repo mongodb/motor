@@ -32,7 +32,10 @@ executed with the (result, error) of the operation as in Motor 0.1. If no
 callback is passed, a Future is returned that resolves to the method's
 result or error.
 
-The ``length`` argument to :meth:`MotorCursor.to_list` is no longer optional.
+The ``length`` argument to :meth:`MotorCursor.to_list` is no longer optional:
+it's dangerous to let Motor buffer unlimited data from a single query.
+You can pass ``None`` as the length if you still want to retrieve the whole
+result set as a single list, no matter how large.
 
 :class:`MotorPool` has been rewritten, both to support the same new features
 as the new PyMongo 2.6 Pool, and to stop subclassing PyMongo's Pool to protect
@@ -44,6 +47,16 @@ Motor somewhat from PyMongo changes.
 ``max_wait_time`` is replaced by ``waitQueueTimeoutMS`` and
 ``waitQueueMultiple``. Timeouts raise a PyMongo :exc:`ConnectionFailure`;
 :exc:`MotorPoolTimeout` is gone.
+
+Motor can take advantage of Tornado 3's `asynchronous resolver interface`_. By
+default, Motor still uses blocking DNS, but you can do configure non-blocking
+lookup with a threaded resolver::
+
+    Resolver.configure('tornado.netutil.ThreadedResolver')
+
+Or install `pycares`_ and use the c-ares resolver:
+
+    Resolver.configure('tornado.platform.caresresolver.CaresResolver')
 
 The ``MotorCursor.tail`` method has been removed. It was complex, diverged from
 PyMongo's feature set, and encouraged overuse of MongoDB capped collections as
@@ -59,6 +72,9 @@ Tornado 3's ``Future`` interface has equivalent functionality.
 
 :meth:`~web.GridFSHandler.get_gridfs_file` now
 returns a Future instead of accepting a callback.
+
+.. _asynchronous resolver interface: http://www.tornadoweb.org/en/stable/netutil.html#tornado.netutil.Resolver
+.. _pycares: https://pypi.python.org/pypi/pycares
 
 Migration
 ~~~~~~~~~
