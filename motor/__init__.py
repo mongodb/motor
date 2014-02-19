@@ -496,7 +496,8 @@ class MotorPool(object):
 
     def discard_socket(self, sock_info):
         """Close and discard the active socket."""
-        sock_info.close()
+        if sock_info:
+            sock_info.close()
 
     def maybe_return_socket(self, sock_info):
         """Return the socket to the pool.
@@ -504,6 +505,9 @@ class MotorPool(object):
         In PyMongo this method only returns the socket if it's not the request
         socket, but Motor doesn't do requests.
         """
+        if not sock_info:
+            return
+
         if sock_info.closed:
             if not sock_info.forced:
                 self.motor_sock_counter -= 1
