@@ -47,8 +47,8 @@ if 'nosetests' in sys.argv:
     package_data['test'] = ['certificates/ca.pem', 'certificates/client.pem']
 
 pymongo_url = (
-    'https://github.com/mongodb/mongo-python-driver/tarball/51c66fe2'
-    '#egg=pymongo')
+    'https://github.com/mongodb/mongo-python-driver/archive/2.7rc0.tar.gz'
+    '#egg=pymongo-2.7rc0')
 
 setup(name='motor',
       version='0.1+',
@@ -62,7 +62,7 @@ setup(name='motor',
       install_requires=[
           'tornado >= 3.1',
           'greenlet >= 0.4.0',
-          'pymongo',
+          'pymongo == 2.7rc0',
       ],
       dependency_links=[pymongo_url],
       license='http://www.apache.org/licenses/LICENSE-2.0',
