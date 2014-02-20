@@ -33,6 +33,27 @@ except ImportError:
 
 import bson
 import pymongo
+
+version_tuple = (0, 1, '+')
+
+
+def get_version_string():
+    if isinstance(version_tuple[-1], basestring):
+        return '.'.join(map(str, version_tuple[:-1])) + version_tuple[-1]
+    return '.'.join(map(str, version_tuple))
+
+version = get_version_string()
+"""Current version of Motor."""
+
+expected_pymongo_version = '2.7rc0'
+if pymongo.version != expected_pymongo_version:
+    msg = (
+        "Motor %s requires PyMongo at exactly version %s. "
+        "You have PyMongo %s."
+    ) % (version, expected_pymongo_version, pymongo.version)
+
+    raise ImportError(msg)
+
 import pymongo.auth
 import pymongo.common
 import pymongo.database
@@ -53,18 +74,6 @@ from gridfs import grid_file
 import util
 
 __all__ = ['MotorClient', 'MotorReplicaSetClient', 'Op']
-
-version_tuple = (0, 1, '+')
-
-
-def get_version_string():
-    if isinstance(version_tuple[-1], basestring):
-        return '.'.join(map(str, version_tuple[:-1])) + version_tuple[-1]
-    return '.'.join(map(str, version_tuple))
-
-version = get_version_string()
-"""Current version of Motor."""
-
 
 HAS_SSL = True
 try:
