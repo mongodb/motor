@@ -368,7 +368,7 @@ class MotorCursorTest(MotorTest):
         result = yield coll.find()[:5].to_list(length=1000)
         self.assertEqual(5, len(result))
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_cursor_index(self):
         yield self.make_test_data()
         coll = self.collection
