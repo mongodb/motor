@@ -41,7 +41,7 @@ class GridFSHandler(tornado.web.RequestHandler):
 
     .. code-block:: python
 
-        db = motor.MotorClient().open_sync().my_database
+        db = motor.MotorClient().my_database
         application = web.Application([
             (r"/static/(.*)", web.GridFSHandler, {"database": db}),
         ])
