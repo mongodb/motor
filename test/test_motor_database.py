@@ -90,11 +90,11 @@ class MotorDatabaseTest(MotorTest):
 
         # Test creating capped collection
         collection = yield db.create_collection(
-            'test_capped', capped=True, size=1000)
+            'test_capped', capped=True, size=4096)
 
         self.assertTrue(isinstance(collection, motor.MotorCollection))
         self.assertEqual(
-            {"capped": True, 'size': 1000},
+            {"capped": True, 'size': 4096},
             (yield db.test_capped.options()))
         yield db.drop_collection('test_capped')
 
