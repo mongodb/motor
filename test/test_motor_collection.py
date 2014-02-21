@@ -187,6 +187,7 @@ class MotorCollectionTest(MotorTest):
         collection = self.collection
         self.assertEqual(201, (yield collection.insert({'_id': 201})))
 
+    @gen_test
     def test_insert_many_one_bad(self):
         collection = self.collection
         yield collection.insert({'_id': 2})
