@@ -1423,11 +1423,8 @@ class MotorCollection(MotorBase):
         self.database = database
 
     def __getattr__(self, name):
-        # dotted collection name, like foo.bar
-        return MotorCollection(
-            self.database,
-            self.name + '.' + name
-        )
+        # Dotted collection name, like "foo.bar".
+        return MotorCollection(self.database, self.name + '.' + name)
 
     def __call__(self, *args, **kwargs):
         raise TypeError(
