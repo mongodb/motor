@@ -191,11 +191,20 @@ class MotorSocket(object):
         self.use_ssl = use_ssl
         self.timeout = None
         if self.use_ssl:
-            ssl_options = {
-                'certfile': certfile,
-                'keyfile': keyfile,
-                'ca_certs': ca_certs,
-                'cert_reqs': cert_reqs}
+            # In Python 3, Tornado's ssl_options_to_context fails if
+            # any options are None.
+            ssl_options = {}
+            if certfile:
+                ssl_options['certfile'] = certfile
+
+            if keyfile:
+                ssl_options['keyfile'] = keyfile
+
+            if ca_certs:
+                ssl_options['ca_certs'] = ca_certs
+
+            if cert_reqs:
+                ssl_options['cert_reqs'] = cert_reqs
 
             self.stream = iostream.SSLIOStream(
                 sock, ssl_options=ssl_options, io_loop=io_loop)
