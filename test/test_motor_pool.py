@@ -87,7 +87,7 @@ class MotorPoolTest(MotorTest):
         self.assertEqual(max_pool_size, pool.motor_sock_counter)
         cx.close()
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_wait_queue_timeout(self):
         # Do a find_one that takes 1 second, and set waitQueueTimeoutMS to 500,
         # 5000, and None. Verify timeout iff max_wait_time < 1 sec.
