@@ -28,6 +28,7 @@ from tornado.testing import gen_test
 import motor
 import test
 from test import MotorTest, assert_raises, host, port
+from test.utils import server_is_mongos
 
 
 class MotorCursorTest(MotorTest):
@@ -489,8 +490,7 @@ class MotorCursorTest(MotorTest):
 
     @gen_test
     def test_exhaust(self):
-
-        if self.cx.is_mongos:
+        if (yield server_is_mongos(self.cx)):
             self.assertRaises(InvalidOperation,
                               self.db.test.find, exhaust=True)
             return

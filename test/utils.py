@@ -16,6 +16,7 @@
 """
 
 from tornado import gen
+from nose.plugins.skip import SkipTest
 
 from test import version
 
@@ -47,6 +48,19 @@ def server_started_with_auth(client):
 def server_is_master_with_slave(client):
     command_line = yield get_command_line(client)
     raise gen.Return('--master' in command_line)
+
+
+@gen.coroutine
+def server_is_mongos(client):
+    ismaster_response = yield client.admin.command('ismaster')
+    raise gen.Return(ismaster_response.get('msg') == 'isdbgrid')
+
+
+@gen.coroutine
+def skip_if_mongos(client):
+    is_mongos = yield server_is_mongos(client)
+    if is_mongos:
+        raise SkipTest("connected to mongos")
 
 
 @gen.coroutine

@@ -24,6 +24,7 @@ from tornado.testing import gen_test
 import motor
 from test import assert_raises
 from test.utils import server_is_master_with_slave, remove_all_users
+from test.utils import skip_if_mongos
 
 
 class MotorClientTestMixin(object):
@@ -144,8 +145,7 @@ class MotorClientTestMixin(object):
     def test_copy_db_auth(self):
         # See SERVER-6427.
         cx = self.get_client()
-        if cx.is_mongos:
-            raise SkipTest("Can't copy database with auth via mongos.")
+        yield skip_if_mongos(cx)
 
         target_db_name = 'motor_test_2'
 
@@ -186,9 +186,7 @@ class MotorClientTestMixin(object):
     @gen_test(timeout=30)
     def test_copy_db_auth_concurrent(self):
         cx = self.get_client()
-        if cx.is_mongos:
-            # See SERVER-6427.
-            raise SkipTest("Can't copy database with auth via mongos.")
+        yield skip_if_mongos(cx)
 
         n_copies = 2
         test_db_names = ['motor_test_%s' % i for i in range(n_copies)]

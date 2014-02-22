@@ -23,12 +23,12 @@ from pymongo import ReadPreference
 from pymongo.errors import DuplicateKeyError
 from tornado import gen
 from tornado.concurrent import Future
-from test.utils import delay
 from tornado.testing import gen_test
 
 import motor
 import test
 from test import MotorTest, assert_raises, version
+from test.utils import delay, skip_if_mongos
 
 
 class MotorCollectionTest(MotorTest):
@@ -442,6 +442,8 @@ class MotorCollectionTest(MotorTest):
     def test_parallel_scan(self):
         if not (yield version.at_least(self.cx, (2, 5, 5))):
             raise SkipTest("Requires MongoDB >= 2.5.5")
+
+        yield skip_if_mongos(self.cx)
 
         collection = self.collection
 
