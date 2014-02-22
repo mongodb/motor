@@ -65,6 +65,15 @@ class MotorCollectionTest(MotorTest):
             yield coll.remove()
             self.assertEqual(None, (yield coll.find_one({'_id': 'xyzzy'})))
 
+    def test_call(self):
+        # Prevents user error with nice message.
+        try:
+            self.db.foo()
+        except TypeError, e:
+            self.assertTrue('no such method exists' in str(e))
+        else:
+            self.fail('Expected TypeError')
+
     @gen_test
     def test_find_is_async(self):
         # Confirm find() is async by launching two operations which will finish

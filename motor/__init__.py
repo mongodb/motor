@@ -1345,6 +1345,20 @@ class MotorDatabase(MotorBase):
 
     __getitem__ = __getattr__
 
+    def __call__(self, *args, **kwargs):
+        database_name = self.delegate.name
+        client_class_name = self.connection.__class__.__name__
+        if database_name == 'open_sync':
+            raise TypeError(
+                "%s.open_sync() is unnecessary Motor 0.2, "
+                "see changelog for details." % client_class_name)
+
+        raise TypeError(
+            "MotorDatabase object is not callable. If you meant to "
+            "call the '%s' method on a %s object it is "
+            "failing because no such method exists." % (
+            database_name, client_class_name))
+
     def wrap(self, collection):
         # Replace pymongo.collection.Collection with MotorCollection
         return self[collection.name]
@@ -1414,6 +1428,13 @@ class MotorCollection(MotorBase):
             self.database,
             self.name + '.' + name
         )
+
+    def __call__(self, *args, **kwargs):
+        raise TypeError(
+            "MotorCollection object is not callable. If you meant to "
+            "call the '%s' method on a MotorCollection object it is "
+            "failing because no such method exists." %
+            self.delegate.name)
 
     def find(self, *args, **kwargs):
         """Create a :class:`MotorCursor`. Same parameters as for

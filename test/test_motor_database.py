@@ -46,6 +46,23 @@ class MotorDatabaseTest(MotorTest):
         self.assertTrue(isinstance(db['delegate'], motor.MotorCollection))
         db.connection.close()
 
+    def test_call(self):
+        # Prevents user error with nice message.
+        try:
+            self.cx.foo()
+        except TypeError, e:
+            self.assertTrue('no such method exists' in str(e))
+        else:
+            self.fail('Expected TypeError')
+
+        try:
+            # First line of applications written for Motor 0.1.
+            self.cx.open_sync()
+        except TypeError, e:
+            self.assertTrue('unnecessary' in str(e))
+        else:
+            self.fail('Expected TypeError')
+
     @gen_test
     def test_database_callbacks(self):
         db = self.db
