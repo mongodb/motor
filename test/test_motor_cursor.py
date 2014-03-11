@@ -20,7 +20,8 @@ import unittest
 import greenlet
 import pymongo
 from tornado import gen
-from pymongo.errors import InvalidOperation
+from nose.plugins.skip import SkipTest
+from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
 from tornado.concurrent import Future
 from tornado.testing import gen_test
@@ -28,7 +29,7 @@ from tornado.testing import gen_test
 import motor
 import test
 from test import MotorTest, assert_raises, host, port
-from test.utils import server_is_mongos
+from test.utils import server_is_mongos, version, get_command_line
 
 
 class MotorCursorTest(MotorTest):
@@ -546,6 +547,131 @@ class MotorCursorTest(MotorTest):
         cur = None
         # The socket should be discarded.
         self.assertEqual(0, len(socks))
+
+
+class MotorCursorMaxTimeMSTest(MotorTest):
+    def setUp(self):
+        super(MotorCursorMaxTimeMSTest, self).setUp()
+        self.io_loop.run_sync(self.maybe_skip)
+
+    def tearDown(self):
+        self.io_loop.run_sync(self.disable_timeout)
+        super(MotorCursorMaxTimeMSTest, self).tearDown()
+
+    @gen.coroutine
+    def maybe_skip(self):
+        if not (yield version.at_least(self.cx, (2, 5, 3, -1))):
+            raise SkipTest("maxTimeMS requires MongoDB >= 2.5.3")
+
+        if "enableTestCommands=1" not in (yield get_command_line(self.cx)):
+            raise SkipTest("testing maxTimeMS requires failpoints")
+
+    @gen.coroutine
+    def enable_timeout(self):
+        yield self.cx.admin.command("configureFailPoint",
+                                    "maxTimeAlwaysTimeOut",
+                                    mode="alwaysOn")
+
+    @gen.coroutine
+    def disable_timeout(self):
+        self.cx.admin.command("configureFailPoint",
+                              "maxTimeAlwaysTimeOut",
+                              mode="off")
+
+    @gen_test
+    def test_max_time_ms_query(self):
+        # Cursor parses server timeout error in response to initial query.
+        yield self.enable_timeout()
+        cursor = self.collection.find().max_time_ms(1)
+        with assert_raises(ExecutionTimeout):
+            yield cursor.fetch_next
+
+        cursor = self.collection.find().max_time_ms(1)
+        with assert_raises(ExecutionTimeout):
+            yield cursor.to_list(10)
+
+        with assert_raises(ExecutionTimeout):
+            yield self.collection.find_one(max_time_ms=1)
+
+    @gen_test
+    def test_max_time_ms_getmore(self):
+        # Cursor handles server timeout during getmore, also.
+        yield self.collection.insert({} for _ in range(200))
+        try:
+            # Send initial query.
+            cursor = self.collection.find().max_time_ms(1)
+            yield cursor.fetch_next
+            cursor.next_object()
+
+            # Test getmore timeout.
+            yield self.enable_timeout()
+            with assert_raises(ExecutionTimeout):
+                while (yield cursor.fetch_next):
+                    cursor.next_object()
+
+            # Send another initial query.
+            yield self.disable_timeout()
+            cursor = self.collection.find().max_time_ms(1)
+            yield cursor.fetch_next
+            cursor.next_object()
+
+            # Test getmore timeout.
+            yield self.enable_timeout()
+            with assert_raises(ExecutionTimeout):
+                yield cursor.to_list(None)
+
+            # Avoid 'IOLoop is closing' warning.
+            yield cursor.close()
+        finally:
+            # Cleanup.
+            yield self.disable_timeout()
+            yield self.collection.remove()
+
+    @gen_test
+    def test_max_time_ms_each_query(self):
+        # Cursor.each() handles server timeout during initial query.
+        yield self.enable_timeout()
+        cursor = self.collection.find().max_time_ms(1)
+        future = Future()
+
+        def callback(result, error):
+            if error:
+                future.set_exception(error)
+            elif not result:
+                # Done.
+                future.set_result(None)
+
+        with assert_raises(ExecutionTimeout):
+            cursor.each(callback)
+            yield future
+
+    @gen_test
+    def test_max_time_ms_each_getmore(self):
+        # Cursor.each() handles server timeout during getmore.
+        yield self.collection.insert({} for _ in range(200))
+        try:
+            # Send initial query.
+            cursor = self.collection.find().max_time_ms(1)
+            yield cursor.fetch_next
+            cursor.next_object()
+
+            future = Future()
+
+            def callback(result, error):
+                if error:
+                    future.set_exception(error)
+                elif not result:
+                    # Done.
+                    future.set_result(None)
+
+            yield self.enable_timeout()
+            with assert_raises(ExecutionTimeout):
+                cursor.each(callback)
+                yield future
+        finally:
+            # Cleanup.
+            yield self.disable_timeout()
+            yield self.collection.remove()
 
 
 if __name__ == '__main__':
