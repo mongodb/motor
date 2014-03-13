@@ -62,7 +62,7 @@ setup(name='motor',
       install_requires=[
           'tornado >= 3.1',
           'greenlet >= 0.4.0',
-          'pymongo == 2.7rc0',
+          'pymongo == 2.7rc1',
       ],
       dependency_links=[pymongo_url],
       license='http://www.apache.org/licenses/LICENSE-2.0',
