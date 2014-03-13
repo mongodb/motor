@@ -1575,7 +1575,7 @@ class _MotorBaseCursor(MotorBase):
         .. note::
           There is no need to manually close cursors; they are closed
           by the server after being fully iterated
-          with :meth:`to_list`, :meth:`each`, or :meth:`fetch_next`, or
+          with :meth:`to_list`, :meth:`each`, or :attr:`fetch_next`, or
           automatically closed by the client when the :class:`MotorCursor` is
           cleaned up by the garbage collector.
         """
@@ -1692,7 +1692,6 @@ class _MotorBaseCursor(MotorBase):
         .. doctest:: each
 
           >>> def inserted(result, error):
-          ...     global cursor
           ...     if error:
           ...         raise error
           ...     cursor = collection.find().sort([('_id', 1)])

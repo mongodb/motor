@@ -37,7 +37,7 @@ import motor
 
 class GridFSHandler(tornado.web.RequestHandler):
     """A handler that can serve content from `GridFS`_, very similar to
-    `tornado.web.StaticFileHandler`.
+    :class:`tornado.web.StaticFileHandler`.
 
     .. code-block:: python
 
@@ -50,12 +50,6 @@ class GridFSHandler(tornado.web.RequestHandler):
     specific cache-control timeout is sent to clients. Thus each request for
     a GridFS file requires a quick check of the file's ``uploadDate`` in
     MongoDB. Override :meth:`get_cache_time` in a subclass to customize this.
-
-    .. seealso:: MongoDB and `GridFS
-       <http://dochub.mongodb.org/core/gridfs>`_
-
-    .. seealso:: `StaticFileHandler
-       <http://tornadoweb.org/en/stable/web.html#tornado.web.StaticFileHandler>`_
     """
     def initialize(self, database, root_collection='fs'):
         self.database = database
@@ -67,8 +61,8 @@ class GridFSHandler(tornado.web.RequestHandler):
         By default, if a URL pattern like ``"/static/(.*)"`` is mapped to this
         ``GridFSHandler``, then the trailing portion of the URL is used as the
         filename, so a request for "/static/image.png" results in a call
-        to ``get_gridfs_file`` with "image.png" as the ``path`` argument. To
-        customize the mapping of path to GridFS file, override
+        to :meth:`MotorGridFS.get` with "image.png" as the ``filename``
+        argument. To customize the mapping of path to GridFS file, override
         ``get_gridfs_file`` and return a Future :class:`~motor.MotorGridOut`
         from it.
 

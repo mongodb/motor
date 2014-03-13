@@ -1,9 +1,9 @@
 :mod:`motor.web`
 =================
 
-.. currentmodule:: motor.web
+.. currentmodule:: motor
 
-.. autoclass:: GridFSHandler
+.. autoclass:: motor.web.GridFSHandler
   :members:
   :no-inherited-members:
 
