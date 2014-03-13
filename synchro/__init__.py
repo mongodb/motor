@@ -301,6 +301,7 @@ class Synchro(object):
 class MongoClientBase(Synchro):
     get_default_database = WrapOutgoing()
     max_pool_size = SynchroProperty()
+    max_write_batch_size = SynchroProperty()
 
     def __init__(self, *args, **kwargs):
         # Make a unittest happy.

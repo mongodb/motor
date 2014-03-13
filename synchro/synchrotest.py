@@ -162,7 +162,9 @@ excluded_tests = [
     # Complex PyMongo-specific mocking.
     'TestMongoClientFailover.*',
     'TestReplicaSetClientInternalIPs.*',
+    'TestReplicaSetClientMaxWriteBatchSize.*',
     'TestClient.test_wire_version_mongos_ha',
+    'TestClient.test_max_wire_version',
     '*.test_wire_version',
 ]
 
