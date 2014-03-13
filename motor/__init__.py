@@ -18,11 +18,12 @@ import collections
 import functools
 import inspect
 import socket
+import sys
 import time
 import warnings
 
 from tornado import ioloop, iostream, gen, stack_context, netutil
-from tornado.concurrent import Future
+from tornado.concurrent import Future, TracebackFuture
 import greenlet
 
 DomainError = None
@@ -663,7 +664,7 @@ def asynchronize(motor_class, sync_method, has_write_concern, doc=None):
                 raise callback_type_error
             future = None
         else:
-            future = Future()
+            future = TracebackFuture()
 
         def call_method():
             # Runs on child greenlet.
@@ -683,7 +684,7 @@ def asynchronize(motor_class, sync_method, has_write_concern, doc=None):
                         callback, None, e))
                 else:
                     loop.add_callback(functools.partial(
-                        future.set_exception, e))
+                        future.set_exc_info, sys.exc_info()))
 
         # Start running the operation on a greenlet.
         greenlet.greenlet(call_method).switch()
