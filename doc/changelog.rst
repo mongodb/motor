@@ -6,104 +6,64 @@ Changelog
 Motor 0.2
 ---------
 
-Changes
-~~~~~~~
+This version includes API changes that break backward compatibility
+with applications written for Motor 0.1. For most applications, the migration
+chores will be minor. In exchange, Motor 0.2 offers a cleaner style, and
+it wraps the new and improved PyMongo 2.7 instead of 2.5.
 
-Motor 0.2 now requires Tornado 3. However, the previous version, Motor 0.1, is
-still available for Tornado 2 users.
+Changes in Dependencies
+~~~~~~~~~~~~~~~~~~~~~~~
 
-Motor 0.2 drops Python 2.5 support (since Tornado 3 has dropped it).
+Motor now requires PyMongo 2.7.0 exactly and Tornado 3 or later. It drops
+support for Python 2.5 since Tornado 3 has dropped it.
 
-Motor 0.2 requires PyMongo 2.7, whereas Motor 0.1 required PyMongo 2.5.0
-exactly.
+Motor continues to work with Python 2.6 through 3.4. It still requires
+`Greenlet`_.
 
-It is no longer necessary to explicitly "open" a MotorClient or
-MotorReplicaSetClient. The ``open_sync`` method is removed and calling
-``open`` is now optional. Motor clients now connect to MongoDB on demand.
+API Changes
+~~~~~~~~~~~
 
-Similarly, :meth:`MotorGridOut.open` is optional. :class:`MotorGridIn`
-and :class:`MotorGridFS` now have no ``open`` method at all.
+``open_sync``
+'''''''''''''
 
-All Motor asynchronous methods (except
-:meth:`MotorCursor.each`) now return a :class:`~tornado.concurrent.Future`.
-The callback argument
-to these methods is now optional. If a callback is passed, it will be
-executed with the (result, error) of the operation as in Motor 0.1. If no
-callback is passed, a Future is returned that resolves to the method's
-result or error.
+The ``open_sync`` method has been removed from :class:`MotorClient` and
+:class:`MotorReplicaSetClient`. Clients now connect to MongoDB automatically on
+first use. Simply delete the call to ``open_sync`` from your application.
 
-The ``length`` argument to :meth:`MotorCursor.to_list` is no longer optional:
-it's dangerous to let Motor buffer unlimited data from a single query.
-You can pass ``None`` as the length if you still want to retrieve the whole
-result set as a single list, no matter how large.
-
-:class:`MotorPool` has been rewritten, both to support the same new features
-as the new PyMongo 2.6 Pool, and to stop subclassing PyMongo's Pool to protect
-Motor somewhat from PyMongo changes.
-
-:class:`MotorClient` and :class:`MotorReplicaSetClient` no longer support the
-``max_concurrent`` option; ``max_pool_size`` has taken on the function of
-``max_concurrent`` and the default ``max_pool_size`` is bumped from 10 to 100.
-``max_wait_time`` is replaced by ``waitQueueTimeoutMS`` and
-``waitQueueMultiple``. Timeouts raise a PyMongo :exc:`ConnectionFailure`;
-:exc:`MotorPoolTimeout` is gone.
-
-Motor can take advantage of Tornado 3's `asynchronous resolver interface`_. By
-default, Motor still uses blocking DNS, but you can do configure non-blocking
-lookup with a threaded resolver::
-
-    Resolver.configure('tornado.netutil.ThreadedResolver')
-
-Or install `pycares`_ and use the c-ares resolver:
-
-    Resolver.configure('tornado.platform.caresresolver.CaresResolver')
-
-The ``MotorCursor.tail`` method has been removed. It was complex, diverged from
-PyMongo's feature set, and encouraged overuse of MongoDB capped collections as
-message queues when a purpose-built message queue is more appropriate. An
-example of tailing a capped collection is provided instead:
-:doc:`examples/tailable-cursors`.
-
-``MotorClient.is_locked`` has been removed since calling it from Motor would be
-bizarre. See "Migration" below for a workaround.
-
-The yield-point classes ``WaitOp`` and ``WaitAllOps`` have been removed, since
-Tornado 3's ``Future`` interface has equivalent functionality.
-
-:meth:`~web.GridFSHandler.get_gridfs_file` now
-returns a Future instead of accepting a callback.
-
-.. _asynchronous resolver interface: http://www.tornadoweb.org/en/stable/netutil.html#tornado.netutil.Resolver
-.. _pycares: https://pypi.python.org/pypi/pycares
-
-Migration
-~~~~~~~~~
-
-``open``, ``open_sync``
-'''''''''''''''''''''''
-
-``open`` is now optional, and ``open_sync`` has been removed. You can remove
-calls to these methods from your application. The one remaining use for these
-calls is to test if the MongoDB server is available before continuing your
-application's startup. This is still possible with ``IOLoop.run_sync``::
+If it's important to test that MongoDB is available before continuing
+your application's startup, use ``IOLoop.run_sync``::
 
     loop = tornado.ioloop.IOLoop.current()
     client = motor.MotorClient(host, port)
     try:
         loop.run_sync(client.open)
-    except pymongo.errors.AutoReconnect:
+    except pymongo.errors.ConnectionFailure:
         print "Can't connect"
+
+Similarly, calling :meth:`MotorGridOut.open` is now optional.
+:class:`MotorGridIn` and :class:`MotorGridFS` no longer have an ``open``
+method at all.
+
+.. _changelog-futures:
 
 Futures
 '''''''
 
-``motor.Op`` is deprecated. You can continue to use it, but the simpler
-syntax yielding a Future is preferred::
+All Motor asynchronous methods (except :meth:`MotorCursor.each`) now return a
+:class:`~tornado.concurrent.Future`. The callback is optional. If a
+callback is passed, it will be executed with the ``(result,
+error)`` of the operation as in Motor 0.1. If no callback is passed, a Future is
+returned that resolves to the method's result or error.
 
-    document = yield collection.find_one()
+``motor.Op`` is deprecated. The simpler syntax yielding a Future is preferred::
 
-Code that uses explicit callbacks with Motor 0.2 works the same as in Motor
-0.1::
+    # Old style:
+    document = yield motor.Op(collection.find_one, {'_id': my_id})
+
+    # New style:
+    document = yield collection.find_one({'_id': my_id})
+
+Code that uses callbacks with Motor 0.2 works the same as in Motor 0.1::
 
     def callback(document, error):
         if error:
@@ -111,10 +71,7 @@ Code that uses explicit callbacks with Motor 0.2 works the same as in Motor
         else:
             print document
 
-    collection.find_one(callback=callback)
-
-``WaitOp`` and ``WaitAllOps``
-'''''''''''''''''''''''''''''
+    collection.find_one({'_id': my_id}, callback=callback)
 
 ``WaitOp`` and ``WaitAllOps`` have been removed. Code that used them can now
 yield a ``Future`` or a list of them. Consider this function written for
@@ -144,7 +101,7 @@ The function now becomes::
         except Exception, e:
             print e
 
-Similarly, a function written like so for Tornado 2 and Motor 0.1::
+Similarly, a function written like so in the old style::
 
     @gen.engine
     def get_two_documents_in_parallel(collection):
@@ -160,7 +117,7 @@ Similarly, a function written like so for Tornado 2 and Motor 0.1::
         except Exception, e:
             print e
 
-Now it becomes::
+Now becomes::
 
     @gen.coroutine
     def get_two_documents_in_parallel(collection):
@@ -173,34 +130,9 @@ Now it becomes::
         except Exception, e:
             print e
 
-Pool options
-''''''''''''
 
-PyMongo 2.6 updated its connection pooling options. Motor's options
-have changed for increased consistency with PyMongo.
-
-:class:`MotorClient` and :class:`MotorReplicaSetClient` have an option
-``max_pool_size``, which meant "minimum idle sockets to keep open", but its
-meaning has changed to "maximum sockets open per host." Once this limit is
-reached, operations will pause waiting for a socket to become available.
-Therefore the default has been raised from 10 to 100. If you pass a value for
-``max_pool_size`` make sure it's large enough for the expected load. (Sockets
-are only opened when needed, so there's no cost to having a ``max_pool_size``
-larger than necessary. Err towards a larger value.) If you've been accepting
-the default, continue to do so.
-
-The ``max_concurrent`` option is removed, since ``max_pool_size`` now fulfills
-the same purpose. If you passed this option, you can remove it or rename to
-``max_pool_size``.
-
-``max_wait_time`` has been renamed ``waitQueueTimeoutMS`` for consistency with
-PyMongo. If you pass ``max_wait_time``, rename it and multiply by 1000.
-
-The :exc:`MotorPoolTimeout` exception is gone; catch PyMongo's
-:exc:`ConnectionFailure` instead.
-
-to_list
-'''''''
+``to_list``
+'''''''''''
 
 Any calls to :meth:`MotorCursor.to_list` that omitted the ``length``
 argument must now include it::
@@ -209,16 +141,58 @@ argument must now include it::
 
 ``None`` is acceptable, meaning "unlimited." Use with caution.
 
-tail
-''''
+Connection Pooling
+''''''''''''''''''
 
-If you relied on ``MotorCursor.tail``, see :doc:`examples/tailable-cursors`
-for an example of tailing a capped collection with Motor using a coroutine.
+:class:`MotorPool` has been rewritten. It supports the new options
+introduced in PyMongo 2.6, and drops all Motor-specific options.
 
-is_locked
-'''''''''
+:class:`MotorClient` and :class:`MotorReplicaSetClient` have an option
+``max_pool_size``. It used to mean "minimum idle sockets to keep open", but its
+meaning has changed to "maximum sockets open per host." Once this limit is
+reached, operations will pause waiting for a socket to become available.
+Therefore the default has been raised from 10 to 100. If you pass a value for
+``max_pool_size`` make sure it's large enough for the expected load. (Sockets
+are only opened when needed, so there's no cost to having a ``max_pool_size``
+larger than necessary. Err towards a larger value.) If you've been accepting
+the default, continue to do so.
 
-If you called ``MotorClient.is_locked`` like::
+``max_pool_size`` is now synonymous with Motor's special ``max_concurrent``
+option, so ``max_concurrent`` has been removed.
+
+``max_wait_time`` has been renamed ``waitQueueTimeoutMS`` for consistency with
+PyMongo. If you pass ``max_wait_time``, rename it and multiply by 1000.
+
+The :exc:`MotorPoolTimeout` exception is gone; catch PyMongo's
+:exc:`~pymongo.errors.ConnectionFailure` instead.
+
+DNS
+'''
+
+Motor can take advantage of Tornado 3's `asynchronous resolver interface`_. By
+default, Motor still uses blocking DNS, but you can enable non-blocking
+lookup with a threaded resolver::
+
+    Resolver.configure('tornado.netutil.ThreadedResolver')
+
+Or install `pycares`_ and use the c-ares resolver:
+
+    Resolver.configure('tornado.platform.caresresolver.CaresResolver')
+
+``MotorCursor.tail``
+''''''''''''''''''''
+
+The ``MotorCursor.tail`` method has been removed. It was complex, diverged from
+PyMongo's feature set, and encouraged overuse of MongoDB capped collections as
+message queues when a purpose-built message queue is more appropriate. An
+example of tailing a capped collection is provided instead:
+:doc:`examples/tailable-cursors`.
+
+``MotorClient.is_locked``
+'''''''''''''''''''''''''
+
+``is_locked`` has been removed since calling it from Motor would be
+bizarre. If you called ``MotorClient.is_locked`` like::
 
     locked = yield motor.Op(client.is_locked)
 
@@ -226,6 +200,39 @@ you should now do::
 
     result = yield client.admin.current_op()
     locked = bool(result.get('fsyncLock', None))
+
+The result is ``True`` only if an administrator has called `fsyncLock`_ on the
+mongod. It is unlikely that you have any use for this.
+
+``GridFSHandler``
+'''''''''''''''''
+
+:meth:`~web.GridFSHandler.get_gridfs_file` now
+returns a Future instead of accepting a callback.
+
+.. _Greenlet: http://pypi.python.org/pypi/greenlet/
+.. _asynchronous resolver interface: http://www.tornadoweb.org/en/stable/netutil.html#tornado.netutil.Resolver
+.. _pycares: https://pypi.python.org/pypi/pycares
+.. _fsyncLock: http://docs.mongodb.org/manual/reference/method/db.fsyncLock/
+
+New Features
+~~~~~~~~~~~~
+
+The introduction of a :ref:`Futures-based API <changelog-futures>` is the most
+pervasive new feature. In addition Motor 0.2 includes new features from
+PyMongo 2.6 and 2.7:
+
+* :meth:`MotorCollection.aggregate` can return a cursor.
+* Support for all current MongoDB authentication mechanisms (see PyMongo's
+  `authentication examples`_).
+* A new :meth:`MotorCollection.parallel_scan` method.
+* An :doc:`API for bulk writes <examples/bulk>`.
+* Support for wire protocol changes in MongoDB 2.6.
+* The ability to specify a server-side timeout for operations
+  with :meth:`~MotorCursor.max_time_ms`.
+* A new :meth:`MotorGridFS.find` method for querying GridFS.
+
+.. _authentication examples: http://api.mongodb.org/python/current/examples/authentication.html
 
 Bugfixes
 ~~~~~~~~

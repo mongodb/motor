@@ -16,8 +16,8 @@ Prerequisites
 
 * CPython 2.6, 2.7, or 3.3, or PyPy 2.0 (greenlets were very slow in earlier
   PyPy versions)
-* PyMongo_ 2.5.1 or later
-* Tornado_
+* PyMongo_ 2.7.0 exactly.
+* Tornado_ 3 or later.
 * Greenlet_
 
 Tests require Nose_ and generating the docs_ requires Sphinx_.
