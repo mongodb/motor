@@ -475,7 +475,7 @@ class MotorPool(object):
         else:
             motor_sock = self.create_connection()
             motor_sock.settimeout(self.net_timeout)
-            return SocketInfo(motor_sock, self.pool_id)
+            return SocketInfo(motor_sock, self.pool_id, self.pair[0])
 
     def get_socket(self, force=False):
         """Get a socket from the pool.
