@@ -1407,6 +1407,34 @@ class MotorDatabase(MotorBase):
     def get_io_loop(self):
         return self.connection.get_io_loop()
 
+aggregate_doc = """Execute an aggregation pipeline on this collection.
+
+The aggregation can be run on a secondary if the client is a
+:class:`~motor.MotorReplicaSetClient` and its ``read_preference`` is not
+:attr:`PRIMARY`.
+
+:Parameters:
+  - `pipeline`: a single command or list of aggregation commands
+  - `**kwargs`: send arbitrary parameters to the aggregate command
+
+.. note:: Requires server version **>= 2.1.0**.
+
+With server version **>= 2.5.1**, pass
+``cursor={}`` to retrieve unlimited aggregation results
+with a :class:`~motor.MotorCommandCursor`::
+
+    pipeline = [{'$project': {'name': {'$toUpper': '$name'}}}]
+    cursor = collection.aggregate(pipeline, cursor={})
+    while (yield cursor.fetch_next):
+        doc = cursor.next_object()
+
+.. versionchanged:: 0.2
+   Added cursor support.
+
+.. _aggregate command:
+    http://docs.mongodb.org/manual/applications/aggregation
+"""
+
 
 class MotorCollection(MotorBase):
     __delegate_class__ = Collection
@@ -1431,7 +1459,7 @@ class MotorCollection(MotorBase):
     distinct          = AsyncRead()
     inline_map_reduce = AsyncRead()
     find_one          = AsyncRead()
-    aggregate         = AsyncRead().wrap(CommandCursor)
+    aggregate         = AsyncRead(doc=aggregate_doc).wrap(CommandCursor)
     uuid_subtype      = ReadWriteProperty()
     full_name         = ReadOnlyProperty()
 
