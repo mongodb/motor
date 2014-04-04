@@ -182,7 +182,7 @@ lookup with a threaded resolver::
 
     Resolver.configure('tornado.netutil.ThreadedResolver')
 
-Or install `pycares`_ and use the c-ares resolver:
+Or install `pycares`_ and use the c-ares resolver::
 
     Resolver.configure('tornado.platform.caresresolver.CaresResolver')
 
