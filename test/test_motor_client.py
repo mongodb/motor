@@ -271,6 +271,17 @@ class MotorClientTest(MotorTest):
 
 
 class MotorResolverTest(MotorTest):
+    nonexistent_domain = 'doesntexist'
+
+    def setUp(self):
+        super(MotorResolverTest, self).setUp()
+
+        # Caching the lookup helps prevent timeouts, at least on Mac OS.
+        try:
+            socket.getaddrinfo(self.nonexistent_domain, port)
+        except socket.gaierror:
+            pass
+
     # Helper method.
     @gen.coroutine
     def test_resolver(self, resolver_name):
@@ -282,7 +293,7 @@ class MotorResolverTest(MotorTest):
 
             with assert_raises(pymongo.errors.ConnectionFailure):
                 client = motor.MotorClient(
-                    'doesntexist',
+                    self.nonexistent_domain,
                     connectTimeoutMS=100,
                     io_loop=self.io_loop)
 
