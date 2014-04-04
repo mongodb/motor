@@ -49,13 +49,7 @@ method at all.
 Futures
 '''''''
 
-All Motor asynchronous methods (except :meth:`MotorCursor.each`) now return a
-:class:`~tornado.concurrent.Future`. The callback is optional. If a
-callback is passed, it will be executed with the ``(result,
-error)`` of the operation as in Motor 0.1. If no callback is passed, a Future is
-returned that resolves to the method's result or error.
-
-``motor.Op`` is deprecated. The simpler syntax yielding a Future is preferred::
+Motor 0.2 takes advantage of Tornado's tidy new coroutine syntax::
 
     # Old style:
     document = yield motor.Op(collection.find_one, {'_id': my_id})
@@ -63,7 +57,13 @@ returned that resolves to the method's result or error.
     # New style:
     document = yield collection.find_one({'_id': my_id})
 
-Code that uses callbacks with Motor 0.2 works the same as in Motor 0.1::
+To make this possible, Motor asynchronous methods
+(except :meth:`MotorCursor.each`) now return a
+:class:`~tornado.concurrent.Future`.
+
+Using Motor with callbacks is still possible: If a callback is passed, it will
+be executed with the ``(result, error)`` of the operation, same as in Motor
+0.1::
 
     def callback(document, error):
         if error:
@@ -72,6 +72,13 @@ Code that uses callbacks with Motor 0.2 works the same as in Motor 0.1::
             print document
 
     collection.find_one({'_id': my_id}, callback=callback)
+
+If no callback is passed, a Future is returned that resolves to the
+method's result or error::
+
+    document = yield collection.find_one({'_id': my_id})
+
+``motor.Op`` works the same as before, but it's deprecated.
 
 ``WaitOp`` and ``WaitAllOps`` have been removed. Code that used them can now
 yield a ``Future`` or a list of them. Consider this function written for
