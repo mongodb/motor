@@ -195,7 +195,7 @@ class MotorGridFileTest(MotorTest):
         self.assertRaises(AttributeError, getattr, a, "length")
         self.assertRaises(AttributeError, setattr, a, "length", 5)
 
-        self.assertEqual(256 * 1024, a.chunk_size)
+        self.assertEqual(255 * 1024, a.chunk_size)
         self.assertRaises(AttributeError, setattr, a, "chunk_size", 5)
 
         self.assertRaises(AttributeError, getattr, a, "upload_date")
@@ -224,7 +224,7 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual(0, a.length)
         self.assertRaises(AttributeError, setattr, a, "length", 5)
 
-        self.assertEqual(256 * 1024, a.chunk_size)
+        self.assertEqual(255 * 1024, a.chunk_size)
         self.assertRaises(AttributeError, setattr, a, "chunk_size", 5)
 
         self.assertTrue(isinstance(a.upload_date, datetime.datetime))
@@ -280,7 +280,7 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual(a._id, b._id)
         self.assertEqual(0, b.length)
         self.assertEqual(None, b.content_type)
-        self.assertEqual(256 * 1024, b.chunk_size)
+        self.assertEqual(255 * 1024, b.chunk_size)
         self.assertTrue(isinstance(b.upload_date, datetime.datetime))
         self.assertEqual(None, b.aliases)
         self.assertEqual(None, b.metadata)
