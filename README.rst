@@ -47,8 +47,7 @@ requires:
 * PyMongo_
 * Tornado_
 * Greenlet_
-* CPython 2.6, 2.7, 3.2, or 3.3
-* PyPy 2.0 (greenlets were very slow in earlier PyPy versions)
+* CPython 2.6 or later, including CPython 3, or PyPy 2.0 or later.
 
 Additional dependencies are:
 
