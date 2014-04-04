@@ -844,27 +844,30 @@ class Unwrap(WrapBase):
 
 
 class AsyncRead(Async):
-    def __init__(self, attr_name=None):
+    def __init__(self, attr_name=None, doc=None):
         """A descriptor that wraps a PyMongo read method like find_one() that
         returns a Future.
         """
-        Async.__init__(self, attr_name=attr_name, has_write_concern=False)
+        Async.__init__(
+            self, attr_name=attr_name, has_write_concern=False, doc=doc)
 
 
 class AsyncWrite(Async):
-    def __init__(self, attr_name=None):
+    def __init__(self, attr_name=None, doc=None):
         """A descriptor that wraps a PyMongo write method like update() that
         accepts getLastError options and returns a Future.
         """
-        Async.__init__(self, attr_name=attr_name, has_write_concern=True)
+        Async.__init__(
+            self, attr_name=attr_name, has_write_concern=True, doc=doc)
 
 
 class AsyncCommand(Async):
-    def __init__(self, attr_name=None):
+    def __init__(self, attr_name=None, doc=None):
         """A descriptor that wraps a PyMongo command like copy_database() that
         returns a Future and does not accept getLastError options.
         """
-        Async.__init__(self, attr_name=attr_name, has_write_concern=False)
+        Async.__init__(
+            self, attr_name=attr_name, has_write_concern=False, doc=doc)
 
 
 class ReadOnlyPropertyDescriptor(object):
