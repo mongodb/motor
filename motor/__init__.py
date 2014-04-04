@@ -707,12 +707,15 @@ class MotorAttributeFactory(object):
     PyMongo. At module import time, each Motor class is created, and MotorMeta
     calls create_attribute() for each attr to create the final class attribute.
     """
+    def __init__(self, doc=None):
+        self.doc = doc
+
     def create_attribute(self, cls, attr_name):
         raise NotImplementedError
 
 
 class Async(MotorAttributeFactory):
-    def __init__(self, attr_name, has_write_concern):
+    def __init__(self, attr_name, has_write_concern, doc=None):
         """A descriptor that wraps a PyMongo method, such as insert or remove,
         and returns an asynchronous version of the method, which accepts a
         callback or returns a Future.
@@ -722,7 +725,7 @@ class Async(MotorAttributeFactory):
            different from attribute on the Motor class
          - `has_write_concern`: Whether the method accepts getLastError options
         """
-        super(Async, self).__init__()
+        super(Async, self).__init__(doc)
         self.attr_name = attr_name
         self.has_write_concern = has_write_concern
 
@@ -733,7 +736,7 @@ class Async(MotorAttributeFactory):
             name = '_%s%s' % (cls.__delegate_class__.__name__, name)
 
         method = getattr(cls.__delegate_class__, name)
-        return asynchronize(cls, method, self.has_write_concern)
+        return asynchronize(cls, method, self.has_write_concern, doc=self.doc)
 
     def wrap(self, original_class):
         return WrapAsync(self, original_class)
@@ -743,8 +746,8 @@ class Async(MotorAttributeFactory):
 
 
 class WrapBase(MotorAttributeFactory):
-    def __init__(self, prop):
-        super(WrapBase, self).__init__()
+    def __init__(self, prop, doc=None):
+        super(WrapBase, self).__init__(doc)
         self.property = prop
 
 
@@ -787,6 +790,9 @@ class WrapAsync(WrapBase):
                 raise gen.Return(self.wrap(result))
             else:
                 raise gen.Return(result)
+
+        if self.doc:
+            wrapper.__doc__ = self.doc
 
         return wrapper
 
@@ -831,6 +837,9 @@ class Unwrap(WrapBase):
                 (key, _unwrap_obj(value)) for key, value in kwargs.items()])
             return f(*args, **kwargs)
 
+        if self.doc:
+            _f.__doc__ = self.doc
+
         return _f
 
 
@@ -859,8 +868,10 @@ class AsyncCommand(Async):
 
 
 class ReadOnlyPropertyDescriptor(object):
-    def __init__(self, attr_name):
+    def __init__(self, attr_name, doc=None):
         self.attr_name = attr_name
+        if doc:
+            self.__doc__ = doc
 
     def __get__(self, obj, objtype):
         if obj:
@@ -877,7 +888,7 @@ class ReadOnlyPropertyDescriptor(object):
 class ReadOnlyProperty(MotorAttributeFactory):
     """Creates a readonly attribute on the wrapped PyMongo object"""
     def create_attribute(self, cls, attr_name):
-        return ReadOnlyPropertyDescriptor(attr_name)
+        return ReadOnlyPropertyDescriptor(attr_name, self.doc)
 
 
 class DelegateMethod(ReadOnlyProperty):
@@ -893,7 +904,7 @@ class ReadWritePropertyDescriptor(ReadOnlyPropertyDescriptor):
 class ReadWriteProperty(MotorAttributeFactory):
     """Creates a mutable attribute on the wrapped PyMongo object"""
     def create_attribute(self, cls, attr_name):
-        return ReadWritePropertyDescriptor(attr_name)
+        return ReadWritePropertyDescriptor(attr_name, self.doc)
 
 
 class MotorMeta(type):
@@ -1558,6 +1569,9 @@ class MotorCursorChainingMethod(MotorAttributeFactory):
         # This is for the benefit of motor_extensions.py
         return_clone.is_motorcursor_chaining_method = True
         return_clone.pymongo_method_name = attr_name
+        if self.doc:
+            return_clone.__doc__ = self.doc
+
         return return_clone
 
 
