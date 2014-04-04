@@ -39,7 +39,7 @@ Tutorial Prerequisites
 ----------------------
 You can learn about MongoDB with the `MongoDB Tutorial`_ before you learn Motor.
 
-Install pip_ and then do:
+Install pip_ and then do::
 
   $ pip install motor
 
@@ -98,7 +98,7 @@ specify the host and port like:
 
   >>> client = motor.MotorClient('localhost', 27017)
 
-Motor also supports `connection URIs`_::
+Motor also supports `connection URIs`_:
 
 .. doctest:: before-inserting-2000-docs
 
