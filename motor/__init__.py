@@ -1897,7 +1897,88 @@ class MotorCursor(_MotorBaseCursor):
     limit         = MotorCursorChainingMethod()
     skip          = MotorCursorChainingMethod()
     max_scan      = MotorCursorChainingMethod()
-    sort          = MotorCursorChainingMethod()
+    sort          = MotorCursorChainingMethod(doc="""
+Sorts this cursor's results.
+
+Pass a field name and a direction, either
+:data:`~pymongo.ASCENDING` or :data:`~pymongo.DESCENDING`:
+
+.. testsetup:: sort
+
+  MongoClient().test.test_collection.drop()
+  MongoClient().test.test_collection.insert([
+      {'_id': i, 'field1': i % 2, 'field2': i}
+      for i in range(5)])
+  collection = MotorClient().test.test_collection
+
+.. doctest:: sort
+
+  >>> @gen.coroutine
+  ... def f():
+  ...     cursor = collection.find().sort('_id', pymongo.DESCENDING)
+  ...     docs = yield cursor.to_list(None)
+  ...     print([d['_id'] for d in docs])
+  ...
+  >>> IOLoop.current().run_sync(f)
+  [4, 3, 2, 1, 0]
+
+To sort by multiple fields, pass a list of (key, direction) pairs:
+
+.. doctest:: sort
+
+  >>> @gen.coroutine
+  ... def f():
+  ...     cursor = collection.find().sort([
+  ...         ('field1', pymongo.ASCENDING),
+  ...         ('field2', pymongo.DESCENDING)])
+  ...
+  ...     docs = yield cursor.to_list(None)
+  ...     print([(d['field1'], d['field2']) for d in docs])
+  ...
+  >>> IOLoop.current().run_sync(f)
+  [(0, 4), (0, 2), (0, 0), (1, 3), (1, 1)]
+
+Beginning with MongoDB version 2.6, text search results can be
+sorted by relevance:
+
+.. testsetup:: sort_text
+
+  MongoClient().test.test_collection.drop()
+  MongoClient().test.test_collection.insert([
+      {'field': 'words'},
+      {'field': 'words about some words'}])
+
+  MongoClient().test.test_collection.create_index([('field', 'text')])
+  collection = MotorClient().test.test_collection
+
+.. doctest:: sort_text
+
+  >>> @gen.coroutine
+  ... def f():
+  ...     cursor = collection.find({
+  ...         '$text': {'$search': 'some words'}},
+  ...         {'score': {'$meta': 'textScore'}})
+  ...
+  ...     # Sort by 'score' field.
+  ...     cursor.sort([('score', {'$meta': 'textScore'})])
+  ...     docs = yield cursor.to_list(None)
+  ...     for doc in docs:
+  ...         print('%.1f %s' % (doc['score'], doc['field']))
+  ...
+  >>> IOLoop.current().run_sync(f)
+  1.5 words about some words
+  1.0 words
+
+Raises :class:`~pymongo.errors.InvalidOperation` if this cursor has
+already been used. Only the last :meth:`sort` applied to this
+cursor has any effect.
+
+:Parameters:
+  - `key_or_list`: a single key or a list of (key, direction)
+    pairs specifying the keys to sort on
+  - `direction` (optional): only used if `key_or_list` is a single
+    key, if not given :data:`~pymongo.ASCENDING` is assumed
+""")
     hint          = MotorCursorChainingMethod()
     where         = MotorCursorChainingMethod()
     max_time_ms   = MotorCursorChainingMethod()
