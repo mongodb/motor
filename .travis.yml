@@ -2,7 +2,7 @@ language: python
 python:
   - "2.6"
   - "2.7"
-  - "3.4"
+  - "3.3"
 services: mongodb
 script: "python setup.py test"
 
@@ -18,7 +18,7 @@ env:
   - FUTURES=no
 matrix:
   exclude:
-    - python: "3.4"
+    - python: "3.3"
       env: FUTURES=yes
 before_script:
   - if [[ "$FUTURES" == "yes" ]]; then pip install futures; fi
