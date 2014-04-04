@@ -23,8 +23,8 @@ Motor continues to work with Python 2.6 through 3.4. It still requires
 API Changes
 ~~~~~~~~~~~
 
-``open_sync``
-'''''''''''''
+open_sync
+'''''''''
 
 The ``open_sync`` method has been removed from :class:`MotorClient` and
 :class:`MotorReplicaSetClient`. Clients now connect to MongoDB automatically on
@@ -138,8 +138,8 @@ Now becomes::
             print e
 
 
-``to_list``
-'''''''''''
+to_list
+'''''''
 
 Any calls to :meth:`MotorCursor.to_list` that omitted the ``length``
 argument must now include it::
@@ -186,8 +186,8 @@ Or install `pycares`_ and use the c-ares resolver::
 
     Resolver.configure('tornado.platform.caresresolver.CaresResolver')
 
-``MotorCursor.tail``
-''''''''''''''''''''
+MotorCursor.tail
+''''''''''''''''
 
 The ``MotorCursor.tail`` method has been removed. It was complex, diverged from
 PyMongo's feature set, and encouraged overuse of MongoDB capped collections as
@@ -195,8 +195,8 @@ message queues when a purpose-built message queue is more appropriate. An
 example of tailing a capped collection is provided instead:
 :doc:`examples/tailable-cursors`.
 
-``MotorClient.is_locked``
-'''''''''''''''''''''''''
+MotorClient.is_locked
+'''''''''''''''''''''
 
 ``is_locked`` has been removed since calling it from Motor would be
 bizarre. If you called ``MotorClient.is_locked`` like::
@@ -211,8 +211,8 @@ you should now do::
 The result is ``True`` only if an administrator has called `fsyncLock`_ on the
 mongod. It is unlikely that you have any use for this.
 
-``GridFSHandler``
-'''''''''''''''''
+GridFSHandler
+'''''''''''''
 
 :meth:`~web.GridFSHandler.get_gridfs_file` now
 returns a Future instead of accepting a callback.
