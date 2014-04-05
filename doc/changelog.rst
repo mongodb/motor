@@ -250,6 +250,9 @@ Bugfixes
 <https://jira.mongodb.org/browse/MOTOR-8>`_. (Thanks to Eren Güven for the
 report and the fix.)
 
+`The full list is in Jira
+<https://jira.mongodb.org/browse/MOTOR-23?filter=15038>`_.
+
 Motor 0.1.2
 -----------
 
