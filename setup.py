@@ -48,7 +48,7 @@ if 'nosetests' in sys.argv:
     package_data['test'] = ['certificates/ca.pem', 'certificates/client.pem']
 
 setup(name='motor',
-      version='0.1+',
+      version='0.2rc0',
       packages=packages,
       package_data=package_data,
       description=description,
