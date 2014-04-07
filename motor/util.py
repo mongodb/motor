@@ -55,7 +55,7 @@ class MotorGreenletEvent(object):
     def wait(self, timeout_seconds=None):
         current = greenlet.getcurrent()
         parent = current.parent
-        assert parent, "Should be on child greenlet"
+        assert parent is not None, "Should be on child greenlet"
         if not self._flag:
             self._waiters.append(current)
 

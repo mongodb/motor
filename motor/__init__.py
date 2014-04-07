@@ -109,7 +109,7 @@ def motor_sock_method(method):
     def _motor_sock_method(self, *args, **kwargs):
         child_gr = greenlet.getcurrent()
         main = child_gr.parent
-        assert main, "Should be on child greenlet"
+        assert main is not None, "Should be on child greenlet"
 
         timeout_object = None
 
@@ -233,7 +233,9 @@ class MotorSocket(object):
         self.stream.connect(pair, callback, server_hostname=server_hostname)
 
     def sendall(self, data):
-        assert greenlet.getcurrent().parent, "Should be on child greenlet"
+        assert greenlet.getcurrent().parent is not None,\
+            "Should be on child greenlet"
+
         try:
             self.stream.write(data)
         except IOError, e:
@@ -362,7 +364,7 @@ class MotorPool(object):
         """Return list of (family, address) pairs."""
         child_gr = greenlet.getcurrent()
         main = child_gr.parent
-        assert main, "Should be on child greenlet"
+        assert main is not None, "Should be on child greenlet"
 
         def handler(exc_typ, exc_val, exc_tb):
             # If netutil.Resolver is configured to use TwistedResolver.
@@ -451,7 +453,7 @@ class MotorPool(object):
         """
         child_gr = greenlet.getcurrent()
         main = child_gr.parent
-        assert main, "Should be on child greenlet"
+        assert main is not None, "Should be on child greenlet"
 
         if self.max_size and self.motor_sock_counter >= self.max_size:
             if self.max_waiters and len(self.queue) >= self.max_waiters:
@@ -1277,7 +1279,9 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
             self.stopped = True
 
     def refresh(self):
-        assert greenlet.getcurrent().parent, "Should be on child greenlet"
+        assert greenlet.getcurrent().parent is not None,\
+            "Should be on child greenlet"
+
         try:
             self.rsc.refresh()
         except pymongo.errors.AutoReconnect:
@@ -1317,7 +1321,9 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
         pass
 
     def wait_for_refresh(self, timeout_seconds):
-        assert greenlet.getcurrent().parent, "Should be on child greenlet"
+        assert greenlet.getcurrent().parent is not None,\
+            "Should be on child greenlet"
+
         # self.refreshed is a util.MotorGreenletEvent.
         self.refreshed.wait(timeout_seconds)
 
@@ -1897,7 +1903,7 @@ class _MotorBaseCursor(MotorBase):
         # do I/O. First, do a quick check whether the cursor is still alive on
         # the server:
         if self.cursor_id and self.alive:
-            if greenlet.getcurrent().parent:
+            if greenlet.getcurrent().parent is not None:
                 # We're on a child greenlet, send the message.
                 self.delegate.close()
             else:
