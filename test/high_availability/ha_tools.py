@@ -170,7 +170,7 @@ def start_replica_set(members, auth=False, fresh=True):
 
     # Wait for 8 minutes for replica set to come up
     patience = 8
-    for i in range(patience * 60 / 2):
+    for i in range(int(patience * 60 / 2)):
         time.sleep(2)
         try:
             if (get_primary() and
