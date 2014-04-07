@@ -964,6 +964,7 @@ class MotorTestMongosHighAvailability(MotorHATestCase):
 
         first = '%s:%d' % (c.host, c.port)
         ha_tools.kill_mongos(first)
+        yield self.pause(1)
         # Fail first attempt
         with assert_raises(AutoReconnect):
             yield coll.count()
@@ -973,6 +974,7 @@ class MotorTestMongosHighAvailability(MotorHATestCase):
         second = '%s:%d' % (c.host, c.port)
         self.assertNotEqual(first, second)
         ha_tools.kill_mongos(second)
+        yield self.pause(1)
         # Fail first attempt
         with assert_raises(AutoReconnect):
             yield coll.count()
@@ -982,12 +984,14 @@ class MotorTestMongosHighAvailability(MotorHATestCase):
         third = '%s:%d' % (c.host, c.port)
         self.assertNotEqual(second, third)
         ha_tools.kill_mongos(third)
+        yield self.pause(1)
         # Fail first attempt
         with assert_raises(AutoReconnect):
             yield coll.count()
 
         # We've killed all three, restart one.
         ha_tools.restart_mongos(first)
+        yield self.pause(1)
 
         # Find new mongos
         self.assertEqual(1, (yield coll.count()))
