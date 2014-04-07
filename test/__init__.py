@@ -198,16 +198,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
 
             try:
                 next(sync_cursor)
-            except pymongo.errors.OperationFailure, e:
-                # Let's check this error was because the cursor was killed,
-                # not a test bug. mongod reports "cursor id 'N' not valid at
-                # server", mongos says:
-                # "database error: could not find cursor in cache for id N
-                # over collection motor_test.test_collection".
-                self.assertTrue(
-                    "not valid at server" in e.args[0] or
-                    "could not find cursor in cache" in e.args[0])
-
+            except pymongo.errors.CursorNotFound:
                 # Success!
                 return
             finally:
