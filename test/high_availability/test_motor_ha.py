@@ -141,7 +141,7 @@ class MotorTestDirectConnection(MotorHATestCase):
             try:
                 yield client.motor_test.test.insert({}, w=0)
             except AutoReconnect, e:
-                self.assertEqual('not master', e.message)
+                self.assertEqual('not master', e.args[0])
             else:
                 self.fail(
                     'Unacknowledged insert into arbiter connection %s should'
