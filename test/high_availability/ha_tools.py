@@ -174,8 +174,8 @@ def start_replica_set(members, auth=False, fresh=True):
         time.sleep(2)
         try:
             if (get_primary() and
-                len(get_secondaries()) == expected_secondaries and
-                len(get_arbiters()) == expected_arbiters):
+                    len(get_secondaries()) == expected_secondaries and
+                    len(get_arbiters()) == expected_arbiters):
                 break
         except pymongo.errors.ConnectionFailure:
             # Keep waiting
@@ -213,7 +213,7 @@ def create_sharded_cluster(num_routers=3):
         return None
 
     # ...and a shard server
-    cur_port = cur_port + 1
+    cur_port += 1
     shard_host = '%s:%d' % (hostname, cur_port)
     path = os.path.join(dbpath, 'shard1')
     if not os.path.exists(path):
@@ -233,9 +233,9 @@ def create_sharded_cluster(num_routers=3):
         return None
 
     # ...and a few mongos instances
-    cur_port = cur_port + 1
-    for i in xrange(num_routers):
-        cur_port = cur_port + i
+    cur_port += 1
+    for i in range(num_routers):
+        cur_port += 1
         host = '%s:%d' % (hostname, cur_port)
         mongos_logpath = os.path.join(logpath, 'mongos' + str(i) + '.log')
         cmd = [mongos,
@@ -336,7 +336,7 @@ def get_hidden_members():
     for member in readers:
         try:
             secondaries.remove(member)
-        except:
+        except KeyError:
             # Skip primary
             pass
     return secondaries
