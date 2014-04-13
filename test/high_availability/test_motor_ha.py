@@ -63,6 +63,7 @@ class MotorTestDirectConnection(MotorHATestCase):
         members = [{}, {}, {'arbiterOnly': True}]
         res = ha_tools.start_replica_set(members)
         self.seed, self.name = res
+        self.c = None
 
     @gen_test
     def test_secondary_connection(self):
@@ -876,7 +877,7 @@ class MotorTestReplicaSetAuth(MotorHATestCase):
         # Add an admin user to enable auth
         try:
             self.c.admin.add_user('admin', 'adminpass')
-        except:
+        except OperationFailure:
             # SERVER-4225
             pass
         self.c.admin.authenticate('admin', 'adminpass')
