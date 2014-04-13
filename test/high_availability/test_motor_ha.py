@@ -16,6 +16,8 @@
    test/high_availability/test_ha.py
 """
 
+from __future__ import print_function, unicode_literals
+
 import time
 import unittest
 from tornado import gen, testing
@@ -122,7 +124,7 @@ class MotorTestDirectConnection(MotorHATestCase):
             # should do the same for unacknowledged writes.
             try:
                 yield client.motor_test.test.insert({}, w=0)
-            except AutoReconnect, e:
+            except AutoReconnect as e:
                 self.assertEqual('not master', e.args[0])
             else:
                 self.fail(
@@ -140,7 +142,7 @@ class MotorTestDirectConnection(MotorHATestCase):
             # See explanation above
             try:
                 yield client.motor_test.test.insert({}, w=0)
-            except AutoReconnect, e:
+            except AutoReconnect as e:
                 self.assertEqual('not master', e.args[0])
             else:
                 self.fail(
@@ -243,7 +245,7 @@ class MotorTestTriggeredRefresh(MotorHATestCase):
         self.c_find_one, self.c_count = yield [
             motor.MotorReplicaSetClient(
                 self.seed, replicaSet=self.name, read_preference=SECONDARY
-            ).open() for _ in xrange(2)]
+            ).open() for _ in range(2)]
 
         # We've started the primary and one secondary
         primary = ha_tools.get_primary()
@@ -323,7 +325,7 @@ class MotorTestHealthMonitor(MotorHATestCase):
 
         # Wait for new primary to step up, and for MotorReplicaSetClient
         # to detect it.
-        for _ in xrange(30):
+        for _ in range(30):
             if c.primary != primary and c.secondaries != secondaries:
                 break
             yield self.pause(1)
@@ -349,7 +351,7 @@ class MotorTestHealthMonitor(MotorHATestCase):
 
         # Wait for secondary to join, and for MotorReplicaSetClient
         # to detect it.
-        for _ in xrange(30):
+        for _ in range(30):
             if c.secondaries != secondaries:
                 break
             yield self.pause(1)
@@ -367,7 +369,7 @@ class MotorTestHealthMonitor(MotorHATestCase):
 
         # Wait for primary to step down, and for MotorReplicaSetClient
         # to detect it.
-        for _ in xrange(30):
+        for _ in range(30):
             if c.primary != primary and secondaries != c.secondaries:
                 break
             yield self.pause(1)
@@ -397,7 +399,7 @@ class MotorTestWritesWithFailover(MotorHATestCase):
         self.assertTrue(bool(len(killed)))
         yield self.pause(2)
 
-        for _ in xrange(30):
+        for _ in range(30):
             try:
                 yield db.test.insert({'bar': 'baz'})
 
@@ -429,7 +431,7 @@ class MotorTestReadWithFailover(MotorHATestCase):
         w = len(c.secondaries) + 1
         db.test.remove({}, w=w)
         # Force replication
-        yield db.test.insert([{'foo': i} for i in xrange(10)], w=w)
+        yield db.test.insert([{'foo': i} for i in range(10)], w=w)
         self.assertEqual(10, (yield db.test.count()))
 
         db.read_preference = SECONDARY
@@ -469,7 +471,7 @@ class MotorTestShipOfTheseus(MotorHATestCase):
         ha_tools.add_member()
 
         # Wait for new members to join
-        for _ in xrange(120):
+        for _ in range(120):
             if ha_tools.get_primary() and len(ha_tools.get_secondaries()) == 4:
                 break
 
@@ -480,7 +482,7 @@ class MotorTestShipOfTheseus(MotorHATestCase):
         ha_tools.kill_members([primary, secondary1], 9)
 
         # Wait for primary
-        for _ in xrange(30):
+        for _ in range(30):
             if ha_tools.get_primary() and len(ha_tools.get_secondaries()) == 2:
                 break
 
@@ -552,7 +554,7 @@ class MotorTestReadPreference(MotorHATestCase):
         self.w = len(self.c.secondaries) + 1
         self.db.test.remove({}, w=self.w)
         self.db.test.insert(
-            [{'foo': i} for i in xrange(10)], w=self.w)
+            [{'foo': i} for i in range(10)], w=self.w)
 
         self.clear_ping_times()
 

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function, unicode_literals
+
 """Help test MotorReplicaSetClient and read preferences.
 
 Motor's version of some replica set testing functions in PyMongo's test.utils.
