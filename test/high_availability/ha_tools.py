@@ -114,7 +114,7 @@ def start_replica_set(members, auth=False, fresh=True):
         if not os.path.exists(key_file):
             f = open(key_file, 'w')
             try:
-                f.write(b"my super secret system password")
+                f.write("my super secret system password")
             finally:
                 f.close()
             os.chmod(key_file, S_IRUSR)
