@@ -62,7 +62,7 @@ class MotorClientTestMixin(object):
 
         yield cx.drop_database('target')
 
-        client = motor.MotorClient('doesntexist')
+        client = motor.MotorClient('doesntexist', connectTimeoutMS=10)
         (result, error), _ = yield gen.Task(
             client.copy_database, name, 'target')
 
