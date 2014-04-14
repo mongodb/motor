@@ -24,7 +24,6 @@ import sys
 import time
 import warnings
 
-import six
 from tornado import ioloop, iostream, gen, stack_context, netutil
 from tornado.concurrent import Future, TracebackFuture
 import greenlet
@@ -75,7 +74,7 @@ from pymongo.command_cursor import CommandCursor
 from pymongo.pool import _closed, SocketInfo
 from gridfs import grid_file
 
-from . import util
+from . import motor_py3_compat, util
 
 __all__ = ['MotorClient', 'MotorReplicaSetClient', 'Op']
 
@@ -820,7 +819,7 @@ class Unwrap(WrapBase):
         motor_class = self.motor_class
 
         def _unwrap_obj(obj):
-            if isinstance(motor_class, six.text_type):
+            if isinstance(motor_class, motor_py3_compat.text_type):
                 # Delayed reference - e.g., drop_database is defined before
                 # MotorDatabase is, so it was initialized with
                 # unwrap('MotorDatabase') instead of unwrap(MotorDatabase).
@@ -936,7 +935,7 @@ class MotorMeta(type):
         return new_class
 
 
-@six.add_metaclass(MotorMeta)
+@motor_py3_compat.add_metaclass(MotorMeta)
 class MotorBase(object):
     def __eq__(self, other):
         if (isinstance(other, self.__class__)
@@ -1030,13 +1029,13 @@ class MotorClientBase(MotorBase):
         # PyMongo's implementation uses requests, so rewrite for Motor.
         pool, sock_info = None, None
         try:
-            if not isinstance(from_name, six.string_types):
+            if not isinstance(from_name, motor_py3_compat.string_types):
                 raise TypeError("from_name must be an instance "
-                                "of %s" % six.string_types)
+                                "of %s" % motor_py3_compat.string_types)
 
-            if not isinstance(to_name, six.string_types):
+            if not isinstance(to_name, motor_py3_compat.string_types):
                 raise TypeError("to_name must be an instance "
-                                "of %s" % six.string_types)
+                                "of %s" % motor_py3_compat.string_types)
 
             pymongo.database._check_name(to_name)
 
@@ -2116,7 +2115,7 @@ cursor has any effect.
             self.delegate[index]
             return self
         else:
-            if not isinstance(index, six.integer_types):
+            if not isinstance(index, motor_py3_compat.integer_types):
                 raise TypeError("index %r cannot be applied to MotorCursor "
                                 "instances" % index)
 
@@ -2227,7 +2226,7 @@ class MotorBulkOperationBuilder(MotorBase):
         return self.io_loop
 
 
-@six.add_metaclass(MotorMeta)
+@motor_py3_compat.add_metaclass(MotorMeta)
 class MotorGridOut(object):
     """Class to read data out of GridFS.
 
@@ -2344,7 +2343,7 @@ class MotorGridOut(object):
             written += len(chunk)
 
 
-@six.add_metaclass(MotorMeta)
+@motor_py3_compat.add_metaclass(MotorMeta)
 class MotorGridIn(object):
     __delegate_class__ = gridfs.GridIn
 
@@ -2436,7 +2435,7 @@ object created from the file.
 """)
 
 
-@six.add_metaclass(MotorMeta)
+@motor_py3_compat.add_metaclass(MotorMeta)
 class MotorGridFS(object):
     __delegate_class__ = gridfs.GridFS
 

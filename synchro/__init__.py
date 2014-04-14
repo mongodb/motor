@@ -30,6 +30,7 @@ import traceback
 from tornado.ioloop import IOLoop
 
 import motor
+from motor import motor_py3_compat
 
 # Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
 # importing * won't pick up underscore-prefixed attrs.
@@ -52,7 +53,6 @@ from pymongo import auth
 from pymongo.auth import *
 from pymongo.auth import _password_digest
 from gridfs.grid_file import DEFAULT_CHUNK_SIZE, _SEEK_CUR, _SEEK_END
-import six
 
 GridFile = None
 have_gevent = False
@@ -592,7 +592,7 @@ class GridOutCursor(Cursor):
         self.delegate = delegate
 
     def next(self):
-        motor_grid_out = six.advance_iterator(super(GridOutCursor, self))
+        motor_grid_out = motor_py3_compat.advance_iterator(super(GridOutCursor, self))
         if motor_grid_out:
             return GridOut(self.collection, delegate=motor_grid_out)
 

@@ -21,7 +21,6 @@ import unittest
 from functools import partial
 from bson import ObjectId
 
-from bson.py3compat import StringIO
 from gridfs.errors import FileExists, NoFile
 from pymongo import MongoClient
 from pymongo.errors import AutoReconnect, ConfigurationError
@@ -31,6 +30,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
+from motor.motor_py3_compat import StringIO
 from test import host, port, MotorTest, MotorReplicaSetTestBase, assert_raises
 
 
