@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import unicode_literals
+
 """Synchro, a fake synchronous PyMongo implementation built on top of Motor,
 for the sole purpose of checking that Motor passes the same unittests as
 PyMongo.
@@ -50,6 +52,7 @@ from pymongo import auth
 from pymongo.auth import *
 from pymongo.auth import _password_digest
 from gridfs.grid_file import DEFAULT_CHUNK_SIZE, _SEEK_CUR, _SEEK_END
+import six
 
 GridFile = None
 have_gevent = False
@@ -350,14 +353,14 @@ class MongoClientBase(Synchro):
         # ConnectionFailure if it times out.
         try:
             self.synchronize(self.delegate.open)()
-        except OperationFailure, exc:
+        except OperationFailure as exc:
             # Emulate PyMongo's behavior: auth failure during initialization
             # is translated to ConfigurationError.
             if 'auth fails' in str(exc):
                 raise ConfigurationError(str(exc))
 
             raise
-        except AutoReconnect, e:
+        except AutoReconnect as e:
             raise ConnectionFailure(str(e))
 
     def start_request(self):
@@ -589,7 +592,7 @@ class GridOutCursor(Cursor):
         self.delegate = delegate
 
     def next(self):
-        motor_grid_out = super(GridOutCursor, self).next()
+        motor_grid_out = six.advance_iterator(super(GridOutCursor, self))
         if motor_grid_out:
             return GridOut(self.collection, delegate=motor_grid_out)
 

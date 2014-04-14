@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import unicode_literals
+
 """Test Motor by testing that Synchro, a fake PyMongo implementation built on
 top of Motor, passes the same unittests as PyMongo.
 
@@ -197,7 +199,8 @@ class SynchroNosePlugin(Plugin):
         for excluded_name in excluded_tests:
             suite_name, method_name = excluded_name.split('.')
             suite_matches = (
-                method.im_class.__name__ == suite_name or suite_name == '*')
+                method.__self__.__class__.__name__ == suite_name
+                or suite_name == '*')
 
             method_matches = (
                 method.__name__ == method_name or method_name == '*')
