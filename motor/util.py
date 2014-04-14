@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A version of PyMongo's thread_util for Motor."""
+from __future__ import unicode_literals
 
+"""A version of PyMongo's thread_util for Motor."""
 
 import datetime
 

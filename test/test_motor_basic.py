@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import unicode_literals, absolute_import
+
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import pymongo
@@ -21,7 +23,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import host, port, assert_raises, MotorTest
+from . import host, port, assert_raises, MotorTest
 
 
 class MotorTestBasic(MotorTest):

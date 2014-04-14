@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import unicode_literals
+
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import unittest
@@ -69,7 +71,7 @@ class MotorCollectionTest(MotorTest):
         # Prevents user error with nice message.
         try:
             self.db.foo()
-        except TypeError, e:
+        except TypeError as e:
             self.assertTrue('no such method exists' in str(e))
         else:
             self.fail('Expected TypeError')
@@ -458,7 +460,7 @@ class MotorCollectionTest(MotorTest):
 
         # Enough documents that each cursor requires multiple batches.
         yield collection.remove()
-        yield collection.insert(({'_id': i} for i in xrange(8000)), w=test.w)
+        yield collection.insert(({'_id': i} for i in range(8000)), w=test.w)
         if test.is_replica_set:
             client = motor.MotorReplicaSetClient(
                 '%s:%s' % (test.host, test.port),

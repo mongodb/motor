@@ -12,11 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import unicode_literals
+
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import socket
 import ssl
-from urllib import quote_plus
+
+try:
+    # Python 2.
+    from urllib import quote_plus
+except ImportError:
+    # Python 3.
+    from urllib.parse import quote_plus
 
 from nose.plugins.skip import SkipTest
 from pymongo.common import HAS_SSL

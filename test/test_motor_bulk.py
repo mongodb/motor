@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import unicode_literals
+
 """Test Motor's bulk API."""
 
 import unittest
@@ -43,7 +45,7 @@ class MotorBulkTest(MotorTest):
 
             try:
                 yield bulk.execute()
-            except BulkWriteError, exc:
+            except BulkWriteError as exc:
                 result = exc.details
                 self.assertEqual(exc.code, 65)
             else:

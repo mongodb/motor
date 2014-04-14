@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import unicode_literals, absolute_import
+
 """Some tools for running tests based on MongoDB server version."""
 
 from tornado import gen

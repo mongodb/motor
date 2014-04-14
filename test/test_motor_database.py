@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import unicode_literals
+
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import unittest
@@ -50,7 +52,7 @@ class MotorDatabaseTest(MotorTest):
         # Prevents user error with nice message.
         try:
             self.cx.foo()
-        except TypeError, e:
+        except TypeError as e:
             self.assertTrue('no such method exists' in str(e))
         else:
             self.fail('Expected TypeError')
@@ -58,7 +60,7 @@ class MotorDatabaseTest(MotorTest):
         try:
             # First line of applications written for Motor 0.1.
             self.cx.open_sync()
-        except TypeError, e:
+        except TypeError as e:
             self.assertTrue('unnecessary' in str(e))
         else:
             self.fail('Expected TypeError')
@@ -145,7 +147,7 @@ class MotorDatabaseTest(MotorTest):
         db.add_son_manipulator(AutoReference(db))
         db.add_son_manipulator(NamespaceInjector())
 
-        a = {"hello": u"world"}
+        a = {"hello": "world"}
         b = {"test": a}
         c = {"another test": b}
 
@@ -208,7 +210,7 @@ class MotorDatabaseTest(MotorTest):
         with assert_raises(OperationFailure):
             yield db.validate_collection(db.test.doesnotexist)
 
-        yield db.test.save({"dummy": u"object"})
+        yield db.test.save({"dummy": "object"})
         self.assertTrue((yield db.validate_collection("test")))
         self.assertTrue((yield db.validate_collection(db.test)))
 

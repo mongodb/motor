@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import unicode_literals, absolute_import
+
 """Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import collections
@@ -22,6 +24,7 @@ import sys
 import time
 import warnings
 
+import six
 from tornado import ioloop, iostream, gen, stack_context, netutil
 from tornado.concurrent import Future, TracebackFuture
 import greenlet
@@ -39,9 +42,9 @@ version_tuple = (0, 2, '+')
 
 
 def get_version_string():
-    if isinstance(version_tuple[-1], basestring):
-        return '.'.join(map(str, version_tuple[:-1])) + version_tuple[-1]
-    return '.'.join(map(str, version_tuple))
+    if isinstance(version_tuple[-1], str):
+        return '.'.join(str(v) for v in version_tuple[:-1]) + version_tuple[-1]
+    return '.'.join(str(v) for v in version_tuple)
 
 version = get_version_string()
 """Current version of Motor."""
@@ -72,7 +75,7 @@ from pymongo.command_cursor import CommandCursor
 from pymongo.pool import _closed, SocketInfo
 from gridfs import grid_file
 
-import util
+from . import util
 
 __all__ = ['MotorClient', 'MotorReplicaSetClient', 'Op']
 
@@ -168,7 +171,7 @@ def motor_sock_method(method):
             return main.switch()
         except socket.error:
             raise
-        except IOError, e:
+        except IOError as e:
             # If IOStream raises generic IOError (e.g., if operation
             # attempted on closed IOStream), then substitute socket.error,
             # since socket.error is what PyMongo's built to handle. For
@@ -238,7 +241,7 @@ class MotorSocket(object):
 
         try:
             self.stream.write(data)
-        except IOError, e:
+        except IOError as e:
             # PyMongo is built to handle socket.error here, not IOError
             raise socket.error(str(e))
 
@@ -431,7 +434,7 @@ class MotorPool(object):
                 # MotorSocket pauses this greenlet and resumes when connected.
                 motor_sock.connect(sa, server_hostname=host)
                 return motor_sock
-            except socket.error, e:
+            except socket.error as e:
                 self.motor_sock_counter -= 1
                 err = e
                 if sock is not None:
@@ -625,7 +628,7 @@ def motor_coroutine(f):
                 try:
                     result = future.result()
                     callback(result, None)
-                except Exception, e:
+                except Exception as e:
                     callback(None, e)
             future.add_done_callback(_callback)
         else:
@@ -680,7 +683,7 @@ def asynchronize(motor_class, sync_method, has_write_concern, doc=None):
                     # Schedule future to be resolved on main greenlet.
                     loop.add_callback(functools.partial(
                         future.set_result, result))
-            except Exception, e:
+            except Exception as e:
                 if callback:
                     loop.add_callback(functools.partial(
                         callback, None, e))
@@ -817,7 +820,7 @@ class Unwrap(WrapBase):
         motor_class = self.motor_class
 
         def _unwrap_obj(obj):
-            if isinstance(motor_class, basestring):
+            if isinstance(motor_class, six.text_type):
                 # Delayed reference - e.g., drop_database is defined before
                 # MotorDatabase is, so it was initialized with
                 # unwrap('MotorDatabase') instead of unwrap(MotorDatabase).
@@ -933,9 +936,8 @@ class MotorMeta(type):
         return new_class
 
 
+@six.add_metaclass(MotorMeta)
 class MotorBase(object):
-    __metaclass__ = MotorMeta
-
     def __eq__(self, other):
         if (isinstance(other, self.__class__)
                 and hasattr(self, 'delegate')
@@ -1028,13 +1030,13 @@ class MotorClientBase(MotorBase):
         # PyMongo's implementation uses requests, so rewrite for Motor.
         pool, sock_info = None, None
         try:
-            if not isinstance(from_name, basestring):
+            if not isinstance(from_name, six.string_types):
                 raise TypeError("from_name must be an instance "
-                                "of %s" % (basestring.__name__,))
+                                "of %s" % six.string_types)
 
-            if not isinstance(to_name, basestring):
+            if not isinstance(to_name, six.string_types):
                 raise TypeError("to_name must be an instance "
-                                "of %s" % (basestring.__name__,))
+                                "of %s" % six.string_types)
 
             pymongo.database._check_name(to_name)
 
@@ -1722,7 +1724,7 @@ class _MotorBaseCursor(MotorBase):
         # __empty is a special case: limit of 0
         if self._empty() or not self._buffer_size():
             return None
-        return self.delegate.next()
+        return next(self.delegate)
 
     def each(self, callback):
         """Iterates over all the documents for this cursor.
@@ -1785,7 +1787,7 @@ class _MotorBaseCursor(MotorBase):
 
         while self._buffer_size() > 0:
             try:
-                doc = self.delegate.next()  # decrements self.buffer_size
+                doc = next(self.delegate)  # decrements self.buffer_size
             except StopIteration:
                 # Special case: limit of 0
                 add_callback(functools.partial(callback, None, None))
@@ -2114,7 +2116,7 @@ cursor has any effect.
             self.delegate[index]
             return self
         else:
-            if not isinstance(index, (int, long)):
+            if not isinstance(index, six.integer_types):
                 raise TypeError("index %r cannot be applied to MotorCursor "
                                 "instances" % index)
 
@@ -2225,6 +2227,7 @@ class MotorBulkOperationBuilder(MotorBase):
         return self.io_loop
 
 
+@six.add_metaclass(MotorMeta)
 class MotorGridOut(object):
     """Class to read data out of GridFS.
 
@@ -2237,7 +2240,6 @@ class MotorGridOut(object):
     instantiated directly, call :meth:`open`, :meth:`read`, or
     :meth:`readline` before accessing its attributes.
     """
-    __metaclass__ = MotorMeta
     __delegate_class__ = gridfs.GridOut
 
     tell            = DelegateMethod()
@@ -2342,8 +2344,8 @@ class MotorGridOut(object):
             written += len(chunk)
 
 
+@six.add_metaclass(MotorMeta)
 class MotorGridIn(object):
-    __metaclass__ = MotorMeta
     __delegate_class__ = gridfs.GridIn
 
     __getattr__     = DelegateMethod()
@@ -2434,8 +2436,8 @@ object created from the file.
 """)
 
 
+@six.add_metaclass(MotorMeta)
 class MotorGridFS(object):
-    __metaclass__ = MotorMeta
     __delegate_class__ = gridfs.GridFS
 
     new_file            = AsyncRead().wrap(grid_file.GridIn)

@@ -13,6 +13,9 @@
 # limitations under the License.
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
+
+from __future__ import unicode_literals
+
 import contextlib
 
 import datetime

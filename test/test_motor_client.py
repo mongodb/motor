@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import unicode_literals
+
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import os
@@ -125,7 +127,7 @@ class MotorClientTest(MotorTest):
         error = None
         try:
             yield [timeout_fut, notimeout_fut]
-        except pymongo.errors.AutoReconnect, e:
+        except pymongo.errors.AutoReconnect as e:
             error = e
 
         self.assertEqual(str(error), 'timed out')

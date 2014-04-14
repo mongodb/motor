@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import unicode_literals
+
 """Test utilities for using Motor with Tornado web applications."""
 
 import datetime
@@ -21,7 +23,6 @@ import time
 import re
 import unittest
 
-from bson.py3compat import b
 import gridfs
 import pymongo
 from tornado.testing import AsyncHTTPTestCase
@@ -43,7 +44,7 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
         self.fs = gridfs.GridFS(test.sync_db)
 
         # Make a 500k file in GridFS with filename 'foo'
-        self.contents = b('Jesse' * 100 * 1024)
+        self.contents = b'Jesse' * 100 * 1024
         self.contents_hash = hashlib.md5(self.contents).hexdigest()
 
         # Record when we created the file, to check the Last-Modified header
@@ -114,7 +115,7 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
         ):
             response = self.fetch('/foo', if_modified_since=ims_value)
             self.assertEqual(304, response.code)
-            self.assertEqual(b(''), response.body)
+            self.assertEqual(b'', response.body)
 
         # If-Modified-Since in the past, get whole response back
         response = self.fetch(
@@ -126,7 +127,7 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
         # Matching Etag
         response = self.fetch('/foo', headers={'If-None-Match': etag})
         self.assertEqual(304, response.code)
-        self.assertEqual(b(''), response.body)
+        self.assertEqual(b'', response.body)
 
         # Mismatched Etag
         response = self.fetch('/foo', headers={'If-None-Match': etag + 'a'})
@@ -146,7 +147,7 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
 
         # Test the result
         self.assertEqual(200, response.code)
-        self.assertEqual(b(''), response.body) # Empty body for HEAD request
+        self.assertEqual(b'', response.body)  # Empty body for HEAD request
         self.assertEqual(
             len(self.contents), int(response.headers['Content-Length']))
         self.assertEqual('my type', response.headers['Content-Type'])
@@ -164,7 +165,7 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
             ('jscr.js', 'javascript'),
         ]:
             # 'fs' is PyMongo's blocking GridFS
-            self.fs.put(b(''), filename=filename)
+            self.fs.put(b'', filename=filename)
             for method in 'GET', 'HEAD':
                 response = self.fetch('/' + filename, method=method)
                 self.assertEqual(200, response.code)

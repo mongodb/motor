@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import unicode_literals
+
 """Utilities for testing Motor
 """
 
@@ -23,7 +25,7 @@ from test import version
 
 def one(s):
     """Get one element of a set"""
-    return iter(s).next()
+    return next(iter(s))
 
 
 def delay(sec):

@@ -30,33 +30,21 @@ description = 'Non-blocking MongoDB driver for Tornado'
 
 long_description = open("README.rst").read()
 
-major, minor = sys.version_info[:2]
-
-kwargs = {}
-if major >= 3:
-    kwargs['use_2to3'] = True
-
 packages = ['motor']
-package_data = {}
 if 'test' in sys.argv:
     sys.argv.remove('test')
     sys.argv.append('nosetests')
-    package_data['test'] = ['certificates/*']
-
-if 'nosetests' in sys.argv:
-    packages.append('test')
-    package_data['test'] = ['certificates/ca.pem', 'certificates/client.pem']
 
 setup(name='motor',
       version='0.2+',
       packages=packages,
-      package_data=package_data,
       description=description,
       long_description=long_description,
       author='A. Jesse Jiryu Davis',
       author_email='jesse@mongodb.com',
       url='https://github.com/mongodb/motor/',
       install_requires=[
+          'six',
           'tornado >= 3.1',
           'greenlet >= 0.4.0',
           'pymongo == 2.7',
@@ -69,5 +57,4 @@ setup(name='motor',
       # Use 'python setup.py test' or 'python setup.py nosetests' to test.
       setup_requires=['nose'],
       test_suite='nose.main',
-      zip_safe=False,
-      **kwargs)
+      zip_safe=False)
