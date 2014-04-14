@@ -266,14 +266,14 @@ class MotorReplicaSetTestBase(MotorTest):
         self.rsc = self.motor_rsc_sync()
 
     @gen.coroutine
-    def motor_rsc(self, host=host, port=port, *args, **kwargs):
+    def motor_rsc(self, h=host, p=port, *args, **kwargs):
         """Get an open MotorReplicaSetClient. Ignores self.ssl, you must pass
         'ssl' argument. You'll probably need to close the client to avoid
         file-descriptor problems after AsyncTestCase calls
         self.io_loop.close(all_fds=True).
         """
         client = motor.MotorReplicaSetClient(
-            '%s:%s' % (host, port), *args, io_loop=self.io_loop,
+            '%s:%s' % (h, p), *args, io_loop=self.io_loop,
             replicaSet=rs_name, **kwargs)
 
         raise gen.Return(client)
