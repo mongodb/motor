@@ -49,11 +49,6 @@ requires:
 * Greenlet_
 * CPython 2.6 or later, including CPython 3, or PyPy 2.0 or later.
 
-Additional dependencies are:
-
-- (to generate documentation) sphinx_
-- (to run tests) nose_
-
 Documentation
 =============
 
@@ -71,9 +66,9 @@ or `Chirp, a dumb Twitter clone <https://github.com/ajdavis/chirp>`_.
 Testing
 =======
 
-The easiest way to run the tests is to install nose_ and run ``nosetests``
-or ``python setup.py test`` in the root of the distribution. Tests are
-located in the ``test/`` directory.
+Run ``python setup.py test``.
+Tests are located in the ``test/`` directory.
+In Python 2.6, unittest2_ is automatically installed.
 
 .. _PyMongo: http://pypi.python.org/pypi/pymongo/
 
@@ -87,4 +82,4 @@ located in the ``test/`` directory.
 
 .. _sphinx: http://sphinx.pocoo.org/
 
-.. _nose: http://somethingaboutorange.com/mrl/projects/nose/
+.. _unittest2: https://pypi.python.org/pypi/unittest2

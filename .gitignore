@@ -6,7 +6,6 @@
 build/
 dist/
 motor.egg-info/
-nosetests.xml
 setup.cfg
 *.egg
 .tox

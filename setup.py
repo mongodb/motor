@@ -6,8 +6,6 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, Feature
 
-import sys
-
 classifiers = """\
 Intended Audience :: Developers
 License :: OSI Approved :: Apache Software License
@@ -17,7 +15,6 @@ Programming Language :: Python :: 2
 Programming Language :: Python :: 2.6
 Programming Language :: Python :: 2.7
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.2
 Programming Language :: Python :: 3.3
 Programming Language :: Python :: 3.4
 Operating System :: MacOS :: MacOS X
@@ -30,14 +27,19 @@ description = 'Non-blocking MongoDB driver for Tornado'
 
 long_description = open("README.rst").read()
 
-packages = ['motor']
-if 'test' in sys.argv:
-    sys.argv.remove('test')
-    sys.argv.append('nosetests')
+import sys
+if sys.version_info[:2] < (2, 7):
+    tests_require = 'unittest2'
+    test_suite = 'unittest2.collector'
+else:
+    # In Python 2.7+, unittest has a built-in collector.
+    # Test everything under 'test/'.
+    tests_require = None
+    test_suite = 'test'
 
 setup(name='motor',
       version='0.2+',
-      packages=packages,
+      packages=['motor'],
       description=description,
       long_description=long_description,
       author='A. Jesse Jiryu Davis',
@@ -53,7 +55,6 @@ setup(name='motor',
       keywords=[
           "mongo", "mongodb", "pymongo", "gridfs", "bson", "motor", "tornado",
       ],
-      # Use 'python setup.py test' or 'python setup.py nosetests' to test.
-      setup_requires=['nose'],
-      test_suite='nose.main',
+      tests_require=tests_require,
+      test_suite=test_suite,
       zip_safe=False)
