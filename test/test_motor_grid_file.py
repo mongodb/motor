@@ -28,7 +28,7 @@ from pymongo.errors import InvalidOperation
 
 import motor
 import test
-from test import MotorTest, assert_raises
+from test import MotorTest, assert_raises, setUpModule
 
 
 class MotorGridFileTest(MotorTest):

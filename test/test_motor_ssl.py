@@ -35,7 +35,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import MotorTest, host, port, version
+from test import MotorTest, host, port, version, setUpModule
 from test import HAVE_SSL, CLIENT_PEM, CA_PEM
 from test.utils import server_started_with_auth, remove_all_users
 

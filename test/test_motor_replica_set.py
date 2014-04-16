@@ -27,6 +27,7 @@ from tornado.testing import gen_test
 import motor
 import test
 from test import host, port, MotorReplicaSetTestBase, assert_raises, MotorTest
+from test import setUpModule
 from test.motor_client_test_generic import MotorClientTestMixin
 
 

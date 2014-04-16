@@ -24,7 +24,7 @@ from pymongo.errors import ConnectionFailure
 from tornado.testing import gen_test
 
 import motor
-from test import host, port, MotorTest
+from test import host, port, MotorTest, setUpModule
 
 
 class MotorIPv6Test(MotorTest):

@@ -24,14 +24,13 @@ import re
 import unittest
 
 import gridfs
-import pymongo
 from tornado.testing import AsyncHTTPTestCase
 from tornado.web import Application
 
 import motor
 import motor.web
 import test
-from test import host, port
+from test import host, port, setUpModule
 
 
 # We're using Tornado's AsyncHTTPTestCase instead of our own MotorTestCase for
@@ -40,7 +39,6 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
     def setUp(self):
         super(GridFSHandlerTestBase, self).setUp()
 
-        test.sync_db = pymongo.MongoClient(host, port).motor_test
         self.fs = gridfs.GridFS(test.sync_db)
 
         # Make a 500k file in GridFS with filename 'foo'

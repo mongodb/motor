@@ -29,7 +29,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import MotorTest, assert_raises, version
+from test import MotorTest, assert_raises, version, setUpModule
 from test.utils import delay, skip_if_mongos
 
 

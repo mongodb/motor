@@ -20,7 +20,7 @@ import pymongo.son_manipulator
 from tornado.testing import gen_test
 
 import test
-from test import MotorTest
+from test import MotorTest, setUpModule
 
 
 class CustomSONManipulator(pymongo.son_manipulator.SONManipulator):
