@@ -17,15 +17,19 @@
 from __future__ import unicode_literals
 
 import contextlib
-
 import datetime
 import functools
 import os
 import time
 
+try:
+    from unittest import SkipTest
+except ImportError:
+    # Python 2.6.
+    from unittest2 import SkipTest
+
 import pymongo
 import pymongo.errors
-from nose.plugins.skip import SkipTest
 from pymongo.mongo_client import _partition_node
 from tornado import gen, testing
 

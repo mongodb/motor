@@ -18,9 +18,8 @@ from __future__ import unicode_literals
 """
 
 from tornado import gen
-from nose.plugins.skip import SkipTest
 
-from test import version
+from test import version, SkipTest
 
 
 def one(s):

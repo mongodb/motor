@@ -18,13 +18,12 @@ from __future__ import unicode_literals
 
 import unittest
 
-from nose.plugins.skip import SkipTest
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from tornado.testing import gen_test
 
 import motor
-from test import host, port, MotorTest, setUpModule
+from test import host, port, MotorTest, setUpModule, SkipTest
 
 
 class MotorIPv6Test(MotorTest):

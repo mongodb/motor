@@ -22,13 +22,12 @@ import random
 import unittest
 
 import pymongo.errors
-from nose.plugins.skip import SkipTest
 from tornado import stack_context
 from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import test
-from test import MotorTest, assert_raises, setUpModule
+from test import MotorTest, assert_raises, setUpModule, SkipTest
 from test.utils import delay
 
 

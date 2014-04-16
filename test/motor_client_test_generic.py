@@ -19,7 +19,6 @@ import time
 
 import pymongo.errors
 import pymongo.mongo_replica_set_client
-from nose.plugins.skip import SkipTest
 from tornado import gen
 from tornado.testing import gen_test
 

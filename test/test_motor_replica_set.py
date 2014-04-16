@@ -20,14 +20,13 @@ import unittest
 
 import pymongo.errors
 import pymongo.mongo_replica_set_client
-from nose.plugins.skip import SkipTest
 from tornado import iostream, gen
 from tornado.testing import gen_test
 
 import motor
 import test
 from test import host, port, MotorReplicaSetTestBase, assert_raises, MotorTest
-from test import setUpModule
+from test import setUpModule, SkipTest
 from test.motor_client_test_generic import MotorClientTestMixin
 
 

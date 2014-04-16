@@ -20,7 +20,6 @@ import unittest
 
 import bson
 from bson.objectid import ObjectId
-from nose.plugins.skip import SkipTest
 from pymongo import ReadPreference
 from pymongo.errors import DuplicateKeyError
 from tornado import gen
@@ -29,7 +28,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import MotorTest, assert_raises, version, setUpModule
+from test import MotorTest, assert_raises, version, setUpModule, SkipTest
 from test.utils import delay, skip_if_mongos
 
 

@@ -26,7 +26,6 @@ except ImportError:
     # Python 3.
     from urllib.parse import quote_plus
 
-from nose.plugins.skip import SkipTest
 from pymongo.common import HAS_SSL
 from pymongo.errors import (ConfigurationError,
                             ConnectionFailure,
@@ -35,7 +34,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import MotorTest, host, port, version, setUpModule
+from test import MotorTest, host, port, version, setUpModule, SkipTest
 from test import HAVE_SSL, CLIENT_PEM, CA_PEM
 from test.utils import server_started_with_auth, remove_all_users
 

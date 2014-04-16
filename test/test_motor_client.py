@@ -21,7 +21,6 @@ import socket
 import unittest
 import sys
 
-from nose.plugins.skip import SkipTest
 import pymongo
 from pymongo.errors import ConfigurationError, OperationFailure
 from pymongo.errors import ConnectionFailure
@@ -32,7 +31,7 @@ from tornado.testing import gen_test, netutil
 
 import motor
 import test
-from test import host, port, assert_raises, MotorTest, setUpModule
+from test import host, port, assert_raises, MotorTest, setUpModule, SkipTest
 from test.motor_client_test_generic import MotorClientTestMixin
 from test.utils import server_started_with_auth, remove_all_users, delay
 
