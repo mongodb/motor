@@ -22,7 +22,6 @@ of a larger test suite.
 """
 
 import sys
-import synchro
 
 import nose
 from nose.config import Config
@@ -32,6 +31,7 @@ from nose.plugins.skip import Skip
 from nose.plugins.xunit import Xunit
 from nose.selector import Selector
 
+import synchro
 from motor.motor_py3_compat import PY3
 
 excluded_modules = [
