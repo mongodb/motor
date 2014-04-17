@@ -32,6 +32,8 @@ from nose.plugins.skip import Skip
 from nose.plugins.xunit import Xunit
 from nose.selector import Selector
 
+from motor.motor_py3_compat import PY3
+
 excluded_modules = [
     # Depending on PYTHONPATH, Motor's direct tests may be imported - don't
     # run them now.
@@ -197,11 +199,16 @@ class SynchroNosePlugin(Plugin):
             return False
 
         for excluded_name in excluded_tests:
-            suite_name, method_name = excluded_name.split('.')
-            suite_matches = (
-                method.__self__.__class__.__name__ == suite_name
-                or suite_name == '*')
+            if PY3:
+                classname = method.__self__.__class__.__name__
+            else:
+                classname = method.im_class.__name__
 
+            # Should we exclude this method's whole TestCase?
+            suite_name, method_name = excluded_name.split('.')
+            suite_matches = (suite_name == classname or suite_name == '*')
+
+            # Should we exclude this particular method?
             method_matches = (
                 method.__name__ == method_name or method_name == '*')
 
