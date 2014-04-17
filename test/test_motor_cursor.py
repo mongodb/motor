@@ -625,7 +625,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
         with assert_raises(ExecutionTimeout):
             yield self.collection.find_one(max_time_ms=1)
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_max_time_ms_getmore(self):
         # Cursor handles server timeout during getmore, also.
         yield self.collection.insert({} for _ in range(200))
