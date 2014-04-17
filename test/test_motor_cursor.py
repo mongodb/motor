@@ -646,7 +646,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
             cursor.each(callback)
             yield future
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_max_time_ms_each_getmore(self):
         # Cursor.each() handles server timeout during getmore.
         yield self.collection.insert({} for _ in range(200))
