@@ -87,7 +87,6 @@ class GridFSHandler(tornado.web.RequestHandler):
         """
         return fs.get_last_version(path)  # A Future MotorGridOut
 
-    @tornado.web.asynchronous
     @gen.coroutine
     def get(self, path, include_body=True):
         fs = motor.MotorGridFS(self.database, self.root_collection)
