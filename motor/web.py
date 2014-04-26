@@ -87,7 +87,6 @@ class GridFSHandler(tornado.web.RequestHandler):
         """
         return fs.get_last_version(path)  # A Future MotorGridOut
 
-    @tornado.web.asynchronous
     @gen.coroutine
     def get(self, path, include_body=True):
         fs = motor.MotorGridFS(self.database, self.root_collection)
@@ -151,7 +150,8 @@ class GridFSHandler(tornado.web.RequestHandler):
         self.finish()
 
     def head(self, path):
-        self.get(path, include_body=False)
+        # get() is a coroutine. Return its Future.
+        return self.get(path, include_body=False)
 
     def get_cache_time(self, path, modified, mime_type):
         """Override to customize cache control behavior.
