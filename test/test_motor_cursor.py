@@ -277,20 +277,22 @@ class MotorCursorTest(MotorTest):
         retrieved = cursor.delegate._Cursor__retrieved
         yield self.wait_for_cursor(collection, cursor.cursor_id, retrieved)
 
+    @gen_test
     def test_each_cancel(self):
         yield self.make_test_data()
         loop = self.io_loop
         collection = self.collection
         results = []
+        future = Future()
 
         def cancel(result, error):
             if error:
-                loop.stop()
-                raise error
+                future.set_exception(error)
 
-            results.append(result)
-            loop.add_callback(canceled)
-            return False  # Cancel iteration.
+            else:
+                results.append(result)
+                loop.add_callback(canceled)
+                return False  # Cancel iteration.
 
         def canceled():
             try:
@@ -299,25 +301,22 @@ class MotorCursorTest(MotorTest):
 
                 # Resume iteration
                 cursor.each(each)
-            except Exception:
-                loop.stop()
-                raise
+            except Exception as e:
+                future.set_exception(e)
 
         def each(result, error):
             if error:
-                loop.stop()
-                raise error
-
-            if result:
+                future.set_exception(error)
+            elif result:
+                pass
                 results.append(result)
             else:
                 # Complete
-                loop.stop()
+                future.set_result(None)
 
         cursor = collection.find()
         cursor.each(cancel)
-        loop.start()
-
+        yield future
         self.assertEqual(test.sync_collection.count(), len(results))
 
     def test_cursor_slice_argument_checking(self):
