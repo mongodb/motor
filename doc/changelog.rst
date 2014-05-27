@@ -3,6 +3,18 @@ Changelog
 
 .. currentmodule:: motor
 
+Motor 0.2.1
+-----------
+
+Fixes two bugs:
+
+* `MOTOR-32 <https://jira.mongodb.org/browse/MOTOR-32>`_:
+  The documentation for :meth:`MotorCursor.close` claimed it immediately
+  halted execution of :meth:`MotorCursor.each`, but it didn't.
+* `MOTOR-33 <https://jira.mongodb.org/browse/MOTOR-33>`_:
+  An incompletely iterated cursor's ``__del__`` method sometimes got stuck
+  and cost 100% CPU forever, even though the application was still responsive.
+
 Motor 0.2
 ---------
 
