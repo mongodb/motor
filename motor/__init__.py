@@ -1893,8 +1893,9 @@ class _MotorBaseCursor(MotorBase):
 
         If a callback is passed, returns None, else returns a Future.
         """
-        self.closed = True
-        yield self._close()
+        if not self.closed:
+            self.closed = True
+            yield self._close()
 
     def _buffer_size(self):
         return len(self._data())
