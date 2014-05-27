@@ -38,7 +38,7 @@ import motor
 
 
 class GridFSHandler(tornado.web.RequestHandler):
-    """A handler that can serve content from `GridFS`_, very similar to
+    """A handler that can serve content from GridFS, very similar to
     :class:`tornado.web.StaticFileHandler`.
 
     .. code-block:: python
