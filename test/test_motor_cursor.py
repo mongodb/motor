@@ -16,8 +16,10 @@ from __future__ import unicode_literals
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+import datetime
 import sys
 import unittest
+from functools import partial
 
 import greenlet
 import pymongo
@@ -319,6 +321,37 @@ class MotorCursorTest(MotorTest):
         cursor.each(cancel)
         yield future
         self.assertEqual(test.sync_collection.count(), len(results))
+
+    @gen_test
+    def test_each_close(self):
+        yield self.make_test_data()  # 200 documents.
+        loop = self.io_loop
+        collection = self.collection
+        results = []
+        future = Future()
+
+        def callback(result, error):
+            if error:
+                future.set_exception(error)
+
+            else:
+                results.append(result)
+                if len(results) == 50:
+                    # Prevent further calls.
+                    cursor.close()
+
+                    # Soon, finish this test. Leave a little time for further
+                    # calls to ensure we've really canceled them by calling
+                    # cursor.close().
+                    # future.set_result(None)
+                    loop.add_timeout(
+                        datetime.timedelta(milliseconds=10),
+                        partial(future.set_result, None))
+
+        cursor = collection.find()
+        cursor.each(callback)
+        yield future
+        self.assertEqual(50, len(results))
 
     def test_cursor_slice_argument_checking(self):
         collection = self.collection
