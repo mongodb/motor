@@ -1798,6 +1798,10 @@ class _MotorBaseCursor(MotorBase):
             if callback(doc, None) is False:
                 return
 
+            # The callback closed this cursor?
+            if self.closed:
+                return
+
         if self.alive and (self.cursor_id or not self.started):
             self._get_more(functools.partial(self._each_got_more, callback))
         else:
