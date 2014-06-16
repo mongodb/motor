@@ -875,11 +875,7 @@ class MotorTestReplicaSetAuth(MotorHATestCase):
             self.seed, replicaSet=self.name)
 
         # Add an admin user to enable auth
-        try:
-            self.c.admin.add_user('admin', 'adminpass')
-        except OperationFailure:
-            # SERVER-4225
-            pass
+        self.c.admin.add_user('admin', 'adminpass')
         self.c.admin.authenticate('admin', 'adminpass')
         self.c.pymongo_ha_auth.add_user('user', 'userpass')
 
