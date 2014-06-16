@@ -48,7 +48,7 @@ def get_version_string():
 version = get_version_string()
 """Current version of Motor."""
 
-expected_pymongo_version = '2.7'
+expected_pymongo_version = '2.7.1'
 if pymongo.version != expected_pymongo_version:
     msg = (
         "Motor %s requires PyMongo at exactly version %s. "
