@@ -3,6 +3,19 @@ Changelog
 
 .. currentmodule:: motor
 
+Motor 0.3
+---------
+
+No new features.
+
+* Updates PyMongo dependency from 2.7 to 2.7.1,
+  therefore inheriting `PyMongo 2.7.1's bug fixes
+  <https://jira.mongodb.org/browse/PYTHON/fixforversion/13823>`_.
+* Motor continues to support Python 2.6, 2.7, 3.3, and 3.4,
+  but now with single-source.
+  2to3 no longer runs during installation with Python 3.
+* `nosetests` is no longer required for regular Motor tests.
+
 Motor 0.2.1
 -----------
 
