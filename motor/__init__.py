@@ -1431,7 +1431,7 @@ With server version **>= 2.5.1**, pass
 with a :class:`~motor.MotorCommandCursor`::
 
     pipeline = [{'$project': {'name': {'$toUpper': '$name'}}}]
-    cursor = collection.aggregate(pipeline, cursor={})
+    cursor = yield collection.aggregate(pipeline, cursor={})
     while (yield cursor.fetch_next):
         doc = cursor.next_object()
 
