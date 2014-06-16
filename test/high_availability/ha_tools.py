@@ -112,7 +112,7 @@ def start_replica_set(members, auth=False, fresh=True):
     if auth:
         key_file = os.path.join(dbpath, 'key.txt')
         if not os.path.exists(key_file):
-            f = open(key_file, 'w')
+            f = open(key_file, 'wb')
             try:
                 f.write(b'my super secret system password')
             finally:
