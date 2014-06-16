@@ -58,7 +58,7 @@ def kill_members(members, sig, hosts=nodes):
     for member in sorted(members):
         try:
             if ha_tools_debug:
-                print('killing', member)
+                print('killing %s' % member)
             proc = hosts[member]['proc']
             # Not sure if cygwin makes sense here...
             if sys.platform in ('win32', 'cygwin'):
@@ -67,7 +67,7 @@ def kill_members(members, sig, hosts=nodes):
                 os.kill(proc.pid, sig)
         except OSError:
             if ha_tools_debug:
-                print(member, 'already dead?')
+                print('%s already dead?' % member)
 
 
 def kill_all_members():
@@ -107,14 +107,14 @@ def start_replica_set(members, auth=False, fresh=True):
             os.makedirs(dbpath)
         except OSError as e:
             print(e)
-            print("\tWhile creating", dbpath)
+            print('\tWhile creating %s' % dbpath)
 
     if auth:
         key_file = os.path.join(dbpath, 'key.txt')
         if not os.path.exists(key_file):
             f = open(key_file, 'w')
             try:
-                f.write("my super secret system password")
+                f.write(b'my super secret system password')
             finally:
                 f.close()
             os.chmod(key_file, S_IRUSR)
@@ -138,7 +138,7 @@ def start_replica_set(members, auth=False, fresh=True):
             cmd += ['--keyFile', key_file]
 
         if ha_tools_debug:
-            print('starting', ' '.join(cmd))
+            print('starting %s' % ' '.join(cmd))
 
         proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
@@ -184,7 +184,7 @@ def start_replica_set(members, auth=False, fresh=True):
             pass
 
         if ha_tools_debug:
-            print('waiting for RS', i)
+            print('waiting for RS %s' % i)
     else:
         kill_all_members()
         raise Exception(
@@ -398,7 +398,7 @@ def add_member(auth=False):
         cmd += ['--keyFile', key_file]
 
     if ha_tools_debug:
-        print('starting', ' '.join(cmd))
+        print('starting %s' % ' '.join(cmd))
 
     proc = subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
@@ -427,14 +427,14 @@ def stepdown_primary():
     primary = get_primary()
     if primary:
         if ha_tools_debug:
-            print('stepping down primary:', primary)
+            print('stepping down primary: %s' % primary)
         c = pymongo.MongoClient(primary, use_greenlets=use_greenlets)
         # replSetStepDown causes mongod to close all connections
         try:
             c.admin.command('replSetStepDown', 20)
         except Exception as e:
             if ha_tools_debug:
-                print('Exception from replSetStepDown:', e)
+                print('Exception from replSetStepDown: %s' % e)
         if ha_tools_debug:
             print('\tcalled replSetStepDown')
     elif ha_tools_debug:
