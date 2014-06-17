@@ -20,6 +20,8 @@ matrix:
   exclude:
     - python: "3.3"
       env: FUTURES=yes
+before_install:
+  - sleep 5
 before_script:
   - if [[ "$FUTURES" == "yes" ]]; then pip install futures; fi
 
