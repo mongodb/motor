@@ -15,6 +15,8 @@ No new features.
   but now with single-source.
   2to3 no longer runs during installation with Python 3.
 * `nosetests` is no longer required for regular Motor tests.
+* Fixes `a mistake in the docstring <https://jira.mongodb.org/browse/MOTOR-34>`_
+  for aggregate().
 
 Motor 0.2.1
 -----------
