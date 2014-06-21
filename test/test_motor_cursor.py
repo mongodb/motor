@@ -236,6 +236,7 @@ class MotorCursorTest(MotorTest):
         count = yield collection.count()
         self.assertEqual(count, len(docs))
 
+    @gen_test
     def test_to_list_tailable(self):
         coll = self.collection
         cursor = coll.find(tailable=True)
