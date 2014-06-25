@@ -285,7 +285,7 @@ class MotorResolverTest(MotorTest):
 
     # Helper method.
     @gen.coroutine
-    def test_resolver(self, resolver_name):
+    def _test_resolver(self, resolver_name):
         config = netutil.Resolver._save_configuration()
         try:
             netutil.Resolver.configure(resolver_name)
@@ -303,11 +303,9 @@ class MotorResolverTest(MotorTest):
         finally:
             netutil.Resolver._restore_configuration(config)
 
-    test_resolver.__test__ = False
-
     @gen_test
     def test_blocking_resolver(self):
-        yield self.test_resolver('tornado.netutil.BlockingResolver')
+        yield self._test_resolver('tornado.netutil.BlockingResolver')
 
     @gen_test
     def test_threaded_resolver(self):
@@ -316,7 +314,7 @@ class MotorResolverTest(MotorTest):
         except ImportError:
             raise SkipTest('concurrent.futures module not available')
 
-        yield self.test_resolver('tornado.netutil.ThreadedResolver')
+        yield self._test_resolver('tornado.netutil.ThreadedResolver')
 
     @gen_test
     def test_twisted_resolver(self):
@@ -324,7 +322,7 @@ class MotorResolverTest(MotorTest):
             import twisted
         except ImportError:
             raise SkipTest('Twisted not installed')
-        yield self.test_resolver('tornado.platform.twisted.TwistedResolver')
+        yield self._test_resolver('tornado.platform.twisted.TwistedResolver')
 
     @gen_test(timeout=30)
     def test_cares_resolver(self):
@@ -332,7 +330,7 @@ class MotorResolverTest(MotorTest):
             import pycares
         except ImportError:
             raise SkipTest('pycares not installed')
-        yield self.test_resolver(
+        yield self._test_resolver(
             'tornado.platform.caresresolver.CaresResolver')
 
 
