@@ -3,6 +3,7 @@ python:
   - "2.6"
   - "2.7"
   - "3.3"
+  - "3.4"
 services: mongodb
 script: "python setup.py test"
 
@@ -19,6 +20,8 @@ env:
 matrix:
   exclude:
     - python: "3.3"
+      env: FUTURES=yes
+    - python: "3.4"
       env: FUTURES=yes
 before_install:
   - sleep 5
