@@ -32,6 +32,7 @@ matrix:
     - env: TORNADO=4
       env: FUTURES=yes
 before_install:
+  # Wait a little longer for MongoDB to start on slow test machines.
   - sleep 5
 before_script:
   - if [[ "$FUTURES" == "yes" ]]; then pip install futures; fi
