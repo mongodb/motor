@@ -31,7 +31,7 @@ from tornado.testing import gen_test, netutil
 
 import motor
 import test
-from test import host, port, assert_raises, MotorTest, setUpModule, SkipTest
+from test import host, port, assert_raises, MotorTest, SkipTest
 from test.motor_client_test_generic import MotorClientTestMixin
 from test.utils import server_started_with_auth, remove_all_users, delay
 

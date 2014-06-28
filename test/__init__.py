@@ -23,10 +23,12 @@ import os
 import time
 
 try:
-    from unittest import SkipTest
-except ImportError:
     # Python 2.6.
     from unittest2 import SkipTest
+    import unittest2 as unittest
+except ImportError:
+    from unittest import SkipTest  # If this fails you need unittest2.
+    import unittest
 
 import pymongo
 import pymongo.errors
@@ -51,7 +53,6 @@ CERT_PATH = os.path.join(
 CLIENT_PEM = os.path.join(CERT_PATH, 'client.pem')
 CA_PEM = os.path.join(CERT_PATH, 'ca.pem')
 
-setup_package_has_run = False
 mongod_started_with_ssl = False
 mongod_validates_client_cert = False
 sync_cx = None
@@ -67,13 +68,7 @@ secondaries = None
 
 
 def setup_package():
-    """Called the first time any setUpModule() is run by unittest."""
-    global setup_package_has_run
-    if setup_package_has_run:
-        return
-
-    setup_package_has_run = True
-
+    """Run once by MotorTestCase before any tests."""
     global mongod_started_with_ssl
     global mongod_validates_client_cert
     global sync_cx
@@ -140,9 +135,17 @@ def setup_package():
             if m['stateStr'] == 'SECONDARY']
         
 
-def setUpModule():
-    """Import this into your test file to run setup_package exactly once."""
-    setup_package()
+def teardown_package():
+    pass
+
+
+class MotorTestRunner(unittest.TextTestRunner):
+    """Runs suite-level setup and teardown."""
+    def run(self, test):
+        setup_package()
+        result = super(MotorTestRunner, self).run(test)
+        teardown_package()
+        return result
 
 
 @contextlib.contextmanager

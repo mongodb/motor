@@ -32,7 +32,6 @@ import motor
 import test
 from motor.motor_py3_compat import StringIO
 from test import host, port, MotorTest, MotorReplicaSetTestBase, assert_raises
-from test import setUpModule
 
 
 class MotorGridfsTest(MotorTest):

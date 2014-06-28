@@ -31,7 +31,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import MotorTest, assert_raises, host, port, setUpModule, SkipTest
+from test import MotorTest, assert_raises, host, port, SkipTest
 from test.utils import server_is_mongos, version, get_command_line
 
 

@@ -22,7 +22,6 @@ from tornado import testing, gen
 from tornado.testing import gen_test
 
 from motor.util import MotorGreenletEvent
-from test import setUpModule
 
 
 class MotorTestEvent(testing.AsyncTestCase):

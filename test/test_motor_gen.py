@@ -24,7 +24,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import MotorTest, assert_raises, setUpModule
+from test import MotorTest, assert_raises
 
 
 class MotorGenTest(MotorTest):

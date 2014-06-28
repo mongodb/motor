@@ -6,6 +6,9 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, Feature
 
+from distutils.cmd import Command
+from distutils.errors import DistutilsOptionError
+
 classifiers = """\
 Intended Audience :: Developers
 License :: OSI Approved :: Apache Software License
@@ -37,6 +40,59 @@ else:
     tests_require = None
     test_suite = 'test'
 
+
+class test(Command):
+    description = "run the tests"
+
+    user_options = [
+        ("test-module=", "m", "Discover tests in specified module"),
+        ("test-suite=", "s",
+         "Test suite to run (e.g. 'some_module.test_suite')"),
+        ("failfast", "f", "Stop running tests on first failure or error")]
+
+    def initialize_options(self):
+        self.test_module = None
+        self.test_suite = None
+        self.failfast = False
+
+    def finalize_options(self):
+        if self.test_suite is None and self.test_module is None:
+            self.test_module = 'test'
+        elif self.test_module is not None and self.test_suite is not None:
+            raise DistutilsOptionError(
+                "You may specify a module or suite, but not both")
+
+    def run(self):
+        # Installing required packages, running egg_info and build_ext are
+        # part of normal operation for setuptools.command.test.test. Motor
+        # has no extensions so build_ext is a no-op.
+        if self.distribution.install_requires:
+            self.distribution.fetch_build_eggs(
+                self.distribution.install_requires)
+        if self.distribution.tests_require:
+            self.distribution.fetch_build_eggs(self.distribution.tests_require)
+        self.run_command('egg_info')
+        build_ext_cmd = self.reinitialize_command('build_ext')
+        build_ext_cmd.inplace = 1
+        self.run_command('build_ext')
+
+        # Construct a MotorTestRunner directly from the unittest imported from
+        # test (this will be unittest2 under Python 2.6), which creates a
+        # TestResult that supports the 'addSkip' method. setuptools will by
+        # default create a TextTestRunner that uses the old TestResult class,
+        # resulting in DeprecationWarnings instead of skipping tests under 2.6.
+        from test import unittest, MotorTestRunner
+        if self.test_suite is None:
+            suite = unittest.defaultTestLoader.discover(self.test_module)
+        else:
+            suite = unittest.defaultTestLoader.loadTestsFromName(
+                self.test_suite)
+
+        result = MotorTestRunner(
+            verbosity=2, failfast=self.failfast).run(suite)
+        sys.exit(not result.wasSuccessful())
+
+
 setup(name='motor',
       version='0.3',
       packages=['motor'],
@@ -57,4 +113,5 @@ setup(name='motor',
       ],
       tests_require=tests_require,
       test_suite=test_suite,
-      zip_safe=False)
+      zip_safe=False,
+      cmdclass={'test': test})
