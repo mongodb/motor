@@ -23,7 +23,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import host, port, assert_raises, MotorTest, setUpModule
+from test import host, port, assert_raises, MotorTest
 
 
 class MotorTestBasic(MotorTest):

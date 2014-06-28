@@ -20,7 +20,7 @@ from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 from motor import callback_type_error
-from test import MotorTest, assert_raises, setUpModule
+from test import MotorTest, assert_raises
 
 
 # Example function to be tested, helps verify that check_optional_callback

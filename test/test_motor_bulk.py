@@ -22,7 +22,7 @@ from pymongo.errors import BulkWriteError
 from tornado.testing import gen_test
 
 import motor
-from test import MotorTest, setUpModule
+from test import MotorTest
 
 
 class MotorBulkTest(MotorTest):

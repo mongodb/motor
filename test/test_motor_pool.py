@@ -27,7 +27,7 @@ from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import test
-from test import MotorTest, assert_raises, setUpModule, SkipTest
+from test import MotorTest, assert_raises, SkipTest
 from test.utils import delay
 
 
