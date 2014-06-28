@@ -35,19 +35,19 @@ from test import host, port, MotorTest, MotorReplicaSetTestBase, assert_raises
 
 
 class MotorGridfsTest(MotorTest):
+    @gen.coroutine
     def _reset(self):
-        test.env.sync_db.drop_collection("fs.files")
-        test.env.sync_db.drop_collection("fs.chunks")
-        test.env.sync_db.drop_collection("alt.files")
-        test.env.sync_db.drop_collection("alt.chunks")
+        yield self.db.drop_collection("fs.files")
+        yield self.db.drop_collection("fs.chunks")
+        yield self.db.drop_collection("alt.files")
+        yield self.db.drop_collection("alt.chunks")
 
     def setUp(self):
         super(MotorGridfsTest, self).setUp()
-        self._reset()
         self.fs = motor.MotorGridFS(self.db)
 
     def tearDown(self):
-        self._reset()
+        self.io_loop.run_sync(self._reset)
         super(MotorGridfsTest, self).tearDown()
 
     @gen_test

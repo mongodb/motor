@@ -41,7 +41,7 @@ class MotorCollectionTest(MotorTest):
 
         # Make sure we got the right collection and it can do an operation
         self.assertEqual('test_collection', collection.name)
-        test.env.sync_collection.insert({'_id': 1})
+        yield collection.insert({'_id': 1})
         doc = yield collection.find_one({'_id': 1})
         self.assertEqual(1, doc['_id'])
 

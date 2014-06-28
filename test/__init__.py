@@ -59,8 +59,6 @@ class TestEnvironment(object):
         self.mongod_started_with_ssl = False
         self.mongod_validates_client_cert = False
         self.sync_cx = None
-        self.sync_db = None
-        self.sync_collection = None
         self.is_replica_set = False
         self.rs_name = None
         self.w = None
@@ -104,9 +102,6 @@ def setup_package():
                 connectTimeoutMS=connectTimeoutMS,
                 socketTimeoutMS=socketTimeoutMS,
                 ssl=False)
-
-    env.sync_db = env.sync_cx.motor_test
-    env.sync_collection = env.sync_db.test_collection
 
     env.is_replica_set = False
     response = env.sync_cx.admin.command('ismaster')
@@ -269,7 +264,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
             raise error
 
     def tearDown(self):
-        env.sync_collection.remove()
+        env.sync_cx.motor_test.test_collection.remove()
         self.cx.close()
         super(MotorTest, self).tearDown()
 

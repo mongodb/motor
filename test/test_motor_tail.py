@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from __future__ import unicode_literals
+from tornado import gen
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
@@ -27,24 +28,30 @@ from test import MotorTest
 
 
 class MotorTailTest(MotorTest):
-    def setUp(self):
-        super(MotorTailTest, self).setUp()
-        test.env.sync_db.capped.drop()
+    @gen.coroutine
+    def _reset(self):
+        yield self.db.capped.drop()
         # autoIndexId catches test bugs that try to insert duplicate _id's
-        test.env.sync_db.create_collection(
+        yield self.db.create_collection(
             'capped', capped=True, size=1000, autoIndexId=True)
 
-        test.env.sync_db.uncapped.drop()
-        test.env.sync_db.uncapped.insert({})
+        yield self.db.uncapped.drop()
+        yield self.db.uncapped.insert({})
+
+    def setUp(self):
+        super(MotorTailTest, self).setUp()
+        self.io_loop.run_sync(self._reset)
 
     def start_insertion_thread(self, pauses):
         """A thread that gradually inserts documents into a capped collection
         """
+        sync_db = test.env.sync_cx.motor_test
+
         def add_docs():
             i = 0
             for pause in pauses:
                 time.sleep(pause)
-                test.env.sync_db.capped.insert({'_id': i})
+                sync_db.capped.insert({'_id': i})
                 i += 1
 
         t = threading.Thread(target=add_docs)

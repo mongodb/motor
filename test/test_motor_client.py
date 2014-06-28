@@ -45,7 +45,7 @@ class MotorClientTest(MotorTest):
 
     @gen_test
     def test_client_lazy_connect(self):
-        test.env.sync_cx.motor_test.test_client_lazy_connect.remove()
+        yield self.db.test_client_lazy_connect.remove()
 
         # Create client without connecting; connect on demand.
         cx = motor.MotorClient(host, port, io_loop=self.io_loop)
