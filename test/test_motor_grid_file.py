@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from __future__ import unicode_literals
+from tornado import gen
 
 """Test GridFS with Motor, an asynchronous driver for MongoDB and Tornado."""
 
@@ -32,18 +33,15 @@ from test import MotorTest, assert_raises
 
 
 class MotorGridFileTest(MotorTest):
+    @gen.coroutine
     def _reset(self):
-        test.env.sync_db.drop_collection("fs.files")
-        test.env.sync_db.drop_collection("fs.chunks")
-        test.env.sync_db.drop_collection("alt.files")
-        test.env.sync_db.drop_collection("alt.chunks")
-
-    def setUp(self):
-        super(MotorGridFileTest, self).setUp()
-        self._reset()
+        yield self.db.drop_collection("fs.files")
+        yield self.db.drop_collection("fs.chunks")
+        yield self.db.drop_collection("alt.files")
+        yield self.db.drop_collection("alt.chunks")
 
     def tearDown(self):
-        self._reset()
+        self.io_loop.run_sync(self._reset)
         super(MotorGridFileTest, self).tearDown()
 
     @gen_test

@@ -39,7 +39,7 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
     def setUp(self):
         super(GridFSHandlerTestBase, self).setUp()
 
-        self.fs = gridfs.GridFS(test.env.sync_db)
+        self.fs = gridfs.GridFS(test.env.sync_cx.motor_test)
 
         # Make a 500k file in GridFS with filename 'foo'
         self.contents = b'Jesse' * 100 * 1024
