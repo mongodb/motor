@@ -44,7 +44,7 @@ class MotorPoolTest(MotorTest):
 
     @gen_test(timeout=30)
     def test_max_size(self):
-        if not test.sync_cx.server_info().get('javascriptEngine') == 'V8':
+        if not test.env.v8:
             raise SkipTest("Need multithreaded Javascript in mongod for test")
 
         max_pool_size = 5

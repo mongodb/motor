@@ -111,7 +111,7 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
     """
     def setUp(self):
         super(TestReplicaSetClientAgainstStandalone, self).setUp()
-        if test.is_replica_set:
+        if test.env.is_replica_set:
             raise SkipTest(
                 "Connected to a replica set, not a standalone mongod")
 
