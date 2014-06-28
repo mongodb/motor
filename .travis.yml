@@ -7,17 +7,19 @@ python:
 services: mongodb
 script: "python setup.py test"
 
-# Futures were introduced in Python 3.2 in the `concurrent.futures` package.
+# Note about Tornado 3:
+#
+# Futures were introduced in Python 3 in the `concurrent.futures` package.
 # This package has also been backported to older versions of Python and can be
-# installed with `pip install futures`. Tornado 3 uses concurrent.futures if
-# available; otherwise it will use a compatible class defined in
-# tornado.concurrent. We want to test all cases: with and without the 'futures'
-# package installed in Python < 3.2, as well as Python >= 3.2.
+# installed with `pip install futures`. Tornado 3 on Python 2 uses
+# concurrent.futures if available; otherwise it will use a compatible class
+# defined in tornado.concurrent.
+#
+# Tornado 4 always uses its own futures.
 
 env:
-  - FUTURES=yes
-  - FUTURES=no
-  - TORNADO=3
+  - TORNADO=3 FUTURES=yes
+  - TORNADO=3 FUTURES=no
   - TORNADO=4
 matrix:
   exclude:
@@ -28,9 +30,6 @@ matrix:
     # Tornado 3 lacks a fix for test errors related to GC and unclosed sockets.
     - python: "3.4"
       env: TORNADO=3
-    # Tornado 4 doesn't use concurrent.futures.
-    - env: TORNADO=4
-      env: FUTURES=yes
 before_install:
   # Wait a little longer for MongoDB to start on slow test machines.
   - sleep 5
