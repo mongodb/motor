@@ -103,7 +103,6 @@ def setup_package():
                 socketTimeoutMS=socketTimeoutMS,
                 ssl=False)
 
-    env.is_replica_set = False
     response = env.sync_cx.admin.command('ismaster')
     if 'setName' in response:
         env.is_replica_set = True
