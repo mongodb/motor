@@ -41,7 +41,7 @@ class SONManipulatorTest(MotorTest):
         super(SONManipulatorTest, self).setUp()
 
     def tearDown(self):
-        test.sync_db.son_manipulator_test_collection.remove()
+        test.env.sync_db.son_manipulator_test_collection.remove()
         super(SONManipulatorTest, self).tearDown()
 
     @gen_test

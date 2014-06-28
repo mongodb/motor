@@ -53,87 +53,84 @@ CERT_PATH = os.path.join(
 CLIENT_PEM = os.path.join(CERT_PATH, 'client.pem')
 CA_PEM = os.path.join(CERT_PATH, 'ca.pem')
 
-mongod_started_with_ssl = False
-mongod_validates_client_cert = False
-sync_cx = None
-sync_db = None
-sync_collection = None
-is_replica_set = False
-rs_name = None
-w = None
-hosts = None
-arbiters = None
-primary = None
-secondaries = None
+
+class TestEnvironment(object):
+    def __init__(self):
+        self.mongod_started_with_ssl = False
+        self.mongod_validates_client_cert = False
+        self.sync_cx = None
+        self.sync_db = None
+        self.sync_collection = None
+        self.is_replica_set = False
+        self.rs_name = None
+        self.w = None
+        self.hosts = None
+        self.arbiters = None
+        self.primary = None
+        self.secondaries = None
+        self.v8 = False
+
+
+env = TestEnvironment()
 
 
 def setup_package():
     """Run once by MotorTestCase before any tests."""
-    global mongod_started_with_ssl
-    global mongod_validates_client_cert
-    global sync_cx
-    global sync_db
-    global sync_collection
-    global is_replica_set
-    global rs_name
-    global w
-    global hosts
-    global arbiters
-    global primary
-    global secondaries
-
     connectTimeoutMS = socketTimeoutMS = 30 * 1000
 
     # Store a regular synchronous pymongo MongoClient for convenience while
     # testing. Try over SSL first.
     try:
-        sync_cx = pymongo.MongoClient(
+        env.sync_cx = pymongo.MongoClient(
             host, port,
             connectTimeoutMS=connectTimeoutMS,
             socketTimeoutMS=socketTimeoutMS,
             ssl=True)
 
-        mongod_started_with_ssl = True
+        env.mongod_started_with_ssl = True
     except pymongo.errors.ConnectionFailure:
         try:
-            sync_cx = pymongo.MongoClient(
+            env.sync_cx = pymongo.MongoClient(
                 host, port,
                 connectTimeoutMS=connectTimeoutMS,
                 socketTimeoutMS=socketTimeoutMS,
                 ssl_certfile=CLIENT_PEM)
 
-            mongod_started_with_ssl = True
-            mongod_validates_client_cert = True
+            env.mongod_started_with_ssl = True
+            env.mongod_validates_client_cert = True
         except pymongo.errors.ConnectionFailure:
-            sync_cx = pymongo.MongoClient(
+            env.sync_cx = pymongo.MongoClient(
                 host, port,
                 connectTimeoutMS=connectTimeoutMS,
                 socketTimeoutMS=socketTimeoutMS,
                 ssl=False)
 
-    sync_db = sync_cx.motor_test
-    sync_collection = sync_db.test_collection
+    env.sync_db = env.sync_cx.motor_test
+    env.sync_collection = env.sync_db.test_collection
 
-    is_replica_set = False
-    response = sync_cx.admin.command('ismaster')
+    env.is_replica_set = False
+    response = env.sync_cx.admin.command('ismaster')
     if 'setName' in response:
-        is_replica_set = True
-        rs_name = str(response['setName'])
-        w = len(response['hosts'])
-        hosts = set([_partition_node(h) for h in response["hosts"]])
-        arbiters = set([
+        env.is_replica_set = True
+        env.rs_name = str(response['setName'])
+        env.w = len(response['hosts'])
+        env.hosts = set([_partition_node(h) for h in response["hosts"]])
+        env.arbiters = set([
             _partition_node(h) for h in response.get("arbiters", [])])
 
-        repl_set_status = sync_cx.admin.command('replSetGetStatus')
+        repl_set_status = env.sync_cx.admin.command('replSetGetStatus')
         primary_info = [
             m for m in repl_set_status['members']
             if m['stateStr'] == 'PRIMARY'][0]
 
-        primary = _partition_node(primary_info['name'])
-        secondaries = [
+        env.primary = _partition_node(primary_info['name'])
+        env.secondaries = [
             _partition_node(m['name']) for m in repl_set_status['members']
             if m['stateStr'] == 'SECONDARY']
-        
+
+    if env.sync_cx.server_info().get('javascriptEngine') == 'V8':
+        env.v8 = True
+
 
 def teardown_package():
     pass
@@ -173,7 +170,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
     def setUp(self):
         super(MotorTest, self).setUp()
 
-        if self.ssl and not mongod_started_with_ssl:
+        if self.ssl and not env.mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")
 
         self.cx = self.motor_client(ssl=self.ssl)
@@ -213,7 +210,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         start = time.time()
         collection_name = collection.name
         db_name = collection.database.name
-        sync_collection = sync_cx[db_name][collection_name]
+        sync_collection = env.sync_cx[db_name][collection_name]
         while True:
             sync_cursor = sync_collection.find()
             sync_cursor._Cursor__id = cursor_id
@@ -272,7 +269,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
             raise error
 
     def tearDown(self):
-        sync_collection.remove()
+        env.sync_collection.remove()
         self.cx.close()
         super(MotorTest, self).tearDown()
 
@@ -280,7 +277,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
 class MotorReplicaSetTestBase(MotorTest):
     def setUp(self):
         super(MotorReplicaSetTestBase, self).setUp()
-        if not is_replica_set:
+        if not env.is_replica_set:
             raise SkipTest("Not connected to a replica set")
 
         self.rsc = self.motor_rsc_sync()
@@ -294,7 +291,7 @@ class MotorReplicaSetTestBase(MotorTest):
         """
         client = motor.MotorReplicaSetClient(
             '%s:%s' % (h, p), *args, io_loop=self.io_loop,
-            replicaSet=rs_name, **kwargs)
+            replicaSet=env.rs_name, **kwargs)
 
         raise gen.Return(client)
 

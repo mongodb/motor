@@ -38,7 +38,7 @@ class MotorDatabaseTest(MotorTest):
 
         # Make sure we got the right DB and it can do an operation
         self.assertEqual('motor_test', db.name)
-        test.sync_collection.insert({'_id': 1})
+        yield db.test_collection.insert({'_id': 1})
         doc = yield db.test_collection.find_one({'_id': 1})
         self.assertEqual(1, doc['_id'])
 
@@ -195,7 +195,7 @@ class MotorDatabaseTest(MotorTest):
         finally:
             yield remove_all_users(db)
             yield self.cx.admin.remove_user('admin')
-            test.sync_cx.disconnect()
+            test.env.sync_cx.disconnect()
 
     @gen_test
     def test_validate_collection(self):

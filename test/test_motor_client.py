@@ -45,7 +45,7 @@ class MotorClientTest(MotorTest):
 
     @gen_test
     def test_client_lazy_connect(self):
-        test.sync_cx.motor_test.test_client_lazy_connect.remove()
+        test.env.sync_cx.motor_test.test_client_lazy_connect.remove()
 
         # Create client without connecting; connect on demand.
         cx = motor.MotorClient(host, port, io_loop=self.io_loop)
@@ -180,8 +180,6 @@ class MotorClientTest(MotorTest):
 
         concurrency = 100
         cx = self.motor_client(max_pool_size=concurrency)
-        test.sync_db.insert_collection.drop()
-        self.assertEqual(200, test.sync_collection.count())
         expected_finds = 200 * concurrency
         n_inserts = 100
 
@@ -212,8 +210,8 @@ class MotorClientTest(MotorTest):
         yield [find() for _ in range(concurrency)]
         yield insert_future
         self.assertEqual(expected_finds, ndocs[0])
-        self.assertEqual(n_inserts, test.sync_db.insert_collection.count())
-        test.sync_db.insert_collection.drop()
+        self.assertEqual(n_inserts, (yield insert_collection.count()))
+        yield collection.remove()
 
     @gen_test
     def test_drop_database(self):

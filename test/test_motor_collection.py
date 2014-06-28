@@ -41,7 +41,7 @@ class MotorCollectionTest(MotorTest):
 
         # Make sure we got the right collection and it can do an operation
         self.assertEqual('test_collection', collection.name)
-        test.sync_collection.insert({'_id': 1})
+        test.env.sync_collection.insert({'_id': 1})
         doc = yield collection.find_one({'_id': 1})
         self.assertEqual(1, doc['_id'])
 
@@ -312,7 +312,7 @@ class MotorCollectionTest(MotorTest):
         coll = self.db[collection_name]
         coll.save({'_id': 201})
 
-        while not test.sync_db[collection_name].find({'_id': 201}).count():
+        while not (yield coll.find_one({'_id': 201})):
             yield self.pause(0.1)
 
         # DuplicateKeyError not raised
@@ -324,10 +324,11 @@ class MotorCollectionTest(MotorTest):
     def test_unacknowledged_update(self):
         # Test that unsafe updates with no callback still work
         coll = self.collection
+
         yield coll.insert({'_id': 1})
         coll.update({'_id': 1}, {'$set': {'a': 1}})
 
-        while not test.sync_db.test_collection.find({'a': 1}).count():
+        while not (yield coll.find_one({'a': 1})):
             yield self.pause(0.1)
 
         coll.database.connection.close()
@@ -459,12 +460,12 @@ class MotorCollectionTest(MotorTest):
 
         # Enough documents that each cursor requires multiple batches.
         yield collection.remove()
-        yield collection.insert(({'_id': i} for i in range(8000)), w=test.w)
-        if test.is_replica_set:
+        yield collection.insert(({'_id': i} for i in range(8000)), w=test.env.w)
+        if test.env.is_replica_set:
             client = motor.MotorReplicaSetClient(
                 '%s:%s' % (test.host, test.port),
                 io_loop=self.io_loop,
-                replicaSet=test.rs_name)
+                replicaSet=test.env.rs_name)
 
             # Test that getMore messages are sent to the right server.
             client.read_preference = ReadPreference.SECONDARY

@@ -23,15 +23,10 @@ import pymongo.errors
 from tornado.testing import gen_test
 
 import motor
-import test
 from test import MotorTest, assert_raises
 
 
 class MotorGenTest(MotorTest):
-    def tearDown(self):
-        test.sync_db.test_collection2.drop()
-        super(MotorGenTest, self).tearDown()
-
     @gen_test
     def test_op(self):
         # motor.Op is deprecated in Motor 0.2, superseded by Tornado 3 Futures.

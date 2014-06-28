@@ -321,7 +321,7 @@ class MotorCursorTest(MotorTest):
         cursor = collection.find()
         cursor.each(cancel)
         yield future
-        self.assertEqual(test.sync_collection.count(), len(results))
+        self.assertEqual((yield collection.count()), len(results))
 
     @gen_test
     def test_each_close(self):

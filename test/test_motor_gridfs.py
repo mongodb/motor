@@ -36,10 +36,10 @@ from test import host, port, MotorTest, MotorReplicaSetTestBase, assert_raises
 
 class MotorGridfsTest(MotorTest):
     def _reset(self):
-        test.sync_db.drop_collection("fs.files")
-        test.sync_db.drop_collection("fs.chunks")
-        test.sync_db.drop_collection("alt.files")
-        test.sync_db.drop_collection("alt.chunks")
+        test.env.sync_db.drop_collection("fs.files")
+        test.env.sync_db.drop_collection("fs.chunks")
+        test.env.sync_db.drop_collection("alt.files")
+        test.env.sync_db.drop_collection("alt.chunks")
 
     def setUp(self):
         super(MotorGridfsTest, self).setUp()
