@@ -222,8 +222,8 @@ class MotorGridfsTest(MotorTest):
 class TestGridfsReplicaSet(MotorReplicaSetTestBase):
     @gen_test
     def test_gridfs_replica_set(self):
-        rsc = yield self.motor_rsc(
-            w=test.w, wtimeout=5000,
+        rsc = self.motor_rsc(
+            w=test.env.w, wtimeout=5000,
             read_preference=ReadPreference.SECONDARY)
 
         fs = motor.MotorGridFS(rsc.motor_test)
@@ -234,29 +234,35 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
 
     @gen_test
     def test_gridfs_secondary(self):
-        primary_host, primary_port = test.primary
-        primary_client = self.motor_client(primary_host, primary_port)
+        primary_host, primary_port = test.env.primary
+        primary = self.motor_client(primary_host, primary_port)
+        if test.env.auth:
+            yield primary.admin.authenticate(test.db_user, test.db_password)
 
-        secondary_host, secondary_port = test.secondaries[0]
-        secondary_client = self.motor_client(
+        secondary_host, secondary_port = test.env.secondaries[0]
+
+        secondary = self.motor_client(
             secondary_host, secondary_port,
             read_preference=ReadPreference.SECONDARY)
 
-        yield primary_client.motor_test.drop_collection("fs.files")
-        yield primary_client.motor_test.drop_collection("fs.chunks")
+        if test.env.auth:
+            yield secondary.admin.authenticate(test.db_user, test.db_password)
+
+        yield primary.motor_test.drop_collection("fs.files")
+        yield primary.motor_test.drop_collection("fs.chunks")
 
         # Should detect it's connected to secondary and not attempt to
         # create index
-        fs = motor.MotorGridFS(secondary_client.motor_test)
+        fs = motor.MotorGridFS(secondary.motor_test)
 
         # This won't detect secondary, raises error
         with assert_raises(AutoReconnect):
             yield fs.put(b'foo')
 
     def tearDown(self):
-        c = MongoClient(host, port)
-        c.motor_test.drop_collection('fs.files')
-        c.motor_test.drop_collection('fs.chunks')
+        self.rsc.motor_test.drop_collection('fs.files')
+        self.rsc.motor_test.drop_collection('fs.chunks')
+        super(TestGridfsReplicaSet, self).tearDown()
 
 
 if __name__ == "__main__":
