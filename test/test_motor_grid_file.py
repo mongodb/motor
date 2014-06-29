@@ -28,7 +28,6 @@ from tornado.testing import gen_test
 from pymongo.errors import InvalidOperation
 
 import motor
-import test
 from test import MotorTest, assert_raises
 
 
