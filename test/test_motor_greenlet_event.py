@@ -15,6 +15,7 @@
 from __future__ import unicode_literals
 
 """Test MotorGreenletEvent."""
+
 import greenlet
 from functools import partial
 
