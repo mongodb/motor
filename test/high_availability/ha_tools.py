@@ -35,9 +35,9 @@ import pymongo.errors
 from pymongo.read_preferences import ReadPreference
 
 home = os.environ.get('HOME')
-default_dbpath = os.path.join(home, 'data', 'pymongo_high_availability')
+default_dbpath = os.path.join(home, 'data', 'motor_ha')
 dbpath = os.environ.get('DBPATH', default_dbpath)
-default_logpath = os.path.join(home, 'log', 'pymongo_high_availability')
+default_logpath = os.path.join(home, 'log', 'motor_ha')
 logpath = os.environ.get('LOGPATH', default_logpath)
 hostname = os.environ.get('HOSTNAME', 'localhost')
 port = int(os.environ.get('DBPORT', 27017))
