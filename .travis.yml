@@ -31,8 +31,8 @@ matrix:
       env: TORNADO=3 FUTURES=yes
       env: TORNADO=3 FUTURES=no
 before_install:
-  # Wait a little longer for MongoDB to start on slow test machines.
-  - sleep 5
+  # Ensure tests don't start before MongoDB does.
+  - python wait_for_mongodb.py 30
 before_script:
   - if [[ "$FUTURES" == "yes" ]]; then pip install futures; fi
   - if [[ "$TORNADO" == "3" ]]; then pip install 'tornado>=3,<4'; fi
