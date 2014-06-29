@@ -74,7 +74,7 @@ def is_server_resolvable():
 def setup_module():
     global SERVER_IS_RESOLVABLE
 
-    if HAVE_SSL and test.mongod_validates_client_cert:
+    if HAVE_SSL and test.env.mongod_validates_client_cert:
         SERVER_IS_RESOLVABLE = is_server_resolvable()
 
 
@@ -141,7 +141,7 @@ class MotorSSLTest(MotorTest):
 
     @gen_test
     def test_simple_ssl(self):
-        if test.mongod_validates_client_cert:
+        if test.env.mongod_validates_client_cert:
             raise SkipTest("mongod validates SSL certs")
 
         # Expects the server to be running with ssl and with
@@ -167,7 +167,7 @@ class MotorSSLTest(MotorTest):
         #   --sslCRLFile=jstests/libs/crl.pem
         #
         # Also requires an /etc/hosts entry where "server" is resolvable.
-        if not test.mongod_validates_client_cert:
+        if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
         if not SERVER_IS_RESOLVABLE:
@@ -196,7 +196,7 @@ class MotorSSLTest(MotorTest):
         #   --sslCRLFile=jstests/libs/crl.pem
         #
         # Also requires an /etc/hosts entry where "server" is resolvable.
-        if not test.mongod_validates_client_cert:
+        if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
         if not SERVER_IS_RESOLVABLE:
@@ -236,7 +236,7 @@ class MotorSSLTest(MotorTest):
         #   --sslCRLFile=jstests/libs/crl.pem
         #
         # Also requires an /etc/hosts entry where "server" is resolvable.
-        if not test.mongod_validates_client_cert:
+        if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
         if not SERVER_IS_RESOLVABLE:
@@ -272,7 +272,7 @@ class MotorSSLTest(MotorTest):
         #   --sslPEMKeyFile=jstests/libs/server.pem
         #   --sslCAFile=jstests/libs/ca.pem
         #   --sslCRLFile=jstests/libs/crl.pem
-        if not test.mongod_validates_client_cert:
+        if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
         client = motor.MotorClient(
@@ -317,7 +317,7 @@ class MotorSSLTest(MotorTest):
         #   --sslCAFile=jstests/libs/ca.pem
         #   --sslCRLFile=jstests/libs/crl.pem
         #   --auth
-        if not test.mongod_validates_client_cert:
+        if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
         client = motor.MotorClient(host, port, ssl_certfile=CLIENT_PEM)
