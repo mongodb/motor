@@ -19,6 +19,7 @@ from __future__ import unicode_literals
 import contextlib
 import datetime
 import functools
+import logging
 import os
 import time
 
@@ -171,9 +172,22 @@ class TestEnvironment(object):
 env = TestEnvironment()
 
 
-def setup_package():
-    """Run once by MotorTestCase before any tests."""
+def suppress_tornado_warnings():
+    for name in [
+            'tornado.general',
+            'tornado.access']:
+        logger = logging.getLogger(name)
+        logger.setLevel(logging.ERROR)
+
+
+def setup_package(warn):
+    """Run once by MotorTestCase before any tests.
+
+    If 'warn', let Tornado log warnings.
+    """
     env.setup()
+    if not warn:
+        suppress_tornado_warnings()
 
 
 def teardown_package():
@@ -183,8 +197,12 @@ def teardown_package():
 
 class MotorTestRunner(unittest.TextTestRunner):
     """Runs suite-level setup and teardown."""
+    def __init__(self, *args, **kwargs):
+        self.warn = kwargs.pop('warn', False)
+        super(MotorTestRunner, self).__init__(*args, **kwargs)
+
     def run(self, test):
-        setup_package()
+        setup_package(warn=self.warn)
         result = super(MotorTestRunner, self).run(test)
         teardown_package()
         return result

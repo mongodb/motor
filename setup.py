@@ -48,12 +48,14 @@ class test(Command):
         ("test-module=", "m", "Discover tests in specified module"),
         ("test-suite=", "s",
          "Test suite to run (e.g. 'some_module.test_suite')"),
-        ("failfast", "f", "Stop running tests on first failure or error")]
+        ("failfast", "f", "Stop running tests on first failure or error"),
+        ("warn", "w", "Let Tornado log warnings")]
 
     def initialize_options(self):
         self.test_module = None
         self.test_suite = None
         self.failfast = False
+        self.warn = False
 
     def finalize_options(self):
         if self.test_suite is None and self.test_module is None:
@@ -89,7 +91,7 @@ class test(Command):
                 self.test_suite)
 
         result = MotorTestRunner(
-            verbosity=2, failfast=self.failfast).run(suite)
+            verbosity=2, failfast=self.failfast, warn=self.warn).run(suite)
         sys.exit(not result.wasSuccessful())
 
 
