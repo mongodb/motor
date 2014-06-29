@@ -19,9 +19,9 @@ from __future__ import unicode_literals
 import os
 import socket
 import unittest
-import sys
 
 import pymongo
+import pymongo.mongo_client
 from pymongo.errors import ConfigurationError, OperationFailure
 from pymongo.errors import ConnectionFailure
 from tornado import gen
@@ -33,13 +33,13 @@ import motor
 import test
 from test import host, port, assert_raises, MotorTest, SkipTest
 from test.motor_client_test_generic import MotorClientTestMixin
-from test.utils import server_started_with_auth, remove_all_users, delay
+from test.utils import remove_all_users, delay
 
 
 class MotorClientTest(MotorTest):
     @gen_test
     def test_client_open(self):
-        cx = motor.MotorClient(host, port, io_loop=self.io_loop)
+        cx = self.motor_client()
         self.assertEqual(cx, (yield cx.open()))
         self.assertEqual(cx, (yield cx.open()))  # Same the second time.
 
@@ -48,7 +48,7 @@ class MotorClientTest(MotorTest):
         yield self.db.test_client_lazy_connect.remove()
 
         # Create client without connecting; connect on demand.
-        cx = motor.MotorClient(host, port, io_loop=self.io_loop)
+        cx = motor.MotorClient(test.env.uri, io_loop=self.io_loop)
         collection = cx.motor_test.test_client_lazy_connect
         future0 = collection.insert({'foo': 'bar'})
         future1 = collection.insert({'foo': 'bar'})
@@ -66,29 +66,17 @@ class MotorClientTest(MotorTest):
 
     @gen_test
     def test_unix_socket(self):
-        if not hasattr(socket, "AF_UNIX"):
-            raise SkipTest("UNIX-sockets are not supported on this system")
-
-        if (sys.platform == 'darwin' and
-                (yield server_started_with_auth(self.cx))):
-            raise SkipTest("SERVER-8492")
-
         mongodb_socket = '/tmp/mongodb-27017.sock'
         if not os.access(mongodb_socket, os.R_OK):
             raise SkipTest("Socket file is not accessible")
 
-        yield motor.MotorClient(
-            "mongodb://%s" % mongodb_socket, io_loop=self.io_loop).open()
+        uri = 'mongodb://%s' % mongodb_socket
+        client = self.motor_client(uri)
 
-        client = yield motor.MotorClient(
-            "mongodb://%s" % mongodb_socket, io_loop=self.io_loop).open()
+        if test.env.auth:
+            yield client.admin.authenticate(test.db_user, test.db_password)
 
         yield client.motor_test.test.save({"dummy": "object"})
-
-        # Confirm we can read via the socket.
-        dbs = yield client.database_names()
-        self.assertTrue("motor_test" in dbs)
-        client.close()
 
         # Confirm it fails with a missing socket.
         client = motor.MotorClient(
@@ -99,11 +87,11 @@ class MotorClientTest(MotorTest):
 
     def test_io_loop(self):
         with assert_raises(TypeError):
-            motor.MotorClient(host, port, io_loop='foo')
+            motor.MotorClient(test.env.uri, io_loop='foo')
 
     def test_open_sync(self):
         loop = IOLoop()
-        cx = loop.run_sync(motor.MotorClient(host, port, io_loop=loop).open)
+        cx = loop.run_sync(motor.MotorClient(test.env.uri, io_loop=loop).open)
         self.assertTrue(isinstance(cx, motor.MotorClient))
 
     def test_database_named_delegate(self):
@@ -115,7 +103,7 @@ class MotorClientTest(MotorTest):
     def test_timeout(self):
         # Launch two slow find_ones. The one with a timeout should get an error
         no_timeout = self.motor_client()
-        timeout = self.motor_client(host, port, socketTimeoutMS=100)
+        timeout = self.motor_client(socketTimeoutMS=100)
         query = {'$where': delay(0.5), '_id': 1}
 
         # Need a document, or the $where clause isn't executed.
@@ -163,14 +151,12 @@ class MotorClientTest(MotorTest):
     @gen_test
     def test_max_pool_size_validation(self):
         with assert_raises(ConfigurationError):
-            motor.MotorClient(host=host, port=port, max_pool_size=-1)
+            motor.MotorClient(max_pool_size=-1)
 
         with assert_raises(ConfigurationError):
-            motor.MotorClient(host=host, port=port, max_pool_size='foo')
+            motor.MotorClient(max_pool_size='foo')
 
-        cx = motor.MotorClient(
-            host=host, port=port, max_pool_size=100, io_loop=self.io_loop)
-
+        cx = self.motor_client(max_pool_size=100)
         self.assertEqual(cx.max_pool_size, 100)
         cx.close()
 
@@ -226,21 +212,18 @@ class MotorClientTest(MotorTest):
 
     @gen_test
     def test_auth_from_uri(self):
-        if not (yield server_started_with_auth(self.cx)):
+        if not test.env.auth:
             raise SkipTest('Authentication is not enabled on server')
 
+        # self.db is logged in as root.
         yield remove_all_users(self.db)
-        yield remove_all_users(self.cx.admin)
-        yield self.cx.admin.add_user('admin', 'pass')
-        yield self.cx.admin.authenticate('admin', 'pass')
-
         db = self.db
         try:
             yield db.add_user(
                 'mike', 'password',
                 roles=['userAdmin', 'readWrite'])
 
-            client = motor.MotorClient('mongodb://foo:bar@%s:%d' % (host, port))
+            client = motor.MotorClient('mongodb://u:pass@%s:%d' % (host, port))
 
             # Note: open() only calls ismaster, doesn't throw auth errors.
             yield client.open()
@@ -248,25 +231,13 @@ class MotorClientTest(MotorTest):
             with assert_raises(OperationFailure):
                 yield client.db.collection.find_one()
 
-            client.close()
-
-            client = motor.MotorClient(
-                'mongodb://user:pass@%s:%d/%s' %
-                (host, port, db.name))
-
-            yield client.open()
-            client.close()
-
             client = motor.MotorClient(
                 'mongodb://mike:password@%s:%d/%s' %
                 (host, port, db.name))
 
             yield client[db.name].collection.find_one()
-            client.close()
-
         finally:
             yield db.remove_user('mike')
-            yield self.cx.admin.remove_user('admin')
 
 
 class MotorResolverTest(MotorTest):
@@ -287,7 +258,7 @@ class MotorResolverTest(MotorTest):
         config = netutil.Resolver._save_configuration()
         try:
             netutil.Resolver.configure(resolver_name)
-            client = motor.MotorClient(host, port, io_loop=self.io_loop)
+            client = self.motor_client()
             yield client.open()  # No error.
 
             with assert_raises(pymongo.errors.ConnectionFailure):

@@ -30,8 +30,7 @@ from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import motor
-import test
-from test import MotorTest, assert_raises, host, port, SkipTest
+from test import MotorTest, assert_raises, SkipTest
 from test.utils import server_is_mongos, version, get_command_line
 
 
@@ -545,7 +544,7 @@ class MotorCursorTest(MotorTest):
         # Insert enough documents to require more than one batch.
         yield self.db.test.insert([{} for _ in range(150)])
 
-        client = motor.MotorClient(host, port, max_pool_size=1)
+        client = self.motor_client(max_pool_size=1)
         # Ensure a pool.
         yield client.db.collection.find_one()
         socks = client._get_primary_pool().sockets
