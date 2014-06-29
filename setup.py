@@ -38,7 +38,7 @@ else:
     test_suite = 'test'
 
 setup(name='motor',
-      version='0.3.1+',
+      version='0.3.2',
       packages=['motor'],
       description=description,
       long_description=long_description,
