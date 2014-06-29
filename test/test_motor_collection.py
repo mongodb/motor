@@ -462,14 +462,10 @@ class MotorCollectionTest(MotorTest):
         yield collection.remove()
         yield collection.insert(({'_id': i} for i in range(8000)), w=test.env.w)
         if test.env.is_replica_set:
-            client = motor.MotorReplicaSetClient(
-                '%s:%s' % (test.host, test.port),
-                io_loop=self.io_loop,
-                replicaSet=test.env.rs_name)
+            client = self.motor_rsc()
 
             # Test that getMore messages are sent to the right server.
             client.read_preference = ReadPreference.SECONDARY
-
             collection = client.motor_test.test_collection
 
         docs = []

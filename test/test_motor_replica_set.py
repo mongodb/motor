@@ -33,11 +33,7 @@ from test.motor_client_test_generic import MotorClientTestMixin
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
     @gen_test
     def test_replica_set_client(self):
-        cx = motor.MotorReplicaSetClient(
-            '%s:%s' % (host, port),
-            replicaSet=test.rs_name,
-            io_loop=self.io_loop)
-
+        cx = self.motor_rsc()
         self.assertEqual(cx, (yield cx.open()))
         self.assertEqual(cx, (yield cx.open()))  # Same the second time.
         self.assertTrue(isinstance(
@@ -52,20 +48,11 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
 
     @gen_test
     def test_open_callback(self):
-        cx = motor.MotorReplicaSetClient(
-            '%s:%s' % (host, port),
-            replicaSet=test.rs_name,
-            io_loop=self.io_loop)
-
-        yield self.check_optional_callback(cx.open)
-        cx.close()
+        yield self.check_optional_callback(self.rsc.open)
 
     def test_io_loop(self):
         with assert_raises(TypeError):
-            motor.MotorReplicaSetClient(
-                '%s:%s' % (host, port),
-                replicaSet=test.rs_name,
-                io_loop='foo')
+            motor.MotorReplicaSetClient(test.env.rs_uri, io_loop='foo')
 
     @gen_test
     def test_auto_reconnect_exception_when_read_preference_is_secondary(self):

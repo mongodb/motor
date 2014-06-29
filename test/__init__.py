@@ -71,6 +71,7 @@ class TestEnvironment(object):
         self.v8 = False
         self.auth = False
         self.uri = None
+        self.rs_uri = None
 
 
 env = TestEnvironment()
@@ -138,6 +139,7 @@ def setup_package():
     if 'setName' in response:
         env.is_replica_set = True
         env.rs_name = str(response['setName'])
+        env.rs_uri = env.uri + '?replicaSet=' + env.rs_name
         env.w = len(response['hosts'])
         env.hosts = set([_partition_node(h) for h in response["hosts"]])
         env.arbiters = set([
@@ -272,6 +274,15 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         return motor.MotorClient(
             uri or env.uri, *args, io_loop=self.io_loop, **kwargs)
 
+    def motor_rsc(self, uri=None, *args, **kwargs):
+        """Get an open MotorReplicaSetClient. Ignores self.ssl, you must pass
+        'ssl' argument. You'll probably need to close the client to avoid
+        file-descriptor problems after AsyncTestCase calls
+        self.io_loop.close(all_fds=True).
+        """
+        return motor.MotorReplicaSetClient(
+            uri or env.rs_uri, *args, io_loop=self.io_loop, **kwargs)
+
     @gen.coroutine
     def check_optional_callback(self, fn, *args, **kwargs):
         """Take a function and verify that it accepts a 'callback' parameter
@@ -310,27 +321,4 @@ class MotorReplicaSetTestBase(MotorTest):
         if not env.is_replica_set:
             raise SkipTest("Not connected to a replica set")
 
-        self.rsc = self.motor_rsc_sync()
-
-    @gen.coroutine
-    def motor_rsc(self, h=host, p=port, *args, **kwargs):
-        """Get an open MotorReplicaSetClient. Ignores self.ssl, you must pass
-        'ssl' argument. You'll probably need to close the client to avoid
-        file-descriptor problems after AsyncTestCase calls
-        self.io_loop.close(all_fds=True).
-        """
-        client = motor.MotorReplicaSetClient(
-            '%s:%s' % (h, p), *args, io_loop=self.io_loop,
-            replicaSet=env.rs_name, **kwargs)
-
-        raise gen.Return(client)
-
-    def motor_rsc_sync(self, host=host, port=port, *args, **kwargs):
-        """Get an open MotorClient. Ignores self.ssl, you must pass 'ssl'
-        argument.
-        """
-        return self.io_loop.run_sync(functools.partial(
-            self.motor_rsc, host, port, *args, **kwargs))
-
-    def tearDown(self):
-        super(MotorReplicaSetTestBase, self).tearDown()
+        self.rsc = self.motor_rsc()
