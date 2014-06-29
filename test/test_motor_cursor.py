@@ -615,16 +615,16 @@ class MotorCursorMaxTimeMSTest(MotorTest):
     def test_max_time_ms_query(self):
         # Cursor parses server timeout error in response to initial query.
         yield self.enable_timeout()
-        cursor = self.collection.find().max_time_ms(1000)
+        cursor = self.collection.find().max_time_ms(100000)
         with assert_raises(ExecutionTimeout):
             yield cursor.fetch_next
 
-        cursor = self.collection.find().max_time_ms(1000)
+        cursor = self.collection.find().max_time_ms(100000)
         with assert_raises(ExecutionTimeout):
             yield cursor.to_list(10)
 
         with assert_raises(ExecutionTimeout):
-            yield self.collection.find_one(max_time_ms=1000)
+            yield self.collection.find_one(max_time_ms=100000)
 
     @gen_test(timeout=30)
     def test_max_time_ms_getmore(self):
@@ -632,7 +632,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
         yield self.collection.insert({} for _ in range(200))
         try:
             # Send initial query.
-            cursor = self.collection.find().max_time_ms(1000)
+            cursor = self.collection.find().max_time_ms(100000)
             yield cursor.fetch_next
             cursor.next_object()
 
@@ -644,7 +644,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
 
             # Send another initial query.
             yield self.disable_timeout()
-            cursor = self.collection.find().max_time_ms(1000)
+            cursor = self.collection.find().max_time_ms(100000)
             yield cursor.fetch_next
             cursor.next_object()
 
@@ -664,7 +664,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
     def test_max_time_ms_each_query(self):
         # Cursor.each() handles server timeout during initial query.
         yield self.enable_timeout()
-        cursor = self.collection.find().max_time_ms(1000)
+        cursor = self.collection.find().max_time_ms(100000)
         future = Future()
 
         def callback(result, error):
@@ -684,7 +684,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
         yield self.collection.insert({} for _ in range(200))
         try:
             # Send initial query.
-            cursor = self.collection.find().max_time_ms(1000)
+            cursor = self.collection.find().max_time_ms(100000)
             yield cursor.fetch_next
             cursor.next_object()
 
