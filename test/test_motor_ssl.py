@@ -36,7 +36,7 @@ import motor
 import test
 from test import MotorTest, host, port, version, SkipTest
 from test import HAVE_SSL, CLIENT_PEM, CA_PEM
-from test.utils import server_started_with_auth, remove_all_users
+from test.utils import remove_all_users
 
 
 # Whether 'server' is a resolvable hostname.
@@ -324,7 +324,7 @@ class MotorSSLTest(MotorTest):
         if not (yield version.at_least(client, (2, 5, 3, -1))):
             raise SkipTest("MONGODB-X509 tests require MongoDB 2.5.3 or newer")
 
-        if not (yield server_started_with_auth(client)):
+        if not test.env.auth:
             raise SkipTest('Authentication is not enabled on server')
 
         # Give admin all necessary privileges.

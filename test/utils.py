@@ -40,12 +40,6 @@ def get_command_line(client):
 
 
 @gen.coroutine
-def server_started_with_auth(client):
-    argv = yield get_command_line(client)
-    raise gen.Return('--auth' in argv or '--keyFile' in argv)
-
-
-@gen.coroutine
 def server_is_master_with_slave(client):
     command_line = yield get_command_line(client)
     raise gen.Return('--master' in command_line)

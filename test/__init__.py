@@ -47,6 +47,8 @@ except ImportError:
 
 host = os.environ.get("DB_IP", "localhost")
 port = int(os.environ.get("DB_PORT", 27017))
+db_user = 'motor-test-root'
+db_password = 'pass'
 
 CERT_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'certificates')
@@ -67,6 +69,8 @@ class TestEnvironment(object):
         self.primary = None
         self.secondaries = None
         self.v8 = False
+        self.auth = False
+        self.uri = None
 
 
 env = TestEnvironment()
@@ -103,6 +107,33 @@ def setup_package():
                 socketTimeoutMS=socketTimeoutMS,
                 ssl=False)
 
+    # See if auth is enabled. Either we're on mongod < 2.7.1 and we can
+    # connect over localhost to check if --auth is in the command line. Or
+    # we're prohibited from seeing the command line so we should try blindly
+    # to create an admin user.
+    try:
+        argv = env.sync_cx.admin.command('getCmdLineOpts')['argv']
+        env.auth = ('--auth' in argv or '--keyFile' in argv)
+    except pymongo.errors.OperationFailure as e:
+        if e.code == 13:
+            # Auth failure getting command line.
+            env.auth = True
+        else:
+            raise
+
+    if env.auth:
+        env.uri = 'mongodb://%s:%s@%s:%s/admin' % (
+            db_user, db_password, host, port)
+
+        # TODO: use PyMongo's add_user once that's fixed.
+        env.sync_cx.admin.command(
+            'createUser', db_user, pwd=db_password, roles=['root'])
+
+        env.sync_cx.admin.authenticate(db_user, db_password)
+
+    else:
+        env.uri = 'mongodb://%s:%s/admin' % (host, port)
+
     response = env.sync_cx.admin.command('ismaster')
     if 'setName' in response:
         env.is_replica_set = True
@@ -127,7 +158,8 @@ def setup_package():
 
 
 def teardown_package():
-    pass
+    if env.auth:
+        env.sync_cx.admin.remove_user(db_user)
 
 
 class MotorTestRunner(unittest.TextTestRunner):
@@ -167,7 +199,11 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         if self.ssl and not env.mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")
 
-        self.cx = self.motor_client(ssl=self.ssl)
+        if env.auth:
+            self.cx = self.motor_client(env.uri, ssl=self.ssl)
+        else:
+            self.cx = self.motor_client(ssl=self.ssl)
+
         self.db = self.cx.motor_test
         self.collection = self.db.test_collection
 
@@ -226,7 +262,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
                 # Let the loop run, might be working on closing the cursor
                 yield self.pause(0.1)
 
-    def motor_client(self, host=host, port=port, *args, **kwargs):
+    def motor_client(self, uri=None, *args, **kwargs):
         """Get a MotorClient.
 
         Ignores self.ssl, you must pass 'ssl' argument. You'll probably need to
@@ -234,7 +270,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         calls self.io_loop.close(all_fds=True).
         """
         return motor.MotorClient(
-            host, port, *args, io_loop=self.io_loop, **kwargs)
+            uri or env.uri, *args, io_loop=self.io_loop, **kwargs)
 
     @gen.coroutine
     def check_optional_callback(self, fn, *args, **kwargs):

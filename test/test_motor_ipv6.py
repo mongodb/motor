@@ -23,6 +23,7 @@ from pymongo.errors import ConnectionFailure
 from tornado.testing import gen_test
 
 import motor
+import test
 from test import host, port, MotorTest, SkipTest
 
 
@@ -40,7 +41,12 @@ class MotorIPv6Test(MotorTest):
             # or the OS doesn't support it (or both).
             raise SkipTest("No IPV6")
 
-        cx_string = "mongodb://[::1]:%d" % port
+        if test.env.auth:
+            cx_string = 'mongodb://%s:%s@[::1]:%d' % (
+                test.db_user, test.db_password, port)
+        else:
+            cx_string = 'mongodb://[::1]:%d' % port
+
         cx = motor.MotorClient(cx_string, io_loop=self.io_loop)
         collection = cx.motor_test.test_collection
         yield collection.insert({"dummy": "object"})

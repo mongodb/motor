@@ -23,7 +23,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import host, port, assert_raises, MotorTest
+from test import assert_raises, MotorTest
 
 
 class MotorTestBasic(MotorTest):
@@ -47,7 +47,7 @@ class MotorTestBasic(MotorTest):
             {'w': 1},
             {'wtimeout': 1000},
         ]:
-            cx = self.motor_client(host, port, **gle_options)
+            cx = self.motor_client(test.env.uri, **gle_options)
             expected_wc = gle_options.copy()
             self.assertEqual(expected_wc, cx.write_concern)
 
@@ -108,7 +108,7 @@ class MotorTestBasic(MotorTest):
     @gen_test
     def test_read_preference(self):
         # Check the default
-        cx = motor.MotorClient(host, port, io_loop=self.io_loop)
+        cx = motor.MotorClient(test.env.uri, io_loop=self.io_loop)
         self.assertEqual(ReadPreference.PRIMARY, cx.read_preference)
 
         # We can set mode, tags, and latency.
@@ -143,11 +143,11 @@ class MotorTestBasic(MotorTest):
         # Motor doesn't support 'safe'
         self.assertRaises(
             ConfigurationError,
-            motor.MotorClient, host, port, io_loop=self.io_loop, safe=True)
+            motor.MotorClient, test.env.uri, io_loop=self.io_loop, safe=True)
 
         self.assertRaises(
             ConfigurationError,
-            motor.MotorClient, host, port, io_loop=self.io_loop, safe=False)
+            motor.MotorClient, test.env.uri, io_loop=self.io_loop, safe=False)
 
         self.assertRaises(
             ConfigurationError, self.collection.insert, {}, safe=False)
@@ -160,22 +160,22 @@ class MotorTestBasic(MotorTest):
         # Motor doesn't support 'slave_okay'
         self.assertRaises(
             ConfigurationError,
-            motor.MotorClient, host, port,
+            motor.MotorClient, test.env.uri,
             io_loop=self.io_loop, slave_okay=True)
 
         self.assertRaises(
             ConfigurationError,
-            motor.MotorClient, host, port,
+            motor.MotorClient, test.env.uri,
             io_loop=self.io_loop, slave_okay=False)
 
         self.assertRaises(
             ConfigurationError,
-            motor.MotorClient, host, port,
+            motor.MotorClient, test.env.uri,
             io_loop=self.io_loop, slaveok=True)
 
         self.assertRaises(
             ConfigurationError,
-            motor.MotorClient, host, port,
+            motor.MotorClient, test.env.uri,
             io_loop=self.io_loop, slaveok=False)
 
         collection = self.cx.motor_test.test_collection

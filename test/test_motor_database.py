@@ -172,29 +172,26 @@ class MotorDatabaseTest(MotorTest):
 
     @gen_test
     def test_authenticate(self):
-        db = self.db
+        # self.db is logged in as root.
+        yield self.db.add_user("mike", "password")
+        db = motor.MotorClient(test.host, test.port).motor_test
         try:
-            yield self.cx.admin.add_user("admin", "password")
-            yield self.cx.admin.authenticate("admin", "password")
-            yield db.add_user("mike", "password")
-
             # Authenticate many times at once to test concurrency.
             yield [db.authenticate("mike", "password") for _ in range(10)]
 
-            # just make sure there are no exceptions here
+            # Just make sure there are no exceptions here.
             yield db.remove_user("mike")
             yield db.logout()
             if (yield version.at_least(self.cx, (2, 5, 4))):
-                info = yield db.command("usersInfo", "mike")
+                info = yield self.db.command("usersInfo", "mike")
                 users = info.get('users', [])
             else:
-                users = yield db.system.users.find().to_list(length=10)
+                users = yield self.db.system.users.find().to_list(length=10)
 
             self.assertFalse("mike" in [u['user'] for u in users])
 
         finally:
-            yield remove_all_users(db)
-            yield self.cx.admin.remove_user('admin')
+            yield remove_all_users(self.db)
             test.env.sync_cx.disconnect()
 
     @gen_test

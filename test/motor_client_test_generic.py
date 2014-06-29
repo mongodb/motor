@@ -144,71 +144,63 @@ class MotorClientTestMixin(object):
 
     @gen_test
     def test_copy_db_auth(self):
-        # See SERVER-6427.
-        cx = self.get_client()
-        yield skip_if_mongos(cx)
+        # SERVER-6427, can't copy database via mongos with auth.
+        yield skip_if_mongos(self.cx)
 
-        target_db_name = 'motor_test_2'
-
-        collection = cx.motor_test.test_collection
-        yield collection.remove()
-        yield collection.insert({'_id': 1})
-
-        yield cx.admin.add_user('admin', 'password')
-        yield cx.admin.authenticate('admin', 'password')
+        yield self.collection.insert({'_id': 1})
 
         try:
-            yield cx.motor_test.add_user('mike', 'password')
+            # self.cx is logged in as root.
+            yield self.cx.motor_test.add_user('mike', 'password')
+
+            client = self.get_client()
+            target_db_name = 'motor_test_2'
 
             with assert_raises(pymongo.errors.OperationFailure):
-                yield cx.copy_database(
+                yield client.copy_database(
                     'motor_test', target_db_name,
                     username='foo', password='bar')
 
             with assert_raises(pymongo.errors.OperationFailure):
-                yield cx.copy_database(
+                yield client.copy_database(
                     'motor_test', target_db_name,
                     username='mike', password='bar')
 
             # Copy a database using name and password.
-            yield cx.copy_database(
+            yield client.copy_database(
                 'motor_test', target_db_name,
                 username='mike', password='password')
 
             self.assertEqual(
                 {'_id': 1},
-                (yield cx[target_db_name].test_collection.find_one()))
+                (yield client[target_db_name].test_collection.find_one()))
 
-            yield cx.drop_database(target_db_name)
+            yield client.drop_database(target_db_name)
         finally:
-            yield remove_all_users(cx.motor_test)
-            yield cx.admin.remove_user('admin')
+            yield remove_all_users(self.cx.motor_test)
 
     @gen_test(timeout=30)
     def test_copy_db_auth_concurrent(self):
-        cx = self.get_client()
-        yield skip_if_mongos(cx)
+        # SERVER-6427, can't copy database via mongos with auth.
+        yield skip_if_mongos(self.cx)
+
 
         n_copies = 2
         test_db_names = ['motor_test_%s' % i for i in range(n_copies)]
 
         # 1. Drop old test DBs
-        yield cx.drop_database('motor_test')
+        yield self.cx.drop_database('motor_test')
+        yield self.collection.insert({'_id': 1})
         yield self.drop_databases(test_db_names)
 
         # 2. Copy a test DB N times at once
-        collection = cx.motor_test.test_collection
-        yield collection.remove()
-        yield collection.insert({'_id': 1})
-
-        yield cx.admin.add_user('admin', 'password', )
-        yield cx.admin.authenticate('admin', 'password')
-
         try:
-            yield cx.motor_test.add_user('mike', 'password')
+            # self.cx is logged in as root.
+            yield self.cx.motor_test.add_user('mike', 'password')
 
+            client = self.get_client()
             results = yield [
-                cx.copy_database(
+                client.copy_database(
                     'motor_test', test_db_name,
                     username='mike', password='password')
                 for test_db_name in test_db_names]
@@ -217,6 +209,7 @@ class MotorClientTestMixin(object):
             yield self.check_copydb_results({'_id': 1}, test_db_names)
 
         finally:
-            yield remove_all_users(cx.motor_test)
-            yield self.drop_databases(test_db_names, authenticated_client=cx)
-            yield cx.admin.remove_user('admin')
+            yield remove_all_users(client.motor_test)
+            yield self.drop_databases(
+                test_db_names,
+                authenticated_client=self.cx)
