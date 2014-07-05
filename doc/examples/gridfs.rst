@@ -15,7 +15,7 @@ Writing a file to GridFS with :meth:`~motor.MotorGridFS.put`
 
     @gen.coroutine
     def write_file():
-        fs = yield motor.MotorGridFS(db).open()
+        fs = yield motor.MotorGridFS(db).open() # here, the method should be removed? (Changed in version 0.2: open method removed; no longer needed)
 
         # file_id is the ObjectId of the resulting file.
         file_id = yield fs.put('Contents')
