@@ -15,7 +15,7 @@ Writing a file to GridFS with :meth:`~motor.MotorGridFS.put`
 
     @gen.coroutine
     def write_file():
-        fs = yield motor.MotorGridFS(db)
+        fs = motor.MotorGridFS(db)
 
         # file_id is the ObjectId of the resulting file.
         file_id = yield fs.put('Contents')
@@ -41,7 +41,7 @@ Streaming a file to GridFS with :class:`~motor.MotorGridIn`
 
     @gen.coroutine
     def write_file_streaming():
-        fs = yield motor.MotorGridFS(db)
+        fs = motor.MotorGridFS(db)
 
         # Create a MotorGridIn and write in chunks, then close the file to
         # flush all data to the server.
@@ -80,7 +80,7 @@ Setting attributes on a :class:`~motor.MotorGridIn`
 
     @gen.coroutine
     def set_attributes():
-        fs = yield motor.MotorGridFS(db)
+        fs = motor.MotorGridFS(db)
         gridin = yield fs.new_file()
 
         # Set metadata attributes.
@@ -109,7 +109,7 @@ Reading from GridFS with :class:`~motor.MotorGridOut`
 
     @gen.coroutine
     def read_file(file_id):
-        fs = yield motor.MotorGridFS(db)
+        fs = motor.MotorGridFS(db)
 
         # Create a MotorGridOut and read it all at once.
         gridout = yield fs.get(file_id)
