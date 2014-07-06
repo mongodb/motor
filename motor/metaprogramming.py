@@ -69,19 +69,25 @@ def asynchronize(
                 result = sync_method(self.delegate, *args, **kwargs)
                 if callback:
                     # Schedule callback(result, None) on main greenlet.
-                    loop.add_callback(functools.partial(
-                        callback, result, None))
+                    framework.call_soon(
+                        loop,
+                        functools.partial(callback, result, None))
                 else:
                     # Schedule future to be resolved on main greenlet.
-                    loop.add_callback(functools.partial(
-                        future.set_result, result))
+                    # TODO: I think Tornado and asyncio have methods for this.
+                    framework.call_soon(
+                        loop,
+                        functools.partial(future.set_result, result))
             except Exception as e:
                 if callback:
-                    loop.add_callback(functools.partial(
-                        callback, None, e))
+                    framework.call_soon(
+                        loop,
+                        functools.partial(callback, None, e))
                 else:
-                    loop.add_callback(functools.partial(
-                        future.set_exc_info, sys.exc_info()))
+                    # TODO: we lost Tornado's set_exc_info. Frameworkify this.
+                    framework.call_soon(
+                        loop,
+                        functools.partial(future.set_exception, e))
 
         # Start running the operation on a greenlet.
         greenlet.greenlet(call_method).switch()

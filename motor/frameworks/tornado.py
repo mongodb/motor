@@ -100,6 +100,10 @@ def resolve(resolver, loop, host, port, family, callback, errback):
         resolver.resolve(host, port, family, callback=callback)
 
 
+def close_resolver(resolver):
+    resolver.close()
+
+
 def coroutine(f):
     """A coroutine that accepts an optional callback.
 

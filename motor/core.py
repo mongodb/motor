@@ -393,7 +393,7 @@ class MotorPool(object):
         for sock_info in self.sockets:
             sock_info.close()
 
-        self.resolver.close()
+        self._framework.close_resolver(self.resolver)
 
     def _create_wait_queue_timeout(self):
         return pymongo.errors.ConnectionFailure(
