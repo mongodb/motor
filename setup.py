@@ -96,7 +96,7 @@ class test(Command):
 
 
 setup(name='motor',
-      version='0.3',
+      version='0.3+',
       packages=['motor'],
       description=description,
       long_description=long_description,
