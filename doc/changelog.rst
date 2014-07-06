@@ -24,6 +24,10 @@ Fix `MOTOR-43 <https://jira.mongodb.org/browse/MOTOR-43>`_,
 a TypeError when using :class:`~motor.web.GridFSHandler`
 with a timezone-aware :class:`~motor.MotorClient`.
 
+Fix GridFS examples that hadn't been updated for Motor 0.2's new syntax.
+
+Fix a unittest that hadn't been running.
+
 Motor 0.3
 ---------
 
