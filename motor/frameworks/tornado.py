@@ -1,4 +1,4 @@
-# Copyright 2014 MongoDB, Inc.
+# Copyright 2011-2014 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,14 @@ import socket
 import time
 
 import greenlet
-from tornado import gen, ioloop, iostream
+from tornado import concurrent, gen, ioloop, iostream, netutil, stack_context
+
+DomainError = None
+try:
+    # If Twisted is installed. See resolve().
+    from twisted.names.error import DomainError
+except ImportError:
+    pass
 
 from motor.motor_common import callback_type_error
 
@@ -30,16 +37,43 @@ def get_event_loop():
     return ioloop.IOLoop.current()
 
 
-def return_value(value):
-    raise gen.Return(value)
-
-
 def is_event_loop(loop):
     return isinstance(loop, ioloop.IOLoop)
 
 
-def resolve():
-    pass
+def return_value(value):
+    raise gen.Return(value)
+
+
+# TODO: rename?
+def get_future():
+    return concurrent.TracebackFuture()
+
+
+def is_future(f):
+    return isinstance(f, concurrent.Future)
+
+
+def get_resolver(loop):
+    return netutil.Resolver(io_loop=loop)
+
+
+def resolve(resolver, loop, host, port, family, callback, errback):
+    def handler(exc_typ, exc_val, exc_tb):
+        # If netutil.Resolver is configured to use TwistedResolver.
+        if DomainError and issubclass(exc_typ, DomainError):
+            exc_typ = socket.gaierror
+            exc_val = socket.gaierror(str(exc_val))
+
+        # Depending on the resolver implementation, we could be on any
+        # thread or greenlet. Schedule error handling on the main.
+        loop.add_callback(functools.partial(errback, exc_typ, exc_val, exc_tb))
+
+        # Don't propagate the exception.
+        return True
+
+    with stack_context.ExceptionStackContext(handler):
+        resolver.resolve(host, port, family, callback=callback)
 
 
 def coroutine(f):

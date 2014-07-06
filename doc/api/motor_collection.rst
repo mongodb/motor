@@ -1,7 +1,7 @@
 :class:`MotorCollection`
 ========================
 
-.. currentmodule:: motor
+.. currentmodule:: motor.core
 
 .. autoclass:: MotorCollection
   :members:

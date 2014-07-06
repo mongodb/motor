@@ -22,6 +22,7 @@ from pymongo.errors import BulkWriteError
 from tornado.testing import gen_test
 
 import motor
+import motor.core
 from test import MotorTest
 
 
@@ -35,7 +36,9 @@ class MotorBulkTest(MotorTest):
         yield self.collection.ensure_index('a', unique=True)
         try:
             bulk = self.collection.initialize_ordered_bulk_op()
-            self.assertTrue(isinstance(bulk, motor.MotorBulkOperationBuilder))
+            self.assertTrue(isinstance(bulk,
+                                       motor.core.MotorBulkOperationBuilder))
+
             bulk.insert({'b': 1, 'a': 1})
             bulk.find({'b': 2}).upsert().update_one({'$set': {'a': 1}})
             bulk.find({'b': 3}).upsert().update_one({'$set': {'a': 2}})
@@ -74,7 +77,9 @@ class MotorBulkTest(MotorTest):
         yield self.collection.remove()
 
         bulk = self.collection.initialize_unordered_bulk_op()
-        self.assertTrue(isinstance(bulk, motor.MotorBulkOperationBuilder))
+        self.assertTrue(isinstance(bulk,
+                                   motor.core.MotorBulkOperationBuilder))
+
         bulk.insert({'a': 1})
         bulk.find({'a': 1}).update_one({'$set': {'b': 1}})
         bulk.find({'a': 2}).upsert().update_one({'$set': {'b': 2}})

@@ -1,9 +1,9 @@
 :class:`MotorDatabase`
 ======================
 
-.. currentmodule:: motor
+.. currentmodule:: motor.core
 
-.. autoclass:: motor.MotorDatabase
+.. autoclass:: MotorDatabase
   :members:
 
   .. describe:: db[collection_name] || db.collection_name

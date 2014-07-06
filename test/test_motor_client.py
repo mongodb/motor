@@ -30,6 +30,7 @@ from tornado.ioloop import IOLoop
 from tornado.testing import gen_test, netutil
 
 import motor
+import motor.core
 import test
 from test import host, port, assert_raises, MotorTest, SkipTest
 from test.motor_client_test_generic import MotorClientTestMixin
@@ -97,7 +98,8 @@ class MotorClientTest(MotorTest):
     def test_database_named_delegate(self):
         self.assertTrue(
             isinstance(self.cx.delegate, pymongo.mongo_client.MongoClient))
-        self.assertTrue(isinstance(self.cx['delegate'], motor.MotorDatabase))
+        self.assertTrue(isinstance(self.cx['delegate'],
+                                   motor.core.MotorDatabase))
 
     @gen_test
     def test_timeout(self):

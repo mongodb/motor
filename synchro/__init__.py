@@ -30,6 +30,8 @@ import traceback
 from tornado.ioloop import IOLoop
 
 import motor
+import motor.core
+import motor.motor_gridfs
 
 # Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
 # importing * won't pick up underscore-prefixed attrs.
@@ -90,26 +92,26 @@ def wrap_synchro(fn):
 
         # Not all Motor classes appear here, only those we need to return
         # from methods like map_reduce() or create_collection()
-        if isinstance(motor_obj, motor.MotorCollection):
+        if isinstance(motor_obj, motor.core.MotorCollection):
             client = MongoClient(delegate=motor_obj.database.connection)
             database = Database(client, motor_obj.database.name)
             return Collection(database, motor_obj.name)
-        if isinstance(motor_obj, motor.MotorDatabase):
+        if isinstance(motor_obj, motor.core.MotorDatabase):
             client = MongoClient(delegate=motor_obj.connection)
             return Database(client, motor_obj.name)
-        if isinstance(motor_obj, motor.MotorCommandCursor):
+        if isinstance(motor_obj, motor.core.MotorCommandCursor):
             return CommandCursor(motor_obj)
-        if isinstance(motor_obj, motor.MotorCursor):
+        if isinstance(motor_obj, motor.core.MotorCursor):
             return Cursor(motor_obj)
-        if isinstance(motor_obj, motor.MotorBulkOperationBuilder):
+        if isinstance(motor_obj, motor.core.MotorBulkOperationBuilder):
             return BulkOperationBuilder(motor_obj)
-        if isinstance(motor_obj, motor.MotorGridFS):
+        if isinstance(motor_obj, motor.motor_gridfs.MotorGridFS):
             return GridFS(motor_obj)
-        if isinstance(motor_obj, motor.MotorGridIn):
+        if isinstance(motor_obj, motor.motor_gridfs.MotorGridIn):
             return GridIn(None, delegate=motor_obj)
-        if isinstance(motor_obj, motor.MotorGridOut):
+        if isinstance(motor_obj, motor.motor_gridfs.MotorGridOut):
             return GridOut(None, delegate=motor_obj)
-        if isinstance(motor_obj, motor.MotorGridOutCursor):
+        if isinstance(motor_obj, motor.motor_gridfs.MotorGridOutCursor):
             return GridOutCursor(motor_obj)
         else:
             return motor_obj
@@ -198,7 +200,7 @@ class SynchroMeta(type):
                             attrname, delegate_attr.has_write_concern)
                         setattr(new_class, attrname, sync_method)
                     elif isinstance(
-                            delegate_attr, motor.Unwrap):
+                            delegate_attr, motor.core.Unwrap):
                         # Re-synchronize the method.
                         sync_method = Sync(
                             attrname, delegate_attr.prop.has_write_concern)
@@ -212,14 +214,14 @@ class SynchroMeta(type):
                         wrapper.name = attrname
                         setattr(new_class, attrname, wrapper)
                     elif isinstance(
-                            delegate_attr, motor.ReadOnlyPropertyDescriptor):
+                            delegate_attr, motor.core.ReadOnlyPropertyDescriptor):
                         # Delegate the property from Synchro to Motor.
                         setattr(new_class, attrname, delegate_attr)
 
         # Set DelegateProperties' and SynchroProperties' names.
         for name, attr in attrs.items():
             if isinstance(attr, (
-                motor.MotorAttributeFactory, SynchroProperty, WrapOutgoing)
+                motor.core.MotorAttributeFactory, SynchroProperty, WrapOutgoing)
             ):
                 attr.name = name
 
@@ -423,7 +425,7 @@ class MongoReplicaSetClient(MongoClientBase):
 
 
 class Database(Synchro):
-    __delegate_class__ = motor.MotorDatabase
+    __delegate_class__ = motor.core.MotorDatabase
 
     def __init__(self, client, name):
         assert isinstance(client, (MongoClient, MongoReplicaSetClient)), (
@@ -433,7 +435,7 @@ class Database(Synchro):
         self.connection = client
 
         self.delegate = client.delegate[name]
-        assert isinstance(self.delegate, motor.MotorDatabase), (
+        assert isinstance(self.delegate, motor.core.MotorDatabase), (
             "synchro.Database delegate must be MotorDatabase, not "
             " %s" % repr(self.delegate))
 
@@ -452,7 +454,7 @@ class Database(Synchro):
 
 
 class Collection(Synchro):
-    __delegate_class__ = motor.MotorCollection
+    __delegate_class__ = motor.core.MotorCollection
 
     find                            = WrapOutgoing()
     initialize_unordered_bulk_op    = WrapOutgoing()
@@ -467,7 +469,7 @@ class Collection(Synchro):
         self.database = database
         self.delegate = database.delegate[name]
 
-        if not isinstance(self.delegate, motor.MotorCollection):
+        if not isinstance(self.delegate, motor.core.MotorCollection):
             raise TypeError(
                 "Expected to get synchro Collection from Database,"
                 " got %s" % repr(self.delegate))
@@ -480,7 +482,7 @@ class Collection(Synchro):
 
 
 class Cursor(Synchro):
-    __delegate_class__ = motor.MotorCursor
+    __delegate_class__ = motor.core.MotorCursor
 
     rewind                     = WrapOutgoing()
     clone                      = WrapOutgoing()
@@ -577,14 +579,14 @@ class Cursor(Synchro):
 
 
 class CommandCursor(Cursor):
-    __delegate_class__ = motor.MotorCommandCursor
+    __delegate_class__ = motor.core.MotorCommandCursor
 
 
 class GridOutCursor(Cursor):
-    __delegate_class__ = motor.MotorGridOutCursor
+    __delegate_class__ = motor.motor_gridfs.MotorGridOutCursor
 
     def __init__(self, delegate):
-        if not isinstance(delegate, motor.MotorGridOutCursor):
+        if not isinstance(delegate, motor.motor_gridfs.MotorGridOutCursor):
             raise TypeError(
                 "Expected MotorGridOutCursor, got %r" % delegate)
 
@@ -605,14 +607,14 @@ class CursorManager(object):
 
 
 class BulkOperationBuilder(Synchro):
-    __delegate_class__ = motor.MotorBulkOperationBuilder
+    __delegate_class__ = motor.core.MotorBulkOperationBuilder
 
     # execute     = Sync()
     # find        = WrapOutgoing()
     # insert      = WrapOutgoing()
 
     def __init__(self, motor_bob):
-        if not isinstance(motor_bob, motor.MotorBulkOperationBuilder):
+        if not isinstance(motor_bob, motor.core.MotorBulkOperationBuilder):
             raise TypeError(
                 "Expected MotorBulkOperationBuilder, got %r" % motor_bob)
 
@@ -620,14 +622,14 @@ class BulkOperationBuilder(Synchro):
 
 
 class GridFS(Synchro):
-    __delegate_class__ = motor.MotorGridFS
+    __delegate_class__ = motor.motor_gridfs.MotorGridFS
 
     def __init__(self, database, collection='fs', _connect=True):
         if not isinstance(database, Database):
             raise TypeError(
                 "Expected Database, got %s" % repr(database))
 
-        self.delegate = motor.MotorGridFS(database.delegate, collection)
+        self.delegate = motor.motor_gridfs.MotorGridFS(database.delegate, collection)
 
     def put(self, *args, **kwargs):
         return self.synchronize(self.delegate.put)(*args, **kwargs)
@@ -639,7 +641,7 @@ class GridFS(Synchro):
 
 
 class GridIn(Synchro):
-    __delegate_class__ = motor.MotorGridIn
+    __delegate_class__ = motor.motor_gridfs.MotorGridIn
 
     def __init__(self, collection, **kwargs):
         """Can be created with collection and kwargs like a PyMongo GridIn,
@@ -653,14 +655,14 @@ class GridIn(Synchro):
                 raise TypeError(
                     "Expected Collection, got %s" % repr(collection))
 
-            self.delegate = motor.MotorGridIn(collection.delegate, **kwargs)
+            self.delegate = motor.motor_gridfs.MotorGridIn(collection.delegate, **kwargs)
 
     def __getattr__(self, item):
         return getattr(self.delegate, item)
 
 
 class GridOut(Synchro):
-    __delegate_class__ = motor.MotorGridOut
+    __delegate_class__ = motor.motor_gridfs.MotorGridOut
 
     def __init__(
             self, root_collection, file_id=None, file_document=None,
@@ -675,7 +677,7 @@ class GridOut(Synchro):
                 raise TypeError(
                     "Expected Collection, got %s" % repr(root_collection))
 
-            self.delegate = motor.MotorGridOut(
+            self.delegate = motor.motor_gridfs.MotorGridOut(
                 root_collection.delegate, file_id, file_document)
 
             if _connect:

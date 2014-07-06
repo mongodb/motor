@@ -71,7 +71,7 @@ Motor, like PyMongo, represents data with a 4-level object hierarchy:
   represents a mongod process, or a cluster of them. You explicitly create one
   of these client objects, connect it to a running mongod or mongods, and
   use it for the lifetime of your application.
-* :class:`~motor.MotorDatabase`: Each mongod has a set of databases (distinct
+* :class:`~motor.core.MotorDatabase`: Each mongod has a set of databases (distinct
   sets of data files on disk). You can get a reference to a database from a
   client.
 * :class:`~motor.MotorCollection`: A database has a set of collections, which
@@ -520,7 +520,7 @@ Commands
 --------
 Besides the "CRUD" operations--insert, update, remove, and find--all other
 operations on MongoDB are commands. Run them using
-the :meth:`~motor.MotorDatabase.command` method on :class:`~motor.MotorDatabase`:
+the :meth:`~motor.core.MotorDatabase.command` method on :class:`~motor.core.MotorDatabase`:
 
 .. doctest:: after-inserting-2000-docs
 
@@ -540,7 +540,7 @@ from the ``bson`` module included with PyMongo::
     yield db.command(SON([("distinct", "test_collection"), ("key", "my_key"]))
 
 Many commands have special helper methods, such as
-:meth:`~motor.MotorDatabase.create_collection` or
+:meth:`~motor.core.MotorDatabase.create_collection` or
 :meth:`~motor.MotorCollection.aggregate`, but these are just conveniences atop
 the basic :meth:`command` method.
 
@@ -550,7 +550,7 @@ Further Reading
 ---------------
 The handful of classes and methods introduced here are sufficient for daily
 tasks. The API documentation for :class:`~motor.MotorClient`,
-:class:`~motor.MotorReplicaSetClient`, :class:`~motor.MotorDatabase`,
+:class:`~motor.MotorReplicaSetClient`, :class:`~motor.core.MotorDatabase`,
 :class:`~motor.MotorCollection`, and :class:`~motor.MotorCursor` provides a
 reference to Motor's complete feature set.
 

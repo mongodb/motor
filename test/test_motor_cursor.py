@@ -30,6 +30,7 @@ from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import motor
+import motor.core
 from test import MotorTest, assert_raises, SkipTest
 from test.utils import server_is_mongos, version, get_command_line
 
@@ -37,7 +38,7 @@ from test.utils import server_is_mongos, version, get_command_line
 class MotorCursorTest(MotorTest):
     def test_cursor(self):
         cursor = self.collection.find()
-        self.assertTrue(isinstance(cursor, motor.MotorCursor))
+        self.assertTrue(isinstance(cursor, motor.core.MotorCursor))
         self.assertFalse(cursor.started, "Cursor shouldn't start immediately")
 
     @gen_test

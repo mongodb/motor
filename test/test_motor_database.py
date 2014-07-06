@@ -24,6 +24,7 @@ from pymongo.son_manipulator import AutoReference, NamespaceInjector
 from tornado.testing import gen_test
 
 import motor
+import motor.core
 import test
 from test import version, MotorTest, assert_raises
 from test.utils import remove_all_users
@@ -34,7 +35,7 @@ class MotorDatabaseTest(MotorTest):
     def test_database(self):
         # Test that we can create a db directly, not just from MotorClient's
         # accessors
-        db = motor.MotorDatabase(self.cx, 'motor_test')
+        db = motor.core.MotorDatabase(self.cx, 'motor_test')
 
         # Make sure we got the right DB and it can do an operation
         self.assertEqual('motor_test', db.name)
@@ -45,7 +46,7 @@ class MotorDatabaseTest(MotorTest):
     def test_collection_named_delegate(self):
         db = self.db
         self.assertTrue(isinstance(db.delegate, pymongo.database.Database))
-        self.assertTrue(isinstance(db['delegate'], motor.MotorCollection))
+        self.assertTrue(isinstance(db['delegate'], motor.core.MotorCollection))
         db.connection.close()
 
     def test_call(self):
@@ -98,7 +99,7 @@ class MotorDatabaseTest(MotorTest):
         db = self.db
         yield db.drop_collection('test_collection2')
         collection = yield db.create_collection('test_collection2')
-        self.assertTrue(isinstance(collection, motor.MotorCollection))
+        self.assertTrue(isinstance(collection, motor.core.MotorCollection))
         self.assertTrue(
             'test_collection2' in (yield db.collection_names()))
 
@@ -111,7 +112,7 @@ class MotorDatabaseTest(MotorTest):
         collection = yield db.create_collection(
             'test_capped', capped=True, size=4096)
 
-        self.assertTrue(isinstance(collection, motor.MotorCollection))
+        self.assertTrue(isinstance(collection, motor.core.MotorCollection))
         self.assertEqual(
             {"capped": True, 'size': 4096},
             (yield db.test_capped.options()))
