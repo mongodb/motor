@@ -22,7 +22,6 @@ from functools import partial
 from bson import ObjectId
 
 from gridfs.errors import FileExists, NoFile
-from pymongo import MongoClient
 from pymongo.errors import AutoReconnect, ConfigurationError
 from pymongo.read_preferences import ReadPreference
 from tornado import gen
@@ -32,7 +31,7 @@ import motor
 import motor.motor_gridfs
 import test
 from motor.motor_py3_compat import StringIO
-from test import host, port, MotorTest, MotorReplicaSetTestBase, assert_raises
+from test import MotorTest, MotorReplicaSetTestBase, assert_raises
 
 
 class MotorGridfsTest(MotorTest):
