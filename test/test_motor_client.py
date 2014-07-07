@@ -170,6 +170,7 @@ class MotorClientTest(MotorTest):
 
         collection = cx.motor_test.test_collection
         insert_collection = cx.motor_test.insert_collection
+        yield insert_collection.remove()
 
         ndocs = [0]
         insert_future = Future()
