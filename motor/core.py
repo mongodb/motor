@@ -42,8 +42,17 @@ from pymongo.pool import _closed, SocketInfo
 
 from . import motor_py3_compat, util
 from .frameworks import tornado as tornado_framework
-from .metaprogramming import create_class_with_framework
-from .motor_common import callback_type_error
+from .metaprogramming import (AsyncCommand,
+                              AsyncRead,
+                              AsyncWrite,
+                              create_class_with_framework,
+                              DelegateMethod,
+                              MotorCursorChainingMethod,
+                              ReadOnlyProperty,
+                              ReadWriteProperty)
+from .motor_common import (callback_type_error,
+                           check_deprecated_kwargs,
+                           mangle_delegate_name)
 
 HAS_SSL = True
 try:
@@ -51,20 +60,6 @@ try:
 except ImportError:
     ssl = None
     HAS_SSL = False
-
-
-def check_deprecated_kwargs(kwargs):
-    if 'safe' in kwargs:
-        raise pymongo.errors.ConfigurationError(
-            "Motor does not support 'safe', use 'w'")
-
-    if 'slave_okay' in kwargs or 'slaveok' in kwargs:
-        raise pymongo.errors.ConfigurationError(
-            "Motor does not support 'slave_okay', use read_preference")
-
-    if 'auto_start_request' in kwargs:
-        raise pymongo.errors.ConfigurationError(
-            "Motor does not support requests")
 
 
 class MotorPool(object):
@@ -395,277 +390,6 @@ class MotorPool(object):
             'Timed out waiting for socket from pool with max_size %r and'
             ' wait_queue_timeout %r' % (
                 self.max_size, self.wait_queue_timeout))
-
-
-def mangle_delegate_name(motor_class, name):
-    if name.startswith('__') and not name.endswith("__"):
-        # Mangle, e.g. Cursor.__die -> Cursor._Cursor__die
-        classname = motor_class.__delegate_class__.__name__
-        return '_%s%s' % (classname, name)
-    else:
-        return name
-
-
-def asynchronize(motor_class, sync_method, has_write_concern, doc=None):
-    """Decorate `sync_method` so it accepts a callback or returns a Future.
-
-    The method runs on a child greenlet and calls the callback or resolves
-    the Future when the greenlet completes.
-
-    :Parameters:
-     - `motor_class`:       Motor class being created, e.g. MotorClient.
-     - `sync_method`:       Unbound method of pymongo Collection, Database,
-                            MongoClient, or Cursor
-     - `has_write_concern`: Whether the method accepts getLastError options
-     - `doc`:               Optionally override sync_method's docstring
-    """
-    @functools.wraps(sync_method)
-    def method(self, *args, **kwargs):
-        check_deprecated_kwargs(kwargs)
-        loop = self.get_io_loop()
-        callback = kwargs.pop('callback', None)
-
-        if callback:
-            if not callable(callback):
-                raise callback_type_error
-            future = None
-        else:
-            future = tornado_framework.get_future()
-
-        def call_method():
-            # Runs on child greenlet.
-            try:
-                result = sync_method(self.delegate, *args, **kwargs)
-                if callback:
-                    # Schedule callback(result, None) on main greenlet.
-                    loop.add_callback(functools.partial(
-                        callback, result, None))
-                else:
-                    # Schedule future to be resolved on main greenlet.
-                    loop.add_callback(functools.partial(
-                        future.set_result, result))
-            except Exception as e:
-                if callback:
-                    loop.add_callback(functools.partial(
-                        callback, None, e))
-                else:
-                    loop.add_callback(functools.partial(
-                        future.set_exc_info, sys.exc_info()))
-
-        # Start running the operation on a greenlet.
-        greenlet.greenlet(call_method).switch()
-        return future
-
-    # This is for the benefit of motor_extensions.py, which needs this info to
-    # generate documentation with Sphinx.
-    method.is_async_method = True
-    method.has_write_concern = has_write_concern
-    name = sync_method.__name__
-    method.pymongo_method_name = mangle_delegate_name(motor_class, name)
-    if doc is not None:
-        method.__doc__ = doc
-
-    return method
-
-
-class MotorAttributeFactory(object):
-    # TODO: update.
-    """Used by Motor classes to mark attributes that delegate in some way to
-    PyMongo. At module import time, each Motor class is created, and MotorMeta
-    calls create_attribute() for each attr to create the final class attribute.
-    """
-    def __init__(self, doc=None):
-        self.doc = doc
-
-    def create_attribute(self, cls, attr_name):
-        raise NotImplementedError
-
-
-class Async(MotorAttributeFactory):
-    def __init__(self, attr_name, has_write_concern, doc=None):
-        """A descriptor that wraps a PyMongo method, such as insert or remove,
-        and returns an asynchronous version of the method, which accepts a
-        callback or returns a Future.
-
-        :Parameters:
-         - `attr_name`: The name of the attribute on the PyMongo class, if
-           different from attribute on the Motor class
-         - `has_write_concern`: Whether the method accepts getLastError options
-        """
-        super(Async, self).__init__(doc)
-        self.attr_name = attr_name
-        self.has_write_concern = has_write_concern
-
-    def create_attribute(self, cls, attr_name):
-        name = self.attr_name or attr_name
-        if name.startswith('__'):
-            # Mangle: __simple_command becomes _MongoClient__simple_command.
-            name = '_%s%s' % (cls.__delegate_class__.__name__, name)
-
-        method = getattr(cls.__delegate_class__, name)
-        return asynchronize(cls, method, self.has_write_concern, doc=self.doc)
-
-    def wrap(self, original_class):
-        return WrapAsync(self, original_class)
-
-    def unwrap(self, class_name):
-        return Unwrap(self, class_name)
-
-
-class WrapBase(MotorAttributeFactory):
-    def __init__(self, prop, doc=None):
-        super(WrapBase, self).__init__(doc)
-        self.property = prop
-
-
-class WrapAsync(WrapBase):
-    def __init__(self, prop, original_class):
-        """Like Async, but before it executes the callback or resolves the
-        Future, checks if result is a PyMongo class and wraps it in a Motor
-        class. E.g., Motor's map_reduce should pass a MotorCollection instead
-        of a PyMongo Collection to the Future. Uses the wrap() method on the
-        owner object to do the actual wrapping. E.g.,
-        Database.create_collection returns a Collection, so MotorDatabase has:
-
-        create_collection = AsyncCommand().wrap(Collection)
-
-        Once Database.create_collection is done, Motor calls
-        MotorDatabase.wrap() on its result, transforming the result from
-        Collection to MotorCollection, which is passed to the callback or
-        Future.
-
-        :Parameters:
-        - `prop`: An Async, the async method to call before wrapping its result
-          in a Motor class.
-        - `original_class`: A PyMongo class to be wrapped.
-        """
-        super(WrapAsync, self).__init__(prop)
-        self.original_class = original_class
-
-    def create_attribute(self, cls, attr_name):
-        async_method = self.property.create_attribute(cls, attr_name)
-        original_class = self.original_class
-
-        @functools.wraps(async_method)
-        @cls._framework.coroutine
-        def wrapper(self, *args, **kwargs):
-            result = yield async_method(self, *args, **kwargs)
-
-            # Don't call isinstance(), not checking subclasses.
-            if result.__class__ == original_class:
-                # Delegate to the current object to wrap the result.
-                tornado_framework.return_value(self.wrap(result))
-            else:
-                tornado_framework.return_value(result)
-
-        if self.doc:
-            wrapper.__doc__ = self.doc
-
-        return wrapper
-
-
-class Unwrap(WrapBase):
-    def __init__(self, prop, motor_class_name):
-        """A descriptor that checks if arguments are Motor classes and unwraps
-        them. E.g., Motor's drop_database takes a MotorDatabase, unwraps it,
-        and passes a PyMongo Database instead.
-
-        :Parameters:
-        - `prop`: An Async, the async method to call with unwrapped arguments.
-        - `motor_class_name`: Like 'MotorDatabase' or 'MotorCollection'.
-        """
-        super(Unwrap, self).__init__(prop)
-        assert isinstance(motor_class_name, motor_py3_compat.text_type)
-        self.motor_class_name = motor_class_name
-
-    def create_attribute(self, cls, attr_name):
-        f = self.property.create_attribute(cls, attr_name)
-        name = self.motor_class_name
-
-        @functools.wraps(f)
-        def _f(self, *args, **kwargs):
-            # Don't call isinstance(), not checking subclasses.
-            unwrapped_args = [
-                obj.delegate if obj.__class__.__name__ == name else obj
-                for obj in args]
-
-            unwrapped_kwargs = dict([
-                (key, obj.delegate if obj.__class__.__name__ == name else obj)
-                for key, obj in kwargs.items()])
-
-            return f(self, *unwrapped_args, **unwrapped_kwargs)
-
-        if self.doc:
-            _f.__doc__ = self.doc
-
-        return _f
-
-
-class AsyncRead(Async):
-    def __init__(self, attr_name=None, doc=None):
-        """A descriptor that wraps a PyMongo read method like find_one() that
-        returns a Future.
-        """
-        Async.__init__(
-            self, attr_name=attr_name, has_write_concern=False, doc=doc)
-
-
-class AsyncWrite(Async):
-    def __init__(self, attr_name=None, doc=None):
-        """A descriptor that wraps a PyMongo write method like update() that
-        accepts getLastError options and returns a Future.
-        """
-        Async.__init__(
-            self, attr_name=attr_name, has_write_concern=True, doc=doc)
-
-
-class AsyncCommand(Async):
-    def __init__(self, attr_name=None, doc=None):
-        """A descriptor that wraps a PyMongo command like copy_database() that
-        returns a Future and does not accept getLastError options.
-        """
-        Async.__init__(
-            self, attr_name=attr_name, has_write_concern=False, doc=doc)
-
-
-class ReadOnlyPropertyDescriptor(object):
-    def __init__(self, attr_name, doc=None):
-        self.attr_name = attr_name
-        if doc:
-            self.__doc__ = doc
-
-    def __get__(self, obj, objtype):
-        if obj:
-            return getattr(obj.delegate, self.attr_name)
-        else:
-            # We're accessing this property on a class, e.g. when Sphinx wants
-            # MotorClient.read_preference.__doc__.
-            return getattr(objtype.__delegate_class__, self.attr_name)
-
-    def __set__(self, obj, val):
-        raise AttributeError
-
-
-class ReadOnlyProperty(MotorAttributeFactory):
-    """Creates a readonly attribute on the wrapped PyMongo object"""
-    def create_attribute(self, cls, attr_name):
-        return ReadOnlyPropertyDescriptor(attr_name, self.doc)
-
-
-class DelegateMethod(ReadOnlyProperty):
-    """A method on the wrapped PyMongo object that does no I/O and can be called
-    synchronously"""
-
-
-class ReadWritePropertyDescriptor(ReadOnlyPropertyDescriptor):
-    def __set__(self, obj, val):
-        setattr(obj.delegate, self.attr_name, val)
-
-
-class ReadWriteProperty(MotorAttributeFactory):
-    """Creates a mutable attribute on the wrapped PyMongo object"""
-    def create_attribute(self, cls, attr_name):
-        return ReadWritePropertyDescriptor(attr_name, self.doc)
 
 
 class AgnosticBase(object):
@@ -1372,24 +1096,6 @@ class AgnosticCollection(AgnosticBase):
 
     def get_io_loop(self):
         return self.database.get_io_loop()
-
-
-class MotorCursorChainingMethod(MotorAttributeFactory):
-    def create_attribute(self, cls, attr_name):
-        cursor_method = getattr(Cursor, attr_name)
-
-        @functools.wraps(cursor_method)
-        def return_clone(self, *args, **kwargs):
-            cursor_method(self.delegate, *args, **kwargs)
-            return self
-
-        # This is for the benefit of motor_extensions.py
-        return_clone.is_motorcursor_chaining_method = True
-        return_clone.pymongo_method_name = attr_name
-        if self.doc:
-            return_clone.__doc__ = self.doc
-
-        return return_clone
 
 
 class AgnosticBaseCursor(AgnosticBase):

@@ -31,6 +31,10 @@ from tornado.ioloop import IOLoop
 
 import motor
 import motor.frameworks.tornado
+from motor.metaprogramming import (
+    MotorAttributeFactory,
+    ReadOnlyPropertyDescriptor,
+    Unwrap)
 
 # Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
 # importing * won't pick up underscore-prefixed attrs.
@@ -199,7 +203,7 @@ class SynchroMeta(type):
                             attrname, delegate_attr.has_write_concern)
                         setattr(new_class, attrname, sync_method)
                     elif isinstance(
-                            delegate_attr, motor.core.Unwrap):
+                            delegate_attr, Unwrap):
                         # Re-synchronize the method.
                         sync_method = Sync(
                             attrname, delegate_attr.prop.has_write_concern)
@@ -213,14 +217,16 @@ class SynchroMeta(type):
                         wrapper.name = attrname
                         setattr(new_class, attrname, wrapper)
                     elif isinstance(
-                            delegate_attr, motor.core.ReadOnlyPropertyDescriptor):
+                            delegate_attr,
+                            ReadOnlyPropertyDescriptor):
                         # Delegate the property from Synchro to Motor.
                         setattr(new_class, attrname, delegate_attr)
 
         # Set DelegateProperties' and SynchroProperties' names.
         for name, attr in attrs.items():
-            if isinstance(attr, (
-                motor.core.MotorAttributeFactory, SynchroProperty, WrapOutgoing)
+            if isinstance(
+                    attr,
+                    (MotorAttributeFactory, SynchroProperty, WrapOutgoing)
             ):
                 attr.name = name
 

@@ -25,13 +25,13 @@ from tornado import gen
 from .frameworks import tornado as tornado_framework
 from .core import (AgnosticBaseCursor,
                    AgnosticCollection,
-                   AgnosticDatabase,
-                   AsyncCommand,
-                   asynchronize,
-                   AsyncRead,
-                   DelegateMethod,
-                   MotorCursorChainingMethod,
-                   ReadOnlyProperty)
+                   AgnosticDatabase)
+from .metaprogramming import (AsyncCommand,
+                              asynchronize,
+                              AsyncRead,
+                              DelegateMethod,
+                              MotorCursorChainingMethod,
+                              ReadOnlyProperty)
 from .metaprogramming import create_class_with_framework
 
 
@@ -225,6 +225,21 @@ class AgnosticGridIn(object):
     length = ReadOnlyProperty()
     chunk_size = ReadOnlyProperty()
     upload_date = ReadOnlyProperty()
+    set = AsyncCommand(attr_name='__setattr__', doc="""
+Set an arbitrary metadata attribute on the file. Stores value on the server
+as a key-value pair within the file document once the file is closed. If
+the file is already closed, calling `set` will immediately update the file
+document on the server.
+
+Metadata set on the file appears as attributes on a
+:class:`~motor.MotorGridOut` object created from the file.
+
+:Parameters:
+  - `name`: Name of the attribute, will be stored as a key in the file
+    document on the server
+  - `value`: Value of the attribute
+  - `callback`: Optional callback to execute once attribute is set.
+""")
 
     def __init__(self, root_collection, delegate=None, **kwargs):
         """
@@ -283,24 +298,6 @@ class AgnosticGridIn(object):
 
     def get_io_loop(self):
         return self.io_loop
-
-
-AgnosticGridIn.set = asynchronize(
-    AgnosticGridIn, gridfs.GridIn.__setattr__, False, doc="""
-Set an arbitrary metadata attribute on the file. Stores value on the server
-as a key-value pair within the file document once the file is closed. If
-the file is already closed, calling `set` will immediately update the file
-document on the server.
-
-Metadata set on the file appears as attributes on a
-:class:`~motor.MotorGridOut` object created from the file.
-
-:Parameters:
-  - `name`: Name of the attribute, will be stored as a key in the file
-    document on the server
-  - `value`: Value of the attribute
-  - `callback`: Optional callback to execute once attribute is set.
-""")
 
 
 class AgnosticGridFS(object):
