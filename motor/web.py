@@ -25,7 +25,7 @@ import tornado.web
 from tornado import gen
 
 import gridfs
-from . import motor_gridfs
+import motor
 
 
 # TODO: this class is not a drop-in replacement for StaticFileHandler.
@@ -89,7 +89,7 @@ class GridFSHandler(tornado.web.RequestHandler):
 
     @gen.coroutine
     def get(self, path, include_body=True):
-        fs = motor_gridfs.MotorGridFS(self.database, self.root_collection)
+        fs = motor.MotorGridFS(self.database, self.root_collection)
 
         try:
             gridout = yield self.get_gridfs_file(fs, path)

@@ -14,6 +14,7 @@
 
 from __future__ import unicode_literals, absolute_import
 
+# TODO: link to framework spec in dev guide.
 """Tornado compatibility layer for MongoDB, an asynchronous MongoDB driver."""
 
 import functools
@@ -52,6 +53,29 @@ def get_future():
 
 def is_future(f):
     return isinstance(f, concurrent.Future)
+
+
+def call_soon(loop, callback):
+    loop.add_callback(callback)
+
+
+def call_soon_threadsafe(loop, callback):
+    loop.add_callback(callback)
+
+
+def call_later(loop, delay, callback, *args, **kwargs):
+    if args or kwargs:
+        loop.add_timeout(
+            loop.time() + delay,
+            functools.partial(callback, *args, **kwargs))
+    else:
+        loop.add_timeout(
+            loop.time() + delay,
+            callback)
+
+
+def call_later_cancel(loop, handle):
+    loop.remove_timeout(handle)
 
 
 def get_resolver(loop):

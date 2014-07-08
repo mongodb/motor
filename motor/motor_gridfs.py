@@ -22,21 +22,21 @@ import pymongo.errors
 from gridfs import grid_file
 from tornado import gen
 
-from . import motor_py3_compat
 from .frameworks import tornado as tornado_framework
-from .core import (AsyncCommand,
+from .core import (AgnosticBaseCursor,
+                   AgnosticCollection,
+                   AgnosticDatabase,
+                   AsyncCommand,
                    asynchronize,
                    AsyncRead,
                    DelegateMethod,
-                   MotorBaseCursor,
-                   MotorCollection,
                    MotorCursorChainingMethod,
-                   MotorMeta,
-                   MotorDatabase,
                    ReadOnlyProperty)
+from .metaprogramming import create_class_with_framework
 
 
-class MotorGridOutCursor(MotorBaseCursor):
+class AgnosticGridOutCursor(AgnosticBaseCursor):
+    __motor_class_name__ = 'MotorGridOutCursor'
     __delegate_class__ = gridfs.GridOutCursor
 
     count = AsyncRead()
@@ -58,9 +58,12 @@ class MotorGridOutCursor(MotorBaseCursor):
 
     def next_object(self):
         """Get next GridOut object from cursor."""
-        grid_out = super(MotorGridOutCursor, self).next_object()
+        grid_out = super(self.__class__, self).next_object()
         if grid_out:
-            return MotorGridOut(self.collection, delegate=grid_out)
+            grid_out_class = create_class_with_framework(
+                AgnosticGridOut, self._framework)
+
+            return grid_out_class(self.collection, delegate=grid_out)
         else:
             # Exhausted.
             return None
@@ -85,8 +88,7 @@ class MotorGridOutCursor(MotorBaseCursor):
         return self._Cursor__die()
 
 
-@motor_py3_compat.add_metaclass(MotorMeta)
-class MotorGridOut(object):
+class AgnosticGridOut(object):
     """Class to read data out of GridFS.
 
     MotorGridOut supports the same attributes as PyMongo's
@@ -94,10 +96,11 @@ class MotorGridOut(object):
     etc.
 
     You don't need to instantiate this class directly - use the
-    methods provided by :class:`~motor.motor_gridfs.MotorGridFS`. If it **is**
+    methods provided by :class:`~motor.MotorGridFS`. If it **is**
     instantiated directly, call :meth:`open`, :meth:`read`, or
     :meth:`readline` before accessing its attributes.
     """
+    __motor_class_name__ = 'MotorGridOut'
     __delegate_class__ = gridfs.GridOut
 
     tell = DelegateMethod()
@@ -114,7 +117,10 @@ class MotorGridOut(object):
         file_document=None,
         delegate=None,
     ):
-        if not isinstance(root_collection, MotorCollection):
+        collection_class = create_class_with_framework(
+            AgnosticCollection, self._framework)
+
+        if not isinstance(root_collection, collection_class):
             raise TypeError(
                 "First argument to MotorGridOut must be "
                 "MotorCollection, not %r" % root_collection)
@@ -148,7 +154,7 @@ class MotorGridOut(object):
          - `callback`: Optional function taking parameters (self, error)
 
         .. versionchanged:: 0.2
-           :class:`MotorGridOut` now opens itself on demand, calling
+           :class:`~motor.MotorGridOut` now opens itself on demand, calling
            ``open`` explicitly is rarely needed.
         """
         yield self._ensure_file()
@@ -177,7 +183,7 @@ class MotorGridOut(object):
                 @gen.coroutine
                 def get(self, filename):
                     db = self.settings['db']
-                    fs = yield motor.motor_gridfs.MotorGridFS(db()).open()
+                    fs = yield motor.MotorGridFS(db()).open()
                     try:
                         gridout = yield fs.get_last_version(filename)
                     except gridfs.NoFile:
@@ -202,15 +208,15 @@ class MotorGridOut(object):
             written += len(chunk)
 
 
-@motor_py3_compat.add_metaclass(MotorMeta)
-class MotorGridIn(object):
+class AgnosticGridIn(object):
+    __motor_class_name__ = 'MotorGridIn'
     __delegate_class__ = gridfs.GridIn
 
     __getattr__ = DelegateMethod()
     closed = ReadOnlyProperty()
     close = AsyncCommand()
-    write = AsyncCommand().unwrap(MotorGridOut)
-    writelines = AsyncCommand().unwrap(MotorGridOut)
+    write = AsyncCommand().unwrap('MotorGridOut')
+    writelines = AsyncCommand().unwrap('MotorGridOut')
     _id = ReadOnlyProperty()
     md5 = ReadOnlyProperty()
     filename = ReadOnlyProperty()
@@ -224,7 +230,7 @@ class MotorGridIn(object):
         """
         Class to write data to GridFS. Application developers should not
         generally need to instantiate this class - see
-        :meth:`~motor.motor_gridfs.MotorGridFS.new_file`.
+        :meth:`~motor.MotorGridFS.new_file`.
 
         Any of the file level options specified in the `GridFS Spec
         <http://dochub.mongodb.org/core/gridfs>`_ may be passed as
@@ -251,14 +257,17 @@ class MotorGridIn(object):
             :class:`bytes`.
 
         :Parameters:
-          - `root_collection`: A :class:`MotorCollection`, the root collection
-             to write to
+          - `root_collection`: A :class:`~motor.MotorCollection`, the root
+             collection to write to
           - `**kwargs` (optional): file level options (see above)
 
         .. versionchanged:: 0.2
            ``open`` method removed, no longer needed.
         """
-        if not isinstance(root_collection, MotorCollection):
+        collection_class = create_class_with_framework(
+            AgnosticCollection, self._framework)
+
+        if not isinstance(root_collection, collection_class):
             raise TypeError(
                 "First argument to MotorGridIn must be "
                 "MotorCollection, not %r" % root_collection)
@@ -276,15 +285,15 @@ class MotorGridIn(object):
         return self.io_loop
 
 
-MotorGridIn.set = asynchronize(
-    MotorGridIn, gridfs.GridIn.__setattr__, False, doc="""
+AgnosticGridIn.set = asynchronize(
+    AgnosticGridIn, gridfs.GridIn.__setattr__, False, doc="""
 Set an arbitrary metadata attribute on the file. Stores value on the server
 as a key-value pair within the file document once the file is closed. If
 the file is already closed, calling `set` will immediately update the file
 document on the server.
 
-Metadata set on the file appears as attributes on a :class:`~MotorGridOut`
-object created from the file.
+Metadata set on the file appears as attributes on a
+:class:`~motor.MotorGridOut` object created from the file.
 
 :Parameters:
   - `name`: Name of the attribute, will be stored as a key in the file
@@ -294,8 +303,8 @@ object created from the file.
 """)
 
 
-@motor_py3_compat.add_metaclass(MotorMeta)
-class MotorGridFS(object):
+class AgnosticGridFS(object):
+    __motor_class_name__ = 'MotorGridFS'
     __delegate_class__ = gridfs.GridFS
 
     new_file = AsyncRead().wrap(grid_file.GridIn)
@@ -311,7 +320,7 @@ class MotorGridFS(object):
         An instance of GridFS on top of a single Database.
 
         :Parameters:
-          - `database`: a :class:`MotorDatabase`
+          - `database`: a :class:`~motor.MotorDatabase`
           - `collection` (optional): A string, name of root collection to use,
             such as "fs" or "my_files"
 
@@ -320,7 +329,10 @@ class MotorGridFS(object):
         .. versionchanged:: 0.2
            ``open`` method removed; no longer needed.
         """
-        if not isinstance(database, MotorDatabase):
+        db_class = create_class_with_framework(
+            AgnosticDatabase, self._framework)
+
+        if not isinstance(database, db_class):
             raise TypeError("First argument to MotorGridFS must be "
                             "MotorDatabase, not %r" % database)
 
@@ -375,7 +387,10 @@ class MotorGridFS(object):
         but Motor does not.
         """
         # PyMongo's implementation uses requests, so rewrite for Motor.
-        grid_file = MotorGridIn(self.collection, **kwargs)
+        grid_in_class = create_class_with_framework(
+            AgnosticGridIn, self._framework)
+
+        grid_file = grid_in_class(self.collection, **kwargs)
 
         # w >= 1 necessary to avoid running 'filemd5' command before
         # all data is written, especially with sharding.
@@ -455,20 +470,32 @@ class MotorGridFS(object):
         .. _localThreshold: http://docs.mongodb.org/manual/reference/mongos/#cmdoption-mongos--localThreshold
         """
         cursor = self.delegate.find(*args, **kwargs)
-        return MotorGridOutCursor(cursor, self.collection)
+        grid_out_cursor = create_class_with_framework(
+            AgnosticGridOutCursor, self._framework)
+
+        return grid_out_cursor(cursor, self.collection)
 
     def wrap(self, obj):
         if obj.__class__ is grid_file.GridIn:
-            return MotorGridIn(
+            grid_in_class = create_class_with_framework(
+                AgnosticGridIn, self._framework)
+
+            return grid_in_class(
                 root_collection=self.collection,
                 delegate=obj)
 
         elif obj.__class__ is grid_file.GridOut:
-            return MotorGridOut(
+            grid_out_class = create_class_with_framework(
+                AgnosticGridOut, self._framework)
+
+            return grid_out_class(
                 root_collection=self.collection,
                 delegate=obj)
 
         elif obj.__class__ is gridfs.GridOutCursor:
-            return MotorGridOutCursor(
+            grid_out_class = create_class_with_framework(
+                AgnosticGridOutCursor, self._framework)
+
+            return grid_out_class(
                 cursor=obj,
                 collection=self.collection)

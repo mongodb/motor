@@ -38,7 +38,7 @@ class MotorCollectionTest(MotorTest):
     def test_collection(self):
         # Test that we can create a collection directly, not just from
         # MotorClient's accessors
-        collection = motor.core.MotorCollection(self.db, 'test_collection')
+        collection = motor.MotorCollection(self.db, 'test_collection')
 
         # Make sure we got the right collection and it can do an operation
         self.assertEqual('test_collection', collection.name)
@@ -51,7 +51,7 @@ class MotorCollectionTest(MotorTest):
         # so this is prohibited.
         self.assertRaises(
             TypeError,
-            motor.core.MotorCollection,
+            motor.MotorCollection,
             self.db,
             'test_collection',
             capped=True)
@@ -382,7 +382,7 @@ class MotorCollectionTest(MotorTest):
         tmp_mr = yield collection.map_reduce(map_fn, reduce_fn, 'tmp_mr')
 
         self.assertTrue(
-            isinstance(tmp_mr, motor.core.MotorCollection),
+            isinstance(tmp_mr, motor.MotorCollection),
             'map_reduce should return MotorCollection, not %s' % tmp_mr)
 
         result = yield tmp_mr.find().sort([('_id', 1)]).to_list(length=1000)
@@ -476,7 +476,7 @@ class MotorCollectionTest(MotorTest):
 
         @gen.coroutine
         def f(cursor):
-            self.assertTrue(isinstance(cursor, motor.core.MotorCommandCursor))
+            self.assertTrue(isinstance(cursor, motor.MotorCommandCursor))
 
             while (yield cursor.fetch_next):
                 docs.append(cursor.next_object())

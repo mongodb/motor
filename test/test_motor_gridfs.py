@@ -28,7 +28,6 @@ from tornado import gen
 from tornado.testing import gen_test
 
 import motor
-import motor.motor_gridfs
 import test
 from motor.motor_py3_compat import StringIO
 from test import MotorTest, MotorReplicaSetTestBase, assert_raises
@@ -44,7 +43,7 @@ class MotorGridfsTest(MotorTest):
 
     def setUp(self):
         super(MotorGridfsTest, self).setUp()
-        self.fs = motor.motor_gridfs.MotorGridFS(self.db)
+        self.fs = motor.MotorGridFS(self.db)
 
     def tearDown(self):
         self.io_loop.run_sync(self._reset)
@@ -52,8 +51,8 @@ class MotorGridfsTest(MotorTest):
 
     @gen_test
     def test_gridfs(self):
-        self.assertRaises(TypeError, motor.motor_gridfs.MotorGridFS, "foo")
-        self.assertRaises(TypeError, motor.motor_gridfs.MotorGridFS, 5)
+        self.assertRaises(TypeError, motor.MotorGridFS, "foo")
+        self.assertRaises(TypeError, motor.MotorGridFS, 5)
 
     @gen_test
     def test_get_version(self):
@@ -126,7 +125,7 @@ class MotorGridfsTest(MotorTest):
     @gen_test
     def test_alt_collection(self):
         db = self.db
-        alt = motor.motor_gridfs.MotorGridFS(db, 'alt')
+        alt = motor.MotorGridFS(db, 'alt')
         oid = yield alt.put(b"hello world")
         gridout = yield alt.get(oid)
         self.assertEqual(b"hello world", (yield gridout.read()))
@@ -188,7 +187,7 @@ class MotorGridfsTest(MotorTest):
     @gen_test
     def test_put_unacknowledged(self):
         client = self.motor_client(w=0)
-        fs = motor.motor_gridfs.MotorGridFS(client.motor_test)
+        fs = motor.MotorGridFS(client.motor_test)
         with assert_raises(ConfigurationError):
             yield fs.put(b"hello")
 
@@ -203,7 +202,7 @@ class MotorGridfsTest(MotorTest):
         cursor = self.fs.find().sort("_id", -1).skip(1).limit(2)
         self.assertTrue((yield cursor.fetch_next))
         grid_out = cursor.next_object()
-        self.assertTrue(isinstance(grid_out, motor.motor_gridfs.MotorGridOut))
+        self.assertTrue(isinstance(grid_out, motor.MotorGridOut))
         self.assertEqual(b"test1", (yield grid_out.read()))
 
         cursor.rewind()
@@ -226,7 +225,7 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
             w=test.env.w, wtimeout=5000,
             read_preference=ReadPreference.SECONDARY)
 
-        fs = motor.motor_gridfs.MotorGridFS(rsc.motor_test)
+        fs = motor.MotorGridFS(rsc.motor_test)
         oid = yield fs.put(b'foo')
         gridout = yield fs.get(oid)
         content = yield gridout.read()
@@ -253,7 +252,7 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
 
         # Should detect it's connected to secondary and not attempt to
         # create index
-        fs = motor.motor_gridfs.MotorGridFS(secondary.motor_test)
+        fs = motor.MotorGridFS(secondary.motor_test)
 
         # This won't detect secondary, raises error
         with assert_raises(AutoReconnect):

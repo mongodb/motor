@@ -16,7 +16,6 @@ from __future__ import unicode_literals, absolute_import
 
 """Motor, an asynchronous driver for MongoDB."""
 
-import functools
 import warnings
 
 version_tuple = (0, 3)
@@ -41,178 +40,67 @@ if pymongo.version != expected_pymongo_version:
 
     raise ImportError(msg)
 
-import pymongo.auth
-import pymongo.common
-import pymongo.database
-import pymongo.errors
-import pymongo.mongo_client
-import pymongo.mongo_replica_set_client
-import pymongo.son_manipulator
-
-from . import motor_py3_compat, util
+from . import core, motor_gridfs, motor_py3_compat, util
 from .frameworks import tornado as tornado_framework
-from .core import (AsyncCommand,
-                   DelegateMethod,
-                   MotorClientBase,
-                   MotorReplicaSetMonitor,
-                   ReadOnlyProperty)
+from .metaprogramming import create_class_with_framework
 from .motor_common import callback_type_error
 
 __all__ = ['MotorClient', 'MotorReplicaSetClient', 'Op']
 
 
-class MotorClient(MotorClientBase):
-    __delegate_class__ = pymongo.mongo_client.MongoClient
-
-    kill_cursors = AsyncCommand()
-    fsync        = AsyncCommand()
-    unlock       = AsyncCommand()
-    nodes        = ReadOnlyProperty()
-    host         = ReadOnlyProperty()
-    port         = ReadOnlyProperty()
-
-    _simple_command = AsyncCommand(attr_name='__simple_command')
-    _socket         = AsyncCommand(attr_name='__socket')
-
-    def __init__(self, *args, **kwargs):
-        """Create a new connection to a single MongoDB instance at *host:port*.
-
-        MotorClient takes the same constructor arguments as
-        :class:`~pymongo.mongo_client.MongoClient`, as well as:
-
-        :Parameters:
-          - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
-            instance to use instead of default
-        """
-        if 'io_loop' in kwargs:
-            io_loop = kwargs.pop('io_loop')
-        else:
-            io_loop = tornado_framework.get_event_loop()
-
-        event_class = functools.partial(util.MotorGreenletEvent, io_loop)
-        kwargs['_event_class'] = event_class
-        super(MotorClient, self).__init__(io_loop, *args, **kwargs)
-
-    @tornado_framework.coroutine
-    def open(self):
-        """Connect to the server.
-
-        Takes an optional callback, or returns a Future that resolves to
-        ``self`` when opened. This is convenient for checking at program
-        startup time whether you can connect.
-
-        .. doctest::
-
-          >>> client = MotorClient()
-          >>> # run_sync() returns the open client.
-          >>> IOLoop.current().run_sync(client.open)
-          MotorClient(MongoClient('localhost', 27017))
-
-        ``open`` raises a :exc:`~pymongo.errors.ConnectionFailure` if it
-        cannot connect, but note that auth failures aren't revealed until
-        you attempt an operation on the open client.
-
-        :Parameters:
-         - `callback`: Optional function taking parameters (self, error)
-
-        .. versionchanged:: 0.2
-           :class:`MotorClient` now opens itself on demand, calling ``open``
-           explicitly is now optional.
-        """
-        yield self._ensure_connected()
-        tornado_framework.return_value(self)
-
-    def _get_member(self):
-        # TODO: expose the PyMongo Member, or otherwise avoid this.
-        return self.delegate._MongoClient__member
-
-    def _get_pools(self):
-        member = self._get_member()
-        return [member.pool] if member else [None]
-
-    def _get_primary_pool(self):
-        return self._get_pools()[0]
+MotorClient = create_class_with_framework(
+    core.AgnosticClient,
+    tornado_framework)
 
 
-class MotorReplicaSetClient(MotorClientBase):
-    __delegate_class__ = pymongo.mongo_replica_set_client.MongoReplicaSetClient
+MotorReplicaSetClient = create_class_with_framework(
+    core.AgnosticReplicaSetClient,
+    tornado_framework)
 
-    primary     = ReadOnlyProperty()
-    secondaries = ReadOnlyProperty()
-    arbiters    = ReadOnlyProperty()
-    hosts       = ReadOnlyProperty()
-    seeds       = DelegateMethod()
-    close       = DelegateMethod()
 
-    _simple_command = AsyncCommand(attr_name='__simple_command')
-    _socket         = AsyncCommand(attr_name='__socket')
+MotorDatabase = create_class_with_framework(
+    core.AgnosticDatabase,
+    tornado_framework)
 
-    def __init__(self, *args, **kwargs):
-        """Create a new connection to a MongoDB replica set.
 
-        MotorReplicaSetClient takes the same constructor arguments as
-        :class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient`,
-        as well as:
+MotorCollection = create_class_with_framework(
+    core.AgnosticCollection,
+    tornado_framework)
 
-        :Parameters:
-          - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
-            instance to use instead of default
-        """
-        if 'io_loop' in kwargs:
-            io_loop = kwargs.pop('io_loop')
-        else:
-            io_loop = tornado_framework.get_event_loop()
 
-        kwargs['_monitor_class'] = functools.partial(
-            MotorReplicaSetMonitor, io_loop)
+MotorCursor = create_class_with_framework(
+    core.AgnosticCursor,
+    tornado_framework)
 
-        super(MotorReplicaSetClient, self).__init__(io_loop, *args, **kwargs)
 
-    @tornado_framework.coroutine
-    def open(self):
-        """Connect to the server.
+MotorCommandCursor = create_class_with_framework(
+    core.AgnosticCommandCursor,
+    tornado_framework)
 
-        Takes an optional callback, or returns a Future that resolves to
-        ``self`` when opened. This is convenient for checking at program
-        startup time whether you can connect.
 
-        .. doctest::
+MotorBulkOperationBuilder = create_class_with_framework(
+    core.AgnosticBulkOperationBuilder,
+    tornado_framework)
 
-          >>> client = MotorClient()
-          >>> # run_sync() returns the open client.
-          >>> IOLoop.current().run_sync(client.open)
-          MotorClient(MongoClient('localhost', 27017))
 
-        ``open`` raises a :exc:`~pymongo.errors.ConnectionFailure` if it
-        cannot connect, but note that auth failures aren't revealed until
-        you attempt an operation on the open client.
+MotorGridFS = create_class_with_framework(
+    motor_gridfs.AgnosticGridFS,
+    tornado_framework)
 
-        :Parameters:
-         - `callback`: Optional function taking parameters (self, error)
 
-        .. versionchanged:: 0.2
-           :class:`MotorReplicaSetClient` now opens itself on demand, calling
-           ``open`` explicitly is now optional.
-        """
-        yield self._ensure_connected(True)
-        primary = self._get_member()
-        if not primary:
-            raise pymongo.errors.AutoReconnect('no primary is available')
-        tornado_framework.return_value(self)
+MotorGridIn = create_class_with_framework(
+    motor_gridfs.AgnosticGridIn,
+    tornado_framework)
 
-    def _get_member(self):
-        # TODO: expose the PyMongo RSC members, or otherwise avoid this.
-        # This raises if the RSState's error is set.
-        rs_state = self.delegate._MongoReplicaSetClient__get_rs_state()
-        return rs_state.primary_member
 
-    def _get_pools(self):
-        rs_state = self._get_member()
-        return [member.pool for member in rs_state._members]
+MotorGridOut = create_class_with_framework(
+    motor_gridfs.AgnosticGridOut,
+    tornado_framework)
 
-    def _get_primary_pool(self):
-        primary_member = self._get_member()
-        return primary_member.pool if primary_member else None
+
+MotorGridOutCursor = create_class_with_framework(
+    motor_gridfs.AgnosticGridOutCursor,
+    tornado_framework)
 
 
 def Op(fn, *args, **kwargs):

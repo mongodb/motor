@@ -18,7 +18,6 @@ from __future__ import unicode_literals, absolute_import
 
 import collections
 import functools
-import inspect
 import socket
 import sys
 import time
@@ -43,6 +42,7 @@ from pymongo.pool import _closed, SocketInfo
 
 from . import motor_py3_compat, util
 from .frameworks import tornado as tornado_framework
+from .metaprogramming import create_class_with_framework
 from .motor_common import callback_type_error
 
 HAS_SSL = True
@@ -68,7 +68,7 @@ def check_deprecated_kwargs(kwargs):
 
 
 class MotorPool(object):
-    framework = tornado_framework
+    _framework = tornado_framework
 
     def __init__(
             self, io_loop, pair, max_size, net_timeout, conn_timeout, use_ssl,
@@ -207,7 +207,7 @@ class MotorPool(object):
             sock = None
             try:
                 sock = socket.socket(af, socktype, proto)
-                motor_sock = self.framework.create_socket(
+                motor_sock = self._framework.create_socket(
                     sock, self.io_loop, use_ssl=self.use_ssl,
                     certfile=self.ssl_certfile, keyfile=self.ssl_keyfile,
                     ca_certs=self.ssl_ca_certs, cert_reqs=self.ssl_cert_reqs)
@@ -469,6 +469,7 @@ def asynchronize(motor_class, sync_method, has_write_concern, doc=None):
 
 
 class MotorAttributeFactory(object):
+    # TODO: update.
     """Used by Motor classes to mark attributes that delegate in some way to
     PyMongo. At module import time, each Motor class is created, and MotorMeta
     calls create_attribute() for each attr to create the final class attribute.
@@ -507,8 +508,8 @@ class Async(MotorAttributeFactory):
     def wrap(self, original_class):
         return WrapAsync(self, original_class)
 
-    def unwrap(self, motor_class):
-        return Unwrap(self, motor_class)
+    def unwrap(self, class_name):
+        return Unwrap(self, class_name)
 
 
 class WrapBase(MotorAttributeFactory):
@@ -546,7 +547,7 @@ class WrapAsync(WrapBase):
         original_class = self.original_class
 
         @functools.wraps(async_method)
-        @cls.framework.coroutine
+        @cls._framework.coroutine
         def wrapper(self, *args, **kwargs):
             result = yield async_method(self, *args, **kwargs)
 
@@ -564,44 +565,35 @@ class WrapAsync(WrapBase):
 
 
 class Unwrap(WrapBase):
-    def __init__(self, prop, motor_class):
+    def __init__(self, prop, motor_class_name):
         """A descriptor that checks if arguments are Motor classes and unwraps
         them. E.g., Motor's drop_database takes a MotorDatabase, unwraps it,
         and passes a PyMongo Database instead.
 
         :Parameters:
         - `prop`: An Async, the async method to call with unwrapped arguments.
-        - `motor_class`: A Motor class to be unwrapped.
+        - `motor_class_name`: Like 'MotorDatabase' or 'MotorCollection'.
         """
         super(Unwrap, self).__init__(prop)
-        self.motor_class = motor_class
+        assert isinstance(motor_class_name, motor_py3_compat.text_type)
+        self.motor_class_name = motor_class_name
 
     def create_attribute(self, cls, attr_name):
         f = self.property.create_attribute(cls, attr_name)
-        motor_class = self.motor_class
-
-        def _unwrap_obj(obj):
-            if isinstance(motor_class, motor_py3_compat.text_type):
-                # Delayed reference - e.g., drop_database is defined before
-                # MotorDatabase is, so it was initialized with
-                # unwrap('MotorDatabase') instead of unwrap(MotorDatabase).
-                actual_motor_class = globals()[motor_class]
-            else:
-                actual_motor_class = motor_class
-            # Don't call isinstance(), not checking subclasses.
-            if obj.__class__ == actual_motor_class:
-                return obj.delegate
-            else:
-                return obj
+        name = self.motor_class_name
 
         @functools.wraps(f)
-        def _f(*args, **kwargs):
+        def _f(self, *args, **kwargs):
+            # Don't call isinstance(), not checking subclasses.
+            unwrapped_args = [
+                obj.delegate if obj.__class__.__name__ == name else obj
+                for obj in args]
 
-            # Call _unwrap_obj on each arg and kwarg before invoking f.
-            args = [_unwrap_obj(arg) for arg in args]
-            kwargs = dict([
-                (key, _unwrap_obj(value)) for key, value in kwargs.items()])
-            return f(*args, **kwargs)
+            unwrapped_kwargs = dict([
+                (key, obj.delegate if obj.__class__.__name__ == name else obj)
+                for key, obj in kwargs.items()])
+
+            return f(self, *unwrapped_args, **unwrapped_kwargs)
 
         if self.doc:
             _f.__doc__ = self.doc
@@ -676,31 +668,9 @@ class ReadWriteProperty(MotorAttributeFactory):
         return ReadWritePropertyDescriptor(attr_name, self.doc)
 
 
-class MotorMeta(type):
-    """Initializes a Motor class, calling create_attribute() on all its
-    MotorAttributeFactories to create the actual class attributes.
-    """
-    def __new__(cls, class_name, bases, attrs):
-        new_class = type.__new__(cls, class_name, bases, attrs)
-        new_class.framework = tornado_framework
-
-        # If new_class has no __delegate_class__, then it's a base like
-        # MotorClientBase; don't try to update its attrs, we'll use them
-        # for its subclasses like MotorClient.
-        if getattr(new_class, '__delegate_class__', None):
-            for base in reversed(inspect.getmro(new_class)):
-                # Turn attribute factories into real methods or descriptors.
-                for name, attr in base.__dict__.items():
-                    if isinstance(attr, MotorAttributeFactory):
-                        new_class_attr = attr.create_attribute(new_class, name)
-                        setattr(new_class, name, new_class_attr)
-
-        return new_class
-
-
-@motor_py3_compat.add_metaclass(MotorMeta)
-class MotorBase(object):
+class AgnosticBase(object):
     def __eq__(self, other):
+        # TODO: verify this is well-tested, the isinstance test is tricky.
         if (isinstance(other, self.__class__)
                 and hasattr(self, 'delegate')
                 and hasattr(other, 'delegate')):
@@ -723,7 +693,7 @@ class MotorBase(object):
         return '%s(%r)' % (self.__class__.__name__, self.delegate)
 
 
-class MotorClientBase(MotorBase):
+class AgnosticClientBase(AgnosticBase):
     """MotorClient and MotorReplicaSetClient common functionality."""
     database_names    = AsyncRead()
     server_info       = AsyncRead()
@@ -747,7 +717,7 @@ class MotorClientBase(MotorBase):
         kwargs['_pool_class'] = functools.partial(MotorPool, io_loop)
         kwargs['_connect'] = False
         delegate = self.__delegate_class__(*args, **kwargs)
-        super(MotorClientBase, self).__init__(delegate)
+        super(AgnosticClientBase, self).__init__(delegate)
         if io_loop:
             if not tornado_framework.is_event_loop(io_loop):
                 raise TypeError(
@@ -760,7 +730,10 @@ class MotorClientBase(MotorBase):
         return self.io_loop
 
     def __getattr__(self, name):
-        return MotorDatabase(self, name)
+        db_class = create_class_with_framework(
+            AgnosticDatabase, self._framework)
+
+        return db_class(self, name)
 
     __getitem__ = __getattr__
 
@@ -861,12 +834,172 @@ class MotorClientBase(MotorBase):
         return self[default_db_name]
 
 
+class AgnosticClient(AgnosticClientBase):
+    __motor_class_name__ = 'MotorClient'
+    __delegate_class__ = pymongo.mongo_client.MongoClient
+
+    kill_cursors = AsyncCommand()
+    fsync        = AsyncCommand()
+    unlock       = AsyncCommand()
+    nodes        = ReadOnlyProperty()
+    host         = ReadOnlyProperty()
+    port         = ReadOnlyProperty()
+
+    _simple_command = AsyncCommand(attr_name='__simple_command')
+    _socket         = AsyncCommand(attr_name='__socket')
+
+    def __init__(self, *args, **kwargs):
+        """Create a new connection to a single MongoDB instance at *host:port*.
+
+        MotorClient takes the same constructor arguments as
+        :class:`~pymongo.mongo_client.MongoClient`, as well as:
+
+        :Parameters:
+          - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
+            instance to use instead of default
+        """
+        if 'io_loop' in kwargs:
+            io_loop = kwargs.pop('io_loop')
+        else:
+            io_loop = tornado_framework.get_event_loop()
+
+        event_class = functools.partial(util.MotorGreenletEvent, io_loop)
+        kwargs['_event_class'] = event_class
+
+        # Our class is not actually AgnosticClient here, it's the version of
+        # 'MotorClient' that create_class_with_framework created.
+        super(self.__class__, self).__init__(io_loop, *args, **kwargs)
+
+    @tornado_framework.coroutine
+    def open(self):
+        """Connect to the server.
+
+        Takes an optional callback, or returns a Future that resolves to
+        ``self`` when opened. This is convenient for checking at program
+        startup time whether you can connect.
+
+        .. doctest::
+
+          >>> client = MotorClient()
+          >>> # run_sync() returns the open client.
+          >>> IOLoop.current().run_sync(client.open)
+          MotorClient(MongoClient('localhost', 27017))
+
+        ``open`` raises a :exc:`~pymongo.errors.ConnectionFailure` if it
+        cannot connect, but note that auth failures aren't revealed until
+        you attempt an operation on the open client.
+
+        :Parameters:
+         - `callback`: Optional function taking parameters (self, error)
+
+        .. versionchanged:: 0.2
+           :class:`MotorClient` now opens itself on demand, calling ``open``
+           explicitly is now optional.
+        """
+        yield self._ensure_connected()
+        tornado_framework.return_value(self)
+
+    def _get_member(self):
+        # TODO: expose the PyMongo Member, or otherwise avoid this.
+        return self.delegate._MongoClient__member
+
+    def _get_pools(self):
+        member = self._get_member()
+        return [member.pool] if member else [None]
+
+    def _get_primary_pool(self):
+        return self._get_pools()[0]
+
+
+class AgnosticReplicaSetClient(AgnosticClientBase):
+    __motor_class_name__ = 'MotorReplicaSetClient'
+    __delegate_class__ = pymongo.mongo_replica_set_client.MongoReplicaSetClient
+
+    primary     = ReadOnlyProperty()
+    secondaries = ReadOnlyProperty()
+    arbiters    = ReadOnlyProperty()
+    hosts       = ReadOnlyProperty()
+    seeds       = DelegateMethod()
+    close       = DelegateMethod()
+
+    _simple_command = AsyncCommand(attr_name='__simple_command')
+    _socket         = AsyncCommand(attr_name='__socket')
+
+    def __init__(self, *args, **kwargs):
+        """Create a new connection to a MongoDB replica set.
+
+        MotorReplicaSetClient takes the same constructor arguments as
+        :class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient`,
+        as well as:
+
+        :Parameters:
+          - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
+            instance to use instead of default
+        """
+        if 'io_loop' in kwargs:
+            io_loop = kwargs.pop('io_loop')
+        else:
+            io_loop = tornado_framework.get_event_loop()
+
+        kwargs['_monitor_class'] = functools.partial(
+            MotorReplicaSetMonitor, io_loop, self._framework)
+
+        # Our class is not actually AgnosticClient here, it's the version of
+        # 'MotorClient' that create_class_with_framework created.
+        super(self.__class__, self).__init__(io_loop, *args, **kwargs)
+
+    @tornado_framework.coroutine
+    def open(self):
+        """Connect to the server.
+
+        Takes an optional callback, or returns a Future that resolves to
+        ``self`` when opened. This is convenient for checking at program
+        startup time whether you can connect.
+
+        .. doctest::
+
+          >>> client = MotorClient()
+          >>> # run_sync() returns the open client.
+          >>> IOLoop.current().run_sync(client.open)
+          MotorClient(MongoClient('localhost', 27017))
+
+        ``open`` raises a :exc:`~pymongo.errors.ConnectionFailure` if it
+        cannot connect, but note that auth failures aren't revealed until
+        you attempt an operation on the open client.
+
+        :Parameters:
+         - `callback`: Optional function taking parameters (self, error)
+
+        .. versionchanged:: 0.2
+           :class:`MotorReplicaSetClient` now opens itself on demand, calling
+           ``open`` explicitly is now optional.
+        """
+        yield self._ensure_connected(True)
+        primary = self._get_member()
+        if not primary:
+            raise pymongo.errors.AutoReconnect('no primary is available')
+        tornado_framework.return_value(self)
+
+    def _get_member(self):
+        # TODO: expose the PyMongo RSC members, or otherwise avoid this.
+        # This raises if the RSState's error is set.
+        rs_state = self.delegate._MongoReplicaSetClient__get_rs_state()
+        return rs_state.primary_member
+
+    def _get_pools(self):
+        rs_state = self._get_member()
+        return [member.pool for member in rs_state._members]
+
+    def _get_primary_pool(self):
+        primary_member = self._get_member()
+        return primary_member.pool if primary_member else None
+
 
 # PyMongo uses a background thread to regularly inspect the replica set and
 # monitor it for changes. In Motor, use a periodic callback on the IOLoop to
 # monitor the set.
 class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
-    def __init__(self, io_loop, rsc):
+    def __init__(self, loop, framework, rsc):
         msg = (
             "First argument to MotorReplicaSetMonitor must be"
             " MongoReplicaSetClient, not %r" % rsc)
@@ -876,18 +1009,20 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
 
         # Super makes two MotorGreenletEvents: self.event and self.refreshed.
         # We only use self.refreshed.
-        event_class = functools.partial(util.MotorGreenletEvent, io_loop)
+        event_class = functools.partial(util.MotorGreenletEvent, loop)
         pymongo.mongo_replica_set_client.Monitor.__init__(
             self, rsc, event_class=event_class)
 
-        self.timeout_obj = None
+        self.timeout_handle = None
         self.started = False
-        self.io_loop = io_loop
+        self.loop = loop
+        self._framework = framework
 
     def shutdown(self, _=None):
-        if self.timeout_obj:
-            self.io_loop.remove_timeout(self.timeout_obj)
-            self.stopped = True
+        self.stopped = True
+        if self.timeout_handle:
+            self._framework.call_later_cancel(self.timeout_handle)
+            self.timeout_handle = None
 
     def refresh(self):
         assert greenlet.getcurrent().parent is not None,\
@@ -905,26 +1040,26 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
             # Switch to greenlets blocked in wait_for_refresh().
             self.refreshed.set()
 
-        self.timeout_obj = self.io_loop.add_timeout(
-            time.time() + self._refresh_interval, self.async_refresh)
+        self.timeout_handle = self._framework.call_later(
+            self._refresh_interval, self.async_refresh)
 
     def async_refresh(self):
         greenlet.greenlet(self.refresh).switch()
 
     def start(self):
         self.started = True
-        self.timeout_obj = self.io_loop.add_timeout(
-            time.time() + self._refresh_interval, self.async_refresh)
+        self.timeout_handle = self._framework.call_later(
+            self.loop, self._refresh_interval, self.async_refresh)
 
     start_sync = start
 
     def schedule_refresh(self):
         self.refreshed.clear()
-        if self.io_loop and self.async_refresh:
-            if self.timeout_obj:
-                self.io_loop.remove_timeout(self.timeout_obj)
+        if self.timeout_handle:
+            self._framework.call_later_cancel(self.timeout_handle)
+            self.timeout_handle = None
 
-            self.io_loop.add_callback(self.async_refresh)
+        self._framework.call_soon(self.loop, self.async_refresh)
 
     def join(self, timeout=None):
         # PyMongo calls join() after shutdown() -- this is not a thread, so
@@ -944,7 +1079,8 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
     isAlive = is_alive
 
 
-class MotorDatabase(MotorBase):
+class AgnosticDatabase(AgnosticBase):
+    __motor_class_name__ = 'MotorDatabase'
     __delegate_class__ = Database
 
     set_profiling_level = AsyncCommand()
@@ -955,6 +1091,7 @@ class MotorDatabase(MotorBase):
     command             = AsyncCommand()
     authenticate        = AsyncCommand()
     eval                = AsyncCommand()
+    # TODO: for consistency, wrap() takes a string too.
     create_collection   = AsyncCommand().wrap(Collection)
     drop_collection     = AsyncCommand().unwrap('MotorCollection')
     validate_collection = AsyncRead().unwrap('MotorCollection')
@@ -973,16 +1110,19 @@ class MotorDatabase(MotorBase):
     outgoing_copying_manipulators = ReadOnlyProperty()
 
     def __init__(self, connection, name):
-        if not isinstance(connection, MotorClientBase):
+        if not isinstance(connection, AgnosticClientBase):
             raise TypeError("First argument to MotorDatabase must be "
-                            "MotorClientBase, not %r" % connection)
+                            "a Motor client, not %r" % connection)
 
         self.connection = connection
         delegate = Database(connection.delegate, name)
-        super(MotorDatabase, self).__init__(delegate)
+        super(self.__class__, self).__init__(delegate)
 
     def __getattr__(self, name):
-        return MotorCollection(self, name)
+        collection_class = create_class_with_framework(
+            AgnosticCollection, self._framework)
+
+        return collection_class(self, name)
 
     __getitem__ = __getattr__
 
@@ -1001,7 +1141,7 @@ class MotorDatabase(MotorBase):
             database_name, client_class_name))
 
     def wrap(self, collection):
-        # Replace pymongo.collection.Collection with MotorCollection
+        # Replace pymongo.collection.Collection with MotorCollection.
         return self[collection.name]
 
     def add_son_manipulator(self, manipulator):
@@ -1016,7 +1156,12 @@ class MotorDatabase(MotorBase):
         # database attribute.
         if isinstance(manipulator, pymongo.son_manipulator.AutoReference):
             db = manipulator.database
-            if isinstance(db, MotorDatabase):
+            db_class = create_class_with_framework(
+                AgnosticDatabase,
+                self._framework)
+
+            if isinstance(db, db_class):
+                # db is a MotorDatabase; get the PyMongo Database instance.
                 manipulator.database = db.delegate
 
         self.delegate.add_son_manipulator(manipulator)
@@ -1053,7 +1198,8 @@ with a :class:`~motor.MotorCommandCursor`::
 """
 
 
-class MotorCollection(MotorBase):
+class AgnosticCollection(AgnosticBase):
+    __motor_class_name__ = 'MotorCollection'
     __delegate_class__ = Collection
 
     create_index      = AsyncCommand()
@@ -1083,17 +1229,23 @@ class MotorCollection(MotorBase):
     __parallel_scan   = AsyncCommand(attr_name='parallel_scan')
 
     def __init__(self, database, name):
-        if not isinstance(database, MotorDatabase):
+        db_class = create_class_with_framework(
+            AgnosticDatabase, self._framework)
+
+        if not isinstance(database, db_class):
             raise TypeError("First argument to MotorCollection must be "
                             "MotorDatabase, not %r" % database)
 
         delegate = Collection(database.delegate, name)
-        super(MotorCollection, self).__init__(delegate)
+        super(self.__class__, self).__init__(delegate)
         self.database = database
 
     def __getattr__(self, name):
         # Dotted collection name, like "foo.bar".
-        return MotorCollection(self.database, self.name + '.' + name)
+        collection_class = create_class_with_framework(
+            AgnosticCollection, self._framework)
+
+        return collection_class(self.database, self.name + '.' + name)
 
     def __call__(self, *args, **kwargs):
         raise TypeError(
@@ -1117,7 +1269,10 @@ class MotorCollection(MotorBase):
                 "Pass a callback to each, to_list, or count, not to find.")
 
         cursor = self.delegate.find(*args, **kwargs)
-        return MotorCursor(cursor, self)
+        cursor_class = create_class_with_framework(
+            AgnosticCursor, self._framework)
+
+        return cursor_class(cursor, self)
 
     @tornado_framework.coroutine
     def parallel_scan(self, num_cursors, **kwargs):
@@ -1155,8 +1310,11 @@ class MotorCollection(MotorBase):
         .. note:: Requires server version **>= 2.5.5**.
         """
         command_cursors = yield self.__parallel_scan(num_cursors, **kwargs)
+        command_cursor_class = create_class_with_framework(
+            AgnosticCommandCursor, self._framework)
+
         motor_command_cursors = [
-            MotorCommandCursor(cursor, self)
+            command_cursor_class(cursor, self)
             for cursor in command_cursors]
 
         tornado_framework.return_value(motor_command_cursors)
@@ -1173,7 +1331,10 @@ class MotorCollection(MotorBase):
 
         .. versionadded:: 0.2
         """
-        return MotorBulkOperationBuilder(self, ordered=False)
+        bob_class = create_class_with_framework(
+            AgnosticBulkOperationBuilder, self._framework)
+
+        return bob_class(self, ordered=False)
 
     def initialize_ordered_bulk_op(self):
         """Initialize an ordered batch of write operations.
@@ -1188,16 +1349,24 @@ class MotorCollection(MotorBase):
 
         .. versionadded:: 0.2
         """
-        return MotorBulkOperationBuilder(self, ordered=True)
+        bob_class = create_class_with_framework(
+            AgnosticBulkOperationBuilder,
+            self._framework)
+
+        return bob_class(self, ordered=True)
 
     def wrap(self, obj):
         if obj.__class__ is Collection:
-            # Replace pymongo.collection.Collection with MotorCollection
+            # Replace pymongo.collection.Collection with MotorCollection.
             return self.database[obj.name]
         elif obj.__class__ is Cursor:
-            return MotorCursor(obj, self)
+            return AgnosticCursor(obj, self)
         elif obj.__class__ is CommandCursor:
-            return MotorCommandCursor(obj, self)
+            command_cursor_class = create_class_with_framework(
+                AgnosticCommandCursor,
+                self._framework)
+
+            return command_cursor_class(obj, self)
         else:
             return obj
 
@@ -1223,8 +1392,8 @@ class MotorCursorChainingMethod(MotorAttributeFactory):
         return return_clone
 
 
-class MotorBaseCursor(MotorBase):
-    """Base class for MotorCursor and MotorCommandCursor"""
+class AgnosticBaseCursor(AgnosticBase):
+    """Base class for AgnosticCursor and AgnosticCommandCursor"""
     _refresh      = AsyncRead()
     cursor_id     = ReadOnlyProperty()
     alive         = ReadOnlyProperty()
@@ -1247,7 +1416,7 @@ class MotorBaseCursor(MotorBase):
             raise TypeError(
                 "cursor must be a Cursor or CommandCursor, not %r" % cursor)
 
-        super(MotorBaseCursor, self).__init__(delegate=cursor)
+        super(AgnosticBaseCursor, self).__init__(delegate=cursor)
         self.collection = collection
         self.started = False
         self.closed = False
@@ -1540,7 +1709,8 @@ class MotorBaseCursor(MotorBase):
         raise NotImplementedError()
 
 
-class MotorCursor(MotorBaseCursor):
+class AgnosticCursor(AgnosticBaseCursor):
+    __motor_class_name__ = 'MotorCursor'
     __delegate_class__ = Cursor
     count         = AsyncRead()
     distinct      = AsyncRead()
@@ -1649,7 +1819,7 @@ cursor has any effect.
 
     def clone(self):
         """Get a clone of this cursor."""
-        return MotorCursor(self.delegate.clone(), self.collection)
+        return self.__class__(self.delegate.clone(), self.collection)
 
     def __getitem__(self, index):
         """Get a slice of documents from this cursor.
@@ -1739,10 +1909,10 @@ cursor has any effect.
             return self[self.delegate._Cursor__skip + index:].limit(-1)
 
     def __copy__(self):
-        return MotorCursor(self.delegate.__copy__(), self.collection)
+        return self.__class__(self.delegate.__copy__(), self.collection)
 
     def __deepcopy__(self, memo):
-        return MotorCursor(self.delegate.__deepcopy__(memo), self.collection)
+        return self.__class__(self.delegate.__deepcopy__(memo), self.collection)
 
     def _empty(self):
         return self.delegate._Cursor__empty
@@ -1758,7 +1928,8 @@ cursor has any effect.
         return self._Cursor__die()
 
 
-class MotorCommandCursor(MotorBaseCursor):
+class AgnosticCommandCursor(AgnosticBaseCursor):
+    __motor_class_name__ = 'MotorCommandCursor'
     __delegate_class__ = CommandCursor
     _CommandCursor__die = AsyncCommand()
 
@@ -1776,7 +1947,8 @@ class MotorCommandCursor(MotorBaseCursor):
         return self._CommandCursor__die()
 
 
-class MotorBulkOperationBuilder(MotorBase):
+class AgnosticBulkOperationBuilder(AgnosticBase):
+    __motor_class_name__ = 'MotorBulkOperationBuilder'
     __delegate_class__ = BulkOperationBuilder
 
     find        = DelegateMethod()
@@ -1786,7 +1958,7 @@ class MotorBulkOperationBuilder(MotorBase):
     def __init__(self, collection, ordered):
         self.io_loop = collection.get_io_loop()
         delegate = BulkOperationBuilder(collection.delegate, ordered)
-        super(MotorBulkOperationBuilder, self).__init__(delegate)
+        super(self.__class__, self).__init__(delegate)
 
     def get_io_loop(self):
         return self.io_loop

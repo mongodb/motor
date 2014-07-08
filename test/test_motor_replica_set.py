@@ -24,6 +24,7 @@ from tornado import iostream, gen
 from tornado.testing import gen_test
 
 import motor
+import motor.core
 import test
 from test import host, port, MotorReplicaSetTestBase, assert_raises, MotorTest
 from test import SkipTest
@@ -38,11 +39,11 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         self.assertEqual(cx, (yield cx.open()))  # Same the second time.
         self.assertTrue(isinstance(
             cx.delegate._MongoReplicaSetClient__monitor,
-            motor.MotorReplicaSetMonitor))
+            motor.core.MotorReplicaSetMonitor))
 
         self.assertEqual(
             self.io_loop,
-            cx.delegate._MongoReplicaSetClient__monitor.io_loop)
+            cx.delegate._MongoReplicaSetClient__monitor.loop)
 
         cx.close()
 

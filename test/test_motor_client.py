@@ -99,7 +99,7 @@ class MotorClientTest(MotorTest):
         self.assertTrue(
             isinstance(self.cx.delegate, pymongo.mongo_client.MongoClient))
         self.assertTrue(isinstance(self.cx['delegate'],
-                                   motor.core.MotorDatabase))
+                                   motor.MotorDatabase))
 
     @gen_test
     def test_timeout(self):

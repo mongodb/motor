@@ -37,7 +37,7 @@ class MotorBulkTest(MotorTest):
         try:
             bulk = self.collection.initialize_ordered_bulk_op()
             self.assertTrue(isinstance(bulk,
-                                       motor.core.MotorBulkOperationBuilder))
+                                       motor.MotorBulkOperationBuilder))
 
             bulk.insert({'b': 1, 'a': 1})
             bulk.find({'b': 2}).upsert().update_one({'$set': {'a': 1}})
@@ -78,7 +78,7 @@ class MotorBulkTest(MotorTest):
 
         bulk = self.collection.initialize_unordered_bulk_op()
         self.assertTrue(isinstance(bulk,
-                                   motor.core.MotorBulkOperationBuilder))
+                                   motor.MotorBulkOperationBuilder))
 
         bulk.insert({'a': 1})
         bulk.find({'a': 1}).update_one({'$set': {'b': 1}})

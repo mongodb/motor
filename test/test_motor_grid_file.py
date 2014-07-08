@@ -28,7 +28,6 @@ from tornado.testing import gen_test
 from pymongo.errors import InvalidOperation
 
 import motor
-import motor.motor_gridfs
 from test import MotorTest, assert_raises
 
 
@@ -46,7 +45,7 @@ class MotorGridFileTest(MotorTest):
 
     @gen_test
     def test_grid_in_callback(self):
-        f = motor.motor_gridfs.MotorGridIn(self.db.fs, filename="test")
+        f = motor.MotorGridIn(self.db.fs, filename="test")
         yield self.check_optional_callback(partial(f.set, 'name', 'value'))
         yield self.check_optional_callback(partial(f.write, b'a'))
         yield self.check_optional_callback(partial(f.writelines, [b'a']))
@@ -58,19 +57,19 @@ class MotorGridFileTest(MotorTest):
     @gen_test
     def test_grid_out_callback(self):
         # Some setup: we need to make a GridOut.
-        f = motor.motor_gridfs.MotorGridIn(self.db.fs, filename="test")
+        f = motor.MotorGridIn(self.db.fs, filename="test")
         yield f.close()
 
-        g = motor.motor_gridfs.MotorGridOut(self.db.fs, f._id)
+        g = motor.MotorGridOut(self.db.fs, f._id)
         yield self.check_optional_callback(g.open)
 
-        g = yield motor.motor_gridfs.MotorGridOut(self.db.fs, f._id).open()
+        g = yield motor.MotorGridOut(self.db.fs, f._id).open()
         yield self.check_optional_callback(g.read)
         yield self.check_optional_callback(g.readline)
 
     @gen_test
     def test_attributes(self):
-        f = motor.motor_gridfs.MotorGridIn(
+        f = motor.MotorGridIn(
             self.db.fs,
             filename="test",
             foo="bar",
@@ -78,7 +77,7 @@ class MotorGridFileTest(MotorTest):
 
         yield f.close()
 
-        g = motor.motor_gridfs.MotorGridOut(self.db.fs, f._id)
+        g = motor.MotorGridOut(self.db.fs, f._id)
         attr_names = (
             '_id',
             'filename',
@@ -101,40 +100,40 @@ class MotorGridFileTest(MotorTest):
 
     @gen_test
     def test_iteration(self):
-        fs = motor.motor_gridfs.MotorGridFS(self.db)
+        fs = motor.MotorGridFS(self.db)
         _id = yield fs.put(b'foo')
-        g = motor.motor_gridfs.MotorGridOut(self.db.fs, _id)
+        g = motor.MotorGridOut(self.db.fs, _id)
 
         # Iteration is prohibited.
         self.assertRaises(TypeError, iter, g)
 
     @gen_test
     def test_basic(self):
-        f = motor.motor_gridfs.MotorGridIn(self.db.fs, filename="test")
+        f = motor.MotorGridIn(self.db.fs, filename="test")
         yield f.write(b"hello world")
         yield f.close()
         self.assertEqual(1, (yield self.db.fs.files.find().count()))
         self.assertEqual(1, (yield self.db.fs.chunks.find().count()))
 
-        g = motor.motor_gridfs.MotorGridOut(self.db.fs, f._id)
+        g = motor.MotorGridOut(self.db.fs, f._id)
         self.assertEqual(b"hello world", (yield g.read()))
 
-        f = motor.motor_gridfs.MotorGridIn(self.db.fs, filename="test")
+        f = motor.MotorGridIn(self.db.fs, filename="test")
         yield f.close()
         self.assertEqual(2, (yield self.db.fs.files.find().count()))
         self.assertEqual(1, (yield self.db.fs.chunks.find().count()))
 
-        g = motor.motor_gridfs.MotorGridOut(self.db.fs, f._id)
+        g = motor.MotorGridOut(self.db.fs, f._id)
         self.assertEqual(b"", (yield g.read()))
 
     @gen_test
     def test_readchunk(self):
         in_data = b'a' * 10
-        f = motor.motor_gridfs.MotorGridIn(self.db.fs, chunkSize=3)
+        f = motor.MotorGridIn(self.db.fs, chunkSize=3)
         yield f.write(in_data)
         yield f.close()
 
-        g = motor.motor_gridfs.MotorGridOut(self.db.fs, f._id)
+        g = motor.MotorGridOut(self.db.fs, f._id)
 
         # This is starting to look like Lisp.
         self.assertEqual(3, len((yield g.readchunk())))
@@ -153,14 +152,14 @@ class MotorGridFileTest(MotorTest):
         yield self.db.alt.files.remove()
         yield self.db.alt.chunks.remove()
 
-        f = motor.motor_gridfs.MotorGridIn(self.db.alt)
+        f = motor.MotorGridIn(self.db.alt)
         yield f.write(b"hello world")
         yield f.close()
 
         self.assertEqual(1, (yield self.db.alt.files.find().count()))
         self.assertEqual(1, (yield self.db.alt.chunks.find().count()))
 
-        g = motor.motor_gridfs.MotorGridOut(self.db.alt, f._id)
+        g = motor.MotorGridOut(self.db.alt, f._id)
         self.assertEqual(b"hello world", (yield g.read()))
 
         # test that md5 still works...
@@ -168,9 +167,9 @@ class MotorGridFileTest(MotorTest):
 
     @gen_test
     def test_grid_in_default_opts(self):
-        self.assertRaises(TypeError, motor.motor_gridfs.MotorGridIn, "foo")
+        self.assertRaises(TypeError, motor.MotorGridIn, "foo")
 
-        a = motor.motor_gridfs.MotorGridIn(self.db.fs)
+        a = motor.MotorGridIn(self.db.fs)
 
         self.assertTrue(isinstance(a._id, ObjectId))
         self.assertRaises(AttributeError, setattr, a, "_id", 5)
@@ -238,8 +237,8 @@ class MotorGridFileTest(MotorTest):
 
     @gen_test
     def test_grid_in_custom_opts(self):
-        self.assertRaises(TypeError, motor.motor_gridfs.MotorGridIn, "foo")
-        a = motor.motor_gridfs.MotorGridIn(
+        self.assertRaises(TypeError, motor.MotorGridIn, "foo")
+        a = motor.MotorGridIn(
             self.db.fs, _id=5, filename="my_file",
             contentType="text/html", chunkSize=1000, aliases=["foo"],
             metadata={"foo": 1, "bar": 2}, bar=3, baz="hello")
@@ -254,7 +253,7 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual("hello", a.baz)
         self.assertRaises(AttributeError, getattr, a, "mike")
 
-        b = motor.motor_gridfs.MotorGridIn(
+        b = motor.MotorGridIn(
             self.db.fs,
             content_type="text/html",
             chunk_size=1000,
@@ -266,15 +265,15 @@ class MotorGridFileTest(MotorTest):
 
     @gen_test
     def test_grid_out_default_opts(self):
-        self.assertRaises(TypeError, motor.motor_gridfs.MotorGridOut, "foo")
-        gout = motor.motor_gridfs.MotorGridOut(self.db.fs, 5)
+        self.assertRaises(TypeError, motor.MotorGridOut, "foo")
+        gout = motor.MotorGridOut(self.db.fs, 5)
         with assert_raises(NoFile):
             yield gout.open()
 
-        a = motor.motor_gridfs.MotorGridIn(self.db.fs)
+        a = motor.MotorGridIn(self.db.fs)
         yield a.close()
 
-        b = yield motor.motor_gridfs.MotorGridOut(self.db.fs, a._id).open()
+        b = yield motor.MotorGridOut(self.db.fs, a._id).open()
 
         self.assertEqual(a._id, b._id)
         self.assertEqual(0, b.length)
@@ -287,7 +286,7 @@ class MotorGridFileTest(MotorTest):
 
     @gen_test
     def test_grid_out_custom_opts(self):
-        one = motor.motor_gridfs.MotorGridIn(
+        one = motor.MotorGridIn(
             self.db.fs, _id=5, filename="my_file",
             contentType="text/html", chunkSize=1000, aliases=["foo"],
             metadata={"foo": 1, "bar": 2}, bar=3, baz="hello")
@@ -295,7 +294,7 @@ class MotorGridFileTest(MotorTest):
         yield one.write(b"hello world")
         yield one.close()
 
-        two = yield motor.motor_gridfs.MotorGridOut(self.db.fs, 5).open()
+        two = yield motor.MotorGridOut(self.db.fs, 5).open()
 
         self.assertEqual(5, two._id)
         self.assertEqual(11, two.length)
@@ -309,41 +308,41 @@ class MotorGridFileTest(MotorTest):
 
     @gen_test
     def test_grid_out_file_document(self):
-        one = motor.motor_gridfs.MotorGridIn(self.db.fs)
+        one = motor.MotorGridIn(self.db.fs)
         yield one.write(b"foo bar")
         yield one.close()
 
         file_document = yield self.db.fs.files.find_one()
-        two = motor.motor_gridfs.MotorGridOut(
+        two = motor.MotorGridOut(
             self.db.fs, file_document=file_document)
 
         self.assertEqual(b"foo bar", (yield two.read()))
 
         file_document = yield self.db.fs.files.find_one()
-        three = motor.motor_gridfs.MotorGridOut(self.db.fs, 5, file_document)
+        three = motor.MotorGridOut(self.db.fs, 5, file_document)
         self.assertEqual(b"foo bar", (yield three.read()))
 
-        gridout = motor.motor_gridfs.MotorGridOut(self.db.fs, file_document={})
+        gridout = motor.MotorGridOut(self.db.fs, file_document={})
         with assert_raises(NoFile):
             yield gridout.open()
 
     @gen_test
     def test_write_file_like(self):
-        one = motor.motor_gridfs.MotorGridIn(self.db.fs)
+        one = motor.MotorGridIn(self.db.fs)
         yield one.write(b"hello world")
         yield one.close()
 
-        two = motor.motor_gridfs.MotorGridOut(self.db.fs, one._id)
-        three = motor.motor_gridfs.MotorGridIn(self.db.fs)
+        two = motor.MotorGridOut(self.db.fs, one._id)
+        three = motor.MotorGridIn(self.db.fs)
         yield three.write(two)
         yield three.close()
 
-        four = motor.motor_gridfs.MotorGridOut(self.db.fs, three._id)
+        four = motor.MotorGridOut(self.db.fs, three._id)
         self.assertEqual(b"hello world", (yield four.read()))
 
     @gen_test
     def test_set_after_close(self):
-        f = motor.motor_gridfs.MotorGridIn(self.db.fs, _id="foo", bar="baz")
+        f = motor.MotorGridIn(self.db.fs, _id="foo", bar="baz")
 
         self.assertEqual("foo", f._id)
         self.assertEqual("baz", f.bar)
@@ -370,7 +369,7 @@ class MotorGridFileTest(MotorTest):
         yield f.set("baz", "b")
         self.assertRaises(AttributeError, setattr, f, "upload_date", 5)
 
-        g = yield motor.motor_gridfs.MotorGridOut(self.db.fs, f._id).open()
+        g = yield motor.MotorGridOut(self.db.fs, f._id).open()
         self.assertEqual("a", g.bar)
         self.assertEqual("b", g.baz)
 
@@ -386,7 +385,7 @@ class MotorGridFileTest(MotorTest):
             def flush(self):
                 pass
 
-        fs = motor.motor_gridfs.MotorGridFS(self.db)
+        fs = motor.MotorGridFS(self.db)
 
         for content_length in (0, 1, 100, 100 * 1000):
             _id = yield fs.put(b'a' * content_length)
