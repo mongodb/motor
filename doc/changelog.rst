@@ -17,6 +17,13 @@ For this, use PyMongo's `copy_database`_ method, or use the mongo shell.
 
 .. seealso:: `The "copydb" command <http://docs.mongodb.org/manual/reference/command/copydb/>`_.
 
+Motor 0.3.1
+-----------
+
+Fix `MOTOR-43 <https://jira.mongodb.org/browse/MOTOR-43>`_,
+a TypeError when using :class:`~motor.web.GridFSHandler`
+with a timezone-aware :class:`~motor.MotorClient`.
+
 Motor 0.3
 ---------
 
