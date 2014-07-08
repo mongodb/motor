@@ -3,6 +3,13 @@ Changelog
 
 .. currentmodule:: motor
 
+Motor 0.3.1
+-----------
+
+Fix `MOTOR-43 <https://jira.mongodb.org/browse/MOTOR-43>`_,
+a TypeError when using :class:`~motor.web.GridFSHandler`
+with a timezone-aware :class:`~motor.MotorClient`.
+
 Motor 0.3
 ---------
 
