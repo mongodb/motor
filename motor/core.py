@@ -41,12 +41,12 @@ from pymongo.command_cursor import CommandCursor
 from pymongo.pool import _closed, SocketInfo
 
 from . import motor_py3_compat, util
-from .frameworks import tornado as tornado_framework
 from .metaprogramming import (AsyncCommand,
                               AsyncRead,
                               AsyncWrite,
                               create_class_with_framework,
                               DelegateMethod,
+                              motor_coroutine,
                               MotorCursorChainingMethod,
                               ReadOnlyProperty,
                               ReadWriteProperty)
@@ -63,19 +63,28 @@ except ImportError:
 
 
 class MotorPool(object):
-    _framework = tornado_framework
-
     def __init__(
-            self, io_loop, pair, max_size, net_timeout, conn_timeout, use_ssl,
+            self,
+            io_loop,
+            framework,
+            pair,
+            max_size,
+            net_timeout,
+            conn_timeout,
+            use_ssl,
             use_greenlets,
-            ssl_keyfile=None, ssl_certfile=None,
-            ssl_cert_reqs=None, ssl_ca_certs=None,
-            wait_queue_timeout=None, wait_queue_multiple=None):
+            ssl_keyfile=None,
+            ssl_certfile=None,
+            ssl_cert_reqs=None,
+            ssl_ca_certs=None,
+            wait_queue_timeout=None,
+            wait_queue_multiple=None):
         """
         A connection pool that uses Motor's framework-specific sockets.
 
         :Parameters:
           - `io_loop`: An IOLoop instance
+          - `framework`: An asynchronous framework
           - `pair`: a (hostname, port) tuple
           - `max_size`: The maximum number of open sockets. Calls to
             `get_socket` will block if this is set, this pool has opened
@@ -115,7 +124,8 @@ class MotorPool(object):
         """
         assert isinstance(pair, tuple), "pair must be a tuple"
         self.io_loop = io_loop
-        self.resolver = tornado_framework.get_resolver(self.io_loop)
+        self._framework = framework
+        self.resolver = self._framework.get_resolver(self.io_loop)
         self.sockets = set()
         self.pair = pair
         self.max_size = max_size
@@ -159,7 +169,7 @@ class MotorPool(object):
         main = child_gr.parent
         assert main is not None, "Should be on child greenlet"
 
-        tornado_framework.resolve(
+        self._framework.resolve(
             resolver=self.resolver,
             loop=self.io_loop,
             host=host,
@@ -438,17 +448,18 @@ class AgnosticClientBase(AgnosticBase):
 
     def __init__(self, io_loop, *args, **kwargs):
         check_deprecated_kwargs(kwargs)
-        kwargs['_pool_class'] = functools.partial(MotorPool, io_loop)
+        pool_class = functools.partial(MotorPool, io_loop, self._framework)
+        kwargs['_pool_class'] = pool_class
         kwargs['_connect'] = False
         delegate = self.__delegate_class__(*args, **kwargs)
         super(AgnosticClientBase, self).__init__(delegate)
         if io_loop:
-            if not tornado_framework.is_event_loop(io_loop):
+            if not self._framework.is_event_loop(io_loop):
                 raise TypeError(
                     "io_loop must be instance of IOLoop, not %r" % io_loop)
             self.io_loop = io_loop
         else:
-            self.io_loop = tornado_framework.get_event_loop()
+            self.io_loop = self._framework.get_event_loop()
 
     def get_io_loop(self):
         return self.io_loop
@@ -461,7 +472,7 @@ class AgnosticClientBase(AgnosticBase):
 
     __getitem__ = __getattr__
 
-    @tornado_framework.coroutine
+    @motor_coroutine
     def copy_database(
             self, from_name, to_name, from_host=None, username=None,
             password=None):
@@ -528,7 +539,7 @@ class AgnosticClientBase(AgnosticBase):
             result, duration = yield self._simple_command(
                 sock_info, 'admin', copydb_command)
 
-            tornado_framework.return_value(result)
+            self._framework.return_value(result)
         finally:
             if pool and sock_info:
                 pool.maybe_return_socket(sock_info)
@@ -585,7 +596,7 @@ class AgnosticClient(AgnosticClientBase):
         if 'io_loop' in kwargs:
             io_loop = kwargs.pop('io_loop')
         else:
-            io_loop = tornado_framework.get_event_loop()
+            io_loop = self._framework.get_event_loop()
 
         event_class = functools.partial(util.MotorGreenletEvent, io_loop)
         kwargs['_event_class'] = event_class
@@ -594,7 +605,7 @@ class AgnosticClient(AgnosticClientBase):
         # 'MotorClient' that create_class_with_framework created.
         super(self.__class__, self).__init__(io_loop, *args, **kwargs)
 
-    @tornado_framework.coroutine
+    @motor_coroutine
     def open(self):
         """Connect to the server.
 
@@ -621,7 +632,7 @@ class AgnosticClient(AgnosticClientBase):
            explicitly is now optional.
         """
         yield self._ensure_connected()
-        tornado_framework.return_value(self)
+        self._framework.return_value(self)
 
     def _get_member(self):
         # TODO: expose the PyMongo Member, or otherwise avoid this.
@@ -663,7 +674,7 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
         if 'io_loop' in kwargs:
             io_loop = kwargs.pop('io_loop')
         else:
-            io_loop = tornado_framework.get_event_loop()
+            io_loop = self._framework.get_event_loop()
 
         kwargs['_monitor_class'] = functools.partial(
             MotorReplicaSetMonitor, io_loop, self._framework)
@@ -672,7 +683,7 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
         # 'MotorClient' that create_class_with_framework created.
         super(self.__class__, self).__init__(io_loop, *args, **kwargs)
 
-    @tornado_framework.coroutine
+    @motor_coroutine
     def open(self):
         """Connect to the server.
 
@@ -702,7 +713,7 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
         primary = self._get_member()
         if not primary:
             raise pymongo.errors.AutoReconnect('no primary is available')
-        tornado_framework.return_value(self)
+        self._framework.return_value(self)
 
     def _get_member(self):
         # TODO: expose the PyMongo RSC members, or otherwise avoid this.
@@ -998,7 +1009,7 @@ class AgnosticCollection(AgnosticBase):
 
         return cursor_class(cursor, self)
 
-    @tornado_framework.coroutine
+    @motor_coroutine
     def parallel_scan(self, num_cursors, **kwargs):
         """Scan this entire collection in parallel.
 
@@ -1041,7 +1052,7 @@ class AgnosticCollection(AgnosticBase):
             command_cursor_class(cursor, self)
             for cursor in command_cursors]
 
-        tornado_framework.return_value(motor_command_cursors)
+        self._framework.return_value(motor_command_cursors)
 
     def initialize_unordered_bulk_op(self):
         """Initialize an unordered batch of write operations.
@@ -1177,7 +1188,7 @@ class AgnosticBaseCursor(AgnosticBase):
 
         .. _`large batches`: http://docs.mongodb.org/manual/core/read-operations/#cursor-behaviors
         """
-        future = tornado_framework.get_future()
+        future = self._framework.get_future()
 
         if not self._buffer_size() and self.alive:
             if self._empty():
@@ -1293,7 +1304,7 @@ class AgnosticBaseCursor(AgnosticBase):
             # Complete
             add_callback(functools.partial(callback, None, None))
 
-    @tornado_framework.coroutine
+    @motor_coroutine
     def to_list(self, length):
         """Get a list of documents.
 
@@ -1345,7 +1356,7 @@ class AgnosticBaseCursor(AgnosticBase):
 
         # Special case: limit of 0.
         if self._empty():
-            tornado_framework.return_value([])
+            self._framework.return_value([])
 
         the_list = []
         collection = self.collection
@@ -1364,12 +1375,12 @@ class AgnosticBaseCursor(AgnosticBase):
             if reached_length or not self.alive:
                 break
 
-        tornado_framework.return_value(the_list)
+        self._framework.return_value(the_list)
 
     def get_io_loop(self):
         return self.collection.get_io_loop()
 
-    @tornado_framework.coroutine
+    @motor_coroutine
     def close(self):
         """Explicitly kill this cursor on the server. If iterating with
         :meth:`each`, cease.

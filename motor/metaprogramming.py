@@ -99,6 +99,20 @@ def asynchronize(
     return method
 
 
+_coro_token = object()
+
+
+def motor_coroutine(f):
+    """Used by Motor class to mark functions as coroutines.
+
+    create_class_with_framework will decorate the function with a framework-
+    specific coroutine decorator, like asyncio.coroutine or Tornado's
+    gen.coroutine.
+    """
+    f._is_motor_coroutine = _coro_token
+    return f
+
+
 class MotorAttributeFactory(object):
     # TODO: update.
     """Used by Motor classes to mark attributes that delegate in some way to
@@ -320,30 +334,32 @@ class MotorCursorChainingMethod(MotorAttributeFactory):
 
 
 def create_class_with_framework(cls, framework):
-    motor_class_name = cls.__motor_class_name__
-    key = (cls, motor_class_name, framework)
-    cached_class = _class_cache.get(key)
+    name = cls.__motor_class_name__
+    cache_key = (cls, name, framework)
+    cached_class = _class_cache.get(cache_key)
     if cached_class:
         return cached_class
 
-    new_class = type(str(motor_class_name), cls.__bases__, cls.__dict__.copy())
-
-    # TODO: pass to create_attribute instead of setting here?
+    new_class = type(str(name), cls.__bases__, cls.__dict__.copy())
     new_class._framework = framework
 
-    # TODO: can't happen any more? assert has __delegate_class__
-    # If new_class has no __delegate_class__, then it's a base like
-    # AgnosticClientBase; don't try to update its attrs, we'll use them
-    # for its subclasses like MotorClient.
-    if getattr(new_class, '__delegate_class__', None):
-        for base in reversed(inspect.getmro(new_class)):
-            # Turn attribute factories into real methods or descriptors.
-            for motor_class_name, attr in base.__dict__.items():
-                if isinstance(attr, MotorAttributeFactory):
-                    new_class_attr = attr.create_attribute(
-                        new_class, motor_class_name)
+    assert hasattr(new_class, '__delegate_class__')
 
-                    setattr(new_class, motor_class_name, new_class_attr)
+    # If we're constructing MotorClient from AgnosticClient, for example,
+    # the method resolution order is (AgnosticClient, AgnosticBase, object).
+    # Iterate over bases looking for attributes and coroutines that must be
+    # replaced with framework-specific ones.
+    for base in reversed(inspect.getmro(cls)):
+        # Turn attribute factories into real methods or descriptors.
+        for name, attr in base.__dict__.items():
+            if isinstance(attr, MotorAttributeFactory):
+                new_class_attr = attr.create_attribute(new_class, name)
+                setattr(new_class, name, new_class_attr)
 
-    _class_cache[key] = new_class
+            elif getattr(attr, '_is_motor_coroutine', None) is _coro_token:
+                coro = framework.coroutine(attr)
+                del coro._is_motor_coroutine
+                setattr(new_class, name, coro)
+
+    _class_cache[cache_key] = new_class
     return new_class
