@@ -46,8 +46,8 @@ def return_value(value):
     raise gen.Return(value)
 
 
-# TODO: rename?
-def get_future():
+# TODO: rename? Switch between Future / TracebackFuture
+def get_future(loop):
     return concurrent.TracebackFuture()
 
 
@@ -129,6 +129,11 @@ def coroutine(f):
         else:
             return future
     return wrapper
+
+
+def yieldable(future):
+    # TODO: really explain.
+    return future
 
 
 def tornado_motor_sock_method(method):

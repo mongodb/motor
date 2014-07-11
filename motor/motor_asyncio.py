@@ -16,63 +16,63 @@ from __future__ import unicode_literals, absolute_import
 
 """Asyncio support for Motor, an asynchronous driver for MongoDB."""
 
-__all__ = ['MotorClient', 'MotorReplicaSetClient']
+__all__ = ['AsyncIOMotorClient', 'AsyncIOMotorReplicaSetClient']
 
 from . import core, motor_gridfs
 from .frameworks import asyncio as asyncio_framework
 from .metaprogramming import create_class_with_framework
 
 
-MotorClient = create_class_with_framework(
+AsyncIOMotorClient = create_class_with_framework(
     core.AgnosticClient,
     asyncio_framework)
 
 
-MotorReplicaSetClient = create_class_with_framework(
+AsyncIOMotorReplicaSetClient = create_class_with_framework(
     core.AgnosticReplicaSetClient,
     asyncio_framework)
 
 
-MotorDatabase = create_class_with_framework(
+AsyncIOMotorDatabase = create_class_with_framework(
     core.AgnosticDatabase,
     asyncio_framework)
 
 
-MotorCollection = create_class_with_framework(
+AsyncIOMotorCollection = create_class_with_framework(
     core.AgnosticCollection,
     asyncio_framework)
 
 
-MotorCursor = create_class_with_framework(
+AsyncIOMotorCursor = create_class_with_framework(
     core.AgnosticCursor,
     asyncio_framework)
 
 
-MotorCommandCursor = create_class_with_framework(
+AsyncIOMotorCommandCursor = create_class_with_framework(
     core.AgnosticCommandCursor,
     asyncio_framework)
 
 
-MotorBulkOperationBuilder = create_class_with_framework(
+AsyncIOMotorBulkOperationBuilder = create_class_with_framework(
     core.AgnosticBulkOperationBuilder,
     asyncio_framework)
 
 
-MotorGridFS = create_class_with_framework(
+AsyncIOMotorGridFS = create_class_with_framework(
     motor_gridfs.AgnosticGridFS,
     asyncio_framework)
 
 
-MotorGridIn = create_class_with_framework(
+AsyncIOMotorGridIn = create_class_with_framework(
     motor_gridfs.AgnosticGridIn,
     asyncio_framework)
 
 
-MotorGridOut = create_class_with_framework(
+AsyncIOMotorGridOut = create_class_with_framework(
     motor_gridfs.AgnosticGridOut,
     asyncio_framework)
 
 
-MotorGridOutCursor = create_class_with_framework(
+AsyncIOMotorGridOutCursor = create_class_with_framework(
     motor_gridfs.AgnosticGridOutCursor,
     asyncio_framework)

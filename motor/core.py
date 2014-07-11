@@ -46,6 +46,7 @@ from .metaprogramming import (AsyncCommand,
                               AsyncWrite,
                               create_class_with_framework,
                               DelegateMethod,
+                              InternalCommand,
                               motor_coroutine,
                               MotorCursorChainingMethod,
                               ReadOnlyProperty,
@@ -444,7 +445,7 @@ class AgnosticClientBase(AgnosticBase):
     min_wire_version  = ReadOnlyProperty()
     max_wire_version  = ReadOnlyProperty()
     max_pool_size     = ReadOnlyProperty()
-    _ensure_connected = AsyncCommand()
+    _ensure_connected = InternalCommand()
 
     def __init__(self, io_loop, *args, **kwargs):
         check_deprecated_kwargs(kwargs)
@@ -580,8 +581,8 @@ class AgnosticClient(AgnosticClientBase):
     host         = ReadOnlyProperty()
     port         = ReadOnlyProperty()
 
-    _simple_command = AsyncCommand(attr_name='__simple_command')
-    _socket         = AsyncCommand(attr_name='__socket')
+    _simple_command = InternalCommand(attr_name='__simple_command')
+    _socket         = InternalCommand(attr_name='__socket')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -657,8 +658,8 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
     seeds       = DelegateMethod()
     close       = DelegateMethod()
 
-    _simple_command = AsyncCommand(attr_name='__simple_command')
-    _socket         = AsyncCommand(attr_name='__socket')
+    _simple_command = InternalCommand(attr_name='__simple_command')
+    _socket         = InternalCommand(attr_name='__socket')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a MongoDB replica set.
@@ -961,7 +962,7 @@ class AgnosticCollection(AgnosticBase):
     uuid_subtype      = ReadWriteProperty()
     full_name         = ReadOnlyProperty()
 
-    __parallel_scan   = AsyncCommand(attr_name='parallel_scan')
+    __parallel_scan   = InternalCommand(attr_name='parallel_scan')
 
     def __init__(self, database, name):
         db_class = create_class_with_framework(
@@ -1111,7 +1112,7 @@ class AgnosticCollection(AgnosticBase):
 
 class AgnosticBaseCursor(AgnosticBase):
     """Base class for AgnosticCursor and AgnosticCommandCursor"""
-    _refresh      = AsyncRead()
+    _refresh      = InternalCommand()
     cursor_id     = ReadOnlyProperty()
     alive         = ReadOnlyProperty()
     batch_size    = MotorCursorChainingMethod()
@@ -1188,7 +1189,7 @@ class AgnosticBaseCursor(AgnosticBase):
 
         .. _`large batches`: http://docs.mongodb.org/manual/core/read-operations/#cursor-behaviors
         """
-        future = self._framework.get_future()
+        future = self._framework.get_future(self.get_io_loop())
 
         if not self._buffer_size() and self.alive:
             if self._empty():
@@ -1422,6 +1423,7 @@ class AgnosticBaseCursor(AgnosticBase):
     def _data(self):
         raise NotImplementedError()
 
+    @motor_coroutine
     def _close(self):
         raise NotImplementedError()
 
@@ -1526,7 +1528,7 @@ cursor has any effect.
     max           = MotorCursorChainingMethod()
     comment       = MotorCursorChainingMethod()
 
-    _Cursor__die  = AsyncCommand()
+    _Cursor__die  = InternalCommand()
 
     def rewind(self):
         """Rewind this cursor to its unevaluated state."""
@@ -1640,15 +1642,16 @@ cursor has any effect.
     def _data(self):
         return self.delegate._Cursor__data
 
+    @motor_coroutine
     def _close(self):
-        # Returns a Future.
-        return self._Cursor__die()
+        yield self._Cursor__die()
 
 
 class AgnosticCommandCursor(AgnosticBaseCursor):
     __motor_class_name__ = 'MotorCommandCursor'
     __delegate_class__ = CommandCursor
-    _CommandCursor__die = AsyncCommand()
+
+    _CommandCursor__die = InternalCommand()
 
     def _empty(self):
         return False
@@ -1659,9 +1662,9 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
     def _data(self):
         return self.delegate._CommandCursor__data
 
+    @motor_coroutine
     def _close(self):
-        # Returns a Future.
-        return self._CommandCursor__die()
+        yield self._CommandCursor__die()
 
 
 class AgnosticBulkOperationBuilder(AgnosticBase):

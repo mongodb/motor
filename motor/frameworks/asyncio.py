@@ -44,8 +44,8 @@ def return_value(value):
 
 
 # TODO: rename?
-def get_future():
-    return asyncio.Future()
+def get_future(loop):
+    return asyncio.Future(loop=loop)
 
 
 def is_future(f):
@@ -102,53 +102,12 @@ def close_resolver(resolver):
     pass
 
 
-# TODO: explain why we accept a callback, or drop callback support for asyncio users
-# TODO: explain why we need a runner for asyncio
-def coroutine(f):
-    """A coroutine that accepts an optional callback.
-
-    Given a callback, the function returns None, and the callback is run
-    with (result, error). Without a callback the function returns a Future.
-    """
-    coro = _make_coroutine_wrapper(f)
-
-    # TODO: is this framework-specific or not?
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        callback = kwargs.pop('callback', None)
-        if callback and not callable(callback):
-            raise callback_type_error
-
-        future = coro(*args, **kwargs)
-
-        if callback:
-            def _callback(future):
-                try:
-                    result = future.result()
-                    callback(result, None)
-                except Exception as e:
-                    callback(None, e)
-            future.add_done_callback(_callback)
-        else:
-            return future
-    return wrapper
+coroutine = asyncio.coroutine
 
 
-def _make_coroutine_wrapper(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        future = asyncio.Future()
-        try:
-            result = yield from func(*args, **kwargs)
-        except StopIteration as e:
-            result = getattr(e, 'value', None)
-        except Exception as e:
-            future.set_exception(e)
-            return future
-
-        future.set_result(result)
-        return future
-    return wrapper
+def yieldable(future):
+    # TODO: really explain.
+    return next(iter(future))
 
 
 def asyncio_motor_sock_method(method):

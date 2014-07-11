@@ -61,7 +61,7 @@ def asynchronize(
                 raise callback_type_error
             future = None
         else:
-            future = framework.get_future()
+            future = framework.get_future(self.get_io_loop())
 
         def call_method():
             # Runs on child greenlet.
@@ -279,6 +279,18 @@ class AsyncCommand(Async):
         """
         Async.__init__(
             self, attr_name=attr_name, has_write_concern=False, doc=doc)
+
+
+class InternalCommand(AsyncCommand):
+    """A coroutine like AsyncCommand that works with yield *or* yield from."""
+    def create_attribute(self, cls, attr_name):
+        method = super(InternalCommand, self).create_attribute(cls, attr_name)
+
+        def wrapper(self, *args, **kwargs):
+            rv = method(self, *args, **kwargs)
+            return self._framework.yieldable(rv)
+
+        return wrapper
 
 
 class ReadOnlyPropertyDescriptor(object):
