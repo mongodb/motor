@@ -15,7 +15,9 @@
 """Test Motor's asyncio test utilities."""
 
 import asyncio
+import contextlib
 import io
+import os
 import unittest
 
 
@@ -31,6 +33,20 @@ def run_test_case(case, suppress_output=True):
 
     runner = unittest.TextTestRunner(stream=stream)
     return runner.run(suite)
+
+
+@contextlib.contextmanager
+def set_environ(name, value):
+    old_value = os.environ.get(name)
+    os.environ[name] = value
+
+    try:
+        yield
+    finally:
+        if old_value is None:
+            del os.environ[name]
+        else:
+            os.environ[name] = old_value
 
 
 class TestAsyncIOTests(unittest.TestCase):
@@ -68,6 +84,29 @@ class TestAsyncIOTests(unittest.TestCase):
         self.assertTrue('test_that_is_too_slow' in text)
         self.assertTrue('middle' in text)
         self.assertTrue('inner' in text)
+
+    def test_timeout_environment_variable(self):
+        self.loop = asyncio.new_event_loop()
+
+        @asyncio_test
+        def default_timeout(self):
+            yield from asyncio.sleep(0.1, loop=self.loop)
+
+        with set_environ('ASYNC_TEST_TIMEOUT', '0.2'):
+            default_timeout(self)
+
+        with set_environ('ASYNC_TEST_TIMEOUT', '0'):
+            with self.assertRaises(asyncio.CancelledError):
+                default_timeout(self)
+
+        @asyncio_test(timeout=0.1)
+        def custom_timeout(self):
+            yield from asyncio.sleep(0.2, loop=self.loop)
+
+        # Environment timeout is ignored.
+        with set_environ('ASYNC_TEST_TIMEOUT', '1'):
+            with self.assertRaises(asyncio.CancelledError):
+                custom_timeout(self)
 
     def test_failure(self):
         class Test(AsyncIOTestCase):

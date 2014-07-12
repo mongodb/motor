@@ -98,18 +98,19 @@ def get_async_test_timeout():
 # TODO: doc. Spin off to a PyPI package.
 def asyncio_test(func=None, timeout=None):
     """Decorator like Tornado's gen_test."""
-    if timeout is None:
-        timeout = get_async_test_timeout()
-
     def wrap(f):
         @functools.wraps(f)
         def wrapped(self, *args, **kwargs):
+            actual_timeout = timeout
+            if actual_timeout is None:
+                actual_timeout = get_async_test_timeout()
+
             def on_timeout():
                 if inspect.isgenerator(coro):
                     # Simply doing task.cancel() raises an unhelpful traceback.
                     # We want to include the coroutine's stack, so throw into
                     # the generator and record its traceback in exc_handler().
-                    msg = 'timed out after %s seconds' % timeout
+                    msg = 'timed out after %s seconds' % actual_timeout
                     coro.throw(asyncio.CancelledError(msg))
 
             coro_exc = None
@@ -123,7 +124,7 @@ def asyncio_test(func=None, timeout=None):
 
             self.loop.set_exception_handler(exc_handler)
             coro = asyncio.coroutine(f)(self, *args, **kwargs)
-            timeout_handle = self.loop.call_later(timeout, on_timeout)
+            timeout_handle = self.loop.call_later(actual_timeout, on_timeout)
             task = tasks.Task(coro, loop=self.loop)
             try:
                 self.loop.run_until_complete(task)
