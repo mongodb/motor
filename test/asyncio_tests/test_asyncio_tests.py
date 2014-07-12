@@ -64,6 +64,31 @@ class TestAsyncIOTests(unittest.TestCase):
         self.assertTrue('middle' in text)
         self.assertTrue('inner' in text)
 
+    def test_failure(self):
+        class Test(AsyncIOTestCase):
+            @asyncio_test
+            def test_that_fails(self):
+                yield from self.middle()
+
+            @asyncio.coroutine
+            def middle(self):
+                yield from self.inner()
+
+            @asyncio.coroutine
+            def inner(self):
+                assert False, 'expected error'
+
+        result = run_test_case(Test)
+        self.assertEqual(1, len(result.failures))
+        case, text = result.failures[0]
+        self.assertFalse('CancelledError' in text)
+        self.assertTrue('AssertionError' in text)
+        self.assertTrue('expected error' in text)
+
+        # The traceback shows where the coroutine raised.
+        self.assertTrue('test_that_fails' in text)
+        self.assertTrue('middle' in text)
+        self.assertTrue('inner' in text)
 
 if __name__ == '__main__':
     unittest.main()
