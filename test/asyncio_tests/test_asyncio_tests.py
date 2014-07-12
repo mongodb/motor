@@ -146,6 +146,15 @@ class TestAsyncIOTests(unittest.TestCase):
         self.assertTrue('TypeError' in text)
         self.assertTrue('should be decorated with @asyncio_test' in text)
 
+    def test_other_return(self):
+        class Test(AsyncIOTestCase):
+            def test_other_return(self):
+                return 42
+
+        result = run_test_case(Test)
+        self.assertEqual(len(result.errors), 1)
+        case, text = result.errors[0]
+        self.assertIn('Return value from test method ignored', text)
 
 if __name__ == '__main__':
     unittest.main()
