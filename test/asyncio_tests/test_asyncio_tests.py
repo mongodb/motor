@@ -22,9 +22,14 @@ import unittest
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 
-def run_test_case(case):
+def run_test_case(case, suppress_output=True):
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(case)
-    runner = unittest.TextTestRunner(stream=io.StringIO())
+    if suppress_output:
+        stream = io.StringIO()
+    else:
+        stream = None
+
+    runner = unittest.TextTestRunner(stream=stream)
     return runner.run(suite)
 
 
@@ -89,6 +94,19 @@ class TestAsyncIOTests(unittest.TestCase):
         self.assertTrue('test_that_fails' in text)
         self.assertTrue('middle' in text)
         self.assertTrue('inner' in text)
+
+    def test_undecorated(self):
+        class Test(AsyncIOTestCase):
+            def test_that_should_be_decorated(self):
+                yield from asyncio.sleep(0.01, loop=self.loop)
+
+        result = run_test_case(Test)
+        self.assertEqual(1, len(result.errors))
+        case, text = result.errors[0]
+        self.assertFalse('CancelledError' in text)
+        self.assertTrue('TypeError' in text)
+        self.assertTrue('should be decorated with @asyncio_test' in text)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -24,7 +24,49 @@ from asyncio import events, tasks
 from motor import motor_asyncio
 
 
+class _TestMethodWrapper(object):
+    """Wraps a test method to raise an error if it returns a value.
+
+    This is mainly used to detect undecorated generators (if a test
+    method yields it must use a decorator to consume the generator),
+    but will also detect other kinds of return values (these are not
+    necessarily errors, but we alert anyway since there is no good
+    reason to return a value from a test).
+
+    Adapted from Tornado's test framework.
+    """
+    def __init__(self, orig_method):
+        self.orig_method = orig_method
+
+    def __call__(self):
+        result = self.orig_method()
+        if inspect.isgenerator(result):
+            raise TypeError("Generator test methods should be decorated with "
+                            "@asyncio_test")
+        elif result is not None:
+            raise ValueError("Return value from test method ignored: %r" %
+                             result)
+
+    def __getattr__(self, name):
+        """Proxy all unknown attributes to the original method.
+
+        This is important for some of the decorators in the `unittest`
+        module, such as `unittest.skipIf`.
+        """
+        return getattr(self.orig_method, name)
+
+
 class AsyncIOTestCase(unittest.TestCase):
+    def __init__(self, methodName='runTest'):
+        super().__init__(methodName)
+
+        # It's easy to forget the @asyncio_test decorator, but if you do
+        # the test will silently be ignored because nothing will consume
+        # the generator. Replace the test method with a wrapper that will
+        # make sure it's not an undecorated generator.
+        # (Adapted from Tornado's AsyncTestCase.)
+        setattr(self, methodName, _TestMethodWrapper(getattr(self, methodName)))
+
     def setUp(self):
         # Ensure that the event loop is passed explicitly in Motor.
         events.set_event_loop(None)
