@@ -76,10 +76,10 @@ class MotorDatabaseTest(MotorTest):
         # second call would raise "already exists", so test manually.
         self.assertRaises(TypeError, db.create_collection, 'c', callback='foo')
         self.assertRaises(TypeError, db.create_collection, 'c', callback=1)
-        
+
         # No error without callback
         db.create_collection('c', callback=None)
-        
+
         # Wait for create_collection to complete
         for _ in range(10):
             yield self.pause(0.5)
