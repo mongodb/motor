@@ -29,7 +29,7 @@ from test.utils import skip_if_mongos
 
 
 class MotorClientTestMixin(object):
-    def get_client(self):
+    def get_client(self, **kwargs):
         raise NotImplementedError()
 
     def test_requests(self):
@@ -108,7 +108,8 @@ class MotorClientTestMixin(object):
 
     @gen_test
     def test_copy_db(self):
-        cx = self.get_client()
+        # This will catch any socket leaks.
+        cx = self.get_client(max_pool_size=1, waitQueueTimeoutMS=1)
         target_db_name = 'motor_test_2'
 
         yield cx.drop_database(target_db_name)
@@ -153,7 +154,8 @@ class MotorClientTestMixin(object):
             # self.cx is logged in as root.
             yield self.cx.motor_test.add_user('mike', 'password')
 
-            client = self.get_client()
+            # This will catch any socket leaks.
+            client = self.get_client(max_pool_size=1, waitQueueTimeoutMS=1)
             target_db_name = 'motor_test_2'
 
             with assert_raises(pymongo.errors.OperationFailure):

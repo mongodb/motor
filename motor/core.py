@@ -499,7 +499,7 @@ class AgnosticClientBase(AgnosticBase):
           - `callback`: Optional function taking parameters (response, error)
         """
         # PyMongo's implementation uses requests, so rewrite for Motor.
-        pool, sock_info = None, None
+        member, sock_info = None, None
         try:
             if not isinstance(from_name, motor_py3_compat.string_types):
                 raise TypeError("from_name must be an instance "
@@ -542,8 +542,8 @@ class AgnosticClientBase(AgnosticBase):
 
             self._framework.return_value(result)
         finally:
-            if pool and sock_info:
-                pool.maybe_return_socket(sock_info)
+            if sock_info:
+                member.pool.maybe_return_socket(sock_info)
 
     def get_default_database(self):
         """Get the database named in the MongoDB connection URI.
