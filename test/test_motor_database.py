@@ -27,6 +27,7 @@ import motor
 import motor.core
 import test
 from test import version, MotorTest, assert_raises
+from test.test_environment import host, port
 from test.utils import remove_all_users
 
 
@@ -175,7 +176,7 @@ class MotorDatabaseTest(MotorTest):
     def test_authenticate(self):
         # self.db is logged in as root.
         yield self.db.add_user("mike", "password")
-        db = motor.MotorClient(test.host, test.port).motor_test
+        db = motor.MotorClient(host, port).motor_test
         try:
             # Authenticate many times at once to test concurrency.
             yield [db.authenticate("mike", "password") for _ in range(10)]

@@ -24,7 +24,8 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import host, port, MotorTest, SkipTest
+from test import MotorTest, SkipTest
+from test.test_environment import host, port
 
 
 class MotorIPv6Test(MotorTest):
