@@ -20,8 +20,11 @@ import inspect
 import os
 import unittest
 from asyncio import events, tasks
+from unittest import SkipTest
 
 from motor import motor_asyncio
+from test.version import _parse_version_string, _padded
+from test.test_environment import env
 
 
 class _TestMethodWrapper(object):
@@ -57,6 +60,9 @@ class _TestMethodWrapper(object):
 
 
 class AsyncIOTestCase(unittest.TestCase):
+    longMessage = True  # Used by unittest.TestCase
+    ssl = False  # If True, connect with SSL, skip if mongod isn't SSL
+
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
 
@@ -68,9 +74,22 @@ class AsyncIOTestCase(unittest.TestCase):
         setattr(self, methodName, _TestMethodWrapper(getattr(self, methodName)))
 
     def setUp(self):
+        super(AsyncIOTestCase, self).setUp()
+
         # Ensure that the event loop is passed explicitly in Motor.
         events.set_event_loop(None)
         self.loop = asyncio.new_event_loop()
+
+        if self.ssl and not env.mongod_started_with_ssl:
+            raise SkipTest("mongod doesn't support SSL, or is down")
+
+        if env.auth:
+            self.cx = self.asyncio_client(env.uri, ssl=self.ssl)
+        else:
+            self.cx = self.asyncio_client(ssl=self.ssl)
+
+        self.db = self.cx.motor_test
+        self.collection = self.db.test_collection
 
     def asyncio_client(self, uri=None, *args, **kwargs):
         """Get an AsyncIOMotorClient.
@@ -151,3 +170,50 @@ def asyncio_test(func=None, timeout=None):
     else:
         # Used like @gen_test(timeout=10)
         return wrap
+
+
+@asyncio.coroutine
+def get_command_line(client):
+    command_line = yield from client.admin.command('getCmdLineOpts')
+    assert command_line['ok'] == 1, "getCmdLineOpts() failed"
+    return command_line['argv']
+
+
+@asyncio.coroutine
+def server_is_master_with_slave(client):
+    command_line = yield from get_command_line(client)
+    return '--master' in command_line
+
+
+@asyncio.coroutine
+def server_is_mongos(client):
+    ismaster_response = yield from client.admin.command('ismaster')
+    return ismaster_response.get('msg' == 'isdbgrid')
+
+
+@asyncio.coroutine
+def version(client):
+    info = yield from client.server_info()
+    return _parse_version_string(info["version"])
+
+
+@asyncio.coroutine
+def at_least(client, min_version):
+    client_version = yield from version(client)
+    return client_version >= tuple(_padded(min_version, 4))
+
+
+@asyncio.coroutine
+def skip_if_mongos(client):
+    is_mongos = yield from server_is_mongos(client)
+    if is_mongos:
+        raise unittest.SkipTest("connected to mongos")
+
+
+@asyncio.coroutine
+def remove_all_users(db):
+    version_check = yield from at_least(db.connection, (2, 5, 4))
+    if version_check:
+        yield from db.command({"dropAllUsersFromDatabase": 1})
+    else:
+        yield from db.system.users.remove({})
