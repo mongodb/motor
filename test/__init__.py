@@ -280,27 +280,17 @@ class MotorReplicaSetTestBase(MotorTest):
         if not is_replica_set:
             raise SkipTest("Not connected to a replica set")
 
-        self.rsc = self.motor_rsc_sync()
+        self.rsc = self.motor_rsc()
 
-    @gen.coroutine
     def motor_rsc(self, h=host, p=port, *args, **kwargs):
         """Get an open MotorReplicaSetClient. Ignores self.ssl, you must pass
         'ssl' argument. You'll probably need to close the client to avoid
         file-descriptor problems after AsyncTestCase calls
         self.io_loop.close(all_fds=True).
         """
-        client = motor.MotorReplicaSetClient(
+        return motor.MotorReplicaSetClient(
             '%s:%s' % (h, p), *args, io_loop=self.io_loop,
             replicaSet=rs_name, **kwargs)
-
-        raise gen.Return(client)
-
-    def motor_rsc_sync(self, host=host, port=port, *args, **kwargs):
-        """Get an open MotorClient. Ignores self.ssl, you must pass 'ssl'
-        argument.
-        """
-        return self.io_loop.run_sync(functools.partial(
-            self.motor_rsc, host, port, *args, **kwargs))
 
     def tearDown(self):
         super(MotorReplicaSetTestBase, self).tearDown()
