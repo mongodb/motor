@@ -29,7 +29,7 @@ from test.utils import skip_if_mongos
 
 
 class MotorClientTestMixin(object):
-    def get_client(self):
+    def get_client(self, **kwargs):
         raise NotImplementedError()
 
     def test_requests(self):
@@ -99,8 +99,9 @@ class MotorClientTestMixin(object):
                     "%s not dropped" % test_db_name)
 
     @gen.coroutine
-    def check_copydb_results(self, doc, test_db_names):
-        cx = self.get_client()
+    def check_copydb_results(
+            self, doc, test_db_names, authenticated_client=None):
+        cx = authenticated_client or self.cx
         for test_db_name in test_db_names:
             self.assertEqual(
                 doc,
@@ -108,7 +109,8 @@ class MotorClientTestMixin(object):
 
     @gen_test
     def test_copy_db(self):
-        cx = self.get_client()
+        # This will catch any socket leaks.
+        cx = self.get_client(max_pool_size=1, waitQueueTimeoutMS=1)
         target_db_name = 'motor_test_2'
 
         yield cx.drop_database(target_db_name)
@@ -144,8 +146,10 @@ class MotorClientTestMixin(object):
 
     @gen_test
     def test_copy_db_auth(self):
-        # See SERVER-6427.
-        cx = self.get_client()
+        # This will catch any socket leaks.
+        cx = self.get_client(max_pool_size=1, waitQueueTimeoutMS=1)
+
+        # SERVER-6427, can't copy database via mongos with auth.
         yield skip_if_mongos(cx)
 
         target_db_name = 'motor_test_2'
@@ -214,7 +218,9 @@ class MotorClientTestMixin(object):
                 for test_db_name in test_db_names]
 
             self.assertTrue(all(isinstance(i, dict) for i in results))
-            yield self.check_copydb_results({'_id': 1}, test_db_names)
+            yield self.check_copydb_results(
+                {'_id': 1}, test_db_names,
+                authenticated_client=cx)
 
         finally:
             yield remove_all_users(cx.motor_test)

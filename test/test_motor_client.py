@@ -335,8 +335,8 @@ class MotorResolverTest(MotorTest):
 
 
 class MotorClientTestGeneric(MotorClientTestMixin, MotorTest):
-    def get_client(self):
-        return self.cx
+    def get_client(self, **kwargs):
+        return self.motor_client(**kwargs)
 
 
 if __name__ == '__main__':

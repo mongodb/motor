@@ -101,8 +101,8 @@ class MotorReplicaSetClientTestGeneric(
         MotorClientTestMixin,
         MotorReplicaSetTestBase):
 
-    def get_client(self):
-        return self.rsc
+    def get_client(self, **kwargs):
+        return self.motor_rsc(**kwargs)
 
 
 class TestReplicaSetClientAgainstStandalone(MotorTest):
