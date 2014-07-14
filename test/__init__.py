@@ -293,4 +293,5 @@ class MotorReplicaSetTestBase(MotorTest):
             replicaSet=rs_name, **kwargs)
 
     def tearDown(self):
+        self.rsc.close()
         super(MotorReplicaSetTestBase, self).tearDown()

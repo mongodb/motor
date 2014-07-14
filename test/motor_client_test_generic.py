@@ -15,6 +15,8 @@
 from __future__ import unicode_literals
 
 """Generic tests for MotorClient and MotorReplicaSetClient."""
+
+import gc
 import time
 
 import pymongo.errors
@@ -22,19 +24,22 @@ import pymongo.mongo_replica_set_client
 from tornado import gen
 from tornado.testing import gen_test
 
-import motor
 from test import assert_raises
 from test.utils import server_is_master_with_slave, remove_all_users
 from test.utils import skip_if_mongos
 
 
 class MotorClientTestMixin(object):
-    def get_client(self, **kwargs):
+    def get_client(self, *args, **kwargs):
         raise NotImplementedError()
 
     def test_requests(self):
+        cx = self.get_client()
         for method in 'start_request', 'in_request', 'end_request':
-            self.assertRaises(TypeError, getattr(self.get_client(), method))
+            self.assertRaises(TypeError, getattr(cx, method))
+
+        cx.close()
+        gc.collect()
 
     @gen_test
     def test_copy_db_argument_checking(self):
@@ -48,6 +53,9 @@ class MotorClientTestMixin(object):
         with assert_raises(pymongo.errors.InvalidName):
             yield cx.copy_database('foo', '$foo')
 
+        cx.close()
+        gc.collect()
+
     @gen_test
     def test_copy_db_callback(self):
         cx = self.get_client()
@@ -60,17 +68,19 @@ class MotorClientTestMixin(object):
         self.assertEqual(error, None)
 
         yield cx.drop_database('target')
+        cx.close()
 
-        client = motor.MotorClient('doesntexist', connectTimeoutMS=10)
+        client = self.get_client('doesntexist', connectTimeoutMS=10)
         (result, error), _ = yield gen.Task(
             client.copy_database, name, 'target')
 
         self.assertEqual(result, None)
         self.assertTrue(isinstance(error, Exception))
+        client.close()
+        gc.collect()
 
     @gen.coroutine
-    def drop_databases(self, database_names, authenticated_client=None):
-        cx = authenticated_client or self.get_client()
+    def drop_databases(self, cx, database_names):
         for test_db_name in database_names:
             yield cx.drop_database(test_db_name)
 
@@ -99,9 +109,7 @@ class MotorClientTestMixin(object):
                     "%s not dropped" % test_db_name)
 
     @gen.coroutine
-    def check_copydb_results(
-            self, doc, test_db_names, authenticated_client=None):
-        cx = authenticated_client or self.cx
+    def check_copydb_results(self, cx, doc, test_db_names):
         for test_db_name in test_db_names:
             self.assertEqual(
                 doc,
@@ -122,6 +130,8 @@ class MotorClientTestMixin(object):
             (yield cx[target_db_name].test_collection.find_one()))
 
         yield cx.drop_database(target_db_name)
+        cx.close()
+        gc.collect()
 
     @gen_test(timeout=300)
     def test_copy_db_concurrent(self):
@@ -131,7 +141,7 @@ class MotorClientTestMixin(object):
         # 1. Drop old test DBs
         cx = self.get_client()
         yield cx.drop_database('motor_test')
-        yield self.drop_databases(target_db_names)
+        yield self.drop_databases(cx, target_db_names)
 
         # 2. Copy a test DB N times at once
         collection = cx.motor_test.test_collection
@@ -141,8 +151,10 @@ class MotorClientTestMixin(object):
             for test_db_name in target_db_names]
 
         self.assertTrue(all(isinstance(i, dict) for i in results))
-        yield self.check_copydb_results({'_id': 1}, target_db_names)
-        yield self.drop_databases(target_db_names)
+        yield self.check_copydb_results(cx, {'_id': 1}, target_db_names)
+        yield self.drop_databases(cx, target_db_names)
+        cx.close()
+        gc.collect()
 
     @gen_test
     def test_copy_db_auth(self):
@@ -187,6 +199,8 @@ class MotorClientTestMixin(object):
         finally:
             yield remove_all_users(cx.motor_test)
             yield cx.admin.remove_user('admin')
+            cx.close()
+            gc.collect()
 
     @gen_test(timeout=30)
     def test_copy_db_auth_concurrent(self):
@@ -198,7 +212,7 @@ class MotorClientTestMixin(object):
 
         # 1. Drop old test DBs
         yield cx.drop_database('motor_test')
-        yield self.drop_databases(test_db_names)
+        yield self.drop_databases(cx, test_db_names)
 
         # 2. Copy a test DB N times at once
         collection = cx.motor_test.test_collection
@@ -218,11 +232,10 @@ class MotorClientTestMixin(object):
                 for test_db_name in test_db_names]
 
             self.assertTrue(all(isinstance(i, dict) for i in results))
-            yield self.check_copydb_results(
-                {'_id': 1}, test_db_names,
-                authenticated_client=cx)
-
+            yield self.check_copydb_results(cx, {'_id': 1}, test_db_names)
         finally:
             yield remove_all_users(cx.motor_test)
-            yield self.drop_databases(test_db_names, authenticated_client=cx)
+            yield self.drop_databases(cx, test_db_names)
             yield cx.admin.remove_user('admin')
+            cx.close()
+            gc.collect()
