@@ -29,7 +29,7 @@ class mongoref(nodes.reference):
 
 
 def visit_mongodoc_node(self, node):
-    self.visit_admonition(node, "seealso")
+    self.visit_admonition(node)
 
 
 def depart_mongodoc_node(self, node):
