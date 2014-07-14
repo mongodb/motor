@@ -46,13 +46,13 @@ def suppress_tornado_warnings():
         logger.setLevel(logging.ERROR)
 
 
-def setup_package(warn):
+def setup_package(tornado_warnings):
     """Run once by MotorTestCase before any tests.
 
     If 'warn', let Tornado log warnings.
     """
     env.setup()
-    if not warn:
+    if not tornado_warnings:
         suppress_tornado_warnings()
 
 
@@ -64,11 +64,11 @@ def teardown_package():
 class MotorTestRunner(unittest.TextTestRunner):
     """Runs suite-level setup and teardown."""
     def __init__(self, *args, **kwargs):
-        self.warn = kwargs.pop('warn', False)
+        self.tornado_warnings = kwargs.pop('tornado_warnings', False)
         super(MotorTestRunner, self).__init__(*args, **kwargs)
 
     def run(self, test):
-        setup_package(warn=self.warn)
+        setup_package(tornado_warnings=self.tornado_warnings)
         result = super(MotorTestRunner, self).run(test)
         teardown_package()
         return result
