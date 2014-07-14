@@ -49,13 +49,13 @@ class test(Command):
         ("test-suite=", "s",
          "Test suite to run (e.g. 'some_module.test_suite')"),
         ("failfast", "f", "Stop running tests on first failure or error"),
-        ("warn", "w", "Let Tornado log warnings")]
+        ("tornado-warnings", "w", "Let Tornado log warnings")]
 
     def initialize_options(self):
         self.test_module = None
         self.test_suite = None
         self.failfast = False
-        self.warn = False
+        self.tornado_warnings = False
 
     def finalize_options(self):
         if self.test_suite is None and self.test_module is None:
@@ -90,8 +90,12 @@ class test(Command):
             suite = unittest.defaultTestLoader.loadTestsFromName(
                 self.test_suite)
 
-        result = MotorTestRunner(
-            verbosity=2, failfast=self.failfast, warn=self.warn).run(suite)
+        runner = MotorTestRunner(
+            verbosity=2,
+            failfast=self.failfast,
+            tornado_warnings=self.tornado_warnings)
+
+        result = runner.run(suite)
         sys.exit(not result.wasSuccessful())
 
 
