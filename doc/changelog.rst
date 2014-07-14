@@ -17,6 +17,13 @@ For this, use PyMongo's `copy_database`_ method, or use the mongo shell.
 
 .. seealso:: `The "copydb" command <http://docs.mongodb.org/manual/reference/command/copydb/>`_.
 
+Motor 0.3.2
+-----------
+
+Fix `MOTOR-44 <https://jira.mongodb.org/browse/MOTOR-44>`_,
+a socket leak in :class:`MotorClient.copy_database`
+and :class:`MotorReplicaSetClient.copy_database`.
+
 Motor 0.3.1
 -----------
 
