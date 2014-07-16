@@ -186,7 +186,6 @@ class MotorClientTestMixin(object):
         # SERVER-6427, can't copy database via mongos with auth.
         yield skip_if_mongos(self.cx)
 
-
         n_copies = 2
         test_db_names = ['motor_test_%s' % i for i in range(n_copies)]
 
