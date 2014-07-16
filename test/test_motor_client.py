@@ -31,7 +31,13 @@ from tornado.testing import gen_test, netutil
 
 import motor
 import test
-from test import host, port, assert_raises, MotorTest, SkipTest
+from test import (host,
+                  port,
+                  assert_raises,
+                  MotorTest,
+                  SkipTest,
+                  db_user,
+                  db_password)
 from test.utils import remove_all_users, delay
 
 
@@ -73,7 +79,7 @@ class MotorClientTest(MotorTest):
         client = self.motor_client(uri)
 
         if test.env.auth:
-            yield client.admin.authenticate(test.db_user, test.db_password)
+            yield client.admin.authenticate(db_user, db_password)
 
         yield client.motor_test.test.save({"dummy": "object"})
 
