@@ -33,7 +33,7 @@ import motor
 import motor.core
 import test
 from test import assert_raises, MotorTest, SkipTest
-from test.test_environment import host, port, env
+from test.test_environment import host, port, db_user, db_password
 from test.motor_client_test_generic import MotorClientTestMixin
 from test.utils import remove_all_users, delay
 
@@ -76,7 +76,7 @@ class MotorClientTest(MotorTest):
         client = self.motor_client(uri)
 
         if test.env.auth:
-            yield client.admin.authenticate(test.db_user, test.db_password)
+            yield client.admin.authenticate(db_user, db_password)
 
         yield client.motor_test.test.save({"dummy": "object"})
 
