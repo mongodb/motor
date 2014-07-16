@@ -93,6 +93,7 @@ class test(Command):
         runner = MotorTestRunner(
             verbosity=2,
             failfast=self.failfast,
+            warnings='default',
             tornado_warnings=self.tornado_warnings)
 
         result = runner.run(suite)
