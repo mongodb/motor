@@ -102,6 +102,14 @@ class AsyncIOTestCase(unittest.TestCase):
         return motor_asyncio.AsyncIOMotorClient(
             uri or env.uri, *args, io_loop=self.loop, **kwargs)
 
+    def asyncio_rsc(self, uri=None, *args, **kwargs):
+        """Get an AsyncIOMotorReplicaSetClient.
+
+        Ignores self.ssl, you must pass 'ssl' argument.
+        """
+        return motor_asyncio.AsyncIOMotorReplicaSetClient(
+            uri or env.rs_uri, *args, io_loop=self.loop, **kwargs)
+
     @asyncio.coroutine
     def make_test_data(self):
         yield from self.collection.remove()
