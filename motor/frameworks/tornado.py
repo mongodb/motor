@@ -65,11 +65,11 @@ def call_soon_threadsafe(loop, callback):
 
 def call_later(loop, delay, callback, *args, **kwargs):
     if args or kwargs:
-        loop.add_timeout(
+        return loop.add_timeout(
             loop.time() + delay,
             functools.partial(callback, *args, **kwargs))
     else:
-        loop.add_timeout(
+        return loop.add_timeout(
             loop.time() + delay,
             callback)
 

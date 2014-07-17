@@ -599,7 +599,9 @@ class AgnosticClient(AgnosticClientBase):
         else:
             io_loop = self._framework.get_event_loop()
 
-        event_class = functools.partial(util.MotorGreenletEvent, io_loop)
+        event_class = functools.partial(
+            util.MotorGreenletEvent, io_loop, self._framework)
+
         kwargs['_event_class'] = event_class
 
         # Our class is not actually AgnosticClient here, it's the version of
@@ -745,7 +747,9 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
 
         # Super makes two MotorGreenletEvents: self.event and self.refreshed.
         # We only use self.refreshed.
-        event_class = functools.partial(util.MotorGreenletEvent, loop)
+        event_class = functools.partial(
+            util.MotorGreenletEvent, loop, framework)
+
         pymongo.mongo_replica_set_client.Monitor.__init__(
             self, rsc, event_class=event_class)
 
@@ -757,7 +761,7 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
     def shutdown(self, _=None):
         self.stopped = True
         if self.timeout_handle:
-            self._framework.call_later_cancel(self.timeout_handle)
+            self._framework.call_later_cancel(self.loop, self.timeout_handle)
             self.timeout_handle = None
 
     def refresh(self):
@@ -792,7 +796,7 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
     def schedule_refresh(self):
         self.refreshed.clear()
         if self.timeout_handle:
-            self._framework.call_later_cancel(self.timeout_handle)
+            self._framework.call_later_cancel(self.loop, self.timeout_handle)
             self.timeout_handle = None
 
         self._framework.call_soon(self.loop, self.async_refresh)
