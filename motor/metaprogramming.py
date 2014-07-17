@@ -200,7 +200,8 @@ class WrapAsync(WrapBase):
         @functools.wraps(async_method)
         @cls._framework.coroutine
         def wrapper(self, *args, **kwargs):
-            result = yield async_method(self, *args, **kwargs)
+            future = async_method(self, *args, **kwargs)
+            result = yield cls._framework.yieldable(future)
 
             # Don't call isinstance(), not checking subclasses.
             if result.__class__ == original_class:

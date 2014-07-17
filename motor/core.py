@@ -782,7 +782,7 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
             self.refreshed.set()
 
         self.timeout_handle = self._framework.call_later(
-            self._refresh_interval, self.async_refresh)
+            self.loop, self._refresh_interval, self.async_refresh)
 
     def async_refresh(self):
         greenlet.greenlet(self.refresh).switch()
