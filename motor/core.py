@@ -1116,7 +1116,7 @@ class AgnosticCollection(AgnosticBase):
 
 class AgnosticBaseCursor(AgnosticBase):
     """Base class for AgnosticCursor and AgnosticCommandCursor"""
-    _refresh      = InternalCommand()
+    _refresh      = AsyncRead()
     cursor_id     = ReadOnlyProperty()
     alive         = ReadOnlyProperty()
     batch_size    = MotorCursorChainingMethod()
@@ -1143,20 +1143,15 @@ class AgnosticBaseCursor(AgnosticBase):
         self.started = False
         self.closed = False
 
-    def _get_more(self, callback):
-        """
-        Get a batch of data asynchronously, either performing an initial query
-        or getting more data from an existing cursor.
-        :Parameters:
-         - `callback`:    function taking parameters (batch_size, error)
-        """
+    def _get_more(self):
+        """Initial query or getMore. Returns a Future."""
         if not self.alive:
             raise pymongo.errors.InvalidOperation(
                 "Can't call get_more() on a MotorCursor that has been"
                 " exhausted or killed.")
 
         self.started = True
-        self._refresh(callback=callback)
+        return self._refresh()
 
     @property
     def fetch_next(self):
@@ -1201,14 +1196,8 @@ class AgnosticBaseCursor(AgnosticBase):
                 future.set_result(False)
                 return future
 
-            def cb(batch_size, error):
-                if error:
-                    future.set_exception(error)
-                else:
-                    future.set_result(bool(batch_size))
-
-            self._get_more(cb)
-            return future
+            # Return the Future, which resolves to number of docs fetched or 0.
+            return self._get_more()
         elif self._buffer_size():
             future.set_result(True)
             return future
@@ -1276,21 +1265,25 @@ class AgnosticBaseCursor(AgnosticBase):
         if not callable(callback):
             raise callback_type_error
 
-        self._each_got_more(callback, None, None)
+        self._each_got_more(callback, None)
 
-    def _each_got_more(self, callback, batch_size, error):
-        if error:
-            callback(None, error)
-            return
-
-        add_callback = self.get_io_loop().add_callback
+    def _each_got_more(self, callback, future):
+        if future:
+            try:
+                future.result()
+            except Exception as error:
+                callback(None, error)
+                return
 
         while self._buffer_size() > 0:
             try:
                 doc = next(self.delegate)  # decrements self.buffer_size
             except StopIteration:
                 # Special case: limit of 0
-                add_callback(functools.partial(callback, None, None))
+                self._framework.call_soon(
+                    self.get_io_loop(),
+                    functools.partial(callback, None, None))
+
                 self.close()
                 return
 
@@ -1304,10 +1297,13 @@ class AgnosticBaseCursor(AgnosticBase):
                 return
 
         if self.alive and (self.cursor_id or not self.started):
-            self._get_more(functools.partial(self._each_got_more, callback))
+            self._get_more().add_done_callback(
+                functools.partial(self._each_got_more, callback))
         else:
             # Complete
-            add_callback(functools.partial(callback, None, None))
+            self._framework.call_soon(
+                self.get_io_loop(),
+                functools.partial(callback, None, None))
 
     @motor_coroutine
     def to_list(self, length):
@@ -1369,7 +1365,7 @@ class AgnosticBaseCursor(AgnosticBase):
 
         self.started = True
         while True:
-            yield self._refresh()
+            yield self._framework.yieldable(self._refresh())
             while (self._buffer_size() > 0
                    and (length is None or len(the_list) < length)):
 
