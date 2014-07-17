@@ -114,8 +114,11 @@ class TestEnvironment(object):
                 db_user, db_password, host, port)
 
             # TODO: use PyMongo's add_user once that's fixed.
-            self.sync_cx.admin.command(
-                'createUser', db_user, pwd=db_password, roles=['root'])
+            try:
+                self.sync_cx.admin.command(
+                    'createUser', db_user, pwd=db_password, roles=['root'])
+            except pymongo.errors.OperationFailure:
+                print("Couldn't create root user, prior test didn't clean up?")
 
             self.sync_cx.admin.authenticate(db_user, db_password)
 
