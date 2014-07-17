@@ -227,7 +227,9 @@ class MotorClientTest(MotorTest):
                 'mike', 'password',
                 roles=['userAdmin', 'readWrite'])
 
-            client = motor.MotorClient('mongodb://u:pass@%s:%d' % (host, port))
+            client = motor.MotorClient(
+                'mongodb://u:pass@%s:%d' % (host, port),
+                io_loop=self.io_loop)
 
             # Note: open() only calls ismaster, doesn't throw auth errors.
             yield client.open()
@@ -237,7 +239,8 @@ class MotorClientTest(MotorTest):
 
             client = motor.MotorClient(
                 'mongodb://mike:password@%s:%d/%s' %
-                (host, port, db.name))
+                (host, port, db.name),
+                io_loop=self.io_loop)
 
             yield client[db.name].collection.find_one()
         finally:
