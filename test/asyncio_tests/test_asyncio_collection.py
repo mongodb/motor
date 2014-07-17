@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Test MotorCollection with asyncio."""
+"""Test AsyncIOMotorCollection."""
 
 import asyncio
 import unittest
