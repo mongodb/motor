@@ -12,11 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import unicode_literals, absolute_import
-
 # TODO: link to framework spec in dev guide.
-import types
-
 """asyncio compatibility layer for MongoDB, an asynchronous MongoDB driver."""
 
 import asyncio
@@ -25,8 +21,6 @@ import socket
 import sys
 
 import greenlet
-
-from motor.motor_common import callback_type_error
 
 
 def get_event_loop():
