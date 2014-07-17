@@ -642,6 +642,8 @@ class MotorCursorMaxTimeMSTest(MotorTest):
                 while (yield cursor.fetch_next):
                     cursor.next_object()
 
+            yield cursor.close()
+
             # Send another initial query.
             yield self.disable_timeout()
             cursor = self.collection.find().max_time_ms(100000)
@@ -701,6 +703,8 @@ class MotorCursorMaxTimeMSTest(MotorTest):
             with assert_raises(ExecutionTimeout):
                 cursor.each(callback)
                 yield future
+
+            yield cursor.close()
         finally:
             # Cleanup.
             yield self.disable_timeout()
