@@ -343,7 +343,6 @@ class MotorCursorTest(MotorTest):
                     # Soon, finish this test. Leave a little time for further
                     # calls to ensure we've really canceled them by calling
                     # cursor.close().
-                    # future.set_result(None)
                     loop.add_timeout(
                         datetime.timedelta(milliseconds=10),
                         partial(future.set_result, None))
