@@ -46,7 +46,6 @@ from .metaprogramming import (AsyncCommand,
                               AsyncWrite,
                               create_class_with_framework,
                               DelegateMethod,
-                              InternalCommand,
                               motor_coroutine,
                               MotorCursorChainingMethod,
                               ReadOnlyProperty,
@@ -445,7 +444,7 @@ class AgnosticClientBase(AgnosticBase):
     min_wire_version  = ReadOnlyProperty()
     max_wire_version  = ReadOnlyProperty()
     max_pool_size     = ReadOnlyProperty()
-    _ensure_connected = InternalCommand()
+    _ensure_connected = AsyncRead()
 
     def __init__(self, io_loop, *args, **kwargs):
         check_deprecated_kwargs(kwargs)
@@ -512,9 +511,9 @@ class AgnosticClientBase(AgnosticBase):
             pymongo.database._check_name(to_name)
 
             # Make sure there *is* a primary pool.
-            yield self._ensure_connected(True)
+            yield self._framework.yieldable(self._ensure_connected(True))
             member = self._get_member()
-            sock_info = yield self._socket(member)
+            sock_info = yield self._framework.yieldable(self._socket(member))
 
             copydb_command = bson.SON([
                 ('copydb', 1),
@@ -528,8 +527,9 @@ class AgnosticClientBase(AgnosticBase):
                 getnonce_command = bson.SON(
                     [('copydbgetnonce', 1), ('fromhost', from_host)])
 
-                response, ms = yield self._simple_command(
-                    sock_info, 'admin', getnonce_command)
+                response, ms = yield self._framework.yieldable(
+                    self._simple_command(
+                        sock_info, 'admin', getnonce_command))
 
                 nonce = response['nonce']
                 copydb_command['username'] = username
@@ -537,8 +537,9 @@ class AgnosticClientBase(AgnosticBase):
                 copydb_command['key'] = pymongo.auth._auth_key(
                     nonce, username, password)
 
-            result, duration = yield self._simple_command(
-                sock_info, 'admin', copydb_command)
+            result, duration = yield self._framework.yieldable(
+                self._simple_command(
+                    sock_info, 'admin', copydb_command))
 
             self._framework.return_value(result)
         finally:
@@ -581,8 +582,8 @@ class AgnosticClient(AgnosticClientBase):
     host         = ReadOnlyProperty()
     port         = ReadOnlyProperty()
 
-    _simple_command = InternalCommand(attr_name='__simple_command')
-    _socket         = InternalCommand(attr_name='__socket')
+    _simple_command = AsyncRead(attr_name='__simple_command')
+    _socket         = AsyncRead(attr_name='__socket')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -634,7 +635,7 @@ class AgnosticClient(AgnosticClientBase):
            :class:`MotorClient` now opens itself on demand, calling ``open``
            explicitly is now optional.
         """
-        yield self._ensure_connected()
+        yield self._framework.yieldable(self._ensure_connected())
         self._framework.return_value(self)
 
     def _get_member(self):
@@ -660,8 +661,8 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
     seeds       = DelegateMethod()
     close       = DelegateMethod()
 
-    _simple_command = InternalCommand(attr_name='__simple_command')
-    _socket         = InternalCommand(attr_name='__socket')
+    _simple_command = AsyncRead(attr_name='__simple_command')
+    _socket         = AsyncRead(attr_name='__socket')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a MongoDB replica set.
@@ -712,7 +713,7 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
            :class:`MotorReplicaSetClient` now opens itself on demand, calling
            ``open`` explicitly is now optional.
         """
-        yield self._ensure_connected(True)
+        yield self._framework.yieldable(self._ensure_connected(True))
         primary = self._get_member()
         if not primary:
             raise pymongo.errors.AutoReconnect('no primary is available')
@@ -966,7 +967,7 @@ class AgnosticCollection(AgnosticBase):
     uuid_subtype      = ReadWriteProperty()
     full_name         = ReadOnlyProperty()
 
-    __parallel_scan   = InternalCommand(attr_name='parallel_scan')
+    __parallel_scan   = AsyncRead(attr_name='parallel_scan')
 
     def __init__(self, database, name):
         db_class = create_class_with_framework(
@@ -1049,7 +1050,9 @@ class AgnosticCollection(AgnosticBase):
 
         .. note:: Requires server version **>= 2.5.5**.
         """
-        command_cursors = yield self.__parallel_scan(num_cursors, **kwargs)
+        command_cursors = yield self._framework.yieldable(
+            self.__parallel_scan(num_cursors, **kwargs))
+
         command_cursor_class = create_class_with_framework(
             AgnosticCommandCursor, self._framework)
 
@@ -1534,7 +1537,7 @@ cursor has any effect.
     max           = MotorCursorChainingMethod()
     comment       = MotorCursorChainingMethod()
 
-    _Cursor__die  = InternalCommand()
+    _Cursor__die  = AsyncRead()
 
     def rewind(self):
         """Rewind this cursor to its unevaluated state."""
@@ -1664,14 +1667,14 @@ cursor has any effect.
 
     @motor_coroutine
     def _close(self):
-        yield self._Cursor__die()
+        yield self._framework.yieldable(self._Cursor__die())
 
 
 class AgnosticCommandCursor(AgnosticBaseCursor):
     __motor_class_name__ = 'MotorCommandCursor'
     __delegate_class__ = CommandCursor
 
-    _CommandCursor__die = InternalCommand()
+    _CommandCursor__die = AsyncRead()
 
     def _empty(self):
         return False
@@ -1691,7 +1694,7 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
 
     @motor_coroutine
     def _close(self):
-        yield self._CommandCursor__die()
+        yield self._framework.yieldable(self._CommandCursor__die())
 
 
 class AgnosticBulkOperationBuilder(AgnosticBase):

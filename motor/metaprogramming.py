@@ -18,7 +18,6 @@ from __future__ import unicode_literals, absolute_import
 
 import inspect
 import functools
-import sys
 
 import greenlet
 from pymongo.cursor import Cursor
@@ -279,18 +278,6 @@ class AsyncCommand(Async):
         """
         Async.__init__(
             self, attr_name=attr_name, has_write_concern=False, doc=doc)
-
-
-class InternalCommand(AsyncCommand):
-    """A coroutine like AsyncCommand that works with yield *or* yield from."""
-    def create_attribute(self, cls, attr_name):
-        method = super(InternalCommand, self).create_attribute(cls, attr_name)
-
-        def wrapper(self, *args, **kwargs):
-            rv = method(self, *args, **kwargs)
-            return self._framework.yieldable(rv)
-
-        return wrapper
 
 
 class ReadOnlyPropertyDescriptor(object):
