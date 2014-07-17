@@ -280,12 +280,15 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         db_name = collection.database.name
         sync_collection = env.sync_cx[db_name][collection_name]
         while True:
-            sync_cursor = sync_collection.find()
+            sync_cursor = sync_collection.find().batch_size(1)
             sync_cursor._Cursor__id = cursor_id
             sync_cursor._Cursor__retrieved = retrieved
 
             try:
                 next(sync_cursor)
+                if not sync_cursor.cursor_id:
+                    # We exhausted the result set before cursor was killed.
+                    self.fail("Cursor finished before killed")
             except pymongo.errors.CursorNotFound:
                 # Success!
                 return
@@ -293,6 +296,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
                 # Avoid spurious errors trying to close this cursor.
                 sync_cursor._Cursor__id = None
 
+            retrieved = sync_cursor._Cursor__retrieved
             now = time.time()
             if now - start > patience_seconds:
                 self.fail("Cursor not closed")

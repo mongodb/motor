@@ -94,7 +94,7 @@ class MotorCursorTest(MotorTest):
 
         # Decref'ing the cursor eventually closes it on the server; yielding
         # clears the engine Runner's reference to the cursor.
-        cursor = coll.find()
+        cursor = coll.find().batch_size(1)
         yield cursor.fetch_next
         cursor_id = cursor.cursor_id
         retrieved = cursor.delegate._Cursor__retrieved
@@ -487,7 +487,7 @@ class MotorCursorTest(MotorTest):
         # prepared to close itself correctly on main or a child.
         yield self.make_test_data()
         collection = self.collection
-        cursor = collection.find()
+        cursor = collection.find().batch_size(1)
         yield cursor.fetch_next
         cursor_id = cursor.cursor_id
         retrieved = cursor.delegate._Cursor__retrieved
@@ -504,7 +504,7 @@ class MotorCursorTest(MotorTest):
         # prepared to close itself correctly on main or a child.
         yield self.make_test_data()
         collection = self.collection
-        cursor = [collection.find()]
+        cursor = [collection.find().batch_size(1)]
         yield cursor[0].fetch_next
         cursor_id = cursor[0].cursor_id
         retrieved = cursor[0].delegate._Cursor__retrieved
@@ -569,7 +569,7 @@ class MotorCursorTest(MotorTest):
         # If the Cursor instance is discarded before being
         # completely iterated we have to close and
         # discard the socket.
-        cur = client[self.db.name].test.find(exhaust=True)
+        cur = client[self.db.name].test.find(exhaust=True).batch_size(1)
         has_next = yield cur.fetch_next
         self.assertTrue(has_next)
         self.assertEqual(0, len(socks))
