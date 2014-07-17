@@ -131,8 +131,12 @@ class TestEnvironment(object):
         if self.auth:
             self.uri = 'mongodb://%s:%s@%s:%s/admin' % (
                 db_user, db_password, host, port)
-    
-            self.sync_cx.admin.add_user(db_user, db_password, roles=['root'])
+
+            try:
+                self.sync_cx.admin.add_user(db_user, db_password, roles=['root'])
+            except pymongo.errors.OperationFailure:
+                print("Couldn't create root user, prior test didn't clean up?")
+
             self.sync_cx.admin.authenticate(db_user, db_password)
     
         else:
