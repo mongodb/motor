@@ -55,8 +55,11 @@ def is_future(f):
     return isinstance(f, concurrent.Future)
 
 
-def call_soon(loop, callback):
-    loop.add_callback(callback)
+def call_soon(loop, callback, *args, **kwargs):
+    if args or kwargs:
+        loop.add_callback(functools.partial(callback, *args, **kwargs))
+    else:
+        loop.add_callback(callback)
 
 
 def call_soon_threadsafe(loop, callback):
@@ -76,6 +79,10 @@ def call_later(loop, delay, callback, *args, **kwargs):
 
 def call_later_cancel(loop, handle):
     loop.remove_timeout(handle)
+
+
+def create_task(loop, coro, *args, **kwargs):
+    loop.add_callback(functools.partial(coro, *args, **kwargs))
 
 
 def get_resolver(loop):

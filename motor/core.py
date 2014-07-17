@@ -1397,7 +1397,7 @@ class AgnosticBaseCursor(AgnosticBase):
         """
         if not self.closed:
             self.closed = True
-            yield self._close()
+            yield self._framework.yieldable(self._close())
 
     def _buffer_size(self):
         return len(self._data())
@@ -1405,27 +1405,33 @@ class AgnosticBaseCursor(AgnosticBase):
     def __del__(self):
         # This MotorCursor is deleted on whatever greenlet does the last
         # decref, or (if it's referenced from a cycle) whichever is current
-        # when the GC kicks in. We may need to send the server a killCursors
-        # message, but in Motor only direct children of the main greenlet can
-        # do I/O. First, do a quick check whether the cursor is still alive on
-        # the server:
+        # when the GC kicks in. First, do a quick check whether the cursor
+        # is still alive on the server:
         if self.cursor_id and self.alive:
-            if greenlet.getcurrent().parent is not None:
-                # We're on a child greenlet, send the message.
-                self.delegate.close()
-            else:
-                # We're on the main greenlet, start the operation on a child.
-                self.close()
+            client = self.collection.database.connection
+            cursor_id = self.cursor_id
+
+            # Prevent PyMongo Cursor from attempting to kill itself; it
+            # doesn't know how to schedule I/O on a greenlet.
+            self._clear_cursor_id()
+            self._close_exhaust_cursor()
+            client.kill_cursors([cursor_id])
 
     # Paper over some differences between PyMongo Cursor and CommandCursor.
     def _empty(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _query_flags(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _data(self):
-        raise NotImplementedError()
+        raise NotImplementedError
+
+    def _clear_cursor_id(self):
+        raise NotImplementedError
+
+    def _close_exhaust_cursor(self):
+        raise NotImplementedError
 
     @motor_coroutine
     def _close(self):
@@ -1646,6 +1652,20 @@ cursor has any effect.
     def _data(self):
         return self.delegate._Cursor__data
 
+    def _clear_cursor_id(self):
+        self.delegate._Cursor__id = 0
+
+    def _close_exhaust_cursor(self):
+        # If an exhaust cursor is dying without fully iterating its results,
+        # it must close the socket. PyMongo's Cursor does this, but we've
+        # disabled its cleanup so we must do it ourselves.
+        if self.delegate._Cursor__exhaust:
+            manager = self.delegate._Cursor__exhaust_mgr
+            if manager.sock:
+                manager.sock.close()
+
+            manager.close()
+
     @motor_coroutine
     def _close(self):
         yield self._Cursor__die()
@@ -1665,6 +1685,13 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
 
     def _data(self):
         return self.delegate._CommandCursor__data
+
+    def _clear_cursor_id(self):
+        self.delegate._CommandCursor__id = 0
+
+    def _close_exhaust_cursor(self):
+        # MongoDB doesn't have exhaust command cursors yet.
+        pass
 
     @motor_coroutine
     def _close(self):

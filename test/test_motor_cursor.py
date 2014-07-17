@@ -32,7 +32,7 @@ from tornado.testing import gen_test
 import motor
 import motor.core
 from test import MotorTest, assert_raises, SkipTest
-from test.utils import server_is_mongos, version, get_command_line
+from test.utils import server_is_mongos, version, get_command_line, one
 
 
 class MotorCursorTest(MotorTest):
@@ -570,6 +570,7 @@ class MotorCursorTest(MotorTest):
         # If the Cursor instance is discarded before being
         # completely iterated we have to close and
         # discard the socket.
+        sock = one(socks)
         cur = client[self.db.name].test.find(exhaust=True)
         has_next = yield cur.fetch_next
         self.assertTrue(has_next)
@@ -577,9 +578,18 @@ class MotorCursorTest(MotorTest):
         if 'PyPy' in sys.version:
             # Don't wait for GC or use gc.collect(), it's unreliable.
             cur.close()
+
+        cursor_id = cur.cursor_id
+        retrieved = cur.delegate._Cursor__retrieved
         cur = None
-        # The socket should be discarded.
-        self.assertEqual(0, len(socks))
+
+        yield self.pause(0.1)
+
+        # The exhaust cursor's socket was discarded, although another may
+        # already have been opened to send OP_KILLCURSORS.
+        self.assertNotIn(sock, socks)
+        self.assertTrue(sock.closed)
+        yield self.wait_for_cursor(self.collection, retrieved, cursor_id)
 
 
 class MotorCursorMaxTimeMSTest(MotorTest):

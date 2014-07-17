@@ -16,6 +16,7 @@
 """asyncio compatibility layer for MongoDB, an asynchronous MongoDB driver."""
 
 import asyncio
+import asyncio.tasks
 import functools
 import socket
 import sys
@@ -46,8 +47,11 @@ def is_future(f):
     return isinstance(f, asyncio.Future)
 
 
-def call_soon(loop, callback):
-    loop.call_soon(callback)
+def call_soon(loop, callback, *args, **kwargs):
+    if args or kwargs:
+        loop.call_soon(functools.partial(callback, *args, **kwargs))
+    else:
+        loop.call_soon(callback)
 
 
 def call_soon_threadsafe(loop, callback):
@@ -68,6 +72,10 @@ def call_later(loop, delay, callback, *args, **kwargs):
 
 def call_later_cancel(loop, handle):
     handle.cancel()
+
+
+def create_task(loop, coro, *args, **kwargs):
+    asyncio.tasks.Task(coro(*args, **kwargs), loop=loop)
 
 
 def get_resolver(loop):
