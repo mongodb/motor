@@ -29,7 +29,7 @@ from test.utils import skip_if_mongos
 
 
 class MotorClientTestMixin(object):
-    def get_client(self, **kwargs):
+    def get_client(self, *args, **kwargs):
         raise NotImplementedError()
 
     def test_requests(self):

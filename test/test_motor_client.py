@@ -308,8 +308,8 @@ class MotorResolverTest(MotorTest):
 
 
 class MotorClientTestGeneric(MotorClientTestMixin, MotorTest):
-    def get_client(self, **kwargs):
-        return motor.MotorClient(env.uri, **kwargs)
+    def get_client(self, *args, **kwargs):
+        return self.motor_client(**kwargs)
 
 
 if __name__ == '__main__':

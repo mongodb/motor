@@ -29,6 +29,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
+from test.test_environment import db_password, db_user
 from motor.motor_py3_compat import StringIO
 from test import MotorTest, MotorReplicaSetTestBase, assert_raises
 
@@ -236,7 +237,7 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
         primary_host, primary_port = test.env.primary
         primary = self.motor_client(primary_host, primary_port)
         if test.env.auth:
-            yield primary.admin.authenticate(test.db_user, test.db_password)
+            yield primary.admin.authenticate(db_user, db_password)
 
         secondary_host, secondary_port = test.env.secondaries[0]
 
@@ -245,7 +246,7 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
             read_preference=ReadPreference.SECONDARY)
 
         if test.env.auth:
-            yield secondary.admin.authenticate(test.db_user, test.db_password)
+            yield secondary.admin.authenticate(db_user, db_password)
 
         yield primary.motor_test.drop_collection("fs.files")
         yield primary.motor_test.drop_collection("fs.chunks")

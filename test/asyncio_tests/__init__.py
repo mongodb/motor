@@ -97,7 +97,7 @@ class AsyncIOTestCase(unittest.TestCase):
         Ignores self.ssl, you must pass 'ssl' argument.
         """
         return motor_asyncio.AsyncIOMotorClient(
-            uri or 'mongodb://localhost', *args, io_loop=self.loop, **kwargs)
+            uri or env.uri, *args, io_loop=self.loop, **kwargs)
 
     def tearDown(self):
         self.loop.close()

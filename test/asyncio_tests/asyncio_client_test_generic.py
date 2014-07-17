@@ -27,8 +27,8 @@ from test.asyncio_tests import (asyncio_test,
 
 
 class AsyncIOClientTestMixin(object):
-    def get_client(self):
-        raise NotImplementedError()
+    def get_client(self, **kwargs):
+        raise NotImplementedError
 
     def test_requests(self):
         for method in 'start_request', 'in_request', 'end_request':
@@ -47,8 +47,7 @@ class AsyncIOClientTestMixin(object):
             yield from cx.copy_database('foo', '$foo')
 
     @asyncio.coroutine
-    def drop_databases(self, database_names, authenticated_client=None):
-        cx = authenticated_client or self.get_client()
+    def drop_databases(self, cx, database_names):
         for test_db_name in database_names:
             yield from cx.drop_database(test_db_name)
 
@@ -77,8 +76,7 @@ class AsyncIOClientTestMixin(object):
                     "%s not dropped" % test_db_name)
 
     @asyncio.coroutine
-    def check_copydb_results(self, doc, test_db_names):
-        cx = self.get_client()
+    def check_copydb_results(self, cx, doc, test_db_names):
         for test_db_name in test_db_names:
             self.assertEqual(
                 doc,
@@ -108,7 +106,7 @@ class AsyncIOClientTestMixin(object):
         # 1. Drop old test DBs
         cx = self.get_client()
         yield from cx.drop_database('motor_test')
-        yield from self.drop_databases(target_db_names)
+        yield from self.drop_databases(cx, target_db_names)
 
         # 2. Copy a test DB N times at once
         collection = cx.motor_test.test_collection
@@ -119,8 +117,8 @@ class AsyncIOClientTestMixin(object):
 
         results, _ = yield from asyncio.wait(futures, loop=self.loop)
         self.assertTrue(all(isinstance(i.result(), dict) for i in results))
-        yield from self.check_copydb_results({'_id': 1}, target_db_names)
-        yield from self.drop_databases(target_db_names)
+        yield from self.check_copydb_results(cx, {'_id': 1}, target_db_names)
+        yield from self.drop_databases(cx, target_db_names)
 
     @asyncio_test
     def test_copy_db_auth(self):
@@ -171,7 +169,7 @@ class AsyncIOClientTestMixin(object):
         # 1. Drop old test DBs
         yield from self.cx.drop_database('motor_test')
         yield from self.collection.insert({'_id': 1})
-        yield from self.drop_databases(test_db_names)
+        yield from self.drop_databases(self.cx, test_db_names)
 
         # 2. Copy a test DB N times at once
         client = self.get_client()
@@ -186,9 +184,8 @@ class AsyncIOClientTestMixin(object):
 
             results, _ = yield from asyncio.wait(futures, loop=self.loop)
             self.assertTrue(all(isinstance(i.result(), dict) for i in results))
-            yield from self.check_copydb_results({'_id': 1}, test_db_names)
+            yield from self.check_copydb_results(
+                client, {'_id': 1}, test_db_names)
         finally:
             yield from remove_all_users(client.motor_test)
-            yield from self.drop_databases(
-                test_db_names,
-                authenticated_client=self.cx)
+            yield from self.drop_databases(self.cx, test_db_names)

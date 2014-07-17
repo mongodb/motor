@@ -33,8 +33,8 @@ class AsyncIOClientTestGeneric(
         asyncio_client_test_generic.AsyncIOClientTestMixin,
         AsyncIOTestCase):
 
-    def get_client(self):
-        return self.cx
+    def get_client(self, *args, **kwargs):
+        return self.asyncio_client(*args, **kwargs)
 
 
 if __name__ == '__main__':

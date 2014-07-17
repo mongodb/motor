@@ -90,9 +90,9 @@ class MotorReplicaSetClientTestGeneric(
         MotorClientTestMixin,
         MotorReplicaSetTestBase):
 
-    def get_client(self, **kwargs):
-        return motor.MotorReplicaSetClient(
-            env.uri, replicaSet=env.rs_name, **kwargs)
+    def get_client(self, *args, **kwargs):
+        return self.motor_rsc(
+            env.uri, *args, replicaSet=env.rs_name, **kwargs)
 
 
 class TestReplicaSetClientAgainstStandalone(MotorTest):
