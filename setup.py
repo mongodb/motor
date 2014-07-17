@@ -90,12 +90,16 @@ class test(Command):
             suite = unittest.defaultTestLoader.loadTestsFromName(
                 self.test_suite)
 
-        runner = MotorTestRunner(
+        runner_kwargs = dict(
             verbosity=2,
             failfast=self.failfast,
-            warnings='default',
             tornado_warnings=self.tornado_warnings)
 
+        if sys.version_info[:3] >= (3, 2):
+            # 'warnings' argument added to TextTestRunner in Python 3.2.
+            runner_kwargs['warnings'] = 'default'
+
+        runner = MotorTestRunner(**runner_kwargs)
         result = runner.run(suite)
         sys.exit(not result.wasSuccessful())
 
