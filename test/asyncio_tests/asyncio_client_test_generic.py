@@ -84,7 +84,8 @@ class AsyncIOClientTestMixin(object):
 
     @asyncio_test
     def test_copy_db(self):
-        cx = self.get_client()
+        # This will catch any socket leaks.
+        cx = self.get_client(max_pool_size=1, waitQueueTimeoutMS=1)
         target_db_name = 'motor_test_2'
 
         yield from cx.drop_database(target_db_name)
@@ -132,7 +133,8 @@ class AsyncIOClientTestMixin(object):
             # self.cx is logged in as root.
             yield from self.cx.motor_test.add_user('mike', 'password')
 
-            client = self.get_client()
+            # This will catch any socket leaks.
+            client = self.get_client(max_pool_size=1, waitQueueTimeoutMS=1)
             target_db_name = 'motor_test_2'
 
             with self.assertRaises(pymongo.errors.OperationFailure):
