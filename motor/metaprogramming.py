@@ -206,7 +206,6 @@ class WrapAsync(WrapBase):
             # Don't call isinstance(), not checking subclasses.
             if result.__class__ == original_class:
                 # Delegate to the current object to wrap the result.
-                # TODO: pass framework in?
                 cls._framework.return_value(self.wrap(result))
             else:
                 cls._framework.return_value(result)
