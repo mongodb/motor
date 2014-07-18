@@ -45,7 +45,7 @@ def asynchronize(
      - `motor_class`:       Motor class being created, e.g. MotorClient.
      - `framework`:         An asynchronous framework
      - `sync_method`:       Unbound method of pymongo Collection, Database,
-                            MongoClient, or Cursor
+                            MongoClient, etc.
      - `has_write_concern`: Whether the method accepts getLastError options
      - `doc`:               Optionally override sync_method's docstring
     """
