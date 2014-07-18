@@ -31,7 +31,7 @@ from test.asyncio_tests import (asyncio_test,
 from test.test_environment import host, port
 
 
-class MotorDatabaseTest(AsyncIOTestCase):
+class TestAsyncIODatabase(AsyncIOTestCase):
     @asyncio_test
     def test_database(self):
         # Test that we can create a db directly, not just get on from
