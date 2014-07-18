@@ -14,7 +14,6 @@
 # limitations under the License.
 
 from __future__ import unicode_literals
-from tornado import gen
 
 """Test GridFS with Motor, an asynchronous driver for MongoDB and Tornado."""
 
@@ -24,6 +23,7 @@ from functools import partial
 
 from bson.objectid import ObjectId
 from gridfs.errors import NoFile
+from tornado import gen
 from tornado.testing import gen_test
 from pymongo.errors import InvalidOperation
 
