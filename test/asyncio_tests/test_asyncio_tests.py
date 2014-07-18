@@ -74,7 +74,9 @@ class TestAsyncIOTests(unittest.TestCase):
             def inner(self):
                 yield from asyncio.sleep(1, loop=self.loop)
 
-        result = run_test_case(Test)
+        with set_environ('ASYNC_TEST_TIMEOUT', '0'):
+            result = run_test_case(Test)
+
         self.assertEqual(1, len(result.errors))
         case, text = result.errors[0]
         self.assertTrue('CancelledError' in text)
@@ -93,20 +95,25 @@ class TestAsyncIOTests(unittest.TestCase):
             yield from asyncio.sleep(0.1, loop=self.loop)
 
         with set_environ('ASYNC_TEST_TIMEOUT', '0.2'):
+            # No error, sleeps for 0.1 seconds and the timeout is 0.2 seconds.
             default_timeout(self)
-
-        with set_environ('ASYNC_TEST_TIMEOUT', '0'):
-            with self.assertRaises(asyncio.CancelledError):
-                default_timeout(self)
 
         @asyncio_test(timeout=0.1)
         def custom_timeout(self):
             yield from asyncio.sleep(0.2, loop=self.loop)
 
-        # Environment timeout is ignored.
-        with set_environ('ASYNC_TEST_TIMEOUT', '1'):
+        with set_environ('ASYNC_TEST_TIMEOUT', '0'):
+            # No error, default timeout of 5 seconds overrides '0'.
+            default_timeout(self)
+
+        with set_environ('ASYNC_TEST_TIMEOUT', '0'):
             with self.assertRaises(asyncio.CancelledError):
                 custom_timeout(self)
+
+        with set_environ('ASYNC_TEST_TIMEOUT', '1'):
+            # No error, 1-second timeout from environment overrides custom
+            # timeout of 0.1 seconds.
+            custom_timeout(self)
 
     def test_failure(self):
         class Test(AsyncIOTestCase):

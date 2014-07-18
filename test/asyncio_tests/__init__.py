@@ -156,26 +156,47 @@ class AsyncIOTestCase(unittest.TestCase):
         self.loop.close()
 
 
-def get_async_test_timeout():
+def get_async_test_timeout(default=5):
     """Get the global timeout setting for async tests.
 
     Returns a float, the timeout in seconds.
     """
     try:
-        return float(os.environ.get('ASYNC_TEST_TIMEOUT'))
+        timeout = float(os.environ.get('ASYNC_TEST_TIMEOUT'))
+        return max(timeout, default)
     except (ValueError, TypeError):
-        return 5
+        return default
 
 
-# TODO: doc. Spin off to a PyPI package.
+# TODO: Spin off to a PyPI package.
 def asyncio_test(func=None, timeout=None):
-    """Decorator like Tornado's gen_test."""
+    """Decorator for coroutine methods of AsyncIOTestCase::
+
+        class MyTestCase(AsyncIOTestCase):
+            @asyncio_test
+            def test(self):
+                # Your test code here....
+                pass
+
+    Default timeout is 5 seconds. Override like::
+
+        class MyTestCase(AsyncIOTestCase):
+            @asyncio_test(timeout=10)
+            def test(self):
+                # Your test code here....
+                pass
+
+    You can also set the ASYNC_TEST_TIMEOUT environment variable to a number
+    of seconds. The final timeout is the ASYNC_TEST_TIMEOUT or the timeout
+    in the test (5 seconds or the passed-in timeout), whichever is longest.
+    """
     def wrap(f):
         @functools.wraps(f)
         def wrapped(self, *args, **kwargs):
-            actual_timeout = timeout
-            if actual_timeout is None:
+            if timeout is None:
                 actual_timeout = get_async_test_timeout()
+            else:
+                actual_timeout = get_async_test_timeout(timeout)
 
             def on_timeout():
                 if inspect.isgenerator(coro):
