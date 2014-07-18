@@ -60,6 +60,31 @@ class TestAsyncIOTests(unittest.TestCase):
         self.assertEqual(1, result.testsRun)
         self.assertEqual(0, len(result.errors))
 
+    def test_decorator_with_no_args(self):
+        class TestPasses(AsyncIOTestCase):
+            @asyncio_test()
+            def test_decorated_with_no_args(self):
+                pass
+
+        result = run_test_case(TestPasses)
+        self.assertEqual(0, len(result.errors))
+
+        class TestFails(AsyncIOTestCase):
+            @asyncio_test()
+            def test_decorated_with_no_args(self):
+                assert False
+
+        result = run_test_case(TestFails)
+        self.assertEqual(1, len(result.failures))
+
+    def test_timeout_passed_as_positional(self):
+        with self.assertRaises(TypeError):
+            class _(AsyncIOTestCase):
+                # Should be "timeout=10".
+                @asyncio_test(10)
+                def test_decorated_with_no_args(self):
+                    pass
+
     def test_timeout(self):
         class Test(AsyncIOTestCase):
             @asyncio_test(timeout=0.01)
@@ -162,6 +187,7 @@ class TestAsyncIOTests(unittest.TestCase):
         self.assertEqual(len(result.errors), 1)
         case, text = result.errors[0]
         self.assertIn('Return value from test method ignored', text)
+
 
 if __name__ == '__main__':
     unittest.main()

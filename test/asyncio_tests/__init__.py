@@ -240,6 +240,10 @@ def asyncio_test(func=None, timeout=None):
         #     @gen_test
         #     def f(self):
         #         pass
+        if not inspect.isfunction(func):
+            msg = ("%r is not a test method. Pass a timeout as"
+                   " a keyword argument, like @asyncio_test(timeout=7)")
+            raise TypeError(msg % func)
         return wrap(func)
     else:
         # Used like @gen_test(timeout=10)
