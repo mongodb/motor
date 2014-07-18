@@ -86,11 +86,7 @@ class AsyncIOTestCase(unittest.TestCase):
         if self.ssl and not env.mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")
 
-        if env.auth:
-            self.cx = self.asyncio_client(env.uri, ssl=self.ssl)
-        else:
-            self.cx = self.asyncio_client(ssl=self.ssl)
-
+        self.cx = self.asyncio_client(ssl=self.ssl)
         self.db = self.cx.motor_test
         self.collection = self.db.test_collection
 
