@@ -103,11 +103,11 @@ class AgnosticGridOut(object):
     __motor_class_name__ = 'MotorGridOut'
     __delegate_class__ = gridfs.GridOut
 
-    tell = DelegateMethod()
-    seek = DelegateMethod()
-    read = AsyncRead()
-    readchunk = AsyncRead()
-    readline = AsyncRead()
+    tell         = DelegateMethod()
+    seek         = DelegateMethod()
+    read         = AsyncRead()
+    readchunk    = AsyncRead()
+    readline     = AsyncRead()
     _ensure_file = AsyncCommand()
 
     def __init__(
