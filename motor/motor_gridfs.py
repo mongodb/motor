@@ -20,19 +20,17 @@ import gridfs
 import pymongo
 import pymongo.errors
 from gridfs import grid_file
-from tornado import gen
 
-from .frameworks import tornado as tornado_framework
-from .core import (AgnosticBaseCursor,
-                   AgnosticCollection,
-                   AgnosticDatabase)
-from .metaprogramming import (AsyncCommand,
-                              asynchronize,
-                              AsyncRead,
-                              DelegateMethod,
-                              MotorCursorChainingMethod,
-                              ReadOnlyProperty)
-from .metaprogramming import create_class_with_framework
+from motor.core import (AgnosticBaseCursor,
+                        AgnosticCollection,
+                        AgnosticDatabase)
+from motor.metaprogramming import (AsyncCommand,
+                                   AsyncRead,
+                                   create_class_with_framework,
+                                   DelegateMethod,
+                                   motor_coroutine,
+                                   MotorCursorChainingMethod,
+                                   ReadOnlyProperty)
 
 
 class AgnosticGridOutCursor(AgnosticBaseCursor):
@@ -83,9 +81,16 @@ class AgnosticGridOutCursor(AgnosticBaseCursor):
     def _data(self):
         return self.delegate._Cursor__data
 
+    def _clear_cursor_id(self):
+        self.delegate._Cursor__id = 0
+
+    def _close_exhaust_cursor(self):
+        # Exhaust MotorGridOutCursors are prohibited.
+        pass
+
+    @motor_coroutine
     def _close(self):
-        # Returns a Future.
-        return self._Cursor__die()
+        yield self._framework.yieldable(self._Cursor__die())
 
 
 class AgnosticGridOut(object):
@@ -144,7 +149,7 @@ class AgnosticGridOut(object):
 
         return getattr(self.delegate, item)
 
-    @tornado_framework.coroutine
+    @motor_coroutine 
     def open(self):
         """Retrieve this file's attributes from the server.
 
@@ -157,13 +162,13 @@ class AgnosticGridOut(object):
            :class:`~motor.MotorGridOut` now opens itself on demand, calling
            ``open`` explicitly is rarely needed.
         """
-        yield self._ensure_file()
-        raise gen.Return(self)
+        yield self._framework.yieldable(self._ensure_file())
+        raise self._framework.return_value(self)
 
     def get_io_loop(self):
         return self.io_loop
 
-    @tornado_framework.coroutine
+    @motor_coroutine 
     def stream_to_handler(self, request_handler):
         """Write the contents of this file to a
         :class:`tornado.web.RequestHandler`. This method calls `flush` on
@@ -198,8 +203,8 @@ class AgnosticGridOut(object):
         """
         written = 0
         while written < self.length:
-            # Reading chunk_size at a time minimizes buffering
-            chunk = yield self.read(self.chunk_size)
+            # Reading chunk_size at a time minimizes buffering.
+            chunk = yield self._framework.yieldable(self.read(self.chunk_size))
 
             # write() simply appends the output to a list; flush() sends it
             # over the network and minimizes buffering in the handler.
@@ -343,7 +348,7 @@ class AgnosticGridFS(object):
     def get_io_loop(self):
         return self.io_loop
 
-    @tornado_framework.coroutine
+    @motor_coroutine 
     def put(self, data, **kwargs):
         """Put data into GridFS as a new file.
 
@@ -396,11 +401,11 @@ class AgnosticGridFS(object):
                 "Motor does not allow unacknowledged put() to GridFS")
 
         try:
-            yield grid_file.write(data)
+            yield self._framework.yieldable(grid_file.write(data))
         finally:
-            yield grid_file.close()
+            yield self._framework.yieldable(grid_file.close())
 
-        raise gen.Return(grid_file._id)
+        raise self._framework.return_value(grid_file._id)
 
     def find(self, *args, **kwargs):
         """Query GridFS for files.
