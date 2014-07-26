@@ -191,7 +191,7 @@ class MotorPool(object):
                 raise pymongo.errors.ConnectionFailure(
                     "UNIX-sockets are not supported on this system")
 
-            addrinfos = [(socket.AF_UNIX, socket.SOCK_STREAM, 0, host)]
+            addrinfos = [(socket.AF_UNIX, socket.SOCK_STREAM, 0, None, host)]
 
         else:
             # Don't try IPv6 if we don't support it. Also skip it if host
@@ -201,14 +201,13 @@ class MotorPool(object):
             if socket.has_ipv6 and host != 'localhost':
                 family = socket.AF_UNSPEC
 
-            # resolve() returns list of (family, address) pairs.
-            addrinfos = [
-                (af, socket.SOCK_STREAM, 0, sa) for af, sa in
-                self.resolve(host, port, family)]
+            # resolve() returns list of tuples:
+            # (family, socktype, proto, canon_name, sock_addr).
+            addrinfos = self.resolve(host, port, family)
 
         err = None
         for res in addrinfos:
-            af, socktype, proto, sa = res
+            af, socktype, proto, canon_name, sock_addr = res
             sock = None
             try:
                 sock = socket.socket(af, socktype, proto)
@@ -224,7 +223,7 @@ class MotorPool(object):
                 # Important to increment the count before beginning to connect.
                 self.motor_sock_counter += 1
                 # MotorSocket pauses this greenlet and resumes when connected.
-                motor_sock.connect(sa, server_hostname=host)
+                motor_sock.connect(sock_addr, server_hostname=host)
                 return motor_sock
             except socket.error as e:
                 self.motor_sock_counter -= 1

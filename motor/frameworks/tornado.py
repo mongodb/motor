@@ -94,9 +94,12 @@ def resolve(resolver, loop, host, port, family, callback, errback):
     def on_resolved(future):
         try:
             addresses = future.result()
+            addr_infos = [(af, socket.SOCK_STREAM, 0, None, sa)
+                          for af, sa in addresses]
+
             # Depending on the resolver implementation, we could be on any
             # thread or greenlet. Switch to the main greenlet.
-            loop.add_callback(functools.partial(callback, addresses))
+            loop.add_callback(functools.partial(callback, addr_infos))
         except Exception:
             exc_typ, exc_val, exc_tb = sys.exc_info()
 

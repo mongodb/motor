@@ -87,12 +87,8 @@ def get_resolver(loop):
 def resolve(resolver, loop, host, port, family, callback, errback):
     def done_callback(future):
         try:
-            # TODO: cleanup
             addresses = future.result()
-            rv = [
-                (af, sa) for af, sock_type, proto, canonname, sa in addresses]
-
-            callback(rv)
+            callback(addresses)
         except:
             errback(*sys.exc_info())
 
