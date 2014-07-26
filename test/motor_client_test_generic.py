@@ -151,6 +151,7 @@ class MotorClientTestMixin(object):
         # SERVER-6427, can't copy database via mongos with auth.
         yield skip_if_mongos(self.cx)
 
+        yield self.collection.remove()
         yield self.collection.insert({'_id': 1})
 
         try:
