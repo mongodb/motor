@@ -44,12 +44,13 @@ SERVER_IS_RESOLVABLE = False
 MONGODB_X509_USERNAME = \
     "CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US"
 
-# Start a mongod instance (built with SSL support) like so:
+# Start a mongod instance (built with SSL support) from the mongo repository
+# checkout:
 #
-# mongod --dbpath /path/to/data/directory --sslOnNormalPorts \
-# --sslPEMKeyFile /path/to/mongo/jstests/libs/server.pem \
-# --sslCAFile /path/to/mongo/jstests/libs/ca.pem \
-# --sslCRLFile /path/to/mongo/jstests/libs/crl.pem
+# ./mongod --sslOnNormalPorts
+# --sslPEMKeyFile jstests/libs/server.pem \
+# --sslCAFile jstests/libs/ca.pem \
+# --sslCRLFile jstests/libs/crl.pem
 #
 # Optionally, also pass --sslWeakCertificateValidation to run test_simple_ssl.
 #
