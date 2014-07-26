@@ -147,14 +147,15 @@ class MotorSSLTest(MotorTest):
 
         # Expects the server to be running with ssl and with
         # no --sslPEMKeyFile or with --sslWeakCertificateValidation.
-        client = motor.MotorClient(host, port, ssl=True)
+        client = motor.MotorClient(host, port, ssl=True, io_loop=self.io_loop)
         yield client.db.collection.find_one()
         response = yield client.admin.command('ismaster')
         if 'setName' in response:
             client = motor.MotorReplicaSetClient(
                 '%s:%d' % (host, port),
                 replicaSet=response['setName'],
-                ssl=True)
+                ssl=True,
+                io_loop=self.io_loop)
 
             yield client.db.collection.find_one()
 
@@ -175,7 +176,9 @@ class MotorSSLTest(MotorTest):
             raise SkipTest("No hosts entry for 'server'. Cannot validate "
                            "hostname in the certificate")
 
-        client = motor.MotorClient(host, port, ssl_certfile=CLIENT_PEM)
+        client = motor.MotorClient(
+            host, port, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
+
         yield client.db.collection.find_one()
         response = yield client.admin.command('ismaster')
         if 'setName' in response:
@@ -183,7 +186,8 @@ class MotorSSLTest(MotorTest):
                 '%s:%d' % (host, port),
                 replicaSet=response['setName'],
                 ssl=True,
-                ssl_certfile=CLIENT_PEM)
+                ssl_certfile=CLIENT_PEM,
+                io_loop=self.io_loop)
 
             yield client.db.collection.find_one()
 
@@ -208,7 +212,8 @@ class MotorSSLTest(MotorTest):
             'server',
             ssl_certfile=CLIENT_PEM,
             ssl_cert_reqs=ssl.CERT_REQUIRED,
-            ssl_ca_certs=CA_PEM)
+            ssl_ca_certs=CA_PEM,
+            io_loop=self.io_loop)
 
         yield client.db.collection.find_one()
         response = yield client.admin.command('ismaster')
@@ -223,7 +228,8 @@ class MotorSSLTest(MotorTest):
                 replicaSet=response['setName'],
                 ssl_certfile=CLIENT_PEM,
                 ssl_cert_reqs=ssl.CERT_REQUIRED,
-                ssl_ca_certs=CA_PEM)
+                ssl_ca_certs=CA_PEM,
+                io_loop=self.io_loop)
 
             yield client.db.collection.find_one()
 
@@ -248,7 +254,8 @@ class MotorSSLTest(MotorTest):
             'server',
             ssl_certfile=CLIENT_PEM,
             ssl_cert_reqs=ssl.CERT_OPTIONAL,
-            ssl_ca_certs=CA_PEM)
+            ssl_ca_certs=CA_PEM,
+            io_loop=self.io_loop)
 
         response = yield client.admin.command('ismaster')
         if 'setName' in response:
@@ -261,7 +268,8 @@ class MotorSSLTest(MotorTest):
                 replicaSet=response['setName'],
                 ssl_certfile=CLIENT_PEM,
                 ssl_cert_reqs=ssl.CERT_OPTIONAL,
-                ssl_ca_certs=CA_PEM)
+                ssl_ca_certs=CA_PEM,
+                io_loop=self.io_loop)
 
             yield client.db.collection.find_one()
 
@@ -277,7 +285,9 @@ class MotorSSLTest(MotorTest):
             raise SkipTest("No mongod available over SSL with certs")
 
         client = motor.MotorClient(
-            host, port, ssl=True, ssl_certfile=CLIENT_PEM)
+            host, port,
+            ssl_certfile=CLIENT_PEM,
+            io_loop=self.io_loop)
 
         response = yield client.admin.command('ismaster')
         try:
@@ -287,7 +297,8 @@ class MotorSSLTest(MotorTest):
                 host, port,
                 ssl_certfile=CLIENT_PEM,
                 ssl_cert_reqs=ssl.CERT_REQUIRED,
-                ssl_ca_certs=CA_PEM)
+                ssl_ca_certs=CA_PEM,
+                io_loop=self.io_loop)
 
             yield client.db.collection.find_one()
             self.fail("Invalid hostname should have failed")
@@ -301,7 +312,8 @@ class MotorSSLTest(MotorTest):
                     replicaSet=response['setName'],
                     ssl_certfile=CLIENT_PEM,
                     ssl_cert_reqs=ssl.CERT_REQUIRED,
-                    ssl_ca_certs=CA_PEM)
+                    ssl_ca_certs=CA_PEM,
+                    io_loop=self.io_loop)
 
                 yield client.db.collection.find_one()
                 self.fail("Invalid hostname should have failed")
@@ -321,7 +333,9 @@ class MotorSSLTest(MotorTest):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
-        client = motor.MotorClient(host, port, ssl_certfile=CLIENT_PEM)
+        client = motor.MotorClient(
+            host, port, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
+
         if not (yield version.at_least(client, (2, 5, 3, -1))):
             raise SkipTest("MONGODB-X509 tests require MongoDB 2.5.3 or newer")
 
@@ -346,7 +360,9 @@ class MotorSSLTest(MotorTest):
                quote_plus(MONGODB_X509_USERNAME), host, port))
 
         # SSL options aren't supported in the URI....
-        auth_uri_client = motor.MotorClient(uri, ssl_certfile=CLIENT_PEM)
+        auth_uri_client = motor.MotorClient(
+            uri, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
+
         yield auth_uri_client.db.collection.find_one()
 
         # Cleanup.
