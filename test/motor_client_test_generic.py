@@ -23,7 +23,7 @@ from tornado import gen
 from tornado.testing import gen_test
 
 import motor
-from test import assert_raises
+from test import assert_raises, env, SkipTest
 from test.utils import server_is_master_with_slave, remove_all_users
 from test.utils import skip_if_mongos
 
@@ -145,6 +145,9 @@ class MotorClientTestMixin(object):
 
     @gen_test
     def test_copy_db_auth(self):
+        if env.mongod_started_with_ssl:
+            raise SkipTest("Can't copy DB with auth over SSL, SERVER-14700")
+
         # SERVER-6427, can't copy database via mongos with auth.
         yield skip_if_mongos(self.cx)
 
@@ -183,6 +186,9 @@ class MotorClientTestMixin(object):
 
     @gen_test(timeout=30)
     def test_copy_db_auth_concurrent(self):
+        if env.mongod_started_with_ssl:
+            raise SkipTest("Can't copy DB with auth over SSL, SERVER-14700")
+
         # SERVER-6427, can't copy database via mongos with auth.
         yield skip_if_mongos(self.cx)
 

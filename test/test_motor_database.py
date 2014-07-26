@@ -176,7 +176,8 @@ class MotorDatabaseTest(MotorTest):
     def test_authenticate(self):
         # self.db is logged in as root.
         yield self.db.add_user("mike", "password")
-        db = motor.MotorClient(host, port).motor_test
+        client = motor.MotorClient(host, port, **self.get_client_kwargs())
+        db = client.motor_test
         try:
             # Authenticate many times at once to test concurrency.
             yield [db.authenticate("mike", "password") for _ in range(10)]

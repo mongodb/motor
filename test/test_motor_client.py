@@ -50,7 +50,7 @@ class MotorClientTest(MotorTest):
         yield self.db.test_client_lazy_connect.remove()
 
         # Create client without connecting; connect on demand.
-        cx = motor.MotorClient(test.env.uri, io_loop=self.io_loop)
+        cx = self.motor_client()
         collection = cx.motor_test.test_client_lazy_connect
         future0 = collection.insert({'foo': 'bar'})
         future1 = collection.insert({'foo': 'bar'})
@@ -93,7 +93,7 @@ class MotorClientTest(MotorTest):
 
     def test_open_sync(self):
         loop = IOLoop()
-        cx = loop.run_sync(motor.MotorClient(test.env.uri, io_loop=loop).open)
+        cx = loop.run_sync(self.motor_client(io_loop=loop).open)
         self.assertTrue(isinstance(cx, motor.MotorClient))
 
     def test_database_named_delegate(self):

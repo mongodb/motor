@@ -30,6 +30,7 @@ from tornado.web import Application
 import motor
 import motor.web
 import test
+from test.test_environment import env, CLIENT_PEM
 
 
 # We're using Tornado's AsyncHTTPTestCase instead of our own MotorTestCase for
@@ -55,7 +56,17 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
         self.assertTrue(self.fs.get_last_version('foo'))
 
     def motor_db(self):
-        return motor.MotorClient(test.env.uri, io_loop=self.io_loop).motor_test
+        ssl_certfile = None
+        if env.mongod_validates_client_cert:
+            ssl_certfile = CLIENT_PEM
+
+        client = motor.MotorClient(
+            test.env.uri,
+            ssl=env.mongod_started_with_ssl,
+            ssl_certfile=ssl_certfile,
+            io_loop=self.io_loop)
+
+        return client.motor_test
 
     def tearDown(self):
         self.fs.delete(self.file_id)

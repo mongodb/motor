@@ -35,7 +35,7 @@ import pymongo.errors
 from tornado import gen, testing
 
 import motor
-from test.test_environment import env, db_user
+from test.test_environment import env, db_user, CLIENT_PEM
 
 
 def suppress_tornado_warnings():
@@ -103,9 +103,9 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
             raise SkipTest("mongod doesn't support SSL, or is down")
 
         if env.auth:
-            self.cx = self.motor_client(env.uri, ssl=self.ssl)
+            self.cx = self.motor_client(env.uri)
         else:
-            self.cx = self.motor_client(ssl=self.ssl)
+            self.cx = self.motor_client()
 
         self.db = self.cx.motor_test
         self.collection = self.db.test_collection
@@ -169,6 +169,15 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
                 # Let the loop run, might be working on closing the cursor
                 yield self.pause(0.1)
 
+    def get_client_kwargs(self, **kwargs):
+        if env.mongod_validates_client_cert:
+            kwargs.setdefault('ssl_certfile', CLIENT_PEM)
+
+        kwargs.setdefault('ssl', env.mongod_started_with_ssl)
+        kwargs.setdefault('io_loop', self.io_loop)
+
+        return kwargs
+
     def motor_client(self, uri=None, *args, **kwargs):
         """Get a MotorClient.
 
@@ -177,7 +186,9 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         calls self.io_loop.close(all_fds=True).
         """
         return motor.MotorClient(
-            uri or env.uri, *args, io_loop=self.io_loop, **kwargs)
+            uri or env.uri,
+            *args,
+            **self.get_client_kwargs(**kwargs))
 
     def motor_rsc(self, uri=None, *args, **kwargs):
         """Get an open MotorReplicaSetClient. Ignores self.ssl, you must pass
@@ -186,7 +197,9 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         self.io_loop.close(all_fds=True).
         """
         return motor.MotorReplicaSetClient(
-            uri or env.rs_uri, *args, io_loop=self.io_loop, **kwargs)
+            uri or env.rs_uri,
+            *args,
+            **self.get_client_kwargs(**kwargs))
 
     @gen.coroutine
     def check_optional_callback(self, fn, *args, **kwargs):
