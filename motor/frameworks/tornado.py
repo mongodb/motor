@@ -20,9 +20,10 @@ from __future__ import unicode_literals, absolute_import
 import functools
 import socket
 import time
+import sys
 
 import greenlet
-from tornado import concurrent, gen, ioloop, iostream, netutil, stack_context
+from tornado import concurrent, gen, ioloop, iostream, netutil
 
 DomainError = None
 try:
@@ -90,21 +91,27 @@ def get_resolver(loop):
 
 
 def resolve(resolver, loop, host, port, family, callback, errback):
-    def handler(exc_typ, exc_val, exc_tb):
-        # If netutil.Resolver is configured to use TwistedResolver.
-        if DomainError and issubclass(exc_typ, DomainError):
-            exc_typ = socket.gaierror
-            exc_val = socket.gaierror(str(exc_val))
+    def on_resolved(future):
+        try:
+            addresses = future.result()
+            # Depending on the resolver implementation, we could be on any
+            # thread or greenlet. Switch to the main greenlet.
+            loop.add_callback(functools.partial(callback, addresses))
+        except Exception:
+            exc_typ, exc_val, exc_tb = sys.exc_info()
 
-        # Depending on the resolver implementation, we could be on any
-        # thread or greenlet. Schedule error handling on the main.
-        loop.add_callback(functools.partial(errback, exc_typ, exc_val, exc_tb))
+            # If netutil.Resolver is configured to use TwistedResolver.
+            if DomainError and issubclass(exc_typ, DomainError):
+                exc_typ = socket.gaierror
+                exc_val = socket.gaierror(str(exc_val))
 
-        # Don't propagate the exception.
-        return True
+            # Depending on the resolver implementation, we could be on any
+            # thread or greenlet. Schedule error handling on the main greenlet.
+            loop.add_callback(
+                functools.partial(errback, exc_typ, exc_val, exc_tb))
 
-    with stack_context.ExceptionStackContext(handler):
-        resolver.resolve(host, port, family, callback=callback)
+    future = resolver.resolve(host, port, family)
+    loop.add_future(future, on_resolved)
 
 
 def close_resolver(resolver):
