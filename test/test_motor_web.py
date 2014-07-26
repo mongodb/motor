@@ -56,15 +56,16 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
         self.assertTrue(self.fs.get_last_version('foo'))
 
     def motor_db(self):
-        ssl_certfile = None
+        kwargs = {}
         if env.mongod_validates_client_cert:
-            ssl_certfile = CLIENT_PEM
+            kwargs.setdefault('ssl_certfile', CLIENT_PEM)
+
+        kwargs.setdefault('ssl', env.mongod_started_with_ssl)
 
         client = motor.MotorClient(
             test.env.uri,
-            ssl=env.mongod_started_with_ssl,
-            ssl_certfile=ssl_certfile,
-            io_loop=self.io_loop)
+            io_loop=self.io_loop,
+            **kwargs)
 
         return client.motor_test
 
