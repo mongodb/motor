@@ -15,6 +15,7 @@
 """Discover environment and server configuration, initialize PyMongo client."""
 
 import os
+import socket
 
 HAVE_SSL = True
 try:
@@ -38,11 +39,25 @@ CLIENT_PEM = os.path.join(CERT_PATH, 'client.pem')
 CA_PEM = os.path.join(CERT_PATH, 'ca.pem')
 
 
+def is_server_resolvable():
+    """Returns True if 'server' is resolvable."""
+    socket_timeout = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(1)
+    try:
+        socket.gethostbyname('server')
+        return True
+    except socket.error:
+        return False
+    finally:
+        socket.setdefaulttimeout(socket_timeout)
+
+
 class TestEnvironment(object):
     def __init__(self):
         self.initialized = False
         self.mongod_started_with_ssl = False
         self.mongod_validates_client_cert = False
+        self.server_is_resolvable = False
         self.sync_cx = None
         self.is_replica_set = False
         self.rs_name = None
@@ -86,6 +101,8 @@ class TestEnvironment(object):
 
                 self.mongod_started_with_ssl = True
                 self.mongod_validates_client_cert = True
+                self.server_is_resolvable = is_server_resolvable()
+
             except pymongo.errors.ConnectionFailure:
                 self.sync_cx = pymongo.MongoClient(
                     host, port,

@@ -16,8 +16,10 @@ from __future__ import unicode_literals
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-import socket
-import ssl
+try:
+    import ssl
+except ImportError:
+    ssl = None
 
 try:
     # Python 2.
@@ -35,12 +37,10 @@ from tornado.testing import gen_test
 import motor
 import test
 from test import MotorTest, version, SkipTest
-from test.test_environment import host, port, HAVE_SSL, CLIENT_PEM, CA_PEM
+from test.test_environment import host, port, CLIENT_PEM, CA_PEM
 from test.utils import remove_all_users
 
 
-# Whether 'server' is a resolvable hostname.
-SERVER_IS_RESOLVABLE = False
 MONGODB_X509_USERNAME = \
     "CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US"
 
@@ -57,26 +57,6 @@ MONGODB_X509_USERNAME = \
 # For all tests to pass with MotorReplicaSetClient, the replica set
 # configuration must use 'server' for the hostname of all hosts.
 # Make sure you have 'server' as an alias for localhost in /etc/hosts.
-
-
-def is_server_resolvable():
-    """Returns True if 'server' is resolvable."""
-    socket_timeout = socket.getdefaulttimeout()
-    socket.setdefaulttimeout(1)
-    try:
-        socket.gethostbyname('server')
-        return True
-    except socket.error:
-        return False
-    finally:
-        socket.setdefaulttimeout(socket_timeout)
-
-
-def setup_module():
-    global SERVER_IS_RESOLVABLE
-
-    if HAVE_SSL and test.env.mongod_validates_client_cert:
-        SERVER_IS_RESOLVABLE = is_server_resolvable()
 
 
 class MotorNoSSLTest(MotorTest):
@@ -172,7 +152,7 @@ class MotorSSLTest(MotorTest):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
-        if not SERVER_IS_RESOLVABLE:
+        if not test.env.server_is_resolvable:
             raise SkipTest("No hosts entry for 'server'. Cannot validate "
                            "hostname in the certificate")
 
@@ -204,7 +184,7 @@ class MotorSSLTest(MotorTest):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
-        if not SERVER_IS_RESOLVABLE:
+        if not test.env.server_is_resolvable:
             raise SkipTest("No hosts entry for 'server'. Cannot validate "
                            "hostname in the certificate")
 
@@ -246,7 +226,7 @@ class MotorSSLTest(MotorTest):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
-        if not SERVER_IS_RESOLVABLE:
+        if not test.env.server_is_resolvable:
             raise SkipTest("No hosts entry for 'server'. Cannot validate "
                            "hostname in the certificate")
 
