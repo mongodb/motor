@@ -23,6 +23,7 @@ import time
 import sys
 
 import greenlet
+import tornado
 from tornado import concurrent, gen, ioloop, iostream, netutil
 
 DomainError = None
@@ -90,33 +91,6 @@ def get_resolver(loop):
     return netutil.Resolver(io_loop=loop)
 
 
-def resolve(resolver, loop, host, port, family, callback, errback):
-    def on_resolved(future):
-        try:
-            addresses = future.result()
-            addr_infos = [(af, socket.SOCK_STREAM, 0, None, sa)
-                          for af, sa in addresses]
-
-            # Depending on the resolver implementation, we could be on any
-            # thread or greenlet. Switch to the main greenlet.
-            loop.add_callback(functools.partial(callback, addr_infos))
-        except Exception:
-            exc_typ, exc_val, exc_tb = sys.exc_info()
-
-            # If netutil.Resolver is configured to use TwistedResolver.
-            if DomainError and issubclass(exc_typ, DomainError):
-                exc_typ = socket.gaierror
-                exc_val = socket.gaierror(str(exc_val))
-
-            # Depending on the resolver implementation, we could be on any
-            # thread or greenlet. Schedule error handling on the main greenlet.
-            loop.add_callback(
-                functools.partial(errback, exc_typ, exc_val, exc_tb))
-
-    future = resolver.resolve(host, port, family)
-    loop.add_future(future, on_resolved)
-
-
 def close_resolver(resolver):
     resolver.close()
 
@@ -153,6 +127,9 @@ def yieldable(future):
     return future
 
 
+timeout_exc = socket.error('timed out')
+
+
 def tornado_motor_sock_method(method):
     """Decorator for socket-like methods on TornadoMotorSocket.
 
@@ -160,78 +137,69 @@ def tornado_motor_sock_method(method):
     and uses the Tornado IOLoop to schedule the greenlet for resumption
     when I/O is ready.
     """
+    coro = gen.coroutine(method)
+
     @functools.wraps(method)
-    def _motor_sock_method(self, *args, **kwargs):
+    def wrapped(self, *args, **kwargs):
         child_gr = greenlet.getcurrent()
         main = child_gr.parent
         assert main is not None, "Should be on child greenlet"
 
-        timeout_object = None
+        def callback(future):
+            if future.exc_info():
+                child_gr.throw(*future.exc_info())
+            elif future.exception():
+                child_gr.throw(future.exception())
+            else:
+                child_gr.switch(future.result())
 
-        if self.timeout:
-            def timeout_err():
-                # Running on the main greenlet. If a timeout error is thrown,
-                # we raise the exception on the child greenlet. Closing the
-                # IOStream removes callback() from the IOLoop so it isn't
-                # called.
-                self.stream.set_close_callback(None)
-                self.stream.close()
-                child_gr.throw(socket.timeout("timed out"))
+        # Ensure the callback runs on the main greenlet.
+        self.io_loop.add_future(coro(self, *args, **kwargs), callback)
 
-            timeout_object = self.stream.io_loop.add_timeout(
-                time.time() + self.timeout, timeout_err)
+        # Pause this greenlet until the coroutine finishes,
+        # then return its result or raise its exception.
+        return main.switch()
 
-        # This is run by IOLoop on the main greenlet when operation
-        # completes; switch back to child to continue processing
+    return wrapped
+
+
+if tornado.version_info[0] < 4:
+    # In Tornado 3.2, IOStream.connect and read_bytes don't return Futures.
+    def stream_method(stream, method_name, *args, **kwargs):
+        future = concurrent.Future()
+        close_callback = functools.partial(
+            future.set_exception, socket.error('error'))
+
+        stream.set_close_callback(close_callback)
+
         def callback(result=None):
-            self.stream.set_close_callback(None)
-            if timeout_object:
-                self.stream.io_loop.remove_timeout(timeout_object)
+            stream.set_close_callback(None)
+            future.set_result(result)
 
-            child_gr.switch(result)
+        method = getattr(stream, method_name)
+        method(*args, callback=callback, **kwargs)
+        return future
+else:
+    # In Tornado 4, IOStream.connect and read_bytes return Futures.
+    def stream_method(stream, method_name, *args, **kwargs):
+        method = getattr(stream, method_name)
+        return method(*args, **kwargs)
 
-        # Run on main greenlet
-        def closed():
-            if timeout_object:
-                self.stream.io_loop.remove_timeout(timeout_object)
 
-            # The child greenlet might have died, e.g.:
-            # - An operation raised an error within PyMongo
-            # - PyMongo closed the MotorSocket in response
-            # - MotorSocket.close() closed the IOStream
-            # - IOStream scheduled this closed() function on the loop
-            # - PyMongo operation completed (with or without error) and
-            #       its greenlet terminated
-            # - IOLoop runs this function
-            if not child_gr.dead:
-                child_gr.throw(socket.error("error"))
+class _Wait(concurrent.Future):
+    """Utility to wait for a Future with a timeout."""
+    def __init__(self, future, io_loop, timeout, exception):
+        super(_Wait, self).__init__()
+        self._io_loop = io_loop
+        self._exception = exception
+        self._timeout_obj = io_loop.add_timeout(timeout, self._on_timeout)
+        concurrent.chain_future(future, self)
 
-        self.stream.set_close_callback(closed)
-
-        try:
-            kwargs['callback'] = callback
-
-            # method is MotorSocket.open(), recv(), etc. method() begins a
-            # non-blocking operation on an IOStream and arranges for
-            # callback() to be executed on the main greenlet once the
-            # operation has completed.
-            method(self, *args, **kwargs)
-
-            # Pause child greenlet until resumed by main greenlet, which
-            # will pass the result of the socket operation (data for recv,
-            # number of bytes written for sendall) to us.
-            return main.switch()
-        except socket.error:
-            raise
-        except IOError as e:
-            # If IOStream raises generic IOError (e.g., if operation
-            # attempted on closed IOStream), then substitute socket.error,
-            # since socket.error is what PyMongo's built to handle. For
-            # example, PyMongo will catch socket.error, close the socket,
-            # and raise AutoReconnect.
-            raise socket.error(str(e))
-
-    return _motor_sock_method
+    def _on_timeout(self):
+        self._timeout_obj = None
+        self._io_loop = None
+        if not self.done():
+            self.set_exception(self._exception)
 
 
 class TornadoMotorSocket(object):
@@ -242,34 +210,11 @@ class TornadoMotorSocket(object):
 
     We only implement those socket methods actually used by PyMongo.
     """
-    def __init__(
-            self, sock, io_loop, use_ssl,
-            certfile, keyfile, ca_certs, cert_reqs):
-        self.use_ssl = use_ssl
+    def __init__(self, motor_socket_options):
+        self.options = motor_socket_options
+        self.io_loop = self.options.io_loop
         self.timeout = None
-        if self.use_ssl:
-            # In Python 3, Tornado's ssl_options_to_context fails if
-            # any options are None.
-            ssl_options = {}
-            if certfile:
-                ssl_options['certfile'] = certfile
-
-            if keyfile:
-                ssl_options['keyfile'] = keyfile
-
-            if ca_certs:
-                ssl_options['ca_certs'] = ca_certs
-
-            if cert_reqs:
-                ssl_options['cert_reqs'] = cert_reqs
-
-            self.stream = iostream.SSLIOStream(
-                sock, ssl_options=ssl_options, io_loop=io_loop)
-        else:
-            self.stream = iostream.IOStream(sock, io_loop=io_loop)
-
-    def setsockopt(self, *args, **kwargs):
-        self.stream.socket.setsockopt(*args, **kwargs)
+        self.stream = None
 
     def settimeout(self, timeout):
         # IOStream calls socket.setblocking(False), which does settimeout(0.0).
@@ -280,31 +225,98 @@ class TornadoMotorSocket(object):
         self.timeout = timeout
 
     @tornado_motor_sock_method
-    def connect(self, pair, server_hostname=None, callback=None):
-        """
-        :Parameters:
-         - `pair`: A tuple, (host, port)
-        """
-        # 'server_hostname' is used for optional certificate validation.
-        self.stream.connect(pair, callback, server_hostname=server_hostname)
+    def connect(self):
+        options = self.options
+
+        # socket module doesn't have an AF_UNIX constant on Windows.
+        is_unix_socket = (options.family == getattr(socket, 'AF_UNIX', None))
+
+        try:
+            if is_unix_socket:
+                addrinfos = [(socket.AF_UNIX, options.host)]
+            else:
+                addrinfos = yield options.resolver.resolve(
+                    options.host, options.port, options.family)
+        except Exception:
+            exc_typ, exc_val, exc_tb = sys.exc_info()
+
+            # If netutil.Resolver is configured to use TwistedResolver, raised
+            # Twisted's DomainError.
+            if DomainError and issubclass(exc_typ, DomainError):
+                raise socket.gaierror(str(exc_val))
+            else:
+                # Already a gaierror.
+                raise
+        else:
+            # Name resolution succeeded.
+            # TODO: parallel connection attempts.
+            # TODO: Longer-term, do Happy Eyeballs like asyncio.
+            err = None
+            for af, sock_addr in addrinfos:
+                sock, stream = None, None
+                try:
+                    sock = socket.socket(af)
+                    if not is_unix_socket:
+                        sock.setsockopt(
+                            socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
+                    stream = self._create_stream(sock)
+                    future = stream_method(stream, 'connect', sock_addr)
+                    if self.timeout:
+                        yield _Wait(
+                            future,
+                            self.io_loop,
+                            self.timeout,
+                            timeout_exc)
+                    else:
+                        yield future
+
+                    # Connection succeeded.
+                    self.stream = stream
+                    return
+                except Exception as e:
+                    if sock is not None:
+                        sock.close()
+
+                    if stream and stream.error:
+                        tmp_err = stream.error
+                    else:
+                        tmp_err = e
+
+                    # PyMongo expects a socket.error.
+                    if isinstance(tmp_err, socket.error):
+                        err = tmp_err
+                    else:
+                        err = socket.error(str(tmp_err))
+
+            if err is not None:
+                raise err
+            else:
+                # This likely means we tried to connect to an IPv6 only
+                # host with an OS/kernel or Python interpreter that doesn't
+                # support IPv6.
+                raise socket.error('getaddrinfo failed')
 
     def sendall(self, data):
-        assert greenlet.getcurrent().parent is not None,\
-            "Should be on child greenlet"
-
         try:
             self.stream.write(data)
         except IOError as e:
-            # PyMongo is built to handle socket.error here, not IOError
+            # PyMongo is built to handle socket.error here, not IOError.
             raise socket.error(str(e))
 
-        if self.stream.closed():
-            # Something went wrong while writing
-            raise socket.error("write error")
-
     @tornado_motor_sock_method
-    def recv(self, num_bytes, callback):
-        self.stream.read_bytes(num_bytes, callback)
+    def recv(self, num_bytes):
+        future = stream_method(self.stream, 'read_bytes', num_bytes)
+        if self.timeout:
+            result = yield _Wait(
+                future,
+                self.io_loop,
+                self.timeout,
+                timeout_exc)
+        else:
+            result = yield future
+
+        raise gen.Return(result)
 
     def close(self):
         sock = self.stream.socket
@@ -325,6 +337,32 @@ class TornadoMotorSocket(object):
 
     def fileno(self):
         return self.stream.socket.fileno()
+
+    def _create_stream(self, sock):
+        if self.options.use_ssl:
+            # In Python 3, Tornado's ssl_options_to_context fails if
+            # any options are None.
+            ssl_options = {}
+            if self.options.certfile:
+                ssl_options['certfile'] = self.options.certfile
+
+            if self.options.keyfile:
+                ssl_options['keyfile'] = self.options.keyfile
+
+            if self.options.ca_certs:
+                ssl_options['ca_certs'] = self.options.ca_certs
+
+            if self.options.cert_reqs:
+                ssl_options['cert_reqs'] = self.options.cert_reqs
+
+            return iostream.SSLIOStream(
+                sock,
+                ssl_options=ssl_options,
+                io_loop=self.io_loop)
+        else:
+            return iostream.IOStream(
+                sock,
+                io_loop=self.io_loop)
 
 
 # A create_socket() function is part of Motor's framework interface.

@@ -43,3 +43,29 @@ def mangle_delegate_name(motor_class, name):
         return '_%s%s' % (classname, name)
     else:
         return name
+
+
+class MotorSocketOptions(object):
+    def __init__(
+        self,
+        io_loop,
+        resolver,
+        host,
+        port,
+        family,
+        use_ssl,
+        certfile,
+        keyfile,
+        ca_certs,
+        cert_reqs
+    ):
+        self.io_loop = io_loop
+        self.resolver = resolver
+        self.host = host
+        self.port = port
+        self.family = family
+        self.use_ssl = use_ssl
+        self.certfile = certfile
+        self.keyfile = keyfile
+        self.ca_certs = ca_certs
+        self.cert_reqs = cert_reqs

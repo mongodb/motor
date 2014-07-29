@@ -52,7 +52,8 @@ from .metaprogramming import (AsyncCommand,
                               ReadWriteProperty)
 from .motor_common import (callback_type_error,
                            check_deprecated_kwargs,
-                           mangle_delegate_name)
+                           mangle_delegate_name,
+                           MotorSocketOptions)
 
 HAS_SSL = True
 try:
@@ -125,7 +126,6 @@ class MotorPool(object):
         assert isinstance(pair, tuple), "pair must be a tuple"
         self.io_loop = io_loop
         self._framework = framework
-        self.resolver = self._framework.get_resolver(self.io_loop)
         self.sockets = set()
         self.pair = pair
         self.max_size = max_size
@@ -133,18 +133,43 @@ class MotorPool(object):
         self.conn_timeout = conn_timeout
         self.wait_queue_timeout = wait_queue_timeout
         self.wait_queue_multiple = wait_queue_multiple
-        self.use_ssl = use_ssl
-        self.ssl_keyfile = ssl_keyfile
-        self.ssl_certfile = ssl_certfile
-        self.ssl_cert_reqs = ssl_cert_reqs
-        self.ssl_ca_certs = ssl_ca_certs
+
+        # Check if dealing with a unix domain socket
+        host, port = pair
+        if host.endswith('.sock'):
+            if not hasattr(socket, 'AF_UNIX'):
+                raise pymongo.errors.ConnectionFailure(
+                    "UNIX-sockets are not supported on this system")
+
+            self.is_unix_socket = True
+            family = socket.AF_UNIX
+        else:
+            # Don't try IPv6 if we don't support it. Also skip it if host
+            # is 'localhost' (::1 is fine). Avoids slow connect issues
+            # like PYTHON-356.
+            self.is_unix_socket = False
+            family = socket.AF_INET
+            if socket.has_ipv6 and host != 'localhost':
+                family = socket.AF_UNSPEC
+
+        if HAS_SSL and use_ssl and not ssl_cert_reqs:
+            ssl_cert_reqs = ssl.CERT_NONE
+
+        self._motor_socket_options = MotorSocketOptions(
+            io_loop=self.io_loop,
+            resolver=self._framework.get_resolver(self.io_loop),
+            host=pair[0],
+            port=pair[1],
+            family=family,
+            use_ssl=use_ssl,
+            certfile=ssl_certfile,
+            keyfile=ssl_keyfile,
+            ca_certs=ssl_ca_certs,
+            cert_reqs=ssl_cert_reqs)
 
         # Keep track of resets, so we notice sockets created before the most
         # recent reset and close them.
         self.pool_id = 0
-
-        if HAS_SSL and use_ssl and not ssl_cert_reqs:
-            self.ssl_cert_reqs = ssl.CERT_NONE
 
         self.motor_sock_counter = 0
         self.queue = collections.deque()
@@ -163,82 +188,22 @@ class MotorPool(object):
         for sock_info in sockets:
             sock_info.close()
 
-    def resolve(self, host, port, family):
-        """Return list of (family, address) pairs."""
-        child_gr = greenlet.getcurrent()
-        main = child_gr.parent
-        assert main is not None, "Should be on child greenlet"
-
-        self._framework.resolve(
-            resolver=self.resolver,
-            loop=self.io_loop,
-            host=host,
-            port=port,
-            family=family,
-            callback=child_gr.switch,
-            errback=child_gr.throw)
-
-        return main.switch()
-
     def create_connection(self):
         """Connect and return a socket object.
         """
-        host, port = self.pair
+        motor_sock = self._framework.create_socket(self._motor_socket_options)
+        try:
+            self.motor_sock_counter += 1
+            if not self.is_unix_socket:
+                motor_sock.settimeout(self.conn_timeout or 20.0)
 
-        # Check if dealing with a unix domain socket
-        if host.endswith('.sock'):
-            if not hasattr(socket, "AF_UNIX"):
-                raise pymongo.errors.ConnectionFailure(
-                    "UNIX-sockets are not supported on this system")
-
-            addrinfos = [(socket.AF_UNIX, socket.SOCK_STREAM, 0, None, host)]
-
-        else:
-            # Don't try IPv6 if we don't support it. Also skip it if host
-            # is 'localhost' (::1 is fine). Avoids slow connect issues
-            # like PYTHON-356.
-            family = socket.AF_INET
-            if socket.has_ipv6 and host != 'localhost':
-                family = socket.AF_UNSPEC
-
-            # resolve() returns list of tuples:
-            # (family, socktype, proto, canon_name, sock_addr).
-            addrinfos = self.resolve(host, port, family)
-
-        err = None
-        for res in addrinfos:
-            af, socktype, proto, canon_name, sock_addr = res
-            sock = None
-            try:
-                sock = socket.socket(af, socktype, proto)
-                motor_sock = self._framework.create_socket(
-                    sock, self.io_loop, use_ssl=self.use_ssl,
-                    certfile=self.ssl_certfile, keyfile=self.ssl_keyfile,
-                    ca_certs=self.ssl_ca_certs, cert_reqs=self.ssl_cert_reqs)
-
-                if af != getattr(socket, 'AF_UNIX', None):
-                    sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                    motor_sock.settimeout(self.conn_timeout or 20.0)
-
-                # Important to increment the count before beginning to connect.
-                self.motor_sock_counter += 1
-                # MotorSocket pauses this greenlet and resumes when connected.
-                motor_sock.connect(sock_addr, server_hostname=host)
-                return motor_sock
-            except socket.error as e:
-                self.motor_sock_counter -= 1
-                err = e
-                if sock is not None:
-                    sock.close()
-
-        if err is not None:
-            raise err
-        else:
-            # This likely means we tried to connect to an IPv6 only
-            # host with an OS/kernel or Python interpreter that doesn't
-            # support IPv6. The test case is Jython2.5.1 which doesn't
-            # support IPv6 at all.
-            raise socket.error('getaddrinfo failed')
+            # MotorSocket pauses this greenlet, and resumes when connected.
+            motor_sock.connect()
+            motor_sock.settimeout(self.net_timeout)
+            return motor_sock
+        except:
+            self.motor_sock_counter -= 1
+            raise
 
     def connect(self):
         """Connect to Mongo and return a new connected MotorSocket. Note that
@@ -272,7 +237,6 @@ class MotorPool(object):
             return main.switch()
         else:
             motor_sock = self.create_connection()
-            motor_sock.settimeout(self.net_timeout)
             return SocketInfo(motor_sock, self.pool_id, self.pair[0])
 
     def get_socket(self, force=False):
@@ -392,7 +356,7 @@ class MotorPool(object):
         for sock_info in self.sockets:
             sock_info.close()
 
-        self._framework.close_resolver(self.resolver)
+        self._framework.close_resolver(self._motor_socket_options.resolver)
 
     def _create_wait_queue_timeout(self):
         return pymongo.errors.ConnectionFailure(
