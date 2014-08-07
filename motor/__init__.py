@@ -690,8 +690,8 @@ def asynchronize(motor_class, sync_method, has_write_concern, doc=None):
                     loop.add_callback(functools.partial(
                         future.set_exc_info, sys.exc_info()))
 
-        # Start running the operation on a greenlet.
-        greenlet.greenlet(call_method).switch()
+        # Schedule the operation on a greenlet.
+        loop.add_callback(greenlet.greenlet(call_method).switch)
         return future
 
     # This is for the benefit of motor_extensions.py, which needs this info to
