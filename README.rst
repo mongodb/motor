@@ -43,11 +43,13 @@ Dependencies
 Motor works in all the environments officially supported by Tornado_. It
 requires:
 
-* Unix, including Mac OS X. Microsoft Windows is not officially supported.
+* Unix, including Mac OS X. Windows is not supported.
 * PyMongo_
 * Tornado_
 * Greenlet_
-* CPython 2.6 or later, including CPython 3, or PyPy 2.0 or later.
+* Python 2.6 or later.
+
+See "Requirements" for details about compatibility.
 
 Documentation
 =============
