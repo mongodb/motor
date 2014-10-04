@@ -17,6 +17,15 @@ For this, use PyMongo's `copy_database`_ method, or use the mongo shell.
 
 .. seealso:: `The "copydb" command <http://docs.mongodb.org/manual/reference/command/copydb/>`_.
 
+Motor 0.3.3
+-----------
+
+Fix `MOTOR-45 <https://jira.mongodb.org/browse/MOTOR-45>`_,
+a stack-context leak in domain name resolution that could lead to an infinite
+loop and rapid memory leak.
+
+Document Motor's :doc:`requirements` in detail.
+
 Motor 0.3.2
 -----------
 
