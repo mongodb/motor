@@ -41,6 +41,7 @@ Contents
    differences
    features
    installation
+   requirements
    tutorial
    examples/index
    changelog
