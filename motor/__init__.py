@@ -375,24 +375,23 @@ class MotorPool(object):
         main = child_gr.parent
         assert main is not None, "Should be on child greenlet"
 
-        def handler(exc_typ, exc_val, exc_tb):
-            # If netutil.Resolver is configured to use TwistedResolver.
-            if DomainError and issubclass(exc_typ, DomainError):
-                exc_typ = socket.gaierror
-                exc_val = socket.gaierror(str(exc_val))
+        future = self.resolver.resolve(host, port, family)
+        self.io_loop.add_future(future, child_gr.switch)
 
-            # Depending on the resolver implementation, we could be on any
-            # thread or greenlet. Return to the loop's thread and raise the
-            # exception on the calling greenlet from there.
-            self.io_loop.add_callback(functools.partial(
-                child_gr.throw, exc_typ, exc_val, exc_tb))
+        # child_gr pauses until resolve() completes, then the loop calls
+        # child_gr.switch and we come back here. The return value of
+        # main.switch() is the future.
+        main.switch()
 
-            return True  # Don't propagate the exception.
-
-        with stack_context.ExceptionStackContext(handler):
-            self.resolver.resolve(host, port, family, callback=child_gr.switch)
-
-        return main.switch()
+        try:
+            return future.result()
+        except Exception as exc:
+            # If netutil.Resolver is configured to use TwistedResolver,
+            # convert its exception to a gaierror.
+            if DomainError and isinstance(exc, DomainError):
+                raise socket.gaierror(str(exc))
+            else:
+                raise
 
     def create_connection(self):
         """Connect and return a socket object.
