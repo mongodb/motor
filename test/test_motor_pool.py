@@ -26,8 +26,9 @@ from tornado import stack_context
 from tornado.concurrent import Future
 from tornado.testing import gen_test
 
+import motor
 import test
-from test import MotorTest, assert_raises, setUpModule, SkipTest
+from test import MotorTest, assert_raises, setUpModule, SkipTest, host, port
 from test.utils import delay
 
 
@@ -201,6 +202,46 @@ class MotorPoolTest(MotorTest):
         # wasn't leaked from return_socket to get_socket.
         self.assertEqual(['raise', 'get_sock_exc', my_assert], history)
         cx.close()
+
+    @gen_test
+    def test_resolve_stack_context(self):
+        # See http://tornadoweb.org/en/stable/stack_context.html
+        # MotorPool can switch contexts while resolving a name, test that
+        # an exception raised after resolution propagates correctly.
+        future = Future()
+        my_assert = AssertionError('foo')
+
+        pool = motor.MotorPool(
+            io_loop=self.io_loop,
+            pair=(host, port),
+            max_size=1,
+            net_timeout=None,
+            conn_timeout=100,
+            use_ssl=False,
+            use_greenlets=None)
+
+        def get_socket():
+            # This leads to a call to pool.resolve(), which switches contexts
+            # and must restore properly.
+            pool.get_socket()
+            self.io_loop.add_callback(raise_callback)
+
+        def raise_callback():
+            raise my_assert
+
+        def catch_get_sock_exc(exc_type, exc_value, exc_traceback):
+            future.set_exception(exc_value)
+
+            # Don't propagate.
+            return True
+
+        with stack_context.ExceptionStackContext(catch_get_sock_exc):
+            self.io_loop.add_callback(greenlet.greenlet(get_socket).switch)
+
+        with self.assertRaises(AssertionError) as context:
+            yield future
+
+        self.assertEqual(context.exception, my_assert)
 
 
 if __name__ == '__main__':
