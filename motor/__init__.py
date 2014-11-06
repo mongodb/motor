@@ -281,7 +281,8 @@ class MotorPool(object):
             use_greenlets,
             ssl_keyfile=None, ssl_certfile=None,
             ssl_cert_reqs=None, ssl_ca_certs=None,
-            wait_queue_timeout=None, wait_queue_multiple=None):
+            wait_queue_timeout=None, wait_queue_multiple=None,
+            socket_keepalive=False):
         """
         A pool of MotorSockets.
 
@@ -319,6 +320,9 @@ class MotorPool(object):
           - `wait_queue_multiple`: (integer) Multiplied by max_pool_size to
             give the number of callbacks allowed to wait for a socket at one
             time.
+          - `socket_keepalive`: (boolean) Whether to send periodic keep-alive
+            packets on connected sockets. Defaults to ``False`` (do not send
+            keep-alive packets).
 
         .. versionchanged:: 0.2
            ``max_size`` is now a hard cap. ``wait_queue_timeout`` and
@@ -334,6 +338,7 @@ class MotorPool(object):
         self.conn_timeout = conn_timeout
         self.wait_queue_timeout = wait_queue_timeout
         self.wait_queue_multiple = wait_queue_multiple
+        self.socket_keepalive = socket_keepalive
         self.use_ssl = use_ssl
         self.ssl_keyfile = ssl_keyfile
         self.ssl_certfile = ssl_certfile
