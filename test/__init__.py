@@ -132,10 +132,7 @@ class TestEnvironment(object):
             self.uri = 'mongodb://%s:%s@%s:%s/admin' % (
                 db_user, db_password, host, port)
     
-            # TODO: use PyMongo's add_user once that's fixed.
-            self.sync_cx.admin.command(
-                'createUser', db_user, pwd=db_password, roles=['root'])
-    
+            self.sync_cx.admin.add_user(db_user, db_password, roles=['root'])
             self.sync_cx.admin.authenticate(db_user, db_password)
     
         else:
