@@ -3,6 +3,20 @@ Changelog
 
 .. currentmodule:: motor
 
+Motor 0.4
+_________
+
+The ``copy_database`` method has been removed. It was overly complex and no one
+used it, see `MOTOR-56 <https://jira.mongodb.org/browse/MOTOR-56>`_.
+You can still use the :meth:`MotorDatabase.command` method directly.
+The only scenario not supported is copying a database from one host to
+another, if the remote host requires authentication.
+For this, use PyMongo's `copy_database`_ method, or use the mongo shell.
+
+.. _copy_database: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient.copy_database
+
+.. seealso:: `The "copydb" command <http://docs.mongodb.org/manual/reference/command/copydb/>`_.
+
 Motor 0.3
 ---------
 

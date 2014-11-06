@@ -27,7 +27,6 @@ import motor
 import test
 from test import host, port, MotorReplicaSetTestBase, assert_raises, MotorTest
 from test import SkipTest
-from test.motor_client_test_generic import MotorClientTestMixin
 
 
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
@@ -82,14 +81,6 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         (result, error), _ = yield gen.Task(client.open)
         self.assertEqual(None, result)
         self.assertTrue(isinstance(error, pymongo.errors.ConnectionFailure))
-
-
-class MotorReplicaSetClientTestGeneric(
-        MotorClientTestMixin,
-        MotorReplicaSetTestBase):
-
-    def get_client(self):
-        return self.rsc
 
 
 class TestReplicaSetClientAgainstStandalone(MotorTest):

@@ -742,10 +742,6 @@ class Async(MotorAttributeFactory):
 
     def create_attribute(self, cls, attr_name):
         name = self.attr_name or attr_name
-        if name.startswith('__'):
-            # Mangle: __simple_command becomes _MongoClient__simple_command.
-            name = '_%s%s' % (cls.__delegate_class__.__name__, name)
-
         method = getattr(cls.__delegate_class__, name)
         return asynchronize(cls, method, self.has_write_concern, doc=self.doc)
 
@@ -1008,78 +1004,6 @@ class MotorClientBase(MotorBase):
 
     __getitem__ = __getattr__
 
-    @motor_coroutine
-    def copy_database(
-            self, from_name, to_name, from_host=None, username=None,
-            password=None):
-        """Copy a database, potentially from another host.
-
-        Accepts an optional callback, or returns a ``Future``.
-
-        Raises :class:`~pymongo.errors.InvalidName` if `to_name` is
-        not a valid database name.
-
-        If `from_host` is ``None`` the current host is used as the
-        source. Otherwise the database is copied from `from_host`.
-
-        If the source database requires authentication, `username` and
-        `password` must be specified.
-
-        :Parameters:
-          - `from_name`: the name of the source database
-          - `to_name`: the name of the target database
-          - `from_host` (optional): host name to copy from
-          - `username` (optional): username for source database
-          - `password` (optional): password for source database
-          - `callback`: Optional function taking parameters (response, error)
-        """
-        # PyMongo's implementation uses requests, so rewrite for Motor.
-        pool, sock_info = None, None
-        try:
-            if not isinstance(from_name, motor_py3_compat.string_types):
-                raise TypeError("from_name must be an instance "
-                                "of %s" % motor_py3_compat.string_types)
-
-            if not isinstance(to_name, motor_py3_compat.string_types):
-                raise TypeError("to_name must be an instance "
-                                "of %s" % motor_py3_compat.string_types)
-
-            pymongo.database._check_name(to_name)
-
-            # Make sure there *is* a primary pool.
-            yield self._ensure_connected(True)
-            member = self._get_member()
-            sock_info = yield self._socket(member)
-
-            copydb_command = bson.SON([
-                ('copydb', 1),
-                ('fromdb', from_name),
-                ('todb', to_name)])
-
-            if from_host is not None:
-                copydb_command['fromhost'] = from_host
-
-            if username is not None:
-                getnonce_command = bson.SON(
-                    [('copydbgetnonce', 1), ('fromhost', from_host)])
-
-                response, ms = yield self._simple_command(
-                    sock_info, 'admin', getnonce_command)
-
-                nonce = response['nonce']
-                copydb_command['username'] = username
-                copydb_command['nonce'] = nonce
-                copydb_command['key'] = pymongo.auth._auth_key(
-                    nonce, username, password)
-
-            result, duration = yield self._simple_command(
-                sock_info, 'admin', copydb_command)
-
-            raise gen.Return(result)
-        finally:
-            if pool and sock_info:
-                pool.maybe_return_socket(sock_info)
-
     def get_default_database(self):
         """Get the database named in the MongoDB connection URI.
 
@@ -1114,9 +1038,6 @@ class MotorClient(MotorClientBase):
     nodes        = ReadOnlyProperty()
     host         = ReadOnlyProperty()
     port         = ReadOnlyProperty()
-
-    _simple_command = AsyncCommand(attr_name='__simple_command')
-    _socket         = AsyncCommand(attr_name='__socket')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -1187,9 +1108,6 @@ class MotorReplicaSetClient(MotorClientBase):
     hosts       = ReadOnlyProperty()
     seeds       = DelegateMethod()
     close       = DelegateMethod()
-
-    _simple_command = AsyncCommand(attr_name='__simple_command')
-    _socket         = AsyncCommand(attr_name='__socket')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a MongoDB replica set.

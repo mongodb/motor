@@ -32,7 +32,6 @@ from tornado.testing import gen_test, netutil
 import motor
 import test
 from test import host, port, assert_raises, MotorTest, SkipTest
-from test.motor_client_test_generic import MotorClientTestMixin
 from test.utils import remove_all_users, delay
 
 
@@ -301,11 +300,6 @@ class MotorResolverTest(MotorTest):
             raise SkipTest('pycares not installed')
         yield self._test_resolver(
             'tornado.platform.caresresolver.CaresResolver')
-
-
-class MotorClientTestGeneric(MotorClientTestMixin, MotorTest):
-    def get_client(self):
-        return self.cx
 
 
 if __name__ == '__main__':
