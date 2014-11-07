@@ -82,6 +82,16 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         self.assertEqual(None, result)
         self.assertTrue(isinstance(error, pymongo.errors.ConnectionFailure))
 
+    @gen_test
+    def test_socketKeepAlive(self):
+        # Connect.
+        yield self.rsc.server_info()
+        self.assertFalse(self.rsc._get_primary_pool().socket_keepalive)
+
+        client = self.motor_rsc(socketKeepAlive=True)
+        yield client.server_info()
+        self.assertTrue(client._get_primary_pool().socket_keepalive)
+
 
 class TestReplicaSetClientAgainstStandalone(MotorTest):
     """This is a funny beast -- we want to run tests for MotorReplicaSetClient

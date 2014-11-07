@@ -432,6 +432,8 @@ class MotorPool(object):
 
                 if af != getattr(socket, 'AF_UNIX', None):
                     sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE,
+                                    self.socket_keepalive)
                     motor_sock.settimeout(self.conn_timeout or 20.0)
 
                 # Important to increment the count before beginning to connect.
