@@ -30,7 +30,7 @@ from tornado.web import Application
 import motor
 import motor.web
 import test
-
+from test import host, port
 
 # We're using Tornado's AsyncHTTPTestCase instead of our own MotorTestCase for
 # the convenience of self.fetch().
