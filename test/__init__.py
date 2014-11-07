@@ -21,6 +21,7 @@ import datetime
 import functools
 import logging
 import os
+import socket
 import time
 
 try:
@@ -57,11 +58,25 @@ CLIENT_PEM = os.path.join(CERT_PATH, 'client.pem')
 CA_PEM = os.path.join(CERT_PATH, 'ca.pem')
 
 
+def is_server_resolvable():
+    """Returns True if 'server' is resolvable."""
+    socket_timeout = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(1)
+    try:
+        socket.gethostbyname('server')
+        return True
+    except socket.error:
+        return False
+    finally:
+        socket.setdefaulttimeout(socket_timeout)
+
+
 class TestEnvironment(object):
     def __init__(self):
         self.initialized = False
         self.mongod_started_with_ssl = False
         self.mongod_validates_client_cert = False
+        self.is_server_resolvable = is_server_resolvable()
         self.sync_cx = None
         self.is_replica_set = False
         self.rs_name = None

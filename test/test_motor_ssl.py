@@ -35,12 +35,10 @@ from tornado.testing import gen_test
 import motor
 import test
 from test import MotorTest, host, port, version, SkipTest
-from test import HAVE_SSL, CLIENT_PEM, CA_PEM
+from test import CLIENT_PEM, CA_PEM
 from test.utils import remove_all_users
 
 
-# Whether 'server' is a resolvable hostname.
-SERVER_IS_RESOLVABLE = False
 MONGODB_X509_USERNAME = \
     "CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US"
 
@@ -57,26 +55,6 @@ MONGODB_X509_USERNAME = \
 # For all tests to pass with MotorReplicaSetClient, the replica set
 # configuration must use 'server' for the hostname of all hosts.
 # Make sure you have 'server' as an alias for localhost in /etc/hosts.
-
-
-def is_server_resolvable():
-    """Returns True if 'server' is resolvable."""
-    socket_timeout = socket.getdefaulttimeout()
-    socket.setdefaulttimeout(1)
-    try:
-        socket.gethostbyname('server')
-        return True
-    except socket.error:
-        return False
-    finally:
-        socket.setdefaulttimeout(socket_timeout)
-
-
-def setup_module():
-    global SERVER_IS_RESOLVABLE
-
-    if HAVE_SSL and test.env.mongod_validates_client_cert:
-        SERVER_IS_RESOLVABLE = is_server_resolvable()
 
 
 class MotorNoSSLTest(MotorTest):
@@ -145,6 +123,9 @@ class MotorSSLTest(MotorTest):
         if test.env.mongod_validates_client_cert:
             raise SkipTest("mongod validates SSL certs")
 
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
+
         # Expects the server to be running with ssl and with
         # no --sslPEMKeyFile or with --sslWeakCertificateValidation.
         client = motor.MotorClient(host, port, ssl=True, io_loop=self.io_loop)
@@ -172,9 +153,12 @@ class MotorSSLTest(MotorTest):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
-        if not SERVER_IS_RESOLVABLE:
+        if not test.env.is_server_resolvable:
             raise SkipTest("No hosts entry for 'server'. Cannot validate "
                            "hostname in the certificate")
+
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
 
         client = motor.MotorClient(
             host, port, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
@@ -204,9 +188,12 @@ class MotorSSLTest(MotorTest):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
-        if not SERVER_IS_RESOLVABLE:
+        if not test.env.is_server_resolvable:
             raise SkipTest("No hosts entry for 'server'. Cannot validate "
                            "hostname in the certificate")
+
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
 
         client = motor.MotorClient(
             'server',
@@ -246,9 +233,12 @@ class MotorSSLTest(MotorTest):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
-        if not SERVER_IS_RESOLVABLE:
+        if not test.env.is_server_resolvable:
             raise SkipTest("No hosts entry for 'server'. Cannot validate "
                            "hostname in the certificate")
+
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
 
         client = motor.MotorClient(
             'server',
@@ -283,6 +273,9 @@ class MotorSSLTest(MotorTest):
         #   --sslCRLFile=jstests/libs/crl.pem
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
+
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
 
         client = motor.MotorClient(
             host, port,
@@ -343,7 +336,7 @@ class MotorSSLTest(MotorTest):
             raise SkipTest('Authentication is not enabled on server')
 
         # Give admin all necessary privileges.
-        yield client['$external'].add_user(MONGODB_X509_USERNAME, roles=[
+        test.env.sync_cx['$external'].add_user(MONGODB_X509_USERNAME, roles=[
             {'role': 'readWriteAnyDatabase', 'db': 'admin'},
             {'role': 'userAdminAnyDatabase', 'db': 'admin'}])
 
