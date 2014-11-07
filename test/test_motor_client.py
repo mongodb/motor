@@ -165,7 +165,7 @@ class MotorClientTest(MotorTest):
         self.assertEqual(cx.max_pool_size, 100)
         cx.close()
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_high_concurrency(self):
         yield self.make_test_data()
 
