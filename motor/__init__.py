@@ -54,7 +54,7 @@ if pymongo.version != expected_pymongo_version:
         "Motor %s requires PyMongo at exactly version %s. "
         "You have PyMongo %s. "
         "Do pip install "
-        "git+git://github.com/mongodb/mongo-python-driver.git@49ff70c3"
+        "git+git://github.com/mongodb/mongo-python-driver.git@f78716"
     ) % (version, expected_pymongo_version, pymongo.version)
 
     raise ImportError(msg)
