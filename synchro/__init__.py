@@ -301,6 +301,7 @@ class Synchro(object):
 
 
 class MongoClientBase(Synchro):
+    _cache_credentials = SynchroProperty()
     get_default_database = WrapOutgoing()
     max_pool_size = SynchroProperty()
     max_write_batch_size = SynchroProperty()
@@ -416,11 +417,20 @@ class MasterSlaveConnection(object):
 class MongoReplicaSetClient(MongoClientBase):
     __delegate_class__ = motor.MotorReplicaSetClient
 
-    get_default_database                     = WrapOutgoing()
-    _MongoReplicaSetClient__writer           = SynchroProperty()
-    _MongoReplicaSetClient__rs_state         = SynchroProperty()
-    _MongoReplicaSetClient__schedule_refresh = SynchroProperty()
-    _MongoReplicaSetClient__net_timeout      = SynchroProperty()
+    get_default_database                        = WrapOutgoing()
+    _MongoReplicaSetClient__writer              = SynchroProperty()
+    _MongoReplicaSetClient__rs_state            = SynchroProperty()
+    _MongoReplicaSetClient__schedule_refresh    = SynchroProperty()
+    _MongoReplicaSetClient__net_timeout         = SynchroProperty()
+    _MongoReplicaSetClient__conn_timeout        = SynchroProperty()
+    _MongoReplicaSetClient__wait_queue_timeout  = SynchroProperty()
+    _MongoReplicaSetClient__wait_queue_multiple = SynchroProperty()
+    _MongoReplicaSetClient__socket_keepalive    = SynchroProperty()
+    _MongoReplicaSetClient__name                = SynchroProperty()
+    _MongoReplicaSetClient__use_ssl             = SynchroProperty()
+    _MongoReplicaSetClient__ssl_keyfile         = SynchroProperty()
+    _MongoReplicaSetClient__ssl_certfile        = SynchroProperty()
+    _MongoReplicaSetClient__ssl_ca_certs        = SynchroProperty()
 
 
 class Database(Synchro):
