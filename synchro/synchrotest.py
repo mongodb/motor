@@ -48,7 +48,6 @@ excluded_modules = [
     'test.test_threads_replica_set_client',
     'test.test_pooling',
     'test.test_pooling_gevent',
-    'test.test_paired',
     'test.test_master_slave_connection',
     'test.test_legacy_connections',
 
