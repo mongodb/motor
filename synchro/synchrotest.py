@@ -75,7 +75,7 @@ excluded_tests = [
 
     # MotorClient(uri).open() doesn't raise ConfigurationError if the URI has
     # the wrong auth credentials.
-    'TestClient.test_auth_from_uri',
+    'TestClientAuth.test_auth_from_uri',
 
     # Motor's pool is different, we test it separately.
     '*.test_waitQueueMultiple',

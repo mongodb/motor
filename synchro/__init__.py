@@ -352,13 +352,6 @@ class MongoClientBase(Synchro):
         # ConnectionFailure if it times out.
         try:
             self.synchronize(self.delegate.open)()
-        except OperationFailure as exc:
-            # Emulate PyMongo's behavior: auth failure during initialization
-            # is translated to ConfigurationError.
-            if 'auth fails' in str(exc):
-                raise ConfigurationError(str(exc))
-
-            raise
         except AutoReconnect as e:
             raise ConnectionFailure(str(e))
 
