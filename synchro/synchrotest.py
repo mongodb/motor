@@ -169,6 +169,7 @@ excluded_tests = [
     'TestReplicaSetClientMaxWriteBatchSize.*',
     'TestClient.test_wire_version_mongos_ha',
     'TestClient.test_max_wire_version',
+    'TestExhaustCursor.*',
     '*.test_wire_version',
 ]
 
