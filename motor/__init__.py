@@ -34,7 +34,6 @@ try:
 except ImportError:
     pass
 
-import bson
 import pymongo
 
 version_tuple = (0, 3, 3, '+')
