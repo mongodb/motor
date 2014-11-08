@@ -83,7 +83,6 @@ excluded_tests = [
 
     # Lazy-connection tests require multithreading; we test concurrent
     # lazy connection directly.
-    '_TestLazyConnectMixin.*',
     'TestClientLazyConnect.*',
     'TestClientLazyConnectOneGoodSeed.*',
     'TestClientLazyConnectBadSeeds.*',
@@ -96,7 +95,7 @@ excluded_tests = [
     '*.test_request_threads',
     '*.test_operation_failure_with_request',
     'TestClient.test_with_start_request',
-    'TestDatabase.test_authenticate_and_request',
+    'TestDatabaseAuth.test_authenticate_and_request',
     'TestGridfs.test_request',
     'TestGridfs.test_gridfs_request',
 
@@ -124,6 +123,8 @@ excluded_tests = [
     'TestCollection.test_ensure_unique_index_threaded',
     'TestGridfs.test_threaded_writes',
     'TestGridfs.test_threaded_reads',
+    'TestThreadsAuth.*',
+    'TestThreadsAuthReplicaSet.*',
 
     # Relies on threads; tested directly.
     'TestCollection.test_parallel_scan',
@@ -171,6 +172,7 @@ excluded_tests = [
     'TestClient.test_wire_version_mongos_ha',
     'TestClient.test_max_wire_version',
     'TestExhaustCursor.*',
+    'TestReplicaSetClientExhaustCursor.*',
     '*.test_wire_version',
 ]
 
