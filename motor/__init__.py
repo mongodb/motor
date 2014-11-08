@@ -2373,6 +2373,7 @@ class MotorGridFS(object):
     get                 = AsyncRead().wrap(grid_file.GridOut)
     get_version         = AsyncRead().wrap(grid_file.GridOut)
     get_last_version    = AsyncRead().wrap(grid_file.GridOut)
+    find_one            = AsyncRead().wrap(grid_file.GridOut)
     list                = AsyncRead()
     exists              = AsyncRead()
     delete              = AsyncCommand()
