@@ -307,8 +307,8 @@ class MongoClientBase(Synchro):
 
     def __init__(self, *args, **kwargs):
         # Make a unittest happy.
-        self.use_greenlets = True
-        self.auto_start_request = True
+        self.use_greenlets = False
+        self.auto_start_request = False
 
         # Motor doesn't implement auto_start_request.
         kwargs.pop('auto_start_request', None)
@@ -401,9 +401,17 @@ class MongoClient(MongoClientBase):
 
         super(MongoClient, self).__init__(host, port, *args, **kwargs)
 
-    _MongoClient__member      = SynchroProperty()
-    _MongoClient__net_timeout = SynchroProperty()
-
+    _MongoClient__member                = SynchroProperty()
+    _MongoClient__repl                  = SynchroProperty()
+    _MongoClient__net_timeout           = SynchroProperty()
+    _MongoClient__conn_timeout          = SynchroProperty()
+    _MongoClient__wait_queue_timeout    = SynchroProperty()
+    _MongoClient__wait_queue_multiple   = SynchroProperty()
+    _MongoClient__socket_keepalive      = SynchroProperty()
+    _MongoClient__use_ssl               = SynchroProperty()
+    _MongoClient__ssl_keyfile           = SynchroProperty()
+    _MongoClient__ssl_certfile          = SynchroProperty()
+    _MongoClient__ssl_ca_certs          = SynchroProperty()
 
 class MasterSlaveConnection(object):
     """Motor doesn't support master-slave connections, this is just here so
