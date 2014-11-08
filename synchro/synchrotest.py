@@ -58,8 +58,10 @@ excluded_modules = [
 ]
 
 excluded_tests = [
-    # Depends on requests.
+    # Motor no longer has a copy_database method.
     '*.test_copy_db',
+
+    # Depends on requests.
     'TestCollection.test_insert_large_batch',
 
     # Motor always uses greenlets.
