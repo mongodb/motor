@@ -239,7 +239,7 @@ class MotorTestTriggeredRefresh(MotorHATestCase):
         # Disable periodic refresh
         Monitor._refresh_interval = 1e6
 
-    @gen_test
+    @gen_test(timeout=60)
     def test_recovering_member_triggers_refresh(self):
         # To test that find_one() and count() trigger immediate refreshes,
         # we'll create a separate client for each
@@ -273,7 +273,7 @@ class MotorTestTriggeredRefresh(MotorHATestCase):
             self.assertFalse(c.secondaries)
             self.assertEqual(_partition_node(primary), c.primary)
 
-    @gen_test
+    @gen_test(timeout=60)
     def test_stepdown_triggers_refresh(self):
         c_find_one = yield motor.MotorReplicaSetClient(
             self.seed, replicaSet=self.name).open()
@@ -313,7 +313,7 @@ class MotorTestHealthMonitor(MotorHATestCase):
         res = ha_tools.start_replica_set([{}, {}, {}])
         self.seed, self.name = res
 
-    @gen_test(timeout=30)
+    @gen_test(timeout=60)
     def test_primary_failure(self):
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
@@ -326,14 +326,14 @@ class MotorTestHealthMonitor(MotorHATestCase):
 
         # Wait for new primary to step up, and for MotorReplicaSetClient
         # to detect it.
-        for _ in range(30):
+        for _ in range(60):
             if c.primary != primary and c.secondaries != secondaries:
                 break
             yield self.pause(1)
         else:
             self.fail("New primary not detected")
 
-    @gen_test
+    @gen_test(timeout=60)
     def test_secondary_failure(self):
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
@@ -359,7 +359,7 @@ class MotorTestHealthMonitor(MotorHATestCase):
         else:
             self.fail("Dead secondary not detected")
 
-    @gen_test
+    @gen_test(timeout=60)
     def test_primary_stepdown(self):
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
@@ -874,24 +874,22 @@ class MotorTestReplicaSetAuth(MotorHATestCase):
         self.c = pymongo.mongo_replica_set_client.MongoReplicaSetClient(
             self.seed, replicaSet=self.name)
 
-        # TODO: Use PyMongo's add_user once it's fixed for MongoDB 2.7.1+.
-        try:
-            self.c.admin.command(
-                'createUser', 'admin', pwd='adminpass', roles=['root'])
-        except OperationFailure:
-            self.c.admin.add_user('admin', 'adminpass')
-
+        self.c.admin.add_user('admin', pwd='adminpass', roles=['root'])
         self.c.admin.authenticate('admin', 'adminpass')
         self.c.pymongo_ha_auth.add_user('user', 'userpass')
 
-    @gen_test
+        # Await replication.
+        self.c.pymongo_ha_auth.collection.insert({}, w=3, wtimeout=30000)
+        self.c.pymongo_ha_auth.collection.remove({}, w=3, wtimeout=30000)
+
+    @gen_test(timeout=30)
     def test_auth_during_failover(self):
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
         db = c.pymongo_ha_auth
         res = yield db.authenticate('user', 'userpass')
         self.assertTrue(res)
-        yield db.foo.insert({'foo': 'bar'}, w=3, wtimeout=1000)
+        yield db.foo.insert({'foo': 'bar'}, w=3, wtimeout=30000)
         yield db.logout()
         with assert_raises(OperationFailure):
             yield db.foo.find_one()
@@ -937,14 +935,14 @@ class MotorTestAlive(MotorHATestCase):
             self.assertTrue((yield rsc.alive()))
 
             ha_tools.kill_primary()
-            yield self.pause(0.5)
+            yield self.pause(2)
 
             self.assertFalse((yield primary_cx.alive()))
             self.assertTrue((yield secondary_cx.alive()))
             self.assertFalse((yield rsc.alive()))
 
             ha_tools.kill_members([secondary], 2)
-            yield self.pause(0.5)
+            yield self.pause(2)
 
             self.assertFalse((yield primary_cx.alive()))
             self.assertFalse((yield secondary_cx.alive()))

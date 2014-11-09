@@ -429,14 +429,20 @@ def stepdown_primary():
         if ha_tools_debug:
             print('stepping down primary: %s' % primary)
         c = pymongo.MongoClient(primary, use_greenlets=use_greenlets)
-        # replSetStepDown causes mongod to close all connections
-        try:
-            c.admin.command('replSetStepDown', 20)
-        except Exception as e:
-            if ha_tools_debug:
-                print('Exception from replSetStepDown: %s' % e)
-        if ha_tools_debug:
-            print('\tcalled replSetStepDown')
+        for _ in range(20):
+            try:
+                c.admin.command('replSetStepDown', 20)
+            except pymongo.errors.ConnectionFailure:
+                # Expected, mongod to close all connections.
+                if ha_tools_debug:
+                    print('\tcalled replSetStepDown')
+                return
+            except Exception as e:
+                if ha_tools_debug:
+                    # Likely "No electable secondaries caught up", keep trying.
+                    print('Exception from replSetStepDown: %s' % e)
+                time.sleep(2)
+
     elif ha_tools_debug:
         print('stepdown_primary() found no primary')
 
