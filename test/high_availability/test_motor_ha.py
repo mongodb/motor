@@ -31,7 +31,7 @@ from tornado.testing import gen_test
 import motor
 import ha_tools
 from test.utils import one
-from test import assert_raises, PauseMixin
+from test import assert_raises, PauseMixin, suppress_tornado_warnings
 from test_motor_ha_utils import assert_read_from, assert_read_from_all
 
 
@@ -1000,4 +1000,7 @@ class MotorTestMongosHighAvailability(MotorHATestCase):
 
 
 if __name__ == '__main__':
+    if not ha_tools.tornado_warnings:
+        suppress_tornado_warnings()
+
     unittest.main()

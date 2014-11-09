@@ -20,6 +20,7 @@ from __future__ import print_function, unicode_literals
 """Tools for testing high availability in PyMongo."""
 
 import os
+import pprint
 import random
 import shutil
 import signal
@@ -27,6 +28,7 @@ import socket
 import subprocess
 import sys
 import time
+import warnings
 
 from stat import S_IRUSR
 
@@ -46,6 +48,7 @@ mongos = os.environ.get('MONGOS', 'mongos')
 set_name = os.environ.get('SETNAME', 'repl0')
 use_greenlets = bool(os.environ.get('GREENLETS'))
 ha_tools_debug = bool(os.environ.get('HA_TOOLS_DEBUG'))
+tornado_warnings = bool(os.environ.get('TORNADO_WARNINGS'))
 
 
 nodes = {}
@@ -156,7 +159,7 @@ def start_replica_set(members, auth=False, fresh=True):
     c = pymongo.MongoClient(primary, use_greenlets=use_greenlets)
     try:
         if ha_tools_debug:
-            print('rs.initiate(%s)' % config)
+            pprint.pprint({'replSetInitiate': config})
 
         c.admin.command('replSetInitiate', config)
     except pymongo.errors.OperationFailure as e:
@@ -287,7 +290,11 @@ def restart_mongos(host):
 
 
 def get_members_in_state(state):
-    status = get_client().admin.command('replSetGetStatus')
+    with warnings.catch_warnings():
+        # Suppress "replsetgetstatus does not support PRIMARY_PREFERRED".
+        warnings.simplefilter("ignore", UserWarning)
+        status = get_client().admin.command('replSetGetStatus')
+
     members = status['members']
     return [k['name'] for k in members if k['state'] == state]
 
