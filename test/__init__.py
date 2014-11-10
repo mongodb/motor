@@ -107,7 +107,8 @@ class TestEnvironment(object):
 
     def setup_sync_cx(self):
         """Get a synchronous PyMongo MongoClient and determine SSL config."""
-        connectTimeoutMS = socketTimeoutMS = 30 * 1000
+        connectTimeoutMS = 100
+        socketTimeoutMS = 30 * 1000
         try:
             self.sync_cx = pymongo.MongoClient(
                 host, port,
