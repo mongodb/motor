@@ -401,6 +401,9 @@ class MotorPool(object):
         """
         host, port = self.pair
 
+        # Increment the count before yielding in resolve() or connect().
+        self.motor_sock_counter += 1
+
         # Check if dealing with a unix domain socket
         if host.endswith('.sock'):
             if not hasattr(socket, "AF_UNIX"):
@@ -439,8 +442,6 @@ class MotorPool(object):
                                     self.socket_keepalive)
                     motor_sock.settimeout(self.conn_timeout or 20.0)
 
-                # Important to increment the count before beginning to connect.
-                self.motor_sock_counter += 1
                 # MotorSocket pauses this greenlet and resumes when connected.
                 motor_sock.connect(sa, server_hostname=host)
                 return motor_sock
