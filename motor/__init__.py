@@ -342,6 +342,10 @@ class MotorPool(object):
         # recent reset and close them.
         self.pool_id = 0
 
+        # How often to check sockets proactively for errors. An attribute
+        # so it can be overridden in unittests.
+        self._check_interval_seconds = 1
+
         if HAS_SSL and use_ssl and not ssl_cert_reqs:
             self.ssl_cert_reqs = ssl.CERT_NONE
 
@@ -571,6 +575,7 @@ class MotorPool(object):
         can't avoid AutoReconnects completely anyway.
         """
         error = False
+        interval = self._check_interval_seconds
 
         if sock_info.closed:
             error = True
@@ -579,7 +584,8 @@ class MotorPool(object):
             sock_info.close()
             error = True
 
-        elif time.time() - sock_info.last_checkout > 1:
+        elif (interval is not None
+              and time.time() - sock_info.last_checkout > interval):
             if _closed(sock_info.sock):
                 sock_info.close()
                 error = True
@@ -587,6 +593,8 @@ class MotorPool(object):
         if not error:
             return sock_info
         else:
+            # This socket is out of the pool and we won't return it.
+            self.motor_sock_counter -= 1
             try:
                 return self.connect()
             except socket.error:

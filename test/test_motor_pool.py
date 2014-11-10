@@ -29,7 +29,7 @@ from tornado.testing import gen_test
 import motor
 import test
 from test import MotorTest, assert_raises, setUpModule, SkipTest, host, port
-from test.utils import delay
+from test.utils import delay, one
 
 
 class MotorPoolTest(MotorTest):
@@ -144,6 +144,26 @@ class MotorPoolTest(MotorTest):
         # All ops completed
         docs = yield collection.find().sort('_id').to_list(length=100)
         self.assertEqual(list(range(nops)), [doc['_id'] for doc in docs])
+
+    @gen_test
+    def test_check_socket(self):
+        # Test that MotorPool._check(socket_info) replaces a closed socket
+        # and doesn't leak a counter.
+        yield self.cx.open()
+        pool = self.cx._get_primary_pool()
+        pool._check_interval_seconds = 0  # Always check.
+        counter = pool.motor_sock_counter
+        sock_info = one(pool.sockets)
+        sock_info.sock.close()
+        pool.maybe_return_socket(sock_info)
+
+        # New socket replaces closed one.
+        yield self.cx.server_info()
+        sock_info2 = one(pool.sockets)
+        self.assertNotEqual(sock_info, sock_info2)
+
+        # Counter isn't leaked.
+        self.assertEqual(counter, pool.motor_sock_counter)
 
     @gen_test
     def test_stack_context(self):
