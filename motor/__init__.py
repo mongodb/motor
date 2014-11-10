@@ -37,7 +37,7 @@ except ImportError:
 import bson
 import pymongo
 
-version_tuple = (0, 3, 3, '+')
+version_tuple = (0, 3, 4)
 
 
 def get_version_string():
