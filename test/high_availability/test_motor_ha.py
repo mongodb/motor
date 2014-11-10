@@ -958,7 +958,7 @@ class MotorTestMongosHighAvailability(MotorHATestCase):
         super(MotorTestMongosHighAvailability, self).setUp()
         self.seed_list = ha_tools.create_sharded_cluster()
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_mongos_ha(self):
         dbname = 'pymongo_mongos_ha'
         c = yield motor.MotorClient(self.seed_list).open()
