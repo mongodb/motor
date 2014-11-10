@@ -35,10 +35,13 @@ except ImportError:
 
 import pymongo
 import pymongo.errors
+from bson import SON
 from pymongo.mongo_client import _partition_node
+from tornado.testing import gen_test
 from tornado import gen, testing
 
 import motor
+from test.utils import one
 
 HAVE_SSL = True
 try:
@@ -79,6 +82,7 @@ class TestEnvironment(object):
         self.mongod_validates_client_cert = False
         self.is_server_resolvable = is_server_resolvable()
         self.sync_cx = None
+        self.is_mongos = False
         self.is_replica_set = False
         self.rs_name = None
         self.w = None
@@ -96,6 +100,7 @@ class TestEnvironment(object):
         assert not self.initialized
         self.setup_sync_cx()
         self.setup_auth()
+        self.setup_mongos()
         self.setup_rs()
         self.setup_v8()
         self.initialized = True
@@ -158,6 +163,11 @@ class TestEnvironment(object):
         else:
             self.uri = 'mongodb://%s:%s/admin' % (host, port)
 
+    def setup_mongos(self):
+        """Set self.is_mongos."""
+        response = self.sync_cx.admin.command('ismaster')
+        self.is_mongos = response.get('msg') == 'isdbgrid'
+
     def setup_rs(self):
         """Determine server's replica set config."""
         response = self.sync_cx.admin.command('ismaster')
@@ -169,12 +179,12 @@ class TestEnvironment(object):
             self.hosts = set([_partition_node(h) for h in response["hosts"]])
             self.arbiters = set([
                 _partition_node(h) for h in response.get("arbiters", [])])
-    
+
             repl_set_status = self.sync_cx.admin.command('replSetGetStatus')
             primary_info = [
                 m for m in repl_set_status['members']
                 if m['stateStr'] == 'PRIMARY'][0]
-    
+
             self.primary = _partition_node(primary_info['name'])
             self.secondaries = [
                 _partition_node(m['name']) for m in repl_set_status['members']
@@ -379,3 +389,54 @@ class MotorReplicaSetTestBase(MotorTest):
             raise SkipTest("Not connected to a replica set")
 
         self.rsc = self.motor_rsc()
+
+
+class _TestExhaustCursorMixin(object):
+    """Test that clients properly handle errors from exhaust cursors.
+
+    Inherit from this class and from MotorTest, and override
+    _get_client(self, **kwargs).
+    """
+    def setUp(self):
+        super(_TestExhaustCursorMixin, self).setUp()
+        if env.is_mongos:
+            raise SkipTest("mongos doesn't support exhaust cursors")
+
+    @gen_test
+    def test_exhaust_query_server_error(self):
+        # When doing an exhaust query, the socket stays checked out on success
+        # but must be checked in on error to avoid counter leak.
+        client = yield self._get_client(max_pool_size=1).open()
+        collection = client.pymongo_test.test
+        pool = client._get_primary_pool()
+        sock_info = one(pool.sockets)
+
+        # This will cause OperationFailure in all mongo versions since
+        # the value for $orderby must be a document.
+        cursor = collection.find(
+            SON([('$query', {}), ('$orderby', True)]), exhaust=True)
+
+        with self.assertRaises(pymongo.errors.OperationFailure):
+            yield cursor.fetch_next
+
+        self.assertFalse(sock_info.closed)
+        self.assertEqual(sock_info, one(pool.sockets))
+
+    @gen_test
+    def test_exhaust_query_network_error(self):
+        # When doing an exhaust query, the socket stays checked out on success
+        # but must be checked in on error to avoid counter leak.
+        client = yield self._get_client(max_pool_size=1).open()
+        collection = client.pymongo_test.test
+        pool = client._get_primary_pool()
+        pool._check_interval_seconds = None  # Never check.
+
+        # Cause a network error.
+        sock_info = one(pool.sockets)
+        sock_info.sock.close()
+        cursor = collection.find(exhaust=True)
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            yield cursor.fetch_next
+
+        self.assertTrue(sock_info.closed)
+        self.assertEqual(0, pool.motor_sock_counter)

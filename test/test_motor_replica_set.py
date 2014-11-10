@@ -111,5 +111,13 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
                 connectTimeoutMS=600).test.test.find_one()
 
 
+class MotorReplicaSetExhaustCursorTest(
+        test._TestExhaustCursorMixin,
+        MotorReplicaSetTestBase):
+
+    def _get_client(self, **kwargs):
+        return self.motor_rsc(**kwargs)
+
+
 if __name__ == '__main__':
     unittest.main()

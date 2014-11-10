@@ -322,5 +322,10 @@ class MotorResolverTest(MotorTest):
             'tornado.platform.caresresolver.CaresResolver')
 
 
+class MotorClientExhaustCursorTest(test._TestExhaustCursorMixin, MotorTest):
+    def _get_client(self, **kwargs):
+        return self.motor_client(**kwargs)
+
+
 if __name__ == '__main__':
     unittest.main()
