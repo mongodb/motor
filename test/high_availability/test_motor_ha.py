@@ -384,7 +384,7 @@ class MotorTestWritesWithFailover(MotorHATestCase):
         res = ha_tools.start_replica_set([{}, {}, {}])
         self.seed, self.name = res
 
-    @gen_test(timeout=30)
+    @gen_test(timeout=60)
     def test_writes_with_failover(self):
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
@@ -422,7 +422,7 @@ class MotorTestReadWithFailover(MotorHATestCase):
         res = ha_tools.start_replica_set([{}, {}, {}])
         self.seed, self.name = res
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_read_with_failover(self):
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
@@ -874,9 +874,11 @@ class MotorTestReplicaSetAuth(MotorHATestCase):
         self.c = pymongo.mongo_replica_set_client.MongoReplicaSetClient(
             self.seed, replicaSet=self.name)
 
-        self.c.admin.add_user('admin', pwd='adminpass', roles=['root'])
+        self.c.admin.add_user('admin', password='adminpass',
+                              roles=['userAdminAnyDatabase'])
         self.c.admin.authenticate('admin', 'adminpass')
-        self.c.pymongo_ha_auth.add_user('user', 'userpass')
+        self.c.pymongo_ha_auth.add_user('user', 'userpass', roles=['readWrite'])
+        self.c.pymongo_ha_auth.authenticate('user', 'userpass')
 
         # Await replication.
         self.c.pymongo_ha_auth.collection.insert({}, w=3, wtimeout=30000)
