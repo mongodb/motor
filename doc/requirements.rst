@@ -8,6 +8,10 @@ The current version of Motor requires:
 * Tornado_ 3.1 or later.
 * Greenlet_
 
+The default authentication mechanism for MongoDB 2.8+ is SCRAM-SHA-1.
+Install `backports.pbkdf2`_ for faster authentication with MongoDB 2.8+,
+especially on Python older than 2.7.8, or on Python 3 before Python 3.4.
+
 Building the docs requires `sphinx`_.
 
 In Python 2.6, unittest2_ is automatically installed by
@@ -18,6 +22,8 @@ In Python 2.6, unittest2_ is automatically installed by
 .. _Tornado: http://www.tornadoweb.org
 
 .. _Greenlet: http://pypi.python.org/pypi/greenlet/
+
+.. _backports.pbkdf2: https://pypi.python.org/pypi/backports.pbkdf2/
 
 .. _sphinx: http://sphinx.pocoo.org/
 
