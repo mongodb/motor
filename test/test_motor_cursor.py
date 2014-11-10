@@ -481,7 +481,7 @@ class MotorCursorTest(MotorTest):
         self.assertEqual(2, count)
         self.assertEqual(cursor, cursor.rewind())
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_del_on_main_greenlet(self):
         # Since __del__ can happen on any greenlet, MotorCursor must be
         # prepared to close itself correctly on main or a child.

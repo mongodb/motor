@@ -19,6 +19,7 @@ from __future__ import unicode_literals
 import contextlib
 import datetime
 import functools
+import gc
 import logging
 import os
 import socket
@@ -318,6 +319,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
             else:
                 # Let the loop run, might be working on closing the cursor
                 yield self.pause(0.1)
+                gc.collect()
 
     def motor_client(self, uri=None, *args, **kwargs):
         """Get a MotorClient.
