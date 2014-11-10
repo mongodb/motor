@@ -3,6 +3,12 @@ Changelog
 
 .. currentmodule:: motor
 
+Motor 0.3.4
+-----------
+
+Fix `MOTOR-57 <https://jira.mongodb.org/browse/MOTOR-57>`_,
+an occasional leak in the connection pool.
+
 Motor 0.3.3
 -----------
 
