@@ -62,8 +62,7 @@ at ReadTheDocs_.
 Examples
 ========
 
-See the `examples on ReadTheDocs <https://motor.readthedocs.org/en/latest/examples/index.html>`_
-or `Chirp, a dumb Twitter clone <https://github.com/ajdavis/chirp>`_.
+See the `examples on ReadTheDocs <https://motor.readthedocs.org/en/latest/examples/index.html>`_.
 
 Testing
 =======
