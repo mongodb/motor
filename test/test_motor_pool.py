@@ -66,6 +66,7 @@ class MotorPoolTest(MotorTest):
 
         def callback(i, result, error):
             self.assertFalse(error)
+            self.assertFalse(pool.motor_sock_counter > max_pool_size)
             results.append(i)
             if len(results) == nops:
                 ops_completed.set_result(None)
