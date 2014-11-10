@@ -220,7 +220,7 @@ class MotorGridfsTest(MotorTest):
 
 
 class TestGridfsReplicaSet(MotorReplicaSetTestBase):
-    @gen_test
+    @gen_test(timeout=10)
     def test_gridfs_replica_set(self):
         rsc = self.motor_rsc(
             w=test.env.w, wtimeout=5000,

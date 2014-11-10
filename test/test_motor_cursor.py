@@ -87,7 +87,7 @@ class MotorCursorTest(MotorTest):
         self.assertEqual(0, cursor.cursor_id)
         self.assertEqual(200, i)
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_fetch_next_delete(self):
         coll = self.collection
         yield coll.insert({})
@@ -264,7 +264,7 @@ class MotorCursorTest(MotorTest):
         self.assertEqual([], (yield coll.find()[:0].to_list(length=1000)))
         self.assertEqual([], (yield coll.find()[5:5].to_list(length=1000)))
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_cursor_explicit_close(self):
         yield self.make_test_data()
         collection = self.collection
@@ -498,7 +498,7 @@ class MotorCursorTest(MotorTest):
         del cursor
         yield self.wait_for_cursor(collection, cursor_id, retrieved)
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_del_on_child_greenlet(self):
         # Since __del__ can happen on any greenlet, MotorCursor must be
         # prepared to close itself correctly on main or a child.
@@ -625,7 +625,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
         with assert_raises(ExecutionTimeout):
             yield self.collection.find_one(max_time_ms=100000)
 
-    @gen_test(timeout=30)
+    @gen_test(timeout=60)
     def test_max_time_ms_getmore(self):
         # Cursor handles server timeout during getmore, also.
         yield self.collection.insert({} for _ in range(200))

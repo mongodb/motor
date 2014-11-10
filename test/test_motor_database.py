@@ -170,7 +170,8 @@ class MotorDatabaseTest(MotorTest):
         self.assertEqual(b, result_c["another test"])
         self.assertEqual(c, result_c)
 
-    @gen_test
+    # SCRAM-SHA-1 is slow, install backports.pbkdf2 for speed.
+    @gen_test(timeout=30)
     def test_authenticate(self):
         # self.db is logged in as root.
         yield self.db.add_user("mike", "password")
