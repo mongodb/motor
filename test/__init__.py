@@ -407,7 +407,7 @@ class _TestExhaustCursorMixin(object):
         # When doing an exhaust query, the socket stays checked out on success
         # but must be checked in on error to avoid counter leak.
         client = yield self._get_client(max_pool_size=1).open()
-        collection = client.pymongo_test.test
+        collection = client.motor_test.test
         pool = client._get_primary_pool()
         sock_info = one(pool.sockets)
 
@@ -427,7 +427,7 @@ class _TestExhaustCursorMixin(object):
         # When doing an exhaust query, the socket stays checked out on success
         # but must be checked in on error to avoid counter leak.
         client = yield self._get_client(max_pool_size=1).open()
-        collection = client.pymongo_test.test
+        collection = client.motor_test.test
         pool = client._get_primary_pool()
         pool._check_interval_seconds = None  # Never check.
 
