@@ -24,6 +24,7 @@ import pymongo
 import pymongo.mongo_client
 from pymongo.errors import ConfigurationError, OperationFailure
 from pymongo.errors import ConnectionFailure
+import tornado
 from tornado import gen
 from tornado.concurrent import Future
 from tornado.ioloop import IOLoop
@@ -37,7 +38,8 @@ from test import (host,
                   MotorTest,
                   SkipTest,
                   db_user,
-                  db_password)
+                  db_password,
+                  version)
 from test.utils import remove_all_users, delay
 
 
@@ -306,6 +308,10 @@ class MotorResolverTest(MotorTest):
 
     @gen_test
     def test_twisted_resolver(self):
+        required_version = version.padded((3, 2, 2), len(tornado.version_info))
+        if not tornado.version_info >= tuple(required_version):
+            raise SkipTest('requires Tornado version 3.2.2+')
+
         try:
             import twisted
         except ImportError:
