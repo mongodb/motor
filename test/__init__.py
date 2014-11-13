@@ -85,7 +85,7 @@ class TestEnvironment(object):
         self.is_mongos = False
         self.is_replica_set = False
         self.rs_name = None
-        self.w = None
+        self.w = 1
         self.hosts = None
         self.arbiters = None
         self.primary = None
@@ -401,6 +401,10 @@ class _TestExhaustCursorMixin(object):
         super(_TestExhaustCursorMixin, self).setUp()
         if env.is_mongos:
             raise SkipTest("mongos doesn't support exhaust cursors")
+
+    def tearDown(self):
+        env.sync_cx.motor_test.test.remove(w=env.w)
+        super(_TestExhaustCursorMixin, self).tearDown()
 
     @gen_test
     def test_exhaust_query_server_error(self):
