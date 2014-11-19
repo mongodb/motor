@@ -264,7 +264,7 @@ class MotorCursorTest(MotorTest):
         self.assertEqual([], (yield coll.find()[:0].to_list(length=1000)))
         self.assertEqual([], (yield coll.find()[5:5].to_list(length=1000)))
 
-    @gen_test(timeout=30)
+    @gen_test(timeout=10)
     def test_cursor_explicit_close(self):
         yield self.make_test_data()
         collection = self.collection
@@ -272,12 +272,21 @@ class MotorCursorTest(MotorTest):
         cursor = collection.find()
         yield cursor.fetch_next
         self.assertTrue(cursor.alive)
+
+        # OP_KILL_CURSORS is sent asynchronously to the server, no ack.
         yield cursor.close()
 
         # Cursor reports it's alive because it has buffered data, even though
         # it's killed on the server
         self.assertTrue(cursor.alive)
         retrieved = cursor.delegate._Cursor__retrieved
+
+        # We'll check the cursor is closed by trying getMores on it until the
+        # server returns CursorNotFound. However, if we're in the midst of a
+        # getMore when the asynchronous OP_KILL_CURSORS arrives, the server
+        # won't kill the cursor. It logs "Assertion: 16089:Cannot kill active
+        # cursor." So wait for OP_KILL_CURSORS to reach the server first.
+        yield self.pause(5)
         yield self.wait_for_cursor(collection, cursor.cursor_id, retrieved)
 
     @gen_test
