@@ -15,11 +15,12 @@
 from __future__ import unicode_literals, absolute_import
 
 # TODO: link to framework spec in dev guide.
+
 """Tornado compatibility layer for MongoDB, an asynchronous MongoDB driver."""
 
+import datetime
 import functools
 import socket
-import time
 import sys
 
 import greenlet
@@ -188,18 +189,18 @@ else:
 
 class _Wait(concurrent.Future):
     """Utility to wait for a Future with a timeout."""
-    def __init__(self, future, io_loop, timeout, exception):
+    def __init__(self, future, io_loop, timeout_td, timeout_exception):
         super(_Wait, self).__init__()
         self._io_loop = io_loop
-        self._exception = exception
-        self._timeout_obj = io_loop.add_timeout(timeout, self._on_timeout)
+        self._timeout_exception = timeout_exception
+        self._timeout_obj = io_loop.add_timeout(timeout_td, self._on_timeout)
         concurrent.chain_future(future, self)
 
     def _on_timeout(self):
         self._timeout_obj = None
         self._io_loop = None
         if not self.done():
-            self.set_exception(self._exception)
+            self.set_exception(self._timeout_exception)
 
 
 class TornadoMotorSocket(object):
@@ -213,7 +214,9 @@ class TornadoMotorSocket(object):
     def __init__(self, motor_socket_options):
         self.options = motor_socket_options
         self.io_loop = self.options.io_loop
-        self.timeout = None
+
+        # A timedelta or None.
+        self.timeout_td = None
         self.stream = None
 
     def settimeout(self, timeout):
@@ -222,7 +225,10 @@ class TornadoMotorSocket(object):
         # positive number or None) or the socket will start blocking again.
         # Instead, we simulate timeouts by interrupting ourselves with
         # callbacks.
-        self.timeout = timeout
+        if timeout is None:
+            self.timeout_td = None
+        else:
+            self.timeout_td = datetime.timedelta(seconds=timeout)
 
     @tornado_motor_sock_method
     def connect(self):
@@ -262,11 +268,11 @@ class TornadoMotorSocket(object):
 
                     stream = self._create_stream(sock)
                     future = stream_method(stream, 'connect', sock_addr)
-                    if self.timeout:
+                    if self.timeout_td:
                         yield _Wait(
                             future,
                             self.io_loop,
-                            self.timeout,
+                            self.timeout_td,
                             timeout_exc)
                     else:
                         yield future
@@ -307,11 +313,11 @@ class TornadoMotorSocket(object):
     @tornado_motor_sock_method
     def recv(self, num_bytes):
         future = stream_method(self.stream, 'read_bytes', num_bytes)
-        if self.timeout:
+        if self.timeout_td:
             result = yield _Wait(
                 future,
                 self.io_loop,
-                self.timeout,
+                self.timeout_td,
                 timeout_exc)
         else:
             result = yield future
