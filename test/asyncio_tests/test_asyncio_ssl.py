@@ -101,17 +101,13 @@ class TestAsyncIOSSL(AsyncIOTestCase):
 
         # Expects the server to be running with ssl and with
         # no --sslPEMKeyFile or with --sslWeakCertificateValidation.
-        client = AsyncIOMotorClient(
-            host, port, ssl=True, io_loop=self.loop)
-
+        client = AsyncIOMotorClient(test.env.uri, ssl=True, io_loop=self.loop)
         yield from client.db.collection.find_one()
         response = yield from client.admin.command('ismaster')
         if 'setName' in response:
-            client = AsyncIOMotorReplicaSetClient(
-                '%s:%d' % (host, port),
-                replicaSet=response['setName'],
-                ssl=True,
-                io_loop=self.loop)
+            client = AsyncIOMotorReplicaSetClient(test.env.rs_uri,
+                                                  ssl=True,
+                                                  io_loop=self.loop)
 
             yield from client.db.collection.find_one()
 
@@ -135,18 +131,17 @@ class TestAsyncIOSSL(AsyncIOTestCase):
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
-        client = AsyncIOMotorClient(
-            host, port, ssl_certfile=CLIENT_PEM, io_loop=self.loop)
+        client = AsyncIOMotorClient(test.env.uri,
+                                    ssl_certfile=CLIENT_PEM,
+                                    io_loop=self.loop)
 
         yield from client.db.collection.find_one()
         response = yield from client.admin.command('ismaster')
         if 'setName' in response:
-            client = AsyncIOMotorReplicaSetClient(
-                '%s:%d' % (host, port),
-                replicaSet=response['setName'],
-                ssl=True,
-                ssl_certfile=CLIENT_PEM,
-                io_loop=self.loop)
+            client = AsyncIOMotorReplicaSetClient(test.env.rs_uri,
+                                                  ssl=True,
+                                                  ssl_certfile=CLIENT_PEM,
+                                                  io_loop=self.loop)
 
             yield from client.db.collection.find_one()
 
@@ -170,12 +165,11 @@ class TestAsyncIOSSL(AsyncIOTestCase):
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
-        client = AsyncIOMotorClient(
-            'server',
-            ssl_certfile=CLIENT_PEM,
-            ssl_cert_reqs=ssl.CERT_REQUIRED,
-            ssl_ca_certs=CA_PEM,
-            io_loop=self.loop)
+        client = AsyncIOMotorClient(test.env.fake_hostname_uri,
+                                    ssl_certfile=CLIENT_PEM,
+                                    ssl_cert_reqs=ssl.CERT_REQUIRED,
+                                    ssl_ca_certs=CA_PEM,
+                                    io_loop=self.loop)
 
         yield from client.db.collection.find_one()
         response = yield from client.admin.command('ismaster')
@@ -186,7 +180,7 @@ class TestAsyncIOSSL(AsyncIOTestCase):
                                "Cannot validate hostname in the certificate")
 
             client = AsyncIOMotorReplicaSetClient(
-                'server',
+                test.env.fake_hostname_uri,
                 replicaSet=response['setName'],
                 ssl_certfile=CLIENT_PEM,
                 ssl_cert_reqs=ssl.CERT_REQUIRED,
@@ -215,12 +209,11 @@ class TestAsyncIOSSL(AsyncIOTestCase):
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
-        client = AsyncIOMotorClient(
-            'server',
-            ssl_certfile=CLIENT_PEM,
-            ssl_cert_reqs=ssl.CERT_OPTIONAL,
-            ssl_ca_certs=CA_PEM,
-            io_loop=self.loop)
+        client = AsyncIOMotorClient(test.env.fake_hostname_uri,
+                                    ssl_certfile=CLIENT_PEM,
+                                    ssl_cert_reqs=ssl.CERT_OPTIONAL,
+                                    ssl_ca_certs=CA_PEM,
+                                    io_loop=self.loop)
 
         response = yield from client.admin.command('ismaster')
         if 'setName' in response:
@@ -229,7 +222,7 @@ class TestAsyncIOSSL(AsyncIOTestCase):
                                "Cannot validate hostname in the certificate")
 
             client = AsyncIOMotorReplicaSetClient(
-                'server',
+                test.env.fake_hostname_uri,
                 replicaSet=response['setName'],
                 ssl_certfile=CLIENT_PEM,
                 ssl_cert_reqs=ssl.CERT_OPTIONAL,
@@ -252,19 +245,18 @@ class TestAsyncIOSSL(AsyncIOTestCase):
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
-        client = AsyncIOMotorClient(host, port,
+        client = AsyncIOMotorClient(test.env.uri,
                                     ssl=True, ssl_certfile=CLIENT_PEM,
                                     io_loop=self.loop)
 
         response = yield from client.admin.command('ismaster')
         try:
             # The server presents a certificate named 'server', not localhost.
-            client = AsyncIOMotorClient(
-                'localhost', port,
-                ssl_certfile=CLIENT_PEM,
-                ssl_cert_reqs=ssl.CERT_REQUIRED,
-                ssl_ca_certs=CA_PEM,
-                io_loop=self.loop)
+            client = AsyncIOMotorClient(test.env.uri,
+                                        ssl_certfile=CLIENT_PEM,
+                                        ssl_cert_reqs=ssl.CERT_REQUIRED,
+                                        ssl_ca_certs=CA_PEM,
+                                        io_loop=self.loop)
 
             yield from client.db.collection.find_one()
             self.fail("Invalid hostname should have failed")
@@ -275,8 +267,7 @@ class TestAsyncIOSSL(AsyncIOTestCase):
         if 'setName' in response:
             try:
                 client = AsyncIOMotorReplicaSetClient(
-                    '%s:%d' % (host, port),
-                    replicaSet=response['setName'],
+                    test.env.rs_uri,
                     ssl_certfile=CLIENT_PEM,
                     ssl_cert_reqs=ssl.CERT_REQUIRED,
                     ssl_ca_certs=CA_PEM,
@@ -300,8 +291,9 @@ class TestAsyncIOSSL(AsyncIOTestCase):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
-        client = AsyncIOMotorClient(
-            host, port, ssl_certfile=CLIENT_PEM, io_loop=self.loop)
+        client = AsyncIOMotorClient(test.env.uri,
+                                    ssl_certfile=CLIENT_PEM,
+                                    io_loop=self.loop)
 
         if not (yield from at_least(client, (2, 5, 3, -1))):
             raise SkipTest("MONGODB-X509 tests require MongoDB 2.5.3 or newer")
@@ -327,8 +319,9 @@ class TestAsyncIOSSL(AsyncIOTestCase):
                quote_plus(MONGODB_X509_USERNAME), host, port))
 
         # SSL options aren't supported in the URI....
-        auth_uri_client = AsyncIOMotorClient(
-            uri, ssl_certfile=CLIENT_PEM, io_loop=self.loop)
+        auth_uri_client = AsyncIOMotorClient(uri,
+                                             ssl_certfile=CLIENT_PEM,
+                                             io_loop=self.loop)
 
         yield from auth_uri_client.db.collection.find_one()
 
