@@ -211,9 +211,9 @@ class TornadoMotorSocket(object):
 
     We only implement those socket methods actually used by PyMongo.
     """
-    def __init__(self, motor_socket_options):
-        self.options = motor_socket_options
-        self.io_loop = self.options.io_loop
+    def __init__(self, loop, options):
+        self.io_loop = loop
+        self.options = options
 
         # A timedelta or None.
         self.timeout_td = None
@@ -236,13 +236,13 @@ class TornadoMotorSocket(object):
 
         # socket module doesn't have an AF_UNIX constant on Windows.
         is_unix_socket = (options.family == getattr(socket, 'AF_UNIX', None))
-
+        host, port = options.address
         try:
             if is_unix_socket:
-                addrinfos = [(socket.AF_UNIX, options.host)]
+                addrinfos = [(socket.AF_UNIX, host)]
             else:
-                addrinfos = yield options.resolver.resolve(
-                    options.host, options.port, options.family)
+                addrinfos = yield options.resolver.resolve(host, port,
+                                                           options.family)
         except Exception:
             exc_typ, exc_val, exc_tb = sys.exc_info()
 
