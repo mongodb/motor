@@ -343,9 +343,6 @@ class TornadoMotorSocket(object):
             if sock:
                 sock.close()
 
-    def fileno(self):
-        return self.stream.socket.fileno()
-
     def _create_stream(self, sock):
         if self.options.use_ssl:
             # In Python 3, Tornado's ssl_options_to_context fails if
