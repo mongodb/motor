@@ -267,7 +267,9 @@ class TornadoMotorSocket(object):
                             socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
                     stream = self._create_stream(sock)
-                    future = stream_method(stream, 'connect', sock_addr)
+                    future = stream_method(stream, 'connect', sock_addr,
+                                           server_hostname=host)
+
                     if self.timeout_td:
                         yield _Wait(
                             future,
