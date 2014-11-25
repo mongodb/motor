@@ -16,6 +16,7 @@
 
 import asyncio
 import unittest
+from unittest import SkipTest
 
 from pymongo.errors import CollectionInvalid
 from pymongo.son_manipulator import NamespaceInjector, AutoReference
@@ -111,6 +112,9 @@ class TestAsyncIODatabase(AsyncIOTestCase):
 
     @asyncio_test
     def test_authenticate(self):
+        if not test.env.auth:
+            raise SkipTest('Authentication is not enabled on server')
+
         # self.db is logged in as root.
         yield from self.db.add_user("jesse", "password")
         db = AsyncIOMotorClient(host, port, io_loop=self.loop).motor_test
