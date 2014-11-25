@@ -156,10 +156,8 @@ class MotorPool(object):
             ssl_cert_reqs = ssl.CERT_NONE
 
         self._motor_socket_options = MotorSocketOptions(
-            io_loop=self.io_loop,
             resolver=self._framework.get_resolver(self.io_loop),
-            host=pair[0],
-            port=pair[1],
+            address=pair,
             family=family,
             use_ssl=use_ssl,
             certfile=ssl_certfile,
@@ -191,7 +189,10 @@ class MotorPool(object):
     def create_connection(self):
         """Connect and return a socket object.
         """
-        motor_sock = self._framework.create_socket(self._motor_socket_options)
+        motor_sock = self._framework.create_socket(
+            self.io_loop,
+            self._motor_socket_options)
+
         try:
             self.motor_sock_counter += 1
             if not self.is_unix_socket:
