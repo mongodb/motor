@@ -19,9 +19,11 @@ import asyncio
 import asyncio.tasks
 import functools
 import socket
+import ssl
 import sys
 
 import greenlet
+import collections
 
 
 def get_event_loop():
@@ -129,7 +131,9 @@ def asyncio_motor_sock_method(method):
                 if future:
                     future.cancel()
 
-                self.writer.abort()
+                if self._transport:
+                    self._transport.abort()
+
                 child_gr.throw(socket.error("timed out"))
 
             timeout_handle = self.loop.call_later(self.timeout, timeout_err)
@@ -155,7 +159,7 @@ def asyncio_motor_sock_method(method):
     return _motor_sock_method
 
 
-class AsyncioMotorSocket(object):
+class AsyncioMotorSocket(asyncio.Protocol):
     """A fake socket instance that pauses and resumes the current greenlet.
 
     Pauses the calling greenlet when making blocking calls, and uses the
@@ -163,74 +167,89 @@ class AsyncioMotorSocket(object):
 
     We only implement those socket methods actually used by PyMongo.
     """
-    def __init__(
-            self,
-            sock,
-            loop,
-            use_ssl,
-            certfile,
-            keyfile,
-            ca_certs,
-            cert_reqs):
-        self.sock = sock
+    def __init__(self, loop, options):
         self.loop = loop
-        self.use_ssl = use_ssl
+        self.options = options
         self.timeout = None
-        if self.use_ssl:
-            # TODO
-            raise NotImplementedError
-            #
-            # # In Python 3, Tornado's ssl_options_to_context fails if
-            # # any options are None.
-            # ssl_options = {}
-            # if certfile:
-            #     ssl_options['certfile'] = certfile
-            #
-            # if keyfile:
-            #     ssl_options['keyfile'] = keyfile
-            #
-            # if ca_certs:
-            #     ssl_options['ca_certs'] = ca_certs
-            #
-            # if cert_reqs:
-            #     ssl_options['cert_reqs'] = cert_reqs
-            #
-            # self.stream = iostream.SSLIOStream(
-            #     sock, ssl_options=ssl_options, io_loop=io_loop)
+        self.ctx = None
+        self._transport = None
+        self._connected_future = asyncio.Future(loop=self.loop)
+        self._buffer = collections.deque()
+        self._buffer_len = 0
+        self._recv_future = asyncio.Future(loop=self.loop)
 
-    def setsockopt(self, *args, **kwargs):
-        self.sock.setsockopt(*args, **kwargs)
+        if options.use_ssl:
+            # TODO: cache at Pool level.
+            ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            if options.certfile is not None:
+                ctx.load_cert_chain(options.certfile, options.keyfile)
+            if options.ca_certs is not None:
+                ctx.load_verify_locations(options.ca_certs)
+            if options.cert_reqs is not None:
+                ctx.verify_mode = options.cert_reqs
+                if ctx.verify_mode in (ssl.CERT_OPTIONAL, ssl.CERT_REQUIRED):
+                    ctx.check_hostname = True
+
+            self.ctx = ctx
 
     def settimeout(self, timeout):
         self.timeout = timeout
 
     @asyncio_motor_sock_method
-    def connect(self, pair, server_hostname=None):
-        """
-        :Parameters:
-         - `pair`: A tuple, (host, port)
-        """
-        # 'server_hostname' is used for optional certificate validation.
-        # TODO: cert validation
-        return self.loop.sock_connect(self.sock, pair)
+    @asyncio.coroutine
+    def connect(self):
+        protocol_factory = lambda: self
+
+        # TODO: will call getaddrinfo again.
+        host, port = self.options.address
+        self._transport, protocol = yield from self.loop.create_connection(
+            protocol_factory, host, port,
+            ssl=self.ctx)
 
     def sendall(self, data):
         assert greenlet.getcurrent().parent is not None,\
             "Should be on child greenlet"
 
         # TODO: backpressure? errors?
-        self.loop.sock_sendall(self.sock, data)
+        self._transport.write(data)
 
     @asyncio_motor_sock_method
+    @asyncio.coroutine
     def recv(self, num_bytes):
-        return self.loop.sock_recv(self.sock, num_bytes)
+        while self._buffer_len < num_bytes:
+            yield from self._recv_future
+
+        data = bytes().join(self._buffer)
+        rv = data[:num_bytes]
+        remainder = data[num_bytes:]
+
+        self._buffer.clear()
+        if remainder:
+            self._buffer.append(remainder)
+
+        self._buffer_len = len(remainder)
+
+        return rv
 
     def close(self):
-        self.sock.close()
+        self._transport.close()
 
-    def fileno(self):
-        return self.sock.fileno()
+    # Protocol interface.
+    def connection_made(self, transport):
+        pass
+        # self._connected_future.set_result(None)
 
+    def data_received(self, data):
+        self._buffer_len += len(data)
+        self._buffer.append(data)
+
+        # TODO: comment
+        future = self._recv_future
+        self._recv_future = asyncio.Future(loop=self.loop)
+        future.set_result(None)
+
+    def connection_lost(self, exc):
+        pass
 
 # A create_socket() function is part of Motor's framework interface.
 create_socket = AsyncioMotorSocket
