@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # TODO: link to framework spec in dev guide.
-"""asyncio compatibility layer for MongoDB, an asynchronous MongoDB driver."""
+"""asyncio compatibility layer for Motor, an asynchronous MongoDB driver."""
 
 import asyncio
 import asyncio.tasks
