@@ -27,7 +27,7 @@ import pymongo.errors
 
 from motor import motor_asyncio
 from test.version import _parse_version_string, _padded
-from test.test_environment import env
+from test.test_environment import env, CLIENT_PEM
 
 
 class _TestMethodWrapper(object):
@@ -86,9 +86,18 @@ class AsyncIOTestCase(unittest.TestCase):
         if self.ssl and not env.mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")
 
-        self.cx = self.asyncio_client(ssl=self.ssl)
+        self.cx = self.asyncio_client()
         self.db = self.cx.motor_test
         self.collection = self.db.test_collection
+
+    def get_client_kwargs(self, **kwargs):
+        if env.mongod_validates_client_cert:
+            kwargs.setdefault('ssl_certfile', CLIENT_PEM)
+
+        kwargs.setdefault('ssl', env.mongod_started_with_ssl)
+        kwargs.setdefault('io_loop', self.loop)
+
+        return kwargs
 
     def asyncio_client(self, uri=None, *args, **kwargs):
         """Get an AsyncIOMotorClient.
@@ -96,7 +105,9 @@ class AsyncIOTestCase(unittest.TestCase):
         Ignores self.ssl, you must pass 'ssl' argument.
         """
         return motor_asyncio.AsyncIOMotorClient(
-            uri or env.uri, *args, io_loop=self.loop, **kwargs)
+            uri or env.uri,
+            *args,
+            **self.get_client_kwargs(**kwargs))
 
     def asyncio_rsc(self, uri=None, *args, **kwargs):
         """Get an AsyncIOMotorReplicaSetClient.
@@ -104,7 +115,9 @@ class AsyncIOTestCase(unittest.TestCase):
         Ignores self.ssl, you must pass 'ssl' argument.
         """
         return motor_asyncio.AsyncIOMotorReplicaSetClient(
-            uri or env.rs_uri, *args, io_loop=self.loop, **kwargs)
+            uri or env.rs_uri,
+            *args,
+            **self.get_client_kwargs(**kwargs))
 
     @asyncio.coroutine
     def make_test_data(self):

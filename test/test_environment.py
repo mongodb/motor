@@ -69,6 +69,7 @@ class TestEnvironment(object):
         self.v8 = False
         self.auth = False
         self.uri = None
+        self.fake_hostname_uri = None
         self.rs_uri = None
 
     def setup(self):
@@ -127,8 +128,13 @@ class TestEnvironment(object):
                 raise
 
         if self.auth:
-            self.uri = 'mongodb://%s:%s@%s:%s/admin' % (
-                db_user, db_password, host, port)
+            uri_template = 'mongodb://%s:%s@%s:%s/admin'
+            self.uri = uri_template % (db_user, db_password, host, port)
+
+            # If the hostname 'server' is resolvable, this URI lets us use it
+            # to test SSL hostname validation with auth.
+            self.fake_hostname_uri = uri_template % (
+                db_user, db_password, 'server', port)
 
             # TODO: use PyMongo's add_user once that's fixed.
             try:
@@ -141,6 +147,7 @@ class TestEnvironment(object):
 
         else:
             self.uri = 'mongodb://%s:%s/admin' % (host, port)
+            self.fake_hostname_uri = 'mongodb://%s:%s/admin' % ('server', port)
 
     def setup_rs(self):
         """Determine server's replica set config."""
