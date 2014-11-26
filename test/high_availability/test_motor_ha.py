@@ -300,7 +300,7 @@ class MotorTestTriggeredRefresh(MotorHATestCase):
         # We've detected the stepdown
         self.assertTrue(
             not c_find_one.primary
-            or primary != _partition_node(c_find_one.primary))
+            or primary != c_find_one.primary)
 
     def tearDown(self):
         Monitor._refresh_interval = MONITOR_INTERVAL
