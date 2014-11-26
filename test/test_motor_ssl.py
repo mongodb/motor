@@ -270,8 +270,9 @@ class MotorSSLTest(MotorTest):
 
             yield client.db.collection.find_one()
             self.fail("Invalid hostname should have failed")
-        except ConnectionFailure:
-            pass
+        except ConnectionFailure as exc:
+            self.assertEqual("hostname 'localhost' doesn't match 'server'",
+                             str(exc))
 
         if 'setName' in response:
             try:
