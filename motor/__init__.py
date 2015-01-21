@@ -47,13 +47,13 @@ def get_version_string():
 version = get_version_string()
 """Current version of Motor."""
 
-expected_pymongo_version = '2.7.2+'
+expected_pymongo_version = '2.8rc1+'
 if pymongo.version != expected_pymongo_version:
     msg = (
         "Motor %s requires PyMongo at exactly version %s. "
         "You have PyMongo %s. "
         "Do pip install "
-        "git+git://github.com/mongodb/mongo-python-driver.git@eb5d4f"
+        "git+git://github.com/mongodb/mongo-python-driver.git@9e6a26"
     ) % (version, expected_pymongo_version, pymongo.version)
 
     raise ImportError(msg)
