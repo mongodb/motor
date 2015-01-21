@@ -95,6 +95,7 @@ excluded_tests = [
     '*.test_request_threads',
     '*.test_operation_failure_with_request',
     'TestClient.test_with_start_request',
+    'TestCollection.test_unique_index',
     'TestDatabaseAuth.test_authenticate_and_request',
     'TestGridfs.test_request',
     'TestGridfs.test_gridfs_request',
@@ -133,10 +134,6 @@ excluded_tests = [
     # users should just use system.js as a regular collection.
     'TestDatabase.test_system_js',
     'TestDatabase.test_system_js_list',
-
-    # Motor can't raise an index error if a cursor slice is out of range; it
-    # just gets no results.
-    'TestCursor.test_getitem_index_out_of_range',
 
     # Weird use-case.
     'TestCursor.test_cursor_transfer',
@@ -192,7 +189,12 @@ class SynchroNosePlugin(Plugin):
 
     def wantModule(self, module):
         for module_name in excluded_modules:
-            if module.__name__.startswith(module_name):
+            if module_name.endswith('*'):
+                if module.__name__.startswith(module_name.rstrip('*')):
+                    # E.g., test_motor_cursor matches "test_motor_*".
+                    return False
+
+            elif module.__name__ == module_name:
                 return False
 
         return True
