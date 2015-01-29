@@ -175,7 +175,7 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
 class TZAwareGridFSHandlerTest(GridFSHandlerTestBase):
     def motor_db(self):
         client = motor.MotorClient(
-            host, port,
+            test.env.uri,
             tz_aware=True,
             io_loop=self.io_loop)
 
