@@ -18,6 +18,10 @@ and
 and `features
 <http://api.mongodb.org/python/current/changelog.html#changes-in-version-2-8>`_.
 
+Fixes `a connection-pool timeout when waitQueueMultipleMS is set
+<https://jira.mongodb.org/browse/MOTOR-62>`_ and `two bugs in replica set
+monitoring <https://jira.mongodb.org/browse/MOTOR-61>`_.
+
 The ``copy_database`` method has been removed. It was overly complex and no one
 used it, see `MOTOR-56 <https://jira.mongodb.org/browse/MOTOR-56>`_.
 You can still use the :meth:`MotorDatabase.command` method directly.
