@@ -41,7 +41,7 @@ requires:
 * Tornado_
 * Greenlet_
 * Python 2.6 or later.
-* `backports.pbkdf2`_ for faster authentication with MongoDB 2.8+,
+* `backports.pbkdf2`_ for faster authentication with MongoDB 3.0+,
   especially on Python older than 2.7.8, or on Python 3 before Python 3.4.
 
 See "Requirements" for details about compatibility.

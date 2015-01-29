@@ -4,12 +4,12 @@ Requirements
 The current version of Motor requires:
 
 * CPython 2.6, 2.7, 3.3, or 3.4.
-* PyMongo_ 2.7.1 exactly.
+* PyMongo_ 2.8.0 exactly.
 * Tornado_ 3.1 or later.
 * Greenlet_
 
-The default authentication mechanism for MongoDB 2.8+ is SCRAM-SHA-1.
-Install `backports.pbkdf2`_ for faster authentication with MongoDB 2.8+,
+The default authentication mechanism for MongoDB 3.0+ is SCRAM-SHA-1.
+Install `backports.pbkdf2`_ for faster authentication with MongoDB 3.0+,
 especially on Python older than 2.7.8, or on Python 3 before Python 3.4.
 
 Building the docs requires `sphinx`_.
@@ -48,29 +48,29 @@ PyMongo version specified for each version of Motor.
 +-------------------+-----------------+
 | 0.3               | 2.7.1           |
 +-------------------+-----------------+
-| 0.4 (in progress) | 2.8?            |
+| 0.4               | 2.8.0           |
 +-------------------+-----------------+
 
 Motor and MongoDB
 `````````````````
 
-All Motor versions are usable with MongoDB versions as old as 1.8.
+All Motor versions are usable with MongoDB versions as old as 2.2.
 Where "N" appears there are some incompatibilities and
 unsupported server features.
 
-+---------------------------------------------------------+
-|                         MongoDB Version                 |
-+=====================+=====+=====+=====+=====+=====+=====+
-|                     | 1.8 | 2.0 | 2.2 | 2.4 | 2.6 | 2.8 |
-+---------------+-----+-----+-----+-----+-----+-----+-----+
-| Motor Version | 0.1 |  Y  |  Y  |  Y  |  Y  |**N**|**N**|
-+---------------+-----+-----+-----+-----+-----+-----+-----+
-|               | 0.2 |  Y  |  Y  |  Y  |  Y  |  Y  |**N**|
-+---------------+-----+-----+-----+-----+-----+-----+-----+
-|               | 0.3 |  Y  |  Y  |  Y  |  Y  |  Y  |**N**|
-+---------------+-----+-----+-----+-----+-----+-----+-----+
-| (in progress) | 0.4 |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |
-+---------------+-----+-----+-----+-----+-----+-----+-----+
++---------------------------------------------+
+|               MongoDB Version               |
++=====================+=====+=====+=====+=====+
+|                     | 2.2 | 2.4 | 2.6 | 3.0 |
++---------------+-----+-----+-----+-----+-----+
+| Motor Version | 0.1 |  Y  |  Y  |**N**|**N**|
++---------------+-----+-----+-----+-----+-----+
+|               | 0.2 |  Y  |  Y  |  Y  |**N**|
++---------------+-----+-----+-----+-----+-----+
+|               | 0.3 |  Y  |  Y  |  Y  |**N**|
++---------------+-----+-----+-----+-----+-----+
+|               | 0.4 |  Y  |  Y  |  Y  |  Y  |
++---------------+-----+-----+-----+-----+-----+
 
 Motor and Tornado
 `````````````````

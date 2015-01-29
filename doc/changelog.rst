@@ -6,12 +6,25 @@ Changelog
 Motor 0.4
 _________
 
+Supports MongoDB 3.0. In particular, supports MongoDB 3.0's new SCRAM-SHA-1
+authentication mechanism and updates the implementations of
+:meth:`MotorClient.database_names` and :meth:`MotorDatabase.collection_names`.
+
+Updates PyMongo dependency from 2.7.1 to 2.8,
+therefore inheriting
+`PyMongo 2.7.2's bug fixes <https://jira.mongodb.org/browse/PYTHON/fixforversion/14005>`_
+and
+`PyMongo 2.8's bug fixes <https://jira.mongodb.org/browse/PYTHON/fixforversion/14223>`_
+and `features
+<http://api.mongodb.org/python/current/changelog.html#changes-in-version-2-8>`_.
+
 The ``copy_database`` method has been removed. It was overly complex and no one
 used it, see `MOTOR-56 <https://jira.mongodb.org/browse/MOTOR-56>`_.
 You can still use the :meth:`MotorDatabase.command` method directly.
 The only scenario not supported is copying a database from one host to
 another, if the remote host requires authentication.
-For this, use PyMongo's `copy_database`_ method, or use the mongo shell.
+For this, use PyMongo's `copy_database`_ method, or, since PyMongo's
+``copy_database`` will be removed in a future release too, use the mongo shell.
 
 .. _copy_database: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient.copy_database
 

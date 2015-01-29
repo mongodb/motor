@@ -121,6 +121,9 @@ the server. Obviously, this code is improved by :mod:`tornado.gen`::
 Motor ignores the ``auto_start_request`` parameter to
 :class:`~motor.MotorClient` or :class:`~motor.MotorReplicaSetClient`.
 
+.. note:: Requests are deprecated in PyMongo 2.8 and will be removed in
+   PyMongo 3.0.
+
 Threading and forking
 ---------------------
 
