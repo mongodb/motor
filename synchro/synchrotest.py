@@ -57,6 +57,8 @@ excluded_modules = [
 ]
 
 excluded_tests = [
+    'TestReplicaSetClientLazyConnectGevent.*',
+
     # Motor no longer has a copy_database method.
     '*.test_copy_db',
 
