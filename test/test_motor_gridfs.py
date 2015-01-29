@@ -260,8 +260,8 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
             yield fs.put(b'foo')
 
     def tearDown(self):
-        self.rsc.motor_test.drop_collection('fs.files')
-        self.rsc.motor_test.drop_collection('fs.chunks')
+        test.env.sync_cx.motor_test.drop_collection('fs.files')
+        test.env.sync_cx.motor_test.drop_collection('fs.chunks')
         super(TestGridfsReplicaSet, self).tearDown()
 
 
