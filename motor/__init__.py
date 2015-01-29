@@ -354,6 +354,7 @@ class MotorPool(object):
         if HAS_SSL and use_ssl and not ssl_cert_reqs:
             self.ssl_cert_reqs = ssl.CERT_NONE
 
+        # Sum of outstanding sockets and sockets in pool.
         self.motor_sock_counter = 0
         self.queue = collections.deque()
 
@@ -459,7 +460,7 @@ class MotorPool(object):
             # support IPv6 at all.
             raise socket.error('getaddrinfo failed')
 
-    def connect(self):
+    def connect(self, force=False):
         """Connect to Mongo and return a new connected MotorSocket. Note that
         the pool does not keep a reference to the socket -- you must call
         maybe_return_socket() when you're done with it.
@@ -468,7 +469,9 @@ class MotorPool(object):
         main = child_gr.parent
         assert main is not None, "Should be on child greenlet"
 
-        if self.max_size and self.motor_sock_counter >= self.max_size:
+        if (not force
+                and self.max_size
+                and self.motor_sock_counter >= self.max_size):
             if self.max_waiters and len(self.queue) >= self.max_waiters:
                 raise self._create_wait_queue_timeout()
 
@@ -502,24 +505,14 @@ class MotorPool(object):
 
         :Parameters:
           - `force`: optional boolean, forces a connection to be returned
-              without blocking, even if `max_size` has been reached.
+            without blocking, even if `max_size` has been reached.
         """
-        forced = False
-        if force:
-            # If we're doing an internal operation, attempt to play nicely with
-            # max_size, but if there is no open "slot" force the connection
-            # and mark it as forced so we don't decrement motor_sock_counter
-            # when it's returned.
-            if self.motor_sock_counter >= self.max_size:
-                forced = True
-
         if self.sockets:
             sock_info, from_pool = self.sockets.pop(), True
             sock_info = self._check(sock_info)
         else:
-            sock_info, from_pool = self.connect(), False
+            sock_info, from_pool = self.connect(force=force), False
 
-        sock_info.forced = forced
         sock_info.last_checkout = time.time()
         return sock_info
 
@@ -543,8 +536,7 @@ class MotorPool(object):
             return
 
         if sock_info.closed:
-            if not sock_info.forced:
-                self.motor_sock_counter -= 1
+            self.motor_sock_counter -= 1
             return
 
         # Give it to the greenlet at the head of the line, or return it to the
@@ -557,17 +549,13 @@ class MotorPool(object):
             with stack_context.NullContext():
                 self.io_loop.add_callback(functools.partial(waiter, sock_info))
 
-        elif (len(self.sockets) < self.max_size
+        elif (self.motor_sock_counter <= self.max_size
                 and sock_info.pool_id == self.pool_id):
             self.sockets.add(sock_info)
 
         else:
             sock_info.close()
-            if not sock_info.forced:
-                self.motor_sock_counter -= 1
-
-        if sock_info.forced:
-            sock_info.forced = False
+            self.motor_sock_counter -= 1
 
     def _check(self, sock_info):
         """This side-effecty function checks if this pool has been reset since

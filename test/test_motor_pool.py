@@ -91,6 +91,62 @@ class MotorPoolTest(MotorTest):
         cx.close()
 
     @gen_test(timeout=30)
+    def test_force(self):
+        cx = self.motor_client(max_pool_size=2, waitQueueTimeoutMS=100)
+        yield cx.open()
+        pool = cx._get_primary_pool()
+
+        def get_socket():
+            s = pool.get_socket(force=True)
+            self.io_loop.add_callback(functools.partial(future.set_result, s))
+
+        future = Future()
+        greenlet.greenlet(get_socket).switch()
+        socket_info = yield future
+        self.assertEqual(1, pool.motor_sock_counter)
+
+        future = Future()
+        greenlet.greenlet(get_socket).switch()
+        socket_info2 = yield future
+        self.assertEqual(2, pool.motor_sock_counter)
+
+        future = Future()
+        greenlet.greenlet(get_socket).switch()
+        forced_socket_info = yield future
+        self.assertEqual(3, pool.motor_sock_counter)
+
+        future = Future()
+        greenlet.greenlet(get_socket).switch()
+        forced_socket_info2 = yield future
+        self.assertEqual(4, pool.motor_sock_counter)
+
+        # First returned sockets are closed, since our outstanding sockets
+        # exceed max_pool_size.
+        pool.maybe_return_socket(socket_info)
+        self.assertTrue(socket_info.closed)
+        self.assertEqual(0, len(pool.sockets))
+        self.assertEqual(3, pool.motor_sock_counter)
+
+        pool.maybe_return_socket(socket_info2)
+        self.assertTrue(socket_info2.closed)
+        self.assertEqual(0, len(pool.sockets))
+        self.assertEqual(2, pool.motor_sock_counter)
+
+        # Closed socket isn't pooled, but motor_sock_counter is decremented.
+        forced_socket_info.close()
+        pool.maybe_return_socket(forced_socket_info)
+        self.assertEqual(0, len(pool.sockets))
+        self.assertEqual(1, pool.motor_sock_counter)
+
+        # Returned socket is pooled, motor_sock_counter not decremented.
+        pool.maybe_return_socket(forced_socket_info2)
+        self.assertFalse(forced_socket_info2.closed)
+        self.assertEqual(1, len(pool.sockets))
+        self.assertEqual(1, pool.motor_sock_counter)
+
+        cx.close()
+
+    @gen_test(timeout=30)
     def test_wait_queue_timeout(self):
         # Do a find_one that takes 1 second, and set waitQueueTimeoutMS to 500,
         # 5000, and None. Verify timeout iff max_wait_time < 1 sec.
