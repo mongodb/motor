@@ -1173,9 +1173,6 @@ class MotorReplicaSetClient(MotorClientBase):
         return primary_member.pool if primary_member else None
 
 
-# PyMongo uses a background thread to regularly inspect the replica set and
-# monitor it for changes. In Motor, use a periodic callback on the IOLoop to
-# monitor the set.
 class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
     def __init__(self, io_loop, rsc):
         msg = (
@@ -1185,74 +1182,35 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
         assert isinstance(
             rsc, pymongo.mongo_replica_set_client.MongoReplicaSetClient), msg
 
-        # Super makes two MotorGreenletEvents: self.event and self.refreshed.
-        # We only use self.refreshed.
+        # Super makes two MotorGreenletEvents: self.timer and self.refreshed.
         event_class = functools.partial(util.MotorGreenletEvent, io_loop)
         pymongo.mongo_replica_set_client.Monitor.__init__(
             self, rsc, event_class=event_class)
 
-        self.timeout_obj = None
         self.started = False
         self.io_loop = io_loop
 
-    def shutdown(self, _=None):
-        if self.timeout_obj:
-            self.io_loop.remove_timeout(self.timeout_obj)
-            self.stopped = True
-
-    def refresh(self):
-        assert greenlet.getcurrent().parent is not None,\
-            "Should be on child greenlet"
-
-        try:
-            self.rsc.refresh()
-        except pymongo.errors.AutoReconnect:
-            pass
-        # RSC has been collected or there
-        # was an unexpected error.
-        except:
-            return
-        finally:
-            # Switch to greenlets blocked in wait_for_refresh().
-            self.refreshed.set()
-
-        self.timeout_obj = self.io_loop.add_timeout(
-            time.time() + self._refresh_interval, self.async_refresh)
-
-    def async_refresh(self):
-        greenlet.greenlet(self.refresh).switch()
+    def _start(self):
+        assert not greenlet.getcurrent().parent, "Should be on main greenlet"
+        self.greenlet = greenlet.greenlet(self.monitor)
+        self.greenlet.switch()
 
     def start(self):
+        assert not self.started
+        assert greenlet.getcurrent().parent, "Should be on child greenlet"
+
+        # Switch to main and start a monitor greenlet.
         self.started = True
-        self.timeout_obj = self.io_loop.add_timeout(
-            time.time() + self._refresh_interval, self.async_refresh)
-
-    start_sync = start
-
-    def schedule_refresh(self):
-        self.refreshed.clear()
-        if self.io_loop and self.async_refresh:
-            if self.timeout_obj:
-                self.io_loop.remove_timeout(self.timeout_obj)
-
-            self.io_loop.add_callback(self.async_refresh)
+        self.io_loop.add_callback(self._start)
 
     def join(self, timeout=None):
-        # PyMongo calls join() after shutdown() -- this is not a thread, so
-        # shutdown works immediately and join is unnecessary
         pass
 
-    def wait_for_refresh(self, timeout_seconds):
-        assert greenlet.getcurrent().parent is not None,\
-            "Should be on child greenlet"
+    def shutdown(self, dummy=None):
+        pass
 
-        # self.refreshed is a util.MotorGreenletEvent.
-        self.refreshed.wait(timeout_seconds)
-
-    def is_alive(self):
+    def isAlive(self):
         return self.started and not self.stopped
-
-    isAlive = is_alive
 
 
 class MotorDatabase(MotorBase):

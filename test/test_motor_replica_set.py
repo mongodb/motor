@@ -18,6 +18,7 @@ from __future__ import unicode_literals
 
 import unittest
 
+import pymongo.auth
 import pymongo.errors
 import pymongo.mongo_replica_set_client
 from tornado import iostream, gen
@@ -27,6 +28,7 @@ import motor
 import test
 from test import host, port, MotorReplicaSetTestBase, assert_raises, MotorTest
 from test import SkipTest
+from test.utils import one
 
 
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
@@ -91,6 +93,39 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         client = self.motor_rsc(socketKeepAlive=True)
         yield client.server_info()
         self.assertTrue(client._get_primary_pool().socket_keepalive)
+
+    @gen_test
+    def test_auth_network_error(self):
+        if not test.env.auth:
+            raise SkipTest('Authentication is not enabled on server')
+
+        # Make sure there's no semaphore leak if we get a network error
+        # when authenticating a new socket with cached credentials.
+        # Get a client with one socket so we detect if it's leaked.
+        c = self.motor_rsc(max_pool_size=1, waitQueueTimeoutMS=1)
+        yield c.open()
+
+        # Simulate an authenticate() call on a different socket.
+        credentials = pymongo.auth._build_credentials_tuple(
+            'DEFAULT', 'admin',
+            unicode(test.db_user), unicode(test.db_password),
+            {})
+
+        c.delegate._cache_credentials('test', credentials, connect=False)
+
+        # Cause a network error on the actual socket.
+        pool = c._get_primary_pool()
+        socket_info = one(pool.sockets)
+        socket_info.sock.close()
+
+        # In __check_auth, the client authenticates its socket with the
+        # new credential, but gets a socket.error. Should be reraised as
+        # AutoReconnect.
+        with self.assertRaises(pymongo.errors.AutoReconnect):
+            yield c.test.collection.find_one()
+
+        # No semaphore leak, the pool is allowed to make a new socket.
+        yield c.test.collection.find_one()
 
 
 class TestReplicaSetClientAgainstStandalone(MotorTest):

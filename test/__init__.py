@@ -444,4 +444,5 @@ class _TestExhaustCursorMixin(object):
             yield cursor.fetch_next
 
         self.assertTrue(sock_info.closed)
-        self.assertEqual(0, pool.motor_sock_counter)
+        del cursor
+        self.assertNotIn(sock_info, pool.sockets)
