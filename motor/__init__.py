@@ -480,13 +480,16 @@ class MotorPool(object):
 
             if self.wait_queue_timeout is not None:
                 deadline = self.io_loop.time() + self.wait_queue_timeout
-                timeout = self.io_loop.add_timeout(
-                    deadline,
-                    functools.partial(
-                        child_gr.throw,
-                        pymongo.errors.ConnectionFailure,
-                        self._create_wait_queue_timeout()))
 
+                def on_timeout():
+                    if waiter in self.queue:
+                        self.queue.remove(waiter)
+
+                    t = self.waiter_timeouts.pop(waiter)
+                    self.io_loop.remove_timeout(t)
+                    child_gr.throw(self._create_wait_queue_timeout())
+
+                timeout = self.io_loop.add_timeout(deadline, on_timeout)
                 self.waiter_timeouts[waiter] = timeout
 
             # Yield until maybe_return_socket passes spare socket in.
@@ -544,7 +547,8 @@ class MotorPool(object):
         if self.queue:
             waiter = self.queue.popleft()
             if waiter in self.waiter_timeouts:
-                self.io_loop.remove_timeout(self.waiter_timeouts.pop(waiter))
+                timeout = self.waiter_timeouts.pop(waiter)
+                self.io_loop.remove_timeout(timeout)
 
             with stack_context.NullContext():
                 self.io_loop.add_callback(functools.partial(waiter, sock_info))

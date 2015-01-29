@@ -22,7 +22,7 @@ import random
 import unittest
 
 import pymongo.errors
-from tornado import stack_context
+from tornado import gen, stack_context
 from tornado.concurrent import Future
 from tornado.testing import gen_test
 
@@ -174,6 +174,60 @@ class MotorPoolTest(MotorTest):
                 yield collection.find_one()
             yield future
             cx.close()
+
+    @gen_test(timeout=30)
+    def test_wait_queue_multiple(self):
+        cx = self.motor_client(max_pool_size=2,
+                               waitQueueTimeoutMS=100,
+                               waitQueueMultiple=3)
+        yield cx.open()
+        pool = cx._get_primary_pool()
+
+        def get_socket_on_greenlet(future):
+            try:
+                s = pool.get_socket()
+                future.set_result(s)
+            except Exception as e:
+                future.set_exception(e)
+
+        def get_socket():
+            future = Future()
+            fn = functools.partial(get_socket_on_greenlet, future)
+            greenlet.greenlet(fn).switch()
+            return future
+
+        s1 = yield get_socket()
+        self.assertEqual(1, pool.motor_sock_counter)
+
+        s2 = yield get_socket()
+        self.assertEqual(2, pool.motor_sock_counter)
+
+        start = self.io_loop.time()
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            yield get_socket()
+
+        # 100-millisecond timeout.
+        self.assertAlmostEqual(0.1, self.io_loop.time() - start, places=1)
+        self.assertEqual(2, pool.motor_sock_counter)
+
+        # Give a socket back to the pool, a waiter receives it.
+        s1_future = get_socket()
+        pool.maybe_return_socket(s1)
+        self.assertEqual(s1, (yield s1_future))
+        self.assertEqual(2, pool.motor_sock_counter)
+
+        # max_pool_size * waitQueueMultiple = 6 waiters are allowed.
+        for _ in range(6):
+            get_socket()
+
+        start = self.io_loop.time()
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            yield get_socket()
+
+        # Fails immediately.
+        self.assertAlmostEqual(0, self.io_loop.time() - start, places=3)
+        self.assertEqual(2, pool.motor_sock_counter)
+        cx.close()
 
     @gen_test
     def test_connections_unacknowledged_writes(self):
