@@ -89,7 +89,7 @@ completely incompatible.
 +---------------+-----+-----+-----+-----+-----+-----+
 |               | 0.3 |**N**|**N**|  Y  |  Y  |  Y  |
 +---------------+-----+-----+-----+-----+-----+-----+
-| (in progress) | 0.4 |**N**|**N**|  Y  |  Y  |  Y  |
+|               | 0.4 |**N**|**N**|  Y  |  Y  |  Y  |
 +---------------+-----+-----+-----+-----+-----+-----+
 
 Motor and Python
@@ -98,7 +98,7 @@ Motor and Python
 Motor requires Tornado, and it supports the same version of Python as its
 supported Tornado versions do.
 
-Beginning in version 0.4, Motor integrate with asyncio or Tornado.
+Beginning in version 0.5, Motor will integrate with asyncio or Tornado.
 asyncio support will require Python 3.4.
 
 +-----------------------------------------------------------------------------+
@@ -112,7 +112,7 @@ asyncio support will require Python 3.4.
 +---------------+-----+-----+-----+-----+------------------+------------------+
 |               | 0.3 |**N**|  Y  |  Y  |  Y               |  Y               |
 +---------------+-----+-----+-----+-----+------------------+------------------+
-| (in progress) | 0.4 |**N**|  Y  |  Y  |  Y               |  Y               |
+|               | 0.4 |**N**|  Y  |  Y  |  Y               |  Y               |
 +---------------+-----+-----+-----+-----+------------------+------------------+
 
 
