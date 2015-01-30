@@ -29,6 +29,7 @@ matrix:
     # Tornado 3 lacks a fix for test errors related to GC and unclosed sockets.
     - python: "3.4"
       env: TORNADO=3 FUTURES=yes
+    - python: "3.4"
       env: TORNADO=3 FUTURES=no
 before_install:
   # Ensure tests don't start before MongoDB does.
