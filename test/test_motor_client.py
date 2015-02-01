@@ -143,7 +143,7 @@ class MotorClientTest(MotorTest):
         self.assertEqual(None, result)
         self.assertTrue(isinstance(error, ConnectionFailure))
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_connection_timeout(self):
         # Motor merely tries to time out a connection attempt within the
         # specified duration; DNS lookup in particular isn't charged against
