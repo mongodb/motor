@@ -261,6 +261,9 @@ class MotorClientTest(MotorTest):
         self.assertTrue(client._get_primary_pool().socket_keepalive)
 
 
+RESOLVER_TEST_TIMEOUT = 30
+
+
 class MotorResolverTest(MotorTest):
     nonexistent_domain = 'doesntexist'
 
@@ -293,11 +296,11 @@ class MotorResolverTest(MotorTest):
         finally:
             netutil.Resolver._restore_configuration(config)
 
-    @gen_test
+    @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
     def test_blocking_resolver(self):
         yield self._test_resolver('tornado.netutil.BlockingResolver')
 
-    @gen_test
+    @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
     def test_threaded_resolver(self):
         try:
             import concurrent.futures
@@ -306,7 +309,7 @@ class MotorResolverTest(MotorTest):
 
         yield self._test_resolver('tornado.netutil.ThreadedResolver')
 
-    @gen_test
+    @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
     def test_twisted_resolver(self):
         required_version = version.padded((3, 2, 2), len(tornado.version_info))
         if not tornado.version_info >= tuple(required_version):
@@ -318,7 +321,7 @@ class MotorResolverTest(MotorTest):
             raise SkipTest('Twisted not installed')
         yield self._test_resolver('tornado.platform.twisted.TwistedResolver')
 
-    @gen_test(timeout=30)
+    @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
     def test_cares_resolver(self):
         try:
             import pycares
