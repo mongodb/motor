@@ -3,6 +3,12 @@ Changelog
 
 .. currentmodule:: motor
 
+
+Motor next²
+-----------
+
+Merge Motor 0.4 to Motor next to use PyMongo 2.8 and support MongoDB 3.0
+
 Motor next
 ----------
 
@@ -14,6 +20,64 @@ Motor's GridFS classes have moved from ``motor`` to ``motor.motor_gridfs``.
 If you use
 :class:`~motor_gridfs.MotorGridFS` or :class:`~motor_gridfs.MotorGridIn`
 you must change your imports.
+
+Motor 0.4
+_________
+
+Supports MongoDB 3.0. In particular, supports MongoDB 3.0's new SCRAM-SHA-1
+authentication mechanism and updates the implementations of
+:meth:`MotorClient.database_names` and :meth:`MotorDatabase.collection_names`.
+
+Updates PyMongo dependency from 2.7.1 to 2.8,
+therefore inheriting
+`PyMongo 2.7.2's bug fixes <https://jira.mongodb.org/browse/PYTHON/fixforversion/14005>`_
+and
+`PyMongo 2.8's bug fixes <https://jira.mongodb.org/browse/PYTHON/fixforversion/14223>`_
+and `features
+<http://api.mongodb.org/python/current/changelog.html#changes-in-version-2-8>`_.
+
+Fixes `a connection-pool timeout when waitQueueMultipleMS is set
+<https://jira.mongodb.org/browse/MOTOR-62>`_ and `two bugs in replica set
+monitoring <https://jira.mongodb.org/browse/MOTOR-61>`_.
+
+The ``copy_database`` method has been removed. It was overly complex and no one
+used it, see `MOTOR-56 <https://jira.mongodb.org/browse/MOTOR-56>`_.
+You can still use the :meth:`MotorDatabase.command` method directly.
+The only scenario not supported is copying a database from one host to
+another, if the remote host requires authentication.
+For this, use PyMongo's `copy_database`_ method, or, since PyMongo's
+``copy_database`` will be removed in a future release too, use the mongo shell.
+
+.. _copy_database: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient.copy_database
+
+.. seealso:: `The "copydb" command <http://docs.mongodb.org/manual/reference/command/copydb/>`_.
+
+Motor 0.3.3
+-----------
+
+Fix `MOTOR-45 <https://jira.mongodb.org/browse/MOTOR-45>`_,
+a stack-context leak in domain name resolution that could lead to an infinite
+loop and rapid memory leak.
+
+Document Motor's :doc:`requirements` in detail.
+
+Motor 0.3.2
+-----------
+
+Fix `MOTOR-44 <https://jira.mongodb.org/browse/MOTOR-44>`_,
+a socket leak in :class:`MotorClient.copy_database`
+and :class:`MotorReplicaSetClient.copy_database`.
+
+Motor 0.3.1
+-----------
+
+Fix `MOTOR-43 <https://jira.mongodb.org/browse/MOTOR-43>`_,
+a TypeError when using :class:`~motor.web.GridFSHandler`
+with a timezone-aware :class:`~motor.MotorClient`.
+
+Fix GridFS examples that hadn't been updated for Motor 0.2's new syntax.
+
+Fix a unittest that hadn't been running.
 
 Motor 0.3
 ---------

@@ -48,7 +48,6 @@ excluded_modules = [
     'test.test_threads_replica_set_client',
     'test.test_pooling',
     'test.test_pooling_gevent',
-    'test.test_paired',
     'test.test_master_slave_connection',
     'test.test_legacy_connections',
 
@@ -58,8 +57,12 @@ excluded_modules = [
 ]
 
 excluded_tests = [
-    # Depends on requests.
+    'TestReplicaSetClientLazyConnectGevent.*',
+
+    # Motor no longer has a copy_database method.
     '*.test_copy_db',
+
+    # Depends on requests.
     'TestCollection.test_insert_large_batch',
 
     # Motor always uses greenlets.
@@ -75,14 +78,13 @@ excluded_tests = [
 
     # MotorClient(uri).open() doesn't raise ConfigurationError if the URI has
     # the wrong auth credentials.
-    'TestClient.test_auth_from_uri',
+    'TestClientAuth.test_auth_from_uri',
 
     # Motor's pool is different, we test it separately.
     '*.test_waitQueueMultiple',
 
     # Lazy-connection tests require multithreading; we test concurrent
     # lazy connection directly.
-    '_TestLazyConnectMixin.*',
     'TestClientLazyConnect.*',
     'TestClientLazyConnectOneGoodSeed.*',
     'TestClientLazyConnectBadSeeds.*',
@@ -95,7 +97,8 @@ excluded_tests = [
     '*.test_request_threads',
     '*.test_operation_failure_with_request',
     'TestClient.test_with_start_request',
-    'TestDatabase.test_authenticate_and_request',
+    'TestCollection.test_unique_index',
+    'TestDatabaseAuth.test_authenticate_and_request',
     'TestGridfs.test_request',
     'TestGridfs.test_gridfs_request',
 
@@ -123,6 +126,8 @@ excluded_tests = [
     'TestCollection.test_ensure_unique_index_threaded',
     'TestGridfs.test_threaded_writes',
     'TestGridfs.test_threaded_reads',
+    'TestThreadsAuth.*',
+    'TestThreadsAuthReplicaSet.*',
 
     # Relies on threads; tested directly.
     'TestCollection.test_parallel_scan',
@@ -131,10 +136,6 @@ excluded_tests = [
     # users should just use system.js as a regular collection.
     'TestDatabase.test_system_js',
     'TestDatabase.test_system_js_list',
-
-    # Motor can't raise an index error if a cursor slice is out of range; it
-    # just gets no results.
-    'TestCursor.test_getitem_index_out_of_range',
 
     # Weird use-case.
     'TestCursor.test_cursor_transfer',
@@ -169,7 +170,13 @@ excluded_tests = [
     'TestReplicaSetClientMaxWriteBatchSize.*',
     'TestClient.test_wire_version_mongos_ha',
     'TestClient.test_max_wire_version',
+    'TestExhaustCursor.*',
+    'TestReplicaSetClientExhaustCursor.*',
     '*.test_wire_version',
+
+    # Logs AssertionError, 'Should be on child greenlet' in Cursor.__del__, for
+    # reasons not worth getting into.
+    'TestClient.test_kill_cursors_warning',
 ]
 
 
@@ -188,7 +195,12 @@ class SynchroNosePlugin(Plugin):
 
     def wantModule(self, module):
         for module_name in excluded_modules:
-            if module.__name__.startswith(module_name):
+            if module_name.endswith('*'):
+                if module.__name__.startswith(module_name.rstrip('*')):
+                    # E.g., test_motor_cursor matches "test_motor_*".
+                    return False
+
+            elif module.__name__ == module_name:
                 return False
 
         return True

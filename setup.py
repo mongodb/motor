@@ -105,7 +105,7 @@ class test(Command):
 
 
 setup(name='motor',
-      version='0.3',
+      version='0.4+',
       packages=['motor'],
       description=description,
       long_description=long_description,
@@ -115,7 +115,7 @@ setup(name='motor',
       install_requires=[
           'tornado >= 3.1',
           'greenlet >= 0.4.0',
-          'pymongo == 2.7.1',
+          'pymongo == 2.8.0',
       ],
       license='http://www.apache.org/licenses/LICENSE-2.0',
       classifiers=filter(None, classifiers.split('\n')),

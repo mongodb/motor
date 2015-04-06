@@ -20,6 +20,7 @@ from __future__ import print_function, unicode_literals
 """Tools for testing high availability in PyMongo."""
 
 import os
+import pprint
 import random
 import shutil
 import signal
@@ -27,6 +28,7 @@ import socket
 import subprocess
 import sys
 import time
+import warnings
 
 from stat import S_IRUSR
 
@@ -46,12 +48,18 @@ mongos = os.environ.get('MONGOS', 'mongos')
 set_name = os.environ.get('SETNAME', 'repl0')
 use_greenlets = bool(os.environ.get('GREENLETS'))
 ha_tools_debug = bool(os.environ.get('HA_TOOLS_DEBUG'))
+tornado_warnings = bool(os.environ.get('TORNADO_WARNINGS'))
 
 
 nodes = {}
 routers = {}
 cur_port = port
 key_file = None
+
+try:
+    from subprocess import DEVNULL  # Python 3.
+except ImportError:
+    DEVNULL = open(os.devnull, 'wb')
 
 
 def kill_members(members, sig, hosts=nodes):
@@ -91,6 +99,11 @@ def wait_for(proc, port_num):
 
     kill_all_members()
     return False
+
+
+def start_subprocess(cmd):
+    """Run cmd (a list of strings) and return a Popen instance."""
+    return subprocess.Popen(cmd, stdout=DEVNULL, stderr=DEVNULL)
 
 
 def start_replica_set(members, auth=False, fresh=True):
@@ -140,9 +153,7 @@ def start_replica_set(members, auth=False, fresh=True):
         if ha_tools_debug:
             print('starting %s' % ' '.join(cmd))
 
-        proc = subprocess.Popen(cmd,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
+        proc = start_subprocess(cmd)
         nodes[host] = {'proc': proc, 'cmd': cmd}
         res = wait_for(proc, cur_port)
 
@@ -156,7 +167,7 @@ def start_replica_set(members, auth=False, fresh=True):
     c = pymongo.MongoClient(primary, use_greenlets=use_greenlets)
     try:
         if ha_tools_debug:
-            print('rs.initiate(%s)' % config)
+            pprint.pprint({'replSetInitiate': config})
 
         c.admin.command('replSetInitiate', config)
     except pymongo.errors.OperationFailure as e:
@@ -170,10 +181,10 @@ def start_replica_set(members, auth=False, fresh=True):
             expected_arbiters += 1
     expected_secondaries = len(members) - expected_arbiters - 1
 
-    # Wait for 8 minutes for replica set to come up
-    patience = 8
-    for i in range(int(patience * 60 / 2)):
-        time.sleep(2)
+    # Wait for 4 minutes for replica set to come up.
+    patience = 4
+    for i in range(int(patience * 60 / 1)):
+        time.sleep(1)
         try:
             if (get_primary() and
                     len(get_secondaries()) == expected_secondaries and
@@ -206,9 +217,7 @@ def create_sharded_cluster(num_routers=3):
            '--port', str(cur_port),
            '--nojournal', '--logappend',
            '--logpath', configdb_logpath]
-    proc = subprocess.Popen(cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
+    proc = start_subprocess(cmd)
     nodes[configdb_host] = {'proc': proc, 'cmd': cmd}
     res = wait_for(proc, cur_port)
     if not res:
@@ -226,9 +235,7 @@ def create_sharded_cluster(num_routers=3):
            '--port', str(cur_port),
            '--nojournal', '--logappend',
            '--logpath', db_logpath]
-    proc = subprocess.Popen(cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
+    proc = start_subprocess(cmd)
     nodes[shard_host] = {'proc': proc, 'cmd': cmd}
     res = wait_for(proc, cur_port)
     if not res:
@@ -245,9 +252,7 @@ def create_sharded_cluster(num_routers=3):
                '--logappend',
                '--logpath', mongos_logpath,
                '--configdb', configdb_host]
-        proc = subprocess.Popen(cmd,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
+        proc = start_subprocess(cmd)
         routers[host] = {'proc': proc, 'cmd': cmd}
         res = wait_for(proc, cur_port)
         if not res:
@@ -287,7 +292,11 @@ def restart_mongos(host):
 
 
 def get_members_in_state(state):
-    status = get_client().admin.command('replSetGetStatus')
+    with warnings.catch_warnings():
+        # Suppress "replsetgetstatus does not support PRIMARY_PREFERRED".
+        warnings.simplefilter("ignore", UserWarning)
+        status = get_client().admin.command('replSetGetStatus')
+
     members = status['members']
     return [k['name'] for k in members if k['state'] == state]
 
@@ -400,9 +409,7 @@ def add_member(auth=False):
     if ha_tools_debug:
         print('starting %s' % ' '.join(cmd))
 
-    proc = subprocess.Popen(cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
+    proc = start_subprocess(cmd)
     nodes[host] = {'proc': proc, 'cmd': cmd}
     res = wait_for(proc, cur_port)
 
@@ -429,14 +436,20 @@ def stepdown_primary():
         if ha_tools_debug:
             print('stepping down primary: %s' % primary)
         c = pymongo.MongoClient(primary, use_greenlets=use_greenlets)
-        # replSetStepDown causes mongod to close all connections
-        try:
-            c.admin.command('replSetStepDown', 20)
-        except Exception as e:
-            if ha_tools_debug:
-                print('Exception from replSetStepDown: %s' % e)
-        if ha_tools_debug:
-            print('\tcalled replSetStepDown')
+        for _ in range(20):
+            try:
+                c.admin.command('replSetStepDown', 20)
+            except pymongo.errors.ConnectionFailure:
+                # Expected, mongod to close all connections.
+                if ha_tools_debug:
+                    print('\tcalled replSetStepDown')
+                return
+            except Exception as e:
+                if ha_tools_debug:
+                    # Likely "No electable secondaries caught up", keep trying.
+                    print('Exception from replSetStepDown: %s' % e)
+                time.sleep(2)
+
     elif ha_tools_debug:
         print('stepdown_primary() found no primary')
 
@@ -461,9 +474,7 @@ def restart_members(members, router=False):
             cmd = routers[member]['cmd']
         else:
             cmd = nodes[member]['cmd']
-        proc = subprocess.Popen(cmd,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
+        proc = start_subprocess(cmd)
         if router:
             routers[member]['proc'] = proc
         else:

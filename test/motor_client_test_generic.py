@@ -36,37 +36,38 @@ class MotorClientTestMixin(object):
         for method in 'start_request', 'in_request', 'end_request':
             self.assertRaises(TypeError, getattr(self.get_client(), method))
 
-    @gen_test
-    def test_copy_db_argument_checking(self):
-        cx = self.get_client()
-        with assert_raises(TypeError):
-            yield cx.copy_database(4, 'foo')
-
-        with assert_raises(TypeError):
-            yield cx.copy_database('foo', 4)
-
-        with assert_raises(pymongo.errors.InvalidName):
-            yield cx.copy_database('foo', '$foo')
-
-    @gen_test
-    def test_copy_db_callback(self):
-        cx = self.get_client()
-        yield cx.drop_database('target')
-        name = cx.motor_test.name
-        (result, error), _ = yield gen.Task(
-            cx.copy_database, name, 'target')
-
-        self.assertTrue(isinstance(result, dict))
-        self.assertEqual(error, None)
-
-        yield cx.drop_database('target')
-
-        client = motor.MotorClient('doesntexist', connectTimeoutMS=10)
-        (result, error), _ = yield gen.Task(
-            client.copy_database, name, 'target')
-
-        self.assertEqual(result, None)
-        self.assertTrue(isinstance(error, Exception))
+    # no more copy_database method
+    # @gen_test
+    # def test_copy_db_argument_checking(self):
+    #     cx = self.get_client()
+    #     with assert_raises(TypeError):
+    #         yield cx.copy_database(4, 'foo')
+    #
+    #     with assert_raises(TypeError):
+    #         yield cx.copy_database('foo', 4)
+    #
+    #     with assert_raises(pymongo.errors.InvalidName):
+    #         yield cx.copy_database('foo', '$foo')
+    #
+    # @gen_test
+    # def test_copy_db_callback(self):
+    #     cx = self.get_client()
+    #     yield cx.drop_database('target')
+    #     name = cx.motor_test.name
+    #     (result, error), _ = yield gen.Task(
+    #         cx.copy_database, name, 'target')
+    #
+    #     self.assertTrue(isinstance(result, dict))
+    #     self.assertEqual(error, None)
+    #
+    #     yield cx.drop_database('target')
+    #
+    #     client = motor.MotorClient('doesntexist', connectTimeoutMS=10)
+    #     (result, error), _ = yield gen.Task(
+    #         client.copy_database, name, 'target')
+    #
+    #     self.assertEqual(result, None)
+    #     self.assertTrue(isinstance(error, Exception))
 
     @gen.coroutine
     def drop_databases(self, database_names, authenticated_client=None):
@@ -106,118 +107,119 @@ class MotorClientTestMixin(object):
                 doc,
                 (yield cx[test_db_name].test_collection.find_one()))
 
-    @gen_test
-    def test_copy_db(self):
-        # This will catch any socket leaks.
-        cx = self.get_client(max_pool_size=1, waitQueueTimeoutMS=1)
-        target_db_name = 'motor_test_2'
-
-        yield cx.drop_database(target_db_name)
-        yield self.collection.insert({'_id': 1})
-        result = yield cx.copy_database("motor_test", target_db_name)
-        self.assertTrue(isinstance(result, dict))
-        self.assertEqual(
-            {'_id': 1},
-            (yield cx[target_db_name].test_collection.find_one()))
-
-        yield cx.drop_database(target_db_name)
-
-    @gen_test(timeout=300)
-    def test_copy_db_concurrent(self):
-        n_copies = 2
-        target_db_names = ['motor_test_%s' % i for i in range(n_copies)]
-
-        # 1. Drop old test DBs
-        cx = self.get_client()
-        yield cx.drop_database('motor_test')
-        yield self.drop_databases(target_db_names)
-
-        # 2. Copy a test DB N times at once
-        collection = cx.motor_test.test_collection
-        yield collection.insert({'_id': 1})
-        results = yield [
-            cx.copy_database('motor_test', test_db_name)
-            for test_db_name in target_db_names]
-
-        self.assertTrue(all(isinstance(i, dict) for i in results))
-        yield self.check_copydb_results({'_id': 1}, target_db_names)
-        yield self.drop_databases(target_db_names)
-
-    @gen_test
-    def test_copy_db_auth(self):
-        if env.mongod_started_with_ssl:
-            raise SkipTest("Can't copy DB with auth over SSL, SERVER-14700")
-
-        # SERVER-6427, can't copy database via mongos with auth.
-        yield skip_if_mongos(self.cx)
-
-        yield self.collection.remove()
-        yield self.collection.insert({'_id': 1})
-
-        try:
-            # self.cx is logged in as root.
-            yield self.cx.motor_test.add_user('mike', 'password')
-
-            # This will catch any socket leaks.
-            client = self.get_client(max_pool_size=1, waitQueueTimeoutMS=1)
-            target_db_name = 'motor_test_2'
-
-            with assert_raises(pymongo.errors.OperationFailure):
-                yield client.copy_database(
-                    'motor_test', target_db_name,
-                    username='foo', password='bar')
-
-            with assert_raises(pymongo.errors.OperationFailure):
-                yield client.copy_database(
-                    'motor_test', target_db_name,
-                    username='mike', password='bar')
-
-            # Copy a database using name and password.
-            yield client.copy_database(
-                'motor_test', target_db_name,
-                username='mike', password='password')
-
-            self.assertEqual(
-                {'_id': 1},
-                (yield client[target_db_name].test_collection.find_one()))
-
-            yield client.drop_database(target_db_name)
-        finally:
-            yield remove_all_users(self.cx.motor_test)
-
-    @gen_test(timeout=30)
-    def test_copy_db_auth_concurrent(self):
-        if env.mongod_started_with_ssl:
-            raise SkipTest("Can't copy DB with auth over SSL, SERVER-14700")
-
-        # SERVER-6427, can't copy database via mongos with auth.
-        yield skip_if_mongos(self.cx)
-
-        n_copies = 2
-        test_db_names = ['motor_test_%s' % i for i in range(n_copies)]
-
-        # 1. Drop old test DBs
-        yield self.cx.drop_database('motor_test')
-        yield self.collection.insert({'_id': 1})
-        yield self.drop_databases(test_db_names)
-
-        # 2. Copy a test DB N times at once
-        try:
-            # self.cx is logged in as root.
-            yield self.cx.motor_test.add_user('mike', 'password')
-
-            client = self.get_client()
-            results = yield [
-                client.copy_database(
-                    'motor_test', test_db_name,
-                    username='mike', password='password')
-                for test_db_name in test_db_names]
-
-            self.assertTrue(all(isinstance(i, dict) for i in results))
-            yield self.check_copydb_results({'_id': 1}, test_db_names)
-
-        finally:
-            yield remove_all_users(client.motor_test)
-            yield self.drop_databases(
-                test_db_names,
-                authenticated_client=self.cx)
+    # no more copy_database method
+    # @gen_test
+    # def test_copy_db(self):
+    #     # This will catch any socket leaks.
+    #     cx = self.get_client(max_pool_size=1, waitQueueTimeoutMS=1)
+    #     target_db_name = 'motor_test_2'
+    #
+    #     yield cx.drop_database(target_db_name)
+    #     yield self.collection.insert({'_id': 1})
+    #     result = yield cx.copy_database("motor_test", target_db_name)
+    #     self.assertTrue(isinstance(result, dict))
+    #     self.assertEqual(
+    #         {'_id': 1},
+    #         (yield cx[target_db_name].test_collection.find_one()))
+    #
+    #     yield cx.drop_database(target_db_name)
+    #
+    # @gen_test(timeout=300)
+    # def test_copy_db_concurrent(self):
+    #     n_copies = 2
+    #     target_db_names = ['motor_test_%s' % i for i in range(n_copies)]
+    #
+    #     # 1. Drop old test DBs
+    #     cx = self.get_client()
+    #     yield cx.drop_database('motor_test')
+    #     yield self.drop_databases(target_db_names)
+    #
+    #     # 2. Copy a test DB N times at once
+    #     collection = cx.motor_test.test_collection
+    #     yield collection.insert({'_id': 1})
+    #     results = yield [
+    #         cx.copy_database('motor_test', test_db_name)
+    #         for test_db_name in target_db_names]
+    #
+    #     self.assertTrue(all(isinstance(i, dict) for i in results))
+    #     yield self.check_copydb_results({'_id': 1}, target_db_names)
+    #     yield self.drop_databases(target_db_names)
+    #
+    # @gen_test
+    # def test_copy_db_auth(self):
+    #     if env.mongod_started_with_ssl:
+    #         raise SkipTest("Can't copy DB with auth over SSL, SERVER-14700")
+    #
+    #     # SERVER-6427, can't copy database via mongos with auth.
+    #     yield skip_if_mongos(self.cx)
+    #
+    #     yield self.collection.remove()
+    #     yield self.collection.insert({'_id': 1})
+    #
+    #     try:
+    #         # self.cx is logged in as root.
+    #         yield self.cx.motor_test.add_user('mike', 'password')
+    #
+    #         # This will catch any socket leaks.
+    #         client = self.get_client(max_pool_size=1, waitQueueTimeoutMS=1)
+    #         target_db_name = 'motor_test_2'
+    #
+    #         with assert_raises(pymongo.errors.OperationFailure):
+    #             yield client.copy_database(
+    #                 'motor_test', target_db_name,
+    #                 username='foo', password='bar')
+    #
+    #         with assert_raises(pymongo.errors.OperationFailure):
+    #             yield client.copy_database(
+    #                 'motor_test', target_db_name,
+    #                 username='mike', password='bar')
+    #
+    #         # Copy a database using name and password.
+    #         yield client.copy_database(
+    #             'motor_test', target_db_name,
+    #             username='mike', password='password')
+    #
+    #         self.assertEqual(
+    #             {'_id': 1},
+    #             (yield client[target_db_name].test_collection.find_one()))
+    #
+    #         yield client.drop_database(target_db_name)
+    #     finally:
+    #         yield remove_all_users(self.cx.motor_test)
+    #
+    # @gen_test(timeout=30)
+    # def test_copy_db_auth_concurrent(self):
+    #     if env.mongod_started_with_ssl:
+    #         raise SkipTest("Can't copy DB with auth over SSL, SERVER-14700")
+    #
+    #     # SERVER-6427, can't copy database via mongos with auth.
+    #     yield skip_if_mongos(self.cx)
+    #
+    #     n_copies = 2
+    #     test_db_names = ['motor_test_%s' % i for i in range(n_copies)]
+    #
+    #     # 1. Drop old test DBs
+    #     yield self.cx.drop_database('motor_test')
+    #     yield self.collection.insert({'_id': 1})
+    #     yield self.drop_databases(test_db_names)
+    #
+    #     # 2. Copy a test DB N times at once
+    #     try:
+    #         # self.cx is logged in as root.
+    #         yield self.cx.motor_test.add_user('mike', 'password')
+    #
+    #         client = self.get_client()
+    #         results = yield [
+    #             client.copy_database(
+    #                 'motor_test', test_db_name,
+    #                 username='mike', password='password')
+    #             for test_db_name in test_db_names]
+    #
+    #         self.assertTrue(all(isinstance(i, dict) for i in results))
+    #         yield self.check_copydb_results({'_id': 1}, test_db_names)
+    #
+    #     finally:
+    #         yield remove_all_users(client.motor_test)
+    #         yield self.drop_databases(
+    #             test_db_names,
+    #             authenticated_client=self.cx)

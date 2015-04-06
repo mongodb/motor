@@ -267,6 +267,7 @@ class TestAsyncIOGridFS(AsyncIOTestCase):
 
     def setUp(self):
         super().setUp()
+        self.loop.run_until_complete(self._reset())
         self.fs = AsyncIOMotorGridFS(self.db)
 
     def tearDown(self):

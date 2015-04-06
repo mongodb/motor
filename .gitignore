@@ -10,3 +10,4 @@ setup.cfg
 *.egg
 .tox
 doc/_build/
+.idea/

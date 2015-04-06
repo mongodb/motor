@@ -129,6 +129,12 @@ class MotorSSLTest(MotorTest):
         # --sslWeakCertificateValidation. motor_client() adds appropriate
         # ssl args and auth.
         client = self.motor_client()
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
+
+        # Expects the server to be running with ssl and with
+        # no --sslPEMKeyFile or with --sslWeakCertificateValidation.
+        client = motor.MotorClient(host, port, ssl=True, io_loop=self.io_loop)
         yield client.db.collection.find_one()
         response = yield client.admin.command('ismaster')
         if 'setName' in response:
@@ -153,6 +159,12 @@ class MotorSSLTest(MotorTest):
                            "hostname in the certificate")
 
         client = self.motor_client(ssl_certfile=CLIENT_PEM)
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
+
+        client = motor.MotorClient(
+            host, port, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
+
         yield client.db.collection.find_one()
         response = yield client.admin.command('ismaster')
         if 'setName' in response:
@@ -175,6 +187,9 @@ class MotorSSLTest(MotorTest):
         if not test.env.server_is_resolvable:
             raise SkipTest("No hosts entry for 'server'. Cannot validate "
                            "hostname in the certificate")
+
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
 
         client = motor.MotorClient(
             test.env.fake_hostname_uri,
@@ -218,6 +233,9 @@ class MotorSSLTest(MotorTest):
             raise SkipTest("No hosts entry for 'server'. Cannot validate "
                            "hostname in the certificate")
 
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
+
         client = motor.MotorClient(
             test.env.fake_hostname_uri,
             ssl_certfile=CLIENT_PEM,
@@ -251,6 +269,9 @@ class MotorSSLTest(MotorTest):
         #   --sslCRLFile=jstests/libs/crl.pem
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
+
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
 
         client = motor.MotorClient(
             host, port,
