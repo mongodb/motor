@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from __future__ import unicode_literals
+from tornado import gen
 
 """Test GridFS with Motor, an asynchronous driver for MongoDB and Tornado."""
 

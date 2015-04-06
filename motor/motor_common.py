@@ -55,7 +55,8 @@ class MotorSocketOptions(object):
         certfile,
         keyfile,
         ca_certs,
-        cert_reqs
+        cert_reqs,
+        socket_keepalive
     ):
         self.resolver = resolver
         self.address = address
@@ -65,3 +66,4 @@ class MotorSocketOptions(object):
         self.keyfile = keyfile
         self.ca_certs = ca_certs
         self.cert_reqs = cert_reqs
+        self.socket_keepalive=socket_keepalive

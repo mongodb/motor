@@ -121,6 +121,9 @@ the server. Obviously, this code is improved by :mod:`tornado.gen`::
 Motor ignores the ``auto_start_request`` parameter to
 :class:`~motor.MotorClient` or :class:`~motor.MotorReplicaSetClient`.
 
+.. note:: Requests are deprecated in PyMongo 2.8 and will be removed in
+   PyMongo 3.0.
+
 Threading and forking
 ---------------------
 
@@ -128,7 +131,7 @@ Multithreading and forking are not supported; Motor is intended to be used in
 a single-threaded Tornado application. See Tornado's documentation on
 `running Tornado in production`_ to take advantage of multiple cores.
 
-.. _`running Tornado in production`: http://tornadoweb.org/en/stable/overview.html#running-tornado-in-production
+.. _`running Tornado in production`: http://www.tornadoweb.org/en/stable/guide/running.html
 
 Minor differences
 =================

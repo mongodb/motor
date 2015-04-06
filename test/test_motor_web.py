@@ -184,6 +184,27 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
                         expected_type))
 
 
+class TZAwareGridFSHandlerTest(GridFSHandlerTestBase):
+    def motor_db(self):
+        client = motor.MotorClient(
+            test.env.uri,
+            tz_aware=True,
+            io_loop=self.io_loop)
+
+        return client.motor_test
+
+    def test_tz_aware(self):
+        now = datetime.datetime.utcnow()
+        ago = now - datetime.timedelta(minutes=10)
+        hence = now + datetime.timedelta(minutes=10)
+
+        response = self.fetch('/foo', if_modified_since=ago)
+        self.assertEqual(200, response.code)
+
+        response = self.fetch('/foo', if_modified_since=hence)
+        self.assertEqual(304, response.code)
+
+
 class CustomGridFSHandlerTest(GridFSHandlerTestBase):
     def get_app(self):
         class CustomGridFSHandler(motor.web.GridFSHandler):

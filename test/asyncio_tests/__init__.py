@@ -26,7 +26,7 @@ from unittest import SkipTest
 import pymongo.errors
 
 from motor import motor_asyncio
-from test.version import _parse_version_string, _padded
+from test.version import _parse_version_string, padded
 from test.test_environment import env, CLIENT_PEM
 
 
@@ -275,7 +275,7 @@ def server_is_master_with_slave(client):
 @asyncio.coroutine
 def server_is_mongos(client):
     ismaster_response = yield from client.admin.command('ismaster')
-    return ismaster_response.get('msg' == 'isdbgrid')
+    return ismaster_response.get('msg') == 'isdbgrid'
 
 
 @asyncio.coroutine
@@ -287,7 +287,7 @@ def version(client):
 @asyncio.coroutine
 def at_least(client, min_version):
     client_version = yield from version(client)
-    return client_version >= tuple(_padded(min_version, 4))
+    return client_version >= tuple(padded(min_version, 4))
 
 
 @asyncio.coroutine

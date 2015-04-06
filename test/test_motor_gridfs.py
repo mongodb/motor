@@ -220,7 +220,7 @@ class MotorGridfsTest(MotorTest):
 
 
 class TestGridfsReplicaSet(MotorReplicaSetTestBase):
-    @gen_test
+    @gen_test(timeout=10)
     def test_gridfs_replica_set(self):
         rsc = self.motor_rsc(
             w=test.env.w, wtimeout=5000,
@@ -237,8 +237,8 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
         primary_host, primary_port = test.env.primary
         primary = self.motor_client(primary_host, primary_port)
         if test.env.auth:
-            yield primary.admin.authenticate(db_user, db_password)
-
+            yield primary.admin.authenticate(test.db_user, test.db_password)
+ 
         secondary_host, secondary_port = test.env.secondaries[0]
 
         secondary = self.motor_client(

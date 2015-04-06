@@ -79,7 +79,8 @@ class MotorPool(object):
             ssl_cert_reqs=None,
             ssl_ca_certs=None,
             wait_queue_timeout=None,
-            wait_queue_multiple=None):
+            wait_queue_multiple=None,
+            socket_keepalive=False):
         """
         A connection pool that uses Motor's framework-specific sockets.
 
@@ -118,6 +119,9 @@ class MotorPool(object):
           - `wait_queue_multiple`: (integer) Multiplied by max_pool_size to
             give the number of callbacks allowed to wait for a socket at one
             time.
+          - `socket_keepalive`: (boolean) Whether to send periodic keep-alive
+            packets on connected sockets. Defaults to ``False`` (do not send
+            keep-alive packets).
 
         .. versionchanged:: 0.2
            ``max_size`` is now a hard cap. ``wait_queue_timeout`` and
@@ -163,11 +167,16 @@ class MotorPool(object):
             certfile=ssl_certfile,
             keyfile=ssl_keyfile,
             ca_certs=ssl_ca_certs,
-            cert_reqs=ssl_cert_reqs)
+            cert_reqs=ssl_cert_reqs,
+            socket_keepalive=socket_keepalive)
 
         # Keep track of resets, so we notice sockets created before the most
         # recent reset and close them.
         self.pool_id = 0
+
+        # How often to check sockets proactively for errors. An attribute
+        # so it can be overridden in unittests.
+        self._check_interval_seconds = 1
 
         self.motor_sock_counter = 0
         self.queue = collections.deque()
@@ -189,12 +198,13 @@ class MotorPool(object):
     def create_connection(self):
         """Connect and return a socket object.
         """
-        motor_sock = self._framework.create_socket(
-            self.io_loop,
-            self._motor_socket_options)
-
+        motor_sock = None
         try:
             self.motor_sock_counter += 1
+            motor_sock = self._framework.create_socket(
+                self.io_loop,
+                self._motor_socket_options)
+
             if not self.is_unix_socket:
                 motor_sock.settimeout(self.conn_timeout or 20.0)
 
@@ -204,9 +214,11 @@ class MotorPool(object):
             return motor_sock
         except:
             self.motor_sock_counter -= 1
+            if motor_sock is not None:
+                motor_sock.close()
             raise
 
-    def connect(self):
+    def connect(self, force=False):
         """Connect to Mongo and return a new connected MotorSocket. Note that
         the pool does not keep a reference to the socket -- you must call
         maybe_return_socket() when you're done with it.
@@ -215,7 +227,9 @@ class MotorPool(object):
         main = child_gr.parent
         assert main is not None, "Should be on child greenlet"
 
-        if self.max_size and self.motor_sock_counter >= self.max_size:
+        if (not force
+                and self.max_size
+                and self.motor_sock_counter >= self.max_size):
             if self.max_waiters and len(self.queue) >= self.max_waiters:
                 raise self._create_wait_queue_timeout()
 
@@ -225,12 +239,22 @@ class MotorPool(object):
 
             if self.wait_queue_timeout is not None:
                 deadline = self.io_loop.time() + self.wait_queue_timeout
-                timeout = self.io_loop.add_timeout(
-                    deadline,
-                    functools.partial(
-                        child_gr.throw,
-                        pymongo.errors.ConnectionFailure,
-                        self._create_wait_queue_timeout()))
+
+                def on_timeout():
+                    if waiter in self.queue:
+                        self.queue.remove(waiter)
+
+                    t = self.waiter_timeouts.pop(waiter)
+                    self.io_loop.remove_timeout(t)
+                    child_gr.throw(self._create_wait_queue_timeout())
+
+                timeout = self.io_loop.add_timeout(deadline, on_timeout)
+                # timeout = self.io_loop.add_timeout(
+                #     deadline,
+                #     functools.partial(
+                #         child_gr.throw,
+                #         pymongo.errors.ConnectionFailure,
+                #         self._create_wait_queue_timeout()))
 
                 self.waiter_timeouts[waiter] = timeout
 
@@ -264,7 +288,7 @@ class MotorPool(object):
             sock_info, from_pool = self.sockets.pop(), True
             sock_info = self._check(sock_info)
         else:
-            sock_info, from_pool = self.connect(), False
+            sock_info, from_pool = self.connect(force=force), False
 
         sock_info.forced = forced
         sock_info.last_checkout = time.time()
@@ -290,8 +314,8 @@ class MotorPool(object):
             return
 
         if sock_info.closed:
-            if not sock_info.forced:
-                self.motor_sock_counter -= 1
+            # if not sock_info.forced:
+            self.motor_sock_counter -= 1
             return
 
         # Give it to the greenlet at the head of the line, or return it to the
@@ -299,19 +323,20 @@ class MotorPool(object):
         if self.queue:
             waiter = self.queue.popleft()
             if waiter in self.waiter_timeouts:
-                self.io_loop.remove_timeout(self.waiter_timeouts.pop(waiter))
+                timeout = self.waiter_timeouts.pop(waiter)
+                self.io_loop.remove_timeout(timeout)
 
             # TODO: with stack_context.NullContext():
             self.io_loop.add_callback(functools.partial(waiter, sock_info))
 
-        elif (len(self.sockets) < self.max_size
+        elif (self.motor_sock_counter <= self.max_size
                 and sock_info.pool_id == self.pool_id):
             self.sockets.add(sock_info)
 
         else:
             sock_info.close()
-            if not sock_info.forced:
-                self.motor_sock_counter -= 1
+            # if not sock_info.forced:
+            self.motor_sock_counter -= 1
 
         if sock_info.forced:
             sock_info.forced = False
@@ -330,6 +355,7 @@ class MotorPool(object):
         can't avoid AutoReconnects completely anyway.
         """
         error = False
+        interval = self._check_interval_seconds
 
         if sock_info.closed:
             error = True
@@ -338,14 +364,21 @@ class MotorPool(object):
             sock_info.close()
             error = True
 
-        elif time.time() - sock_info.last_checkout > 1:
+        elif (interval is not None
+              and time.time() - sock_info.last_checkout > interval):
             if _closed(sock_info.sock):
                 sock_info.close()
                 error = True
+        # elif time.time() - sock_info.last_checkout > 1:
+        #     if _closed(sock_info.sock):
+        #         sock_info.close()
+        #         error = True
 
         if not error:
             return sock_info
         else:
+            # This socket is out of the pool and we won't return it.
+            self.motor_sock_counter -= 1
             try:
                 return self.connect()
             except socket.error:
@@ -436,80 +469,6 @@ class AgnosticClientBase(AgnosticBase):
 
     __getitem__ = __getattr__
 
-    @motor_coroutine
-    def copy_database(
-            self, from_name, to_name, from_host=None, username=None,
-            password=None):
-        """Copy a database, potentially from another host.
-
-        Accepts an optional callback, or returns a ``Future``.
-
-        Raises :class:`~pymongo.errors.InvalidName` if `to_name` is
-        not a valid database name.
-
-        If `from_host` is ``None`` the current host is used as the
-        source. Otherwise the database is copied from `from_host`.
-
-        If the source database requires authentication, `username` and
-        `password` must be specified.
-
-        :Parameters:
-          - `from_name`: the name of the source database
-          - `to_name`: the name of the target database
-          - `from_host` (optional): host name to copy from
-          - `username` (optional): username for source database
-          - `password` (optional): password for source database
-          - `callback`: Optional function taking parameters (response, error)
-        """
-        # PyMongo's implementation uses requests, so rewrite for Motor.
-        member, sock_info = None, None
-        try:
-            if not isinstance(from_name, motor_py3_compat.string_types):
-                raise TypeError("from_name must be an instance "
-                                "of %s" % motor_py3_compat.string_types)
-
-            if not isinstance(to_name, motor_py3_compat.string_types):
-                raise TypeError("to_name must be an instance "
-                                "of %s" % motor_py3_compat.string_types)
-
-            pymongo.database._check_name(to_name)
-
-            # Make sure there *is* a primary pool.
-            yield self._framework.yieldable(self._ensure_connected(True))
-            member = self._get_member()
-            sock_info = yield self._framework.yieldable(self._socket(member))
-
-            copydb_command = bson.SON([
-                ('copydb', 1),
-                ('fromdb', from_name),
-                ('todb', to_name)])
-
-            if from_host is not None:
-                copydb_command['fromhost'] = from_host
-
-            if username is not None:
-                getnonce_command = bson.SON(
-                    [('copydbgetnonce', 1), ('fromhost', from_host)])
-
-                response, ms = yield self._framework.yieldable(
-                    self._simple_command(
-                        sock_info, 'admin', getnonce_command))
-
-                nonce = response['nonce']
-                copydb_command['username'] = username
-                copydb_command['nonce'] = nonce
-                copydb_command['key'] = pymongo.auth._auth_key(
-                    nonce, username, password)
-
-            result, duration = yield self._framework.yieldable(
-                self._simple_command(
-                    sock_info, 'admin', copydb_command))
-
-            self._framework.return_value(result)
-        finally:
-            if sock_info:
-                member.pool.maybe_return_socket(sock_info)
-
     def get_default_database(self):
         """Get the database named in the MongoDB connection URI.
 
@@ -564,9 +523,7 @@ class AgnosticClient(AgnosticClientBase):
         else:
             io_loop = self._framework.get_event_loop()
 
-        event_class = functools.partial(
-            util.MotorGreenletEvent, io_loop, self._framework)
-
+        event_class = functools.partial(util.MotorGreenletEvent, io_loop, self._framework)
         kwargs['_event_class'] = event_class
 
         # Our class is not actually AgnosticClient here, it's the version of

@@ -59,6 +59,7 @@ class TestEnvironment(object):
         self.mongod_validates_client_cert = False
         self.server_is_resolvable = False
         self.sync_cx = None
+        self.is_mongos = False
         self.is_replica_set = False
         self.rs_name = None
         self.w = None
@@ -77,6 +78,7 @@ class TestEnvironment(object):
         assert not self.initialized
         self.setup_sync_cx()
         self.setup_auth()
+        self.setup_mongos()
         self.setup_rs()
         self.setup_v8()
         self.initialized = True
@@ -148,6 +150,11 @@ class TestEnvironment(object):
         else:
             self.uri = 'mongodb://%s:%s/admin' % (host, port)
             self.fake_hostname_uri = 'mongodb://%s:%s/admin' % ('server', port)
+
+    def setup_mongos(self):
+        """Set self.is_mongos."""
+        response = self.sync_cx.admin.command('ismaster')
+        self.is_mongos = response.get('msg') == 'isdbgrid'
 
     def setup_rs(self):
         """Determine server's replica set config."""

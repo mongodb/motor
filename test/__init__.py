@@ -19,7 +19,10 @@ from __future__ import unicode_literals
 import contextlib
 import datetime
 import functools
+import gc
 import logging
+import os
+import socket
 import time
 
 try:
@@ -32,10 +35,12 @@ except ImportError:
 
 import pymongo
 import pymongo.errors
+from bson import SON
 from tornado import gen, testing
 
 import motor
 from test.test_environment import env, db_user, CLIENT_PEM
+from test.utils import one
 
 
 def suppress_tornado_warnings():
@@ -55,6 +60,17 @@ def setup_package(tornado_warnings):
     if not tornado_warnings:
         suppress_tornado_warnings()
 
+def is_server_resolvable():
+    """Returns True if 'server' is resolvable."""
+    socket_timeout = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(1)
+    try:
+        socket.gethostbyname('server')
+        return True
+    except socket.error:
+        return False
+    finally:
+        socket.setdefaulttimeout(socket_timeout)
 
 def teardown_package():
     if env.auth:
@@ -103,9 +119,9 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
             raise SkipTest("mongod doesn't support SSL, or is down")
 
         if env.auth:
-            self.cx = self.motor_client(env.uri)
+            self.cx = self.motor_client(env.uri, ssl=self.ssl)
         else:
-            self.cx = self.motor_client()
+            self.cx = self.motor_client(ssl=self.ssl)
 
         self.db = self.cx.motor_test
         self.collection = self.db.test_collection
@@ -168,6 +184,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
             else:
                 # Let the loop run, might be working on closing the cursor
                 yield self.pause(0.1)
+                gc.collect()
 
     def get_client_kwargs(self, **kwargs):
         if env.mongod_validates_client_cert:
@@ -240,3 +257,60 @@ class MotorReplicaSetTestBase(MotorTest):
             raise SkipTest("Not connected to a replica set")
 
         self.rsc = self.motor_rsc()
+        self.rsc = self.motor_rsc()
+
+
+class _TestExhaustCursorMixin(object):
+    """Test that clients properly handle errors from exhaust cursors.
+
+    Inherit from this class and from MotorTest, and override
+    _get_client(self, **kwargs).
+    """
+    def setUp(self):
+        super(_TestExhaustCursorMixin, self).setUp()
+        if env.is_mongos:
+            raise SkipTest("mongos doesn't support exhaust cursors")
+
+    def tearDown(self):
+        env.sync_cx.motor_test.test.remove(w=env.w)
+        super(_TestExhaustCursorMixin, self).tearDown()
+
+    @testing.gen_test
+    def test_exhaust_query_server_error(self):
+        # When doing an exhaust query, the socket stays checked out on success
+        # but must be checked in on error to avoid counter leak.
+        client = yield self._get_client(max_pool_size=1).open()
+        collection = client.motor_test.test
+        pool = client._get_primary_pool()
+        sock_info = one(pool.sockets)
+
+        # This will cause OperationFailure in all mongo versions since
+        # the value for $orderby must be a document.
+        cursor = collection.find(
+            SON([('$query', {}), ('$orderby', True)]), exhaust=True)
+
+        with self.assertRaises(pymongo.errors.OperationFailure):
+            yield cursor.fetch_next
+
+        self.assertFalse(sock_info.closed)
+        self.assertEqual(sock_info, one(pool.sockets))
+
+    @testing.gen_test
+    def test_exhaust_query_network_error(self):
+        # When doing an exhaust query, the socket stays checked out on success
+        # but must be checked in on error to avoid counter leak.
+        client = yield self._get_client(max_pool_size=1).open()
+        collection = client.motor_test.test
+        pool = client._get_primary_pool()
+        pool._check_interval_seconds = None  # Never check.
+
+        # Cause a network error.
+        sock_info = one(pool.sockets)
+        sock_info.sock.close()
+        cursor = collection.find(exhaust=True)
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            yield cursor.fetch_next
+
+        self.assertTrue(sock_info.closed)
+        del cursor
+        self.assertNotIn(sock_info, pool.sockets)

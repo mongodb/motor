@@ -24,6 +24,7 @@ import pymongo
 import pymongo.mongo_client
 from pymongo.errors import ConfigurationError, OperationFailure
 from pymongo.errors import ConnectionFailure
+import tornado
 from tornado import gen
 from tornado.concurrent import Future
 from tornado.ioloop import IOLoop
@@ -36,6 +37,7 @@ from test import assert_raises, MotorTest, SkipTest
 from test.test_environment import host, port, db_user, db_password
 from test.motor_client_test_generic import MotorClientTestMixin
 from test.utils import remove_all_users, delay
+from test.version import padded
 
 
 class MotorClientTest(MotorTest):
@@ -139,7 +141,7 @@ class MotorClientTest(MotorTest):
         self.assertEqual(None, result)
         self.assertTrue(isinstance(error, ConnectionFailure))
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_connection_timeout(self):
         # Motor merely tries to time out a connection attempt within the
         # specified duration; DNS lookup in particular isn't charged against
@@ -163,7 +165,7 @@ class MotorClientTest(MotorTest):
         self.assertEqual(cx.max_pool_size, 100)
         cx.close()
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_high_concurrency(self):
         yield self.make_test_data()
 
@@ -246,6 +248,19 @@ class MotorClientTest(MotorTest):
         finally:
             yield db.remove_user('mike')
 
+    @gen_test
+    def test_socketKeepAlive(self):
+        # Connect.
+        yield self.cx.server_info()
+        self.assertFalse(self.cx._get_primary_pool()._motor_socket_options.socket_keepalive)
+
+        client = self.motor_client(socketKeepAlive=True)
+        yield client.server_info()
+        self.assertTrue(client._get_primary_pool()._motor_socket_options.socket_keepalive)
+
+
+RESOLVER_TEST_TIMEOUT = 30
+
 
 class MotorResolverTest(MotorTest):
     nonexistent_domain = 'doesntexist'
@@ -279,11 +294,11 @@ class MotorResolverTest(MotorTest):
         finally:
             netutil.Resolver._restore_configuration(config)
 
-    @gen_test
+    @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
     def test_blocking_resolver(self):
         yield self._test_resolver('tornado.netutil.BlockingResolver')
 
-    @gen_test
+    @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
     def test_threaded_resolver(self):
         try:
             import concurrent.futures
@@ -292,15 +307,19 @@ class MotorResolverTest(MotorTest):
 
         yield self._test_resolver('tornado.netutil.ThreadedResolver')
 
-    @gen_test
+    @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
     def test_twisted_resolver(self):
+        required_version = padded((3, 2, 2), len(tornado.version_info))
+        if not tornado.version_info >= tuple(required_version):
+            raise SkipTest('requires Tornado version 3.2.2+')
+
         try:
             import twisted
         except ImportError:
             raise SkipTest('Twisted not installed')
         yield self._test_resolver('tornado.platform.twisted.TwistedResolver')
 
-    @gen_test(timeout=30)
+    @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
     def test_cares_resolver(self):
         try:
             import pycares
@@ -312,6 +331,11 @@ class MotorResolverTest(MotorTest):
 
 class MotorClientTestGeneric(MotorClientTestMixin, MotorTest):
     def get_client(self, *args, **kwargs):
+        return self.motor_client(**kwargs)
+    
+    
+class MotorClientExhaustCursorTest(test._TestExhaustCursorMixin, MotorTest):
+    def _get_client(self, **kwargs):
         return self.motor_client(**kwargs)
 
 
