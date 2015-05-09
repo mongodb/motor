@@ -1207,6 +1207,9 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
         self.started = True
         self.io_loop.add_callback(self._start)
 
+    def start_sync(self):
+        self.start()
+
     def join(self, timeout=None):
         pass
 
