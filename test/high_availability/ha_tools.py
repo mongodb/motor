@@ -209,6 +209,8 @@ def create_sharded_cluster(num_routers=3):
     if not os.path.exists(path):
         os.makedirs(path)
     configdb_logpath = os.path.join(logpath, 'configdb.log')
+    if not os.path.exists(os.path.dirname(configdb_logpath)):
+        os.makedirs(os.path.dirname(configdb_logpath))
     cmd = [mongod,
            '--dbpath', path,
            '--port', str(cur_port),
@@ -251,7 +253,6 @@ def create_sharded_cluster(num_routers=3):
                '--configdb', configdb_host]
         if ha_tools_debug:
             print('starting %s' % ' '.join(cmd))
-        time.sleep(99999999)
         proc = start_subprocess(cmd)
         routers[host] = {'proc': proc, 'cmd': cmd}
         assert wait_for(proc, cur_port)
