@@ -54,6 +54,7 @@ class MotorHATestCase(PauseMixin, testing.AsyncTestCase):
         ha_tools.kill_all_members()
         ha_tools.nodes.clear()
         ha_tools.routers.clear()
+        ha_tools.config_dbs.clear()
         time.sleep(1)  # Let members really die.
 
 
