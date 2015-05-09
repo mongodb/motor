@@ -3,6 +3,13 @@ Changelog
 
 .. currentmodule:: motor
 
+Motor 0.4.1
+___________
+
+Fix `MOTOR-66 <https://jira.mongodb.org/browse/MOTOR-66>`_, deadlock when
+initiating :class:`MotorReplicaSetClient` connection from multiple operations
+at once.
+
 Motor 0.4
 _________
 
