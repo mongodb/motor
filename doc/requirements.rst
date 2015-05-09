@@ -51,6 +51,9 @@ PyMongo version specified for each version of Motor.
 | 0.4               | 2.8.0           |
 +-------------------+-----------------+
 
+Motor 0.5 will likely depend on PyMongo 2.9, and Motor 0.6 on PyMongo 3.1 or
+later.
+
 Motor and MongoDB
 `````````````````
 
