@@ -53,8 +53,8 @@ except ImportError:
 
 host = os.environ.get("DB_IP", "localhost")
 port = int(os.environ.get("DB_PORT", 27017))
-db_user = 'motor-test-root'
-db_password = 'pass'
+db_user = os.environ.get("DB_USER", "motor-test-root")
+db_password = os.environ.get("DB_PASSWORD", "pass")
 
 CERT_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'certificates')
