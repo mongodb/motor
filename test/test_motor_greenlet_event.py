@@ -22,6 +22,7 @@ from functools import partial
 from tornado import testing, gen
 from tornado.testing import gen_test
 
+from motor.frameworks import tornado as tornado_framework
 from motor.util import MotorGreenletEvent
 
 
@@ -33,7 +34,7 @@ class MotorTestEvent(testing.AsyncTestCase):
 
     @gen_test
     def test_event_basic(self):
-        event = MotorGreenletEvent(self.io_loop)
+        event = MotorGreenletEvent(self.io_loop, tornado_framework)
         self.assertFalse(event.is_set())
 
         waiter = greenlet.greenlet(event.wait)
@@ -49,7 +50,7 @@ class MotorTestEvent(testing.AsyncTestCase):
     @gen_test
     def test_event_multi(self):
         # Two greenlets are run, FIFO, after being unblocked.
-        event = MotorGreenletEvent(self.io_loop)
+        event = MotorGreenletEvent(self.io_loop, tornado_framework)
         order = []
 
         def wait():
@@ -66,7 +67,7 @@ class MotorTestEvent(testing.AsyncTestCase):
 
     @gen_test
     def test_event_timeout(self):
-        event = MotorGreenletEvent(self.io_loop)
+        event = MotorGreenletEvent(self.io_loop, tornado_framework)
         waiter = greenlet.greenlet(partial(event.wait, timeout_seconds=0))
         waiter.switch()
         yield self.tick()

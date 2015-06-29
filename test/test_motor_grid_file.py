@@ -24,6 +24,7 @@ from functools import partial
 
 from bson.objectid import ObjectId
 from gridfs.errors import NoFile
+from tornado import gen
 from tornado.testing import gen_test
 from pymongo.errors import InvalidOperation
 
@@ -313,15 +314,18 @@ class MotorGridFileTest(MotorTest):
         yield one.close()
 
         file_document = yield self.db.fs.files.find_one()
-        two = motor.MotorGridOut(self.db.fs, file_document=file_document)
+        two = motor.MotorGridOut(
+            self.db.fs, file_document=file_document)
+
         self.assertEqual(b"foo bar", (yield two.read()))
 
         file_document = yield self.db.fs.files.find_one()
         three = motor.MotorGridOut(self.db.fs, 5, file_document)
         self.assertEqual(b"foo bar", (yield three.read()))
 
+        gridout = motor.MotorGridOut(self.db.fs, file_document={})
         with assert_raises(NoFile):
-            yield motor.MotorGridOut(self.db.fs, file_document={}).open()
+            yield gridout.open()
 
     @gen_test
     def test_write_file_like(self):

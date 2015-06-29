@@ -14,8 +14,7 @@
 
 from __future__ import unicode_literals
 
-"""Utilities for testing Motor
-"""
+"""Utilities for testing Motor with Tornado."""
 
 from tornado import gen
 

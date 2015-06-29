@@ -24,8 +24,10 @@ from pymongo.son_manipulator import AutoReference, NamespaceInjector
 from tornado.testing import gen_test
 
 import motor
+import motor.core
 import test
 from test import version, MotorTest, assert_raises
+from test.test_environment import host, port
 from test.utils import remove_all_users
 
 
@@ -74,10 +76,10 @@ class MotorDatabaseTest(MotorTest):
         # second call would raise "already exists", so test manually.
         self.assertRaises(TypeError, db.create_collection, 'c', callback='foo')
         self.assertRaises(TypeError, db.create_collection, 'c', callback=1)
-        
+
         # No error without callback
         db.create_collection('c', callback=None)
-        
+
         # Wait for create_collection to complete
         for _ in range(10):
             yield self.pause(0.5)
@@ -170,11 +172,13 @@ class MotorDatabaseTest(MotorTest):
         self.assertEqual(b, result_c["another test"])
         self.assertEqual(c, result_c)
 
-    @gen_test
+    # SCRAM-SHA-1 is slow, install backports.pbkdf2 for speed.
+    @gen_test(timeout=30)
     def test_authenticate(self):
         # self.db is logged in as root.
         yield self.db.add_user("mike", "password")
-        db = motor.MotorClient(test.host, test.port).motor_test
+        client = motor.MotorClient(host, port, **self.get_client_kwargs())
+        db = client.motor_test
         try:
             # Authenticate many times at once to test concurrency.
             yield [db.authenticate("mike", "password") for _ in range(10)]

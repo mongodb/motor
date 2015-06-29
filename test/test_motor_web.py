@@ -30,6 +30,7 @@ from tornado.web import Application
 import motor
 import motor.web
 import test
+from test.test_environment import env, CLIENT_PEM
 
 
 # We're using Tornado's AsyncHTTPTestCase instead of our own MotorTestCase for
@@ -55,7 +56,18 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
         self.assertTrue(self.fs.get_last_version('foo'))
 
     def motor_db(self):
-        return motor.MotorClient(test.env.uri, io_loop=self.io_loop).motor_test
+        kwargs = {}
+        if env.mongod_validates_client_cert:
+            kwargs.setdefault('ssl_certfile', CLIENT_PEM)
+
+        kwargs.setdefault('ssl', env.mongod_started_with_ssl)
+
+        client = motor.MotorClient(
+            test.env.uri,
+            io_loop=self.io_loop,
+            **kwargs)
+
+        return client.motor_test
 
     def tearDown(self):
         self.fs.delete(self.file_id)
@@ -170,6 +182,27 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
                 self.assertTrue(
                     response.headers['Content-Type'].lower().endswith(
                         expected_type))
+
+
+class TZAwareGridFSHandlerTest(GridFSHandlerTestBase):
+    def motor_db(self):
+        client = motor.MotorClient(
+            test.env.uri,
+            tz_aware=True,
+            io_loop=self.io_loop)
+
+        return client.motor_test
+
+    def test_tz_aware(self):
+        now = datetime.datetime.utcnow()
+        ago = now - datetime.timedelta(minutes=10)
+        hence = now + datetime.timedelta(minutes=10)
+
+        response = self.fetch('/foo', if_modified_since=ago)
+        self.assertEqual(200, response.code)
+
+        response = self.fetch('/foo', if_modified_since=hence)
+        self.assertEqual(304, response.code)
 
 
 class CustomGridFSHandlerTest(GridFSHandlerTestBase):

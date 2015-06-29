@@ -19,7 +19,7 @@ from __future__ import unicode_literals, absolute_import
 from tornado import gen
 
 
-def _padded(iter, length, padding=0):
+def padded(iter, length, padding=0):
     l = list(iter)
     if len(l) < length:
         for _ in range(length - len(l)):
@@ -44,7 +44,7 @@ def _parse_version_string(version_string):
         mod = -1
 
     version = [int(part) for part in version_string.split(".")]
-    version = _padded(version, 3)
+    version = padded(version, 3)
     version.append(mod)
 
     return tuple(version)
@@ -59,4 +59,4 @@ def version(client):
 @gen.coroutine
 def at_least(client, min_version):
     client_version = yield version(client)
-    raise gen.Return(client_version >= tuple(_padded(min_version, 4)))
+    raise gen.Return(client_version >= tuple(padded(min_version, 4)))

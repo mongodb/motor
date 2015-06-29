@@ -30,8 +30,9 @@ from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import motor
+import motor.core
 from test import MotorTest, assert_raises, SkipTest
-from test.utils import server_is_mongos, version, get_command_line
+from test.utils import server_is_mongos, version, get_command_line, one
 
 
 class MotorCursorTest(MotorTest):
@@ -87,14 +88,14 @@ class MotorCursorTest(MotorTest):
         self.assertEqual(0, cursor.cursor_id)
         self.assertEqual(200, i)
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_fetch_next_delete(self):
         coll = self.collection
         yield coll.insert({})
 
         # Decref'ing the cursor eventually closes it on the server; yielding
         # clears the engine Runner's reference to the cursor.
-        cursor = coll.find()
+        cursor = coll.find().batch_size(1)
         yield cursor.fetch_next
         cursor_id = cursor.cursor_id
         retrieved = cursor.delegate._Cursor__retrieved
@@ -264,7 +265,7 @@ class MotorCursorTest(MotorTest):
         self.assertEqual([], (yield coll.find()[:0].to_list(length=1000)))
         self.assertEqual([], (yield coll.find()[5:5].to_list(length=1000)))
 
-    @gen_test
+    @gen_test(timeout=10)
     def test_cursor_explicit_close(self):
         yield self.make_test_data()
         collection = self.collection
@@ -272,12 +273,21 @@ class MotorCursorTest(MotorTest):
         cursor = collection.find()
         yield cursor.fetch_next
         self.assertTrue(cursor.alive)
+
+        # OP_KILL_CURSORS is sent asynchronously to the server, no ack.
         yield cursor.close()
 
         # Cursor reports it's alive because it has buffered data, even though
         # it's killed on the server
         self.assertTrue(cursor.alive)
         retrieved = cursor.delegate._Cursor__retrieved
+
+        # We'll check the cursor is closed by trying getMores on it until the
+        # server returns CursorNotFound. However, if we're in the midst of a
+        # getMore when the asynchronous OP_KILL_CURSORS arrives, the server
+        # won't kill the cursor. It logs "Assertion: 16089:Cannot kill active
+        # cursor." So wait for OP_KILL_CURSORS to reach the server first.
+        yield self.pause(5)
         yield self.wait_for_cursor(collection, cursor.cursor_id, retrieved)
 
     @gen_test
@@ -343,7 +353,6 @@ class MotorCursorTest(MotorTest):
                     # Soon, finish this test. Leave a little time for further
                     # calls to ensure we've really canceled them by calling
                     # cursor.close().
-                    # future.set_result(None)
                     loop.add_timeout(
                         datetime.timedelta(milliseconds=10),
                         partial(future.set_result, None))
@@ -482,13 +491,13 @@ class MotorCursorTest(MotorTest):
         self.assertEqual(2, count)
         self.assertEqual(cursor, cursor.rewind())
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_del_on_main_greenlet(self):
         # Since __del__ can happen on any greenlet, MotorCursor must be
         # prepared to close itself correctly on main or a child.
         yield self.make_test_data()
         collection = self.collection
-        cursor = collection.find()
+        cursor = collection.find().batch_size(1)
         yield cursor.fetch_next
         cursor_id = cursor.cursor_id
         retrieved = cursor.delegate._Cursor__retrieved
@@ -499,13 +508,13 @@ class MotorCursorTest(MotorTest):
         del cursor
         yield self.wait_for_cursor(collection, cursor_id, retrieved)
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_del_on_child_greenlet(self):
         # Since __del__ can happen on any greenlet, MotorCursor must be
         # prepared to close itself correctly on main or a child.
         yield self.make_test_data()
         collection = self.collection
-        cursor = [collection.find()]
+        cursor = [collection.find().batch_size(1)]
         yield cursor[0].fetch_next
         cursor_id = cursor[0].cursor_id
         retrieved = cursor[0].delegate._Cursor__retrieved
@@ -570,16 +579,26 @@ class MotorCursorTest(MotorTest):
         # If the Cursor instance is discarded before being
         # completely iterated we have to close and
         # discard the socket.
-        cur = client[self.db.name].test.find(exhaust=True)
+        sock = one(socks)
+        cur = client[self.db.name].test.find(exhaust=True).batch_size(1)
         has_next = yield cur.fetch_next
         self.assertTrue(has_next)
         self.assertEqual(0, len(socks))
         if 'PyPy' in sys.version:
             # Don't wait for GC or use gc.collect(), it's unreliable.
             cur.close()
+
+        cursor_id = cur.cursor_id
+        retrieved = cur.delegate._Cursor__retrieved
         cur = None
-        # The socket should be discarded.
-        self.assertEqual(0, len(socks))
+
+        yield self.pause(0.1)
+
+        # The exhaust cursor's socket was discarded, although another may
+        # already have been opened to send OP_KILLCURSORS.
+        self.assertNotIn(sock, socks)
+        self.assertTrue(sock.closed)
+        yield self.wait_for_cursor(self.collection, retrieved, cursor_id)
 
 
 class MotorCursorMaxTimeMSTest(MotorTest):
@@ -626,7 +645,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
         with assert_raises(ExecutionTimeout):
             yield self.collection.find_one(max_time_ms=100000)
 
-    @gen_test(timeout=30)
+    @gen_test(timeout=60)
     def test_max_time_ms_getmore(self):
         # Cursor handles server timeout during getmore, also.
         yield self.collection.insert({} for _ in range(200))
@@ -641,6 +660,8 @@ class MotorCursorMaxTimeMSTest(MotorTest):
             with assert_raises(ExecutionTimeout):
                 while (yield cursor.fetch_next):
                     cursor.next_object()
+
+            yield cursor.close()
 
             # Send another initial query.
             yield self.disable_timeout()
@@ -701,6 +722,8 @@ class MotorCursorMaxTimeMSTest(MotorTest):
             with assert_raises(ExecutionTimeout):
                 cursor.each(callback)
                 yield future
+
+            yield cursor.close()
         finally:
             # Cleanup.
             yield self.disable_timeout()

@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Test Motor, an asynchronous driver for MongoDB and Tornado."""
-
 from __future__ import unicode_literals
+
+"""Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import contextlib
 import datetime
 import functools
+import gc
 import logging
 import os
+import socket
 import time
 
 try:
@@ -33,143 +35,12 @@ except ImportError:
 
 import pymongo
 import pymongo.errors
-from pymongo.mongo_client import _partition_node
+from bson import SON
 from tornado import gen, testing
 
 import motor
-
-HAVE_SSL = True
-try:
-    import ssl
-except ImportError:
-    HAVE_SSL = False
-    ssl = None
-
-
-host = os.environ.get("DB_IP", "localhost")
-port = int(os.environ.get("DB_PORT", 27017))
-db_user = 'motor-test-root'
-db_password = 'pass'
-
-CERT_PATH = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), 'certificates')
-CLIENT_PEM = os.path.join(CERT_PATH, 'client.pem')
-CA_PEM = os.path.join(CERT_PATH, 'ca.pem')
-
-
-class TestEnvironment(object):
-    def __init__(self):
-        self.initialized = False
-        self.mongod_started_with_ssl = False
-        self.mongod_validates_client_cert = False
-        self.sync_cx = None
-        self.is_replica_set = False
-        self.rs_name = None
-        self.w = None
-        self.hosts = None
-        self.arbiters = None
-        self.primary = None
-        self.secondaries = None
-        self.v8 = False
-        self.auth = False
-        self.uri = None
-        self.rs_uri = None
-
-    def setup(self):
-        """Called once from setup_package."""
-        assert not self.initialized
-        self.setup_sync_cx()
-        self.setup_auth()
-        self.setup_rs()
-        self.setup_v8()
-        self.initialized = True
-
-    def setup_sync_cx(self):
-        """Get a synchronous PyMongo MongoClient and determine SSL config."""
-        connectTimeoutMS = socketTimeoutMS = 30 * 1000
-        try:
-            self.sync_cx = pymongo.MongoClient(
-                host, port,
-                connectTimeoutMS=connectTimeoutMS,
-                socketTimeoutMS=socketTimeoutMS,
-                ssl=True)
-    
-            self.mongod_started_with_ssl = True
-        except pymongo.errors.ConnectionFailure:
-            try:
-                self.sync_cx = pymongo.MongoClient(
-                    host, port,
-                    connectTimeoutMS=connectTimeoutMS,
-                    socketTimeoutMS=socketTimeoutMS,
-                    ssl_certfile=CLIENT_PEM)
-    
-                self.mongod_started_with_ssl = True
-                self.mongod_validates_client_cert = True
-            except pymongo.errors.ConnectionFailure:
-                self.sync_cx = pymongo.MongoClient(
-                    host, port,
-                    connectTimeoutMS=connectTimeoutMS,
-                    socketTimeoutMS=socketTimeoutMS,
-                    ssl=False)
-
-    def setup_auth(self):
-        """Set self.auth and self.uri, and maybe create an admin user."""
-        # Either we're on mongod < 2.7.1 and we can connect over localhost to
-        # check if --auth is in the command line. Or we're prohibited from
-        # seeing the command line so we should try blindly to create an admin
-        # user.
-        try:
-            argv = self.sync_cx.admin.command('getCmdLineOpts')['argv']
-            self.auth = ('--auth' in argv or '--keyFile' in argv)
-        except pymongo.errors.OperationFailure as e:
-            if e.code == 13:
-                # Auth failure getting command line.
-                self.auth = True
-            else:
-                raise
-    
-        if self.auth:
-            self.uri = 'mongodb://%s:%s@%s:%s/admin' % (
-                db_user, db_password, host, port)
-    
-            # TODO: use PyMongo's add_user once that's fixed.
-            self.sync_cx.admin.command(
-                'createUser', db_user, pwd=db_password, roles=['root'])
-    
-            self.sync_cx.admin.authenticate(db_user, db_password)
-    
-        else:
-            self.uri = 'mongodb://%s:%s/admin' % (host, port)
-
-    def setup_rs(self):
-        """Determine server's replica set config."""
-        response = self.sync_cx.admin.command('ismaster')
-        if 'setName' in response:
-            self.is_replica_set = True
-            self.rs_name = str(response['setName'])
-            self.rs_uri = self.uri + '?replicaSet=' + self.rs_name
-            self.w = len(response['hosts'])
-            self.hosts = set([_partition_node(h) for h in response["hosts"]])
-            self.arbiters = set([
-                _partition_node(h) for h in response.get("arbiters", [])])
-    
-            repl_set_status = self.sync_cx.admin.command('replSetGetStatus')
-            primary_info = [
-                m for m in repl_set_status['members']
-                if m['stateStr'] == 'PRIMARY'][0]
-    
-            self.primary = _partition_node(primary_info['name'])
-            self.secondaries = [
-                _partition_node(m['name']) for m in repl_set_status['members']
-                if m['stateStr'] == 'SECONDARY']
-
-    def setup_v8(self):
-        """Determine if server is running SpiderMonkey or V8."""
-        if self.sync_cx.server_info().get('javascriptEngine') == 'V8':
-            self.v8 = True
-
-
-env = TestEnvironment()
+from test.test_environment import env, db_user, CLIENT_PEM
+from test.utils import one
 
 
 def suppress_tornado_warnings():
@@ -180,15 +51,26 @@ def suppress_tornado_warnings():
         logger.setLevel(logging.ERROR)
 
 
-def setup_package(warn):
+def setup_package(tornado_warnings):
     """Run once by MotorTestCase before any tests.
 
     If 'warn', let Tornado log warnings.
     """
     env.setup()
-    if not warn:
+    if not tornado_warnings:
         suppress_tornado_warnings()
 
+def is_server_resolvable():
+    """Returns True if 'server' is resolvable."""
+    socket_timeout = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(1)
+    try:
+        socket.gethostbyname('server')
+        return True
+    except socket.error:
+        return False
+    finally:
+        socket.setdefaulttimeout(socket_timeout)
 
 def teardown_package():
     if env.auth:
@@ -198,11 +80,11 @@ def teardown_package():
 class MotorTestRunner(unittest.TextTestRunner):
     """Runs suite-level setup and teardown."""
     def __init__(self, *args, **kwargs):
-        self.warn = kwargs.pop('warn', False)
+        self.tornado_warnings = kwargs.pop('tornado_warnings', False)
         super(MotorTestRunner, self).__init__(*args, **kwargs)
 
     def run(self, test):
-        setup_package(warn=self.warn)
+        setup_package(tornado_warnings=self.tornado_warnings)
         result = super(MotorTestRunner, self).run(test)
         teardown_package()
         return result
@@ -279,12 +161,15 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         db_name = collection.database.name
         sync_collection = env.sync_cx[db_name][collection_name]
         while True:
-            sync_cursor = sync_collection.find()
+            sync_cursor = sync_collection.find().batch_size(1)
             sync_cursor._Cursor__id = cursor_id
             sync_cursor._Cursor__retrieved = retrieved
 
             try:
                 next(sync_cursor)
+                if not sync_cursor.cursor_id:
+                    # We exhausted the result set before cursor was killed.
+                    self.fail("Cursor finished before killed")
             except pymongo.errors.CursorNotFound:
                 # Success!
                 return
@@ -292,12 +177,23 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
                 # Avoid spurious errors trying to close this cursor.
                 sync_cursor._Cursor__id = None
 
+            retrieved = sync_cursor._Cursor__retrieved
             now = time.time()
             if now - start > patience_seconds:
                 self.fail("Cursor not closed")
             else:
                 # Let the loop run, might be working on closing the cursor
                 yield self.pause(0.1)
+                gc.collect()
+
+    def get_client_kwargs(self, **kwargs):
+        if env.mongod_validates_client_cert:
+            kwargs.setdefault('ssl_certfile', CLIENT_PEM)
+
+        kwargs.setdefault('ssl', env.mongod_started_with_ssl)
+        kwargs.setdefault('io_loop', self.io_loop)
+
+        return kwargs
 
     def motor_client(self, uri=None, *args, **kwargs):
         """Get a MotorClient.
@@ -307,7 +203,9 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         calls self.io_loop.close(all_fds=True).
         """
         return motor.MotorClient(
-            uri or env.uri, *args, io_loop=self.io_loop, **kwargs)
+            uri or env.uri,
+            *args,
+            **self.get_client_kwargs(**kwargs))
 
     def motor_rsc(self, uri=None, *args, **kwargs):
         """Get an open MotorReplicaSetClient. Ignores self.ssl, you must pass
@@ -316,7 +214,9 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         self.io_loop.close(all_fds=True).
         """
         return motor.MotorReplicaSetClient(
-            uri or env.rs_uri, *args, io_loop=self.io_loop, **kwargs)
+            uri or env.rs_uri,
+            *args,
+            **self.get_client_kwargs(**kwargs))
 
     @gen.coroutine
     def check_optional_callback(self, fn, *args, **kwargs):
@@ -357,3 +257,60 @@ class MotorReplicaSetTestBase(MotorTest):
             raise SkipTest("Not connected to a replica set")
 
         self.rsc = self.motor_rsc()
+        self.rsc = self.motor_rsc()
+
+
+class _TestExhaustCursorMixin(object):
+    """Test that clients properly handle errors from exhaust cursors.
+
+    Inherit from this class and from MotorTest, and override
+    _get_client(self, **kwargs).
+    """
+    def setUp(self):
+        super(_TestExhaustCursorMixin, self).setUp()
+        if env.is_mongos:
+            raise SkipTest("mongos doesn't support exhaust cursors")
+
+    def tearDown(self):
+        env.sync_cx.motor_test.test.remove(w=env.w)
+        super(_TestExhaustCursorMixin, self).tearDown()
+
+    @testing.gen_test
+    def test_exhaust_query_server_error(self):
+        # When doing an exhaust query, the socket stays checked out on success
+        # but must be checked in on error to avoid counter leak.
+        client = yield self._get_client(max_pool_size=1).open()
+        collection = client.motor_test.test
+        pool = client._get_primary_pool()
+        sock_info = one(pool.sockets)
+
+        # This will cause OperationFailure in all mongo versions since
+        # the value for $orderby must be a document.
+        cursor = collection.find(
+            SON([('$query', {}), ('$orderby', True)]), exhaust=True)
+
+        with self.assertRaises(pymongo.errors.OperationFailure):
+            yield cursor.fetch_next
+
+        self.assertFalse(sock_info.closed)
+        self.assertEqual(sock_info, one(pool.sockets))
+
+    @testing.gen_test
+    def test_exhaust_query_network_error(self):
+        # When doing an exhaust query, the socket stays checked out on success
+        # but must be checked in on error to avoid counter leak.
+        client = yield self._get_client(max_pool_size=1).open()
+        collection = client.motor_test.test
+        pool = client._get_primary_pool()
+        pool._check_interval_seconds = None  # Never check.
+
+        # Cause a network error.
+        sock_info = one(pool.sockets)
+        sock_info.sock.close()
+        cursor = collection.find(exhaust=True)
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            yield cursor.fetch_next
+
+        self.assertTrue(sock_info.closed)
+        del cursor
+        self.assertNotIn(sock_info, pool.sockets)

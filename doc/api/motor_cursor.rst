@@ -1,7 +1,7 @@
 :class:`MotorCursor`
 ========================
 
-.. currentmodule:: motor
+.. currentmodule:: motor.core
 
 .. autoclass:: MotorCursor
   :members:

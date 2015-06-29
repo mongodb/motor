@@ -23,6 +23,7 @@ from sphinx.addnodes import (desc, desc_content, versionmodified,
 from sphinx.util.inspect import safe_getattr
 
 import motor
+import motor.core
 
 
 # This is a place to store info while parsing, to be used before generating.
@@ -222,6 +223,6 @@ def process_motor_signature(
 
 
 def setup(app):
-    app.add_autodoc_attrgetter(type(motor.MotorBase), get_motor_attr)
+    app.add_autodoc_attrgetter(type(motor.core.MotorBase), get_motor_attr)
     app.connect('autodoc-process-signature', process_motor_signature)
     app.connect("doctree-read", process_motor_nodes)

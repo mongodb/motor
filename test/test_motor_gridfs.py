@@ -22,7 +22,6 @@ from functools import partial
 from bson import ObjectId
 
 from gridfs.errors import FileExists, NoFile
-from pymongo import MongoClient
 from pymongo.errors import AutoReconnect, ConfigurationError
 from pymongo.read_preferences import ReadPreference
 from tornado import gen
@@ -30,8 +29,9 @@ from tornado.testing import gen_test
 
 import motor
 import test
+from test.test_environment import db_password, db_user
 from motor.motor_py3_compat import StringIO
-from test import host, port, MotorTest, MotorReplicaSetTestBase, assert_raises
+from test import MotorTest, MotorReplicaSetTestBase, assert_raises
 
 
 class MotorGridfsTest(MotorTest):
@@ -220,7 +220,7 @@ class MotorGridfsTest(MotorTest):
 
 
 class TestGridfsReplicaSet(MotorReplicaSetTestBase):
-    @gen_test
+    @gen_test(timeout=10)
     def test_gridfs_replica_set(self):
         rsc = self.motor_rsc(
             w=test.env.w, wtimeout=5000,
@@ -238,7 +238,7 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
         primary = self.motor_client(primary_host, primary_port)
         if test.env.auth:
             yield primary.admin.authenticate(test.db_user, test.db_password)
-
+ 
         secondary_host, secondary_port = test.env.secondaries[0]
 
         secondary = self.motor_client(
@@ -246,7 +246,7 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
             read_preference=ReadPreference.SECONDARY)
 
         if test.env.auth:
-            yield secondary.admin.authenticate(test.db_user, test.db_password)
+            yield secondary.admin.authenticate(db_user, db_password)
 
         yield primary.motor_test.drop_collection("fs.files")
         yield primary.motor_test.drop_collection("fs.chunks")

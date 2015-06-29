@@ -36,7 +36,7 @@ before_install:
 before_script:
   - if [[ "$FUTURES" == "yes" ]]; then pip install futures; fi
   - if [[ "$TORNADO" == "3" ]]; then pip install 'tornado>=3,<4'; fi
-  - if [[ "$TORNADO" == "4" ]]; then pip install https://github.com/tornadoweb/tornado/archive/v4.0.0b1.zip; fi
+  - if [[ "$TORNADO" == "4" ]]; then pip install 'tornado>=4,<5'; fi
 
 branches:
   only:

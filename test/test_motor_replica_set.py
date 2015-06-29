@@ -18,17 +18,24 @@ from __future__ import unicode_literals
 
 import unittest
 
+import pymongo.auth
 import pymongo.errors
 import pymongo.mongo_replica_set_client
 from tornado import iostream, gen
 from tornado.testing import gen_test
 
 import motor
+import motor.core
 import test
-from test import host, port, MotorReplicaSetTestBase, assert_raises, MotorTest
+from test import MotorReplicaSetTestBase, assert_raises, MotorTest
 from test import SkipTest
+from test.test_environment import port, host, env
 from test.motor_client_test_generic import MotorClientTestMixin
+from test.utils import one
 
+import six
+if six.PY3:
+    unicode = str
 
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
     @gen_test
@@ -38,11 +45,11 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         self.assertEqual(cx, (yield cx.open()))  # Same the second time.
         self.assertTrue(isinstance(
             cx.delegate._MongoReplicaSetClient__monitor,
-            motor.MotorReplicaSetMonitor))
+            motor.core.MotorReplicaSetMonitor))
 
         self.assertEqual(
             self.io_loop,
-            cx.delegate._MongoReplicaSetClient__monitor.io_loop)
+            cx.delegate._MongoReplicaSetClient__monitor.loop)
 
         cx.close()
 
@@ -83,13 +90,55 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         self.assertEqual(None, result)
         self.assertTrue(isinstance(error, pymongo.errors.ConnectionFailure))
 
+    @gen_test
+    def test_socketKeepAlive(self):
+        # Connect.
+        yield self.rsc.server_info()
+        self.assertFalse(self.rsc._get_primary_pool()._motor_socket_options.socket_keepalive)
+
+        client = self.motor_rsc(socketKeepAlive=True)
+        yield client.server_info()
+        self.assertTrue(client._get_primary_pool()._motor_socket_options.socket_keepalive)
 
 class MotorReplicaSetClientTestGeneric(
         MotorClientTestMixin,
         MotorReplicaSetTestBase):
 
-    def get_client(self):
-        return self.rsc
+    def get_client(self, *args, **kwargs):
+        return self.motor_rsc(
+            env.uri, *args, replicaSet=env.rs_name, **kwargs)
+    @gen_test
+    def test_auth_network_error(self):
+        if not test.env.auth:
+            raise SkipTest('Authentication is not enabled on server')
+
+        # Make sure there's no semaphore leak if we get a network error
+        # when authenticating a new socket with cached credentials.
+        # Get a client with one socket so we detect if it's leaked.
+        c = self.motor_rsc(max_pool_size=1, waitQueueTimeoutMS=1)
+        yield c.open()
+
+        # Simulate an authenticate() call on a different socket.
+        credentials = pymongo.auth._build_credentials_tuple(
+            'DEFAULT', 'admin',
+            unicode(test.db_user), unicode(test.db_password),
+            {})
+
+        c.delegate._cache_credentials('test', credentials, connect=False)
+
+        # Cause a network error on the actual socket.
+        pool = c._get_primary_pool()
+        socket_info = one(pool.sockets)
+        socket_info.sock.close()
+
+        # In __check_auth, the client authenticates its socket with the
+        # new credential, but gets a socket.error. Should be reraised as
+        # AutoReconnect.
+        with self.assertRaises(pymongo.errors.AutoReconnect):
+            yield c.test.collection.find_one()
+
+        # No semaphore leak, the pool is allowed to make a new socket.
+        yield c.test.collection.find_one()
 
 
 class TestReplicaSetClientAgainstStandalone(MotorTest):
@@ -107,7 +156,16 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
         with assert_raises(pymongo.errors.ConnectionFailure):
             yield motor.MotorReplicaSetClient(
                 '%s:%s' % (host, port), replicaSet='anything',
+                io_loop=self.io_loop,
                 connectTimeoutMS=600).test.test.find_one()
+
+
+class MotorReplicaSetExhaustCursorTest(
+        test._TestExhaustCursorMixin,
+        MotorReplicaSetTestBase):
+
+    def _get_client(self, **kwargs):
+        return self.motor_rsc(**kwargs)
 
 
 if __name__ == '__main__':

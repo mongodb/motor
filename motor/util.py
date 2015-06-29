@@ -28,8 +28,9 @@ import greenlet
 
 class MotorGreenletEvent(object):
     """An Event-like class for greenlets."""
-    def __init__(self, io_loop):
+    def __init__(self, io_loop, framework):
         self.io_loop = io_loop
+        self._framework = framework
         self._flag = False
         self._waiters = []
         self._timeouts = set()
@@ -42,13 +43,13 @@ class MotorGreenletEvent(object):
     def set(self):
         self._flag = True
         timeouts, self._timeouts = self._timeouts, set()
-        for timeout in timeouts:
-            self.io_loop.remove_timeout(timeout)
+        for timeout_handle in timeouts:
+            self._framework.call_later_cancel(self.io_loop, timeout_handle)
 
         waiters, self._waiters = self._waiters, []
         for waiter in waiters:
             # Defer execution.
-            self.io_loop.add_callback(waiter.switch)
+            self._framework.call_soon(self.io_loop, waiter.switch)
 
     def clear(self):
         self._flag = False
@@ -61,14 +62,15 @@ class MotorGreenletEvent(object):
             self._waiters.append(current)
 
             def on_timeout():
-                # Called from IOLoop on main greenlet.
+                # Called from event loop on main greenlet.
                 self._waiters.remove(current)
-                self._timeouts.remove(timeout)
+                self._timeouts.discard(timeout_handle)
                 current.switch()
 
             if timeout_seconds is not None:
-                timeout = self.io_loop.add_timeout(
-                    datetime.timedelta(seconds=timeout_seconds), on_timeout)
+                timeout_handle = self._framework.call_later(
+                    self.io_loop, timeout_seconds, on_timeout)
 
-                self._timeouts.add(timeout)
+                self._timeouts.add(timeout_handle)
+
             parent.switch()

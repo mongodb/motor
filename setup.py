@@ -49,13 +49,13 @@ class test(Command):
         ("test-suite=", "s",
          "Test suite to run (e.g. 'some_module.test_suite')"),
         ("failfast", "f", "Stop running tests on first failure or error"),
-        ("warn", "w", "Let Tornado log warnings")]
+        ("tornado-warnings", "w", "Let Tornado log warnings")]
 
     def initialize_options(self):
         self.test_module = None
         self.test_suite = None
         self.failfast = False
-        self.warn = False
+        self.tornado_warnings = False
 
     def finalize_options(self):
         if self.test_suite is None and self.test_module is None:
@@ -90,13 +90,22 @@ class test(Command):
             suite = unittest.defaultTestLoader.loadTestsFromName(
                 self.test_suite)
 
-        result = MotorTestRunner(
-            verbosity=2, failfast=self.failfast, warn=self.warn).run(suite)
+        runner_kwargs = dict(
+            verbosity=2,
+            failfast=self.failfast,
+            tornado_warnings=self.tornado_warnings)
+
+        if sys.version_info[:3] >= (3, 2):
+            # 'warnings' argument added to TextTestRunner in Python 3.2.
+            runner_kwargs['warnings'] = 'default'
+
+        runner = MotorTestRunner(**runner_kwargs)
+        result = runner.run(suite)
         sys.exit(not result.wasSuccessful())
 
 
 setup(name='motor',
-      version='0.3+',
+      version='0.4+',
       packages=['motor'],
       description=description,
       long_description=long_description,
@@ -106,7 +115,7 @@ setup(name='motor',
       install_requires=[
           'tornado >= 3.1',
           'greenlet >= 0.4.0',
-          'pymongo == 2.7.1',
+          'pymongo == 2.8.0',
       ],
       license='http://www.apache.org/licenses/LICENSE-2.0',
       classifiers=filter(None, classifiers.split('\n')),

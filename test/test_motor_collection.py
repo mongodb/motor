@@ -27,6 +27,7 @@ from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import motor
+import motor.core
 import test
 from test import MotorTest, assert_raises, version, SkipTest
 from test.utils import delay, skip_if_mongos
@@ -50,7 +51,10 @@ class MotorCollectionTest(MotorTest):
         # so this is prohibited.
         self.assertRaises(
             TypeError,
-            motor.MotorCollection, self.db, 'test_collection', capped=True)
+            motor.MotorCollection,
+            self.db,
+            'test_collection',
+            capped=True)
 
     @gen_test
     def test_dotted_collection_name(self):
@@ -104,35 +108,6 @@ class MotorCollectionTest(MotorTest):
 
         # Results were appended in order 2, 1.
         self.assertEqual([{'_id': 2}, {'_id': 1}], results)
-
-    @gen_test
-    def test_find_and_cancel(self):
-        collection = self.collection
-        yield collection.insert([{'_id': i} for i in range(3)])
-
-        results = []
-
-        future = Future()
-
-        def callback(doc, error):
-            if error:
-                raise error
-
-            results.append(doc)
-
-            if len(results) == 2:
-                future.set_result(None)
-                # cancel iteration
-                return False
-
-        cursor = collection.find().sort('_id')
-        cursor.each(callback)
-        yield future
-
-        # There are 3 docs, but we canceled after 2
-        self.assertEqual([{'_id': 0}, {'_id': 1}], results)
-
-        yield cursor.close()
 
     @gen_test(timeout=10)
     def test_find_one_is_async(self):

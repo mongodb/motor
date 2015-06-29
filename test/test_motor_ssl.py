@@ -16,8 +16,10 @@ from __future__ import unicode_literals
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-import socket
-import ssl
+try:
+    import ssl
+except ImportError:
+    ssl = None
 
 try:
     # Python 2.
@@ -34,48 +36,27 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import MotorTest, host, port, version, SkipTest
-from test import HAVE_SSL, CLIENT_PEM, CA_PEM
+from test import MotorTest, version, SkipTest
+from test.test_environment import host, port, CLIENT_PEM, CA_PEM
 from test.utils import remove_all_users
 
 
-# Whether 'server' is a resolvable hostname.
-SERVER_IS_RESOLVABLE = False
 MONGODB_X509_USERNAME = \
     "CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US"
 
-# Start a mongod instance (built with SSL support) like so:
+# Start a mongod instance (built with SSL support) from the mongo repository
+# checkout:
 #
-# mongod --dbpath /path/to/data/directory --sslOnNormalPorts \
-# --sslPEMKeyFile /path/to/mongo/jstests/libs/server.pem \
-# --sslCAFile /path/to/mongo/jstests/libs/ca.pem \
-# --sslCRLFile /path/to/mongo/jstests/libs/crl.pem
+# ./mongod --sslOnNormalPorts
+# --sslPEMKeyFile jstests/libs/server.pem \
+# --sslCAFile jstests/libs/ca.pem \
+# --sslCRLFile jstests/libs/crl.pem
 #
 # Optionally, also pass --sslWeakCertificateValidation to run test_simple_ssl.
 #
 # For all tests to pass with MotorReplicaSetClient, the replica set
 # configuration must use 'server' for the hostname of all hosts.
 # Make sure you have 'server' as an alias for localhost in /etc/hosts.
-
-
-def is_server_resolvable():
-    """Returns True if 'server' is resolvable."""
-    socket_timeout = socket.getdefaulttimeout()
-    socket.setdefaulttimeout(1)
-    try:
-        socket.gethostbyname('server')
-        return True
-    except socket.error:
-        return False
-    finally:
-        socket.setdefaulttimeout(socket_timeout)
-
-
-def setup_module():
-    global SERVER_IS_RESOLVABLE
-
-    if HAVE_SSL and test.env.mongod_validates_client_cert:
-        SERVER_IS_RESOLVABLE = is_server_resolvable()
 
 
 class MotorNoSSLTest(MotorTest):
@@ -144,17 +125,20 @@ class MotorSSLTest(MotorTest):
         if test.env.mongod_validates_client_cert:
             raise SkipTest("mongod validates SSL certs")
 
+        # Expects the server to be running with ssl and
+        # --sslWeakCertificateValidation. motor_client() adds appropriate
+        # ssl args and auth.
+        client = self.motor_client()
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
+
         # Expects the server to be running with ssl and with
         # no --sslPEMKeyFile or with --sslWeakCertificateValidation.
-        client = motor.MotorClient(host, port, ssl=True)
+        client = motor.MotorClient(host, port, ssl=True, io_loop=self.io_loop)
         yield client.db.collection.find_one()
         response = yield client.admin.command('ismaster')
         if 'setName' in response:
-            client = motor.MotorReplicaSetClient(
-                '%s:%d' % (host, port),
-                replicaSet=response['setName'],
-                ssl=True)
-
+            client = self.motor_rsc()
             yield client.db.collection.find_one()
 
     @gen_test
@@ -170,20 +154,21 @@ class MotorSSLTest(MotorTest):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
-        if not SERVER_IS_RESOLVABLE:
+        if not test.env.server_is_resolvable:
             raise SkipTest("No hosts entry for 'server'. Cannot validate "
                            "hostname in the certificate")
 
-        client = motor.MotorClient(host, port, ssl_certfile=CLIENT_PEM)
+        client = self.motor_client(ssl_certfile=CLIENT_PEM)
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
+
+        client = motor.MotorClient(
+            host, port, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
+
         yield client.db.collection.find_one()
         response = yield client.admin.command('ismaster')
         if 'setName' in response:
-            client = motor.MotorReplicaSetClient(
-                '%s:%d' % (host, port),
-                replicaSet=response['setName'],
-                ssl=True,
-                ssl_certfile=CLIENT_PEM)
-
+            client = self.motor_rsc(ssl_certfile=CLIENT_PEM)
             yield client.db.collection.find_one()
 
     @gen_test
@@ -199,15 +184,19 @@ class MotorSSLTest(MotorTest):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
-        if not SERVER_IS_RESOLVABLE:
+        if not test.env.server_is_resolvable:
             raise SkipTest("No hosts entry for 'server'. Cannot validate "
                            "hostname in the certificate")
 
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
+
         client = motor.MotorClient(
-            'server',
+            test.env.fake_hostname_uri,
             ssl_certfile=CLIENT_PEM,
             ssl_cert_reqs=ssl.CERT_REQUIRED,
-            ssl_ca_certs=CA_PEM)
+            ssl_ca_certs=CA_PEM,
+            io_loop=self.io_loop)
 
         yield client.db.collection.find_one()
         response = yield client.admin.command('ismaster')
@@ -218,11 +207,12 @@ class MotorSSLTest(MotorTest):
                                "Cannot validate hostname in the certificate")
 
             client = motor.MotorReplicaSetClient(
-                'server',
+                test.env.fake_hostname_uri,
                 replicaSet=response['setName'],
                 ssl_certfile=CLIENT_PEM,
                 ssl_cert_reqs=ssl.CERT_REQUIRED,
-                ssl_ca_certs=CA_PEM)
+                ssl_ca_certs=CA_PEM,
+                io_loop=self.io_loop)
 
             yield client.db.collection.find_one()
 
@@ -239,15 +229,19 @@ class MotorSSLTest(MotorTest):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
-        if not SERVER_IS_RESOLVABLE:
+        if not test.env.server_is_resolvable:
             raise SkipTest("No hosts entry for 'server'. Cannot validate "
                            "hostname in the certificate")
 
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
+
         client = motor.MotorClient(
-            'server',
+            test.env.fake_hostname_uri,
             ssl_certfile=CLIENT_PEM,
             ssl_cert_reqs=ssl.CERT_OPTIONAL,
-            ssl_ca_certs=CA_PEM)
+            ssl_ca_certs=CA_PEM,
+            io_loop=self.io_loop)
 
         response = yield client.admin.command('ismaster')
         if 'setName' in response:
@@ -256,11 +250,12 @@ class MotorSSLTest(MotorTest):
                                "Cannot validate hostname in the certificate")
 
             client = motor.MotorReplicaSetClient(
-                'server',
+                test.env.fake_hostname_uri,
                 replicaSet=response['setName'],
                 ssl_certfile=CLIENT_PEM,
                 ssl_cert_reqs=ssl.CERT_OPTIONAL,
-                ssl_ca_certs=CA_PEM)
+                ssl_ca_certs=CA_PEM,
+                io_loop=self.io_loop)
 
             yield client.db.collection.find_one()
 
@@ -275,32 +270,40 @@ class MotorSSLTest(MotorTest):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
+        if test.env.auth:
+            raise SkipTest("can't test with auth")
+
         client = motor.MotorClient(
-            host, port, ssl=True, ssl_certfile=CLIENT_PEM)
+            host, port,
+            ssl_certfile=CLIENT_PEM,
+            io_loop=self.io_loop)
 
         response = yield client.admin.command('ismaster')
         try:
             # Create client with hostname 'localhost' or whatever, not
             # the name 'server', which is what the server cert presents.
             client = motor.MotorClient(
-                host, port,
+                test.env.uri,
                 ssl_certfile=CLIENT_PEM,
                 ssl_cert_reqs=ssl.CERT_REQUIRED,
-                ssl_ca_certs=CA_PEM)
+                ssl_ca_certs=CA_PEM,
+                io_loop=self.io_loop)
 
             yield client.db.collection.find_one()
             self.fail("Invalid hostname should have failed")
-        except ConnectionFailure:
-            pass
+        except ConnectionFailure as exc:
+            self.assertEqual("hostname 'localhost' doesn't match 'server'",
+                             str(exc))
 
         if 'setName' in response:
             try:
                 client = motor.MotorReplicaSetClient(
-                    '%s:%d' % (host, port),
+                    test.env.uri,
                     replicaSet=response['setName'],
                     ssl_certfile=CLIENT_PEM,
                     ssl_cert_reqs=ssl.CERT_REQUIRED,
-                    ssl_ca_certs=CA_PEM)
+                    ssl_ca_certs=CA_PEM,
+                    io_loop=self.io_loop)
 
                 yield client.db.collection.find_one()
                 self.fail("Invalid hostname should have failed")
@@ -320,34 +323,37 @@ class MotorSSLTest(MotorTest):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
-        client = motor.MotorClient(host, port, ssl_certfile=CLIENT_PEM)
-        if not (yield version.at_least(client, (2, 5, 3, -1))):
+        authenticated_client = motor.MotorClient(
+            test.env.uri, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
+
+        if not (yield version.at_least(authenticated_client, (2, 5, 3, -1))):
             raise SkipTest("MONGODB-X509 tests require MongoDB 2.5.3 or newer")
 
         if not test.env.auth:
             raise SkipTest('Authentication is not enabled on server')
 
         # Give admin all necessary privileges.
-        yield client['$external'].add_user(MONGODB_X509_USERNAME, roles=[
-            {'role': 'readWriteAnyDatabase', 'db': 'admin'},
-            {'role': 'userAdminAnyDatabase', 'db': 'admin'}])
+        yield authenticated_client['$external'].add_user(
+            MONGODB_X509_USERNAME, roles=[
+                {'role': 'readWriteAnyDatabase', 'db': 'admin'},
+                {'role': 'userAdminAnyDatabase', 'db': 'admin'}])
 
-        collection = client.motor_test.test
+        client = motor.MotorClient(
+            host, port, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
+
         with test.assert_raises(OperationFailure):
-            yield collection.count()
+            yield client.motor_test.test.count()
 
-        yield client.admin.authenticate(
-            MONGODB_X509_USERNAME, mechanism='MONGODB-X509')
-
-        yield collection.remove()
         uri = ('mongodb://%s@%s:%d/?authMechanism='
                'MONGODB-X509' % (
                quote_plus(MONGODB_X509_USERNAME), host, port))
 
         # SSL options aren't supported in the URI....
-        auth_uri_client = motor.MotorClient(uri, ssl_certfile=CLIENT_PEM)
+        auth_uri_client = motor.MotorClient(
+            uri, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
+
         yield auth_uri_client.db.collection.find_one()
 
         # Cleanup.
-        yield remove_all_users(client['$external'])
-        yield client['$external'].logout()
+        yield remove_all_users(authenticated_client['$external'])
+        yield authenticated_client['$external'].logout()

@@ -30,6 +30,11 @@ import traceback
 from tornado.ioloop import IOLoop
 
 import motor
+import motor.frameworks.tornado
+from motor.metaprogramming import (
+    MotorAttributeFactory,
+    ReadOnlyPropertyDescriptor,
+    Unwrap)
 
 # Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
 # importing * won't pick up underscore-prefixed attrs.
@@ -198,7 +203,7 @@ class SynchroMeta(type):
                             attrname, delegate_attr.has_write_concern)
                         setattr(new_class, attrname, sync_method)
                     elif isinstance(
-                            delegate_attr, motor.Unwrap):
+                            delegate_attr, Unwrap):
                         # Re-synchronize the method.
                         sync_method = Sync(
                             attrname, delegate_attr.prop.has_write_concern)
@@ -212,14 +217,16 @@ class SynchroMeta(type):
                         wrapper.name = attrname
                         setattr(new_class, attrname, wrapper)
                     elif isinstance(
-                            delegate_attr, motor.ReadOnlyPropertyDescriptor):
+                            delegate_attr,
+                            ReadOnlyPropertyDescriptor):
                         # Delegate the property from Synchro to Motor.
                         setattr(new_class, attrname, delegate_attr)
 
         # Set DelegateProperties' and SynchroProperties' names.
         for name, attr in attrs.items():
-            if isinstance(attr, (
-                motor.MotorAttributeFactory, SynchroProperty, WrapOutgoing)
+            if isinstance(
+                    attr,
+                    (MotorAttributeFactory, SynchroProperty, WrapOutgoing)
             ):
                 attr.name = name
 
@@ -301,14 +308,15 @@ class Synchro(object):
 
 
 class MongoClientBase(Synchro):
+    _cache_credentials = SynchroProperty()
     get_default_database = WrapOutgoing()
     max_pool_size = SynchroProperty()
     max_write_batch_size = SynchroProperty()
 
     def __init__(self, *args, **kwargs):
         # Make a unittest happy.
-        self.use_greenlets = True
-        self.auto_start_request = True
+        self.use_greenlets = False
+        self.auto_start_request = False
 
         # Motor doesn't implement auto_start_request.
         kwargs.pop('auto_start_request', None)
@@ -352,13 +360,6 @@ class MongoClientBase(Synchro):
         # ConnectionFailure if it times out.
         try:
             self.synchronize(self.delegate.open)()
-        except OperationFailure as exc:
-            # Emulate PyMongo's behavior: auth failure during initialization
-            # is translated to ConfigurationError.
-            if 'auth fails' in str(exc):
-                raise ConfigurationError(str(exc))
-
-            raise
         except AutoReconnect as e:
             raise ConnectionFailure(str(e))
 
@@ -401,9 +402,17 @@ class MongoClient(MongoClientBase):
 
         super(MongoClient, self).__init__(host, port, *args, **kwargs)
 
-    _MongoClient__member      = SynchroProperty()
-    _MongoClient__net_timeout = SynchroProperty()
-
+    _MongoClient__member                = SynchroProperty()
+    _MongoClient__repl                  = SynchroProperty()
+    _MongoClient__net_timeout           = SynchroProperty()
+    _MongoClient__conn_timeout          = SynchroProperty()
+    _MongoClient__wait_queue_timeout    = SynchroProperty()
+    _MongoClient__wait_queue_multiple   = SynchroProperty()
+    _MongoClient__socket_keepalive      = SynchroProperty()
+    _MongoClient__use_ssl               = SynchroProperty()
+    _MongoClient__ssl_keyfile           = SynchroProperty()
+    _MongoClient__ssl_certfile          = SynchroProperty()
+    _MongoClient__ssl_ca_certs          = SynchroProperty()
 
 class MasterSlaveConnection(object):
     """Motor doesn't support master-slave connections, this is just here so
@@ -415,11 +424,20 @@ class MasterSlaveConnection(object):
 class MongoReplicaSetClient(MongoClientBase):
     __delegate_class__ = motor.MotorReplicaSetClient
 
-    get_default_database                     = WrapOutgoing()
-    _MongoReplicaSetClient__writer           = SynchroProperty()
-    _MongoReplicaSetClient__rs_state         = SynchroProperty()
-    _MongoReplicaSetClient__schedule_refresh = SynchroProperty()
-    _MongoReplicaSetClient__net_timeout      = SynchroProperty()
+    get_default_database                        = WrapOutgoing()
+    _MongoReplicaSetClient__writer              = SynchroProperty()
+    _MongoReplicaSetClient__rs_state            = SynchroProperty()
+    _MongoReplicaSetClient__schedule_refresh    = SynchroProperty()
+    _MongoReplicaSetClient__net_timeout         = SynchroProperty()
+    _MongoReplicaSetClient__conn_timeout        = SynchroProperty()
+    _MongoReplicaSetClient__wait_queue_timeout  = SynchroProperty()
+    _MongoReplicaSetClient__wait_queue_multiple = SynchroProperty()
+    _MongoReplicaSetClient__socket_keepalive    = SynchroProperty()
+    _MongoReplicaSetClient__name                = SynchroProperty()
+    _MongoReplicaSetClient__use_ssl             = SynchroProperty()
+    _MongoReplicaSetClient__ssl_keyfile         = SynchroProperty()
+    _MongoReplicaSetClient__ssl_certfile        = SynchroProperty()
+    _MongoReplicaSetClient__ssl_ca_certs        = SynchroProperty()
 
 
 class Database(Synchro):
@@ -484,7 +502,7 @@ class Cursor(Synchro):
 
     rewind                     = WrapOutgoing()
     clone                      = WrapOutgoing()
-    close                      = SynchroProperty()
+    close                      = Sync('close', False)
 
     def __init__(self, motor_cursor):
         self.delegate = motor_cursor
