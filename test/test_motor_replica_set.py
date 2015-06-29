@@ -140,6 +140,13 @@ class MotorReplicaSetClientTestGeneric(
         # No semaphore leak, the pool is allowed to make a new socket.
         yield c.test.collection.find_one()
 
+    @gen_test
+    def test_open_concurrent(self):
+        # MOTOR-66: don't block on PyMongo's __monitor_lock, but also don't
+        # spawn multiple monitors.
+        c = self.motor_rsc()
+        yield [c.db.collection.find_one(), c.db.collection.find_one()]
+
 
 class TestReplicaSetClientAgainstStandalone(MotorTest):
     """This is a funny beast -- we want to run tests for MotorReplicaSetClient

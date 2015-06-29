@@ -51,6 +51,7 @@ ha_tools_debug = bool(os.environ.get('HA_TOOLS_DEBUG'))
 tornado_warnings = bool(os.environ.get('TORNADO_WARNINGS'))
 
 
+config_dbs = {}
 nodes = {}
 routers = {}
 cur_port = port
@@ -81,6 +82,7 @@ def kill_members(members, sig, hosts=nodes):
 def kill_all_members():
     kill_members(nodes.keys(), 2, nodes)
     kill_members(routers.keys(), 2, routers)
+    kill_members(config_dbs.keys(), 2, config_dbs)
 
 
 def wait_for(proc, port_num):
@@ -155,12 +157,9 @@ def start_replica_set(members, auth=False, fresh=True):
 
         proc = start_subprocess(cmd)
         nodes[host] = {'proc': proc, 'cmd': cmd}
-        res = wait_for(proc, cur_port)
+        assert wait_for(proc, cur_port)
 
         cur_port += 1
-
-        if not res:
-            return None
 
     config = {'_id': set_name, 'members': members}
     primary = members[0]['host']
@@ -206,25 +205,30 @@ def start_replica_set(members, auth=False, fresh=True):
 def create_sharded_cluster(num_routers=3):
     global cur_port
 
-    # Start a config server
-    configdb_host = '%s:%d' % (hostname, cur_port)
-    path = os.path.join(dbpath, 'configdb')
-    if not os.path.exists(path):
-        os.makedirs(path)
-    configdb_logpath = os.path.join(logpath, 'configdb.log')
-    cmd = [mongod,
-           '--dbpath', path,
-           '--port', str(cur_port),
-           '--nojournal', '--logappend',
-           '--logpath', configdb_logpath]
-    proc = start_subprocess(cmd)
-    nodes[configdb_host] = {'proc': proc, 'cmd': cmd}
-    res = wait_for(proc, cur_port)
-    if not res:
-        return None
+    # Start three config servers
+    configdb_hosts = []
+    for i in range(3):
+        configdb_host = '%s:%d' % (hostname, cur_port)
+        path = os.path.join(dbpath, 'configdb' + str(i))
+        if not os.path.exists(path):
+            os.makedirs(path)
+        configdb_logpath = os.path.join(logpath, 'configdb' + str(i) + '.log')
+        if not os.path.exists(os.path.dirname(configdb_logpath)):
+            os.makedirs(os.path.dirname(configdb_logpath))
+        cmd = [mongod,
+               '--dbpath', path,
+               '--port', str(cur_port),
+               '--nojournal', '--logappend',
+               '--logpath', configdb_logpath]
+        if ha_tools_debug:
+            print('starting %s' % ' '.join(cmd))
+        proc = start_subprocess(cmd)
+        config_dbs[configdb_host] = {'proc': proc, 'cmd': cmd}
+        assert wait_for(proc, cur_port)
+        configdb_hosts.append(configdb_host)
+        cur_port += 1
 
     # ...and a shard server
-    cur_port += 1
     shard_host = '%s:%d' % (hostname, cur_port)
     path = os.path.join(dbpath, 'shard1')
     if not os.path.exists(path):
@@ -235,11 +239,11 @@ def create_sharded_cluster(num_routers=3):
            '--port', str(cur_port),
            '--nojournal', '--logappend',
            '--logpath', db_logpath]
+    if ha_tools_debug:
+        print('starting %s' % ' '.join(cmd))
     proc = start_subprocess(cmd)
     nodes[shard_host] = {'proc': proc, 'cmd': cmd}
-    res = wait_for(proc, cur_port)
-    if not res:
-        return None
+    assert wait_for(proc, cur_port)
 
     # ...and a few mongos instances
     cur_port += 1
@@ -251,12 +255,12 @@ def create_sharded_cluster(num_routers=3):
                '--port', str(cur_port),
                '--logappend',
                '--logpath', mongos_logpath,
-               '--configdb', configdb_host]
+               '--configdb', ','.join(configdb_hosts)]
+        if ha_tools_debug:
+            print('starting %s' % ' '.join(cmd))
         proc = start_subprocess(cmd)
         routers[host] = {'proc': proc, 'cmd': cmd}
-        res = wait_for(proc, cur_port)
-        if not res:
-            return None
+        assert wait_for(proc, cur_port)
 
     # Add the shard
     client = pymongo.MongoClient('%s:%d' % (hostname, cur_port))
@@ -411,7 +415,7 @@ def add_member(auth=False):
 
     proc = start_subprocess(cmd)
     nodes[host] = {'proc': proc, 'cmd': cmd}
-    res = wait_for(proc, cur_port)
+    assert wait_for(proc, cur_port)
 
     cur_port += 1
 
@@ -425,8 +429,6 @@ def add_member(auth=False):
     if ha_tools_debug:
         print(response)
 
-    if not res:
-        return None
     return host
 
 
@@ -467,19 +469,19 @@ def set_maintenance(member, value):
         time.sleep(0.25)
 
 
-def restart_members(members, router=False):
+def restart_members(members, router=False, configdb=False):
     restarted = []
+
+    if router:
+        servers = routers
+    elif configdb:
+        servers = config_dbs
+    else:
+        servers = nodes
+
     for member in members:
-        if router:
-            cmd = routers[member]['cmd']
-        else:
-            cmd = nodes[member]['cmd']
+        cmd = servers[member]['cmd']
         proc = start_subprocess(cmd)
-        if router:
-            routers[member]['proc'] = proc
-        else:
-            nodes[member]['proc'] = proc
-        res = wait_for(proc, int(member.split(':')[1]))
-        if res:
-            restarted.append(member)
+        servers[member]['proc'] = proc
+        assert wait_for(proc, int(member.split(':')[1]))
     return restarted

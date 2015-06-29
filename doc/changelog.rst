@@ -3,12 +3,6 @@ Changelog
 
 .. currentmodule:: motor
 
-
-Motor next²
------------
-
-Merge Motor 0.4 to Motor next to use PyMongo 2.8 and support MongoDB 3.0
-
 Motor next
 ----------
 
@@ -20,6 +14,13 @@ Motor's GridFS classes have moved from ``motor`` to ``motor.motor_gridfs``.
 If you use
 :class:`~motor_gridfs.MotorGridFS` or :class:`~motor_gridfs.MotorGridIn`
 you must change your imports.
+
+Motor 0.4.1
+___________
+
+Fix `MOTOR-66 <https://jira.mongodb.org/browse/MOTOR-66>`_, deadlock when
+initiating :class:`MotorReplicaSetClient` connection from multiple operations
+at once.
 
 Motor 0.4
 _________
