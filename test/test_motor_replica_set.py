@@ -29,13 +29,12 @@ import motor.core
 import test
 from test import MotorReplicaSetTestBase, assert_raises, MotorTest
 from test import SkipTest
-from test.test_environment import port, host, env
+from test.test_environment import db_user, db_password, port, host, env
 from test.motor_client_test_generic import MotorClientTestMixin
 from test.utils import one
 
-import six
-if six.PY3:
-    unicode = str
+from motor.motor_py3_compat import text_type
+
 
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
     @gen_test
@@ -122,7 +121,7 @@ class MotorReplicaSetClientTestGeneric(
         # Simulate an authenticate() call on a different socket.
         credentials = pymongo.auth._build_credentials_tuple(
             'DEFAULT', 'admin',
-            unicode(test.db_user), unicode(test.db_password),
+            text_type(db_user), text_type(db_password),
             {})
 
         c.delegate._cache_credentials('test', credentials, connect=False)
