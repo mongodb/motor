@@ -91,7 +91,8 @@ class MotorDatabaseTest(MotorTest):
     @gen_test
     def test_command(self):
         result = yield self.cx.admin.command("buildinfo")
-        self.assertEqual(int, type(result['bits']))
+        # Make sure we got some sane result or other.
+        self.assertEqual(1, result['ok'])
 
     @gen_test
     def test_create_collection(self):
