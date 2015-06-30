@@ -107,6 +107,7 @@ class MotorReplicaSetClientTestGeneric(
     def get_client(self, *args, **kwargs):
         return self.motor_rsc(
             env.uri, *args, replicaSet=env.rs_name, **kwargs)
+
     @gen_test
     def test_auth_network_error(self):
         if not test.env.auth:
