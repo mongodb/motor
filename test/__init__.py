@@ -187,11 +187,11 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
                 gc.collect()
 
     def get_client_kwargs(self, **kwargs):
-        if env.mongod_validates_client_cert:
-            kwargs.setdefault('ssl_certfile', CLIENT_PEM)
-
-        kwargs.setdefault('ssl', env.mongod_started_with_ssl)
         kwargs.setdefault('io_loop', self.io_loop)
+        ssl = env.mongod_started_with_ssl
+        kwargs.setdefault('ssl', ssl)
+        if kwargs['ssl'] and env.mongod_validates_client_cert:
+            kwargs.setdefault('ssl_certfile', CLIENT_PEM)
 
         return kwargs
 
