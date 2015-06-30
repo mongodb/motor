@@ -1,4 +1,4 @@
-# Copyright 2014 MongoDB, Inc.
+# Copyright 2012-2015 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,14 +24,21 @@ except ImportError:
     HAVE_SSL = False
     ssl = None
 
+HAVE_ASYNCIO = True
+try:
+    import asyncio
+except ImportError:
+    HAVE_ASYNCIO = False
+    asyncio = None
+
 import pymongo
 import pymongo.errors
 from pymongo.mongo_client import _partition_node
 
 host = os.environ.get("DB_IP", "localhost")
 port = int(os.environ.get("DB_PORT", 27017))
-db_user = 'motor-test-root'
-db_password = 'pass'
+db_user = os.environ.get("DB_USER", "motor-test-root")
+db_password = os.environ.get("DB_PASSWORD", "pass")
 
 CERT_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'certificates')
@@ -57,12 +64,12 @@ class TestEnvironment(object):
         self.initialized = False
         self.mongod_started_with_ssl = False
         self.mongod_validates_client_cert = False
-        self.server_is_resolvable = False
+        self.server_is_resolvable = is_server_resolvable()
         self.sync_cx = None
         self.is_mongos = False
         self.is_replica_set = False
         self.rs_name = None
-        self.w = None
+        self.w = 1
         self.hosts = None
         self.arbiters = None
         self.primary = None
@@ -70,7 +77,6 @@ class TestEnvironment(object):
         self.v8 = False
         self.auth = False
         self.uri = None
-        self.fake_hostname_uri = None
         self.rs_uri = None
 
     def setup(self):
@@ -85,14 +91,15 @@ class TestEnvironment(object):
 
     def setup_sync_cx(self):
         """Get a synchronous PyMongo MongoClient and determine SSL config."""
-        connectTimeoutMS = socketTimeoutMS = 30 * 1000
+        connectTimeoutMS = 100
+        socketTimeoutMS = 30 * 1000
         try:
             self.sync_cx = pymongo.MongoClient(
                 host, port,
                 connectTimeoutMS=connectTimeoutMS,
                 socketTimeoutMS=socketTimeoutMS,
                 ssl=True)
-
+    
             self.mongod_started_with_ssl = True
         except pymongo.errors.ConnectionFailure:
             try:
@@ -101,11 +108,9 @@ class TestEnvironment(object):
                     connectTimeoutMS=connectTimeoutMS,
                     socketTimeoutMS=socketTimeoutMS,
                     ssl_certfile=CLIENT_PEM)
-
+    
                 self.mongod_started_with_ssl = True
                 self.mongod_validates_client_cert = True
-                self.server_is_resolvable = is_server_resolvable()
-
             except pymongo.errors.ConnectionFailure:
                 self.sync_cx = pymongo.MongoClient(
                     host, port,
@@ -128,7 +133,7 @@ class TestEnvironment(object):
                 self.auth = True
             else:
                 raise
-
+    
         if self.auth:
             uri_template = 'mongodb://%s:%s@%s:%s/admin'
             self.uri = uri_template % (db_user, db_password, host, port)
@@ -138,10 +143,8 @@ class TestEnvironment(object):
             self.fake_hostname_uri = uri_template % (
                 db_user, db_password, 'server', port)
 
-            # TODO: use PyMongo's add_user once that's fixed.
             try:
-                self.sync_cx.admin.command(
-                    'createUser', db_user, pwd=db_password, roles=['root'])
+                self.sync_cx.admin.add_user(db_user, db_password, roles=['root'])
             except pymongo.errors.OperationFailure:
                 print("Couldn't create root user, prior test didn't clean up?")
 
