@@ -177,6 +177,9 @@ errors (e.g. wtimeout) will be reported after all operations are attempted,
 regardless of execution order.
 
 .. doctest::
+  :options: +SKIP
+
+  .. Standalone MongoDB raises "can't use w>1" with this example, so skip it.
 
   >>> @gen.coroutine
   ... def f():
