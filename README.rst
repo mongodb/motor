@@ -8,9 +8,6 @@ Motor
     Tornado_ applications.
 :Author: A\. Jesse Jiryu Davis
 
-.. image:: https://travis-ci.org/mongodb/motor.png
-        :target: https://travis-ci.org/mongodb/motor
-
 About
 =====
 
