@@ -83,19 +83,27 @@ class test(Command):
         # TestResult that supports the 'addSkip' method. setuptools will by
         # default create a TextTestRunner that uses the old TestResult class,
         # resulting in DeprecationWarnings instead of skipping tests under 2.6.
-        from test import unittest, MotorTestRunner
-        if self.test_suite is None:
-            suite = unittest.defaultTestLoader.discover(self.test_module)
+        from test import unittest, MotorTestLoader, MotorTestRunner
+
+        try:
+            import asyncio
+        except ImportError:
+            loader = MotorTestLoader(avoid='asyncio_tests', reason='no asyncio')
         else:
-            suite = unittest.defaultTestLoader.loadTestsFromName(
-                self.test_suite)
+            # We have asyncio, run its tests.
+            loader = MotorTestLoader()
+
+        if self.test_suite is None:
+            suite = loader.discover(self.test_module)
+        else:
+            suite = loader.loadTestsFromName(self.test_suite)
 
         runner_kwargs = dict(
             verbosity=2,
             failfast=self.failfast,
             tornado_warnings=self.tornado_warnings)
 
-        if sys.version_info[:3] >= (3, 2):
+        if sys.version_info[:3] >= (3, 2) and unittest.__name__ != 'unittest2':
             # 'warnings' argument added to TextTestRunner in Python 3.2.
             runner_kwargs['warnings'] = 'default'
 

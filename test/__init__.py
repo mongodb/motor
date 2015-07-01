@@ -77,6 +77,42 @@ def teardown_package():
         env.sync_cx.admin.remove_user(db_user)
 
 
+class SkippedModule(object):
+    def __init__(self, name, reason):
+        def runTest(self):
+            raise SkipTest(str(reason))
+
+        self.test_case = type(
+            str(name),
+            (unittest.TestCase, ),
+            {'runTest': runTest})
+
+
+class MotorTestLoader(unittest.TestLoader):
+    """Optionally skip whole modules.
+
+    The usual "raise SkipTest" from a module doesn't work if the module
+    won't even parse in Python 2, so prevent TestLoader from importing
+    modules with the given prefix.
+
+    "avoid" is a prefix string like "asyncio_tests".
+    """
+    def __init__(self, avoid=None, reason=None):
+        super(MotorTestLoader, self).__init__()
+        self.avoid = avoid
+        self.reason = reason
+
+    def _get_module_from_name(self, name):
+        if self.avoid is not None and name.startswith(self.avoid):
+            # By experiment, need two tactics to work in unittest2 and stdlib.
+            if unittest.__name__ == 'unittest2':
+                raise SkipTest(str(self.reason))
+            else:
+                return SkippedModule(name, self.reason)
+        else:
+            return super(MotorTestLoader, self)._get_module_from_name(name)
+
+
 class MotorTestRunner(unittest.TextTestRunner):
     """Runs suite-level setup and teardown."""
     def __init__(self, *args, **kwargs):
