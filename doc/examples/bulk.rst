@@ -25,7 +25,7 @@ bulk insert operations.
 
   >>> @gen.coroutine
   ... def f():
-  ...     yield db.test.insert(({'i': i} for i in xrange(10000)))
+  ...     yield db.test.insert(({'i': i} for i in range(10000)))
   ...     count = yield db.test.count()
   ...     print("Final count: %d" % count)
   >>>

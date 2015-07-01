@@ -177,7 +177,7 @@ document and a callback:
 
   >>> from tornado.ioloop import IOLoop
   >>> def my_callback(result, error):
-  ...     print 'result', repr(result)
+  ...     print('result %s' % repr(result))
   ...     IOLoop.instance().stop()
   ...
   >>> document = {'key': 'value'}
@@ -213,7 +213,7 @@ unique id:
   >>> ncalls = 0
   >>> def my_callback(result, error):
   ...     global ncalls
-  ...     print 'result', repr(result), 'error', repr(error)
+  ...     print('result %s error %s' % (repr(result), repr(error)))
   ...     ncalls += 1
   ...     if ncalls == 2:
   ...         IOLoop.instance().stop()
@@ -309,7 +309,7 @@ less than 2:
   >>> @gen.coroutine
   ... def do_find_one():
   ...     document = yield db.test_collection.find_one({'i': {'$lt': 2}})
-  ...     print document
+  ...     print(document)
   ...
   >>> IOLoop.current().run_sync(do_find_one)
   {u'i': 0, u'_id': ObjectId('...')}
@@ -337,7 +337,7 @@ To find all documents with "i" less than 5:
   ... def do_find():
   ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
   ...     for document in (yield cursor.to_list(length=100)):
-  ...         print document
+  ...         print(document)
   ...
   >>> IOLoop.current().run_sync(do_find)
   {u'i': 0, u'_id': ObjectId('...')}
@@ -359,7 +359,7 @@ and :meth:`~motor.MotorCursor.next_object`:
   ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
   ...     while (yield cursor.fetch_next):
   ...         document = cursor.next_object()
-  ...         print document
+  ...         print(document)
   ...
   >>> IOLoop.current().run_sync(do_find)
   {u'i': 0, u'_id': ObjectId('...')}
@@ -379,7 +379,7 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
   ...     cursor.sort([('i', pymongo.DESCENDING)]).limit(2).skip(2)
   ...     while (yield cursor.fetch_next):
   ...         document = cursor.next_object()
-  ...         print document
+  ...         print(document)
   ...
   >>> IOLoop.current().run_sync(do_find)
   {u'i': 2, u'_id': ObjectId('...')}
@@ -400,9 +400,9 @@ a collection, or the number of documents that match a query:
   >>> @gen.coroutine
   ... def do_count():
   ...     n = yield db.test_collection.find().count()
-  ...     print n, 'documents in collection'
+  ...     print('%s documents in collection' % n)
   ...     n = yield db.test_collection.find({'i': {'$gt': 1000}}).count()
-  ...     print n, 'documents where i > 1000'
+  ...     print('%s documents where i > 1000' % n)
   ...
   >>> IOLoop.current().run_sync(do_count)
   2000 documents in collection
@@ -427,15 +427,15 @@ document, or it can update some fields of a document. To replace a document:
   ... def do_replace():
   ...     coll = db.test_collection
   ...     old_document = yield coll.find_one({'i': 50})
-  ...     print 'found document:', old_document
+  ...     print('found document: %s' % old_document)
   ...     _id = old_document['_id']
   ...     result = yield coll.update({'_id': _id}, {'key': 'value'})
-  ...     print 'replaced', result['n'], 'document'
+  ...     print('replaced %s document' % result['n'])
   ...     new_document = yield coll.find_one({'_id': _id})
-  ...     print 'document is now', new_document
+  ...     print('document is now %s' % new_document)
   ...
   >>> IOLoop.current().run_sync(do_replace)
-  found document: {u'i': 50, u'_id': ObjectId('...')}
+  found document: {u'_id': ObjectId('...'), u'i': 50}
   replaced 1 document
   document is now {u'_id': ObjectId('...'), u'key': u'value'}
 
@@ -452,9 +452,9 @@ operator to set "key" to "value":
   ... def do_update():
   ...     coll = db.test_collection
   ...     result = yield coll.update({'i': 51}, {'$set': {'key': 'value'}})
-  ...     print 'updated', result['n'], 'document'
+  ...     print('updated %s document' % result['n'])
   ...     new_document = yield coll.find_one({'i': 51})
-  ...     print 'document is now', new_document
+  ...     print('document is now %s' % new_document)
   ...
   >>> IOLoop.current().run_sync(do_update)
   updated 1 document
@@ -485,7 +485,7 @@ performs an :meth:`insert`.
   ...     coll = db.test_collection
   ...     doc = {'key': 'value'}
   ...     yield coll.save(doc)
-  ...     print 'document _id:', repr(doc['_id'])
+  ...     print('document _id: %s' % repr(doc['_id']))
   ...     doc['other_key'] = 'other_value'
   ...     yield coll.save(doc)
   ...     yield coll.remove(doc)
@@ -506,9 +506,9 @@ Removing Documents
   ... def do_remove():
   ...     coll = db.test_collection
   ...     n = yield coll.count()
-  ...     print n, 'documents before calling remove()'
+  ...     print('%s documents before calling remove()' % n)
   ...     result = yield db.test_collection.remove({'i': {'$gte': 1000}})
-  ...     print (yield coll.count()), 'documents after'
+  ...     print('%s documents after' % (yield coll.count()))
   ...
   >>> IOLoop.current().run_sync(do_remove)
   2000 documents before calling remove()
@@ -528,10 +528,10 @@ the :meth:`~motor.MotorDatabase.command` method on :class:`~motor.MotorDatabase`
   >>> @gen.coroutine
   ... def use_count_command():
   ...     response = yield db.command(SON([("count", "test_collection")]))
-  ...     print 'response:', response
+  ...     print('response: %s' % response)
   ...
   >>> IOLoop.current().run_sync(use_count_command)
-  response: {u'ok': 1.0, u'n': 1000.0}
+  response: {u'ok': 1.0, u'n': 1000}
 
 Since the order of command parameters matters, don't use a Python dict to pass
 the command's parameters. Instead, make a habit of using :class:`bson.SON`,

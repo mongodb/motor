@@ -1104,7 +1104,7 @@ class AgnosticBaseCursor(AgnosticBase):
           ...     while (yield cursor.fetch_next):
           ...         doc = cursor.next_object()
           ...         sys.stdout.write(str(doc['_id']) + ', ')
-          ...     print 'done'
+          ...     print('done')
           ...
           >>> IOLoop.current().run_sync(f)
           0, 1, 2, 3, 4, done
@@ -1174,7 +1174,7 @@ class AgnosticBaseCursor(AgnosticBase):
           ...     else:
           ...         # Iteration complete
           ...         IOLoop.current().stop()
-          ...         print 'done'
+          ...         print('done')
           ...
           >>> collection.insert(
           ...     [{'_id': i} for i in range(5)], callback=inserted)
@@ -1250,10 +1250,10 @@ class AgnosticBaseCursor(AgnosticBase):
           ...     cursor = collection.find().sort([('_id', 1)])
           ...     docs = yield cursor.to_list(length=2)
           ...     while docs:
-          ...         print docs
+          ...         print(docs)
           ...         docs = yield cursor.to_list(length=2)
           ...
-          ...     print 'done'
+          ...     print('done')
           ...
           >>> ioloop.IOLoop.current().run_sync(f)
           [{u'_id': 0}, {u'_id': 1}]
@@ -1494,7 +1494,7 @@ cursor has any effect.
           ...     cursor = collection.find().sort([('i', 1)])[5]
           ...     yield cursor.fetch_next
           ...     doc = cursor.next_object()
-          ...     print doc['i']
+          ...     print(doc['i'])
           ...
           >>> IOLoop.current().run_sync(fifth_item)
           5
@@ -1510,7 +1510,7 @@ cursor has any effect.
           ... def one_thousandth_item():
           ...     cursor = collection.find().sort([('i', 1)])[1000]
           ...     yield cursor.fetch_next
-          ...     print cursor.next_object()
+          ...     print(cursor.next_object())
           ...
           >>> IOLoop.current().run_sync(one_thousandth_item)
           None
@@ -1526,7 +1526,7 @@ cursor has any effect.
           ...     while (yield cursor.fetch_next):
           ...         doc = cursor.next_object()
           ...         sys.stdout.write(str(doc['i']) + ', ')
-          ...     print 'done'
+          ...     print('done')
           ...
           >>> IOLoop.current().run_sync(second_through_fifth_item)
           2, 3, 4, 5, done
