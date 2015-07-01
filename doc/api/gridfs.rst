@@ -20,3 +20,6 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
 
 .. autoclass:: MotorGridOut
   :members:
+
+.. autoclass:: MotorGridOutCursor
+  :members:
