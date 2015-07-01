@@ -21,7 +21,6 @@ import datetime
 import functools
 import gc
 import logging
-import os
 import socket
 import time
 
