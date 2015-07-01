@@ -22,7 +22,7 @@ import random
 import unittest
 
 import pymongo.errors
-from tornado import gen, stack_context
+from tornado import stack_context, version_info as tornado_version
 from tornado.concurrent import Future
 from tornado.testing import gen_test
 
@@ -152,6 +152,9 @@ class MotorPoolTest(MotorTest):
 
     @gen_test(timeout=30)
     def test_wait_queue_timeout(self):
+        if tornado_version < (4, 0, 0, 0):
+            raise SkipTest("MOTOR-73")
+
         # Do a find_one that takes 1 second, and set waitQueueTimeoutMS to 500,
         # 5000, and None. Verify timeout iff max_wait_time < 1 sec.
         where_delay = 1

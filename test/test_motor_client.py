@@ -25,7 +25,7 @@ import pymongo.mongo_client
 from pymongo.errors import ConfigurationError, OperationFailure
 from pymongo.errors import ConnectionFailure
 import tornado
-from tornado import gen
+from tornado import gen, version_info as tornado_version
 from tornado.concurrent import Future
 from tornado.ioloop import IOLoop
 from tornado.testing import gen_test, netutil
@@ -105,6 +105,9 @@ class MotorClientTest(MotorTest):
 
     @gen_test
     def test_timeout(self):
+        if tornado_version < (4, 0, 0, 0):
+            raise SkipTest("MOTOR-73")
+
         # Launch two slow find_ones. The one with a timeout should get an error
         no_timeout = self.motor_client()
         timeout = self.motor_client(socketTimeoutMS=100)
@@ -166,6 +169,9 @@ class MotorClientTest(MotorTest):
 
     @gen_test(timeout=30)
     def test_high_concurrency(self):
+        if tornado_version < (4, 0, 0, 0):
+            raise SkipTest("MOTOR-73")
+
         yield self.make_test_data()
 
         concurrency = 100
