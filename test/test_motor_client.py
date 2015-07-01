@@ -276,20 +276,24 @@ class MotorResolverTest(MotorTest):
 
     # Helper method.
     @gen.coroutine
-    def _test_resolver(self, resolver_name):
+    def _test_resolver(self, resolver_name, test_for_errors=True):
         config = netutil.Resolver._save_configuration()
         try:
             netutil.Resolver.configure(resolver_name)
             client = self.motor_client()
             yield client.open()  # No error.
 
-            with assert_raises(pymongo.errors.ConnectionFailure):
-                client = motor.MotorClient(
-                    self.nonexistent_domain,
-                    connectTimeoutMS=100,
-                    io_loop=self.io_loop)
+            if test_for_errors:
+                with assert_raises(pymongo.errors.ConnectionFailure):
+                    client = motor.MotorClient(
+                        self.nonexistent_domain,
+                        connectTimeoutMS=100,
+                        io_loop=self.io_loop)
 
-                yield client.open()
+                    yield client.open()
+            else:
+                raise SkipTest('not testing resolution errors for %s' %
+                               resolver_name)
 
         finally:
             netutil.Resolver._restore_configuration(config)
@@ -319,14 +323,17 @@ class MotorResolverTest(MotorTest):
             raise SkipTest('Twisted not installed')
         yield self._test_resolver('tornado.platform.twisted.TwistedResolver')
 
+    # Don't test resolution errors with C-ARES - Tornado doesn't either:
+    # https://github.com/tornadoweb/tornado/blob/f098ca/tornado/test/netutil_test.py#L149
     @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
     def test_cares_resolver(self):
         try:
             import pycares
         except ImportError:
             raise SkipTest('pycares not installed')
+
         yield self._test_resolver(
-            'tornado.platform.caresresolver.CaresResolver')
+            'tornado.platform.caresresolver.CaresResolver', False)
 
 
 class MotorClientTestGeneric(MotorClientTestMixin, MotorTest):
