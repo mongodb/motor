@@ -1,7 +1,7 @@
 :class:`MotorDatabase`
 ======================
 
-.. currentmodule:: motor.core
+.. currentmodule:: motor
 
 .. autoclass:: MotorDatabase
   :members:

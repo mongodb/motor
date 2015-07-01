@@ -223,6 +223,6 @@ def process_motor_signature(
 
 
 def setup(app):
-    app.add_autodoc_attrgetter(type(motor.core.MotorBase), get_motor_attr)
+    app.add_autodoc_attrgetter(type(motor.core.AgnosticBase), get_motor_attr)
     app.connect('autodoc-process-signature', process_motor_signature)
     app.connect("doctree-read", process_motor_nodes)

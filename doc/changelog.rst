@@ -3,18 +3,6 @@ Changelog
 
 .. currentmodule:: motor
 
-Motor next
-----------
-
-:class:`~motor.core.MotorCollection` and :class:`~motor.core.MotorDatabase`
-have moved from ``motor`` to ``motor.core``. In the unlikely event you
-instantiated these classes directly, you must import them from ``motor.core``.
-
-Motor's GridFS classes have moved from ``motor`` to ``motor.motor_gridfs``.
-If you use
-:class:`~motor_gridfs.MotorGridFS` or :class:`~motor_gridfs.MotorGridIn`
-you must change your imports.
-
 Motor 0.4.1
 ___________
 

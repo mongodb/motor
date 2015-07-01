@@ -430,9 +430,9 @@ class AgnosticGridFS(object):
         would return a cursor to the three most recently uploaded files
         in GridFS.
 
-        :meth:`~motor.motor_gridfs.MotorGridFS.find` follows a similar
-        interface to :meth:`~motor.core.MotorCollection.find`
-        in :class:`~motor.core.MotorCollection`.
+        :meth:`~motor.MotorGridFS.find` follows a similar
+        interface to :meth:`~motor.MotorCollection.find`
+        in :class:`~motor.MotorCollection`.
 
         :Parameters:
           - `spec` (optional): a SON object specifying elements which
@@ -464,7 +464,7 @@ class AgnosticGridFS(object):
             BSON regex objects into Python regexes. Return instances of
             :class:`~bson.regex.Regex` instead.
 
-        Returns an instance of :class:`~motor.motor_gridfs.MotorGridOutCursor`
+        Returns an instance of :class:`~motor.MotorGridOutCursor`
         corresponding to this query.
 
         .. versionadded:: 0.2

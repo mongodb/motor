@@ -19,7 +19,7 @@ Motor logs in to the server on demand, when you first attempt an operation.
 
 Asynchronous Authentication
 ---------------------------
-Use the non-blocking :meth:`~motor.core.MotorDatabase.authenticate` method to log
+Use the non-blocking :meth:`~motor.MotorDatabase.authenticate` method to log
 in after starting the IOLoop::
 
     client = motor.MotorClient('localhost', 27017)
@@ -31,6 +31,6 @@ in after starting the IOLoop::
 After you've logged in to a database with a given :class:`~motor.MotorClient`
 or :class:`~motor.MotorReplicaSetClient`, all further operations on that
 database using that client will already be authenticated until you
-call :meth:`~motor.core.MotorDatabase.logout`.
+call :meth:`~motor.MotorDatabase.logout`.
 
 .. _MongoDB connection URI: http://docs.mongodb.org/manual/reference/connection-string/
