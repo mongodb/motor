@@ -29,8 +29,7 @@ import motor.core
 import test
 from test import MotorReplicaSetTestBase, assert_raises, MotorTest
 from test import SkipTest
-from test.test_environment import db_user, db_password, port, host, env
-from test.motor_client_test_generic import MotorClientTestMixin
+from test.test_environment import db_user, db_password, port, host
 from test.utils import one
 
 from motor.motor_py3_compat import text_type
@@ -98,14 +97,6 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         client = self.motor_rsc(socketKeepAlive=True)
         yield client.server_info()
         self.assertTrue(client._get_primary_pool()._motor_socket_options.socket_keepalive)
-
-class MotorReplicaSetClientTestGeneric(
-        MotorClientTestMixin,
-        MotorReplicaSetTestBase):
-
-    def get_client(self, *args, **kwargs):
-        return self.motor_rsc(
-            env.uri, *args, replicaSet=env.rs_name, **kwargs)
 
     @gen_test
     def test_auth_network_error(self):

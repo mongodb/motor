@@ -35,7 +35,6 @@ import motor.core
 import test
 from test import assert_raises, MotorTest, SkipTest
 from test.test_environment import host, port, db_user, db_password
-from test.motor_client_test_generic import MotorClientTestMixin
 from test.utils import remove_all_users, delay
 from test.version import padded
 
@@ -336,11 +335,6 @@ class MotorResolverTest(MotorTest):
             'tornado.platform.caresresolver.CaresResolver', False)
 
 
-class MotorClientTestGeneric(MotorClientTestMixin, MotorTest):
-    def get_client(self, *args, **kwargs):
-        return self.motor_client(**kwargs)
-    
-    
 class MotorClientExhaustCursorTest(test._TestExhaustCursorMixin, MotorTest):
     def _get_client(self, **kwargs):
         return self.motor_client(**kwargs)
