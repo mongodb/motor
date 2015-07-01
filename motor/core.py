@@ -23,7 +23,6 @@ import sys
 import time
 
 import greenlet
-import bson
 import pymongo
 import pymongo.auth
 import pymongo.common

@@ -13,8 +13,6 @@
 # limitations under the License.
 
 from __future__ import unicode_literals
-import datetime
-import time
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
