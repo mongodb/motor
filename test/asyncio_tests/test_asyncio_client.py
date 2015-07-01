@@ -16,9 +16,7 @@
 
 import unittest
 
-from test.asyncio_tests import (asyncio_client_test_generic,
-                                asyncio_test,
-                                AsyncIOTestCase)
+from test.asyncio_tests import asyncio_test, AsyncIOTestCase
 
 
 class TestAsyncIOClient(AsyncIOTestCase):
@@ -27,14 +25,6 @@ class TestAsyncIOClient(AsyncIOTestCase):
         cx = self.asyncio_client()
         self.assertEqual(cx, (yield from cx.open()))
         self.assertEqual(cx, (yield from cx.open()))  # Same the second time.
-
-
-class AsyncIOClientTestGeneric(
-        asyncio_client_test_generic.AsyncIOClientTestMixin,
-        AsyncIOTestCase):
-
-    def get_client(self, *args, **kwargs):
-        return self.asyncio_client(*args, **kwargs)
 
 
 if __name__ == '__main__':

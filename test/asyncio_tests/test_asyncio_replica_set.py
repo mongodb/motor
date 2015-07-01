@@ -22,10 +22,8 @@ import pymongo.mongo_replica_set_client
 import test
 from motor import motor_asyncio
 from test import SkipTest
-from test.asyncio_tests import (asyncio_client_test_generic,
-                                AsyncIOTestCase,
-                                asyncio_test)
-from test.test_environment import port, host, env
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.test_environment import port, host
 
 
 class TestAsyncIOReplicaSet(AsyncIOTestCase):
@@ -49,21 +47,6 @@ class TestAsyncIOReplicaSet(AsyncIOTestCase):
 
         with self.assertRaises(pymongo.errors.ConnectionFailure):
             yield from client.open()
-
-
-class AsyncIOReplicaSetClientTestGeneric(
-        asyncio_client_test_generic.AsyncIOClientTestMixin,
-        AsyncIOTestCase):
-
-    def setUp(self):
-        if not test.env.is_replica_set:
-            raise SkipTest('Not connected to a replica set')
-
-        super().setUp()
-
-    def get_client(self, *args, **kwargs):
-        return self.asyncio_rsc(
-            env.uri, *args, replicaSet=env.rs_name, **kwargs)
 
 
 class TestReplicaSetClientAgainstStandalone(AsyncIOTestCase):
