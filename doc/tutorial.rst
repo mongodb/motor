@@ -427,12 +427,12 @@ document, or it can update some fields of a document. To replace a document:
   ... def do_replace():
   ...     coll = db.test_collection
   ...     old_document = yield coll.find_one({'i': 50})
-  ...     print('found document: %s' % old_document)
+  ...     print('found document: %s' % pprint.pformat(old_document))
   ...     _id = old_document['_id']
   ...     result = yield coll.update({'_id': _id}, {'key': 'value'})
   ...     print('replaced %s document' % result['n'])
   ...     new_document = yield coll.find_one({'_id': _id})
-  ...     print('document is now %s' % new_document)
+  ...     print('document is now %s' % pprint.pformat(new_document))
   ...
   >>> IOLoop.current().run_sync(do_replace)
   found document: {u'_id': ObjectId('...'), u'i': 50}
@@ -454,11 +454,11 @@ operator to set "key" to "value":
   ...     result = yield coll.update({'i': 51}, {'$set': {'key': 'value'}})
   ...     print('updated %s document' % result['n'])
   ...     new_document = yield coll.find_one({'i': 51})
-  ...     print('document is now %s' % new_document)
+  ...     print('document is now %s' % pprint.pformat(new_document))
   ...
   >>> IOLoop.current().run_sync(do_update)
   updated 1 document
-  document is now {u'i': 51, u'_id': ObjectId('...'), u'key': u'value'}
+  document is now {u'_id': ObjectId('...'), u'i': 51, u'key': u'value'}
 
 "key" is set to "value" and "i" is still 51.
 

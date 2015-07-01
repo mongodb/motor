@@ -73,6 +73,7 @@ doctest_path = os.path.abspath('..')
 doctest_test_doctest_blocks = False
 
 doctest_global_setup = """
+import pprint
 import sys
 from datetime import timedelta
 
