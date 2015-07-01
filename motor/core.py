@@ -463,7 +463,7 @@ class AgnosticClientBase(AgnosticBase):
 
     def __getattr__(self, name):
         db_class = create_class_with_framework(
-            AgnosticDatabase, self._framework)
+            AgnosticDatabase, self._framework, self.__module__)
 
         return db_class(self, name)
 
@@ -782,7 +782,7 @@ class AgnosticDatabase(AgnosticBase):
 
     def __getattr__(self, name):
         collection_class = create_class_with_framework(
-            AgnosticCollection, self._framework)
+            AgnosticCollection, self._framework, self.__module__)
 
         return collection_class(self, name)
 
@@ -820,7 +820,8 @@ class AgnosticDatabase(AgnosticBase):
             db = manipulator.database
             db_class = create_class_with_framework(
                 AgnosticDatabase,
-                self._framework)
+                self._framework,
+                self.__module__)
 
             if isinstance(db, db_class):
                 # db is a MotorDatabase; get the PyMongo Database instance.
@@ -892,7 +893,7 @@ class AgnosticCollection(AgnosticBase):
 
     def __init__(self, database, name):
         db_class = create_class_with_framework(
-            AgnosticDatabase, self._framework)
+            AgnosticDatabase, self._framework, self.__module__)
 
         if not isinstance(database, db_class):
             raise TypeError("First argument to MotorCollection must be "
@@ -905,7 +906,7 @@ class AgnosticCollection(AgnosticBase):
     def __getattr__(self, name):
         # Dotted collection name, like "foo.bar".
         collection_class = create_class_with_framework(
-            AgnosticCollection, self._framework)
+            AgnosticCollection, self._framework, self.__module__)
 
         return collection_class(self.database, self.name + '.' + name)
 
@@ -932,7 +933,7 @@ class AgnosticCollection(AgnosticBase):
 
         cursor = self.delegate.find(*args, **kwargs)
         cursor_class = create_class_with_framework(
-            AgnosticCursor, self._framework)
+            AgnosticCursor, self._framework, self.__module__)
 
         return cursor_class(cursor, self)
 
@@ -975,7 +976,7 @@ class AgnosticCollection(AgnosticBase):
             self.__parallel_scan(num_cursors, **kwargs))
 
         command_cursor_class = create_class_with_framework(
-            AgnosticCommandCursor, self._framework)
+            AgnosticCommandCursor, self._framework, self.__module__)
 
         motor_command_cursors = [
             command_cursor_class(cursor, self)
@@ -996,7 +997,7 @@ class AgnosticCollection(AgnosticBase):
         .. versionadded:: 0.2
         """
         bob_class = create_class_with_framework(
-            AgnosticBulkOperationBuilder, self._framework)
+            AgnosticBulkOperationBuilder, self._framework, self.__module__)
 
         return bob_class(self, ordered=False)
 
@@ -1015,7 +1016,8 @@ class AgnosticCollection(AgnosticBase):
         """
         bob_class = create_class_with_framework(
             AgnosticBulkOperationBuilder,
-            self._framework)
+            self._framework,
+            self.__module__)
 
         return bob_class(self, ordered=True)
 
@@ -1028,7 +1030,8 @@ class AgnosticCollection(AgnosticBase):
         elif obj.__class__ is CommandCursor:
             command_cursor_class = create_class_with_framework(
                 AgnosticCommandCursor,
-                self._framework)
+                self._framework,
+                self.__module__)
 
             return command_cursor_class(obj, self)
         else:

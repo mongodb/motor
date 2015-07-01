@@ -49,59 +49,41 @@ from .motor_common import callback_type_error
 __all__ = ['MotorClient', 'MotorReplicaSetClient', 'Op']
 
 
-MotorClient = create_class_with_framework(
-    core.AgnosticClient,
-    tornado_framework)
+def create_motor_class(cls):
+    return create_class_with_framework(cls, tornado_framework, 'motor')
 
 
-MotorReplicaSetClient = create_class_with_framework(
-    core.AgnosticReplicaSetClient,
-    tornado_framework)
+MotorClient = create_motor_class(core.AgnosticClient)
 
 
-MotorDatabase = create_class_with_framework(
-    core.AgnosticDatabase,
-    tornado_framework)
+MotorReplicaSetClient = create_motor_class(core.AgnosticReplicaSetClient)
 
 
-MotorCollection = create_class_with_framework(
-    core.AgnosticCollection,
-    tornado_framework)
+MotorDatabase = create_motor_class(core.AgnosticDatabase)
 
 
-MotorCursor = create_class_with_framework(
-    core.AgnosticCursor,
-    tornado_framework)
+MotorCollection = create_motor_class(core.AgnosticCollection)
 
 
-MotorCommandCursor = create_class_with_framework(
-    core.AgnosticCommandCursor,
-    tornado_framework)
+MotorCursor = create_motor_class(core.AgnosticCursor)
 
 
-MotorBulkOperationBuilder = create_class_with_framework(
-    core.AgnosticBulkOperationBuilder,
-    tornado_framework)
+MotorCommandCursor = create_motor_class(core.AgnosticCommandCursor)
 
 
-MotorGridFS = create_class_with_framework(
-    motor_gridfs.AgnosticGridFS,
-    tornado_framework)
+MotorBulkOperationBuilder = create_motor_class(core.AgnosticBulkOperationBuilder)
 
 
-MotorGridIn = create_class_with_framework(
-    motor_gridfs.AgnosticGridIn,
-    tornado_framework)
+MotorGridFS = create_motor_class(motor_gridfs.AgnosticGridFS)
 
 
-MotorGridOut = create_class_with_framework(
-    motor_gridfs.AgnosticGridOut,
-    tornado_framework)
+MotorGridIn = create_motor_class(motor_gridfs.AgnosticGridIn)
 
 
-MotorGridOutCursor = create_class_with_framework(
-    motor_gridfs.AgnosticGridOutCursor,
-    tornado_framework)
+MotorGridOut = create_motor_class(motor_gridfs.AgnosticGridOut)
+
+
+MotorGridOutCursor = create_motor_class(motor_gridfs.AgnosticGridOutCursor)
 
 
 def Op(fn, *args, **kwargs):

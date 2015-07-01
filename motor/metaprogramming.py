@@ -338,7 +338,7 @@ class MotorCursorChainingMethod(MotorAttributeFactory):
         return return_clone
 
 
-def create_class_with_framework(cls, framework):
+def create_class_with_framework(cls, framework, module_name):
     name = cls.__motor_class_name__
     cache_key = (cls, name, framework)
     cached_class = _class_cache.get(cache_key)
@@ -346,6 +346,7 @@ def create_class_with_framework(cls, framework):
         return cached_class
 
     new_class = type(str(name), cls.__bases__, cls.__dict__.copy())
+    new_class.__module__ = module_name
     new_class._framework = framework
 
     assert hasattr(new_class, '__delegate_class__')

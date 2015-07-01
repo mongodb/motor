@@ -59,7 +59,7 @@ class AgnosticGridOutCursor(AgnosticBaseCursor):
         grid_out = super(self.__class__, self).next_object()
         if grid_out:
             grid_out_class = create_class_with_framework(
-                AgnosticGridOut, self._framework)
+                AgnosticGridOut, self._framework, self.__module__)
 
             return grid_out_class(self.collection, delegate=grid_out)
         else:
@@ -123,7 +123,7 @@ class AgnosticGridOut(object):
         delegate=None,
     ):
         collection_class = create_class_with_framework(
-            AgnosticCollection, self._framework)
+            AgnosticCollection, self._framework, self.__module__)
 
         if not isinstance(root_collection, collection_class):
             raise TypeError(
@@ -285,7 +285,7 @@ Metadata set on the file appears as attributes on a
            ``open`` method removed, no longer needed.
         """
         collection_class = create_class_with_framework(
-            AgnosticCollection, self._framework)
+            AgnosticCollection, self._framework, self.__module__)
 
         if not isinstance(root_collection, collection_class):
             raise TypeError(
@@ -332,7 +332,7 @@ class AgnosticGridFS(object):
            ``open`` method removed; no longer needed.
         """
         db_class = create_class_with_framework(
-            AgnosticDatabase, self._framework)
+            AgnosticDatabase, self._framework, self.__module__)
 
         if not isinstance(database, db_class):
             raise TypeError("First argument to MotorGridFS must be "
@@ -390,7 +390,7 @@ class AgnosticGridFS(object):
         """
         # PyMongo's implementation uses requests, so rewrite for Motor.
         grid_in_class = create_class_with_framework(
-            AgnosticGridIn, self._framework)
+            AgnosticGridIn, self._framework, self.__module__)
 
         grid_file = grid_in_class(self.collection, **kwargs)
 
@@ -473,14 +473,14 @@ class AgnosticGridFS(object):
         """
         cursor = self.delegate.find(*args, **kwargs)
         grid_out_cursor = create_class_with_framework(
-            AgnosticGridOutCursor, self._framework)
+            AgnosticGridOutCursor, self._framework, self.__module__)
 
         return grid_out_cursor(cursor, self.collection)
 
     def wrap(self, obj):
         if obj.__class__ is grid_file.GridIn:
             grid_in_class = create_class_with_framework(
-                AgnosticGridIn, self._framework)
+                AgnosticGridIn, self._framework, self.__module__)
 
             return grid_in_class(
                 root_collection=self.collection,
@@ -488,7 +488,7 @@ class AgnosticGridFS(object):
 
         elif obj.__class__ is grid_file.GridOut:
             grid_out_class = create_class_with_framework(
-                AgnosticGridOut, self._framework)
+                AgnosticGridOut, self._framework, self.__module__)
 
             return grid_out_class(
                 root_collection=self.collection,
@@ -496,7 +496,7 @@ class AgnosticGridFS(object):
 
         elif obj.__class__ is gridfs.GridOutCursor:
             grid_out_class = create_class_with_framework(
-                AgnosticGridOutCursor, self._framework)
+                AgnosticGridOutCursor, self._framework, self.__module__)
 
             return grid_out_class(
                 cursor=obj,
