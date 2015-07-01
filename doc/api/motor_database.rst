@@ -1,5 +1,5 @@
-:class:`MotorDatabase`
-======================
+:class:`~motor.MotorDatabase`
+=============================
 
 .. currentmodule:: motor
 

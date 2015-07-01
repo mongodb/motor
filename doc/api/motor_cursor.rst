@@ -1,5 +1,5 @@
-:class:`MotorCursor`
-========================
+:class:`~motor.MotorCursor`
+===========================
 
 .. currentmodule:: motor
 

@@ -1,5 +1,5 @@
-:class:`MotorReplicaSetClient` -- Connection to MongoDB replica set
-=======================================================================
+:class:`~motor.MotorReplicaSetClient` -- Connection to MongoDB replica set
+==========================================================================
 
 .. currentmodule:: motor
 
