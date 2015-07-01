@@ -232,7 +232,8 @@ class AsyncioMotorSocket(asyncio.Protocol):
         return rv
 
     def close(self):
-        self._transport.close()
+        if self._transport:
+            self._transport.close()
 
     # Protocol interface.
     def connection_made(self, transport):
