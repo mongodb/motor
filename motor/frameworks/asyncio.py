@@ -199,12 +199,20 @@ class AsyncioMotorSocket(asyncio.Protocol):
     @asyncio.coroutine
     def connect(self):
         protocol_factory = lambda: self
-
         # TODO: will call getaddrinfo again.
         host, port = self.options.address
-        self._transport, protocol = yield from self.loop.create_connection(
-            protocol_factory, host, port,
-            ssl=self.ctx)
+        # socket module doesn't have an AF_UNIX constant on Windows.
+        is_unix_socket = (self.options.family == getattr(socket,
+                                                         'AF_UNIX', None))
+        if is_unix_socket:
+            path = self.options.address[0]
+            self._transport, protocol =(yield from self.loop.
+                create_unix_connection(protocol_factory, path,
+                                       ssl=self.ctx))
+        else:
+            self._transport, protocol = yield from self.loop.create_connection(
+                protocol_factory, host, port,
+                ssl=self.ctx)
 
     def sendall(self, data):
         assert greenlet.getcurrent().parent is not None,\
