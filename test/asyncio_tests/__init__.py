@@ -74,7 +74,8 @@ class AsyncIOTestCase(unittest.TestCase):
         # the generator. Replace the test method with a wrapper that will
         # make sure it's not an undecorated generator.
         # (Adapted from Tornado's AsyncTestCase.)
-        setattr(self, methodName, _TestMethodWrapper(getattr(self, methodName)))
+        setattr(self, methodName, _TestMethodWrapper(
+            getattr(self, methodName)))
 
     def setUp(self):
         super(AsyncIOTestCase, self).setUp()
@@ -82,6 +83,7 @@ class AsyncIOTestCase(unittest.TestCase):
         # Ensure that the event loop is passed explicitly in Motor.
         events.set_event_loop(None)
         self.loop = asyncio.new_event_loop()
+        self.io_loop = self.loop
 
         if self.ssl and not env.mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")
@@ -89,6 +91,7 @@ class AsyncIOTestCase(unittest.TestCase):
         self.cx = self.asyncio_client()
         self.db = self.cx.motor_test
         self.collection = self.db.test_collection
+        self.loop.run_until_complete(self.collection.drop())
 
     def get_client_kwargs(self, **kwargs):
         if env.mongod_validates_client_cert:
