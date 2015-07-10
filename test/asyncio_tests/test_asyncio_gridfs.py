@@ -309,10 +309,10 @@ class TestAsyncIOGridFS(AsyncIOTestCase):
 
         with self.assertRaises(NoFile):
             yield from self.fs.get("foo")
-        
+
         self.assertEqual(
             "foo", (yield from self.fs.put(b"hello world", _id="foo")))
-        
+
         gridout = yield from self.fs.get("foo")
         self.assertEqual(b"hello world", (yield from gridout.read()))
 
@@ -414,7 +414,7 @@ class TestAsyncIOGridfsReplicaSet(AsyncIOTestCase):
         self.cx.motor_test.drop_collection('fs.files')
         self.cx.motor_test.drop_collection('fs.chunks')
         super().tearDown()
-        
-        
+
+
 if __name__ == "__main__":
     unittest.main()

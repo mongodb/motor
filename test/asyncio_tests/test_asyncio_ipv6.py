@@ -29,8 +29,8 @@ class MotorIPv6Test(AsyncIOTestCase):
     @asyncio_test
     def test_ipv6(self):
         assert host in ('localhost', '127.0.0.1'), (
-            "This unittest isn't written to test IPv6 with host %s" % repr(host)
-        )
+            "This unittest isn't written to test IPv6 "
+            "with host %s" % repr(host))
 
         try:
             MongoClient("[::1]")
