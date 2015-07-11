@@ -18,7 +18,8 @@ import asyncio
 import unittest
 from unittest import SkipTest
 
-from pymongo.errors import CollectionInvalid
+import pymongo.database
+from pymongo.errors import CollectionInvalid, OperationFailure
 from pymongo.son_manipulator import NamespaceInjector, AutoReference
 
 from motor.motor_asyncio import (AsyncIOMotorDatabase,
@@ -45,6 +46,34 @@ class TestAsyncIODatabase(AsyncIOTestCase):
         yield from db.test_collection.insert({'_id': 1})
         doc = yield from db.test_collection.find_one({'_id': 1})
         self.assertEqual(1, doc['_id'])
+
+    def test_collection_named_delegate(self):
+        db = self.db
+        self.assertTrue(isinstance(db.delegate, pymongo.database.Database))
+        self.assertTrue(isinstance(db['delegate'], AsyncIOMotorCollection))
+        db.connection.close()
+
+    def test_call(self):
+        # Prevents user error with nice message.
+        try:
+            self.cx.foo()
+        except TypeError as e:
+            self.assertTrue('no such method exists' in str(e))
+        else:
+            self.fail('Expected TypeError')
+
+        try:
+            # First line of applications written for Motor 0.1.
+            self.cx.open_sync()
+        except TypeError as e:
+            self.assertTrue('unnecessary' in str(e))
+        else:
+            self.fail('Expected TypeError')
+
+    @asyncio_test
+    def test_command(self):
+        result = yield from self.cx.admin.command("buildinfo")
+        self.assertEqual(int, type(result['bits']))
 
     @asyncio_test
     def test_create_collection(self):
@@ -138,6 +167,23 @@ class TestAsyncIODatabase(AsyncIOTestCase):
         finally:
             yield from remove_all_users(self.db)
             test.env.sync_cx.disconnect()
+
+    @asyncio_test
+    def test_validate_collection(self):
+        db = self.db
+
+        with self.assertRaises(TypeError):
+            yield from db.validate_collection(5)
+        with self.assertRaises(TypeError):
+            yield from db.validate_collection(None)
+        with self.assertRaises(OperationFailure):
+            yield from db.validate_collection("test.doesnotexist")
+        with self.assertRaises(OperationFailure):
+            yield from db.validate_collection(db.test.doesnotexist)
+
+        yield from db.test.save({"dummy": "object"})
+        self.assertTrue((yield from db.validate_collection("test")))
+        self.assertTrue((yield from db.validate_collection(db.test)))
 
 
 if __name__ == '__main__':
