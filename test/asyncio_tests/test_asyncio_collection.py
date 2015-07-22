@@ -83,7 +83,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
     @asyncio_test
     def test_find_is_async(self):
         # Confirm find() is async by launching two operations which will finish
-        # out of order. Also test that MotorClient doesn't reuse sockets
+        # out of order. Also test that AsyncIOMotorClient doesn't reuse sockets
         # incorrectly.
 
         # Launch find operations for _id's 1 and 2 which will finish in order
