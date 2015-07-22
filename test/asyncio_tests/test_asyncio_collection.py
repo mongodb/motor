@@ -335,13 +335,13 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
         yield from self.db.tmp_mr.drop()
 
-        # First do a standard mapreduce, should return MotorCollection
+        # First do a standard mapreduce, should return AsyncIOMotorCollection
         collection = self.collection
         tmp_mr = yield from collection.map_reduce(map_fn, reduce_fn, 'tmp_mr')
 
         self.assertTrue(
             isinstance(tmp_mr, motor_asyncio.AsyncIOMotorCollection),
-            'map_reduce should return MotorCollection, not %s' % tmp_mr)
+            'map_reduce should return AsyncIOMotorCollection, not %s' % tmp_mr)
 
         result = yield from tmp_mr.find().sort([('_id', 1)]).to_list(
             length=1000)
