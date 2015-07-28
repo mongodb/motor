@@ -123,7 +123,7 @@ setup(name='motor',
       install_requires=[
           'tornado >= 3.1',
           'greenlet >= 0.4.0',
-          'pymongo == 2.8.0',
+          'pymongo >= 2.8.0, <3',
       ],
       license='http://www.apache.org/licenses/LICENSE-2.0',
       classifiers=filter(None, classifiers.split('\n')),
