@@ -154,7 +154,7 @@ def asyncio_motor_sock_method(method):
     return _motor_sock_method
 
 
-class AsyncioMotorSocket(asyncio.Protocol):
+class AsyncioMotorSocket:
     """A fake socket instance that pauses and resumes the current greenlet.
 
     Pauses the calling greenlet when making blocking calls, and uses the
