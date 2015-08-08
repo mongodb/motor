@@ -23,7 +23,6 @@ import ssl
 import sys
 
 import greenlet
-import collections
 
 
 def get_event_loop():
@@ -159,7 +158,8 @@ class AsyncioMotorSocket(asyncio.Protocol):
     """A fake socket instance that pauses and resumes the current greenlet.
 
     Pauses the calling greenlet when making blocking calls, and uses the
-    asyncio event loop to schedule the greenlet for resumption when I/O is ready.
+    asyncio event loop to schedule the greenlet for resumption when I/O
+    is ready.
 
     We only implement those socket methods actually used by PyMongo.
     """
@@ -168,8 +168,6 @@ class AsyncioMotorSocket(asyncio.Protocol):
         self.options = options
         self.timeout = None
         self.ctx = None
-        self._connected_future = asyncio.Future(loop=self.loop)
-        self._buffer_len = 0
         self._writer = None
         self._reader = None
 
@@ -190,8 +188,6 @@ class AsyncioMotorSocket(asyncio.Protocol):
     def settimeout(self, timeout):
         self.timeout = timeout
 
-
-
     @asyncio_motor_sock_method
     @asyncio.coroutine
     def connect(self):
@@ -200,7 +196,7 @@ class AsyncioMotorSocket(asyncio.Protocol):
         if is_unix_socket:
             path = self.options.address[0]
             reader, writer = yield from asyncio.open_unix_connection(
-                path, loop=self.loop, ssl=self.ctx )
+                path, loop=self.loop, ssl=self.ctx)
         else:
             host, port = self.options.address
             reader, writer = yield from asyncio.open_connection(
