@@ -62,8 +62,8 @@ class MotorTailTest(AsyncIOTestCase):
         start = time()
         cursor = capped.find(tailable=True, await_data=True)
 
-        while (results != expected
-               and time() - start < MotorTailTest.expected_duration):
+        while (results != expected and
+               time() - start < MotorTailTest.expected_duration):
 
             while (yield from cursor.fetch_next):
                 doc = cursor.next_object()
