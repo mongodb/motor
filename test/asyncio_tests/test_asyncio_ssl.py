@@ -316,7 +316,7 @@ class TestAsyncIOSSL(AsyncIOTestCase):
         yield from collection.remove()
         uri = ('mongodb://%s@%s:%d/?authMechanism='
                'MONGODB-X509' % (
-               quote_plus(MONGODB_X509_USERNAME), host, port))
+                   quote_plus(MONGODB_X509_USERNAME), host, port))
 
         # SSL options aren't supported in the URI....
         auth_uri_client = AsyncIOMotorClient(uri,
