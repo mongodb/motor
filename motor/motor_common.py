@@ -66,4 +66,4 @@ class MotorSocketOptions(object):
         self.keyfile = keyfile
         self.ca_certs = ca_certs
         self.cert_reqs = cert_reqs
-        self.socket_keepalive=socket_keepalive
+        self.socket_keepalive = socket_keepalive
