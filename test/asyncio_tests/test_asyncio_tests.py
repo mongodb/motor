@@ -86,6 +86,11 @@ class TestAsyncIOTests(unittest.TestCase):
                     pass
 
     def test_timeout(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(None)
+        self.addCleanup(self.loop.close)
+        self.addCleanup(setattr, self, 'loop', None)
+
         class Test(AsyncIOTestCase):
             @asyncio_test(timeout=0.01)
             def test_that_is_too_slow(self):
@@ -114,6 +119,9 @@ class TestAsyncIOTests(unittest.TestCase):
 
     def test_timeout_environment_variable(self):
         self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(None)
+        self.addCleanup(self.loop.close)
+        self.addCleanup(setattr, self, 'loop', None)
 
         @asyncio_test
         def default_timeout(self):
@@ -167,6 +175,11 @@ class TestAsyncIOTests(unittest.TestCase):
         self.assertTrue('inner' in text)
 
     def test_undecorated(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(None)
+        self.addCleanup(self.loop.close)
+        self.addCleanup(setattr, self, 'loop', None)
+
         class Test(AsyncIOTestCase):
             def test_that_should_be_decorated(self):
                 yield from asyncio.sleep(0.01, loop=self.loop)
