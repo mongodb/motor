@@ -106,7 +106,7 @@ def asyncio_motor_sock_method(method):
     when I/O is ready.
     """
     @functools.wraps(method)
-    def _motor_sock_method(self, *args, **kwargs):
+    def wrapped_method(self, *args, **kwargs):
         child_gr = greenlet.getcurrent()
         main = child_gr.parent
         assert main is not None, "Should be on child greenlet"
@@ -133,7 +133,7 @@ def asyncio_motor_sock_method(method):
         future.add_done_callback(callback)
         return main.switch()
 
-    return _motor_sock_method
+    return wrapped_method
 
 
 class AsyncioMotorSocket:
