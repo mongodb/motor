@@ -16,6 +16,7 @@
 
 import asyncio
 import functools
+import gc
 import inspect
 import os
 import time
@@ -168,6 +169,7 @@ class AsyncIOTestCase(unittest.TestCase):
         self.loop.stop()
         self.loop.run_forever()
         self.loop.close()
+        gc.collect()
 
 
 def get_async_test_timeout(default=5):
