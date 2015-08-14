@@ -125,11 +125,8 @@ def asyncio_motor_sock_method(method):
 
         coro = method(self, *args, **kwargs)
         if self.timeout:
-            future = asyncio.async(
-                asyncio.wait_for(coro, self.timeout, loop=self.loop),
-                loop=self.loop)
-        else:
-            future = asyncio.async(coro, loop=self.loop)
+            coro = asyncio.wait_for(coro, self.timeout, loop=self.loop)
+        future = asyncio.async(coro, loop=self.loop)
         future.add_done_callback(callback)
         return main.switch()
 
