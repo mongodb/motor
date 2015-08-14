@@ -169,6 +169,7 @@ class AsyncIOTestCase(unittest.TestCase):
         self.cx.close()
         self.loop.stop()
         self.loop.run_forever()
+        # TODO: wait for DNS resolving finish
         self.loop.close()
         gc.collect()
 
