@@ -86,18 +86,6 @@ def get_resolver(loop):
     return None
 
 
-def resolve(resolver, loop, host, port, family, callback, errback):
-    def done_callback(future):
-        try:
-            addresses = future.result()
-            callback(addresses)
-        except:
-            errback(*sys.exc_info())
-
-    future = loop.getaddrinfo(host, port, family=family)
-    future.add_done_callback(done_callback)
-
-
 def close_resolver(resolver):
     pass
 
@@ -123,36 +111,25 @@ def asyncio_motor_sock_method(method):
         main = child_gr.parent
         assert main is not None, "Should be on child greenlet"
 
-        future = None
-        timeout_handle = None
-
-        if self.timeout:
-            def timeout_err():
-                if future:
-                    future.cancel()
-
-                if self._writer:
-                    self._writer.close()
-
-                child_gr.throw(socket.error("timed out"))
-
-            timeout_handle = self.loop.call_later(self.timeout, timeout_err)
-
         # This is run by the event loop on the main greenlet when operation
         # completes; switch back to child to continue processing
         def callback(_):
-            if timeout_handle:
-                timeout_handle.cancel()
-
             try:
-                child_gr.switch(future.result())
-            except asyncio.CancelledError:
-                # Timeout. We've already thrown an error on the child greenlet.
-                pass
+                res = future.result()
+            except asyncio.TimeoutError:
+                child_gr.throw(socket.timeout("timed out"))
             except Exception as ex:
-                child_gr.throw(socket.error(str(ex)))
+                child_gr.throw(ex)
+            else:
+                child_gr.switch(res)
 
-        future = asyncio.async(method(self, *args, **kwargs), loop=self.loop)
+        coro = method(self, *args, **kwargs)
+        if self.timeout:
+            future = asyncio.async(
+                asyncio.wait_for(coro, self.timeout, loop=self.loop),
+                loop=self.loop)
+        else:
+            future = asyncio.async(coro, loop=self.loop)
         future.add_done_callback(callback)
         return main.switch()
 
