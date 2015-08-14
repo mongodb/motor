@@ -450,9 +450,7 @@ class AgnosticClientBase(AgnosticBase):
         delegate = self.__delegate_class__(*args, **kwargs)
         super(AgnosticClientBase, self).__init__(delegate)
         if io_loop:
-            if not self._framework.is_event_loop(io_loop):
-                raise TypeError(
-                    "io_loop must be instance of IOLoop, not %r" % io_loop)
+            self._framework.check_event_loop(io_loop)
             self.io_loop = io_loop
         else:
             self.io_loop = self._framework.get_event_loop()

@@ -30,8 +30,14 @@ def get_event_loop():
 
 
 def is_event_loop(loop):
-    # TODO: is there any way to assure that this is an event loop?
-    return True
+    return isinstance(loop, asyncio.AbstractEventLoop)
+
+
+def check_event_loop(loop):
+    if not is_event_loop(loop):
+        raise TypeError(
+            "io_loop must be instance of asyncio-compatible event loop,"
+            "not %r" % loop)
 
 
 def return_value(value):
@@ -39,7 +45,6 @@ def return_value(value):
     raise StopIteration(value)
 
 
-# TODO: rename?
 def get_future(loop):
     return asyncio.Future(loop=loop)
 
@@ -49,10 +54,10 @@ def is_future(f):
 
 
 def call_soon(loop, callback, *args, **kwargs):
-    if args or kwargs:
+    if kwargs:
         loop.call_soon(functools.partial(callback, *args, **kwargs))
     else:
-        loop.call_soon(callback)
+        loop.call_soon(callback, *args)
 
 
 def call_soon_threadsafe(loop, callback):
@@ -68,7 +73,8 @@ def call_later(loop, delay, callback, *args, **kwargs):
 
 
 def call_later_cancel(loop, handle):
-    handle.cancel()
+    if not handle.done():
+        handle.cancel()
 
 
 def create_task(loop, coro, *args, **kwargs):
