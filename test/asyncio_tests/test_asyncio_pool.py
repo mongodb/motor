@@ -95,6 +95,7 @@ class AIOMotorPoolTest(AsyncIOTestCase):
         def get_socket():
             s = pool.get_socket(force=True)
             self.loop.call_later(0, functools.partial(future.set_result, s))
+            self.addCleanup(s.close)
 
         future = asyncio.Future(loop=self.loop)
         greenlet.greenlet(get_socket).switch()
@@ -225,6 +226,7 @@ class AIOMotorPoolTest(AsyncIOTestCase):
         self.assertAlmostEqual(0, self.loop.time() - start, places=3)
         self.assertEqual(2, pool.motor_sock_counter)
         cx.close()
+        yield from asyncio.sleep(0, loop=self.loop)
 
     @asyncio_test
     def test_connections_unacknowledged_writes(self):

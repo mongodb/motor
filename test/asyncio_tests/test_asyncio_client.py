@@ -83,6 +83,10 @@ class TestAsyncIOClient(AsyncIOTestCase):
         loop = asyncio.new_event_loop()
         cx = loop.run_until_complete(self.asyncio_client(io_loop=loop).open())
         self.assertTrue(isinstance(cx, motor_asyncio.AsyncIOMotorClient))
+        cx.close()
+        loop.stop()
+        loop.run_forever()
+        loop.close()
 
     def test_database_named_delegate(self):
         self.assertTrue(
