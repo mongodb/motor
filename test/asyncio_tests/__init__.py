@@ -166,6 +166,7 @@ class AsyncIOTestCase(unittest.TestCase):
     make_test_data.__test__ = False
 
     def tearDown(self):
+        self.cx.close()
         self.loop.stop()
         self.loop.run_forever()
         self.loop.close()
