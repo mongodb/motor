@@ -73,8 +73,7 @@ def call_later(loop, delay, callback, *args, **kwargs):
 
 
 def call_later_cancel(loop, handle):
-    if not handle.done():
-        handle.cancel()
+    handle.cancel()
 
 
 def create_task(loop, coro, *args, **kwargs):
