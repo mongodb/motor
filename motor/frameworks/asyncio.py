@@ -20,7 +20,6 @@ import asyncio.tasks
 import functools
 import socket
 import ssl
-import sys
 
 import greenlet
 
@@ -180,6 +179,10 @@ class AsyncioMotorSocket:
             host, port = self.options.address
             reader, writer = yield from asyncio.open_connection(
                 host=host, port=port, ssl=self.ctx, loop=self.loop)
+            sock = writer.transport.get_extra_info('socket')
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE,
+                            self.options.socket_keepalive)
         self._reader, self._writer = reader, writer
 
     def sendall(self, data):
