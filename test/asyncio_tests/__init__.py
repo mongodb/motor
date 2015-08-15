@@ -21,7 +21,6 @@ import inspect
 import os
 import time
 import unittest
-from asyncio import events, tasks
 from unittest import SkipTest
 from concurrent.futures import ThreadPoolExecutor
 
