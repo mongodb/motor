@@ -145,23 +145,8 @@ class AsyncioMotorSocket:
         self.loop = loop
         self.options = options
         self.timeout = None
-        self.ctx = None
         self._writer = None
         self._reader = None
-
-        if options.use_ssl:
-            # TODO: cache at Pool level.
-            ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-            if options.certfile is not None:
-                ctx.load_cert_chain(options.certfile, options.keyfile)
-            if options.ca_certs is not None:
-                ctx.load_verify_locations(options.ca_certs)
-            if options.cert_reqs is not None:
-                ctx.verify_mode = options.cert_reqs
-                if ctx.verify_mode in (ssl.CERT_OPTIONAL, ssl.CERT_REQUIRED):
-                    ctx.check_hostname = True
-
-            self.ctx = ctx
 
     def settimeout(self, timeout):
         self.timeout = timeout
@@ -171,14 +156,29 @@ class AsyncioMotorSocket:
     def connect(self):
         is_unix_socket = (self.options.family == getattr(socket,
                                                          'AF_UNIX', None))
+        if self.options.use_ssl:
+            # TODO: cache at Pool level.
+            ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            if self.options.certfile is not None:
+                ctx.load_cert_chain(self.options.certfile,
+                                    self.options.keyfile)
+            if self.options.ca_certs is not None:
+                ctx.load_verify_locations(self.options.ca_certs)
+            if self.options.cert_reqs is not None:
+                ctx.verify_mode = self.options.cert_reqs
+                if ctx.verify_mode in (ssl.CERT_OPTIONAL, ssl.CERT_REQUIRED):
+                    ctx.check_hostname = True
+        else:
+            ctx = None
+
         if is_unix_socket:
             path = self.options.address[0]
             reader, writer = yield from asyncio.open_unix_connection(
-                path, loop=self.loop, ssl=self.ctx)
+                path, loop=self.loop, ssl=ctx)
         else:
             host, port = self.options.address
             reader, writer = yield from asyncio.open_connection(
-                host=host, port=port, ssl=self.ctx, loop=self.loop)
+                host=host, port=port, ssl=ctx, loop=self.loop)
             sock = writer.transport.get_extra_info('socket')
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE,

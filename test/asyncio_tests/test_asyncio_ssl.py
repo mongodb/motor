@@ -14,7 +14,11 @@
 
 """Test AsyncIOMotorClient with SSL."""
 
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+import gc
 import ssl
+import unittest
 from unittest import SkipTest
 from urllib.parse import quote_plus  # The 'parse' submodule is Python 3.
 
@@ -25,9 +29,12 @@ from pymongo.errors import (ConfigurationError,
 from motor.motor_asyncio import (AsyncIOMotorClient,
                                  AsyncIOMotorReplicaSetClient)
 import test
-from test.asyncio_tests import AsyncIOTestCase, at_least, asyncio_test
+from test.asyncio_tests import at_least, asyncio_test
 from test.test_environment import host, port, CLIENT_PEM, CA_PEM
 from test.utils import remove_all_users
+
+if not test.env.initialized:
+    test.env.setup()
 
 
 # TODO: refactor with test_motor_ssl, probably put in test_environment.
@@ -49,7 +56,22 @@ MONGODB_X509_USERNAME = \
 # Make sure you have 'server' as an alias for localhost in /etc/hosts.
 
 
-class TestAsyncIOSSL(AsyncIOTestCase):
+class TestAsyncIOSSL(unittest.TestCase):
+
+    def setUp(self):
+        asyncio.set_event_loop(None)
+        self.executor = ThreadPoolExecutor(max_workers=4)
+        self.loop = asyncio.new_event_loop()
+        self.loop.set_default_executor(self.executor)
+        self.io_loop = self.loop
+
+    def tearDown(self):
+        self.executor.shutdown()
+        self.loop.stop()
+        self.loop.run_forever()
+        self.loop.close()
+        gc.collect()
+
     def test_config_ssl(self):
         # This test doesn't require a running mongod.
         self.assertRaises(ConfigurationError,
