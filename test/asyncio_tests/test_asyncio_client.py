@@ -194,7 +194,8 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
     @asyncio_test
     def test_drop_database(self):
-        # Make sure we can pass a MotorDatabase instance to drop_database
+        # Make sure we can pass an AsyncIOMotorDatabase instance
+        # to drop_database
         db = self.cx.test_drop_database
         yield from db.test_collection.insert({})
         names = yield from self.cx.database_names()
