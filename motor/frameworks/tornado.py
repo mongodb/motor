@@ -45,6 +45,12 @@ def is_event_loop(loop):
     return isinstance(loop, ioloop.IOLoop)
 
 
+def check_event_loop(loop):
+    if not is_event_loop(loop):
+        raise TypeError(
+            "io_loop must be instance of IOLoop, not %r" % loop)
+
+
 def return_value(value):
     raise gen.Return(value)
 

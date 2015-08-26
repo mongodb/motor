@@ -223,8 +223,8 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     def test_remove(self):
-        # Remove a document twice, check that we get a success response first
-        # time and an error the second time.
+        # Remove a document twice, check that we get a success responses
+        # and n = 0 for the second time.
         yield self.collection.insert({'_id': 1})
         result = yield self.collection.remove({'_id': 1})
 

@@ -114,7 +114,7 @@ class test(Command):
 
 setup(name='motor',
       version='0.5.dev0',
-      packages=['motor'],
+      packages=['motor', 'motor.frameworks'],
       description=description,
       long_description=long_description,
       author='A. Jesse Jiryu Davis',

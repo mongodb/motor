@@ -237,17 +237,17 @@ class MotorPool(object):
             self.queue.append(waiter)
 
             if self.wait_queue_timeout is not None:
-                deadline = self.io_loop.time() + self.wait_queue_timeout
-
                 def on_timeout():
                     if waiter in self.queue:
                         self.queue.remove(waiter)
 
                     t = self.waiter_timeouts.pop(waiter)
-                    self.io_loop.remove_timeout(t)
+                    self._framework.call_later_cancel(self.io_loop, t)
                     child_gr.throw(self._create_wait_queue_timeout())
 
-                timeout = self.io_loop.add_timeout(deadline, on_timeout)
+                timeout = self._framework.call_later(
+                    self.io_loop, self.wait_queue_timeout, on_timeout)
+
                 # timeout = self.io_loop.add_timeout(
                 #     deadline,
                 #     functools.partial(
@@ -323,10 +323,10 @@ class MotorPool(object):
             waiter = self.queue.popleft()
             if waiter in self.waiter_timeouts:
                 timeout = self.waiter_timeouts.pop(waiter)
-                self.io_loop.remove_timeout(timeout)
+                self._framework.call_later_cancel(self.io_loop, timeout)
 
-            # TODO: with stack_context.NullContext():
-            self.io_loop.add_callback(functools.partial(waiter, sock_info))
+            self._framework.call_soon(self.io_loop,
+                                      functools.partial(waiter, sock_info))
 
         elif (self.motor_sock_counter <= self.max_size
                 and sock_info.pool_id == self.pool_id):
@@ -450,9 +450,7 @@ class AgnosticClientBase(AgnosticBase):
         delegate = self.__delegate_class__(*args, **kwargs)
         super(AgnosticClientBase, self).__init__(delegate)
         if io_loop:
-            if not self._framework.is_event_loop(io_loop):
-                raise TypeError(
-                    "io_loop must be instance of IOLoop, not %r" % io_loop)
+            self._framework.check_event_loop(io_loop)
             self.io_loop = io_loop
         else:
             self.io_loop = self._framework.get_event_loop()
@@ -522,7 +520,8 @@ class AgnosticClient(AgnosticClientBase):
         else:
             io_loop = self._framework.get_event_loop()
 
-        event_class = functools.partial(util.MotorGreenletEvent, io_loop, self._framework)
+        event_class = functools.partial(util.MotorGreenletEvent, io_loop,
+                                        self._framework)
         kwargs['_event_class'] = event_class
 
         # Our class is not actually AgnosticClient here, it's the version of

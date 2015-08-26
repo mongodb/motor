@@ -16,12 +16,13 @@
 
 import asyncio
 import functools
+import gc
 import inspect
 import os
 import time
 import unittest
-from asyncio import events, tasks
 from unittest import SkipTest
+from concurrent.futures import ThreadPoolExecutor
 
 import pymongo.errors
 
@@ -74,14 +75,18 @@ class AsyncIOTestCase(unittest.TestCase):
         # the generator. Replace the test method with a wrapper that will
         # make sure it's not an undecorated generator.
         # (Adapted from Tornado's AsyncTestCase.)
-        setattr(self, methodName, _TestMethodWrapper(getattr(self, methodName)))
+        setattr(self, methodName, _TestMethodWrapper(
+            getattr(self, methodName)))
 
     def setUp(self):
         super(AsyncIOTestCase, self).setUp()
 
         # Ensure that the event loop is passed explicitly in Motor.
-        events.set_event_loop(None)
+        asyncio.set_event_loop(None)
+        self.executor = ThreadPoolExecutor(max_workers=4)
         self.loop = asyncio.new_event_loop()
+        self.loop.set_default_executor(self.executor)
+        self.io_loop = self.loop
 
         if self.ssl and not env.mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")
@@ -89,6 +94,7 @@ class AsyncIOTestCase(unittest.TestCase):
         self.cx = self.asyncio_client()
         self.db = self.cx.motor_test
         self.collection = self.db.test_collection
+        self.loop.run_until_complete(self.collection.drop())
 
     def get_client_kwargs(self, **kwargs):
         if env.mongod_validates_client_cert:
@@ -162,7 +168,12 @@ class AsyncIOTestCase(unittest.TestCase):
     make_test_data.__test__ = False
 
     def tearDown(self):
+        self.cx.close()
+        self.executor.shutdown()
+        self.loop.stop()
+        self.loop.run_forever()
         self.loop.close()
+        gc.collect()
 
 
 def get_async_test_timeout(default=5):
@@ -207,14 +218,6 @@ def asyncio_test(func=None, timeout=None):
             else:
                 actual_timeout = get_async_test_timeout(timeout)
 
-            def on_timeout():
-                if inspect.isgenerator(coro):
-                    # Simply doing task.cancel() raises an unhelpful traceback.
-                    # We want to include the coroutine's stack, so throw into
-                    # the generator and record its traceback in exc_handler().
-                    msg = 'timed out after %s seconds' % actual_timeout
-                    coro.throw(asyncio.CancelledError(msg))
-
             coro_exc = None
 
             def exc_handler(loop, context):
@@ -226,8 +229,8 @@ def asyncio_test(func=None, timeout=None):
 
             self.loop.set_exception_handler(exc_handler)
             coro = asyncio.coroutine(f)(self, *args, **kwargs)
-            timeout_handle = self.loop.call_later(actual_timeout, on_timeout)
-            task = tasks.Task(coro, loop=self.loop)
+            coro = asyncio.wait_for(coro, actual_timeout, loop=self.loop)
+            task = asyncio.async(coro, loop=self.loop)
             try:
                 self.loop.run_until_complete(task)
             except:
@@ -238,9 +241,6 @@ def asyncio_test(func=None, timeout=None):
                     raise coro_exc from None
 
                 raise
-
-            # self.loop.run_until_complete(coro)
-            timeout_handle.cancel()
 
         return wrapped
 

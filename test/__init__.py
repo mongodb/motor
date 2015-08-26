@@ -59,6 +59,7 @@ def setup_package(tornado_warnings):
     if not tornado_warnings:
         suppress_tornado_warnings()
 
+
 def is_server_resolvable():
     """Returns True if 'server' is resolvable."""
     socket_timeout = socket.getdefaulttimeout()
@@ -70,6 +71,7 @@ def is_server_resolvable():
         return False
     finally:
         socket.setdefaulttimeout(socket_timeout)
+
 
 def teardown_package():
     if env.auth:

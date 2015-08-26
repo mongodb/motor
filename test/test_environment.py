@@ -99,7 +99,7 @@ class TestEnvironment(object):
                 connectTimeoutMS=connectTimeoutMS,
                 socketTimeoutMS=socketTimeoutMS,
                 ssl=True)
-    
+
             self.mongod_started_with_ssl = True
         except pymongo.errors.ConnectionFailure:
             try:
@@ -108,7 +108,7 @@ class TestEnvironment(object):
                     connectTimeoutMS=connectTimeoutMS,
                     socketTimeoutMS=socketTimeoutMS,
                     ssl_certfile=CLIENT_PEM)
-    
+
                 self.mongod_started_with_ssl = True
                 self.mongod_validates_client_cert = True
             except pymongo.errors.ConnectionFailure:
@@ -133,7 +133,7 @@ class TestEnvironment(object):
                 self.auth = True
             else:
                 raise
-    
+
         if self.auth:
             uri_template = 'mongodb://%s:%s@%s:%s/admin'
             self.uri = uri_template % (db_user, db_password, host, port)
