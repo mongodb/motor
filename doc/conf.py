@@ -28,7 +28,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Motor'
-copyright = u'2014 MongoDB, Inc.'
+copyright = u'2015 MongoDB, Inc.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -92,9 +92,11 @@ from motor import MotorClient
 
 # -- Options for HTML output ---------------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.
-html_theme = 'classic'
+# Theme gratefully vendored from CPython source.
+html_theme = "pydoctheme"
+html_theme_path = ["."]
 html_theme_options = {'collapsiblesidebar': True}
+html_static_path = ['static']
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
