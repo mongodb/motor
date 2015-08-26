@@ -3,3 +3,6 @@ include LICENSE
 recursive-include doc *.rst
 recursive-include doc *.py
 recursive-include test *.py
+recursive-include doc *.conf
+recursive-include doc *.css
+recursive-include doc *.js
