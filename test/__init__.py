@@ -50,16 +50,6 @@ def suppress_tornado_warnings():
         logger.setLevel(logging.ERROR)
 
 
-def setup_package(tornado_warnings):
-    """Run once by MotorTestCase before any tests.
-
-    If 'warn', let Tornado log warnings.
-    """
-    env.setup()
-    if not tornado_warnings:
-        suppress_tornado_warnings()
-
-
 def is_server_resolvable():
     """Returns True if 'server' is resolvable."""
     socket_timeout = socket.getdefaulttimeout()
@@ -121,7 +111,10 @@ class MotorTestRunner(unittest.TextTestRunner):
         super(MotorTestRunner, self).__init__(*args, **kwargs)
 
     def run(self, test):
-        setup_package(tornado_warnings=self.tornado_warnings)
+        env.setup()
+        if not self.tornado_warnings:
+            suppress_tornado_warnings()
+
         result = super(MotorTestRunner, self).run(test)
         teardown_package()
         return result

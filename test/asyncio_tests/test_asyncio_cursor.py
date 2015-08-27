@@ -24,26 +24,12 @@ from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
 from motor import motor_asyncio
 
-from test import one, env
+from test import one
 from test.asyncio_tests import (asyncio_test, AsyncIOTestCase,
                                 server_is_mongos, at_least, get_command_line)
 
 
-def setup_package():
-    """Run once by MotorTestCase before any tests.
-
-    If 'warn', let Tornado log warnings.
-    """
-    env.setup()
-
-
 class TestAsyncIOCursor(AsyncIOTestCase):
-    def setUp(self):
-        # TODO: fix this
-        if not env.initialized:
-            env.setup()
-        super().setUp()
-
     def test_cursor(self):
         cursor = self.collection.find()
         self.assertTrue(isinstance(cursor, motor_asyncio.AsyncIOMotorCursor))

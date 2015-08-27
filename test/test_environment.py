@@ -80,7 +80,6 @@ class TestEnvironment(object):
         self.rs_uri = None
 
     def setup(self):
-        """Called once from setup_package."""
         assert not self.initialized
         self.setup_sync_cx()
         self.setup_auth()
