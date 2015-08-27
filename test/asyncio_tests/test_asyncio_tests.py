@@ -19,7 +19,7 @@ import contextlib
 import io
 import os
 import unittest
-
+import concurrent.futures
 
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
@@ -109,13 +109,7 @@ class TestAsyncIOTests(unittest.TestCase):
 
         self.assertEqual(1, len(result.errors))
         case, text = result.errors[0]
-        self.assertTrue('CancelledError' in text)
-        self.assertTrue('timed out after 0.01 seconds' in text)
-
-        # The traceback shows where the coroutine hung.
-        self.assertTrue('test_that_is_too_slow' in text)
-        self.assertTrue('middle' in text)
-        self.assertTrue('inner' in text)
+        self.assertTrue('TimeoutError' in text)
 
     def test_timeout_environment_variable(self):
         self.loop = asyncio.new_event_loop()
@@ -140,7 +134,7 @@ class TestAsyncIOTests(unittest.TestCase):
             default_timeout(self)
 
         with set_environ('ASYNC_TEST_TIMEOUT', '0'):
-            with self.assertRaises(asyncio.CancelledError):
+            with self.assertRaises(concurrent.futures.TimeoutError):
                 custom_timeout(self)
 
         with set_environ('ASYNC_TEST_TIMEOUT', '1'):
