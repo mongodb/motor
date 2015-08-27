@@ -50,19 +50,6 @@ def suppress_tornado_warnings():
         logger.setLevel(logging.ERROR)
 
 
-def is_server_resolvable():
-    """Returns True if 'server' is resolvable."""
-    socket_timeout = socket.getdefaulttimeout()
-    socket.setdefaulttimeout(1)
-    try:
-        socket.gethostbyname('server')
-        return True
-    except socket.error:
-        return False
-    finally:
-        socket.setdefaulttimeout(socket_timeout)
-
-
 def teardown_package():
     if env.auth:
         env.sync_cx.admin.remove_user(db_user)
