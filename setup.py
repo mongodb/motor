@@ -26,7 +26,7 @@ Programming Language :: Python
 Programming Language :: Python :: Implementation :: CPython
 """
 
-description = 'Non-blocking MongoDB driver for Tornado'
+description = 'Non-blocking MongoDB driver for Tornado or asyncio'
 
 long_description = open("README.rst").read()
 
@@ -121,7 +121,6 @@ setup(name='motor',
       author_email='jesse@mongodb.com',
       url='https://github.com/mongodb/motor/',
       install_requires=[
-          'tornado >= 3.1',
           'greenlet >= 0.4.0',
           'pymongo == 2.8.0',
       ],
@@ -129,6 +128,7 @@ setup(name='motor',
       classifiers=filter(None, classifiers.split('\n')),
       keywords=[
           "mongo", "mongodb", "pymongo", "gridfs", "bson", "motor", "tornado",
+          "asyncio",
       ],
       tests_require=tests_require,
       test_suite=test_suite,
