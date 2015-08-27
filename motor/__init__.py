@@ -44,8 +44,6 @@ from .frameworks import tornado as tornado_framework
 from .metaprogramming import create_class_with_framework
 from .motor_common import callback_type_error
 
-# TODO: move this to a tornado_motor module, conditionally import here.
-
 __all__ = ['MotorClient', 'MotorReplicaSetClient', 'Op']
 
 
