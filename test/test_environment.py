@@ -59,6 +59,16 @@ def is_server_resolvable():
         socket.setdefaulttimeout(socket_timeout)
 
 
+def safe_get(dct, dotted_key, default=None):
+    for key in dotted_key.split('.'):
+        if key not in dct:
+            return default
+
+        dct = dct[key]
+
+    return dct
+
+
 class TestEnvironment(object):
     def __init__(self):
         self.initialized = False
@@ -76,6 +86,7 @@ class TestEnvironment(object):
         self.secondaries = None
         self.v8 = False
         self.auth = False
+        self.user_provided = False
         self.uri = None
         self.rs_uri = None
 
@@ -87,6 +98,11 @@ class TestEnvironment(object):
         self.setup_rs()
         self.setup_v8()
         self.initialized = True
+
+    def teardown(self):
+        if self.auth and not self.user_provided:
+            # We created this user in setup_auth().
+            self.sync_cx.admin.remove_user(db_user)
 
     def setup_sync_cx(self):
         """Get a synchronous PyMongo MongoClient and determine SSL config."""
@@ -119,19 +135,34 @@ class TestEnvironment(object):
 
     def setup_auth(self):
         """Set self.auth and self.uri, and maybe create an admin user."""
-        # Either we're on mongod < 2.7.1 and we can connect over localhost to
-        # check if --auth is in the command line. Or we're prohibited from
-        # seeing the command line so we should try blindly to create an admin
-        # user.
         try:
-            argv = self.sync_cx.admin.command('getCmdLineOpts')['argv']
-            self.auth = ('--auth' in argv or '--keyFile' in argv)
+            cmd_line = self.sync_cx.admin.command('getCmdLineOpts')
         except pymongo.errors.OperationFailure as e:
-            if e.code == 13:
-                # Auth failure getting command line.
+            msg = e.details.get('errmsg', '')
+            if e.code == 13 or 'unauthorized' in msg or 'login' in msg:
+                # Unauthorized.
                 self.auth = True
             else:
                 raise
+        else:
+            # Either we're on mongod < 2.7.1 and we can connect over localhost
+            # to check if --auth is in the command line. Or we're prohibited
+            # from seeing the command line so we should try blindly to create
+            # an admin user.
+            try:
+                authorization = safe_get(cmd_line,
+                                         'parsed.security.authorization')
+                if authorization:
+                    self.auth = (authorization == 'enabled')
+                else:
+                    argv = cmd_line['argv']
+                    self.auth = ('--auth' in argv or '--keyFile' in argv)
+            except pymongo.errors.OperationFailure as e:
+                if e.code == 13:
+                    # Auth failure getting command line.
+                    self.auth = True
+                else:
+                    raise
 
         if self.auth:
             uri_template = 'mongodb://%s:%s@%s:%s/admin'
@@ -145,7 +176,8 @@ class TestEnvironment(object):
             try:
                 self.sync_cx.admin.add_user(db_user, db_password, roles=['root'])
             except pymongo.errors.OperationFailure:
-                print("Couldn't create root user, prior test didn't clean up?")
+                # User was added before setup(), e.g. by Mongo Orchestration.
+                self.user_provided = True
 
             self.sync_cx.admin.authenticate(db_user, db_password)
 

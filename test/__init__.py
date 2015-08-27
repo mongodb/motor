@@ -50,11 +50,6 @@ def suppress_tornado_warnings():
         logger.setLevel(logging.ERROR)
 
 
-def teardown_package():
-    if env.auth:
-        env.sync_cx.admin.remove_user(db_user)
-
-
 class SkippedModule(object):
     def __init__(self, name, reason):
         def runTest(self):
@@ -103,7 +98,7 @@ class MotorTestRunner(unittest.TextTestRunner):
             suppress_tornado_warnings()
 
         result = super(MotorTestRunner, self).run(test)
-        teardown_package()
+        env.teardown()
         return result
 
 
