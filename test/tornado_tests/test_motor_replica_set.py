@@ -1,4 +1,4 @@
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2012-2015 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,9 +27,10 @@ from tornado.testing import gen_test
 import motor
 import motor.core
 import test
-from test import MotorReplicaSetTestBase, assert_raises, MotorTest
+from test import assert_raises
 from test import SkipTest
 from test.test_environment import db_user, db_password, port, host
+from test.tornado_tests import MotorReplicaSetTestBase, MotorTest
 from test.utils import one
 
 from motor.motor_py3_compat import text_type
@@ -159,7 +160,7 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
 
 
 class MotorReplicaSetExhaustCursorTest(
-        test._TestExhaustCursorMixin,
+        test.tornado_tests._TestExhaustCursorMixin,
         MotorReplicaSetTestBase):
 
     def _get_client(self, **kwargs):

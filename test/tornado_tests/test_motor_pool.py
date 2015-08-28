@@ -1,4 +1,4 @@
-# Copyright 2013-2014 MongoDB, Inc.
+# Copyright 2013-2015 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,8 +27,9 @@ from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import test
-from test import MotorTest, assert_raises, SkipTest
+from test import assert_raises, SkipTest
 from test.test_environment import host, port
+from test.tornado_tests import MotorTest
 from test.utils import delay, one
 
 import motor

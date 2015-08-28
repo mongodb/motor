@@ -1,4 +1,4 @@
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2012-2015 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,8 @@ import pymongo.errors
 from tornado.testing import gen_test
 
 import motor
-from test import MotorTest, assert_raises
+from test import assert_raises
+from test.tornado_tests import MotorTest
 
 
 class MotorGenTest(MotorTest):

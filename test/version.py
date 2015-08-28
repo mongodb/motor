@@ -1,4 +1,4 @@
-# Copyright 2009-2014 MongoDB, Inc.
+# Copyright 2009-2015 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
 from __future__ import unicode_literals, absolute_import
 
 """Some tools for running tests based on MongoDB server version."""
-
-from tornado import gen
 
 
 def padded(iter, length, padding=0):
@@ -48,15 +46,3 @@ def _parse_version_string(version_string):
     version.append(mod)
 
     return tuple(version)
-
-
-@gen.coroutine
-def version(client):
-    info = yield client.server_info()
-    raise gen.Return(_parse_version_string(info["version"]))
-
-
-@gen.coroutine
-def at_least(client, min_version):
-    client_version = yield version(client)
-    raise gen.Return(client_version >= tuple(padded(min_version, 4)))

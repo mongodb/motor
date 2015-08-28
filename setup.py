@@ -83,14 +83,17 @@ class test(Command):
         # TestResult that supports the 'addSkip' method. setuptools will by
         # default create a TextTestRunner that uses the old TestResult class,
         # resulting in DeprecationWarnings instead of skipping tests under 2.6.
-        from test import unittest, MotorTestLoader, MotorTestRunner
+        from test import (unittest, MotorTestLoader, MotorTestRunner,
+                          test_environment as testenv)
 
-        try:
-            import asyncio
-        except ImportError:
+        if not (testenv.HAVE_ASYNCIO or testenv.HAVE_TORNADO):
+            raise ImportError("No tornado nor asyncio")
+        elif not testenv.HAVE_TORNADO:
+            loader = MotorTestLoader(avoid='tornado_tests', reason='no tornado')
+        elif not testenv.HAVE_ASYNCIO:
             loader = MotorTestLoader(avoid='asyncio_tests', reason='no asyncio')
         else:
-            # We have asyncio, run its tests.
+            # We have both.
             loader = MotorTestLoader()
 
         if self.test_suite is None:

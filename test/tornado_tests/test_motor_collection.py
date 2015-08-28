@@ -1,4 +1,4 @@
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2012-2015 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,10 +27,11 @@ from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import motor
-import motor.core
+import motor.motor_tornado
 import test
-from test import MotorTest, assert_raises, version, SkipTest
-from test.utils import delay, skip_if_mongos
+from test import assert_raises, SkipTest
+from test.tornado_tests import at_least, MotorTest, skip_if_mongos
+from test.utils import delay
 
 
 class MotorCollectionTest(MotorTest):
@@ -405,7 +406,7 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     def test_aggregation_cursor(self):
-        if not (yield version.at_least(self.cx, (2, 5, 1))):
+        if not (yield at_least(self.cx, (2, 5, 1))):
             raise SkipTest("Aggregation cursor requires MongoDB >= 2.5.1")
 
         db = self.db
@@ -426,7 +427,7 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test(timeout=30)
     def test_parallel_scan(self):
-        if not (yield version.at_least(self.cx, (2, 5, 5))):
+        if not (yield at_least(self.cx, (2, 5, 5))):
             raise SkipTest("Requires MongoDB >= 2.5.5")
 
         yield skip_if_mongos(self.cx)
@@ -447,7 +448,8 @@ class MotorCollectionTest(MotorTest):
 
         @gen.coroutine
         def f(cursor):
-            self.assertTrue(isinstance(cursor, motor.MotorCommandCursor))
+            self.assertTrue(isinstance(cursor,
+                                       motor.motor_tornado.MotorCommandCursor))
 
             while (yield cursor.fetch_next):
                 docs.append(cursor.next_object())

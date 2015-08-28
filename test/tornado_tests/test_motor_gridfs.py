@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2012-2015 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,7 +31,8 @@ import motor
 import test
 from test.test_environment import db_password, db_user
 from motor.motor_py3_compat import StringIO
-from test import MotorTest, MotorReplicaSetTestBase, assert_raises
+from test import assert_raises
+from test.tornado_tests import MotorTest, MotorReplicaSetTestBase
 
 
 class MotorGridfsTest(MotorTest):

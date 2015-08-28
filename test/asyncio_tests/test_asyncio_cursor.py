@@ -24,7 +24,7 @@ from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
 from motor import motor_asyncio
 
-from test import one
+from test.utils import one
 from test.asyncio_tests import (asyncio_test, AsyncIOTestCase,
                                 server_is_mongos, at_least, get_command_line)
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2012-2015 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
 # limitations under the License.
 
 from __future__ import unicode_literals
-from tornado import gen
 
 """Test GridFS with Motor, an asynchronous driver for MongoDB and Tornado."""
 
@@ -29,7 +28,8 @@ from tornado.testing import gen_test
 from pymongo.errors import InvalidOperation
 
 import motor
-from test import MotorTest, assert_raises
+from test import assert_raises
+from test.tornado_tests import MotorTest
 
 
 class MotorGridFileTest(MotorTest):

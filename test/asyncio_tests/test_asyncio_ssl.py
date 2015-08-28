@@ -29,9 +29,8 @@ from pymongo.errors import (ConfigurationError,
 from motor.motor_asyncio import (AsyncIOMotorClient,
                                  AsyncIOMotorReplicaSetClient)
 import test
-from test.asyncio_tests import at_least, asyncio_test
+from test.asyncio_tests import asyncio_test, at_least, remove_all_users
 from test.test_environment import host, port, CLIENT_PEM, CA_PEM
-from test.utils import remove_all_users
 
 
 # TODO: refactor with test_motor_ssl, probably put in test_environment.

@@ -20,13 +20,14 @@ from unittest import SkipTest
 
 import pymongo
 from pymongo.errors import ConnectionFailure, ConfigurationError
-from pymongo.errors import OperationFailure
-from motor import motor_asyncio
 
+from pymongo.errors import OperationFailure
+
+from motor import motor_asyncio
 import test
-from test.asyncio_tests import asyncio_test, AsyncIOTestCase
+from test.asyncio_tests import asyncio_test, AsyncIOTestCase, remove_all_users
 from test.test_environment import host, port, db_user, db_password
-from test.utils import remove_all_users, delay
+from test.utils import delay
 
 
 class TestAsyncIOClient(AsyncIOTestCase):

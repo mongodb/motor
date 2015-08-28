@@ -1,4 +1,4 @@
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2012-2015 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,10 +36,9 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import MotorTest, version, SkipTest
+from test import SkipTest
 from test.test_environment import host, port, CLIENT_PEM, CA_PEM
-from test.utils import remove_all_users
-
+from test.tornado_tests import at_least, MotorTest, remove_all_users
 
 MONGODB_X509_USERNAME = \
     "CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US"
@@ -328,7 +327,7 @@ class MotorSSLTest(MotorTest):
         authenticated_client = motor.MotorClient(
             test.env.uri, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
 
-        if not (yield version.at_least(authenticated_client, (2, 5, 3, -1))):
+        if not (yield at_least(authenticated_client, (2, 5, 3, -1))):
             raise SkipTest("MONGODB-X509 tests require MongoDB 2.5.3 or newer")
 
         if not test.env.auth:

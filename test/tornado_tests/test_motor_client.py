@@ -1,4 +1,4 @@
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2012-2015 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,11 +31,11 @@ from tornado.ioloop import IOLoop
 from tornado.testing import gen_test, netutil
 
 import motor
-import motor.core
 import test
-from test import assert_raises, MotorTest, SkipTest
+from test import assert_raises, SkipTest
 from test.test_environment import host, port, db_user, db_password
-from test.utils import remove_all_users, delay
+from test.tornado_tests import remove_all_users, MotorTest
+from test.utils import delay
 from test.version import padded
 
 
@@ -341,7 +341,8 @@ class MotorResolverTest(MotorTest):
             'tornado.platform.caresresolver.CaresResolver', False)
 
 
-class MotorClientExhaustCursorTest(test._TestExhaustCursorMixin, MotorTest):
+class MotorClientExhaustCursorTest(test.tornado_tests._TestExhaustCursorMixin,
+                                   MotorTest):
     def _get_client(self, **kwargs):
         return self.motor_client(**kwargs)
 

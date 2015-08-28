@@ -24,6 +24,13 @@ except ImportError:
     HAVE_SSL = False
     ssl = None
 
+HAVE_TORNADO = True
+try:
+    import tornado
+except ImportError:
+    HAVE_TORNADO = False
+    tornado = None
+
 HAVE_ASYNCIO = True
 try:
     import asyncio

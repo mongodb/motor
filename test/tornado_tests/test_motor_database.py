@@ -1,4 +1,4 @@
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2012-2015 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,11 +24,10 @@ from pymongo.son_manipulator import AutoReference, NamespaceInjector
 from tornado.testing import gen_test
 
 import motor
-import motor.core
 import test
-from test import version, MotorTest, assert_raises
+from test import assert_raises
 from test.test_environment import host, port
-from test.utils import remove_all_users
+from test.tornado_tests import MotorTest, remove_all_users, at_least
 
 
 class MotorDatabaseTest(MotorTest):
@@ -187,7 +186,7 @@ class MotorDatabaseTest(MotorTest):
             # Just make sure there are no exceptions here.
             yield db.remove_user("mike")
             yield db.logout()
-            if (yield version.at_least(self.cx, (2, 5, 4))):
+            if (yield at_least(self.cx, (2, 5, 4))):
                 info = yield self.db.command("usersInfo", "mike")
                 users = info.get('users', [])
             else:

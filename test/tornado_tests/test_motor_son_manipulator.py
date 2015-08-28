@@ -1,4 +1,4 @@
-# Copyright 2013-2014 MongoDB, Inc.
+# Copyright 2013-2015 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@ from __future__ import unicode_literals
 import pymongo.son_manipulator
 from tornado.testing import gen_test
 
-import test
-from test import MotorTest
+from test.tornado_tests import MotorTest
 
 
 class CustomSONManipulator(pymongo.son_manipulator.SONManipulator):

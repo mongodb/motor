@@ -1,4 +1,4 @@
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2012-2015 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,15 +30,19 @@ from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import motor
-import motor.core
-from test import MotorTest, assert_raises, SkipTest
-from test.utils import server_is_mongos, version, get_command_line, one
+import motor.motor_tornado
+from test import assert_raises, SkipTest
+from test.tornado_tests import (at_least,
+                                get_command_line,
+                                MotorTest,
+                                server_is_mongos)
+from test.utils import one
 
 
 class MotorCursorTest(MotorTest):
     def test_cursor(self):
         cursor = self.collection.find()
-        self.assertTrue(isinstance(cursor, motor.MotorCursor))
+        self.assertTrue(isinstance(cursor, motor.motor_tornado.MotorCursor))
         self.assertFalse(cursor.started, "Cursor shouldn't start immediately")
 
     @gen_test
@@ -598,7 +602,7 @@ class MotorCursorTest(MotorTest):
         # already have been opened to send OP_KILLCURSORS.
         self.assertNotIn(sock, socks)
         self.assertTrue(sock.closed)
-        yield self.wait_for_cursor(self.collection, retrieved, cursor_id)
+        yield self.wait_for_cursor(self.collection, cursor_id, retrieved)
 
 
 class MotorCursorMaxTimeMSTest(MotorTest):
@@ -612,7 +616,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
 
     @gen.coroutine
     def maybe_skip(self):
-        if not (yield version.at_least(self.cx, (2, 5, 3, -1))):
+        if not (yield at_least(self.cx, (2, 5, 3, -1))):
             raise SkipTest("maxTimeMS requires MongoDB >= 2.5.3")
 
         if "enableTestCommands=1" not in (yield get_command_line(self.cx)):
