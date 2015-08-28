@@ -65,8 +65,7 @@ def at_least(client, min_version):
 def get_command_line(client):
     command_line = yield client.admin.command('getCmdLineOpts')
     assert command_line['ok'] == 1, "getCmdLineOpts() failed"
-    raise gen.Return(command_line['argv'])
-
+    raise gen.Return(command_line)
 
 
 @gen.coroutine

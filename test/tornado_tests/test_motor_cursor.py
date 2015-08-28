@@ -36,7 +36,7 @@ from test.tornado_tests import (at_least,
                                 get_command_line,
                                 MotorTest,
                                 server_is_mongos)
-from test.utils import one
+from test.utils import one, safe_get
 
 
 class MotorCursorTest(MotorTest):
@@ -618,8 +618,10 @@ class MotorCursorMaxTimeMSTest(MotorTest):
         if not (yield at_least(self.cx, (2, 5, 3, -1))):
             raise SkipTest("maxTimeMS requires MongoDB >= 2.5.3")
 
-        if "enableTestCommands=1" not in (yield get_command_line(self.cx)):
-            raise SkipTest("testing maxTimeMS requires failpoints")
+        cmdline = yield get_command_line(self.cx)
+        if '1' != safe_get(cmdline, 'parsed.setParameter.enableTestCommands'):
+            if 'enableTestCommands=1' not in cmdline['argv']:
+                raise SkipTest("testing maxTimeMS requires failpoints")
 
     @gen.coroutine
     def enable_timeout(self):

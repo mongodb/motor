@@ -17,6 +17,8 @@
 import os
 import socket
 
+from test.utils import safe_get
+
 HAVE_SSL = True
 try:
     import ssl
@@ -64,16 +66,6 @@ def is_server_resolvable():
         return False
     finally:
         socket.setdefaulttimeout(socket_timeout)
-
-
-def safe_get(dct, dotted_key, default=None):
-    for key in dotted_key.split('.'):
-        if key not in dct:
-            return default
-
-        dct = dct[key]
-
-    return dct
 
 
 class TestEnvironment(object):
