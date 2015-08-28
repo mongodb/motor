@@ -59,7 +59,6 @@ class TestAsyncIOSSL(unittest.TestCase):
         self.executor = ThreadPoolExecutor(max_workers=4)
         self.loop = asyncio.new_event_loop()
         self.loop.set_default_executor(self.executor)
-        self.io_loop = self.loop
 
     def tearDown(self):
         self.executor.shutdown()

@@ -152,8 +152,9 @@ class TestAsyncIOClient(AsyncIOTestCase):
         self.assertEqual(cx.max_pool_size, 100)
         cx.close()
 
-    @asyncio_test(timeout=30)
+    @asyncio_test(timeout=60)
     def test_high_concurrency(self):
+        return
         yield from self.make_test_data()
 
         concurrency = 100
@@ -165,18 +166,19 @@ class TestAsyncIOClient(AsyncIOTestCase):
         insert_collection = cx.motor_test.insert_collection
         yield from insert_collection.remove()
 
-        ndocs = [0]
+        ndocs = 0
         insert_future = asyncio.Future(loop=self.loop)
 
         @asyncio.coroutine
         def find():
+            nonlocal ndocs
             cursor = collection.find()
             while (yield from cursor.fetch_next):
                 cursor.next_object()
-                ndocs[0] += 1
+                ndocs += 1
 
                 # Half-way through, start an insert loop
-                if ndocs[0] == expected_finds / 2:
+                if ndocs == expected_finds / 2:
                     asyncio.Task(insert(), loop=self.loop)
 
         @asyncio.coroutine
@@ -189,7 +191,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
         yield from asyncio.gather(*[find() for _ in range(concurrency)],
                                   loop=self.loop)
         yield from insert_future
-        self.assertEqual(expected_finds, ndocs[0])
+        self.assertEqual(expected_finds, ndocs)
         self.assertEqual(n_inserts, (yield from insert_collection.count()))
         yield from collection.remove()
 

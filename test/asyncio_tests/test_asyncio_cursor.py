@@ -547,7 +547,7 @@ class MotorCursorMaxTimeMSTest(AsyncIOTestCase):
         self.loop.run_until_complete(self.maybe_skip())
 
     def tearDown(self):
-        self.io_loop.run_until_complete(self.disable_timeout())
+        self.loop.run_until_complete(self.disable_timeout())
         super(MotorCursorMaxTimeMSTest, self).tearDown()
 
     @asyncio.coroutine

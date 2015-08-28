@@ -86,7 +86,6 @@ class AsyncIOTestCase(unittest.TestCase):
         self.executor = ThreadPoolExecutor(max_workers=4)
         self.loop = asyncio.new_event_loop()
         self.loop.set_default_executor(self.executor)
-        self.io_loop = self.loop
 
         if self.ssl and not env.mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")
