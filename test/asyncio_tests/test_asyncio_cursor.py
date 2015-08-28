@@ -538,7 +538,6 @@ class TestAsyncIOCursor(AsyncIOTestCase):
         # already have been opened to send OP_KILLCURSORS.
         self.assertNotIn(sock, socks)
         self.assertTrue(sock.closed)
-        yield from self.wait_for_cursor(self.collection, retrieved, cursor_id)
 
 
 class MotorCursorMaxTimeMSTest(AsyncIOTestCase):

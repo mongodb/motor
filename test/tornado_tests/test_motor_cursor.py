@@ -602,7 +602,6 @@ class MotorCursorTest(MotorTest):
         # already have been opened to send OP_KILLCURSORS.
         self.assertNotIn(sock, socks)
         self.assertTrue(sock.closed)
-        yield self.wait_for_cursor(self.collection, cursor_id, retrieved)
 
 
 class MotorCursorMaxTimeMSTest(MotorTest):
