@@ -21,9 +21,9 @@ import random
 import unittest
 
 import pymongo.errors
-from test.asyncio_tests import asyncio_test, AsyncIOTestCase
 
 import test
+from test.asyncio_tests import asyncio_test, AsyncIOTestCase
 from test import assert_raises, SkipTest
 from test.utils import delay, one
 

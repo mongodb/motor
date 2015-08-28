@@ -17,12 +17,14 @@
 import asyncio
 import unittest
 from unittest import SkipTest
+
 import bson
 from bson.objectid import ObjectId
 from pymongo import ReadPreference
-from pymongo.errors import DuplicateKeyError
-from motor import motor_asyncio
 
+from pymongo.errors import DuplicateKeyError
+
+from motor import motor_asyncio
 from motor.motor_asyncio import AsyncIOMotorCollection, \
     AsyncIOMotorCommandCursor
 import test
