@@ -266,12 +266,6 @@ def get_command_line(client):
 
 
 @asyncio.coroutine
-def server_is_master_with_slave(client):
-    command_line = yield from get_command_line(client)
-    return '--master' in command_line
-
-
-@asyncio.coroutine
 def server_is_mongos(client):
     ismaster_response = yield from client.admin.command('ismaster')
     return ismaster_response.get('msg') == 'isdbgrid'

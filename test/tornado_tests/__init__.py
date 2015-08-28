@@ -68,11 +68,6 @@ def get_command_line(client):
     raise gen.Return(command_line['argv'])
 
 
-@gen.coroutine
-def server_is_master_with_slave(client):
-    command_line = yield get_command_line(client)
-    raise gen.Return('--master' in command_line)
-
 
 @gen.coroutine
 def server_is_mongos(client):
