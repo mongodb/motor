@@ -262,7 +262,7 @@ def asyncio_test(func=None, timeout=None):
 def get_command_line(client):
     command_line = yield from client.admin.command('getCmdLineOpts')
     assert command_line['ok'] == 1, "getCmdLineOpts() failed"
-    return command_line['argv']
+    return command_line
 
 
 @asyncio.coroutine

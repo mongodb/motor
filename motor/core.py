@@ -18,6 +18,7 @@ from __future__ import unicode_literals, absolute_import
 
 import collections
 import functools
+import logging
 import socket
 import sys
 import time
@@ -677,6 +678,7 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
         self.started = False
         self.loop = loop
         self._framework = framework
+        self._logger = logging.getLogger('motor')
 
     def shutdown(self, _=None):
         self.stopped = True
@@ -690,12 +692,14 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
 
         try:
             self.rsc.refresh()
-        except pymongo.errors.AutoReconnect:
+        except (pymongo.errors.AutoReconnect, IOError, OSError):
+            # Stream closed.
             pass
-        # RSC has been collected or there
-        # was an unexpected error.
-        except:
-            return
+        except ReferenceError:
+            # rsc was collected.
+            pass
+        except Exception:
+            self._logger.exception('Monitor.refresh')
         finally:
             # Switch to greenlets blocked in wait_for_refresh().
             self.refreshed.set()
