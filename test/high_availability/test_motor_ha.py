@@ -870,13 +870,6 @@ class MotorTestReplicaSetAuth(MotorHATestCase):
         self.c = pymongo.mongo_replica_set_client.MongoReplicaSetClient(
             self.seed, replicaSet=self.name)
 
-        # TODO: Use PyMongo's add_user once it's fixed for MongoDB 2.7.1+.
-        try:
-            self.c.admin.command(
-                'createUser', 'admin', pwd='adminpass', roles=['root'])
-        except OperationFailure:
-            self.c.admin.add_user('admin', 'adminpass')
-
         self.c.admin.add_user('admin', password='adminpass',
                               roles=['userAdminAnyDatabase'])
         self.c.admin.authenticate('admin', 'adminpass')
