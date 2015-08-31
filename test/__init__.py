@@ -50,28 +50,31 @@ class SkippedModule(object):
 
 
 class MotorTestLoader(unittest.TestLoader):
-    """Optionally skip whole modules.
-
-    The usual "raise SkipTest" from a module doesn't work if the module
-    won't even parse in Python 2, so prevent TestLoader from importing
-    modules with the given prefix.
-
-    "avoid" is a prefix string like "asyncio_tests".
-    """
     def __init__(self, avoid=None, reason=None):
         super(MotorTestLoader, self).__init__()
-        self.avoid = avoid
-        self.reason = reason
+        self._avoid = []
+
+    def avoid(self, prefix, reason):
+        """Skip a module.
+
+        The usual "raise SkipTest" from a module doesn't work if the module
+        won't even parse in Python 2, so prevent TestLoader from importing
+        modules with the given prefix.
+
+        "prefix" is a path prefix like "asyncio_tests".
+        """
+        self._avoid.append((prefix, reason))
 
     def _get_module_from_name(self, name):
-        if self.avoid is not None and name.startswith(self.avoid):
-            # By experiment, need two tactics to work in unittest2 and stdlib.
-            if unittest.__name__ == 'unittest2':
-                raise SkipTest(str(self.reason))
-            else:
-                return SkippedModule(name, self.reason)
-        else:
-            return super(MotorTestLoader, self)._get_module_from_name(name)
+        for prefix, reason in self._avoid:
+            if name.startswith(prefix):
+                # By experiment, need two tactics to work in unittest2 & stdlib.
+                if unittest.__name__ == 'unittest2':
+                    raise SkipTest(reason)
+                else:
+                    return SkippedModule(name, reason)
+
+        return super(MotorTestLoader, self)._get_module_from_name(name)
 
 
 class MotorTestRunner(unittest.TextTestRunner):

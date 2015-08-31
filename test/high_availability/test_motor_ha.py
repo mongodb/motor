@@ -29,11 +29,12 @@ from pymongo.errors import AutoReconnect, OperationFailure
 
 from tornado.testing import gen_test
 import motor
-import ha_tools
-from test import one
-from test import assert_raises, PauseMixin
-from test_motor_ha_utils import assert_read_from, assert_read_from_all
-
+from test import assert_raises
+from test.high_availability import ha_tools
+from test.high_availability.test_motor_ha_utils import (assert_read_from,
+                                                        assert_read_from_all)
+from test.tornado_tests import PauseMixin
+from test.utils import one
 
 
 # Override default 30-second interval for faster testing

@@ -86,15 +86,15 @@ class test(Command):
         from test import (unittest, MotorTestLoader, MotorTestRunner,
                           test_environment as testenv)
 
+        loader = MotorTestLoader()
+        loader.avoid('high_availability', 'Runs separately')
+
         if not (testenv.HAVE_ASYNCIO or testenv.HAVE_TORNADO):
             raise ImportError("No tornado nor asyncio")
         elif not testenv.HAVE_TORNADO:
-            loader = MotorTestLoader(avoid='tornado_tests', reason='no tornado')
+            loader.avoid('tornado_tests', reason='no tornado')
         elif not testenv.HAVE_ASYNCIO:
-            loader = MotorTestLoader(avoid='asyncio_tests', reason='no asyncio')
-        else:
-            # We have both.
-            loader = MotorTestLoader()
+            loader.avoid('asyncio_tests', reason='no asyncio')
 
         if self.test_suite is None:
             suite = loader.discover(self.test_module)
