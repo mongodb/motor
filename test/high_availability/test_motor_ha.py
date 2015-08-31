@@ -340,21 +340,14 @@ class MotorTestHealthMonitor(MotorHATestCase):
     def test_secondary_failure(self):
         c = motor.MotorReplicaSetClient(self.seed, replicaSet=self.name)
         yield c.open()
-        self.assertTrue(c.secondaries)
-        primary = c.primary
+        secondaries = c.secondaries
+        self.assertTrue(secondaries)
 
         killed = ha_tools.kill_secondary()
         self.assertTrue(bool(len(killed)))
-        self.assertEqual(primary, c.primary)
 
         yield self.pause(2 * MONITOR_INTERVAL)
-        secondaries = c.secondaries
 
-        ha_tools.restart_members([killed])
-        self.assertEqual(primary, c.primary)
-
-        # Wait for secondary to join, and for MotorReplicaSetClient
-        # to detect it.
         for _ in range(30):
             if c.secondaries != secondaries:
                 break
