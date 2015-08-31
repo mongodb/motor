@@ -73,7 +73,6 @@ def asynchronize(
                         functools.partial(callback, result, None))
                 else:
                     # Schedule future to be resolved on main greenlet.
-                    # TODO: I think Tornado and asyncio have methods for this.
                     framework.call_soon(
                         loop,
                         functools.partial(future.set_result, result))
