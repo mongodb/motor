@@ -202,6 +202,10 @@ class AsyncioMotorSocket:
         if self._writer:
             self._writer.close()
 
+    def fileno(self):
+        assert False, "TODO"
+        return self._writer.transport.something
+
 
 # A create_socket() function is part of Motor's framework interface.
 create_socket = AsyncioMotorSocket

@@ -369,10 +369,10 @@ class MotorPool(object):
             if _closed(sock_info.sock):
                 sock_info.close()
                 error = True
-        # elif time.time() - sock_info.last_checkout > 1:
-        #     if _closed(sock_info.sock):
-        #         sock_info.close()
-        #         error = True
+        elif time.time() - sock_info.last_checkout > 1:
+            if _closed(sock_info.sock):
+                sock_info.close()
+                error = True
 
         if not error:
             return sock_info

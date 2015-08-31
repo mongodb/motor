@@ -374,6 +374,9 @@ class TornadoMotorSocket(object):
                 sock,
                 io_loop=self.io_loop)
 
+    def fileno(self):
+        return self.stream.socket.fileno()
+
 
 # A create_socket() function is part of Motor's framework interface.
 create_socket = TornadoMotorSocket
