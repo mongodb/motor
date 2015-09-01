@@ -332,6 +332,9 @@ class TornadoMotorSocket(object):
         raise gen.Return(result)
 
     def close(self):
+        if not self.stream:
+            return
+
         sock = self.stream.socket
         try:
             self.stream.close()
