@@ -71,7 +71,7 @@ class _AssertLogsContext(_BaseTestCaseContext):
             return False
         if len(self.watcher.records) == 0:
             self._raiseFailure(
-                "no logs of level {} or higher triggered on {}"
+                "no logs of level {0} or higher triggered on {1}"
                 .format(logging.getLevelName(self.level), self.logger.name))
 
 
