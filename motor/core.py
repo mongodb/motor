@@ -697,7 +697,7 @@ class MotorReplicaSetMonitor(pymongo.mongo_replica_set_client.Monitor):
             pass
         except ReferenceError:
             # rsc was collected.
-            pass
+            return
         except Exception:
             self._logger.exception('Monitor.refresh')
         finally:
