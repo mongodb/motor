@@ -3,14 +3,16 @@ Requirements
 
 The current version of Motor requires:
 
-* CPython 2.6, 2.7, 3.3, or 3.4.
+* CPython 2.6, 2.7, or 3.3 and later.
 * PyMongo_ 2.8.0 exactly.
-* Tornado_ 3.1 or later.
 * Greenlet_
 
 The default authentication mechanism for MongoDB 3.0+ is SCRAM-SHA-1.
 Install `backports.pbkdf2`_ for faster authentication with MongoDB 3.0+,
-especially on Python older than 2.7.8, or on Python 3 before Python 3.4.
+especially on Python older than 2.7.8, or on Python 3.3.
+
+(Python 2.7.9 and later, or Python 3.4 and later, have builtin hash functions
+nearly as fast as backports.pbkdf2.)
 
 Building the docs requires `sphinx`_.
 
@@ -18,8 +20,6 @@ In Python 2.6, unittest2_ is automatically installed by
 ``python setup.py test``.
 
 .. _PyMongo: https://pypi.python.org/pypi/pymongo/
-
-.. _Tornado: http://www.tornadoweb.org
 
 .. _Greenlet: http://pypi.python.org/pypi/greenlet/
 
@@ -50,14 +50,13 @@ PyMongo version specified for each version of Motor.
 +-------------------+-----------------+
 | 0.4               | 2.8.0           |
 +-------------------+-----------------+
-
-Motor 0.5 will likely depend on PyMongo 2.9, and Motor 0.6 on PyMongo 3.1 or
-later.
+| 0.5               | 2.8.0           |
++-------------------+-----------------+
 
 Motor and MongoDB
 `````````````````
 
-All Motor versions are usable with MongoDB versions as old as 2.2.
+All Motor versions are usable with all MongoDB versions as old as 2.2.
 Where "N" appears there are some incompatibilities and
 unsupported server features.
 
@@ -74,35 +73,40 @@ unsupported server features.
 +---------------+-----+-----+-----+-----+-----+
 |               | 0.4 |  Y  |  Y  |  Y  |  Y  |
 +---------------+-----+-----+-----+-----+-----+
+|               | 0.5 |  Y  |  Y  |  Y  |  Y  |
++---------------+-----+-----+-----+-----+-----+
 
 Motor and Tornado
 `````````````````
 
 Where "N" appears in this matrix, the versions of Motor and Tornado are
-completely incompatible.
+known to be incompatible, or have not been tested together.
 
-+---------------------------------------------------------+
-|                        Tornado Version                  |
-+=====================+=====+=====+=====+=====+=====+=====+
-|                     | 2.4 | 3.0 | 3.1 | 3.2 | 4.0 | 4.1 |
-+---------------+-----+-----+-----+-----+-----+-----+-----+
-| Motor Version | 0.1 |  Y  |  Y  |  Y  |  Y  |**N**|**N**|
-+---------------+-----+-----+-----+-----+-----+-----+-----+
-|               | 0.2 |**N**|**N**|  Y  |  Y  |  Y  |  Y  |
-+---------------+-----+-----+-----+-----+-----+-----+-----+
-|               | 0.3 |**N**|**N**|  Y  |  Y  |  Y  |  Y  |
-+---------------+-----+-----+-----+-----+-----+-----+-----+
-|               | 0.4 |**N**|**N**|  Y  |  Y  |  Y  |  Y  |
-+---------------+-----+-----+-----+-----+-----+-----+-----+
++---------------------------------------------------+
+|                 Tornado Version                   |
++=====================+=====+=====+=====+=====+=====+
+|                     | 3.1 | 3.2 | 4.0 | 4.1 | 4.2 |
++---------------+-----+-----+-----+-----+-----+-----+
+| Motor Version | 0.1 |  Y  |  Y  |**N**|**N**|**N**|
++---------------+-----+-----+-----+-----+-----+-----+
+|               | 0.2 |  Y  |  Y  |  Y  |  Y  |**N**|
++---------------+-----+-----+-----+-----+-----+-----+
+|               | 0.3 |  Y  |  Y  |  Y  |  Y  |**N**|
++---------------+-----+-----+-----+-----+-----+-----+
+|               | 0.4 |  Y  |  Y  |  Y  |  Y  |**N**|
++---------------+-----+-----+-----+-----+-----+-----+
+|               | 0.5 |  Y  |  Y  |  Y  |  Y  |  Y  |
++---------------+-----+-----+-----+-----+-----+-----+
 
 Motor and Python
 ````````````````
 
-Motor requires Tornado, and it supports the same version of Python as its
-supported Tornado versions do.
+Until version 0.4, Motor required Tornado, and it supported the same version of
+Python as its supported Tornado versions did.
 
-Beginning in version 0.5, Motor will integrate with asyncio or Tornado.
-asyncio support will require Python 3.4.
+Beginning in version 0.5, Motor integrates with asyncio or Tornado.
+For asyncio support specifically, Motor requires Python 3.4+, or Python 3.3
+with the `asyncio package from PyPI`_.
 
 +-----------------------------------------------------------------------------+
 |                   Python Version                                            |
@@ -117,12 +121,15 @@ asyncio support will require Python 3.4.
 +---------------+-----+-----+-----+-----+------------------+------------------+
 |               | 0.4 |**N**|  Y  |  Y  |  Y               |  Y               |
 +---------------+-----+-----+-----+-----+------------------+------------------+
+|               | 0.5 |**N**|  Y  |  Y  |  Y               |  Y               |
++---------------+-----+-----+-----+-----+------------------+------------------+
 
+.. _asyncio package from PyPI: https://pypi.python.org/pypi/asyncio
 
 Not Supported
 -------------
 
-Code that executes greenlets has performed very poorly on PyPy until recently.
+Code that executes greenlets has performed very poorly on PyPy in the past.
 I must reevaluate whether PyPy is supported or not.
 
 Motor does not support Jython or Windows.
