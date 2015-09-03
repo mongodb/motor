@@ -27,6 +27,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pymongo.errors
 
 from motor import motor_asyncio
+from test.assert_logs_backport import AssertLogsMixin
 from test.version import _parse_version_string, padded
 from test.test_environment import env, CLIENT_PEM
 
@@ -63,7 +64,7 @@ class _TestMethodWrapper(object):
         return getattr(self.orig_method, name)
 
 
-class AsyncIOTestCase(unittest.TestCase):
+class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
     longMessage = True  # Used by unittest.TestCase
     ssl = False  # If True, connect with SSL, skip if mongod isn't SSL
 

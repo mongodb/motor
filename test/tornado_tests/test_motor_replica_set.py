@@ -162,8 +162,8 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
 
         # The background Monitor logs an error.
         output = ' '.join(log_ctx.output)
-        self.assertRegex(output, "Monitor.refresh")
-        self.assertRegex(output, "No suitable hosts")
+        self.assertTrue("Monitor.refresh" in output)
+        self.assertTrue("No suitable hosts" in output)
 
 
 class MotorReplicaSetExhaustCursorTest(

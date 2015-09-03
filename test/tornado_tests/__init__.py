@@ -37,7 +37,7 @@ from tornado import gen, testing
 
 import motor
 from test.test_environment import env, CLIENT_PEM
-from test.tornado_tests.assert_logs_backport import AssertLogsMixin
+from test.assert_logs_backport import AssertLogsMixin
 from test.utils import one
 from test.version import padded, _parse_version_string
 

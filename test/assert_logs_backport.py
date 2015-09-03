@@ -37,12 +37,11 @@ class _AssertLogsContext(_BaseTestCaseContext):
     LOGGING_FORMAT = "%(levelname)s:%(name)s:%(message)s"
 
     def __init__(self, test_case, logger_name, level):
+        assert isinstance(level, int)
         _BaseTestCaseContext.__init__(self, test_case)
         self.logger_name = logger_name
-        if level:
-            self.level = logging.getLevelName(level)
-        else:
-            self.level = logging.INFO
+        self.level = level or logging.INFO
+        self.level_name = logging.getLevelName(level)
         self.msg = None
 
     def __enter__(self):
@@ -72,7 +71,7 @@ class _AssertLogsContext(_BaseTestCaseContext):
         if len(self.watcher.records) == 0:
             self._raiseFailure(
                 "no logs of level {0} or higher triggered on {1}"
-                .format(logging.getLevelName(self.level), self.logger.name))
+                .format(self.level_name, self.logger.name))
 
 
 class AssertLogsMixin(object):
