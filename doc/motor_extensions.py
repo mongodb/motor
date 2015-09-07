@@ -175,12 +175,14 @@ def get_motor_attr(motor_class, name, *defargs):
     else:
         pymongo_method = None
 
-    is_pymongo_docstring = from_pymongo or is_async_method or is_cursor_method
+    # attr.doc is set by statement like 'error = AsyncRead(doc="OBSOLETE")'.
+    is_pymongo_doc = ((from_pymongo or is_async_method or is_cursor_method)
+                      and not getattr(attr, 'doc', None))
 
     motor_info[full_name] = {
         # These sub-attributes are set in motor.asynchronize()
         'is_async_method': is_async_method,
-        'is_pymongo_docstring': is_pymongo_docstring,
+        'is_pymongo_docstring': is_pymongo_doc,
         'pymongo_method': pymongo_method,
     }
 

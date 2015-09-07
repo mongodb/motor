@@ -741,7 +741,6 @@ class AgnosticDatabase(AgnosticBase):
     __delegate_class__ = Database
 
     set_profiling_level = AsyncCommand()
-    reset_error_history = AsyncCommand()
     add_user            = AsyncCommand()
     remove_user         = AsyncCommand()
     logout              = AsyncCommand()
@@ -756,9 +755,10 @@ class AgnosticDatabase(AgnosticBase):
     current_op          = AsyncRead()
     profiling_level     = AsyncRead()
     profiling_info      = AsyncRead()
-    error               = AsyncRead()
-    last_status         = AsyncRead()
-    previous_error      = AsyncRead()
+    error               = AsyncRead(doc="OBSOLETE")
+    last_status         = AsyncRead(doc="OBSOLETE")
+    previous_error      = AsyncRead(doc="OBSOLETE")
+    reset_error_history = AsyncCommand(doc="OBSOLETE")
     dereference         = AsyncRead()
 
     incoming_manipulators         = ReadOnlyProperty()
