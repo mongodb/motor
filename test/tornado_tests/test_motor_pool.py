@@ -233,7 +233,7 @@ class MotorPoolTest(MotorTest):
             yield get_socket()
 
         # Fails immediately.
-        self.assertAlmostEqual(0, self.io_loop.time() - start, places=3)
+        self.assertAlmostEqual(0, self.io_loop.time() - start, places=2)
         self.assertEqual(2, pool.motor_sock_counter)
         cx.close()
 

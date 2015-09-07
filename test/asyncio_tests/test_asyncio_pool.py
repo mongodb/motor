@@ -223,7 +223,7 @@ class AIOMotorPoolTest(AsyncIOTestCase):
             yield from get_socket()
 
         # Fails immediately.
-        self.assertAlmostEqual(0, self.loop.time() - start, places=3)
+        self.assertAlmostEqual(0, self.loop.time() - start, places=2)
         self.assertEqual(2, pool.motor_sock_counter)
         cx.close()
         yield from asyncio.sleep(0, loop=self.loop)
