@@ -1504,11 +1504,11 @@ cursor has any effect.
           >>> @gen.coroutine
           ... def one_thousandth_item():
           ...     cursor = collection.find().sort([('i', 1)])[1000]
-          ...     yield cursor.fetch_next
-          ...     print(cursor.next_object())
+          ...     if not (yield cursor.fetch_next):
+          ...         print("No thousandth item")
           ...
           >>> IOLoop.current().run_sync(one_thousandth_item)
-          None
+          No thousandth item
 
         To get a slice of documents use a slice index like
         ``cursor[start:end]``.
