@@ -285,6 +285,7 @@ class MotorCollectionTest(MotorTest):
     def test_nested_callbacks(self):
         results = [0]
         future = Future()
+        yield self.collection.remove()
         yield self.collection.insert({'_id': 1})
 
         def callback(result, error):

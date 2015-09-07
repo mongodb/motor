@@ -272,6 +272,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
     def test_nested_callbacks(self):
         results = [0]
         future = asyncio.Future(loop=self.loop)
+        yield from self.collection.remove()
         yield from self.collection.insert({'_id': 1})
 
         def callback(result, error):
