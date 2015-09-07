@@ -2,6 +2,8 @@
 Motor Features
 ==============
 
+.. currentmodule:: motor.motor_tornado
+
 Non-Blocking
 ============
 Motor is an asynchronous driver for MongoDB and Tornado_.
@@ -38,13 +40,12 @@ Configurable IOLoops
 ====================
 Motor supports Tornado applications with multiple
 :class:`IOLoops <tornado.ioloop.IOLoop>`. Pass the ``io_loop``
-argument to :class:`~motor.MotorClient`
-or :class:`~motor.MotorReplicaSetClient` to configure the loop for a
+argument to :class:`MotorClient`
+or :class:`MotorReplicaSetClient` to configure the loop for a
 client instance.
 
 Streams Static Files from GridFS
 ================================
 Motor can stream data from `GridFS <http://dochub.mongodb.org/core/gridfs>`_
-to a Tornado :class:`~tornado.web.RequestHandler`
-using :meth:`~motor.MotorGridOut.stream_to_handler` or
-the :class:`~motor.web.GridFSHandler` class.
+to a Tornado `~tornado.web.RequestHandler`
+using `MotorGridOut.stream_to_handler` or the `~motor.web.GridFSHandler` class.

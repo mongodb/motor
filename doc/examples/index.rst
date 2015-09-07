@@ -1,8 +1,6 @@
 Motor Examples
 ==============
 
-.. currentmodule:: motor
-
 .. seealso:: :doc:`../tutorial`
 
 .. toctree::

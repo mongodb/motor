@@ -1,8 +1,9 @@
+.. currentmodule:: motor.motor_tornado
+
 Motor Tailable Cursor Example
 =============================
 
-A cursor on a capped collection can be tailed using
-:attr:`~motor.MotorCursor.fetch_next`:
+A cursor on a capped collection can be tailed using `MotorCursor.fetch_next`:
 
 .. code-block:: python
 

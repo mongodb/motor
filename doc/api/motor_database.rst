@@ -1,7 +1,7 @@
-:class:`~motor.MotorDatabase`
-=============================
+:class:`~motor.motor_tornado.MotorDatabase`
+===========================================
 
-.. currentmodule:: motor
+.. currentmodule:: motor.motor_tornado
 
 .. autoclass:: MotorDatabase
   :members:

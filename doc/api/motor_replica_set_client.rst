@@ -1,9 +1,9 @@
-:class:`~motor.MotorReplicaSetClient` -- Connection to MongoDB replica set
-==========================================================================
+:class:`~motor.motor_tornado.MotorReplicaSetClient` -- Connection to MongoDB replica set
+========================================================================================
 
-.. currentmodule:: motor
+.. currentmodule:: motor.motor_tornado
 
-.. autoclass:: motor.MotorReplicaSetClient
+.. autoclass:: motor.motor_tornado.MotorReplicaSetClient
   :members:
 
   .. describe:: client[db_name] || client.db_name

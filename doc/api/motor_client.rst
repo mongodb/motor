@@ -1,7 +1,7 @@
-:class:`~motor.MotorClient` -- Connection to MongoDB
-====================================================
+:class:`~motor.motor_tornado.MotorClient` -- Connection to MongoDB
+==================================================================
 
-.. currentmodule:: motor
+.. currentmodule:: motor.motor_tornado
 
 .. autoclass:: MotorClient
   :members:

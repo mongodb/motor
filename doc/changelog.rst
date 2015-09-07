@@ -1,7 +1,7 @@
 Changelog
 =========
 
-.. currentmodule:: motor
+.. currentmodule:: motor.motor_tornado
 
 Motor 0.4.1
 ___________
@@ -62,7 +62,7 @@ Motor 0.3.1
 
 Fix `MOTOR-43 <https://jira.mongodb.org/browse/MOTOR-43>`_,
 a TypeError when using :class:`~motor.web.GridFSHandler`
-with a timezone-aware :class:`~motor.MotorClient`.
+with a timezone-aware :class:`~motor.motor_tornado.MotorClient`.
 
 Fix GridFS examples that hadn't been updated for Motor 0.2's new syntax.
 

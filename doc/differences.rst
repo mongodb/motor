@@ -1,3 +1,5 @@
+.. currentmodule:: motor.motor_tornado
+
 =====================================
 Differences between Motor and PyMongo
 =====================================
@@ -11,8 +13,7 @@ Connecting to MongoDB
 PyMongo's connection classes are called
 :class:`~pymongo.mongo_client.MongoClient` and
 :class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient`.
-Motor provides a
-:class:`~motor.MotorClient` and :class:`~motor.MotorReplicaSetClient`.
+Motor provides a `MotorClient` and `MotorReplicaSetClient`.
 
 Motor's client classes do no I/O in their constructors; they connect
 on demand, when you first attempt an operation.
@@ -40,7 +41,7 @@ like:
     user = db.users.find_one({'name': 'Jesse'})
     print user
 
-But Motor's :meth:`~motor.MotorCollection.find_one` method is asynchronous:
+But Motor's `MotorCollection.find_one` method is asynchronous:
 
 .. code-block:: python
 
@@ -56,7 +57,7 @@ But Motor's :meth:`~motor.MotorCollection.find_one` method is asynchronous:
 
 The callback must be passed as a keyword argument, not a positional argument.
 
-To find multiple documents, Motor provides :meth:`~motor.MotorCursor.to_list`:
+To find multiple documents, Motor provides `MotorCursor.to_list`:
 
 .. code-block:: python
 
@@ -69,7 +70,7 @@ To find multiple documents, Motor provides :meth:`~motor.MotorCursor.to_list`:
 
     db.users.find().to_list(length=10, callback=got_users)
 
-.. seealso:: MotorCursor's :meth:`~motor.MotorCursor.fetch_next`
+.. seealso:: `MotorCursor.fetch_next`
 
 If you pass no callback to an asynchronous method, it returns a Future for use
 in a :func:`coroutine <tornado.gen.coroutine>`:
@@ -119,7 +120,7 @@ the server. Obviously, this code is improved by :mod:`tornado.gen`::
         print result
 
 Motor ignores the ``auto_start_request`` parameter to
-:class:`~motor.MotorClient` or :class:`~motor.MotorReplicaSetClient`.
+`MotorClient` or `MotorReplicaSetClient`.
 
 .. note:: Requests are deprecated in PyMongo 2.8 and will be removed in
    PyMongo 3.0.
@@ -146,7 +147,7 @@ PyMongo deprecated the ``slave_okay`` / ``slaveok`` option in favor of
 :class:`~pymongo.mongo_client.MongoClient` and
 :class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient` in version
 2.4, as well as deprecating the ``safe`` option in favor of
-:attr:`~motor.MotorClient.write_concern`.
+:attr:`~motor.motor_tornado.MotorClient.write_concern`.
 Motor supports none of PyMongo's deprecated options and classes at all, and
 will raise :exc:`~pymongo.errors.ConfigurationError` if you use them.
 
@@ -170,8 +171,8 @@ GridFS
     PyMongo's :class:`~gridfs.grid_file.GridIn` and
     :class:`~gridfs.grid_file.GridOut` strive to act like Python's built-in
     file objects, so they can be passed to many functions that expect files.
-    But the I/O methods of :class:`~motor.MotorGridIn` and
-    :class:`~motor.MotorGridOut` are asynchronous, so they cannot obey the
+    But the I/O methods of `MotorGridIn` and
+    `MotorGridOut` are asynchronous, so they cannot obey the
     file API and aren't suitable in the same circumstances as files.
 
 - Iteration
@@ -183,10 +184,10 @@ GridFS
         for chunk in grid_out:
             print chunk
 
-    :class:`~motor.MotorGridOut` cannot support this API asynchronously.
+    `MotorGridOut` cannot support this API asynchronously.
     To read a ``MotorGridOut`` use the non-blocking
-    :meth:`~motor.MotorGridOut.read` method. For convenience ``MotorGridOut``
-    provides :meth:`~motor.MotorGridOut.stream_to_handler`.
+    `MotorGridOut.read` method. For convenience ``MotorGridOut``
+    provides `MotorGridOut.stream_to_handler`.
 
     .. seealso:: :ref:`reading-from-gridfs` and :doc:`../api/web`
 
@@ -200,12 +201,12 @@ GridFS
         grid_in.close()
         grid_in.my_field = 'my_value'  # Sends update to server.
 
-    Updating metadata on a :class:`~motor.MotorGridIn` is asynchronous, so
+    Updating metadata on a `MotorGridIn` is asynchronous, so
     the API is different::
 
         @gen.coroutine
         def f():
-            fs = motor.MotorGridFS(db)
+            fs = motor.motor_tornado.MotorGridFS(db)
             yield fs.open()
             grid_in = yield fs.new_file()
             yield grid_in.close()
@@ -223,7 +224,7 @@ GridFS
         with fs.new_file() as grid_in:
             grid_in.write('data')
 
-    But ``MotorGridIn``'s :meth:`~motor.MotorGridIn.close` method is
+    But ``MotorGridIn``'s `MotorGridIn.close` method is
     asynchronous, so it must be called explicitly.
 
 is_locked
@@ -276,7 +277,7 @@ In Motor, however, no exception is raised. The query simply has no results:
 The difference arises because the PyMongo :class:`~pymongo.cursor.Cursor`'s
 slicing operator blocks until it has queried the MongoDB server, and determines
 if a document exists at the desired offset; Motor simply returns a new
-:class:`~motor.MotorCursor` with a skip and limit applied.
+`MotorCursor` with a skip and limit applied.
 
 Creating a collection
 ---------------------

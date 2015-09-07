@@ -16,10 +16,10 @@
 
 import inspect
 
-from docutils.nodes import field, list_item, paragraph, title_reference
+from docutils.nodes import field, list_item, paragraph, title_reference, literal
 from docutils.nodes import field_list, field_body, bullet_list, Text, field_name
 from sphinx.addnodes import (desc, desc_content, versionmodified,
-                             desc_signature, seealso)
+                             desc_signature, seealso, pending_xref)
 from sphinx.util.inspect import safe_getattr
 
 import motor
@@ -47,7 +47,7 @@ def get_parameter_names(parameters_node):
     parameter_names = []
     for list_item_node in find_by_path(parameters_node, [list_item]):
         title_ref_nodes = find_by_path(
-            list_item_node, [paragraph, title_reference])
+            list_item_node, [paragraph, (title_reference, pending_xref)])
 
         parameter_names.append(title_ref_nodes[0].astext())
 
@@ -76,7 +76,8 @@ def insert_callback(parameters_node):
         new_item = list_item(
             '', paragraph(
                 '', '',
-                title_reference('', 'callback'),
+                literal('', 'callback'),
+                # literal(text='callback'),
                 Text(doc)))
 
         # Insert "callback" before *args and **kwargs
@@ -167,6 +168,10 @@ def get_motor_attr(motor_class, name, *defargs):
     full_name = '%s.%s.%s' % (
         motor_class.__module__, motor_class.__name__, name)
 
+    # TODO: hack! All docstrings should be updated with fully-qualified refs.
+    full_name_legacy = 'motor.motor_tornado.%s.%s' % (
+        motor_class.__name__, name)
+
     is_async_method = getattr(attr, 'is_async_method', False)
     is_cursor_method = getattr(attr, 'is_motorcursor_chaining_method', False)
     if is_async_method or is_cursor_method:
@@ -179,7 +184,7 @@ def get_motor_attr(motor_class, name, *defargs):
     is_pymongo_doc = ((from_pymongo or is_async_method or is_cursor_method)
                       and not getattr(attr, 'doc', None))
 
-    motor_info[full_name] = {
+    motor_info[full_name] = motor_info[full_name_legacy] = {
         # These sub-attributes are set in motor.asynchronize()
         'is_async_method': is_async_method,
         'is_pymongo_docstring': is_pymongo_doc,

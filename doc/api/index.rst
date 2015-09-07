@@ -1,7 +1,6 @@
 Motor API
 =========
 
-.. currentmodule:: motor
 
 .. seealso:: :doc:`../tutorial`
 

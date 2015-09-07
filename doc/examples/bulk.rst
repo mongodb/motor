@@ -1,11 +1,13 @@
+.. currentmodule:: motor.motor_tornado
+
 Bulk Write Operations
 =====================
 
 .. testsetup::
 
-  sync_client.drop_database('test_database')
   client = MotorClient()
   db = client.test_database
+  IOLoop.current().run_sync(db.test.drop)
 
 This tutorial explains how to take advantage of Motor's bulk
 write operation features. Executing write operations in batches
@@ -16,7 +18,7 @@ Bulk Insert
 -----------
 
 A batch of documents can be inserted by passing a list or generator
-to the :meth:`~motor.MotorCollection.insert` method. Motor
+to the `MotorCollection.insert` method. Motor
 will automatically split the batch into smaller sub-batches based on
 the maximum message size accepted by MongoDB, supporting very large
 bulk insert operations.
@@ -46,7 +48,7 @@ the Bulk API.
   Though the following API will work with all versions of MongoDB, it is
   designed to be used with MongoDB versions >= 2.6. Much better bulk insert
   performance can be achieved with older versions of MongoDB through the
-  :meth:`~motor.MotorCollection.insert` method.
+  `MotorCollection.insert` method.
 
 .. _ordered_bulk:
 
@@ -169,10 +171,10 @@ Write Concern
 .............
 
 By default bulk operations are executed with the
-:attr:`~motor.MotorCollection.write_concern` of the collection they are
+`MotorCollection.write_concern` of the collection they are
 executed against, typically the default write concern ``{w: 1}``. A custom
 write concern can be passed to the
-:meth:`~motor.MotorBulkOperationBuilder.execute` method. Write concern
+`MotorBulkOperationBuilder.execute` method. Write concern
 errors (e.g. wtimeout) will be reported after all operations are attempted,
 regardless of execution order.
 

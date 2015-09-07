@@ -1,7 +1,7 @@
-:class:`~motor.MotorCollection`
-===============================
+:class:`~motor.motor_tornado.MotorCollection`
+=============================================
 
-.. currentmodule:: motor
+.. currentmodule:: motor.motor_tornado
 
 .. autoclass:: MotorCollection
   :members:

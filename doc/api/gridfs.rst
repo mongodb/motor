@@ -1,7 +1,7 @@
 Motor GridFS Classes
 ====================
 
-.. currentmodule:: motor
+.. currentmodule:: motor.motor_tornado
 
 Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
 
@@ -13,10 +13,8 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
 .. autoclass:: MotorGridFS
   :members:
 
-
 .. autoclass:: MotorGridIn
   :members:
-
 
 .. autoclass:: MotorGridOut
   :members:

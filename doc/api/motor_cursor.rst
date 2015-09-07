@@ -1,7 +1,7 @@
-:class:`~motor.MotorCursor`
-===========================
+:class:`~motor.motor_tornado.MotorCursor`
+=========================================
 
-.. currentmodule:: motor
+.. currentmodule:: motor.motor_tornado
 
 .. autoclass:: MotorCursor
   :members:

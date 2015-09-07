@@ -1,3 +1,5 @@
+.. currentmodule:: motor.motor_tornado
+
 Examples With Callbacks And Coroutines
 ======================================
 
@@ -59,7 +61,7 @@ An application that can create and display short messages:
                 self.write('</ul>')
                 self.finish()
 
-    db = motor.MotorClient().test
+    db = motor.motor_tornado.MotorClient().test
 
     application = tornado.web.Application(
         [
@@ -73,8 +75,8 @@ An application that can create and display short messages:
     application.listen(8888)
     tornado.ioloop.IOLoop.instance().start()
 
-The call to :meth:`~motor.MotorCursor.each` could be
-replaced with :meth:`~motor.MotorCursor.to_list`, which is easier to use
+The call to `MotorCursor.each` could be
+replaced with `MotorCursor.to_list`, which is easier to use
 with templates because the callback receives the entire result at once:
 
 .. code-block:: python
@@ -113,9 +115,8 @@ requires a maximum ``length`` argument.
 
 With coroutines
 ---------------
-Motor's asynchronous methods return
-:class:`Futures <tornado.concurrent.Future>`. Yield a Future to resolve
-it into a result or an exception:
+Motor's asynchronous methods return `Futures <tornado.concurrent.Future>`.
+Yield a Future to resolve it into a result or an exception:
 
 .. code-block:: python
 

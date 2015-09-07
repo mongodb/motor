@@ -1,21 +1,23 @@
+.. currentmodule:: motor.motor_tornado
+
 Motor GridFS Examples
 =====================
 
 .. seealso:: :doc:`../api/web`
 
-Writing a file to GridFS with :meth:`~motor.MotorGridFS.put`
-------------------------------------------------------------
+Writing a file to GridFS with `MotorGridFS.put`
+-----------------------------------------------
 
 .. code-block:: python
 
     from tornado import gen
     import motor
 
-    db = motor.MotorClient().test
+    db = motor.motor_tornado.MotorClient().test
 
     @gen.coroutine
     def write_file():
-        fs = motor.MotorGridFS(db)
+        fs = motor.motor_tornado.MotorGridFS(db)
 
         # file_id is the ObjectId of the resulting file.
         file_id = yield fs.put('Contents')
@@ -29,19 +31,19 @@ Writing a file to GridFS with :meth:`~motor.MotorGridFS.put`
         specified_id = yield fs.put('Contents', _id=42)
         assert 42 == specified_id
 
-Streaming a file to GridFS with :class:`~motor.MotorGridIn`
------------------------------------------------------------
+Streaming a file to GridFS with `MotorGridIn`
+---------------------------------------------
 
 .. code-block:: python
 
     from tornado import gen
     import motor
 
-    db = motor.MotorClient().test
+    db = motor.motor_tornado.MotorClient().test
 
     @gen.coroutine
     def write_file_streaming():
-        fs = motor.MotorGridFS(db)
+        fs = motor.motor_tornado.MotorGridFS(db)
 
         # Create a MotorGridIn and write in chunks, then close the file to
         # flush all data to the server.
@@ -68,19 +70,19 @@ Streaming a file to GridFS with :class:`~motor.MotorGridIn`
 
 .. _setting-attributes-on-a-motor-gridin:
 
-Setting attributes on a :class:`~motor.MotorGridIn`
----------------------------------------------------
+Setting attributes on a `MotorGridIn`
+-------------------------------------
 
 .. code-block:: python
 
     from tornado import gen
     import motor
 
-    db = motor.MotorClient().test
+    db = motor.motor_tornado.MotorClient().test
 
     @gen.coroutine
     def set_attributes():
-        fs = motor.MotorGridFS(db)
+        fs = motor.motor_tornado.MotorGridFS(db)
         gridin = yield fs.new_file()
 
         # Set metadata attributes.
@@ -97,19 +99,19 @@ Setting attributes on a :class:`~motor.MotorGridIn`
 
 .. _reading-from-gridfs:
 
-Reading from GridFS with :class:`~motor.MotorGridOut`
------------------------------------------------------
+Reading from GridFS with `MotorGridOut`
+---------------------------------------
 
 .. code-block:: python
 
     from tornado import gen
     import motor
 
-    db = motor.MotorClient().test
+    db = motor.motor_tornado.MotorClient().test
 
     @gen.coroutine
     def read_file(file_id):
-        fs = motor.MotorGridFS(db)
+        fs = motor.motor_tornado.MotorGridFS(db)
 
         # Create a MotorGridOut and read it all at once.
         gridout = yield fs.get(file_id)
