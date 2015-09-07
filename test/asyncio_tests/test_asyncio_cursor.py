@@ -108,6 +108,7 @@ class TestAsyncIOCursor(AsyncIOTestCase):
         self.assertEqual(101, cursor._buffer_size())
         yield from cursor.fetch_next  # Does nothing
         self.assertEqual(101, cursor._buffer_size())
+        yield from cursor.close()
 
     @asyncio_test
     def test_fetch_next_exception(self):
@@ -305,6 +306,9 @@ class TestAsyncIOCursor(AsyncIOTestCase):
         cursor.each(callback)
         yield from future
         self.assertGreater(150, len(results))
+
+        # Let cursor finish closing.
+        yield from asyncio.sleep(1, loop=self.loop)
 
     def test_cursor_slice_argument_checking(self):
         collection = self.collection

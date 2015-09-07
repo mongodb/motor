@@ -73,5 +73,7 @@ class SONManipulatorTest(AsyncIOTestCase):
             {'_id': _id1, 'added_field': 42},
             {'_id': _id2, 'added_field': 42}]
 
-        found = yield from coll.find().sort([('_id', 1)]).to_list(length=2)
+        cursor = coll.find().sort([('_id', 1)])
+        found = yield from cursor.to_list(length=2)
         self.assertEqual(expected, found)
+        yield from cursor.close()

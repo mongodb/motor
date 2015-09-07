@@ -130,6 +130,7 @@ class MotorCursorTest(MotorTest):
         self.assertEqual(101, cursor._buffer_size())
         yield cursor.fetch_next  # Does nothing
         self.assertEqual(101, cursor._buffer_size())
+        yield cursor.close()
 
     @gen_test
     def test_fetch_next_exception(self):
@@ -365,6 +366,9 @@ class MotorCursorTest(MotorTest):
         cursor.each(callback)
         yield future
         self.assertEqual(50, len(results))
+
+        # Let cursor finish closing.
+        yield self.pause(1)
 
     def test_cursor_slice_argument_checking(self):
         collection = self.collection

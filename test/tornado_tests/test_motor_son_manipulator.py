@@ -68,6 +68,8 @@ class SONManipulatorTest(MotorTest):
             {'_id': _id, 'foo': 'bar', 'added_field': 42},
             cursor.next_object())
 
+        yield cursor.close()
+
     @gen_test
     def test_with_to_list(self):
         coll = self.cx.motor_test.son_manipulator_test_collection
@@ -80,5 +82,7 @@ class SONManipulatorTest(MotorTest):
             {'_id': _id1, 'added_field': 42},
             {'_id': _id2, 'added_field': 42}]
 
-        found = yield coll.find().sort([('_id', 1)]).to_list(length=2)
+        cursor = coll.find().sort([('_id', 1)])
+        found = yield cursor.to_list(length=2)
         self.assertEqual(expected, found)
+        yield cursor.close()
