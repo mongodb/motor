@@ -4,6 +4,10 @@
 Differences between Motor and PyMongo
 =====================================
 
+.. important:: This page describes using Motor with Tornado. Beginning in
+  version 0.5 Motor can also integrate with asyncio instead of Tornado. The
+  documentation is not yet updated for Motor's asyncio integration.
+
 Major differences
 =================
 

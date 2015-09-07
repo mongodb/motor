@@ -6,6 +6,10 @@ Examples With Callbacks And Coroutines
 Programming with Motor is far easier with Tornado coroutines than with
 raw callbacks. Here's an example that shows the difference.
 
+.. important:: This page describes using Motor with Tornado. Beginning in
+  version 0.5 Motor can also integrate with asyncio instead of Tornado. The
+  documentation is not yet updated for Motor's asyncio integration.
+
 With callbacks
 --------------
 An application that can create and display short messages:

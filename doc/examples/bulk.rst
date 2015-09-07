@@ -14,6 +14,10 @@ write operation features. Executing write operations in batches
 reduces the number of network round trips, increasing write
 throughput.
 
+.. important:: This page describes using Motor with Tornado. Beginning in
+  version 0.5 Motor can also integrate with asyncio instead of Tornado. The
+  documentation is not yet updated for Motor's asyncio integration.
+
 Bulk Insert
 -----------
 
