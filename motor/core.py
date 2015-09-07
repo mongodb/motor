@@ -827,6 +827,43 @@ class AgnosticDatabase(AgnosticBase):
     def get_io_loop(self):
         return self.connection.get_io_loop()
 
+mr_doc = """Perform a map/reduce operation on this collection.
+
+If `full_response` is ``False`` (default) returns a
+:class:`~motor.motor_tornado.MotorCollection` instance containing
+the results of the operation. Otherwise, returns the full
+response from the server to the `map reduce command`_.
+
+:Parameters:
+  - `map`: map function (as a JavaScript string)
+  - `reduce`: reduce function (as a JavaScript string)
+  - `out`: output collection name or `out object` (dict). See
+    the `map reduce command`_ documentation for available options.
+    Note: `out` options are order sensitive. :class:`~bson.son.SON`
+    can be used to specify multiple options.
+    e.g. SON([('replace', <collection name>), ('db', <database name>)])
+  - `full_response` (optional): if ``True``, return full response to
+    this command - otherwise just return the result collection
+  - `callback` (optional): function taking (result, error), executed when
+    operation completes.
+  - `**kwargs` (optional): additional arguments to the
+    `map reduce command`_ may be passed as keyword arguments to this
+    helper method, e.g.::
+
+       result = yield db.test.map_reduce(map, reduce, "myresults", limit=2)
+
+If a callback is passed, returns None, else returns a Future.
+
+.. note:: The :meth:`map_reduce` method does **not** obey the
+   :attr:`read_preference` of this :class:`Collection`. To run
+   mapReduce on a secondary use the :meth:`inline_map_reduce` method
+   instead.
+
+.. _map reduce command: http://docs.mongodb.org/manual/reference/command/mapReduce/
+
+.. mongodoc:: mapreduce
+"""
+
 aggregate_doc = """Execute an aggregation pipeline on this collection.
 
 The aggregation can be run on a secondary if the client is a
@@ -868,7 +905,7 @@ class AgnosticCollection(AgnosticBase):
     reindex           = AsyncCommand()
     rename            = AsyncCommand()
     find_and_modify   = AsyncCommand()
-    map_reduce        = AsyncCommand().wrap(Collection)
+    map_reduce        = AsyncCommand(doc=mr_doc).wrap(Collection)
     update            = AsyncWrite()
     insert            = AsyncWrite()
     remove            = AsyncWrite()
