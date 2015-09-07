@@ -110,34 +110,6 @@ class MotorCollectionTest(MotorTest):
         # Results were appended in order 2, 1.
         self.assertEqual([{'_id': 2}, {'_id': 1}], results)
 
-    @gen_test(timeout=10)
-    def test_find_one_is_async(self):
-        # Confirm find_one() is async by launching two operations which will
-        # finish out of order.
-        # Launch 2 find_one operations for _id's 1 and 2, which will finish in
-        # order 2 then 1.
-        coll = self.collection
-        yield coll.insert([{'_id': 1}, {'_id': 2}])
-        results = []
-
-        futures = [Future(), Future()]
-
-        def callback(result, error):
-            if result:
-                results.append(result)
-                futures.pop().set_result(None)
-
-        # This find_one() takes 3 seconds.
-        coll.find_one({'_id': 1, '$where': delay(3)}, callback=callback)
-
-        # Very fast lookup.
-        coll.find_one({'_id': 2}, callback=callback)
-
-        yield futures
-
-        # Results were appended in order 2, 1.
-        self.assertEqual([{'_id': 2}, {'_id': 1}], results)
-
     @gen_test
     def test_update(self):
         yield self.collection.insert({'_id': 1})
