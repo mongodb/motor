@@ -7,6 +7,8 @@ The current version of Motor requires:
 * PyMongo_ 2.8.0 exactly.
 * Greenlet_
 
+Beginning with version 0.5, Motor can integrate with either Tornado or asyncio.
+
 The default authentication mechanism for MongoDB 3.0+ is SCRAM-SHA-1.
 Install `backports.pbkdf2`_ for faster authentication with MongoDB 3.0+,
 especially on Python older than 2.7.8, or on Python 3.3.
@@ -101,7 +103,7 @@ known to be incompatible, or have not been tested together.
 Motor and Python
 ````````````````
 
-Until version 0.4, Motor required Tornado, and it supported the same version of
+Until version 0.5, Motor required Tornado, and it supported the same version of
 Python as its supported Tornado versions did.
 
 Beginning in version 0.5, Motor integrates with asyncio or Tornado.

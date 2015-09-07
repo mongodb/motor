@@ -6,11 +6,14 @@ Motor Features
 
 Non-Blocking
 ============
-Motor is an asynchronous driver for MongoDB and Tornado_.
+Motor is an asynchronous driver for MongoDB. It can be used from Tornado_ or
+asyncio_ applications.
 Motor never blocks Tornado's IOLoop while connecting to MongoDB or
 performing I/O.
 
 .. _Tornado: http://tornadoweb.org/
+
+.. _asyncio: https://docs.python.org/3/library/asyncio.html
 
 .. important:: This page describes using Motor with Tornado. Beginning in
   version 0.5 Motor can also integrate with asyncio instead of Tornado. The

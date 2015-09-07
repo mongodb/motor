@@ -3,6 +3,13 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 0.5
+---------
+
+Motor can now integrate with asyncio, as an alternative to Tornado. My gratitude
+to Rémi Jolin, Andrew Svetlov, and Nikolay Novik for their huge contributions to
+Motor's asyncio integration.
+
 Motor 0.4.1
 ___________
 
