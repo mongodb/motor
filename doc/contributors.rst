@@ -8,3 +8,5 @@ The following is a list of people who have contributed to
 - Eren Güven
 - Jorge Puente Sarrín
 - Rémi Jolin
+- Andrew Svetlov
+- Nikolay Novik
