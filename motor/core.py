@@ -249,13 +249,6 @@ class MotorPool(object):
                 timeout = self._framework.call_later(
                     self.io_loop, self.wait_queue_timeout, on_timeout)
 
-                # timeout = self.io_loop.add_timeout(
-                #     deadline,
-                #     functools.partial(
-                #         child_gr.throw,
-                #         pymongo.errors.ConnectionFailure,
-                #         self._create_wait_queue_timeout()))
-
                 self.waiter_timeouts[waiter] = timeout
 
             # Yield until maybe_return_socket passes spare socket in.
