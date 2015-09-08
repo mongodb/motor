@@ -619,6 +619,9 @@ class MotorCursorMaxTimeMSTest(MotorTest):
 
     @gen.coroutine
     def maybe_skip(self):
+        if (yield server_is_mongos(self.cx)):
+            raise SkipTest("mongos has no maxTimeAlwaysTimeOut fail point")
+
         if not (yield at_least(self.cx, (2, 5, 3, -1))):
             raise SkipTest("maxTimeMS requires MongoDB >= 2.5.3")
 
