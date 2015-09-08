@@ -179,6 +179,11 @@ class MotorTest(PauseMixin, AssertLogsMixin, testing.AsyncTestCase):
             except pymongo.errors.CursorNotFound:
                 # Success!
                 return
+            except pymongo.errors.OperationFailure as exc:
+                if exc.code == 16336:
+                    # mongos 2.2 "cursor not found" error, success!
+                    return
+                raise
             finally:
                 # Avoid spurious errors trying to close this cursor.
                 sync_cursor._Cursor__id = None
