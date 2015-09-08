@@ -280,6 +280,8 @@ class TestAsyncIOCursor(AsyncIOTestCase):
 
     @asyncio_test
     def test_each_close(self):
+        raise SkipTest("MOTOR-81")
+
         yield from self.make_test_data()  # 200 documents.
         loop = self.loop
         collection = self.collection
@@ -294,7 +296,6 @@ class TestAsyncIOCursor(AsyncIOTestCase):
                 results.append(result)
                 if len(results) == 50:
                     # Prevent further calls.
-                    cursor.close()
                     asyncio.Task(cursor.close(), loop=self.loop)
 
                     # Soon, finish this test. Leave a little time for further
@@ -454,7 +455,7 @@ class TestAsyncIOCursor(AsyncIOTestCase):
         del cursor
         yield from self.wait_for_cursor(collection, cursor_id, retrieved)
 
-    @asyncio_test
+    @asyncio_test(timeout=30)
     def test_del_on_child_greenlet(self):
         # Since __del__ can happen on any greenlet, cursor must be
         # prepared to close itself correctly on main or a child.
