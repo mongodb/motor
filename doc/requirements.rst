@@ -78,6 +78,14 @@ unsupported server features.
 |               | 0.5 |  Y  |  Y  |  Y  |  Y  |
 +---------------+-----+-----+-----+-----+-----+
 
+There is no relationship between PyMongo and MongoDB version numbers, although
+the numbers happen to be close in recent releases of PyMongo and MongoDB.
+Use `the PyMongo compatibility matrix`_ to determine what MongoDB version is
+supported by PyMongo. Use the compatibility matrix above to determine what
+MongoDB version Motor supports.
+
+.. _the PyMongo compatibility matrix: https://docs.mongodb.org/ecosystem/drivers/python/#mongodb-compatibility
+
 Motor and Tornado
 `````````````````
 
