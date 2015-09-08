@@ -195,7 +195,15 @@ class AsyncioMotorSocket:
     @asyncio_motor_sock_method
     @asyncio.coroutine
     def recv(self, num_bytes):
-        rv = yield from self._reader.readexactly(num_bytes)
+        try:
+            rv = yield from self._reader.readexactly(num_bytes)
+        except asyncio.streams.IncompleteReadError:
+            # in case of IncompleteReadError we try to return empty bytes,
+            # so pymongo will raise AutoReconnect for us, see:
+            # https://github.com/mongodb/mongo-python-driver/blob
+            # /414250b5ef918656427e1a60fbf203bd023d543b/pymongo
+            # /network.py#L121-L131
+            rv = b''
         return rv
 
     def close(self):

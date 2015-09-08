@@ -117,6 +117,22 @@ class TestAsyncIOClient(AsyncIOTestCase):
         timeout.close()
 
     @asyncio_test
+    def test_reconnect_in_case_connection_closed_by_mongo(self):
+        cx = self.asyncio_client(max_pool_size=1)
+        yield from cx.open()
+
+        # close motor_socket, we imitate that connection to mongo server
+        # lost, as result we should have AutoReconnect instead of
+        # IncompleteReadError
+        pool = cx._get_primary_pool()
+        socket = pool.sockets.pop()
+        socket.sock._writer.close()
+        pool.sockets.add(socket)
+
+        with self.assertRaises(pymongo.errors.AutoReconnect):
+            yield from cx.motor_test.test_collection.find_one()
+
+    @asyncio_test
     def test_connection_failure(self):
         # Assuming there isn't anything actually running on this port
         client = motor_asyncio.AsyncIOMotorClient('localhost', 8765,
