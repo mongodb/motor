@@ -532,9 +532,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             # Don't wait for GC or use gc.collect(), it's unreliable.
             cur.close()
 
-        cursor_id = cur.cursor_id
-        retrieved = cur.delegate._Cursor__retrieved
-        cur = None
+        del cur
 
         yield from asyncio.sleep(0.1, loop=self.loop)
 
