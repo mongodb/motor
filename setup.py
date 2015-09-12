@@ -1,3 +1,5 @@
+import sys
+
 # Don't force people to install distribute unless we have to.
 try:
     from setuptools import setup, Feature
@@ -30,14 +32,14 @@ description = 'Non-blocking MongoDB driver for Tornado or asyncio'
 
 long_description = open("README.rst").read()
 
-import sys
+tests_require = ['mockupdb']
+
 if sys.version_info[:2] < (2, 7):
-    tests_require = 'unittest2'
+    tests_require.append('unittest2')
     test_suite = 'unittest2.collector'
 else:
     # In Python 2.7+, unittest has a built-in collector.
     # Test everything under 'test/'.
-    tests_require = None
     test_suite = 'test'
 
 
