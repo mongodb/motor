@@ -494,18 +494,17 @@ class MotorCursorTest(MotorMockServerTest):
         # Since __del__ can happen on any greenlet, cursor must be
         # prepared to close itself correctly on main or a child.
         client, server = self.client_and_mock_server(auto_ismaster=True)
-        cursor = client.test.collection.find()
+        self.cursor = client.test.collection.find()
 
-        future = cursor.fetch_next
+        future = self.cursor.fetch_next
         request = yield self.run_thread(server.receives, OpQuery)
         request.replies({'_id': 1}, cursor_id=123)
         yield future  # Complete the first fetch.
 
         def f():
-            nonlocal cursor
             # Last ref, should trigger __del__ immediately in CPython and
             # allow eventual __del__ in PyPy.
-            del cursor
+            del self.cursor
 
         greenlet.greenlet(f).switch()
 
