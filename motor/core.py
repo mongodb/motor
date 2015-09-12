@@ -1342,8 +1342,9 @@ class AgnosticBaseCursor(AgnosticBase):
 
     @motor_coroutine
     def close(self):
-        """Explicitly kill this cursor on the server. If iterating with
-        :meth:`each`, cease.
+        """Explicitly kill this cursor on the server. Call like (in Tornado)::
+
+           yield cursor.close()
 
         :Parameters:
          - `callback` (optional): function taking (result, error).

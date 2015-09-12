@@ -18,15 +18,14 @@ import asyncio
 import gc
 import sys
 import unittest
-from functools import partial
 from unittest import SkipTest
 
 import greenlet
 from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
-from motor import motor_asyncio
 from mockupdb import OpQuery, OpKillCursors
 
+from motor import motor_asyncio
 from test.utils import one, safe_get
 from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase, AsyncIOMockServerTestCase,
@@ -292,39 +291,6 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         cursor.each(cancel)
         yield from future
         self.assertEqual((yield from collection.count()), len(results))
-
-    @asyncio_test
-    def test_each_close(self):
-        raise SkipTest("MOTOR-81")
-
-        yield from self.make_test_data()  # 200 documents.
-        loop = self.loop
-        collection = self.collection
-        results = []
-        future = asyncio.Future(loop=self.loop)
-
-        def callback(result, error):
-            if error:
-                future.set_exception(error)
-
-            else:
-                results.append(result)
-                if len(results) == 50:
-                    # Prevent further calls.
-                    asyncio.Task(cursor.close(), loop=self.loop)
-
-                    # Soon, finish this test. Leave a little time for further
-                    # calls to ensure we've really canceled them by calling
-                    # cursor.close().
-                    loop.call_later(0.1, partial(future.set_result, None))
-
-        cursor = collection.find()
-        cursor.each(callback)
-        yield from future
-        self.assertGreater(150, len(results))
-
-        # Let cursor finish closing.
-        yield from asyncio.sleep(1, loop=self.loop)
 
     def test_cursor_slice_argument_checking(self):
         collection = self.collection

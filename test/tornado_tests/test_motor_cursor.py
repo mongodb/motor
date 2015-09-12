@@ -16,21 +16,19 @@ from __future__ import unicode_literals
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-import datetime
 import gc
 import sys
 import unittest
-from functools import partial
 
 import greenlet
 import pymongo
 from mockupdb import OpQuery
 from mockupdb import OpKillCursors
 from tornado import gen
-from pymongo.errors import InvalidOperation, ExecutionTimeout
-from pymongo.errors import OperationFailure
 from tornado.concurrent import Future
 from tornado.testing import gen_test
+from pymongo.errors import InvalidOperation, ExecutionTimeout
+from pymongo.errors import OperationFailure
 
 import motor
 import motor.motor_tornado
@@ -338,39 +336,6 @@ class MotorCursorTest(MotorMockServerTest):
         cursor.each(cancel)
         yield future
         self.assertEqual((yield collection.count()), len(results))
-
-    @gen_test
-    def test_each_close(self):
-        yield self.make_test_data()  # 200 documents.
-        loop = self.io_loop
-        collection = self.collection
-        results = []
-        future = Future()
-
-        def callback(result, error):
-            if error:
-                future.set_exception(error)
-
-            else:
-                results.append(result)
-                if len(results) == 50:
-                    # Prevent further calls.
-                    cursor.close()
-
-                    # Soon, finish this test. Leave a little time for further
-                    # calls to ensure we've really canceled them by calling
-                    # cursor.close().
-                    loop.add_timeout(
-                        datetime.timedelta(milliseconds=10),
-                        partial(future.set_result, None))
-
-        cursor = collection.find()
-        cursor.each(callback)
-        yield future
-        self.assertEqual(50, len(results))
-
-        # Let cursor finish closing.
-        yield self.pause(1)
 
     def test_cursor_slice_argument_checking(self):
         collection = self.collection
