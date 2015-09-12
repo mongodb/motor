@@ -24,6 +24,7 @@ import unittest
 from unittest import SkipTest
 from concurrent.futures import ThreadPoolExecutor
 
+from mockupdb import MockupDB
 import pymongo.errors
 
 from motor import motor_asyncio
@@ -179,6 +180,31 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         self.loop.run_forever()
         self.loop.close()
         gc.collect()
+
+
+class AsyncIOMockServerTestCase(AsyncIOTestCase):
+    def client_server(self, *args, **kwargs):
+        server = MockupDB(*args, **kwargs)
+        server.run()
+        self.addCleanup(server.stop)
+
+        client = motor_asyncio.AsyncIOMotorClient(server.uri, io_loop=self.loop)
+
+        return client, server
+
+    def run_thread(self, fn, *args, **kwargs):
+        return self.loop.run_in_executor(None,
+                                         functools.partial(fn, *args, **kwargs))
+
+    def async(self, coro):
+        return asyncio.async(coro, loop=self.loop)
+
+    def fetch_next(self, cursor):
+        @asyncio.coroutine
+        def fetch_next():
+            return (yield from cursor.fetch_next)
+
+        return self.async(fetch_next())
 
 
 def get_async_test_timeout(default=5):

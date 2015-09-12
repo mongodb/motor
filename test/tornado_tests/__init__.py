@@ -16,6 +16,7 @@ from __future__ import unicode_literals
 
 """Utilities for testing Motor with Tornado."""
 
+import concurrent.futures
 import datetime
 import functools
 import gc
@@ -33,6 +34,7 @@ except ImportError:
 import pymongo
 import pymongo.errors
 from bson import SON
+from mockupdb import MockupDB
 from tornado import gen, testing
 
 import motor
@@ -269,6 +271,24 @@ class MotorReplicaSetTestBase(MotorTest):
 
         self.rsc = self.motor_rsc()
         self.rsc = self.motor_rsc()
+
+
+class MotorMockServerTest(MotorTest):
+
+    executor = concurrent.futures.ThreadPoolExecutor(1)
+
+    def client_and_mock_server(self, *args, **kwargs):
+        server = MockupDB(*args, **kwargs)
+        server.run()
+        self.addCleanup(server.stop)
+
+        client = motor.motor_tornado.MotorClient(server.uri,
+                                                 io_loop=self.io_loop)
+
+        return client, server
+
+    def run_thread(self, fn, *args, **kwargs):
+        return self.executor.submit(fn, *args, **kwargs)
 
 
 class _TestExhaustCursorMixin(object):

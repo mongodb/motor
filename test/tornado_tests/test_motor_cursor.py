@@ -17,12 +17,15 @@ from __future__ import unicode_literals
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import datetime
+import gc
 import sys
 import unittest
 from functools import partial
 
 import greenlet
 import pymongo
+from mockupdb import OpQuery
+from mockupdb import OpKillCursors
 from tornado import gen
 from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
@@ -32,14 +35,13 @@ from tornado.testing import gen_test
 import motor
 import motor.motor_tornado
 from test import assert_raises, SkipTest
-from test.tornado_tests import (at_least,
-                                get_command_line,
-                                MotorTest,
+from test.tornado_tests import (at_least, get_command_line,
+                                MotorTest, MotorMockServerTest,
                                 server_is_mongos)
 from test.utils import one, safe_get
 
 
-class MotorCursorTest(MotorTest):
+class MotorCursorTest(MotorMockServerTest):
     def test_cursor(self):
         cursor = self.collection.find()
         self.assertTrue(isinstance(cursor, motor.motor_tornado.MotorCursor))
@@ -499,45 +501,56 @@ class MotorCursorTest(MotorTest):
         self.assertEqual(2, count)
         self.assertEqual(cursor, cursor.rewind())
 
-    @gen_test(timeout=30)
+    @gen_test
     def test_del_on_main_greenlet(self):
-        # Since __del__ can happen on any greenlet, MotorCursor must be
+        # Since __del__ can happen on any greenlet, cursor must be
         # prepared to close itself correctly on main or a child.
-        yield self.make_test_data()
-        collection = self.collection
-        cursor = collection.find().batch_size(1)
-        yield cursor.fetch_next
-        cursor_id = cursor.cursor_id
-        retrieved = cursor.delegate._Cursor__retrieved
+        client, server = self.client_and_mock_server(auto_ismaster=True)
+        cursor = client.test.collection.find()
 
-        # Clear the FetchNext reference from this gen.Runner so it's deleted
-        # and decrefs the cursor
-        yield gen.Task(self.io_loop.add_callback)
+        future = cursor.fetch_next
+        request = yield self.run_thread(server.receives, OpQuery)
+        request.replies({'_id': 1}, cursor_id=123)
+        yield future  # Complete the first fetch.
+
+        # Dereference the cursor.
         del cursor
-        yield self.wait_for_cursor(collection, cursor_id, retrieved)
 
-    @gen_test(timeout=30)
+        # Let the event loop iterate once more to clear its references to
+        # callbacks, allowing the cursor to be freed.
+        yield self.pause(0)
+        if 'PyPy' in sys.version:
+            gc.collect()
+
+        yield self.run_thread(server.receives, OpKillCursors)
+
+    @gen_test
     def test_del_on_child_greenlet(self):
-        # Since __del__ can happen on any greenlet, MotorCursor must be
+        # Since __del__ can happen on any greenlet, cursor must be
         # prepared to close itself correctly on main or a child.
-        yield self.make_test_data()
-        collection = self.collection
-        cursor = [collection.find().batch_size(1)]
-        yield cursor[0].fetch_next
-        cursor_id = cursor[0].cursor_id
-        retrieved = cursor[0].delegate._Cursor__retrieved
+        client, server = self.client_and_mock_server(auto_ismaster=True)
+        cursor = client.test.collection.find()
 
-        # Clear the FetchNext reference from this gen.Runner so it's deleted
-        # and decrefs the cursor
-        yield gen.Task(self.io_loop.add_callback)
+        future = cursor.fetch_next
+        request = yield self.run_thread(server.receives, OpQuery)
+        request.replies({'_id': 1}, cursor_id=123)
+        yield future  # Complete the first fetch.
 
         def f():
+            nonlocal cursor
             # Last ref, should trigger __del__ immediately in CPython and
             # allow eventual __del__ in PyPy.
-            del cursor[0]
+            del cursor
 
         greenlet.greenlet(f).switch()
-        yield self.wait_for_cursor(collection, cursor_id, retrieved)
+
+        # Let the event loop iterate once more to clear its references to
+        # callbacks, allowing the cursor to be freed.
+        yield self.pause(0)
+        if 'PyPy' in sys.version:
+            gc.collect()
+
+        yield self.run_thread(server.receives, OpKillCursors)
 
     @gen_test
     def test_exhaust(self):

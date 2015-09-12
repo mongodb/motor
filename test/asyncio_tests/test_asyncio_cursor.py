@@ -13,7 +13,9 @@
 # limitations under the License.
 
 """Test AsyncIOMotorCursor."""
+
 import asyncio
+import gc
 import sys
 import unittest
 from functools import partial
@@ -23,13 +25,15 @@ import greenlet
 from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
 from motor import motor_asyncio
+from mockupdb import OpQuery, OpKillCursors
 
 from test.utils import one, safe_get
-from test.asyncio_tests import (asyncio_test, AsyncIOTestCase,
+from test.asyncio_tests import (asyncio_test,
+                                AsyncIOTestCase, AsyncIOMockServerTestCase,
                                 server_is_mongos, at_least, get_command_line)
 
 
-class TestAsyncIOCursor(AsyncIOTestCase):
+class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     def test_cursor(self):
         cursor = self.collection.find()
         self.assertTrue(isinstance(cursor, motor_asyncio.AsyncIOMotorCursor))
@@ -222,19 +226,30 @@ class TestAsyncIOCursor(AsyncIOTestCase):
 
     @asyncio_test
     def test_cursor_explicit_close(self):
-        yield from self.make_test_data()
-        collection = self.collection
+        client, server = self.client_server(auto_ismaster={'ismaster': True})
+        collection = client.test.collection
         cursor = collection.find()
-        yield from cursor.fetch_next
+
+        future = self.fetch_next(cursor)
         self.assertTrue(cursor.alive)
-        yield from cursor.close()
+        request = yield from self.run_thread(server.receives, OpQuery)
+        request.replies({'_id': 1}, cursor_id=123)
+        self.assertTrue((yield from future))
+        self.assertEqual(123, cursor.cursor_id)
+
+        future = self.async(cursor.close())
+
+        # No reply to OP_KILLCURSORS.
+        yield from self.run_thread(server.receives,
+                                   OpKillCursors(cursor_ids=[123]))
+        yield from future
 
         # Cursor reports it's alive because it has buffered data, even though
-        # it's killed on the server
+        # it's killed on the server.
         self.assertTrue(cursor.alive)
-        retrieved = cursor.delegate._Cursor__retrieved
-        yield from self.wait_for_cursor(collection, cursor.cursor_id,
-                                        retrieved)
+        self.assertEqual({'_id': 1}, cursor.next_object())
+        self.assertFalse((yield from cursor.fetch_next))
+        self.assertFalse(cursor.alive)
 
     @asyncio_test
     def test_each_cancel(self):
@@ -446,34 +461,52 @@ class TestAsyncIOCursor(AsyncIOTestCase):
     def test_del_on_main_greenlet(self):
         # Since __del__ can happen on any greenlet, cursor must be
         # prepared to close itself correctly on main or a child.
-        yield from self.make_test_data()
-        collection = self.collection
-        cursor = collection.find()
-        yield from cursor.fetch_next
-        cursor_id = cursor.cursor_id
-        retrieved = cursor.delegate._Cursor__retrieved
-        del cursor
-        yield from self.wait_for_cursor(collection, cursor_id, retrieved)
+        client, server = self.client_server(auto_ismaster=True)
+        cursor = client.test.collection.find()
 
-    @asyncio_test(timeout=30)
+        future = self.fetch_next(cursor)
+        request = yield from self.run_thread(server.receives, OpQuery)
+        request.replies({'_id': 1}, cursor_id=123)
+        yield from future  # Complete the first fetch.
+
+        # Dereference the cursor.
+        del cursor
+
+        # Let the event loop iterate once more to clear its references to
+        # callbacks, allowing the cursor to be freed.
+        yield from asyncio.sleep(0, loop=self.loop)
+        if 'PyPy' in sys.version:
+            gc.collect()
+
+        yield from self.run_thread(server.receives, OpKillCursors)
+
+    @asyncio_test
     def test_del_on_child_greenlet(self):
         # Since __del__ can happen on any greenlet, cursor must be
         # prepared to close itself correctly on main or a child.
-        yield from self.make_test_data()
-        collection = self.collection
-        cursor = [collection.find().batch_size(1)]
-        yield from cursor[0].fetch_next
-        cursor_id = cursor[0].cursor_id
-        retrieved = cursor[0].delegate._Cursor__retrieved
+        client, server = self.client_server(auto_ismaster=True)
+        cursor = client.test.collection.find()
+
+        future = self.fetch_next(cursor)
+        request = yield from self.run_thread(server.receives, OpQuery)
+        request.replies({'_id': 1}, cursor_id=123)
+        yield from future  # Complete the first fetch.
 
         def f():
+            nonlocal cursor
             # Last ref, should trigger __del__ immediately in CPython and
             # allow eventual __del__ in PyPy.
-            del cursor[0]
-            return
+            del cursor
 
         greenlet.greenlet(f).switch()
-        yield from self.wait_for_cursor(collection, cursor_id, retrieved)
+
+        # Let the event loop iterate once more to clear its references to
+        # callbacks, allowing the cursor to be freed.
+        yield from asyncio.sleep(0, loop=self.loop)
+        if 'PyPy' in sys.version:
+            gc.collect()
+
+        yield from self.run_thread(server.receives, OpKillCursors)
 
     @asyncio_test
     def test_exhaust(self):
