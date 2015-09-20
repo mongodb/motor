@@ -55,9 +55,17 @@ def return_value(value):
     raise gen.Return(value)
 
 
-# TODO: rename? Switch between Future / TracebackFuture
+# Beginning in Tornado 4, TracebackFuture is a deprecated alias for Future.
+# Future-proof Motor in case TracebackFuture is some day removed. Remove this
+# Future-proofing once we drop support for Tornado 3.
+try:
+    _TornadoFuture = concurrent.TracebackFuture
+except AttributeError:
+    _TornadoFuture = concurrent.Future
+
+
 def get_future(loop):
-    return concurrent.TracebackFuture()
+    return _TornadoFuture()
 
 
 def is_future(f):
