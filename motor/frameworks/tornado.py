@@ -27,14 +27,14 @@ import greenlet
 import tornado
 from tornado import concurrent, gen, ioloop, iostream, netutil
 
+from motor.motor_common import callback_type_error
+
 DomainError = None
 try:
     # If Twisted is installed. See resolve().
     from twisted.names.error import DomainError
 except ImportError:
-    pass
-
-from motor.motor_common import callback_type_error
+    DomainError = None
 
 
 def get_event_loop():
@@ -125,9 +125,9 @@ def coroutine(f):
             raise callback_type_error
         future = coro(*args, **kwargs)
         if callback:
-            def _callback(future):
+            def _callback(_future):
                 try:
-                    result = future.result()
+                    result = _future.result()
                     callback(result, None)
                 except Exception as e:
                     callback(None, e)
@@ -255,7 +255,8 @@ class TornadoMotorSocket(object):
             if is_unix_socket:
                 addrinfos = [(socket.AF_UNIX, host)]
             else:
-                addrinfos = yield options.resolver.resolve(host, port, options.family)
+                addrinfos = yield options.resolver.resolve(host, port,
+                                                           options.family)
         except Exception:
             exc_typ, exc_val, exc_tb = sys.exc_info()
 
@@ -276,7 +277,8 @@ class TornadoMotorSocket(object):
                 try:
                     sock = socket.socket(af)
                     if not is_unix_socket:
-                        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                        sock.setsockopt(socket.IPPROTO_TCP,
+                                        socket.TCP_NODELAY, 1)
                         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE,
                                         options.socket_keepalive)
                     stream = self._create_stream(sock)
