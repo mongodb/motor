@@ -4,7 +4,7 @@ Changelog
 .. currentmodule:: motor.motor_tornado
 
 Motor 0.5
-_________
+---------
 
 asyncio
 ~~~~~~~
@@ -39,14 +39,14 @@ a useful messsage like "hostname 'X' doesn't match 'Y'". The message is now
 empty and Tornado logs a warning instead.
 
 Motor 0.4.1
-___________
+-----------
 
 Fix `MOTOR-66 <https://jira.mongodb.org/browse/MOTOR-66>`_, deadlock when
 initiating :class:`MotorReplicaSetClient` connection from multiple operations
 at once.
 
 Motor 0.4
-_________
+---------
 
 Supports MongoDB 3.0. In particular, supports MongoDB 3.0's new SCRAM-SHA-1
 authentication mechanism and updates the implementations of
