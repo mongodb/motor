@@ -47,6 +47,7 @@ Contents
    installation
    requirements
    tutorial-tornado
+   tutorial-asyncio
    examples/index
    changelog
    contributors
