@@ -893,6 +893,77 @@ with a :class:`~motor.MotorCommandCursor`::
 """
 
 
+# PyMongo's Collection.update shows examples that don't apply to Motor.
+update_doc = """Update a document(s) in this collection.
+
+Raises :class:`TypeError` if either `spec` or `document` is
+not an instance of ``dict`` or `upsert` is not an instance of
+``bool``.
+
+Write concern options can be passed as keyword arguments, overriding
+any global defaults. Valid options include w=<int/string>,
+wtimeout=<int>, j=<bool>, or fsync=<bool>. See the parameter list below
+for a detailed explanation of these options.
+
+There are many useful `update modifiers`_ which can be used
+when performing updates. For example, here we use the
+``"$set"`` modifier to modify a field in a matching document:
+
+  >>> @gen.coroutine
+  ... def do_update():
+  ...     result = yield collection.update({'_id': 10},
+  ...                                      {'$set': {'x': 1}})
+
+:Parameters:
+  - `spec`: a ``dict`` or :class:`~bson.son.SON` instance
+    specifying elements which must be present for a document
+    to be updated
+  - `document`: a ``dict`` or :class:`~bson.son.SON`
+    instance specifying the document to be used for the update
+    or (in the case of an upsert) insert - see docs on MongoDB
+    `update modifiers`_
+  - `upsert` (optional): perform an upsert if ``True``
+  - `manipulate` (optional): manipulate the document before
+    updating? If ``True`` all instances of
+    :mod:`~pymongo.son_manipulator.SONManipulator` added to
+    this :class:`~pymongo.database.Database` will be applied
+    to the document before performing the update.
+  - `check_keys` (optional): check if keys in `document` start
+    with '$' or contain '.', raising
+    :class:`~pymongo.errors.InvalidName`. Only applies to
+    document replacement, not modification through $
+    operators.
+  - `safe` (optional): **DEPRECATED** - Use `w` instead.
+  - `multi` (optional): update all documents that match
+    `spec`, rather than just the first matching document. The
+    default value for `multi` is currently ``False``, but this
+    might eventually change to ``True``. It is recommended
+    that you specify this argument explicitly for all update
+    operations in order to prepare your code for that change.
+  - `w` (optional): (integer or string) If this is a replica set, write
+    operations will block until they have been replicated to the
+    specified number or tagged set of servers. `w=<int>` always includes
+    the replica set primary (e.g. w=3 means write to the primary and wait
+    until replicated to **two** secondaries). **Passing w=0 disables
+    write acknowledgement and all other write concern options.**
+  - `wtimeout` (optional): (integer) Used in conjunction with `w`.
+    Specify a value in milliseconds to control how long to wait for
+    write propagation to complete. If replication does not complete in
+    the given timeframe, a timeout exception is raised.
+  - `j` (optional): If ``True`` block until write operations have been
+    committed to the journal. Ignored if the server is running without
+    journaling.
+  - `fsync` (optional): If ``True`` force the database to fsync all
+    files before returning. When used with `j` the server awaits the
+    next group commit before returning.
+
+:Returns:
+  - A document (dict) describing the effect of the update.
+
+.. _update modifiers: http://www.mongodb.org/display/DOCS/Updating
+
+.. mongodoc:: update"""
+
 class AgnosticCollection(AgnosticBase):
     __motor_class_name__ = 'MotorCollection'
     __delegate_class__ = Collection
@@ -906,7 +977,7 @@ class AgnosticCollection(AgnosticBase):
     rename            = AsyncCommand()
     find_and_modify   = AsyncCommand()
     map_reduce        = AsyncCommand(doc=mr_doc).wrap(Collection)
-    update            = AsyncWrite()
+    update            = AsyncWrite(doc=update_doc)
     insert            = AsyncWrite()
     remove            = AsyncWrite()
     save              = AsyncWrite()
