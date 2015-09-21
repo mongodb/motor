@@ -87,7 +87,7 @@ describing the type and count of operations performed.
    'nModified': 2,
    'nRemoved': 10000,
    'nUpserted': 1,
-   'upserted': [{u'_id': 4, u'index': 5}],
+   'upserted': [{'_id': 4, 'index': 5}],
    'writeConcernErrors': [],
    'writeErrors': []}
 
@@ -122,10 +122,10 @@ the operation that caused the failure.
    'nUpserted': 0,
    'upserted': [],
    'writeConcernErrors': [],
-   'writeErrors': [{u'code': 11000,
-                    u'errmsg': u'... duplicate key error ...',
-                    u'index': 1,
-                    u'op': {'_id': 4}}]}
+   'writeErrors': [{'code': 11000,
+                    'errmsg': '... duplicate key error ...',
+                    'index': 1,
+                    'op': {'_id': 4}}]}
 
 .. _unordered_bulk:
 
@@ -162,14 +162,14 @@ and fourth operations succeed.
    'nUpserted': 0,
    'upserted': [],
    'writeConcernErrors': [],
-   'writeErrors': [{u'code': 11000,
-                    u'errmsg': u'... duplicate key error ...',
-                    u'index': 0,
-                    u'op': {'_id': 1}},
-                   {u'code': 11000,
-                    u'errmsg': u'... duplicate key error ...',
-                    u'index': 2,
-                    u'op': {'_id': 3}}]}
+   'writeErrors': [{'code': 11000,
+                    'errmsg': '... duplicate key error ...',
+                    'index': 0,
+                    'op': {'_id': 1}},
+                   {'code': 11000,
+                    'errmsg': '... duplicate key error ...',
+                    'index': 2,
+                    'op': {'_id': 3}}]}
 
 Write Concern
 .............
@@ -207,7 +207,7 @@ regardless of execution order.
    'nRemoved': 0,
    'nUpserted': 0,
    'upserted': [],
-   'writeConcernErrors': [{u'code': 64,
-                           u'errInfo': {u'wtimeout': True},
-                           u'errmsg': u'waiting for replication timed out'}],
+   'writeConcernErrors': [{'code': 64,
+                           'errInfo': {'wtimeout': True},
+                           'errmsg': 'waiting for replication timed out'}],
    'writeErrors': []}
