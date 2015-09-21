@@ -465,6 +465,12 @@ class MotorCursorTest(MotorMockServerTest):
         self.assertNotIn(sock, socks)
         self.assertTrue(sock.closed)
 
+    def test_iter(self):
+        # Iteration should be prohibited.
+        with assert_raises(TypeError):
+            for _ in self.db.test.find():
+                pass
+
 
 class MotorCursorMaxTimeMSTest(MotorTest):
     def setUp(self):

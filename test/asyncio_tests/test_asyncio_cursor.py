@@ -555,6 +555,12 @@ class MotorCursorMaxTimeMSTest(AsyncIOTestCase):
             yield from self.disable_timeout()
             yield from self.collection.remove()
 
+    def test_iter(self):
+        # Iteration should be prohibited.
+        with self.assertRaises(TypeError):
+            for _ in self.db.test.find():
+                pass
+
 
 if __name__ == '__main__':
     unittest.main()
