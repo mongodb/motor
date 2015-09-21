@@ -203,27 +203,6 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             yield from cursor.to_list(10)
 
     @asyncio_test
-    def test_limit_zero(self):
-        # Limit of 0 is a weird case that PyMongo handles specially, make sure
-        # Motor does too. cursor.limit(0) means "remove limit", but cursor[:0]
-        # or cursor[5:5] sets the cursor to "empty".
-        coll = self.collection
-
-        # make sure we do not have _id: 1
-        yield from coll.remove({'_id': 1})
-
-        yield from coll.insert({'_id': 1})
-        resp = yield from coll.find()[:0].fetch_next
-        self.assertEqual(False, resp)
-        resp = yield from coll.find()[5:5].fetch_next
-        self.assertEqual(False, resp)
-
-        resp = yield from coll.find()[:0].to_list(length=1000)
-        self.assertEqual([], resp)
-        resp = yield from coll.find()[5:5].to_list(length=1000)
-        self.assertEqual([], resp)
-
-    @asyncio_test
     def test_cursor_explicit_close(self):
         client, server = self.client_server(auto_ismaster={'ismaster': True})
         collection = client.test.collection
@@ -291,105 +270,6 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         cursor.each(cancel)
         yield from future
         self.assertEqual((yield from collection.count()), len(results))
-
-    def test_cursor_slice_argument_checking(self):
-        collection = self.collection
-
-        for arg in '', None, {}, []:
-            self.assertRaises(TypeError, lambda: collection.find()[arg])
-
-        self.assertRaises(IndexError, lambda: collection.find()[-1])
-
-    @asyncio_test
-    def test_cursor_slice(self):
-        # This is an asynchronous copy of PyMongo's test_getitem_slice_index in
-        # test_cursor.py
-        yield from self.make_test_data()
-        coll = self.collection
-
-        self.assertRaises(IndexError, lambda: coll.find()[-1])
-        self.assertRaises(IndexError, lambda: coll.find()[1:2:2])
-        self.assertRaises(IndexError, lambda: coll.find()[2:1])
-
-        result = yield from coll.find()[0:].to_list(length=1000)
-        self.assertEqual(200, len(result))
-
-        result = yield from coll.find()[20:].to_list(length=1000)
-        self.assertEqual(180, len(result))
-
-        result = yield from coll.find()[99:].to_list(length=1000)
-        self.assertEqual(101, len(result))
-
-        result = yield from coll.find()[1000:].to_list(length=1000)
-        self.assertEqual(0, len(result))
-
-        result = yield from coll.find()[20:25].to_list(length=1000)
-        self.assertEqual(5, len(result))
-
-        # Any slice overrides all previous slices
-        result = yield from coll.find()[20:25][20:].to_list(length=1000)
-        self.assertEqual(180, len(result))
-
-        result = yield from coll.find()[20:25].limit(0).skip(20).to_list(
-            length=1000)
-        self.assertEqual(180, len(result))
-
-        result = yield from coll.find().limit(0).skip(20)[20:25].to_list(
-            length=1000)
-        self.assertEqual(5, len(result))
-
-        result = yield from coll.find()[:1].to_list(length=1000)
-        self.assertEqual(1, len(result))
-
-        result = yield from coll.find()[:5].to_list(length=1000)
-        self.assertEqual(5, len(result))
-
-    @asyncio_test(timeout=30)
-    def test_cursor_index(self):
-        yield from self.make_test_data()
-        coll = self.collection
-        cursor = coll.find().sort([('_id', 1)])[0]
-        yield from cursor.fetch_next
-        self.assertEqual({'_id': 0}, cursor.next_object())
-
-        self.assertEqual(
-            [{'_id': 5}],
-            (yield from coll.find().sort([('_id', 1)])[5].to_list(100)))
-
-        # Only 200 documents, so 1000th doc doesn't exist. PyMongo raises
-        # IndexError here, but Motor simply returns None.
-        cursor = coll.find()[1000]
-        self.assertFalse((yield from cursor.fetch_next))
-        self.assertEqual(None, cursor.next_object())
-        self.assertEqual([], (yield from coll.find()[1000].to_list(100)))
-
-    @asyncio_test
-    def test_cursor_index_each(self):
-        yield from self.make_test_data()
-        coll = self.collection
-
-        results = set()
-        futures = [asyncio.Future(loop=self.loop) for _ in range(3)]
-
-        def each(result, error):
-            if error:
-                raise error
-
-            if result:
-                results.add(result['_id'])
-            else:
-                futures.pop().set_result(None)
-
-        coll.find({}, {'_id': 1}).sort([('_id', 1)])[0].each(each)
-        coll.find({}, {'_id': 1}).sort([('_id', 1)])[5].each(each)
-
-        # Only 200 documents, so 1000th doc doesn't exist. PyMongo raises
-        # IndexError here, but Motor simply returns None, which won't show up
-        # in results.
-        coll.find()[1000].each(each)
-
-        yield from asyncio.gather(*futures, loop=self.loop)
-        self.assertEqual(set([0, 5]), results)
 
     @asyncio_test
     def test_rewind(self):

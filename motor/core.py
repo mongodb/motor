@@ -1150,11 +1150,6 @@ class AgnosticBaseCursor(AgnosticBase):
         future = self._framework.get_future(self.get_io_loop())
 
         if not self._buffer_size() and self.alive:
-            if self._empty():
-                # Special case, limit of 0
-                future.set_result(False)
-                return future
-
             # Return the Future, which resolves to number of docs fetched or 0.
             return self._get_more()
         elif self._buffer_size():
@@ -1169,8 +1164,7 @@ class AgnosticBaseCursor(AgnosticBase):
         """Get a document from the most recently fetched batch, or ``None``.
         See :attr:`fetch_next`.
         """
-        # __empty is a special case: limit of 0
-        if self._empty() or not self._buffer_size():
+        if not self._buffer_size():
             return None
         return next(self.delegate)
 
@@ -1314,10 +1308,6 @@ class AgnosticBaseCursor(AgnosticBase):
             raise pymongo.errors.InvalidOperation(
                 "Can't call to_list on tailable cursor")
 
-        # Special case: limit of 0.
-        if self._empty():
-            self._framework.return_value([])
-
         the_list = []
         collection = self.collection
         fix_outgoing = collection.database.delegate._fix_outgoing
@@ -1374,9 +1364,6 @@ class AgnosticBaseCursor(AgnosticBase):
             client.kill_cursors([cursor_id])
 
     # Paper over some differences between PyMongo Cursor and CommandCursor.
-    def _empty(self):
-        raise NotImplementedError
-
     def _query_flags(self):
         raise NotImplementedError
 
@@ -1506,101 +1493,11 @@ cursor has any effect.
         """Get a clone of this cursor."""
         return self.__class__(self.delegate.clone(), self.collection)
 
-    def __getitem__(self, index):
-        """Get a slice of documents from this cursor.
-
-        Raises :class:`~pymongo.errors.InvalidOperation` if this
-        cursor has already been used.
-
-        To get a single document use an integral index, e.g.:
-
-        .. testsetup:: getitem
-
-          MongoClient().test.test_collection.remove()
-          collection = MotorClient().test.test_collection
-
-        .. doctest:: getitem
-
-          >>> @gen.coroutine
-          ... def fifth_item():
-          ...     yield collection.insert([{'i': i} for i in range(10)])
-          ...     cursor = collection.find().sort([('i', 1)])[5]
-          ...     yield cursor.fetch_next
-          ...     doc = cursor.next_object()
-          ...     print(doc['i'])
-          ...
-          >>> IOLoop.current().run_sync(fifth_item)
-          5
-
-        Any limit previously applied to this cursor will be ignored.
-
-        The cursor returns ``None`` if the index is greater than or equal to
-        the length of the result set.
-
-        .. doctest:: getitem
-
-          >>> @gen.coroutine
-          ... def one_thousandth_item():
-          ...     cursor = collection.find().sort([('i', 1)])[1000]
-          ...     if not (yield cursor.fetch_next):
-          ...         print("No thousandth item")
-          ...
-          >>> IOLoop.current().run_sync(one_thousandth_item)
-          No thousandth item
-
-        To get a slice of documents use a slice index like
-        ``cursor[start:end]``.
-
-        .. doctest:: getitem
-
-          >>> @gen.coroutine
-          ... def second_through_fifth_item():
-          ...     cursor = collection.find().sort([('i', 1)])[2:6]
-          ...     while (yield cursor.fetch_next):
-          ...         doc = cursor.next_object()
-          ...         sys.stdout.write(str(doc['i']) + ', ')
-          ...     print('done')
-          ...
-          >>> IOLoop.current().run_sync(second_through_fifth_item)
-          2, 3, 4, 5, done
-
-        This will apply a skip of 2 and a limit of 4 to the cursor. Using a
-        slice index overrides prior limits or skips applied to this cursor
-        (including those applied through previous calls to this method).
-
-        Raises :class:`~pymongo.errors.IndexError` when the slice has a step,
-        a negative start value, or a stop value less than or equal to
-        the start value.
-
-        :Parameters:
-          - `index`: An integer or slice index to be applied to this cursor
-        """
-        if self.started:
-            raise pymongo.errors.InvalidOperation(
-                "MotorCursor already started")
-
-        if isinstance(index, slice):
-            # Slicing a cursor does no I/O - it just sets skip and limit - so
-            # we can slice it immediately.
-            self.delegate[index]
-            return self
-        else:
-            if not isinstance(index, motor_py3_compat.integer_types):
-                raise TypeError("index %r cannot be applied to MotorCursor "
-                                "instances" % index)
-
-            # Get one document, force hard limit of 1 so server closes cursor
-            # immediately
-            return self[self.delegate._Cursor__skip + index:].limit(-1)
-
     def __copy__(self):
         return self.__class__(self.delegate.__copy__(), self.collection)
 
     def __deepcopy__(self, memo):
         return self.__class__(self.delegate.__deepcopy__(memo), self.collection)
-
-    def _empty(self):
-        return self.delegate._Cursor__empty
 
     def _query_flags(self):
         return self.delegate._Cursor__query_flags
@@ -1632,9 +1529,6 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
     __delegate_class__ = CommandCursor
 
     _CommandCursor__die = AsyncRead()
-
-    def _empty(self):
-        return False
 
     def _query_flags(self):
         return 0

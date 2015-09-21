@@ -10,6 +10,24 @@ Motor can now integrate with asyncio, as an alternative to Tornado. My gratitude
 to Rémi Jolin, Andrew Svetlov, and Nikolay Novik for their huge contributions to
 Motor's asyncio integration.
 
+Cursors can no longer be indexed like ``cursor[n]`` or sliced like
+``cursor[start:end]``, see `MOTOR-84 <https://jira.mongodb.org/browse/MOTOR-84>`_.
+If you wrote code like this::
+
+    cursor = collection.find()[i]
+    yield cursor.fetch_next
+    doc = cursor.next_object()
+
+Then instead, write::
+
+    cursor = collection.find().skip(i).limit(-1)
+    yield cursor.fetch_next
+    doc = cursor.next_object()
+
+The negative limit ensures the server closes the cursor after one result,
+saving Motor the work of closing it. See `cursor.limit
+<http://docs.mongodb.org/v3.0/reference/method/cursor.limit/>`_.
+
 Motor 0.4.1
 ___________
 
