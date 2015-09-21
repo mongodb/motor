@@ -264,8 +264,8 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
         client = self.asyncio_client(socketKeepAlive=True)
         yield from client.server_info()
-        ka = self.cx._get_primary_pool()._motor_socket_options.socket_keepalive
-        self.assertFalse(ka)
+        ka = client._get_primary_pool()._motor_socket_options.socket_keepalive
+        self.assertTrue(ka)
 
 
 if __name__ == '__main__':
