@@ -5,7 +5,7 @@ Motor API
   version 0.5 Motor can also integrate with asyncio instead of Tornado. The
   documentation is not yet updated for Motor's asyncio integration.
 
-.. seealso:: :doc:`../tutorial`
+.. seealso:: :doc:`../tutorial-tornado`
 
 .. toctree::
 

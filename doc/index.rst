@@ -46,7 +46,7 @@ Contents
    features
    installation
    requirements
-   tutorial
+   tutorial-tornado
    examples/index
    changelog
    contributors

@@ -1,7 +1,7 @@
 Motor Examples
 ==============
 
-.. seealso:: :doc:`../tutorial`
+.. seealso:: :doc:`../tutorial-tornado`
 
 .. toctree::
 

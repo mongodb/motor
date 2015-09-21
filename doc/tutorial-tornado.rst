@@ -1,9 +1,7 @@
-.. _motor-tutorial:
-
 .. currentmodule:: motor.motor_tornado
 
-Motor Tutorial
-==============
+Tutorial: Using Motor With Tornado
+==================================
 
 .. These setups are redundant because I can't figure out how to make doctest
   run a common setup *before* the setup for the two groups. A "testsetup:: *"
@@ -36,10 +34,6 @@ Motor Tutorial
 
 A guide to using MongoDB and Tornado with Motor, the
 non-blocking driver.
-
-.. important:: This page describes using Motor with Tornado. Beginning in
-  version 0.5 Motor can also integrate with asyncio instead of Tornado. The
-  documentation is not yet updated for Motor's asyncio integration.
 
 Tutorial Prerequisites
 ----------------------
@@ -315,15 +309,18 @@ less than 2:
   >>> @gen.coroutine
   ... def do_find_one():
   ...     document = yield db.test_collection.find_one({'i': {'$lt': 2}})
-  ...     print(document)
+  ...     pprint.pprint(document)
   ...
   >>> IOLoop.current().run_sync(do_find_one)
-  {u'i': 0, u'_id': ObjectId('...')}
+  {'_id': ObjectId('...'), 'i': 0}
 
 The result is a dictionary matching the one that we inserted previously.
 
-.. note:: The returned document contains an ``"_id"``, which was
-   automatically added on insert.
+The returned document contains an ``"_id"``, which was
+automatically added on insert.
+
+(We use ``pprint`` here instead of ``print`` to ensure the document's key names
+are sorted the same in your output as ours.)
 
 .. mongodoc:: find
 
@@ -343,14 +340,14 @@ To find all documents with "i" less than 5:
   ... def do_find():
   ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
   ...     for document in (yield cursor.to_list(length=100)):
-  ...         print(document)
+  ...         pprint.pprint(document)
   ...
   >>> IOLoop.current().run_sync(do_find)
-  {u'i': 0, u'_id': ObjectId('...')}
-  {u'i': 1, u'_id': ObjectId('...')}
-  {u'i': 2, u'_id': ObjectId('...')}
-  {u'i': 3, u'_id': ObjectId('...')}
-  {u'i': 4, u'_id': ObjectId('...')}
+  {'_id': ObjectId('...'), 'i': 0}
+  {'_id': ObjectId('...'), 'i': 1}
+  {'_id': ObjectId('...'), 'i': 2}
+  {'_id': ObjectId('...'), 'i': 3}
+  {'_id': ObjectId('...'), 'i': 4}
 
 A ``length`` argument is required when you call to_list to prevent Motor from
 buffering an unlimited number of documents.
@@ -365,14 +362,14 @@ and `MotorCursor.next_object`:
   ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
   ...     while (yield cursor.fetch_next):
   ...         document = cursor.next_object()
-  ...         print(document)
+  ...         pprint.pprint(document)
   ...
   >>> IOLoop.current().run_sync(do_find)
-  {u'i': 0, u'_id': ObjectId('...')}
-  {u'i': 1, u'_id': ObjectId('...')}
-  {u'i': 2, u'_id': ObjectId('...')}
-  {u'i': 3, u'_id': ObjectId('...')}
-  {u'i': 4, u'_id': ObjectId('...')}
+  {'_id': ObjectId('...'), 'i': 0}
+  {'_id': ObjectId('...'), 'i': 1}
+  {'_id': ObjectId('...'), 'i': 2}
+  {'_id': ObjectId('...'), 'i': 3}
+  {'_id': ObjectId('...'), 'i': 4}
 
 You can apply a sort, limit, or skip to a query before you begin iterating:
 
@@ -385,11 +382,11 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
   ...     cursor.sort([('i', pymongo.DESCENDING)]).limit(2).skip(2)
   ...     while (yield cursor.fetch_next):
   ...         document = cursor.next_object()
-  ...         print(document)
+  ...         pprint.pprint(document)
   ...
   >>> IOLoop.current().run_sync(do_find)
-  {u'i': 2, u'_id': ObjectId('...')}
-  {u'i': 1, u'_id': ObjectId('...')}
+  {'_id': ObjectId('...'), 'i': 2}
+  {'_id': ObjectId('...'), 'i': 1}
 
 ``fetch_next`` does not actually retrieve each document from the server
 individually; it gets documents efficiently in `large batches`_.
@@ -441,9 +438,9 @@ document, or it can update some fields of a document. To replace a document:
   ...     print('document is now %s' % pprint.pformat(new_document))
   ...
   >>> IOLoop.current().run_sync(do_replace)
-  found document: {u'_id': ObjectId('...'), u'i': 50}
+  found document: {'_id': ObjectId('...'), 'i': 50}
   replaced 1 document
-  document is now {u'_id': ObjectId('...'), u'key': u'value'}
+  document is now {'_id': ObjectId('...'), 'key': 'value'}
 
 You can see that :meth:`update` replaced everything in the old document except
 its ``_id`` with the new document.
@@ -464,7 +461,7 @@ operator to set "key" to "value":
   ...
   >>> IOLoop.current().run_sync(do_update)
   updated 1 document
-  document is now {u'_id': ObjectId('...'), u'i': 51, u'key': u'value'}
+  document is now {'_id': ObjectId('...'), 'i': 51, 'key': 'value'}
 
 "key" is set to "value" and "i" is still 51.
 
@@ -534,10 +531,10 @@ the `MotorDatabase.command` method on `MotorDatabase`:
   >>> @gen.coroutine
   ... def use_count_command():
   ...     response = yield db.command(SON([("count", "test_collection")]))
-  ...     print('response: %s' % response)
+  ...     print('response: %s' % pprint.pformat(response))
   ...
   >>> IOLoop.current().run_sync(use_count_command)
-  response: {u'ok': 1.0, u'n': 1000}
+  response: {'n': 1000, 'ok': 1.0}
 
 Since the order of command parameters matters, don't use a Python dict to pass
 the command's parameters. Instead, make a habit of using :class:`bson.SON`,
