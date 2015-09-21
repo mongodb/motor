@@ -1282,8 +1282,8 @@ class AgnosticBaseCursor(AgnosticBase):
           ...     print('done')
           ...
           >>> ioloop.IOLoop.current().run_sync(f)
-          [{u'_id': 0}, {u'_id': 1}]
-          [{u'_id': 2}, {u'_id': 3}]
+          [{'_id': 0}, {'_id': 1}]
+          [{'_id': 2}, {'_id': 3}]
           done
 
         :Parameters:
