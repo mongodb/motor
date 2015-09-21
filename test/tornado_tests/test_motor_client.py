@@ -257,11 +257,13 @@ class MotorClientTest(MotorTest):
     def test_socketKeepAlive(self):
         # Connect.
         yield self.cx.server_info()
-        self.assertFalse(self.cx._get_primary_pool()._motor_socket_options.socket_keepalive)
+        ka = self.cx._get_primary_pool()._motor_socket_options.socket_keepalive
+        self.assertFalse(ka)
 
         client = self.motor_client(socketKeepAlive=True)
         yield client.server_info()
-        self.assertTrue(client._get_primary_pool()._motor_socket_options.socket_keepalive)
+        ka = client._get_primary_pool()._motor_socket_options.socket_keepalive
+        self.assertTrue(ka)
 
 
 RESOLVER_TEST_TIMEOUT = 30
