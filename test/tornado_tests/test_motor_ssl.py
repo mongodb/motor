@@ -16,6 +16,8 @@ from __future__ import unicode_literals
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+import logging
+
 try:
     import ssl
 except ImportError:
@@ -278,38 +280,37 @@ class MotorSSLTest(MotorTest):
             io_loop=self.io_loop)
 
         response = yield client.admin.command('ismaster')
-        try:
-            # Create client with hostname 'localhost' or whatever, not
-            # the name 'server', which is what the server cert presents.
-            client = motor.MotorClient(
-                test.env.uri,
-                ssl_certfile=CLIENT_PEM,
-                ssl_cert_reqs=ssl.CERT_REQUIRED,
-                ssl_ca_certs=CA_PEM,
-                io_loop=self.io_loop)
-
-            yield client.db.collection.find_one()
-            self.fail("Invalid hostname should have failed")
-        except ConnectionFailure as exc:
-            # TODO uncomment: MOTOR-74.
-            pass
-            # self.assertEqual("hostname 'localhost' doesn't match 'server'",
-            #                  str(exc))
-
-        if 'setName' in response:
-            try:
-                client = motor.MotorReplicaSetClient(
+        with self.assertLogs("tornado.general", logging.WARNING) as log_ctx:
+            with self.assertRaises(ConnectionFailure):
+                # Create client with hostname 'localhost' or whatever, not
+                # the name 'server', which is what the server cert presents.
+                client = motor.MotorClient(
                     test.env.uri,
-                    replicaSet=response['setName'],
                     ssl_certfile=CLIENT_PEM,
                     ssl_cert_reqs=ssl.CERT_REQUIRED,
                     ssl_ca_certs=CA_PEM,
                     io_loop=self.io_loop)
 
                 yield client.db.collection.find_one()
-                self.fail("Invalid hostname should have failed")
-            except ConnectionFailure:
-                pass
+
+        output = ' '.join(log_ctx.output)
+        self.assertIn("hostname 'localhost' doesn't match 'server'", output)
+
+        if 'setName' in response:
+            with self.assertLogs("tornado.general", logging.WARNING) as log_ctx:
+                with self.assertRaises(ConnectionFailure):
+                    client = motor.MotorReplicaSetClient(
+                        test.env.uri,
+                        replicaSet=response['setName'],
+                        ssl_certfile=CLIENT_PEM,
+                        ssl_cert_reqs=ssl.CERT_REQUIRED,
+                        ssl_ca_certs=CA_PEM,
+                        io_loop=self.io_loop)
+
+                    yield client.db.collection.find_one()
+
+            output = ' '.join(log_ctx.output)
+            self.assertIn("hostname 'localhost' doesn't match 'server'", output)
 
     @gen_test
     def test_mongodb_x509_auth(self):
