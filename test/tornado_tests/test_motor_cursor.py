@@ -27,6 +27,7 @@ from mockupdb import OpKillCursors
 from tornado import gen
 from tornado.concurrent import Future
 from tornado.testing import gen_test
+from tornado import version_info as tornado_version
 from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
 
@@ -351,6 +352,9 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     def test_del_on_main_greenlet(self):
+        if tornado_version < (4, 0, 0, 0):
+            raise SkipTest("Tornado 3")
+
         # Since __del__ can happen on any greenlet, cursor must be
         # prepared to close itself correctly on main or a child.
         client, server = self.client_and_mock_server(auto_ismaster=True)
@@ -374,6 +378,9 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     def test_del_on_child_greenlet(self):
+        if tornado_version < (4, 0, 0, 0):
+            raise SkipTest("Tornado 3")
+
         # Since __del__ can happen on any greenlet, cursor must be
         # prepared to close itself correctly on main or a child.
         client, server = self.client_and_mock_server(auto_ismaster=True)
