@@ -5,11 +5,10 @@ import asyncio
 from aiohttp import web
 from motor.motor_asyncio import AsyncIOMotorClient
 
-db = AsyncIOMotorClient().test
-
 
 @asyncio.coroutine
-def setup():
+def setup_db():
+    db = AsyncIOMotorClient().test
     yield from db.pages.drop()
     html = '<html><body>{}</body></html>'
     yield from db.pages.insert({'_id': 'page-one',
@@ -17,14 +16,19 @@ def setup():
 
     yield from db.pages.insert({'_id': 'page-two',
                                 'body': html.format('Goodbye.')})
+
+    return db
 # -- setup-end --
 
 
-# -- server-start --
+# -- handler-start --
 @asyncio.coroutine
-def page(request):
+def page_handler(request):
     # If the visitor gets "/pages/page-one", then page_name is "page-one".
     page_name = request.match_info.get('page_name')
+
+    # Retrieve the long-lived database handle.
+    db = request.app['db']
 
     # Find the page by its unique id.
     document = yield from db.pages.find_one(page_name)
@@ -33,20 +37,22 @@ def page(request):
         return web.HTTPNotFound(text='No page named {!r}'.format(page_name))
 
     return web.Response(body=document['body'].encode())
+# -- handler-end --
 
-
+# -- server-start --
 @asyncio.coroutine
 def create_example_server(loop):
+    db = yield from setup_db()
+
     app = web.Application(loop=loop)
-    app.router.add_route('GET', '/pages/{page_name}', page)
+    app['db'] = db
+    app.router.add_route('GET', '/pages/{page_name}', page_handler)
     srv = yield from loop.create_server(app.make_handler(), '127.0.0.1', 8080)
     return srv
 # -- server-end --
 
-event_loop = asyncio.get_event_loop()
-event_loop.run_until_complete(setup())
-
 # -- main-start --
+event_loop = asyncio.get_event_loop()
 event_loop.run_until_complete(create_example_server(event_loop))
 try:
     event_loop.run_forever()

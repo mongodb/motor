@@ -417,6 +417,7 @@ asyncio. Install it with::
 
   python3 -m pip install aiohttp
 
+We are going to make a trivial web site with two pages served from MongoDB.
 To begin:
 
 .. literalinclude:: examples/aiohttp_example.py
@@ -425,36 +426,47 @@ To begin:
 
 The ``AsyncIOMotorClient`` constructor does not actually connect to MongoDB.
 The client connects on demand, when you attempt the first operation.
-We create it and store a handle to the "test" database as a global variable.
+We create it and assign the "test" database's handle to ``db``.
 
-Note that it is a common mistake to create a new client object for every
-request; this comes at a dire performance cost. Create the client
-when your application starts and reuse that one client for the lifetime
-of the process, as shown in this example.
-
-The ``setup`` coroutine drops the "pages" collection (plainly, this code is
+The ``setup_db`` coroutine drops the "pages" collection (plainly, this code is
 for demonstration purposes), then inserts two documents. Each document's page
-name is its unique id, and the "body" field is a simple HTML page.
+name is its unique id, and the "body" field is a simple HTML page. Finally,
+``setup_db`` returns the database handle.
 
-Run the coroutine with asyncio's event loop::
-
-  event_loop = asyncio.get_event_loop()
-  event_loop.run_until_complete(setup())
-
-We can make a trivial web site that serves these pages from MongoDB:
+The ``setup_db`` coroutine is called by a higher-level coroutine,
+``create_example_server``:
 
 .. literalinclude:: examples/aiohttp_example.py
   :start-after: server-start
   :end-before: server-end
 
-Start the server, and let the event loop run until you hit Control-C in the
-terminal:
+This coroutine runs ``setup_db`` to completion, then creates an aiohttp
+Application instance and attaches the database handle to it, so it lasts
+the lifetime of the process and is available to request handlers.
+
+Note that it is a common mistake to create a new client object for every
+request; this comes at a dire performance cost. Create the client
+when your application starts and reuse that one client for the lifetime
+of the process. You can maintain the client by storing a database handle
+from the client on your application object, as shown in this example.
+
+In ``create_example_server`` we route requests for all URLs beginning with
+"/pages/" to the ``page_handler`` coroutine:
+
+.. literalinclude:: examples/aiohttp_example.py
+  :start-after: handler-start
+  :end-before: handler-end
+
+Now setup is complete.  Start the server, and let the event loop run until you
+hit Control-C in the terminal:
 
 .. literalinclude:: examples/aiohttp_example.py
   :start-after: main-start
   :end-before: main-end
 
-Now visit ``localhost:8080/pages/page-one`` and the server responds "Hello!".
+Visit ``localhost:8080/pages/page-one`` and the server responds "Hello!".
+At ``localhost:8080/pages/page-two`` it responds "Goodbye." At other URLs it
+returns a 404.
 
 The complete code is in the Motor repository in ``examples/aiohttp_example.py``.
 
