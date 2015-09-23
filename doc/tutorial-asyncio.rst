@@ -409,6 +409,57 @@ the basic :meth:`command` method.
 
 .. mongodoc:: commands
 
+A Web Application With `aiohttp`
+--------------------------------
+
+Let us create a web application using `aiohttp`_, a popular HTTP package for
+asyncio. Install it with::
+
+  python3 -m pip install aiohttp
+
+To begin:
+
+.. literalinclude:: examples/aiohttp_example.py
+  :start-after: setup-start
+  :end-before: setup-end
+
+The ``AsyncIOMotorClient`` constructor does not actually connect to MongoDB.
+The client connects on demand, when you attempt the first operation.
+We create it and store a handle to the "test" database as a global variable.
+
+Note that it is a common mistake to create a new client object for every
+request; this comes at a dire performance cost. Create the client
+when your application starts and reuse that one client for the lifetime
+of the process, as shown in this example.
+
+The ``setup`` coroutine drops the "pages" collection (plainly, this code is
+for demonstration purposes), then inserts two documents. Each document's page
+name is its unique id, and the "body" field is a simple HTML page.
+
+Run the coroutine with asyncio's event loop::
+
+  event_loop = asyncio.get_event_loop()
+  event_loop.run_until_complete(setup())
+
+We can make a trivial web site that serves these pages from MongoDB:
+
+.. literalinclude:: examples/aiohttp_example.py
+  :start-after: server-start
+  :end-before: server-end
+
+Start the server, and let the event loop run until you hit Control-C in the
+terminal:
+
+.. literalinclude:: examples/aiohttp_example.py
+  :start-after: main-start
+  :end-before: main-end
+
+Now visit ``localhost:8080/pages/page-one`` and the server responds "Hello!".
+
+The complete code is in the Motor repository in ``examples/aiohttp_example.py``.
+
+.. _aiohttp: https://aiohttp.readthedocs.org/
+
 Further Reading
 ---------------
 Learning to use the MongoDB driver is just the beginning, of course. For
