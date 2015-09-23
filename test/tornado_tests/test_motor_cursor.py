@@ -18,7 +18,6 @@ from __future__ import unicode_literals
 
 import gc
 import sys
-import time
 import unittest
 
 import greenlet
