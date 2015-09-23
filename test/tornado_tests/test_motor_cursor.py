@@ -18,6 +18,7 @@ from __future__ import unicode_literals
 
 import gc
 import sys
+import time
 import unittest
 
 import greenlet
@@ -509,9 +510,9 @@ class MotorCursorMaxTimeMSTest(MotorTest):
 
     @gen.coroutine
     def disable_timeout(self):
-        self.cx.admin.command("configureFailPoint",
-                              "maxTimeAlwaysTimeOut",
-                              mode="off")
+        yield self.cx.admin.command("configureFailPoint",
+                                    "maxTimeAlwaysTimeOut",
+                                    mode="off")
 
     @gen_test
     def test_max_time_ms_query(self):

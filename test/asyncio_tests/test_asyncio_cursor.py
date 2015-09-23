@@ -452,9 +452,9 @@ class MotorCursorMaxTimeMSTest(AsyncIOTestCase):
 
     @asyncio.coroutine
     def disable_timeout(self):
-        self.cx.admin.command("configureFailPoint",
-                              "maxTimeAlwaysTimeOut",
-                              mode="off")
+        yield from self.cx.admin.command("configureFailPoint",
+                                         "maxTimeAlwaysTimeOut",
+                                         mode="off")
 
     @asyncio_test
     def test_max_time_ms_query(self):
