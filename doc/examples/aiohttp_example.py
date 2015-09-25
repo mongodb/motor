@@ -39,7 +39,8 @@ def page_handler(request):
     return web.Response(body=document['body'].encode())
 # -- handler-end --
 
-# -- server-start --
+
+# -- create-server-start --
 @asyncio.coroutine
 def create_example_server(loop):
     db = yield from setup_db()
@@ -47,15 +48,35 @@ def create_example_server(loop):
     app = web.Application(loop=loop)
     app['db'] = db
     app.router.add_route('GET', '/pages/{page_name}', page_handler)
-    srv = yield from loop.create_server(app.make_handler(), '127.0.0.1', 8080)
-    return srv
-# -- server-end --
+    handler = app.make_handler()
+    server = yield from loop.create_server(handler, '127.0.0.1', 8080)
+    return server, app, handler
+# -- create-server-end --
+
+
+# -- shutdown-start --
+@asyncio.coroutine
+def shutdown(server, app, handler):
+    yield from handler.finish_connections(1.0)
+    server.close()
+    yield from server.wait_closed()
+    yield from app.finish()
+# -- shutdown-end --
+
 
 # -- main-start --
-event_loop = asyncio.get_event_loop()
-event_loop.run_until_complete(create_example_server(event_loop))
-try:
-    event_loop.run_forever()
-except KeyboardInterrupt:
-    pass
+def main():
+    loop = asyncio.get_event_loop()
+    server, app, handler = loop.run_until_complete(create_example_server(loop))
+
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        loop.run_until_complete(shutdown(server, app, handler))
+    loop.close()
 # -- main-end --
+
+if __name__ == '__main__':
+    main()

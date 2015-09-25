@@ -457,16 +457,31 @@ In ``create_example_server`` we route requests for all URLs beginning with
   :start-after: handler-start
   :end-before: handler-end
 
-Now setup is complete.  Start the server, and let the event loop run until you
-hit Control-C in the terminal:
+Now setup is complete. Start the server and the event loop:
 
 .. literalinclude:: examples/aiohttp_example.py
   :start-after: main-start
   :end-before: main-end
 
+As you see, ``main`` is not a coroutine, it is a regular function. It uses
+`~asyncio.BaseEventLoop.run_until_complete` to run ``create_example_server``
+synchronously. The return value of `~asyncio.BaseEventLoop.run_until_complete`
+is the three values returned by ``create_example_server``: the server, the app,
+and the app's top-level request handler.
+
+Once this step is complete, ``main`` starts the event loop and lets it run
+indefinitely.
+
 Visit ``localhost:8080/pages/page-one`` and the server responds "Hello!".
 At ``localhost:8080/pages/page-two`` it responds "Goodbye." At other URLs it
 returns a 404.
+
+When you hit Control-C in the terminal, the event loop exits and ``main`` runs
+the ``shutdown`` coroutine to attempt a graceful exit:
+
+.. literalinclude:: examples/aiohttp_example.py
+  :start-after: shutdown-start
+  :end-before: shutdown-end
 
 The complete code is in the Motor repository in ``examples/aiohttp_example.py``.
 
@@ -478,3 +493,4 @@ Learning to use the MongoDB driver is just the beginning, of course. For
 in-depth instruction in MongoDB itself, see `The MongoDB Manual`_.
 
 .. _The MongoDB Manual: http://docs.mongodb.org/manual/
+
