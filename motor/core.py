@@ -40,7 +40,7 @@ from pymongo.cursor import Cursor, _QUERY_OPTIONS
 from pymongo.command_cursor import CommandCursor
 from pymongo.pool import _closed, SocketInfo
 
-from . import motor_py3_compat, util
+from . import util
 from .metaprogramming import (AsyncCommand,
                               AsyncRead,
                               AsyncWrite,
