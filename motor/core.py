@@ -1300,16 +1300,7 @@ class AgnosticBaseCursor(AgnosticBase):
                 return
 
         while self._buffer_size() > 0:
-            try:
-                doc = next(self.delegate)  # decrements self.buffer_size
-            except StopIteration:
-                # Special case: limit of 0
-                self._framework.call_soon(
-                    self.get_io_loop(),
-                    functools.partial(callback, None, None))
-
-                self.close()
-                return
+            doc = next(self.delegate)  # decrements self.buffer_size
 
             # Quit if callback returns exactly False (not None). Note we
             # don't close the cursor: user may want to resume iteration.
