@@ -19,13 +19,11 @@ import functools
 import gc
 import inspect
 import os
-import time
 import unittest
 from unittest import SkipTest
 from concurrent.futures import ThreadPoolExecutor
 
 from mockupdb import MockupDB
-import pymongo.errors
 
 from motor import motor_asyncio
 from test.assert_logs_backport import AssertLogsMixin
@@ -130,46 +128,6 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
     def make_test_data(self):
         yield from self.collection.remove()
         yield from self.collection.insert([{'_id': i} for i in range(200)])
-
-    @asyncio.coroutine
-    def wait_for_cursor(self, collection, cursor_id, retrieved):
-        """Ensure a cursor opened during the test is closed on the
-        server, e.g. after dereferencing an open cursor on the client.
-        """
-        patience_seconds = 20
-        start = time.time()
-        collection_name = collection.name
-        db_name = collection.database.name
-        sync_collection = env.sync_cx[db_name][collection_name]
-        while True:
-            sync_cursor = sync_collection.find().batch_size(1)
-            sync_cursor._Cursor__id = cursor_id
-            sync_cursor._Cursor__retrieved = retrieved
-
-            try:
-                next(sync_cursor)
-                if not sync_cursor.cursor_id:
-                    # We exhausted the result set before cursor was killed.
-                    self.fail("Cursor finished before killed")
-            except pymongo.errors.CursorNotFound:
-                # Success!
-                return
-            except pymongo.errors.OperationFailure as exc:
-                if exc.code == 16336:
-                    # mongos 2.2 "cursor not found" error, success!
-                    return
-                raise
-            finally:
-                # Avoid spurious errors trying to close this cursor.
-                sync_cursor._Cursor__id = None
-
-            retrieved = sync_cursor._Cursor__retrieved
-            now = time.time()
-            if now - start > patience_seconds:
-                self.fail("Cursor not closed")
-            else:
-                # Let the loop run, might be working on closing the cursor.
-                yield from asyncio.sleep(0.25, loop=self.loop)
 
     make_test_data.__test__ = False
 

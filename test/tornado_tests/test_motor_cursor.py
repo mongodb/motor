@@ -93,20 +93,20 @@ class MotorCursorTest(MotorMockServerTest):
         self.assertEqual(0, cursor.cursor_id)
         self.assertEqual(200, i)
 
-    @gen_test(timeout=30)
+    @gen_test
     def test_fetch_next_delete(self):
-        coll = self.collection
-        yield coll.insert({})
+        client, server = self.client_server(auto_ismaster={'ismaster': True})
+        cursor = client.test.collection.find()
 
-        # Decref'ing the cursor eventually closes it on the server; yielding
-        # clears the engine Runner's reference to the cursor.
-        cursor = coll.find().batch_size(1)
-        yield cursor.fetch_next
-        cursor_id = cursor.cursor_id
-        retrieved = cursor.delegate._Cursor__retrieved
+        # With Tornado, simply accessing fetch_next starts the fetch.
+        cursor.fetch_next
+        request = yield self.run_thread(server.receives, OpQuery)
+        request.replies({'_id': 1}, cursor_id=123)
+
+        # Decref'ing the cursor eventually closes it on the server.
         del cursor
-        yield gen.Task(self.io_loop.add_callback)
-        yield self.wait_for_cursor(coll, cursor_id, retrieved)
+        yield self.run_thread(server.receives,
+                              OpKillCursors(cursor_ids=[123]))
 
     @gen_test
     def test_fetch_next_without_results(self):
@@ -251,30 +251,28 @@ class MotorCursorTest(MotorMockServerTest):
         with assert_raises(InvalidOperation):
             yield cursor.to_list(10)
 
-    @gen_test(timeout=10)
+    @gen_test
     def test_cursor_explicit_close(self):
-        yield self.make_test_data()
-        collection = self.collection
-        yield self.check_optional_callback(collection.find().close)
+        client, server = self.client_server(auto_ismaster={'ismaster': True})
+        collection = client.test.collection
         cursor = collection.find()
-        yield cursor.fetch_next
-        self.assertTrue(cursor.alive)
 
-        # OP_KILL_CURSORS is sent asynchronously to the server, no ack.
-        yield cursor.close()
+        # With Tornado, simply accessing fetch_next starts the fetch.
+        fetch_next = cursor.fetch_next
+        request = yield self.run_thread(server.receives, OpQuery)
+        request.replies({'_id': 1}, cursor_id=123)
+        self.assertTrue((yield fetch_next))
+
+        close_future = cursor.close()
+        yield self.run_thread(server.receives, OpKillCursors(cursor_ids=[123]))
+        yield close_future
 
         # Cursor reports it's alive because it has buffered data, even though
-        # it's killed on the server
+        # it's killed on the server.
         self.assertTrue(cursor.alive)
-        retrieved = cursor.delegate._Cursor__retrieved
-
-        # We'll check the cursor is closed by trying getMores on it until the
-        # server returns CursorNotFound. However, if we're in the midst of a
-        # getMore when the asynchronous OP_KILL_CURSORS arrives, the server
-        # won't kill the cursor. It logs "Assertion: 16089:Cannot kill active
-        # cursor." So wait for OP_KILL_CURSORS to reach the server first.
-        yield self.pause(5)
-        yield self.wait_for_cursor(collection, cursor.cursor_id, retrieved)
+        self.assertEqual({'_id': 1}, cursor.next_object())
+        self.assertFalse((yield cursor.fetch_next))
+        self.assertFalse(cursor.alive)
 
     @gen_test
     def test_each_cancel(self):
@@ -357,7 +355,7 @@ class MotorCursorTest(MotorMockServerTest):
 
         # Since __del__ can happen on any greenlet, cursor must be
         # prepared to close itself correctly on main or a child.
-        client, server = self.client_and_mock_server(auto_ismaster=True)
+        client, server = self.client_server(auto_ismaster=True)
         cursor = client.test.collection.find()
 
         future = cursor.fetch_next
@@ -383,7 +381,7 @@ class MotorCursorTest(MotorMockServerTest):
 
         # Since __del__ can happen on any greenlet, cursor must be
         # prepared to close itself correctly on main or a child.
-        client, server = self.client_and_mock_server(auto_ismaster=True)
+        client, server = self.client_server(auto_ismaster=True)
         self.cursor = client.test.collection.find()
 
         future = self.cursor.fetch_next

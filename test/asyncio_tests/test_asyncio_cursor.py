@@ -77,16 +77,17 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
     @asyncio_test
     def test_fetch_next_delete(self):
-        coll = self.collection
-        yield from coll.insert({})
+        client, server = self.client_server(auto_ismaster={'ismaster': True})
+
+        cursor = client.test.collection.find()
+        self.fetch_next(cursor)
+        request = yield from self.run_thread(server.receives, OpQuery)
+        request.replies({'_id': 1}, cursor_id=123)
 
         # Decref'ing the cursor eventually closes it on the server.
-        cursor = coll.find()
-        yield from cursor.fetch_next
-        cursor_id = cursor.cursor_id
-        retrieved = cursor.delegate._Cursor__retrieved
         del cursor
-        yield from self.wait_for_cursor(coll, cursor_id, retrieved)
+        yield from self.run_thread(server.receives,
+                                   OpKillCursors(cursor_ids=[123]))
 
     @asyncio_test
     def test_fetch_next_without_results(self):

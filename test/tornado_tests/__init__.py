@@ -19,9 +19,7 @@ from __future__ import unicode_literals
 import concurrent.futures
 import datetime
 import functools
-import gc
 import logging
-import time
 
 try:
     # Python 2.6.
@@ -141,64 +139,6 @@ class MotorTest(PauseMixin, AssertLogsMixin, testing.AsyncTestCase):
 
     make_test_data.__test__ = False
 
-    @gen.coroutine
-    def wait_for_cursor(self, collection, cursor_id, retrieved):
-        """Ensure a cursor opened during the test is closed on the
-        server, e.g. after dereferencing an open cursor on the client:
-
-            collection = self.cx.motor_test.test_collection
-            cursor = collection.find()
-
-            # Open it server-side
-            yield cursor.fetch_next
-            cursor_id = cursor.cursor_id
-            retrieved = cursor.delegate._Cursor__retrieved
-
-            # Clear cursor reference from this scope and from Runner
-            del cursor
-            yield gen.Task(self.io_loop.add_callback)
-
-            # Wait for cursor to be closed server-side
-            yield self.wait_for_cursor(collection, cursor_id, retrieved)
-
-        `yield cursor.close()` is usually simpler.
-        """
-        patience_seconds = 20
-        start = time.time()
-        collection_name = collection.name
-        db_name = collection.database.name
-        sync_collection = env.sync_cx[db_name][collection_name]
-        while True:
-            sync_cursor = sync_collection.find().batch_size(1)
-            sync_cursor._Cursor__id = cursor_id
-            sync_cursor._Cursor__retrieved = retrieved
-
-            try:
-                next(sync_cursor)
-                if not sync_cursor.cursor_id:
-                    # We exhausted the result set before cursor was killed.
-                    self.fail("Cursor finished before killed")
-            except pymongo.errors.CursorNotFound:
-                # Success!
-                return
-            except pymongo.errors.OperationFailure as exc:
-                if exc.code == 16336:
-                    # mongos 2.2 "cursor not found" error, success!
-                    return
-                raise
-            finally:
-                # Avoid spurious errors trying to close this cursor.
-                sync_cursor._Cursor__id = None
-
-            retrieved = sync_cursor._Cursor__retrieved
-            now = time.time()
-            if now - start > patience_seconds:
-                self.fail("Cursor not closed")
-            else:
-                # Let the loop run, might be working on closing the cursor
-                yield self.pause(0.1)
-                gc.collect()
-
     def get_client_kwargs(self, **kwargs):
         kwargs.setdefault('io_loop', self.io_loop)
         ssl = env.mongod_started_with_ssl
@@ -277,7 +217,7 @@ class MotorMockServerTest(MotorTest):
 
     executor = concurrent.futures.ThreadPoolExecutor(1)
 
-    def client_and_mock_server(self, *args, **kwargs):
+    def client_server(self, *args, **kwargs):
         server = MockupDB(*args, **kwargs)
         server.run()
         self.addCleanup(server.stop)
