@@ -140,6 +140,6 @@ Not Supported
 -------------
 
 Code that executes greenlets has performed very poorly on PyPy in the past.
-I must reevaluate whether PyPy is supported or not.
+I must reevaluate whether PyPy is supported.
 
 Motor does not support Jython or Windows.
