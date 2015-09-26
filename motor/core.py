@@ -1377,8 +1377,8 @@ class AgnosticBaseCursor(AgnosticBase):
         self.started = True
         while True:
             yield self._framework.yieldable(self._refresh())
-            while (self._buffer_size() > 0
-                   and (length is None or len(the_list) < length)):
+            while (self._buffer_size() > 0 and
+                   (length is None or len(the_list) < length)):
 
                 doc = self._data().popleft()
                 the_list.append(fix_outgoing(doc, collection))
