@@ -522,8 +522,7 @@ class AgnosticClient(AgnosticClientBase):
         # 'MotorClient' that create_class_with_framework created.
         super(self.__class__, self).__init__(io_loop, *args, **kwargs)
 
-    @motor_coroutine
-    def open(self):
+    def open(self, callback=None):
         """Connect to the server.
 
         Takes an optional callback, or returns a Future that resolves to
@@ -548,8 +547,10 @@ class AgnosticClient(AgnosticClientBase):
            :class:`MotorClient` now opens itself on demand, calling ``open``
            explicitly is now optional.
         """
-        yield self._framework.yieldable(self._ensure_connected())
-        self._framework.return_value(self)
+        return self._framework.future_or_callback(self._ensure_connected(),
+                                                  callback,
+                                                  self.get_io_loop(),
+                                                  self)
 
     def _get_member(self):
         # TODO: expose the PyMongo Member, or otherwise avoid this.
@@ -600,8 +601,7 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
         # 'MotorClient' that create_class_with_framework created.
         super(self.__class__, self).__init__(io_loop, *args, **kwargs)
 
-    @motor_coroutine
-    def open(self):
+    def open(self, callback=None):
         """Connect to the server.
 
         Takes an optional callback, or returns a Future that resolves to
@@ -626,11 +626,10 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
            :class:`MotorReplicaSetClient` now opens itself on demand, calling
            ``open`` explicitly is now optional.
         """
-        yield self._framework.yieldable(self._ensure_connected(True))
-        primary = self._get_member()
-        if not primary:
-            raise pymongo.errors.AutoReconnect('no primary is available')
-        self._framework.return_value(self)
+        return self._framework.future_or_callback(self._ensure_connected(),
+                                                  callback,
+                                                  self.get_io_loop(),
+                                                  self)
 
     def _get_member(self):
         # TODO: expose the PyMongo RSC members, or otherwise avoid this.
@@ -1218,18 +1217,18 @@ class AgnosticBaseCursor(AgnosticBase):
 
         .. _`large batches`: http://docs.mongodb.org/manual/core/read-operations/#cursor-behaviors
         """
-        future = self._framework.get_future(self.get_io_loop())
-
         if not self._buffer_size() and self.alive:
             # Return the Future, which resolves to number of docs fetched or 0.
             return self._get_more()
         elif self._buffer_size():
+            future = self._framework.get_future(self.get_io_loop())
             future.set_result(True)
             return future
         else:
             # Dead
+            future = self._framework.get_future(self.get_io_loop())
             future.set_result(False)
-        return future
+            return future
 
     def next_object(self):
         """Get a document from the most recently fetched batch, or ``None``.
@@ -1320,8 +1319,7 @@ class AgnosticBaseCursor(AgnosticBase):
                 self.get_io_loop(),
                 functools.partial(callback, None, None))
 
-    @motor_coroutine
-    def to_list(self, length):
+    def to_list(self, length, callback=None):
         """Get a list of documents.
 
         .. testsetup:: to_list
@@ -1370,24 +1368,47 @@ class AgnosticBaseCursor(AgnosticBase):
             raise pymongo.errors.InvalidOperation(
                 "Can't call to_list on tailable cursor")
 
-        the_list = []
-        collection = self.collection
-        fix_outgoing = collection.database.delegate._fix_outgoing
+        future = self._framework.get_future(self.get_io_loop())
+
+        # Run future_or_callback's type checking before we change anything.
+        retval = self._framework.future_or_callback(future,
+                                                    callback,
+                                                    self.get_io_loop())
 
         self.started = True
-        while True:
-            yield self._framework.yieldable(self._refresh())
-            while (self._buffer_size() > 0 and
-                   (length is None or len(the_list) < length)):
+        the_list = []
+        self._refresh(callback=functools.partial(self._to_list,
+                                                 length,
+                                                 the_list,
+                                                 future))
 
-                doc = self._data().popleft()
-                the_list.append(fix_outgoing(doc, collection))
+        return retval
+
+    def _to_list(self, length, the_list, future, result, error):
+        if error:
+            # TODO: lost exc_info
+            future.set_exception(error)
+        else:
+            collection = self.collection
+            fix_outgoing = collection.database.delegate._fix_outgoing
+
+            if length is None:
+                n = result
+            else:
+                n = min(length, result)
+
+            for _ in range(n):
+                the_list.append(fix_outgoing(self._data().popleft(),
+                                             collection))
 
             reached_length = (length is not None and len(the_list) >= length)
             if reached_length or not self.alive:
-                break
-
-        self._framework.return_value(the_list)
+                future.set_result(the_list)
+            else:
+                self._refresh(callback=functools.partial(self._to_list,
+                                                         length,
+                                                         the_list,
+                                                         future))
 
     def get_io_loop(self):
         return self.collection.get_io_loop()

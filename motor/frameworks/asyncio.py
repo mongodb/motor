@@ -39,13 +39,32 @@ def check_event_loop(loop):
             "not %r" % loop)
 
 
-def return_value(value):
-    # In Python 3.3, StopIteration can accept a value.
-    raise StopIteration(value)
-
-
 def get_future(loop):
     return asyncio.Future(loop=loop)
+
+
+_DEFAULT = object()
+
+
+def future_or_callback(future, callback, loop, return_value=_DEFAULT):
+    if callback:
+        raise NotImplementedError("Motor with asyncio prohibits callbacks")
+
+    if return_value is _DEFAULT:
+        return future
+
+    chained = asyncio.Future(loop=loop)
+
+    def done_callback(_future):
+        try:
+            result = _future.result()
+            chained.set_result(result if return_value is _DEFAULT
+                               else return_value)
+        except Exception as exc:
+            chained.set_exception(exc)
+
+    future.add_done_callback(done_callback)
+    return chained
 
 
 def is_future(f):
@@ -90,6 +109,26 @@ def close_resolver(resolver):
 
 
 coroutine = asyncio.coroutine
+
+
+def pymongo_class_wrapper(f, pymongo_class):
+    """Executes the coroutine f and wraps its result in a Motor class.
+
+    See WrapAsync.
+    """
+    @functools.wraps(f)
+    @asyncio.coroutine
+    def _wrapper(self, *args, **kwargs):
+        result = yield from f(self, *args, **kwargs)
+
+        # Don't call isinstance(), not checking subclasses.
+        if result.__class__ == pymongo_class:
+            # Delegate to the current object to wrap the result.
+            return self.wrap(result)
+        else:
+            return result
+
+    return _wrapper
 
 
 def yieldable(future):

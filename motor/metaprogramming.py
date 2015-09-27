@@ -107,11 +107,15 @@ _coro_token = object()
 
 
 def motor_coroutine(f):
-    """Used by Motor class to mark functions as coroutines.
+    """Used by Motor classes to mark functions as coroutines.
 
     create_class_with_framework will decorate the function with a framework-
     specific coroutine decorator, like asyncio.coroutine or Tornado's
     gen.coroutine.
+
+    You cannot return a value from a motor_coroutine, the syntax differences
+    between Tornado on Python 2 and asyncio with Python 3.5 are impossible to
+    bridge.
     """
     f._is_motor_coroutine = _coro_token
     return f
@@ -195,20 +199,8 @@ class WrapAsync(WrapBase):
     def create_attribute(self, cls, attr_name):
         async_method = self.property.create_attribute(cls, attr_name)
         original_class = self.original_class
-
-        @functools.wraps(async_method)
-        @cls._framework.coroutine
-        def wrapper(self, *args, **kwargs):
-            future = async_method(self, *args, **kwargs)
-            result = yield cls._framework.yieldable(future)
-
-            # Don't call isinstance(), not checking subclasses.
-            if result.__class__ == original_class:
-                # Delegate to the current object to wrap the result.
-                cls._framework.return_value(self.wrap(result))
-            else:
-                cls._framework.return_value(result)
-
+        wrapper = cls._framework.pymongo_class_wrapper(async_method,
+                                                       original_class)
         if self.doc:
             wrapper.__doc__ = self.doc
 

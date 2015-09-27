@@ -51,10 +51,6 @@ def check_event_loop(loop):
             "io_loop must be instance of IOLoop, not %r" % loop)
 
 
-def return_value(value):
-    raise gen.Return(value)
-
-
 # Beginning in Tornado 4, TracebackFuture is a deprecated alias for Future.
 # Future-proof Motor in case TracebackFuture is some day removed. Remove this
 # Future-proofing once we drop support for Tornado 3.
@@ -66,6 +62,44 @@ except AttributeError:
 
 def get_future(loop):
     return _TornadoFuture()
+
+
+_DEFAULT = object()
+
+
+def future_or_callback(future, callback, io_loop, return_value=_DEFAULT):
+    if callback:
+        if not callable(callback):
+            raise callback_type_error
+
+        # Motor's callback convention is "callback(result, error)".
+        def done_callback(_future):
+            try:
+                result = _future.result()
+                callback(result if return_value is _DEFAULT else return_value,
+                         None)
+            except Exception as exc:
+                callback(None, exc)
+
+        future.add_done_callback(done_callback)
+
+    elif return_value is not _DEFAULT:
+        chained = _TornadoFuture()
+
+        def done_callback(_future):
+            try:
+                result = _future.result()
+                chained.set_result(result if return_value is _DEFAULT
+                                   else return_value)
+            except Exception as exc:
+                # TODO: exc_info
+                chained.set_exception(exc)
+
+        future.add_done_callback(done_callback)
+        return chained
+
+    else:
+        return future
 
 
 def is_future(f):
@@ -135,6 +169,26 @@ def coroutine(f):
         else:
             return future
     return wrapper
+
+
+def pymongo_class_wrapper(f, pymongo_class):
+    """Executes the coroutine f and wraps its result in a Motor class.
+
+    See WrapAsync.
+    """
+    @functools.wraps(f)
+    @coroutine
+    def _wrapper(self, *args, **kwargs):
+        result = yield f(self, *args, **kwargs)
+
+        # Don't call isinstance(), not checking subclasses.
+        if result.__class__ == pymongo_class:
+            # Delegate to the current object to wrap the result.
+            raise gen.Return(self.wrap(result))
+        else:
+            raise gen.Return(result)
+
+    return _wrapper
 
 
 def yieldable(future):

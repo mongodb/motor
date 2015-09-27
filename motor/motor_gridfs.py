@@ -149,8 +149,7 @@ class AgnosticGridOut(object):
 
         return getattr(self.delegate, item)
 
-    @motor_coroutine 
-    def open(self):
+    def open(self, callback=None):
         """Retrieve this file's attributes from the server.
 
         Takes an optional callback, or returns a Future.
@@ -162,8 +161,10 @@ class AgnosticGridOut(object):
            :class:`~motor.MotorGridOut` now opens itself on demand, calling
            ``open`` explicitly is rarely needed.
         """
-        yield self._framework.yieldable(self._ensure_file())
-        raise self._framework.return_value(self)
+        return self._framework.future_or_callback(self._ensure_file(),
+                                                  callback,
+                                                  self.get_io_loop(),
+                                                  self)
 
     def get_io_loop(self):
         return self.io_loop
@@ -305,50 +306,14 @@ Metadata set on the file appears as attributes on a
         return self.io_loop
 
 
-class AgnosticGridFS(object):
-    __motor_class_name__ = 'MotorGridFS'
-    __delegate_class__ = gridfs.GridFS
+class _MotorDelegateGridFS(gridfs.GridFS):
 
-    new_file = AsyncRead().wrap(grid_file.GridIn)
-    get = AsyncRead().wrap(grid_file.GridOut)
-    get_version = AsyncRead().wrap(grid_file.GridOut)
-    get_last_version = AsyncRead().wrap(grid_file.GridOut)
-    list = AsyncRead()
-    exists = AsyncRead()
-    delete = AsyncCommand()
+    # PyMongo's put() implementation uses requests, so rewrite for Motor.
+    # w >= 1 necessary to avoid running 'filemd5' command before all data
+    # is written, especially with sharding.
+    #
+    # Motor runs this on a greenlet.
 
-    def __init__(self, database, collection="fs"):
-        """
-        An instance of GridFS on top of a single Database.
-
-        :Parameters:
-          - `database`: a :class:`~motor.MotorDatabase`
-          - `collection` (optional): A string, name of root collection to use,
-            such as "fs" or "my_files"
-
-        .. mongodoc:: gridfs
-
-        .. versionchanged:: 0.2
-           ``open`` method removed; no longer needed.
-        """
-        db_class = create_class_with_framework(
-            AgnosticDatabase, self._framework, self.__module__)
-
-        if not isinstance(database, db_class):
-            raise TypeError("First argument to MotorGridFS must be "
-                            "MotorDatabase, not %r" % database)
-
-        self.io_loop = database.get_io_loop()
-        self.collection = database[collection]
-        self.delegate = self.__delegate_class__(
-            database.delegate,
-            collection,
-            _connect=False)
-
-    def get_io_loop(self):
-        return self.io_loop
-
-    @motor_coroutine 
     def put(self, data, **kwargs):
         """Put data into GridFS as a new file.
 
@@ -388,24 +353,63 @@ class AgnosticGridFS(object):
         Note that PyMongo allows unacknowledged ("w=0") puts to GridFS,
         but Motor does not.
         """
-        # PyMongo's implementation uses requests, so rewrite for Motor.
-        grid_in_class = create_class_with_framework(
-            AgnosticGridIn, self._framework, self.__module__)
-
-        grid_file = grid_in_class(self.collection, **kwargs)
-
-        # w >= 1 necessary to avoid running 'filemd5' command before
-        # all data is written, especially with sharding.
-        if 0 == self.collection.write_concern.get('w'):
+        collection = self._GridFS__collection
+        if 0 == collection.write_concern.get('w'):
             raise pymongo.errors.ConfigurationError(
                 "Motor does not allow unacknowledged put() to GridFS")
 
-        try:
-            yield self._framework.yieldable(grid_file.write(data))
-        finally:
-            yield self._framework.yieldable(grid_file.close())
+        grid_in = grid_file.GridIn(collection, **kwargs)
 
-        raise self._framework.return_value(grid_file._id)
+        try:
+            grid_in.write(data)
+        finally:
+            grid_in.close()
+
+        return grid_in._id
+
+
+class AgnosticGridFS(object):
+    __motor_class_name__ = 'MotorGridFS'
+    __delegate_class__ = _MotorDelegateGridFS
+
+    new_file = AsyncRead().wrap(grid_file.GridIn)
+    get = AsyncRead().wrap(grid_file.GridOut)
+    get_version = AsyncRead().wrap(grid_file.GridOut)
+    get_last_version = AsyncRead().wrap(grid_file.GridOut)
+    list = AsyncRead()
+    exists = AsyncRead()
+    delete = AsyncCommand()
+    put = AsyncCommand()
+
+    def __init__(self, database, collection="fs"):
+        """An instance of GridFS on top of a single Database.
+
+        :Parameters:
+          - `database`: a :class:`~motor.MotorDatabase`
+          - `collection` (optional): A string, name of root collection to use,
+            such as "fs" or "my_files"
+
+        .. mongodoc:: gridfs
+
+        .. versionchanged:: 0.2
+           ``open`` method removed; no longer needed.
+        """
+        db_class = create_class_with_framework(
+            AgnosticDatabase, self._framework, self.__module__)
+
+        if not isinstance(database, db_class):
+            raise TypeError("First argument to MotorGridFS must be "
+                            "MotorDatabase, not %r" % database)
+
+        self.io_loop = database.get_io_loop()
+        self.collection = database[collection]
+        self.delegate = self.__delegate_class__(
+            database.delegate,
+            collection,
+            _connect=False)
+
+    def get_io_loop(self):
+        return self.io_loop
 
     def find(self, *args, **kwargs):
         """Query GridFS for files.
