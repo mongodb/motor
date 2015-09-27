@@ -460,6 +460,12 @@ class AgnosticClientBase(AgnosticBase):
 
     __getitem__ = __getattr__
 
+    def open(self, callback=None):
+        return self._framework.future_or_callback(self._ensure_connected(True),
+                                                  callback,
+                                                  self.get_io_loop(),
+                                                  self)
+
     def get_default_database(self):
         """Get the database named in the MongoDB connection URI.
 
@@ -531,6 +537,8 @@ class AgnosticClient(AgnosticClientBase):
 
         .. doctest::
 
+          >>> from tornado.ioloop import IOLoop
+          >>> from motor.motor_tornado import MotorClient
           >>> client = MotorClient()
           >>> # run_sync() returns the open client.
           >>> IOLoop.current().run_sync(client.open)
@@ -547,10 +555,7 @@ class AgnosticClient(AgnosticClientBase):
            :class:`MotorClient` now opens itself on demand, calling ``open``
            explicitly is now optional.
         """
-        return self._framework.future_or_callback(self._ensure_connected(),
-                                                  callback,
-                                                  self.get_io_loop(),
-                                                  self)
+        return super(self.__class__, self).open(callback)
 
     def _get_member(self):
         # TODO: expose the PyMongo Member, or otherwise avoid this.
@@ -608,12 +613,17 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
         ``self`` when opened. This is convenient for checking at program
         startup time whether you can connect.
 
-        .. doctest::
+        .. Not a doctest: don't require a replica set for doctests to pass.
 
-          >>> client = MotorClient()
+        .. code-block:: python
+
+          >>> from tornado.ioloop import IOLoop
+          >>> from motor.motor_tornado import MotorReplicaSetClient
+          >>> uri = 'mongodb://localhost:27017/?replicaSet=rs'
+          >>> client = MotorReplicaSetClient(uri)
           >>> # run_sync() returns the open client.
           >>> IOLoop.current().run_sync(client.open)
-          MotorClient(MongoClient('localhost', 27017))
+          MotorReplicaSetClient(MongoReplicaSetClient(['localhost:27017', ...]))
 
         ``open`` raises a :exc:`~pymongo.errors.ConnectionFailure` if it
         cannot connect, but note that auth failures aren't revealed until
@@ -626,10 +636,7 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
            :class:`MotorReplicaSetClient` now opens itself on demand, calling
            ``open`` explicitly is now optional.
         """
-        return self._framework.future_or_callback(self._ensure_connected(),
-                                                  callback,
-                                                  self.get_io_loop(),
-                                                  self)
+        return super(self.__class__, self).open(callback)
 
     def _get_member(self):
         # TODO: expose the PyMongo RSC members, or otherwise avoid this.
