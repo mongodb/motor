@@ -196,7 +196,7 @@ class AIOMotorPoolTest(AsyncIOTestCase):
         s1 = yield from get_socket()
         self.assertEqual(1, pool.motor_sock_counter)
 
-        yield from get_socket()
+        s2 = yield from get_socket()
         self.assertEqual(2, pool.motor_sock_counter)
 
         start = self.loop.time()
@@ -226,7 +226,8 @@ class AIOMotorPoolTest(AsyncIOTestCase):
         self.assertAlmostEqual(0, self.loop.time() - start, places=2)
         self.assertEqual(2, pool.motor_sock_counter)
         cx.close()
-        yield from asyncio.sleep(0, loop=self.loop)
+        s1.close()
+        s2.close()
 
     @asyncio_test
     def test_connections_unacknowledged_writes(self):
