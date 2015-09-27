@@ -1332,11 +1332,13 @@ class AgnosticBaseCursor(AgnosticBase):
         .. testsetup:: to_list
 
           MongoClient().test.test_collection.remove()
-          collection = MotorClient().test.test_collection
           from tornado import ioloop
 
         .. doctest:: to_list
 
+          >>> from motor.motor_tornado import MotorClient
+          >>> collection = MotorClient().test.test_collection
+          >>>
           >>> @gen.coroutine
           ... def f():
           ...     yield collection.insert([{'_id': i} for i in range(4)])
@@ -1356,7 +1358,7 @@ class AgnosticBaseCursor(AgnosticBase):
         :Parameters:
          - `length`: maximum number of documents to return for this call, or
            None
-         - `callback` (optional): function taking (document, error)
+         - `callback` (optional): function taking (documents, error)
 
         If a callback is passed, returns None, else returns a Future.
 
