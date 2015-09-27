@@ -1,5 +1,5 @@
-:mod:`motor.web`
-================
+:mod:`motor.web` - Integrate Motor with the Tornado web framework
+=================================================================
 
 .. currentmodule:: motor.web
 
