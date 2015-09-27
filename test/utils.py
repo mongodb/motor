@@ -16,6 +16,9 @@ from __future__ import unicode_literals
 
 """Utilities for testing Motor with any framework."""
 
+import contextlib
+import warnings
+
 
 def one(s):
     """Get one element of a set"""
@@ -35,3 +38,10 @@ def safe_get(dct, dotted_key, default=None):
         dct = dct[key]
 
     return dct
+
+
+@contextlib.contextmanager
+def ignore_deprecations():
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        yield

@@ -25,6 +25,7 @@ from tornado.testing import gen_test
 import motor
 from test import assert_raises
 from test.tornado_tests import MotorTest
+from test.utils import ignore_deprecations
 
 
 class MotorGenTest(MotorTest):
@@ -51,15 +52,16 @@ class MotorGenTest(MotorTest):
             self.assertTrue("deprecated" in message)
             self.assertTrue("insert" in message)
 
-        result = yield motor.Op(collection.find_one, doc)
-        self.assertEqual(doc, result)
+        with ignore_deprecations():
+            result = yield motor.Op(collection.find_one, doc)
+            self.assertEqual(doc, result)
 
-        # Make sure it works with no args.
-        result = yield motor.Op(collection.find_one)
-        self.assertTrue(isinstance(result, dict))
+            # Make sure it works with no args.
+            result = yield motor.Op(collection.find_one)
+            self.assertTrue(isinstance(result, dict))
 
-        with assert_raises(pymongo.errors.DuplicateKeyError):
-            yield motor.Op(collection.insert, doc)
+            with assert_raises(pymongo.errors.DuplicateKeyError):
+                yield motor.Op(collection.insert, doc)
 
 
 if __name__ == '__main__':
