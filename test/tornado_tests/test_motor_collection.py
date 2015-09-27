@@ -224,9 +224,9 @@ class MotorCollectionTest(MotorTest):
         yield coll.insert([{'_id': i} for i in range(3)])
 
         # Don't yield the futures.
-        coll.remove({'_id': 0})
-        coll.remove({'_id': 1})
-        coll.remove({'_id': 2})
+        coll.remove({'_id': 0}, w=0)
+        coll.remove({'_id': 1}, w=0)
+        coll.remove({'_id': 2}, w=0)
 
         # Wait for them to complete
         while (yield coll.count()):
@@ -240,7 +240,7 @@ class MotorCollectionTest(MotorTest):
 
         # Insert id 1 without a callback or w=1.
         coll = self.db.test_unacknowledged_insert
-        coll.insert({'_id': 1})
+        coll.insert({'_id': 1}, w=0)
 
         # The insert is eventually executed.
         while not (yield coll.count()):
@@ -258,7 +258,7 @@ class MotorCollectionTest(MotorTest):
         # Test that unsafe saves with no callback still work
         collection_name = 'test_unacknowledged_save'
         coll = self.db[collection_name]
-        coll.save({'_id': 201})
+        coll.save({'_id': 201}, w=0)
 
         while not (yield coll.find_one({'_id': 201})):
             yield self.pause(0.1)
@@ -274,7 +274,7 @@ class MotorCollectionTest(MotorTest):
         coll = self.collection
 
         yield coll.insert({'_id': 1})
-        coll.update({'_id': 1}, {'$set': {'a': 1}})
+        coll.update({'_id': 1}, {'$set': {'a': 1}}, w=0)
 
         while not (yield coll.find_one({'a': 1})):
             yield self.pause(0.1)

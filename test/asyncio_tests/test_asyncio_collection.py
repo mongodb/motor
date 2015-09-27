@@ -213,9 +213,9 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         yield from coll.insert([{'_id': i} for i in range(3)])
 
         # Don't yield from the futures.
-        coll.remove({'_id': 0})
-        coll.remove({'_id': 1})
-        coll.remove({'_id': 2})
+        coll.remove({'_id': 0}, w=0)
+        coll.remove({'_id': 1}, w=0)
+        coll.remove({'_id': 2}, w=0)
 
         # Wait for them to complete
         while (yield from coll.count()):
@@ -225,9 +225,8 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
     @asyncio_test
     def test_unacknowledged_insert(self):
-        # Insert id 1 without a callback or w=1.
         coll = self.db.test_unacknowledged_insert
-        coll.insert({'_id': 1})
+        coll.insert({'_id': 1}, w=0)
 
         # The insert is eventually executed.
         while not (yield from coll.count()):
@@ -245,7 +244,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         # Test that unsafe saves with no callback still work
         collection_name = 'test_unacknowledged_save'
         coll = self.db[collection_name]
-        coll.save({'_id': 201})
+        future = coll.save({'_id': 201}, w=0)
 
         while not (yield from coll.find_one({'_id': 201})):
             yield from asyncio.sleep(0.1, loop=self.loop)
@@ -253,6 +252,9 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         # DuplicateKeyError not raised
         coll.save({'_id': 201})
         yield from coll.save({'_id': 201}, w=0)
+
+        # Clean up.
+        yield from future
         coll.database.connection.close()
 
     @asyncio_test
@@ -261,7 +263,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         coll = self.collection
 
         yield from coll.insert({'_id': 1})
-        coll.update({'_id': 1}, {'$set': {'a': 1}})
+        coll.update({'_id': 1}, {'$set': {'a': 1}}, w=0)
 
         while not (yield from coll.find_one({'a': 1})):
             yield from asyncio.sleep(0.1, loop=self.loop)
