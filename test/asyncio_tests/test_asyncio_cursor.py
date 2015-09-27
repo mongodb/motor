@@ -84,8 +84,9 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         request = yield from self.run_thread(server.receives, OpQuery)
         request.replies({'_id': 1}, cursor_id=123)
 
-        # Decref'ing the cursor eventually closes it on the server.
+        # Decref the cursor and clear from the event loop.
         del cursor
+        yield
         yield from self.run_thread(server.receives,
                                    OpKillCursors(cursor_ids=[123]))
 
