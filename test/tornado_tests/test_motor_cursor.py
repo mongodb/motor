@@ -95,6 +95,9 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     def test_fetch_next_delete(self):
+        if 'PyPy' in sys.version:
+            raise SkipTest('PyPy')
+
         client, server = self.client_server(auto_ismaster={'ismaster': True})
         cursor = client.test.collection.find()
 
