@@ -217,7 +217,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertTrue((yield from future))
         self.assertEqual(123, cursor.cursor_id)
 
-        future = self.async(cursor.close())
+        future = self.ensure_future(cursor.close())
 
         # No reply to OP_KILLCURSORS.
         yield from self.run_thread(server.receives,

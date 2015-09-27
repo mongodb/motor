@@ -23,6 +23,11 @@ import unittest
 from unittest import SkipTest
 from concurrent.futures import ThreadPoolExecutor
 
+try:
+    from asyncio import ensure_future
+except ImportError:
+    from asyncio import async as ensure_future
+
 from mockupdb import MockupDB
 
 from motor import motor_asyncio
@@ -154,15 +159,15 @@ class AsyncIOMockServerTestCase(AsyncIOTestCase):
         return self.loop.run_in_executor(None,
                                          functools.partial(fn, *args, **kwargs))
 
-    def async(self, coro):
-        return asyncio.async(coro, loop=self.loop)
+    def ensure_future(self, coro):
+        return ensure_future(coro, loop=self.loop)
 
     def fetch_next(self, cursor):
         @asyncio.coroutine
         def fetch_next():
             return (yield from cursor.fetch_next)
 
-        return self.async(fetch_next())
+        return self.ensure_future(fetch_next())
 
 
 def get_async_test_timeout(default=5):
@@ -219,7 +224,7 @@ def asyncio_test(func=None, timeout=None):
             self.loop.set_exception_handler(exc_handler)
             coro = asyncio.coroutine(f)(self, *args, **kwargs)
             coro = asyncio.wait_for(coro, actual_timeout, loop=self.loop)
-            task = asyncio.async(coro, loop=self.loop)
+            task = ensure_future(coro, loop=self.loop)
             try:
                 self.loop.run_until_complete(task)
             except:

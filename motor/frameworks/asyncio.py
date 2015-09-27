@@ -21,6 +21,11 @@ import functools
 import socket
 import ssl
 
+try:
+    from asyncio import ensure_future
+except ImportError:
+    from asyncio import async as ensure_future
+
 import greenlet
 
 
@@ -172,7 +177,7 @@ def asyncio_motor_sock_method(method):
         coro = method(self, *args, **kwargs)
         if self.timeout:
             coro = asyncio.wait_for(coro, self.timeout, loop=self.loop)
-        future = asyncio.async(coro, loop=self.loop)
+        future = ensure_future(coro, loop=self.loop)
         future.add_done_callback(callback)
         return main.switch()
 
