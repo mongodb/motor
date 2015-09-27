@@ -390,7 +390,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
     @asyncio_test(timeout=30)
     def test_parallel_scan(self):
-        raise SkipTest("TODO")
         if not (yield from at_least(self.cx, (2, 5, 5))):
             raise SkipTest("Requires MongoDB >= 2.5.5")
 

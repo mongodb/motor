@@ -1046,7 +1046,6 @@ class AgnosticCollection(AgnosticBase):
 
         return cursor_class(cursor, self)
 
-    @motor_coroutine
     def parallel_scan(self, num_cursors, **kwargs):
         """Scan this entire collection in parallel.
 
@@ -1081,17 +1080,33 @@ class AgnosticCollection(AgnosticBase):
 
         .. note:: Requires server version **>= 2.5.5**.
         """
-        command_cursors = yield self._framework.yieldable(
-            self.__parallel_scan(num_cursors, **kwargs))
+        io_loop = self.get_io_loop()
+        future = self._framework.get_future(io_loop)
 
-        command_cursor_class = create_class_with_framework(
-            AgnosticCommandCursor, self._framework, self.__module__)
+        # Return a future, or if user passed a callback chain it to the future.
+        callback = kwargs.pop('callback', None)
+        retval = self._framework.future_or_callback(future, callback, io_loop)
 
-        motor_command_cursors = [
-            command_cursor_class(cursor, self)
-            for cursor in command_cursors]
+        # Once we have PyMongo Cursors, wrap in MotorCursors and resolve the
+        # future with them, or pass them to the callback.
+        scan_callback = functools.partial(self._scan_callback, future)
+        self.__parallel_scan(num_cursors, callback=scan_callback, **kwargs)
 
-        self._framework.return_value(motor_command_cursors)
+        return retval
+
+    def _scan_callback(self, future, command_cursors, error):
+        if error:
+            # TODO: exc_info.
+            future.set_exception(error)
+        else:
+            command_cursor_class = create_class_with_framework(
+                AgnosticCommandCursor, self._framework, self.__module__)
+
+            motor_command_cursors = [
+                command_cursor_class(cursor, self)
+                for cursor in command_cursors]
+
+            future.set_result(motor_command_cursors)
 
     def initialize_unordered_bulk_op(self):
         """Initialize an unordered batch of write operations.
