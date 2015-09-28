@@ -18,6 +18,7 @@ from __future__ import unicode_literals
 
 import os
 import socket
+import sys
 import unittest
 
 import pymongo
