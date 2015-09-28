@@ -307,6 +307,9 @@ class MotorResolverTest(MotorTest):
 
     @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
     def test_blocking_resolver(self):
+        if 'PyPy' in sys.version:
+            raise SkipTest('PyPy')
+
         yield self._test_resolver('tornado.netutil.BlockingResolver')
 
     @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
