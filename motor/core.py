@@ -460,12 +460,6 @@ class AgnosticClientBase(AgnosticBase):
 
     __getitem__ = __getattr__
 
-    def open(self, callback=None):
-        return self._framework.future_or_callback(self._ensure_connected(True),
-                                                  callback,
-                                                  self.get_io_loop(),
-                                                  self)
-
     def get_default_database(self):
         """Get the database named in the MongoDB connection URI.
 
@@ -555,7 +549,10 @@ class AgnosticClient(AgnosticClientBase):
            :class:`MotorClient` now opens itself on demand, calling ``open``
            explicitly is now optional.
         """
-        return super(self.__class__, self).open(callback)
+        return self._framework.future_or_callback(self._ensure_connected(True),
+                                                  callback,
+                                                  self.get_io_loop(),
+                                                  self)
 
     def _get_member(self):
         # TODO: expose the PyMongo Member, or otherwise avoid this.
@@ -636,7 +633,23 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
            :class:`MotorReplicaSetClient` now opens itself on demand, calling
            ``open`` explicitly is now optional.
         """
-        return super(self.__class__, self).open(callback)
+        loop = self.get_io_loop()
+        future = self._framework.get_future(loop)
+        retval = self._framework.future_or_callback(future, callback, loop)
+        connected_callback = functools.partial(self._connected_callback,
+                                               future)
+        self._ensure_connected(sync=True, callback=connected_callback)
+        return retval
+
+    def _connected_callback(self, future, result, error):
+        if error:
+            # TODO: exc_info.
+            future.set_exception(error)
+        elif not self._get_member():
+            future.set_exception(pymongo.errors.AutoReconnect(
+                'no primary is available'))
+        else:
+            future.set_result(self)
 
     def _get_member(self):
         # TODO: expose the PyMongo RSC members, or otherwise avoid this.
