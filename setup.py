@@ -103,6 +103,10 @@ class test(Command):
         elif not testenv.HAVE_ASYNCIO:
             loader.avoid('asyncio_tests', reason='no asyncio')
 
+        if sys.version_info[:2] < (3, 5):
+            loader.avoid('asyncio_tests.test_asyncio_await',
+                         reason='python < 3.5')
+
         if self.test_suite is None:
             suite = loader.discover(self.test_module)
         else:
