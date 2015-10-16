@@ -104,6 +104,8 @@ class test(Command):
             loader.avoid('asyncio_tests', reason='no asyncio')
 
         if sys.version_info[:2] < (3, 5):
+            loader.avoid('tornado_tests.test_motor_await',
+                         reason='python < 3.5')
             loader.avoid('asyncio_tests.test_asyncio_await',
                          reason='python < 3.5')
 
@@ -117,7 +119,7 @@ class test(Command):
             failfast=self.failfast,
             tornado_warnings=self.tornado_warnings)
 
-        if sys.version_info[:3] >= (3, 2) and unittest.__name__ != 'unittest2':
+        if sys.version_info[:2] >= (3, 2) and unittest.__name__ != 'unittest2':
             # 'warnings' argument added to TextTestRunner in Python 3.2.
             runner_kwargs['warnings'] = 'default'
 
