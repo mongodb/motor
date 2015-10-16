@@ -211,7 +211,7 @@ class MotorClientTest(MotorTest):
         self.assertEqual(n_inserts, (yield insert_collection.count()))
         yield collection.remove()
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_drop_database(self):
         # Make sure we can pass a MotorDatabase instance to drop_database
         db = self.cx.test_drop_database

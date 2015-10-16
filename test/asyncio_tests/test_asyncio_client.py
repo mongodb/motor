@@ -211,7 +211,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
         self.assertEqual(n_inserts, (yield from insert_collection.count()))
         yield from collection.remove()
 
-    @asyncio_test
+    @asyncio_test(timeout=30)
     def test_drop_database(self):
         # Make sure we can pass an AsyncIOMotorDatabase instance
         # to drop_database

@@ -103,6 +103,21 @@ class test(Command):
         elif not testenv.HAVE_ASYNCIO:
             loader.avoid('asyncio_tests', reason='no asyncio')
 
+        if sys.version_info[:2] < (3, 5):
+            loader.avoid('asyncio_tests.test_asyncio_await',
+                         reason='python < 3.5')
+
+        # Decide if we can run async / await tests with Tornado.
+        test_motor_await = 'tornado_tests.test_motor_await'
+        if not testenv.HAVE_TORNADO:
+            loader.avoid(test_motor_await, reason='no tornado')
+        # We need Tornado after this patch to wrap "async def" with gen_test:
+        # https://github.com/tornadoweb/tornado/pull/1550
+        elif not testenv.TORNADO_VERSION[:2] > (4, 2):
+            loader.avoid(test_motor_await, reason='tornado < 4.3')
+        elif sys.version_info[:2] < (3, 5):
+            loader.avoid(test_motor_await, reason='python < 3.5')
+
         if self.test_suite is None:
             suite = loader.discover(self.test_module)
         else:
@@ -113,7 +128,7 @@ class test(Command):
             failfast=self.failfast,
             tornado_warnings=self.tornado_warnings)
 
-        if sys.version_info[:3] >= (3, 2) and unittest.__name__ != 'unittest2':
+        if sys.version_info[:2] >= (3, 2) and unittest.__name__ != 'unittest2':
             # 'warnings' argument added to TextTestRunner in Python 3.2.
             runner_kwargs['warnings'] = 'default'
 

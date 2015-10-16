@@ -21,6 +21,7 @@ import functools
 import logging
 import socket
 import sys
+import textwrap
 import time
 
 import greenlet
@@ -62,6 +63,7 @@ except ImportError:
     ssl = None
     HAS_SSL = False
 
+PY35 = sys.version_info[:2] >= (3, 5)
 
 class MotorPool(object):
     def __init__(
@@ -1206,6 +1208,18 @@ class AgnosticBaseCursor(AgnosticBase):
         self.collection = collection
         self.started = False
         self.closed = False
+
+    if PY35:
+        exec(textwrap.dedent("""
+        async def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            # An optimization: skip the "await" if possible.
+            if self._buffer_size() or await self.fetch_next:
+                return self.next_object()
+            raise StopAsyncIteration()
+        """), globals(), locals())
 
     def _get_more(self):
         """Initial query or getMore. Returns a Future."""
