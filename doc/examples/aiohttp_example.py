@@ -57,6 +57,10 @@ def create_example_server(loop):
 # -- shutdown-start --
 @asyncio.coroutine
 def shutdown(server, app, handler):
+    sock = server.sockets[0]
+    app.loop.remove_reader(sock.fileno())
+    sock.close()
+
     yield from handler.finish_connections(1.0)
     server.close()
     yield from server.wait_closed()
