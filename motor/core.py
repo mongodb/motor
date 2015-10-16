@@ -1215,8 +1215,8 @@ class AgnosticBaseCursor(AgnosticBase):
             return self
 
         async def __anext__(self):
-            # TODO: no need for await on each
-            if await self.fetch_next:
+            # An optimization: skip the "await" if possible.
+            if self._buffer_size() or await self.fetch_next:
                 return self.next_object()
             raise StopAsyncIteration()
         """), globals(), locals())
