@@ -25,6 +25,22 @@ were rewritten. (See `commit message dc19418c`_ for an explanation.)
 
 .. _commit message dc19418c: https://github.com/mongodb/motor/commit/dc19418c
 
+`async` and `await`
+~~~~~~~~~~~~~~~~~~~
+
+Motor now supports Python 3.5 native coroutines, written with the `async` and
+`await` syntax::
+
+    async def f():
+        await collection.insert({'_id': 1})
+
+Cursors from `~MotorCollection.find`, `~MotorCollection.aggregate`, or
+`MotorGridFS.find` can be iterated elegantly and very efficiently in native
+coroutines with `async for`::
+
+    async def f():
+        async for doc in collection.find():
+            do_something_with(doc)
 
 Cursor slicing
 ~~~~~~~~~~~~~~
