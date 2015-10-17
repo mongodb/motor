@@ -35,6 +35,8 @@ Tutorial: Using Motor With Tornado
 A guide to using MongoDB and Tornado with Motor, the
 non-blocking driver.
 
+.. contents::
+
 Tutorial Prerequisites
 ----------------------
 You can learn about MongoDB with the `MongoDB Tutorial`_ before you learn Motor.

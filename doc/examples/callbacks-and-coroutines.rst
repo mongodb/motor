@@ -10,6 +10,8 @@ raw callbacks. Here's an example that shows the difference.
   version 0.5 Motor can also integrate with asyncio instead of Tornado. The
   documentation is not yet updated for Motor's asyncio integration.
 
+.. contents::
+
 With callbacks
 --------------
 An application that can create and display short messages:
