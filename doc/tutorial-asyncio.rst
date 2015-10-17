@@ -459,9 +459,88 @@ the basic :meth:`command` method.
 
 .. mongodoc:: commands
 
+A Web Application With `aiohttp`
+--------------------------------
+
+Let us create a web application using `aiohttp`_, a popular HTTP package for
+asyncio. Install it with::
+
+  python3 -m pip install aiohttp
+
+We are going to make a trivial web site with two pages served from MongoDB.
+To begin:
+
+.. literalinclude:: examples/aiohttp_example.py
+  :start-after: setup-start
+  :end-before: setup-end
+
+The ``AsyncIOMotorClient`` constructor does not actually connect to MongoDB.
+The client connects on demand, when you attempt the first operation.
+We create it and assign the "test" database's handle to ``db``.
+
+The ``setup_db`` coroutine drops the "pages" collection (plainly, this code is
+for demonstration purposes), then inserts two documents. Each document's page
+name is its unique id, and the "body" field is a simple HTML page. Finally,
+``setup_db`` returns the database handle.
+
+The ``setup_db`` coroutine is called by a higher-level coroutine,
+``create_example_server``:
+
+.. literalinclude:: examples/aiohttp_example.py
+  :start-after: server-start
+  :end-before: server-end
+
+This coroutine runs ``setup_db`` to completion, then creates an aiohttp
+Application instance and attaches the database handle to it, so it lasts
+the lifetime of the process and is available to request handlers.
+
+Note that it is a common mistake to create a new client object for every
+request; this comes at a dire performance cost. Create the client
+when your application starts and reuse that one client for the lifetime
+of the process. You can maintain the client by storing a database handle
+from the client on your application object, as shown in this example.
+
+In ``create_example_server`` we route requests for all URLs beginning with
+"/pages/" to the ``page_handler`` coroutine:
+
+.. literalinclude:: examples/aiohttp_example.py
+  :start-after: handler-start
+  :end-before: handler-end
+
+Now setup is complete. Start the server and the event loop:
+
+.. literalinclude:: examples/aiohttp_example.py
+  :start-after: main-start
+  :end-before: main-end
+
+As you see, ``main`` is not a coroutine, it is a regular function. It uses
+`~asyncio.BaseEventLoop.run_until_complete` to run ``create_example_server``
+synchronously. The return value of `~asyncio.BaseEventLoop.run_until_complete`
+is the three values returned by ``create_example_server``: the server, the app,
+and the app's top-level request handler.
+
+Once this step is complete, ``main`` starts the event loop and lets it run
+indefinitely.
+
+Visit ``localhost:8080/pages/page-one`` and the server responds "Hello!".
+At ``localhost:8080/pages/page-two`` it responds "Goodbye." At other URLs it
+returns a 404.
+
+When you hit Control-C in the terminal, the event loop exits and ``main`` runs
+the ``shutdown`` coroutine to attempt a graceful exit:
+
+.. literalinclude:: examples/aiohttp_example.py
+  :start-after: shutdown-start
+  :end-before: shutdown-end
+
+The complete code is in the Motor repository in ``examples/aiohttp_example.py``.
+
+.. _aiohttp: https://aiohttp.readthedocs.org/
+
 Further Reading
 ---------------
 Learning to use the MongoDB driver is just the beginning, of course. For
 in-depth instruction in MongoDB itself, see `The MongoDB Manual`_.
 
 .. _The MongoDB Manual: http://docs.mongodb.org/manual/
+

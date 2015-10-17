@@ -184,4 +184,5 @@ intersphinx_mapping = {
     'gridfs': ('http://api.mongodb.org/python/2.8/', None),
     'pymongo': ('http://api.mongodb.org/python/2.8/', None),
     'tornado': ('http://www.tornadoweb.org/en/stable/', None),
+    'python': ('https://docs.python.org/3/', None),
 }
