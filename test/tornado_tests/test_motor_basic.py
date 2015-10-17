@@ -23,7 +23,6 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import assert_raises
 from test.tornado_tests import MotorTest
 
 
@@ -61,7 +60,7 @@ class MotorTestBasic(MotorTest):
             if gle_options.get('w') == 0:
                 yield collection.insert({'_id': 0})  # No error
             else:
-                with assert_raises(pymongo.errors.DuplicateKeyError):
+                with self.assertRaises(pymongo.errors.DuplicateKeyError):
                     yield collection.insert({'_id': 0})
 
             # No error
@@ -80,23 +79,23 @@ class MotorTestBasic(MotorTest):
         # Test write concerns passed to MotorClient, set on collection, or
         # passed to insert.
         if test.env.is_replica_set:
-            with assert_raises(pymongo.errors.DuplicateKeyError):
+            with self.assertRaises(pymongo.errors.DuplicateKeyError):
                 yield cxw2.motor_test.test_collection.insert({'_id': 0})
 
-            with assert_raises(pymongo.errors.DuplicateKeyError):
+            with self.assertRaises(pymongo.errors.DuplicateKeyError):
                 yield collection.insert({'_id': 0})
 
-            with assert_raises(pymongo.errors.DuplicateKeyError):
+            with self.assertRaises(pymongo.errors.DuplicateKeyError):
                 yield self.collection.insert({'_id': 0}, w=2)
         else:
             # w > 1 and no replica set
-            with assert_raises(pymongo.errors.OperationFailure):
+            with self.assertRaises(pymongo.errors.OperationFailure):
                 yield cxw2.motor_test.test_collection.insert({'_id': 0})
 
-            with assert_raises(pymongo.errors.OperationFailure):
+            with self.assertRaises(pymongo.errors.OperationFailure):
                 yield collection.insert({'_id': 0})
 
-            with assert_raises(pymongo.errors.OperationFailure):
+            with self.assertRaises(pymongo.errors.OperationFailure):
                 yield self.collection.insert({'_id': 0}, w=2)
 
         # Important that the last operation on each MotorClient was

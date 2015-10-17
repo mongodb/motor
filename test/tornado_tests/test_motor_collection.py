@@ -29,7 +29,7 @@ from tornado.testing import gen_test
 import motor
 import motor.motor_tornado
 import test
-from test import assert_raises, SkipTest
+from test import SkipTest
 from test.tornado_tests import at_least, MotorTest, skip_if_mongos
 from test.utils import delay
 
@@ -129,7 +129,7 @@ class MotorCollectionTest(MotorTest):
 
         try:
             yield coll.insert([{'s': 1}, {'s': 2}])
-            with assert_raises(DuplicateKeyError):
+            with self.assertRaises(DuplicateKeyError):
                 yield coll.update({'s': 2}, {'$set': {'s': 1}})
 
         finally:
@@ -151,7 +151,7 @@ class MotorCollectionTest(MotorTest):
         yield collection.insert({'_id': 2})
 
         # Violate a unique index in one of many updates, handle error.
-        with assert_raises(DuplicateKeyError):
+        with self.assertRaises(DuplicateKeyError):
             yield collection.insert([
                 {'_id': 1},
                 {'_id': 2},  # Already exists
@@ -189,7 +189,7 @@ class MotorCollectionTest(MotorTest):
         yield coll.save({'s': 1})
 
         try:
-            with assert_raises(DuplicateKeyError):
+            with self.assertRaises(DuplicateKeyError):
                 yield coll.save({'s': 1})
         finally:
             yield coll.drop()
@@ -250,7 +250,7 @@ class MotorCollectionTest(MotorTest):
         future = coll.insert({'_id': 1})
         yield coll.insert({'_id': 1}, w=0)
 
-        with assert_raises(DuplicateKeyError):
+        with self.assertRaises(DuplicateKeyError):
             yield future
 
     @gen_test

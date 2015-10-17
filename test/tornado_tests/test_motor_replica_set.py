@@ -28,7 +28,6 @@ from tornado.testing import gen_test
 import motor
 import motor.core
 import test
-from test import assert_raises
 from test import SkipTest
 from test.test_environment import db_user, db_password, port, host
 from test.tornado_tests import MotorReplicaSetTestBase, MotorTest
@@ -58,7 +57,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         yield self.check_optional_callback(self.rsc.open)
 
     def test_io_loop(self):
-        with assert_raises(TypeError):
+        with self.assertRaises(TypeError):
             motor.MotorReplicaSetClient(test.env.rs_uri, io_loop='foo')
 
     @gen_test
@@ -70,7 +69,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             cursor = self.rsc.motor_test.test_collection.find(
                 read_preference=pymongo.ReadPreference.SECONDARY)
 
-            with assert_raises(pymongo.errors.AutoReconnect):
+            with self.assertRaises(pymongo.errors.AutoReconnect):
                 yield cursor.fetch_next
         finally:
             iostream.IOStream.write = old_write
@@ -82,7 +81,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             'localhost:8765', replicaSet='rs', io_loop=self.io_loop)
 
         # Test the Future interface.
-        with assert_raises(pymongo.errors.ConnectionFailure):
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
             yield client.open()
 
         # Test with a callback.
@@ -156,7 +155,7 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
     @gen_test
     def test_connect(self):
         with self.assertLogs("motor", logging.ERROR) as log_ctx:
-            with assert_raises(pymongo.errors.ConnectionFailure):
+            with self.assertRaises(pymongo.errors.ConnectionFailure):
                 yield motor.MotorReplicaSetClient(
                     '%s:%s' % (host, port), replicaSet='anything',
                     io_loop=self.io_loop,

@@ -23,7 +23,6 @@ import pymongo.errors
 from tornado.testing import gen_test
 
 import motor
-from test import assert_raises
 from test.tornado_tests import MotorTest
 from test.utils import ignore_deprecations
 
@@ -60,7 +59,7 @@ class MotorGenTest(MotorTest):
             result = yield motor.Op(collection.find_one)
             self.assertTrue(isinstance(result, dict))
 
-            with assert_raises(pymongo.errors.DuplicateKeyError):
+            with self.assertRaises(pymongo.errors.DuplicateKeyError):
                 yield motor.Op(collection.insert, doc)
 
 

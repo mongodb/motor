@@ -28,7 +28,7 @@ from tornado.testing import gen_test
 from pymongo.errors import InvalidOperation
 
 import motor
-from test import assert_raises, MockRequestHandler
+from test import MockRequestHandler
 from test.tornado_tests import MotorTest
 
 
@@ -268,7 +268,7 @@ class MotorGridFileTest(MotorTest):
     def test_grid_out_default_opts(self):
         self.assertRaises(TypeError, motor.MotorGridOut, "foo")
         gout = motor.MotorGridOut(self.db.fs, 5)
-        with assert_raises(NoFile):
+        with self.assertRaises(NoFile):
             yield gout.open()
 
         a = motor.MotorGridIn(self.db.fs)
@@ -324,7 +324,7 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual(b"foo bar", (yield three.read()))
 
         gridout = motor.MotorGridOut(self.db.fs, file_document={})
-        with assert_raises(NoFile):
+        with self.assertRaises(NoFile):
             yield gridout.open()
 
     @gen_test

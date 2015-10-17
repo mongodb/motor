@@ -27,7 +27,7 @@ from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import test
-from test import assert_raises, SkipTest
+from test import SkipTest
 from test.test_environment import host, port
 from test.tornado_tests import MotorTest
 from test.utils import delay, one
@@ -175,7 +175,7 @@ class MotorPoolTest(MotorTest):
             collection = cx.motor_test.test_collection
             future = collection.find_one({'$where': delay(where_delay)})
             if waitQueueTimeoutMS and waitQueueTimeoutMS < where_delay * 1000:
-                with assert_raises(pymongo.errors.ConnectionFailure):
+                with self.assertRaises(pymongo.errors.ConnectionFailure):
                     yield collection.find_one()
             else:
                 # No error

@@ -31,7 +31,6 @@ import motor
 import test
 from test.test_environment import db_password, db_user
 from motor.motor_py3_compat import StringIO
-from test import assert_raises
 from test.tornado_tests import MotorTest, MotorReplicaSetTestBase
 
 
@@ -96,13 +95,13 @@ class MotorGridfsTest(MotorTest):
         self.assertEqual(1, (yield self.db.fs.chunks.count()))
 
         yield self.fs.delete(oid)
-        with assert_raises(NoFile):
+        with self.assertRaises(NoFile):
             yield self.fs.get(oid)
 
         self.assertEqual(0, (yield self.db.fs.files.count()))
         self.assertEqual(0, (yield self.db.fs.chunks.count()))
 
-        with assert_raises(NoFile):
+        with self.assertRaises(NoFile):
             yield self.fs.get("foo")
         
         self.assertEqual(
@@ -135,13 +134,13 @@ class MotorGridfsTest(MotorTest):
         self.assertEqual(1, (yield self.db.alt.chunks.count()))
 
         yield alt.delete(oid)
-        with assert_raises(NoFile):
+        with self.assertRaises(NoFile):
             yield alt.get(oid)
 
         self.assertEqual(0, (yield self.db.alt.files.count()))
         self.assertEqual(0, (yield self.db.alt.chunks.count()))
 
-        with assert_raises(NoFile):
+        with self.assertRaises(NoFile):
             yield alt.get("foo")
         oid = yield alt.put(b"hello world", _id="foo")
         self.assertEqual("foo", oid)
@@ -175,7 +174,7 @@ class MotorGridfsTest(MotorTest):
     @gen_test
     def test_put_duplicate(self):
         oid = yield self.fs.put(b"hello")
-        with assert_raises(FileExists):
+        with self.assertRaises(FileExists):
             yield self.fs.put(b"world", _id=oid)
 
     @gen_test
@@ -190,7 +189,7 @@ class MotorGridfsTest(MotorTest):
     def test_put_unacknowledged(self):
         client = self.motor_client(w=0)
         fs = motor.MotorGridFS(client.motor_test)
-        with assert_raises(ConfigurationError):
+        with self.assertRaises(ConfigurationError):
             yield fs.put(b"hello")
 
         client.close()
@@ -257,7 +256,7 @@ class TestGridfsReplicaSet(MotorReplicaSetTestBase):
         fs = motor.MotorGridFS(secondary.motor_test)
 
         # This won't detect secondary, raises error
-        with assert_raises(AutoReconnect):
+        with self.assertRaises(AutoReconnect):
             yield fs.put(b'foo')
 
     def tearDown(self):

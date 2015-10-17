@@ -25,7 +25,6 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test import assert_raises
 from test.test_environment import host, port
 from test.tornado_tests import MotorTest, remove_all_users, at_least
 
@@ -104,7 +103,7 @@ class MotorDatabaseTest(MotorTest):
         self.assertTrue(
             'test_collection2' in (yield db.collection_names()))
 
-        with assert_raises(CollectionInvalid):
+        with self.assertRaises(CollectionInvalid):
             yield db.create_collection('test_collection2')
 
         yield db.drop_collection('test_collection2')
@@ -202,13 +201,13 @@ class MotorDatabaseTest(MotorTest):
     def test_validate_collection(self):
         db = self.db
 
-        with assert_raises(TypeError):
+        with self.assertRaises(TypeError):
             yield db.validate_collection(5)
-        with assert_raises(TypeError):
+        with self.assertRaises(TypeError):
             yield db.validate_collection(None)
-        with assert_raises(OperationFailure):
+        with self.assertRaises(OperationFailure):
             yield db.validate_collection("test.doesnotexist")
-        with assert_raises(OperationFailure):
+        with self.assertRaises(OperationFailure):
             yield db.validate_collection(db.test.doesnotexist)
 
         yield db.test.save({"dummy": "object"})

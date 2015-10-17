@@ -24,7 +24,7 @@ import pymongo.errors
 
 import test
 from test.asyncio_tests import asyncio_test, AsyncIOTestCase
-from test import assert_raises, SkipTest
+from test import SkipTest
 from test.utils import delay, one
 
 
@@ -164,7 +164,7 @@ class AIOMotorPoolTest(AsyncIOTestCase):
             collection = cx.motor_test.test_collection
             future = collection.find_one({'$where': delay(where_delay)})
             if waitQueueTimeoutMS and waitQueueTimeoutMS < where_delay * 1000:
-                with assert_raises(pymongo.errors.ConnectionFailure):
+                with self.assertRaises(pymongo.errors.ConnectionFailure):
                     yield from collection.find_one()
             else:
                 # No error

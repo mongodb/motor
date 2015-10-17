@@ -29,7 +29,6 @@ from pymongo.errors import AutoReconnect, OperationFailure
 
 from tornado.testing import gen_test
 import motor
-from test import assert_raises
 from test.high_availability import ha_tools
 from test.high_availability.test_motor_ha_utils import (assert_read_from,
                                                         assert_read_from_all)
@@ -120,7 +119,7 @@ class MotorTestDirectConnection(MotorHATestCase):
                 self.assertTrue((
                     yield client.motor_test.test.find_one()))
             else:
-                with assert_raises(AutoReconnect):
+                with self.assertRaises(AutoReconnect):
                     yield client.motor_test.test.find_one()
 
             # Since an attempt at an acknowledged write to a secondary from a
@@ -262,10 +261,10 @@ class MotorTestTriggeredRefresh(MotorHATestCase):
         ha_tools.set_maintenance(secondary, True)
 
         # Trigger a refresh in various ways
-        with assert_raises(AutoReconnect):
+        with self.assertRaises(AutoReconnect):
             yield self.c_find_one.test.test.find_one()
 
-        with assert_raises(AutoReconnect):
+        with self.assertRaises(AutoReconnect):
             yield self.c_count.test.test.count()
 
         # Wait for the immediate refresh to complete - we're not waiting for
@@ -293,7 +292,7 @@ class MotorTestTriggeredRefresh(MotorHATestCase):
         yield self.pause(1)
 
         # Trigger a refresh
-        with assert_raises(AutoReconnect):
+        with self.assertRaises(AutoReconnect):
             yield c_find_one.test.test.find_one()
 
         # Wait for the immediate refresh to complete - we're not waiting for
@@ -889,7 +888,7 @@ class MotorTestReplicaSetAuth(MotorHATestCase):
         self.assertTrue(res)
         yield db.foo.insert({'foo': 'bar'}, w=3, wtimeout=30000)
         yield db.logout()
-        with assert_raises(OperationFailure):
+        with self.assertRaises(OperationFailure):
             yield db.foo.find_one()
 
         primary = '%s:%d' % self.c.primary
@@ -966,7 +965,7 @@ class MotorTestMongosHighAvailability(MotorHATestCase):
         ha_tools.kill_mongos(first)
         yield self.pause(1)
         # Fail first attempt
-        with assert_raises(AutoReconnect):
+        with self.assertRaises(AutoReconnect):
             yield coll.count()
         # Find new mongos
         self.assertEqual(1, (yield coll.count()))
@@ -976,7 +975,7 @@ class MotorTestMongosHighAvailability(MotorHATestCase):
         ha_tools.kill_mongos(second)
         yield self.pause(1)
         # Fail first attempt
-        with assert_raises(AutoReconnect):
+        with self.assertRaises(AutoReconnect):
             yield coll.count()
         # Find new mongos
         self.assertEqual(1, (yield coll.count()))
@@ -986,7 +985,7 @@ class MotorTestMongosHighAvailability(MotorHATestCase):
         ha_tools.kill_mongos(third)
         yield self.pause(1)
         # Fail first attempt
-        with assert_raises(AutoReconnect):
+        with self.assertRaises(AutoReconnect):
             yield coll.count()
 
         # We've killed all three, restart one.

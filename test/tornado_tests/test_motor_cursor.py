@@ -33,7 +33,7 @@ from pymongo.errors import OperationFailure
 
 import motor
 import motor.motor_tornado
-from test import assert_raises, SkipTest
+from test import SkipTest
 from test.tornado_tests import (at_least, get_command_line,
                                 MotorTest, MotorMockServerTest,
                                 server_is_mongos)
@@ -142,7 +142,7 @@ class MotorCursorTest(MotorMockServerTest):
         cursor = coll.find()
         cursor.delegate._Cursor__id = 1234  # Not valid on server
 
-        with assert_raises(OperationFailure):
+        with self.assertRaises(OperationFailure):
             yield cursor.fetch_next
 
         # Avoid the cursor trying to close itself when it goes out of scope
@@ -191,10 +191,10 @@ class MotorCursorTest(MotorMockServerTest):
         cursor = coll.find()
         yield self.check_optional_callback(cursor.to_list, 10)
         cursor = coll.find()
-        with assert_raises(ValueError):
+        with self.assertRaises(ValueError):
             yield cursor.to_list(-1)
 
-        with assert_raises(TypeError):
+        with self.assertRaises(TypeError):
             yield cursor.to_list('foo')
 
     @gen_test
@@ -251,7 +251,7 @@ class MotorCursorTest(MotorMockServerTest):
         cursor = coll.find(tailable=True)
 
         # Can't call to_list on tailable cursor.
-        with assert_raises(InvalidOperation):
+        with self.assertRaises(InvalidOperation):
             yield cursor.to_list(10)
 
     @gen_test
@@ -475,7 +475,7 @@ class MotorCursorTest(MotorMockServerTest):
 
     def test_iter(self):
         # Iteration should be prohibited.
-        with assert_raises(TypeError):
+        with self.assertRaises(TypeError):
             for _ in self.db.test.find():
                 pass
 
@@ -519,14 +519,14 @@ class MotorCursorMaxTimeMSTest(MotorTest):
         # Cursor parses server timeout error in response to initial query.
         yield self.enable_timeout()
         cursor = self.collection.find().max_time_ms(100000)
-        with assert_raises(ExecutionTimeout):
+        with self.assertRaises(ExecutionTimeout):
             yield cursor.fetch_next
 
         cursor = self.collection.find().max_time_ms(100000)
-        with assert_raises(ExecutionTimeout):
+        with self.assertRaises(ExecutionTimeout):
             yield cursor.to_list(10)
 
-        with assert_raises(ExecutionTimeout):
+        with self.assertRaises(ExecutionTimeout):
             yield self.collection.find_one(max_time_ms=100000)
 
     @gen_test(timeout=60)
@@ -541,7 +541,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
 
             # Test getmore timeout.
             yield self.enable_timeout()
-            with assert_raises(ExecutionTimeout):
+            with self.assertRaises(ExecutionTimeout):
                 while (yield cursor.fetch_next):
                     cursor.next_object()
 
@@ -555,7 +555,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
 
             # Test getmore timeout.
             yield self.enable_timeout()
-            with assert_raises(ExecutionTimeout):
+            with self.assertRaises(ExecutionTimeout):
                 yield cursor.to_list(None)
 
             # Avoid 'IOLoop is closing' warning.
@@ -579,7 +579,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
                 # Done.
                 future.set_result(None)
 
-        with assert_raises(ExecutionTimeout):
+        with self.assertRaises(ExecutionTimeout):
             cursor.each(callback)
             yield future
 
@@ -603,7 +603,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
                     future.set_result(None)
 
             yield self.enable_timeout()
-            with assert_raises(ExecutionTimeout):
+            with self.assertRaises(ExecutionTimeout):
                 cursor.each(callback)
                 yield future
 

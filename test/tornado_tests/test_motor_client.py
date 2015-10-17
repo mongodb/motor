@@ -33,7 +33,7 @@ from tornado.testing import gen_test, netutil
 
 import motor
 import test
-from test import assert_raises, SkipTest
+from test import SkipTest
 from test.test_environment import host, port, db_user, db_password
 from test.tornado_tests import remove_all_users, MotorTest
 from test.utils import delay
@@ -86,11 +86,11 @@ class MotorClientTest(MotorTest):
         client = motor.MotorClient(
             "mongodb:///tmp/non-existent.sock", io_loop=self.io_loop)
 
-        with assert_raises(ConnectionFailure):
+        with self.assertRaises(ConnectionFailure):
             yield client.open()
 
     def test_io_loop(self):
-        with assert_raises(TypeError):
+        with self.assertRaises(TypeError):
             motor.MotorClient(test.env.uri, io_loop='foo')
 
     def test_open_sync(self):
@@ -136,7 +136,7 @@ class MotorClientTest(MotorTest):
         client = motor.MotorClient('localhost', 8765, io_loop=self.io_loop)
 
         # Test the Future interface.
-        with assert_raises(ConnectionFailure):
+        with self.assertRaises(ConnectionFailure):
             yield client.open()
 
         # Test with a callback.
@@ -153,15 +153,15 @@ class MotorClientTest(MotorTest):
             'example.com', port=12345,
             connectTimeoutMS=1, io_loop=self.io_loop)
 
-        with assert_raises(ConnectionFailure):
+        with self.assertRaises(ConnectionFailure):
             yield client.open()
 
     @gen_test
     def test_max_pool_size_validation(self):
-        with assert_raises(ConfigurationError):
+        with self.assertRaises(ConfigurationError):
             motor.MotorClient(max_pool_size=-1)
 
-        with assert_raises(ConfigurationError):
+        with self.assertRaises(ConfigurationError):
             motor.MotorClient(max_pool_size='foo')
 
         cx = self.motor_client(max_pool_size=100)
@@ -242,7 +242,7 @@ class MotorClientTest(MotorTest):
             # Note: open() only calls ismaster, doesn't throw auth errors.
             yield client.open()
 
-            with assert_raises(OperationFailure):
+            with self.assertRaises(OperationFailure):
                 yield client.db.collection.find_one()
 
             client = motor.MotorClient(
@@ -292,7 +292,7 @@ class MotorResolverTest(MotorTest):
             yield client.open()  # No error.
 
             if test_for_errors:
-                with assert_raises(pymongo.errors.ConnectionFailure):
+                with self.assertRaises(pymongo.errors.ConnectionFailure):
                     client = motor.MotorClient(
                         self.nonexistent_domain,
                         connectTimeoutMS=100,

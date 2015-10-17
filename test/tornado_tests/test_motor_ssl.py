@@ -343,7 +343,7 @@ class MotorSSLTest(MotorTest):
         client = motor.MotorClient(
             host, port, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
 
-        with test.assert_raises(OperationFailure):
+        with self.assertRaises(OperationFailure):
             yield client.motor_test.test.count()
 
         uri = ('mongodb://%s@%s:%d/?authMechanism='

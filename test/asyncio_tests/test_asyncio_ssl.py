@@ -324,7 +324,7 @@ class TestAsyncIOSSL(unittest.TestCase):
             {'role': 'userAdminAnyDatabase', 'db': 'admin'}])
 
         collection = client.motor_test.test
-        with test.assert_raises(OperationFailure):
+        with self.assertRaises(OperationFailure):
             yield from collection.count()
 
         yield from client.admin.authenticate(

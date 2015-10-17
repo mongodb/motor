@@ -93,17 +93,6 @@ class MotorTestRunner(unittest.TextTestRunner):
         return result
 
 
-@contextlib.contextmanager
-def assert_raises(exc_class):
-    """Roughly a backport of Python 2.7's TestCase.assertRaises"""
-    try:
-        yield
-    except exc_class:
-        pass
-    else:
-        assert False, "%s not raised" % exc_class
-
-
 class MockRequestHandler(object):
     """For testing MotorGridOut.stream_to_handler."""
     def __init__(self):

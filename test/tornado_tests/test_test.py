@@ -20,7 +20,6 @@ from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 from motor.motor_common import callback_type_error
-from test import assert_raises
 from test.tornado_tests import MotorTest
 
 
@@ -48,5 +47,5 @@ class MotorCallbackTestTest(MotorTest):
     @gen_test
     def test_check_optional_callback(self):
         yield self.check_optional_callback(dont_require_callback)
-        with assert_raises(Exception):
+        with self.assertRaises(Exception):
             yield self.check_optional_callback(require_callback)
