@@ -13,8 +13,9 @@ Motor can now integrate with asyncio, as an alternative to Tornado. My gratitude
 to Rémi Jolin, Andrew Svetlov, and Nikolay Novik for their huge contributions to
 Motor's asyncio integration.
 
-Other changes
-~~~~~~~~~~~~~
+
+Cursor slicing
+~~~~~~~~~~~~~~
 
 Cursors can no longer be indexed like ``cursor[n]`` or sliced like
 ``cursor[start:end]``, see `MOTOR-84 <https://jira.mongodb.org/browse/MOTOR-84>`_.
@@ -33,6 +34,9 @@ Then instead, write::
 The negative limit ensures the server closes the cursor after one result,
 saving Motor the work of closing it. See `cursor.limit
 <http://docs.mongodb.org/v3.0/reference/method/cursor.limit/>`_.
+
+SSL hostname validation error
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If SSL hostname validation fails, Motor used to raise a `ConnectionFailure` with
 a useful messsage like "hostname 'X' doesn't match 'Y'". The message is now
