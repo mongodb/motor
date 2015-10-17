@@ -13,6 +13,18 @@ Motor can now integrate with asyncio, as an alternative to Tornado. My gratitude
 to Rémi Jolin, Andrew Svetlov, and Nikolay Novik for their huge contributions to
 Motor's asyncio integration.
 
+Python 3.5
+~~~~~~~~~~
+
+Motor is now compatible with Python 3.5, which required some effort.
+Motor not only supports users' coroutines, it uses coroutines to implement of
+some of its own features, like `MotorClient.open` and `MotorGridFS.put`.
+There is no single way to return a value from a Python 3.5 native coroutine
+or a Python 2 generator-based coroutine, so Motor internal coroutines that
+were rewritten. (See `commit message dc19418c`_ for an explanation.)
+
+.. _commit message dc19418c: https://github.com/mongodb/motor/commit/dc19418c
+
 
 Cursor slicing
 ~~~~~~~~~~~~~~
