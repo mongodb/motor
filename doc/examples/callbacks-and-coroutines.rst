@@ -77,7 +77,7 @@ An application that can create and display short messages:
         db=db
     )
 
-    print 'Listening on http://localhost:8888'
+    print('Listening on http://localhost:8888')
     application.listen(8888)
     tornado.ioloop.IOLoop.instance().start()
 
