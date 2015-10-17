@@ -26,7 +26,6 @@ from tornado import stack_context, version_info as tornado_version
 from tornado.concurrent import Future
 from tornado.testing import gen_test
 
-import test
 from test import SkipTest
 from test.test_environment import host, port
 from test.tornado_tests import MotorTest
@@ -50,9 +49,6 @@ class MotorPoolTest(MotorTest):
 
     @gen_test(timeout=30)
     def test_max_size(self):
-        if not test.env.v8:
-            raise SkipTest("Need multithreaded Javascript in mongod for test")
-
         max_pool_size = 5
         cx = self.motor_client(max_pool_size=max_pool_size)
 
