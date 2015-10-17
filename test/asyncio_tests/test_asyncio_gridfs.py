@@ -24,12 +24,11 @@ from gridfs.errors import NoFile, FileExists
 from pymongo import ReadPreference
 from pymongo.errors import InvalidOperation, ConfigurationError, AutoReconnect
 
-from motor.motor_py3_compat import StringIO
+import test
 from motor.motor_asyncio import (AsyncIOMotorGridFS,
                                  AsyncIOMotorGridIn,
                                  AsyncIOMotorGridOut)
-
-import test
+from motor.motor_py3_compat import StringIO
 from test.asyncio_tests import asyncio_test, AsyncIOTestCase
 from test.test_environment import db_password, db_user
 
@@ -359,18 +358,6 @@ class TestAsyncIOGridfsReplicaSet(AsyncIOTestCase):
         super().setUp()
         if not test.env.is_replica_set:
             raise SkipTest("Not connected to a replica set")
-
-    @asyncio_test
-    def test_gridfs_replica_set(self):
-        rsc = self.asyncio_rsc(
-            w=test.env.w, wtimeout=5000,
-            read_preference=ReadPreference.SECONDARY)
-
-        fs = AsyncIOMotorGridFS(rsc.motor_test)
-        oid = yield from fs.put(b'foo')
-        gridout = yield from fs.get(oid)
-        content = yield from gridout.read()
-        self.assertEqual(b'foo', content)
 
     @asyncio_test
     def test_gridfs_secondary(self):

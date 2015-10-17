@@ -220,18 +220,6 @@ class MotorGridfsTest(MotorTest):
 
 
 class TestGridfsReplicaSet(MotorReplicaSetTestBase):
-    @gen_test(timeout=10)
-    def test_gridfs_replica_set(self):
-        rsc = self.motor_rsc(
-            w=test.env.w, wtimeout=5000,
-            read_preference=ReadPreference.SECONDARY)
-
-        fs = motor.MotorGridFS(rsc.motor_test)
-        oid = yield fs.put(b'foo')
-        gridout = yield fs.get(oid)
-        content = yield gridout.read()
-        self.assertEqual(b'foo', content)
-
     @gen_test
     def test_gridfs_secondary(self):
         primary_host, primary_port = test.env.primary
