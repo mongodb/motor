@@ -27,6 +27,7 @@ import motor
 import test
 from test.test_environment import host, port
 from test.tornado_tests import MotorTest, remove_all_users, at_least
+from test.utils import ignore_deprecations
 
 
 class MotorDatabaseTest(MotorTest):
@@ -175,7 +176,9 @@ class MotorDatabaseTest(MotorTest):
     @gen_test(timeout=30)
     def test_authenticate(self):
         # self.db is logged in as root.
-        yield self.db.add_user("mike", "password")
+        with ignore_deprecations():
+            yield self.db.add_user("mike", "password")
+
         client = motor.MotorClient(host, port, **self.get_client_kwargs())
         db = client.motor_test
         try:
