@@ -152,18 +152,25 @@ store a document in MongoDB, call `AsyncIOMotorCollection.insert` in a
 
 .. mongodoc:: insert
 
+.. doctest:: before-inserting-2000-docs
+  :hide:
+
+  >>> # Clean up from previous insert
+  >>> pymongo.MongoClient().test_database.test_collection.remove()
+  {...}
+
 Getting a Single Document With `find_one`
 -----------------------------------------
 
 Use `AsyncIOMotorCollection.find_one` to get the first document that
 matches a query. For example, to get a document where the value for key "i" is
-less than 2:
+less than 1:
 
 .. doctest:: after-inserting-2000-docs
 
   >>> @coroutine
   ... def do_find_one():
-  ...     document = yield from db.test_collection.find_one({'i': {'$lt': 2}})
+  ...     document = yield from db.test_collection.find_one({'i': {'$lt': 1}})
   ...     pprint.pprint(document)
   ...
   >>> loop = asyncio.get_event_loop()
@@ -191,7 +198,7 @@ To find all documents with "i" less than 5:
 
   >>> @coroutine
   ... def do_find():
-  ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
+  ...     cursor = db.test_collection.find({'i': {'$lt': 5}}).sort('i')
   ...     for document in (yield from cursor.to_list(length=100)):
   ...         pprint.pprint(document)
   ...
@@ -234,7 +241,7 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
   ... def do_find():
   ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
   ...     # Modify the query before iterating
-  ...     cursor.sort([('i', pymongo.DESCENDING)]).limit(2).skip(2)
+  ...     cursor.sort('i', -1).limit(2).skip(2)
   ...     while (yield from cursor.fetch_next):
   ...         document = cursor.next_object()
   ...         pprint.pprint(document)

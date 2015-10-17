@@ -300,17 +300,24 @@ In the code above, ``result`` is the ``_id`` of each inserted document.
 
 .. mongodoc:: insert
 
+.. doctest:: before-inserting-2000-docs
+  :hide:
+
+  >>> # Clean up from previous insert
+  >>> pymongo.MongoClient().test_database.test_collection.remove()
+  {...}
+
 Getting a Single Document With `MotorCollection.find_one`
 ---------------------------------------------------------
 Use `MotorCollection.find_one` to get the first document that
 matches a query. For example, to get a document where the value for key "i" is
-less than 2:
+less than 1:
 
 .. doctest:: after-inserting-2000-docs
 
   >>> @gen.coroutine
   ... def do_find_one():
-  ...     document = yield db.test_collection.find_one({'i': {'$lt': 2}})
+  ...     document = yield db.test_collection.find_one({'i': {'$lt': 1}})
   ...     pprint.pprint(document)
   ...
   >>> IOLoop.current().run_sync(do_find_one)
@@ -340,7 +347,7 @@ To find all documents with "i" less than 5:
 
   >>> @gen.coroutine
   ... def do_find():
-  ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
+  ...     cursor = db.test_collection.find({'i': {'$lt': 5}}).sort('i')
   ...     for document in (yield cursor.to_list(length=100)):
   ...         pprint.pprint(document)
   ...
@@ -379,9 +386,10 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
 
   >>> @gen.coroutine
   ... def do_find():
-  ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
+  ...     c = db.test_collection
+  ...     cursor = c.find({'i': {'$lt': 5}})
   ...     # Modify the query before iterating
-  ...     cursor.sort([('i', pymongo.DESCENDING)]).limit(2).skip(2)
+  ...     cursor.sort('i', -1).limit(2).skip(2)
   ...     while (yield cursor.fetch_next):
   ...         document = cursor.next_object()
   ...         pprint.pprint(document)
