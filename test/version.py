@@ -17,7 +17,7 @@ from __future__ import unicode_literals, absolute_import
 """Some tools for running tests based on MongoDB server version."""
 
 
-def padded(iter, length, padding=0):
+def padded(iter, length):
     l = list(iter)
     if len(l) < length:
         for _ in range(length - len(l)):
