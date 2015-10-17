@@ -1260,9 +1260,22 @@ class AgnosticBaseCursor(AgnosticBase):
           >>> IOLoop.current().run_sync(f)
           0, 1, 2, 3, 4, done
 
-        .. note:: While it appears that fetch_next retrieves each document from
-          the server individually, the cursor actually fetches documents
-          efficiently in `large batches`_.
+        While it appears that fetch_next retrieves each document from
+        the server individually, the cursor actually fetches documents
+        efficiently in `large batches`_.
+
+        In Python 3.5 and newer, cursors can be iterated elegantly and very
+        efficiently in native coroutines with `async for`:
+
+        .. doctest:: fetch_next
+
+          >>> async def f():
+          ...     async for doc in collection.find():
+          ...         sys.stdout.write(str(doc['_id']) + ', ')
+          ...     print('done')
+          ...
+          >>> IOLoop.current().run_sync(f)
+          0, 1, 2, 3, 4, done
 
         .. _`large batches`: http://docs.mongodb.org/manual/core/read-operations/#cursor-behaviors
         """

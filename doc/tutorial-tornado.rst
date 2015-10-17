@@ -307,6 +307,26 @@ In the code above, ``result`` is the ``_id`` of each inserted document.
   >>> pymongo.MongoClient().test_database.test_collection.remove()
   {...}
 
+Using native coroutines
+-----------------------
+
+Starting in Python 3.5, you can define a `native coroutine`_ with `async def`
+instead of the `gen.coroutine` decorator. Within a native coroutine, wait
+for an async operation with `await` instead of `yield`:
+
+.. doctest:: before-inserting-2000-docs
+
+  >>> async def do_insert():
+  ...     for i in range(2000):
+  ...         result = await db.test_collection.insert({'i': i})
+  ...
+  >>> IOLoop.current().run_sync(do_insert)
+
+Within a native coroutine, the syntax to use Motor with Tornado or asyncio
+is often identical.
+
+.. _native coroutine: https://www.python.org/dev/peps/pep-0492/
+
 Getting a Single Document With `MotorCollection.find_one`
 ---------------------------------------------------------
 Use `MotorCollection.find_one` to get the first document that
@@ -402,6 +422,25 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
 individually; it gets documents efficiently in `large batches`_.
 
 .. _`large batches`: http://docs.mongodb.org/manual/core/read-operations/#cursor-behaviors
+
+`async for`
+-----------
+
+In a native coroutine defined with `async def`, replace the while-loop with
+`async for`:
+
+.. doctest:: after-inserting-2000-docs
+
+  >>> async def do_find():
+  ...     c = db.test_collection
+  ...     async for document in c.find({'i': {'$lt': 2}}):
+  ...         pprint.pprint(document)
+  ...
+  >>> IOLoop.current().run_sync(do_find)
+  {'_id': ObjectId('...'), 'i': 0}
+  {'_id': ObjectId('...'), 'i': 1}
+
+This version of the code is dramatically faster.
 
 Counting Documents
 ------------------

@@ -175,3 +175,31 @@ two messages at once and wait for both:
 
     # Wait for both to complete by yielding the Futures.
     previous_msg, next_msg = yield [prev_future, next_future]
+
+`async` and `await`
+-------------------
+
+Python 3.5 introduces `native coroutines`_ that use the `async` and `await`
+keywords. Starting in Python 3.5, you can use `async def` instead of the
+`gen.coroutine` decorator, and replace the while-loop with `async for`:
+
+.. code-block:: python
+
+    class MessagesHandler(tornado.web.RequestHandler):
+        @tornado.web.asynchronous
+        async def get(self):
+            """Display all messages."""
+            self.write('<a href="/compose">Compose a message</a><br>')
+            self.write('<ul>')
+            db = self.settings['db']
+
+            # New in Python 3.5:
+            async for message in db.messages.find().sort([('_id', -1)]):
+                self.write('<li>%s</li>' % message['msg'])
+
+            self.write('</ul>')
+            self.finish()
+
+This version of the code is dramatically faster.
+
+.. _native coroutines: https://www.python.org/dev/peps/pep-0492/
