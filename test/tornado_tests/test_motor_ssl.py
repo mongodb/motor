@@ -129,7 +129,6 @@ class MotorSSLTest(MotorTest):
         # Expects the server to be running with ssl and
         # --sslWeakCertificateValidation. motor_client() adds appropriate
         # ssl args and auth.
-        client = self.motor_client()
         if test.env.auth:
             raise SkipTest("can't test with auth")
 
@@ -159,7 +158,6 @@ class MotorSSLTest(MotorTest):
             raise SkipTest("No hosts entry for 'server'. Cannot validate "
                            "hostname in the certificate")
 
-        client = self.motor_client(ssl_certfile=CLIENT_PEM)
         if test.env.auth:
             raise SkipTest("can't test with auth")
 
