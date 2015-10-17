@@ -338,6 +338,9 @@ class MotorResolverTest(MotorTest):
     # https://github.com/tornadoweb/tornado/blob/f098ca/tornado/test/netutil_test.py#L149
     @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
     def test_cares_resolver(self):
+        if 'PyPy' in sys.version:
+            raise SkipTest('PyPy')
+
         try:
             import pycares
         except ImportError:
