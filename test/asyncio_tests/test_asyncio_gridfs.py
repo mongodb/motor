@@ -235,23 +235,12 @@ class TestAsyncIOGridFile(AsyncIOTestCase):
 
     @asyncio_test
     def test_stream_to_handler(self):
-        # TODO: Sort of Tornado-specific, but it does work with asyncio.
-        class MockRequestHandler(object):
-            def __init__(self):
-                self.n_written = 0
-
-            def write(self, data):
-                self.n_written += len(data)
-
-            def flush(self):
-                pass
-
         fs = AsyncIOMotorGridFS(self.db)
 
         for content_length in (0, 1, 100, 100 * 1000):
             _id = yield from fs.put(b'a' * content_length)
             gridout = yield from fs.get(_id)
-            handler = MockRequestHandler()
+            handler = test.MockRequestHandler()
             yield from gridout.stream_to_handler(handler)
             self.assertEqual(content_length, handler.n_written)
             yield from fs.delete(_id)

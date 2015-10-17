@@ -102,3 +102,15 @@ def assert_raises(exc_class):
         pass
     else:
         assert False, "%s not raised" % exc_class
+
+
+class MockRequestHandler(object):
+    """For testing MotorGridOut.stream_to_handler."""
+    def __init__(self):
+        self.n_written = 0
+
+    def write(self, data):
+        self.n_written += len(data)
+
+    def flush(self):
+        pass

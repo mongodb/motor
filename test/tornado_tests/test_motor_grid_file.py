@@ -28,7 +28,7 @@ from tornado.testing import gen_test
 from pymongo.errors import InvalidOperation
 
 import motor
-from test import assert_raises
+from test import assert_raises, MockRequestHandler
 from test.tornado_tests import MotorTest
 
 
@@ -376,16 +376,6 @@ class MotorGridFileTest(MotorTest):
 
     @gen_test
     def test_stream_to_handler(self):
-        class MockRequestHandler(object):
-            def __init__(self):
-                self.n_written = 0
-
-            def write(self, data):
-                self.n_written += len(data)
-
-            def flush(self):
-                pass
-
         fs = motor.MotorGridFS(self.db)
 
         for content_length in (0, 1, 100, 100 * 1000):

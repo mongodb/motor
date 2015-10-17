@@ -124,23 +124,12 @@ class MotorTestAwait(MotorTest):
 
     @gen_test
     async def test_stream_to_handler(self):
-        # TODO: refactor the MockRequestHandler
-        class MockRequestHandler(object):
-            def __init__(self):
-                self.n_written = 0
-
-            def write(self, data):
-                self.n_written += len(data)
-
-            def flush(self):
-                pass
-
         fs = MotorGridFS(self.db)
         content_length = 1000
         await fs.delete(1)
         self.assertEqual(1, await fs.put(b'a' * content_length, _id=1))
         gridout = await fs.get(1)
-        handler = MockRequestHandler()
+        handler = test.MockRequestHandler()
         await gridout.stream_to_handler(handler)
         self.assertEqual(content_length, handler.n_written)
         await fs.delete(1)
