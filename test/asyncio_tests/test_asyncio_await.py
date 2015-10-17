@@ -14,8 +14,8 @@
 
 from __future__ import unicode_literals, absolute_import
 
-import test
 from motor.motor_asyncio import AsyncIOMotorGridFS
+import test
 from test import SkipTest
 from test.asyncio_tests import asyncio_test, AsyncIOTestCase
 
