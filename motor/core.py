@@ -1457,27 +1457,26 @@ class AgnosticBaseCursor(AgnosticBase):
             raise pymongo.errors.InvalidOperation(
                 "Can't call to_list on tailable cursor")
 
-        future = self._framework.get_future(self.get_io_loop())
+        to_list_future = self._framework.get_future(self.get_io_loop())
 
         # Run future_or_callback's type checking before we change anything.
-        retval = self._framework.future_or_callback(future,
+        retval = self._framework.future_or_callback(to_list_future,
                                                     callback,
                                                     self.get_io_loop())
 
         self.started = True
         the_list = []
-        self._refresh(callback=functools.partial(self._to_list,
-                                                 length,
-                                                 the_list,
-                                                 future))
+
+        self._get_more().add_done_callback(
+            functools.partial(self._to_list, length, the_list, to_list_future))
 
         return retval
 
-    def _to_list(self, length, the_list, future, result, error):
-        if error:
-            # TODO: lost exc_info
-            future.set_exception(error)
-        else:
+    def _to_list(self, length, the_list, to_list_future, get_more_result):
+        # get_more_result is the result of self._get_more().
+        # to_list_future will be the result of the user's to_list() call.
+        try:
+            result = get_more_result.result()
             collection = self.collection
             fix_outgoing = collection.database.delegate._fix_outgoing
 
@@ -1492,12 +1491,16 @@ class AgnosticBaseCursor(AgnosticBase):
 
             reached_length = (length is not None and len(the_list) >= length)
             if reached_length or not self.alive:
-                future.set_result(the_list)
+                to_list_future.set_result(the_list)
             else:
-                self._refresh(callback=functools.partial(self._to_list,
-                                                         length,
-                                                         the_list,
-                                                         future))
+                self._get_more().add_done_callback(
+                    functools.partial(self._to_list,
+                                      length,
+                                      the_list,
+                                      to_list_future))
+        except Exception as exc:
+            # TODO: lost exc_info
+            to_list_future.set_exception(exc)
 
     def get_io_loop(self):
         return self.collection.get_io_loop()
