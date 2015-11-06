@@ -1100,7 +1100,7 @@ class AgnosticCollection(AgnosticBase):
             @gen.coroutine
             def process_cursor(cursor):
                 while (yield cursor.fetch_next):
-                    process_document(document)
+                    process_document(cursor.next_object())
 
             # Get up to 4 cursors.
             cursors = yield collection.parallel_scan(4)
