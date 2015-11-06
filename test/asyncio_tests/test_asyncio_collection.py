@@ -370,8 +370,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
     @asyncio_test
     def test_aggregation_cursor(self):
-        if not (yield from at_least(self.cx, (2, 5, 1))):
-            raise SkipTest("Aggregation cursor requires MongoDB >= 2.5.1")
+        mongo_2_5_1 = yield from at_least(self.cx, (2, 5, 1))
 
         db = self.db
 
@@ -379,16 +378,20 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         # and a larger one that requires a getMore.
         for collection_size in (10, 1000):
             yield from db.drop_collection("test")
-            yield from db.test.insert(
-                [{'_id': i} for i in range(collection_size)])
+            yield from db.test.insert([{'_id': i} for i in
+                                       range(collection_size)])
+            pipeline = {'$project': {'_id': '$_id'}}
             expected_sum = sum(range(collection_size))
-            cursor = yield from db.test.aggregate(
-                {'$project': {'_id': '$_id'}}, cursor={})
 
-            docs = yield from cursor.to_list(collection_size)
-            self.assertEqual(
-                expected_sum,
-                sum(doc['_id'] for doc in docs))
+            reply = yield from db.test.aggregate(pipeline, cursor=False)
+            self.assertEqual(expected_sum,
+                             sum(doc['_id'] for doc in reply['result']))
+
+            if mongo_2_5_1:
+                cursor = yield from db.test.aggregate(pipeline)
+                docs = yield from cursor.to_list(collection_size)
+                self.assertEqual(expected_sum,
+                                 sum(doc['_id'] for doc in docs))
 
     @asyncio_test(timeout=30)
     def test_parallel_scan(self):

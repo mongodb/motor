@@ -42,6 +42,38 @@ coroutines with `async for`::
         async for doc in collection.find():
             do_something_with(doc)
 
+`aggregate`
+~~~~~~~~~~~
+
+`MotorCollection.aggregate` now returns a cursor by default. The old syntax is
+no longer needed::
+
+    # Motor 0.4 and older.
+    cursor = yield collection.aggregate(pipeline, cursor={})
+    while (yield cursor.fetch_next):
+        doc = cursor.next_object()
+        print(doc)
+
+In Motor 0.5, simply do::
+
+    # Motor 0.5: "cursor={}" is now the default and need not be passed in.
+    cursor = yield collection.aggregate(pipeline)
+    while (yield cursor.fetch_next):
+        doc = cursor.next_object()
+        print(doc)
+
+Or with Python 3.5 and later::
+
+    async for doc in yield collection.aggregate(pipeline):
+        print(doc)
+
+MongoDB versions 2.4 and older do not support aggregation cursors; pass
+``cursor=False`` for compatibility with older MongoDBs::
+
+    reply = yield collection.aggregate(cursor=False)
+    for doc in reply['results']:
+        print(doc)
+
 Cursor slicing
 ~~~~~~~~~~~~~~
 

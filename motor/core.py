@@ -885,34 +885,6 @@ If a callback is passed, returns None, else returns a Future.
 .. mongodoc:: mapreduce
 """
 
-aggregate_doc = """Execute an aggregation pipeline on this collection.
-
-The aggregation can be run on a secondary if the client is a
-:class:`~motor.MotorReplicaSetClient` and its ``read_preference`` is not
-:attr:`PRIMARY`.
-
-:Parameters:
-  - `pipeline`: a single command or list of aggregation commands
-  - `**kwargs`: send arbitrary parameters to the aggregate command
-
-.. note:: Requires server version **>= 2.1.0**.
-
-With server version **>= 2.5.1**, pass
-``cursor={}`` to retrieve unlimited aggregation results
-with a :class:`~motor.MotorCommandCursor`::
-
-    pipeline = [{'$project': {'name': {'$toUpper': '$name'}}}]
-    cursor = yield collection.aggregate(pipeline, cursor={})
-    while (yield cursor.fetch_next):
-        doc = cursor.next_object()
-
-.. versionchanged:: 0.2
-   Added cursor support.
-
-.. _aggregate command:
-    http://docs.mongodb.org/manual/applications/aggregation
-"""
-
 
 # PyMongo's Collection.update shows examples that don't apply to Motor.
 update_doc = """Update a document(s) in this collection.
@@ -1009,10 +981,10 @@ class AgnosticCollection(AgnosticBase):
     distinct          = AsyncRead()
     inline_map_reduce = AsyncRead()
     find_one          = AsyncRead()
-    aggregate         = AsyncRead(doc=aggregate_doc).wrap(CommandCursor)
     uuid_subtype      = ReadWriteProperty()
     full_name         = ReadOnlyProperty()
 
+    __aggregate       = AsyncRead(attr_name='aggregate').wrap(CommandCursor)
     __parallel_scan   = AsyncRead(attr_name='parallel_scan')
 
     def __init__(self, database, name):
@@ -1060,6 +1032,59 @@ class AgnosticCollection(AgnosticBase):
             AgnosticCursor, self._framework, self.__module__)
 
         return cursor_class(cursor, self)
+
+    def aggregate(self, pipeline, **kwargs):
+        """Execute an aggregation pipeline on this collection.
+
+        The aggregation can be run on a secondary if the client is a
+        :class:`~motor.MotorReplicaSetClient` and its ``read_preference`` is not
+        :attr:`PRIMARY`.
+
+        :Parameters:
+          - `pipeline`: a single command or list of aggregation commands
+          - `**kwargs`: send arbitrary parameters to the aggregate command
+
+        Returns a `MotorCommandCursor` that can be iterated like a cursor from
+        `find`::
+
+          pipeline = [{'$project': {'name': {'$toUpper': '$name'}}}]
+          cursor = yield collection.aggregate(pipeline)
+          while (yield cursor.fetch_next):
+              doc = cursor.next_object()
+              print(doc)
+
+        In Python 3.5 and newer, aggregation cursors can be iterated elegantly
+        in native coroutines with `async for`::
+
+          async def f():
+              async for doc in await collection.aggregate(pipeline):
+                  doc = cursor.next_object()
+                  print(doc)
+
+        MongoDB versions 2.4 and older do not support aggregation cursors; pass
+        ``cursor=False`` for compatibility with older MongoDBs::
+
+          reply = yield collection.aggregate(cursor=False)
+          for doc in reply['results']:
+              print(doc)
+
+        .. versionchanged:: 0.5
+           `aggregate` returns a cursor by default, the argument ``cursor={}``
+           is no longer needed.
+
+        .. versionchanged:: 0.2
+           Added cursor support.
+
+        .. _aggregate command:
+            http://docs.mongodb.org/manual/applications/aggregation
+
+        """
+        if kwargs.get('cursor') is False:
+            kwargs.pop('cursor')
+        else:
+            kwargs.setdefault('cursor', {})
+
+        return self.__aggregate(pipeline, **kwargs)
 
     def parallel_scan(self, num_cursors, **kwargs):
         """Scan this entire collection in parallel.

@@ -379,8 +379,7 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     def test_aggregation_cursor(self):
-        if not (yield at_least(self.cx, (2, 5, 1))):
-            raise SkipTest("Aggregation cursor requires MongoDB >= 2.5.1")
+        mongo_2_5_1 = yield at_least(self.cx, (2, 5, 1))
 
         db = self.db
 
@@ -389,14 +388,18 @@ class MotorCollectionTest(MotorTest):
         for collection_size in (10, 1000):
             yield db.drop_collection("test")
             yield db.test.insert([{'_id': i} for i in range(collection_size)])
+            pipeline = {'$project': {'_id': '$_id'}}
             expected_sum = sum(range(collection_size))
-            cursor = yield db.test.aggregate(
-                {'$project': {'_id': '$_id'}}, cursor={})
 
-            docs = yield cursor.to_list(collection_size)
-            self.assertEqual(
-                expected_sum,
-                sum(doc['_id'] for doc in docs))
+            reply = yield db.test.aggregate(pipeline, cursor=False)
+            self.assertEqual(expected_sum,
+                             sum(doc['_id'] for doc in reply['result']))
+
+            if mongo_2_5_1:
+                cursor = yield db.test.aggregate(pipeline)
+                docs = yield cursor.to_list(collection_size)
+                self.assertEqual(expected_sum,
+                                 sum(doc['_id'] for doc in docs))
 
     @gen_test(timeout=30)
     def test_parallel_scan(self):

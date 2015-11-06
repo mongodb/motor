@@ -77,7 +77,7 @@ class TestAsyncIOAwait(AsyncIOTestCase):
         pipeline = [{'$sort': {'_id': 1}}]
 
         # Empty iterator.
-        async for _ in await collection.aggregate(pipeline, cursor={}):
+        async for _ in await collection.aggregate(pipeline):
             self.fail()
 
         for n_docs in 1, 2, 10000:
@@ -86,7 +86,7 @@ class TestAsyncIOAwait(AsyncIOTestCase):
                 await collection.insert(docs)
 
             j = 0
-            async for doc in await collection.aggregate(pipeline, cursor={}):
+            async for doc in await collection.aggregate(pipeline):
                 self.assertEqual(j, doc['_id'])
                 j += 1
 
