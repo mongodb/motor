@@ -48,6 +48,10 @@ AsyncIOMotorCommandCursor = create_asyncio_class(
     core.AgnosticCommandCursor)
 
 
+AsyncIOMotorAggregationCursor = create_asyncio_class(
+    core.AgnosticAggregationCursor)
+
+
 AsyncIOMotorBulkOperationBuilder = create_asyncio_class(
     core.AgnosticBulkOperationBuilder)
 

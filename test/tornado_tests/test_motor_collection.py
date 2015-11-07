@@ -21,7 +21,7 @@ import unittest
 import bson
 from bson.objectid import ObjectId
 from pymongo import ReadPreference
-from pymongo.errors import DuplicateKeyError
+from pymongo.errors import DuplicateKeyError, InvalidOperation
 from tornado import gen
 from tornado.concurrent import Future
 from tornado.testing import gen_test
@@ -377,6 +377,39 @@ class MotorCollectionTest(MotorTest):
 
         # Don't test drop_index or drop_indexes -- Synchro tests them
 
+    @gen.coroutine
+    def _make_test_data(self, n):
+        yield self.db.drop_collection("test")
+        yield self.db.test.insert([{'_id': i} for i in range(n)])
+        expected_sum = sum(range(n))
+        return expected_sum
+
+    pipeline = {'$project': {'_id': '$_id'}}
+
+    def assertAllDocs(self, expected_sum, docs):
+        self.assertEqual(expected_sum, sum(doc['_id'] for doc in docs))
+
+    @gen_test
+    def test_aggregate_callback(self):
+        mongo_2_5_1 = yield at_least(self.cx, (2, 5, 1))
+
+        future = Future()
+
+        def cb(result, error):
+            if error:
+                future.set_exception(error)
+            else:
+                future.set_result(result)
+
+        # Callback is allowed if cursor=False.
+        self.db.test.aggregate(self.pipeline, cursor=False, callback=cb)
+        yield future  # Completes without error.
+
+        if mongo_2_5_1:
+            # Pass a callback to to_list or each, not to aggregate.
+            with self.assertRaises(InvalidOperation):
+                self.db.test.aggregate(self.pipeline, callback=cb)
+
     @gen_test
     def test_aggregation_cursor(self):
         mongo_2_5_1 = yield at_least(self.cx, (2, 5, 1))
@@ -386,20 +419,38 @@ class MotorCollectionTest(MotorTest):
         # A small collection which returns only an initial batch,
         # and a larger one that requires a getMore.
         for collection_size in (10, 1000):
-            yield db.drop_collection("test")
-            yield db.test.insert([{'_id': i} for i in range(collection_size)])
-            pipeline = {'$project': {'_id': '$_id'}}
-            expected_sum = sum(range(collection_size))
-
-            reply = yield db.test.aggregate(pipeline, cursor=False)
-            self.assertEqual(expected_sum,
-                             sum(doc['_id'] for doc in reply['result']))
+            expected_sum = yield self._make_test_data(collection_size)
+            reply = yield db.test.aggregate(self.pipeline, cursor=False)
+            self.assertAllDocs(expected_sum, reply['result'])
 
             if mongo_2_5_1:
-                cursor = yield db.test.aggregate(pipeline)
+                cursor = db.test.aggregate(self.pipeline)
                 docs = yield cursor.to_list(collection_size)
-                self.assertEqual(expected_sum,
-                                 sum(doc['_id'] for doc in docs))
+                self.assertAllDocs(expected_sum, docs)
+
+    @gen_test
+    def test_aggregation_cursor_to_list_callback(self):
+        if not (yield at_least(self.cx, (2, 5, 1))):
+            raise SkipTest("Aggregation cursor requires MongoDB >= 2.5.1")
+
+        db = self.db
+
+        # A small collection which returns only an initial batch,
+        # and a larger one that requires a getMore.
+        for collection_size in (10, 1000):
+            expected_sum = yield self._make_test_data(collection_size)
+            cursor = db.test.aggregate(self.pipeline)
+            future = Future()
+
+            def cb(result, error):
+                if error:
+                    future.set_exception(error)
+                else:
+                    future.set_result(result)
+
+            cursor.to_list(collection_size, callback=cb)
+            docs = yield future
+            self.assertAllDocs(expected_sum, docs)
 
     @gen_test(timeout=30)
     def test_parallel_scan(self):

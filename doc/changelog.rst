@@ -42,13 +42,16 @@ coroutines with `async for`::
         async for doc in collection.find():
             do_something_with(doc)
 
+.. _aggregate_changes_0_5:
+
 `aggregate`
 ~~~~~~~~~~~
 
-`MotorCollection.aggregate` now returns a cursor by default. The old syntax is
-no longer needed::
+`MotorCollection.aggregate` now returns a cursor by default, and the cursor
+is returned immediately without a `yield`. The old syntax is no longer
+supported::
 
-    # Motor 0.4 and older.
+    # Motor 0.4 and older, no longer supported.
     cursor = yield collection.aggregate(pipeline, cursor={})
     while (yield cursor.fetch_next):
         doc = cursor.next_object()
@@ -56,20 +59,24 @@ no longer needed::
 
 In Motor 0.5, simply do::
 
-    # Motor 0.5: "cursor={}" is now the default and need not be passed in.
-    cursor = yield collection.aggregate(pipeline)
+    # Motor 0.5: no "cursor={}", no "yield".
+    cursor = collection.aggregate(pipeline)
     while (yield cursor.fetch_next):
         doc = cursor.next_object()
         print(doc)
 
 Or with Python 3.5 and later::
 
-    async for doc in yield collection.aggregate(pipeline):
+    # Motor 0.5, Python 3.5.
+    async for doc in collection.aggregate(pipeline):
         print(doc)
 
-MongoDB versions 2.4 and older do not support aggregation cursors; pass
-``cursor=False`` for compatibility with older MongoDBs::
+MongoDB versions 2.4 and older do not support aggregation cursors. For
+compatibility with older MongoDBs, `~MotorCollection.aggregate` now takes an
+argument ``cursor=False``, and returns a Future that you can yield to get all
+the results in one document::
 
+    # Motor 0.5 with MongoDB 2.4 and older.
     reply = yield collection.aggregate(cursor=False)
     for doc in reply['results']:
         print(doc)

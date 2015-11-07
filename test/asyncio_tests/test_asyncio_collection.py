@@ -388,7 +388,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
                              sum(doc['_id'] for doc in reply['result']))
 
             if mongo_2_5_1:
-                cursor = yield from db.test.aggregate(pipeline)
+                cursor = db.test.aggregate(pipeline)
                 docs = yield from cursor.to_list(collection_size)
                 self.assertEqual(expected_sum,
                                  sum(doc['_id'] for doc in docs))

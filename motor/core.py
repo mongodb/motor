@@ -984,7 +984,7 @@ class AgnosticCollection(AgnosticBase):
     uuid_subtype      = ReadWriteProperty()
     full_name         = ReadOnlyProperty()
 
-    __aggregate       = AsyncRead(attr_name='aggregate').wrap(CommandCursor)
+    _async_aggregate  = AsyncRead(attr_name='aggregate')
     __parallel_scan   = AsyncRead(attr_name='parallel_scan')
 
     def __init__(self, database, name):
@@ -1048,7 +1048,7 @@ class AgnosticCollection(AgnosticBase):
         `find`::
 
           pipeline = [{'$project': {'name': {'$toUpper': '$name'}}}]
-          cursor = yield collection.aggregate(pipeline)
+          cursor = collection.aggregate(pipeline)
           while (yield cursor.fetch_next):
               doc = cursor.next_object()
               print(doc)
@@ -1057,20 +1057,22 @@ class AgnosticCollection(AgnosticBase):
         in native coroutines with `async for`::
 
           async def f():
-              async for doc in await collection.aggregate(pipeline):
+              async for doc in collection.aggregate(pipeline):
                   doc = cursor.next_object()
                   print(doc)
 
-        MongoDB versions 2.4 and older do not support aggregation cursors; pass
-        ``cursor=False`` for compatibility with older MongoDBs::
+        MongoDB versions 2.4 and older do not support aggregation cursors; use
+        ``yield`` and pass ``cursor=False`` for compatibility with older
+        MongoDBs::
 
           reply = yield collection.aggregate(cursor=False)
           for doc in reply['results']:
               print(doc)
 
         .. versionchanged:: 0.5
-           `aggregate` returns a cursor by default, the argument ``cursor={}``
-           is no longer needed.
+           `aggregate` now returns a cursor by default, and the cursor is
+           returned immediately without a ``yield``.
+           See :ref:`aggregation changes in Motor 0.5 <aggregate_changes_0_5>`.
 
         .. versionchanged:: 0.2
            Added cursor support.
@@ -1081,10 +1083,19 @@ class AgnosticCollection(AgnosticBase):
         """
         if kwargs.get('cursor') is False:
             kwargs.pop('cursor')
+            # One-shot aggregation, no cursor. Send command now, return Future.
+            return self._async_aggregate(pipeline, **kwargs)
         else:
-            kwargs.setdefault('cursor', {})
+            if 'callback' in kwargs:
+                raise pymongo.errors.InvalidOperation(
+                    "Pass a callback to to_list or each, not to aggregate.")
 
-        return self.__aggregate(pipeline, **kwargs)
+            kwargs.setdefault('cursor', {})
+            cursor_class = create_class_with_framework(
+                AgnosticAggregationCursor, self._framework, self.__module__)
+
+            # Latent cursor that will send initial command on first "async for".
+            return cursor_class(self, pipeline, **kwargs)
 
     def parallel_scan(self, num_cursors, **kwargs):
         """Scan this entire collection in parallel.
@@ -1223,12 +1234,7 @@ class AgnosticBaseCursor(AgnosticBase):
           automatically closed by the client when the :class:`MotorCursor` is
           cleaned up by the garbage collector.
         """
-        # 'cursor' is a PyMongo Cursor, CommandCursor, or GridOutCursor. The
-        # lattermost inherits from Cursor.
-        if not isinstance(cursor, (Cursor, CommandCursor)):
-            raise TypeError(
-                "cursor must be a Cursor or CommandCursor, not %r" % cursor)
-
+        # 'cursor' is a PyMongo Cursor, CommandCursor, or a _LatentCursor.
         super(AgnosticBaseCursor, self).__init__(delegate=cursor)
         self.collection = collection
         self.started = False
@@ -1464,7 +1470,6 @@ class AgnosticBaseCursor(AgnosticBase):
                                                     callback,
                                                     self.get_io_loop())
 
-        self.started = True
         the_list = []
 
         self._get_more().add_done_callback(
@@ -1721,6 +1726,53 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
     @motor_coroutine
     def _close(self):
         yield self._framework.yieldable(self._CommandCursor__die())
+
+
+class _LatentCursor(object):
+    alive = True
+    _CommandCursor__data = []
+    _CommandCursor__id = None
+    _CommandCursor__killed = False
+    cursor_id = None
+
+    def clone(self):
+        return _LatentCursor()
+
+    def rewind(self):
+        pass
+
+
+class AgnosticAggregationCursor(AgnosticCommandCursor):
+    __motor_class_name__ = 'MotorAggregationCursor'
+
+    def __init__(self, collection, pipeline, **kwargs):
+        super(self.__class__, self).__init__(_LatentCursor(), collection)
+        self.pipeline = pipeline
+        self.kwargs = kwargs
+
+    def _get_more(self):
+        if not self.started:
+            self.started = True
+            future = self._framework.get_future(self.get_io_loop())
+            self.collection._async_aggregate(
+                self.pipeline,
+                callback=functools.partial(self._on_get_more, future),
+                **self.kwargs)
+
+            return future
+
+        return super(self.__class__, self)._get_more()
+
+    def _on_get_more(self, future, result, error):
+        if result:
+            # "result" is a CommandCursor from PyMongo's aggregate().
+            self.delegate = result
+
+            # _get_more is complete.
+            future.set_result(len(result._CommandCursor__data))
+        else:
+            # TODO: exc_info.
+            future.set_exception(error)
 
 
 class AgnosticBulkOperationBuilder(AgnosticBase):

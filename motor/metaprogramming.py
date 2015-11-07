@@ -330,13 +330,13 @@ class MotorCursorChainingMethod(MotorAttributeFactory):
 
 
 def create_class_with_framework(cls, framework, module_name):
-    name = cls.__motor_class_name__
-    cache_key = (cls, name, framework)
+    motor_class_name = cls.__motor_class_name__
+    cache_key = (cls, motor_class_name, framework)
     cached_class = _class_cache.get(cache_key)
     if cached_class:
         return cached_class
 
-    new_class = type(str(name), cls.__bases__, cls.__dict__.copy())
+    new_class = type(str(motor_class_name), cls.__bases__, cls.__dict__.copy())
     new_class.__module__ = module_name
     new_class._framework = framework
 
