@@ -1729,6 +1729,7 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
 
 
 class _LatentCursor(object):
+    """Take the place of a PyMongo CommandCursor until aggregate() begins."""
     alive = True
     _CommandCursor__data = []
     _CommandCursor__id = None
@@ -1746,6 +1747,13 @@ class AgnosticAggregationCursor(AgnosticCommandCursor):
     __motor_class_name__ = 'MotorAggregationCursor'
 
     def __init__(self, collection, pipeline, **kwargs):
+        # We're being constructed without yield or await, like:
+        #
+        #     cursor = collection.aggregate(pipeline)
+        #
+        # ... so we can't send the "aggregate" command to the server and get
+        # a PyMongo CommandCursor back yet. Set self.delegate to a latent
+        # cursor until the first yield or await triggers _get_more().
         super(self.__class__, self).__init__(_LatentCursor(), collection)
         self.pipeline = pipeline
         self.kwargs = kwargs
