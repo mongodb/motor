@@ -57,13 +57,14 @@ class MotorTestAwait(MotorTest):
         collection = self.collection
         await collection.remove()
 
-        for n_docs in 0, 1, 2, 10000:
+        for n_docs in 0, 1, 2, 10:
             if n_docs:
                 docs = [{'_id': i} for i in range(n_docs)]
                 await collection.insert(docs)
 
+            # Force extra batches to test iteration.
             j = 0
-            async for doc in collection.find().sort('_id'):
+            async for doc in collection.find().sort('_id').batch_size(3):
                 self.assertEqual(j, doc['_id'])
                 j += 1
 
@@ -84,13 +85,15 @@ class MotorTestAwait(MotorTest):
         async for _ in collection.aggregate(pipeline):
             self.fail()
 
-        for n_docs in 1, 2, 10000:
+        for n_docs in 1, 2, 10:
             if n_docs:
                 docs = [{'_id': i} for i in range(n_docs)]
                 await collection.insert(docs)
 
+            # Force extra batches to test iteration.
             j = 0
-            async for doc in collection.aggregate(pipeline):
+            async for doc in collection.aggregate(pipeline,
+                                                  cursor={'batchSize': 3}):
                 self.assertEqual(j, doc['_id'])
                 j += 1
 
@@ -98,7 +101,7 @@ class MotorTestAwait(MotorTest):
 
             await collection.remove()
 
-    @gen_test(timeout=120)
+    @gen_test
     async def test_iter_gridfs(self):
         gfs = MotorGridFS(self.db)
 
@@ -112,14 +115,15 @@ class MotorTestAwait(MotorTest):
         async for _ in gfs.find({'_id': 1}):
             self.fail()
 
-        data = b'data' * 1000
+        data = b'data'
 
-        for n_files in 1, 2, 1000:
+        for n_files in 1, 2, 10:
             for i in range(n_files):
                 await gfs.put(data, filename='filename')
 
+            # Force extra batches to test iteration.
             j = 0
-            async for _ in gfs.find({'filename': 'filename'}):
+            async for _ in gfs.find({'filename': 'filename'}).batch_size(3):
                 j += 1
 
             self.assertEqual(j, n_files)
