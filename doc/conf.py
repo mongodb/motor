@@ -101,6 +101,10 @@ html_theme_path = ["."]
 html_theme_options = {'collapsiblesidebar': True}
 html_static_path = ['static']
 
+html_sidebars = {
+   'index': ['globaltoc.html', 'searchbox.html'],
+}
+
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
 #html_title = None
