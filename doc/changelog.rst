@@ -17,11 +17,12 @@ Python 3.5
 ~~~~~~~~~~
 
 Motor is now compatible with Python 3.5, which required some effort.
-Motor not only supports users' coroutines, it uses coroutines to implement of
+Motor not only supports users' coroutines, it uses coroutines to implement
 some of its own features, like `MotorClient.open` and `MotorGridFS.put`.
 There is no single way to return a value from a Python 3.5 native coroutine
 or a Python 2 generator-based coroutine, so Motor internal coroutines that
-were rewritten. (See `commit message dc19418c`_ for an explanation.)
+return values were rewritten. (See `commit message dc19418c`_ for an
+explanation.)
 
 .. _commit message dc19418c: https://github.com/mongodb/motor/commit/dc19418c
 
