@@ -382,7 +382,7 @@ class MotorCollectionTest(MotorTest):
         yield self.db.drop_collection("test")
         yield self.db.test.insert([{'_id': i} for i in range(n)])
         expected_sum = sum(range(n))
-        return expected_sum
+        raise gen.Return(expected_sum)
 
     pipeline = {'$project': {'_id': '$_id'}}
 
