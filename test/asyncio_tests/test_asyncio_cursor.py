@@ -184,6 +184,10 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         # Only 95 docs left, make sure length=100 doesn't error or hang
         self.assertEqual(expected(105, 200), (yield from cursor.to_list(100)))
         self.assertEqual(0, cursor.cursor_id)
+
+        # Nothing left.
+        self.assertEqual([], (yield from cursor.to_list(100)))
+
         yield from cursor.close()
 
     @asyncio_test

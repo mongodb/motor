@@ -1470,10 +1470,15 @@ class AgnosticBaseCursor(AgnosticBase):
                                                     callback,
                                                     self.get_io_loop())
 
-        the_list = []
-
-        self._get_more().add_done_callback(
-            functools.partial(self._to_list, length, the_list, to_list_future))
+        if not self.alive:
+            to_list_future.set_result([])
+        else:
+            the_list = []
+            self._get_more().add_done_callback(
+                functools.partial(self._to_list,
+                                  length,
+                                  the_list,
+                                  to_list_future))
 
         return retval
 

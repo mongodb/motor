@@ -236,6 +236,9 @@ class MotorCursorTest(MotorMockServerTest):
         self.assertEqual(expected(105, 200), (yield cursor.to_list(100)))
         self.assertEqual(0, cursor.cursor_id)
 
+        # Nothing left.
+        self.assertEqual([], (yield cursor.to_list(100)))
+
     @gen_test
     def test_to_list_with_length_of_none(self):
         yield self.make_test_data()

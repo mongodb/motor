@@ -45,8 +45,11 @@ class TestAsyncIOAwait(AsyncIOTestCase):
 
         docs = [{'_id': 1}, {'_id': 2}]
         await collection.insert(docs)
-        results = await collection.find().sort('_id').to_list(length=None)
+        cursor = collection.find().sort('_id')
+        results = await cursor.to_list(length=None)
         self.assertEqual(docs, results)
+        results = await cursor.to_list(length=None)
+        self.assertEqual([], results)
 
     @asyncio_test
     async def test_iter_cursor(self):
