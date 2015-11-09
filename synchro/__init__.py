@@ -334,7 +334,7 @@ class MongoClientBase(Synchro):
 
             secondary = kwargs.pop('slave_okay', kwargs.pop('slaveok', False))
             kwargs['read_preference'] = (
-                ReadPreference.SECONDARY if secondary
+                ReadPreference.SECONDARY_PREFERRED if secondary
                 else ReadPreference.PRIMARY)
 
         gle_opts = dict([
