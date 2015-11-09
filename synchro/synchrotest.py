@@ -65,6 +65,12 @@ excluded_tests = [
     # Depends on requests.
     'TestCollection.test_insert_large_batch',
 
+    # Motor's aggregate is different from PyMongo 2's, see MOTOR-90.
+    'TestCollection.test_aggregate',
+    'TestCollection.test_aggregate_with_compile_re',
+    'TestCollection.test_aggregation_cursor',
+    'TestCollection.test_aggregation_cursor_validation',
+
     # Motor always uses greenlets.
     '*.test_use_greenlets',
 
@@ -82,6 +88,7 @@ excluded_tests = [
 
     # Motor's pool is different, we test it separately.
     '*.test_waitQueueMultiple',
+    '*.test_socketKeepAlive',
 
     # Lazy-connection tests require multithreading; we test concurrent
     # lazy connection directly.
@@ -139,6 +146,17 @@ excluded_tests = [
 
     # Weird use-case.
     'TestCursor.test_cursor_transfer',
+
+    # Requires indexing / slicing cursors, which Motor doesn't do, see MOTOR-84.
+    'TestCursor.test_clone',
+    'TestCursor.test_count_with_limit_and_skip',
+    'TestCursor.test_getitem_numeric_index',
+    'TestCursor.test_getitem_slice_index',
+    'TestCollection.test_min_query',
+
+    # Profiling format changes in MongoDB 3.2+, SERVER-19566.
+    'TestCursor.test_comment',
+    'TestDatabase.test_profiling_info',
 
     # No context-manager protocol for MotorCursor.
     'TestCursor.test_with_statement',

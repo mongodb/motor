@@ -31,6 +31,7 @@ from tornado.ioloop import IOLoop
 
 import motor
 import motor.frameworks.tornado
+import motor.motor_tornado
 from motor.metaprogramming import (
     MotorAttributeFactory,
     ReadOnlyPropertyDescriptor,
@@ -102,9 +103,9 @@ def wrap_synchro(fn):
         if isinstance(motor_obj, motor.MotorDatabase):
             client = MongoClient(delegate=motor_obj.connection)
             return Database(client, motor_obj.name)
-        if isinstance(motor_obj, motor.MotorCommandCursor):
+        if isinstance(motor_obj, motor.motor_tornado.MotorCommandCursor):
             return CommandCursor(motor_obj)
-        if isinstance(motor_obj, motor.MotorCursor):
+        if isinstance(motor_obj, motor.motor_tornado.MotorCursor):
             return Cursor(motor_obj)
         if isinstance(motor_obj, motor.MotorBulkOperationBuilder):
             return BulkOperationBuilder(motor_obj)
@@ -114,7 +115,7 @@ def wrap_synchro(fn):
             return GridIn(None, delegate=motor_obj)
         if isinstance(motor_obj, motor.MotorGridOut):
             return GridOut(None, delegate=motor_obj)
-        if isinstance(motor_obj, motor.MotorGridOutCursor):
+        if isinstance(motor_obj, motor.motor_tornado.MotorGridOutCursor):
             return GridOutCursor(motor_obj)
         else:
             return motor_obj
@@ -498,7 +499,7 @@ class Collection(Synchro):
 
 
 class Cursor(Synchro):
-    __delegate_class__ = motor.MotorCursor
+    __delegate_class__ = motor.motor_tornado.MotorCursor
 
     rewind                     = WrapOutgoing()
     clone                      = WrapOutgoing()
@@ -522,8 +523,6 @@ class Cursor(Synchro):
 
     def next(self):
         cursor = self.delegate
-        if cursor._empty():
-            raise StopIteration
 
         if cursor._buffer_size():
             return cursor.next_object()
@@ -595,14 +594,14 @@ class Cursor(Synchro):
 
 
 class CommandCursor(Cursor):
-    __delegate_class__ = motor.MotorCommandCursor
+    __delegate_class__ = motor.motor_tornado.MotorCommandCursor
 
 
 class GridOutCursor(Cursor):
-    __delegate_class__ = motor.MotorGridOutCursor
+    __delegate_class__ = motor.motor_tornado.MotorGridOutCursor
 
     def __init__(self, delegate):
-        if not isinstance(delegate, motor.MotorGridOutCursor):
+        if not isinstance(delegate, motor.motor_tornado.MotorGridOutCursor):
             raise TypeError(
                 "Expected MotorGridOutCursor, got %r" % delegate)
 
