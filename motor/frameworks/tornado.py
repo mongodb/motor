@@ -392,14 +392,18 @@ class TornadoMotorSocket(object):
     @tornado_motor_sock_method
     def recv(self, num_bytes):
         future = stream_method(self.stream, 'read_bytes', num_bytes)
-        if self.timeout_td:
-            result = yield _Wait(
-                future,
-                self.io_loop,
-                self.timeout_td,
-                timeout_exc)
-        else:
-            result = yield future
+        try:
+            if self.timeout_td:
+                result = yield _Wait(
+                    future,
+                    self.io_loop,
+                    self.timeout_td,
+                    timeout_exc)
+            else:
+                result = yield future
+        except IOError as e:
+            # PyMongo is built to handle socket.error here, not IOError.
+            raise socket.error(str(e))
 
         raise gen.Return(result)
 
