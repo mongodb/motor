@@ -372,6 +372,7 @@ class AgnosticGridFS(object):
     __motor_class_name__ = 'MotorGridFS'
     __delegate_class__ = _MotorDelegateGridFS
 
+    find_one = AsyncRead().wrap(grid_file.GridOut)
     new_file = AsyncRead().wrap(grid_file.GridIn)
     get = AsyncRead().wrap(grid_file.GridOut)
     get_version = AsyncRead().wrap(grid_file.GridOut)
