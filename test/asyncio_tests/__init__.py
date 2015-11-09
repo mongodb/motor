@@ -146,11 +146,14 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
 
 
 class AsyncIOMockServerTestCase(AsyncIOTestCase):
-    def client_server(self, *args, **kwargs):
+    def server(self, *args, **kwargs):
         server = MockupDB(*args, **kwargs)
         server.run()
         self.addCleanup(server.stop)
+        return server
 
+    def client_server(self, *args, **kwargs):
+        server = self.server(*args, **kwargs)
         client = motor_asyncio.AsyncIOMotorClient(server.uri, io_loop=self.loop)
 
         return client, server

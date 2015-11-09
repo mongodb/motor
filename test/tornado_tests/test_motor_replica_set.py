@@ -167,13 +167,5 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
         self.assertTrue("No suitable hosts" in output)
 
 
-class MotorReplicaSetExhaustCursorTest(
-        test.tornado_tests._TestExhaustCursorMixin,
-        MotorReplicaSetTestBase):
-
-    def _get_client(self, **kwargs):
-        return self.motor_rsc(**kwargs)
-
-
 if __name__ == '__main__':
     unittest.main()

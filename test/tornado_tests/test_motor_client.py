@@ -23,9 +23,10 @@ import unittest
 
 import pymongo
 import pymongo.mongo_client
+import tornado
+from mockupdb import OpQuery
 from pymongo.errors import ConfigurationError, OperationFailure
 from pymongo.errors import ConnectionFailure
-import tornado
 from tornado import gen, version_info as tornado_version
 from tornado.concurrent import Future
 from tornado.ioloop import IOLoop
@@ -35,8 +36,8 @@ import motor
 import test
 from test import SkipTest
 from test.test_environment import host, port, db_user, db_password
-from test.tornado_tests import remove_all_users, MotorTest
-from test.utils import delay
+from test.tornado_tests import remove_all_users, MotorTest, MotorMockServerTest
+from test.utils import delay, one
 from test.version import padded
 
 
@@ -350,10 +351,84 @@ class MotorResolverTest(MotorTest):
             'tornado.platform.caresresolver.CaresResolver', False)
 
 
-class MotorClientExhaustCursorTest(test.tornado_tests._TestExhaustCursorMixin,
-                                   MotorTest):
-    def _get_client(self, **kwargs):
-        return self.motor_client(**kwargs)
+class MotorClientExhaustCursorTest(MotorMockServerTest):
+    def primary_server(self):
+        primary = self.server()
+        hosts = [primary.address_string]
+        primary.autoresponds(
+            'ismaster', ismaster=True, setName='rs', hosts=hosts)
+
+        return primary
+
+    def primary_or_standalone(self, rs):
+        if rs:
+            return self.primary_server()
+        else:
+            return self.server(auto_ismaster=True)
+
+    @gen.coroutine
+    def _test_exhaust_query_server_error(self, rs):
+        # When doing an exhaust query, the socket stays checked out on success
+        # but must be checked in on error to avoid counter leak.
+        server = self.primary_or_standalone(rs=rs)
+        client = motor.MotorClient(server.uri, max_pool_size=1)
+        yield client.open()
+        pool = client._get_primary_pool()
+        sock_info = one(pool.sockets)
+        cursor = client.db.collection.find(exhaust=True)
+
+        # With Tornado, simply accessing fetch_next starts the fetch.
+        fetch_next = cursor.fetch_next
+        request = yield self.run_thread(server.receives, OpQuery)
+        request.fail()
+
+        with self.assertRaises(pymongo.errors.OperationFailure):
+            yield fetch_next
+
+        self.assertFalse(sock_info.closed)
+        self.assertEqual(sock_info, one(pool.sockets))
+
+    @gen_test
+    def test_exhaust_query_server_error_standalone(self):
+        yield self._test_exhaust_query_server_error(rs=False)
+
+    @gen_test
+    def test_exhaust_query_server_error_rs(self):
+        yield self._test_exhaust_query_server_error(rs=True)
+
+    @gen.coroutine
+    def _test_exhaust_query_network_error(self, rs):
+        # When doing an exhaust query, the socket stays checked out on success
+        # but must be checked in on error to avoid counter leak.
+        server = self.primary_or_standalone(rs=rs)
+        client = motor.MotorClient(server.uri, max_pool_size=1)
+
+        yield client.open()
+        pool = client._get_primary_pool()
+        pool._check_interval_seconds = None  # Never check.
+        sock_info = one(pool.sockets)
+
+        cursor = client.db.collection.find(exhaust=True)
+
+        # With Tornado, simply accessing fetch_next starts the fetch.
+        fetch_next = cursor.fetch_next
+        request = yield self.run_thread(server.receives, OpQuery)
+        request.hangs_up()
+
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            yield fetch_next
+
+        self.assertTrue(sock_info.closed)
+        del cursor
+        self.assertNotIn(sock_info, pool.sockets)
+
+    @gen_test
+    def test_exhaust_query_network_error_standalone(self):
+        yield self._test_exhaust_query_network_error(rs=False)
+
+    @gen_test
+    def test_exhaust_query_network_error_rs(self):
+        yield self._test_exhaust_query_network_error(rs=True)
 
 
 if __name__ == '__main__':

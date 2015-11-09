@@ -13,21 +13,26 @@
 # limitations under the License.
 
 """Test AsyncIOMotorClient."""
+
 import asyncio
 import os
 import unittest
 from unittest import SkipTest
 
 import pymongo
+from mockupdb import OpQuery
 from pymongo.errors import ConnectionFailure, ConfigurationError
-
 from pymongo.errors import OperationFailure
 
 from motor import motor_asyncio
+
 import test
-from test.asyncio_tests import asyncio_test, AsyncIOTestCase, remove_all_users
+from test.asyncio_tests import (asyncio_test,
+                                AsyncIOTestCase,
+                                AsyncIOMockServerTestCase,
+                                remove_all_users)
 from test.test_environment import host, port, db_user, db_password
-from test.utils import delay
+from test.utils import delay, one
 
 
 class TestAsyncIOClient(AsyncIOTestCase):
@@ -266,6 +271,85 @@ class TestAsyncIOClient(AsyncIOTestCase):
         yield from client.server_info()
         ka = client._get_primary_pool()._motor_socket_options.socket_keepalive
         self.assertTrue(ka)
+
+
+class TestAsyncIOClientExhaustCursor(AsyncIOMockServerTestCase):
+    def primary_server(self):
+        primary = self.server()
+        hosts = [primary.address_string]
+        primary.autoresponds(
+            'ismaster', ismaster=True, setName='rs', hosts=hosts)
+
+        return primary
+
+    def primary_or_standalone(self, rs):
+        if rs:
+            return self.primary_server()
+        else:
+            return self.server(auto_ismaster=True)
+
+    @asyncio.coroutine
+    def _test_exhaust_query_server_error(self, rs):
+        # When doing an exhaust query, the socket stays checked out on success
+        # but must be checked in on error to avoid counter leak.
+        server = self.primary_or_standalone(rs=rs)
+        client = motor_asyncio.AsyncIOMotorClient(server.uri,
+                                                  max_pool_size=1,
+                                                  io_loop=self.loop)
+        yield from client.open()
+        pool = client._get_primary_pool()
+        sock_info = one(pool.sockets)
+        cursor = client.db.collection.find(exhaust=True)
+        fetch_next = self.fetch_next(cursor)
+        request = yield from self.run_thread(server.receives, OpQuery)
+        request.fail()
+
+        with self.assertRaises(pymongo.errors.OperationFailure):
+            yield from fetch_next
+
+        self.assertFalse(sock_info.closed)
+        self.assertEqual(sock_info, one(pool.sockets))
+
+    @asyncio_test
+    def test_exhaust_query_server_error_standalone(self):
+        yield from self._test_exhaust_query_server_error(rs=False)
+
+    @asyncio_test
+    def test_exhaust_query_server_error_rs(self):
+        yield from self._test_exhaust_query_server_error(rs=True)
+
+    @asyncio.coroutine
+    def _test_exhaust_query_network_error(self, rs):
+        # When doing an exhaust query, the socket stays checked out on success
+        # but must be checked in on error to avoid counter leak.
+        server = self.primary_or_standalone(rs=rs)
+        client = motor_asyncio.AsyncIOMotorClient(server.uri,
+                                                  max_pool_size=1,
+                                                  io_loop=self.loop)
+
+        yield from client.open()
+        pool = client._get_primary_pool()
+        pool._check_interval_seconds = None  # Never check.
+        sock_info = one(pool.sockets)
+        cursor = client.db.collection.find(exhaust=True)
+        fetch_next = self.fetch_next(cursor)
+        request = yield from self.run_thread(server.receives, OpQuery)
+        request.hangs_up()
+
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            yield from fetch_next
+
+        self.assertTrue(sock_info.closed)
+        del cursor
+        self.assertNotIn(sock_info, pool.sockets)
+
+    @asyncio_test
+    def test_exhaust_query_network_error_standalone(self):
+        yield from self._test_exhaust_query_network_error(rs=False)
+
+    @asyncio_test
+    def test_exhaust_query_network_error_rs(self):
+        yield from self._test_exhaust_query_network_error(rs=True)
 
 
 if __name__ == '__main__':

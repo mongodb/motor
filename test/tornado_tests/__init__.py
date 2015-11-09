@@ -29,16 +29,12 @@ except ImportError:
     from unittest import SkipTest  # If this fails you need unittest2.
     import unittest
 
-import pymongo
-import pymongo.errors
-from bson import SON
 from mockupdb import MockupDB
 from tornado import gen, testing
 
 import motor
 from test.test_environment import env, CLIENT_PEM
 from test.assert_logs_backport import AssertLogsMixin
-from test.utils import one
 from test.version import padded, _parse_version_string
 
 
@@ -217,11 +213,14 @@ class MotorMockServerTest(MotorTest):
 
     executor = concurrent.futures.ThreadPoolExecutor(1)
 
-    def client_server(self, *args, **kwargs):
+    def server(self, *args, **kwargs):
         server = MockupDB(*args, **kwargs)
         server.run()
         self.addCleanup(server.stop)
+        return server
 
+    def client_server(self, *args, **kwargs):
+        server = self.server(*args, **kwargs)
         client = motor.motor_tornado.MotorClient(server.uri,
                                                  io_loop=self.io_loop)
 
@@ -229,59 +228,3 @@ class MotorMockServerTest(MotorTest):
 
     def run_thread(self, fn, *args, **kwargs):
         return self.executor.submit(fn, *args, **kwargs)
-
-
-class _TestExhaustCursorMixin(object):
-    """Test that clients properly handle errors from exhaust cursors.
-
-    Inherit from this class and from MotorTest, and override
-    _get_client(self, **kwargs).
-    """
-    def setUp(self):
-        super(_TestExhaustCursorMixin, self).setUp()
-        if env.is_mongos:
-            raise SkipTest("mongos doesn't support exhaust cursors")
-
-    def tearDown(self):
-        env.sync_cx.motor_test.test.remove(w=env.w)
-        super(_TestExhaustCursorMixin, self).tearDown()
-
-    @testing.gen_test
-    def test_exhaust_query_server_error(self):
-        # When doing an exhaust query, the socket stays checked out on success
-        # but must be checked in on error to avoid counter leak.
-        client = yield self._get_client(max_pool_size=1).open()
-        collection = client.motor_test.test
-        pool = client._get_primary_pool()
-        sock_info = one(pool.sockets)
-
-        # This will cause OperationFailure in all mongo versions since
-        # the value for $orderby must be a document.
-        cursor = collection.find(
-            SON([('$query', {}), ('$orderby', True)]), exhaust=True)
-
-        with self.assertRaises(pymongo.errors.OperationFailure):
-            yield cursor.fetch_next
-
-        self.assertFalse(sock_info.closed)
-        self.assertEqual(sock_info, one(pool.sockets))
-
-    @testing.gen_test
-    def test_exhaust_query_network_error(self):
-        # When doing an exhaust query, the socket stays checked out on success
-        # but must be checked in on error to avoid counter leak.
-        client = yield self._get_client(max_pool_size=1).open()
-        collection = client.motor_test.test
-        pool = client._get_primary_pool()
-        pool._check_interval_seconds = None  # Never check.
-
-        # Cause a network error.
-        sock_info = one(pool.sockets)
-        sock_info.sock.close()
-        cursor = collection.find(exhaust=True)
-        with self.assertRaises(pymongo.errors.ConnectionFailure):
-            yield cursor.fetch_next
-
-        self.assertTrue(sock_info.closed)
-        del cursor
-        self.assertNotIn(sock_info, pool.sockets)
