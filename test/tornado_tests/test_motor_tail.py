@@ -61,7 +61,7 @@ class MotorTailTest(MotorTest):
     # Need at least one pause > 4.5 seconds to ensure we recover when
     # getMore times out
     tail_pauses = (0, 1, 0, 1, 0, 5, 0, 0)
-    expected_duration = sum(tail_pauses) + 10  # Add 10 sec of fudge
+    expected_duration = sum(tail_pauses) + 20  # Add 20 sec of fudge
 
     @gen_test(timeout=expected_duration)
     def test_tail(self):
