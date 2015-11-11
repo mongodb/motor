@@ -106,32 +106,6 @@ class MotorClientTest(MotorTest):
                                    motor.MotorDatabase))
 
     @gen_test
-    def test_timeout(self):
-        if tornado_version < (4, 0, 0, 0):
-            raise SkipTest("MOTOR-73")
-
-        # Launch two slow find_ones. The one with a timeout should get an error
-        no_timeout = self.motor_client()
-        timeout = self.motor_client(socketTimeoutMS=100)
-        query = {'$where': delay(0.5), '_id': 1}
-
-        # Need a document, or the $where clause isn't executed.
-        yield no_timeout.motor_test.test_collection.insert({'_id': 1})
-        timeout_fut = timeout.motor_test.test_collection.find_one(query)
-        notimeout_fut = no_timeout.motor_test.test_collection.find_one(query)
-
-        error = None
-        try:
-            yield [timeout_fut, notimeout_fut]
-        except pymongo.errors.AutoReconnect as e:
-            error = e
-
-        self.assertEqual(str(error), 'timed out')
-        self.assertEqual({'_id': 1}, notimeout_fut.result())
-        no_timeout.close()
-        timeout.close()
-
-    @gen_test
     def test_connection_failure(self):
         # Assuming there isn't anything actually running on this port
         client = motor.MotorClient('localhost', 8765, io_loop=self.io_loop)
@@ -266,6 +240,22 @@ class MotorClientTest(MotorTest):
         yield client.server_info()
         ka = client._get_primary_pool()._motor_socket_options.socket_keepalive
         self.assertTrue(ka)
+
+
+class MotorClientTimeoutTest(MotorMockServerTest):
+    @gen_test
+    def test_timeout(self):
+        if tornado_version < (4, 0, 0, 0):
+            raise SkipTest("MOTOR-73")
+
+        server = self.server(auto_ismaster=True)
+        client = motor.MotorClient(server.uri, socketTimeoutMS=100)
+
+        with self.assertRaises(pymongo.errors.AutoReconnect) as context:
+            yield client.motor_test.test_collection.find_one()
+
+        self.assertEqual(str(context.exception), 'timed out')
+        client.close()
 
 
 RESOLVER_TEST_TIMEOUT = 30

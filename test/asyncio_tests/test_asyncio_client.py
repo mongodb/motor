@@ -101,28 +101,6 @@ class TestAsyncIOClient(AsyncIOTestCase):
                                    motor_asyncio.AsyncIOMotorDatabase))
 
     @asyncio_test
-    def test_timeout(self):
-        # Launch two slow find_ones. The one with a timeout should get an error
-        no_timeout_client = self.asyncio_client()
-        timeout = self.asyncio_client(socketTimeoutMS=100)
-        query = {'$where': delay(0.4), '_id': 1}
-
-        # Need a document, or the $where clause isn't executed.
-        test_collection = no_timeout_client.motor_test.test_collection
-        yield from test_collection.drop()
-        yield from test_collection.insert({'_id': 1})
-        timeout_fut = timeout.motor_test.test_collection.find_one(query)
-        notimeout_fut = no_timeout_client.motor_test.test_collection.find_one(
-            query)
-
-        yield from asyncio.gather(timeout_fut, notimeout_fut,
-                                  return_exceptions=True, loop=self.loop)
-        self.assertEqual(str(timeout_fut.exception()), 'timed out')
-        self.assertEqual({'_id': 1}, notimeout_fut.result())
-        no_timeout_client.close()
-        timeout.close()
-
-    @asyncio_test
     def test_reconnect_in_case_connection_closed_by_mongo(self):
         cx = self.asyncio_client(max_pool_size=1)
         yield from cx.open()
@@ -271,6 +249,21 @@ class TestAsyncIOClient(AsyncIOTestCase):
         yield from client.server_info()
         ka = client._get_primary_pool()._motor_socket_options.socket_keepalive
         self.assertTrue(ka)
+
+
+class TestAsyncIOClientTimeout(AsyncIOMockServerTestCase):
+    @asyncio_test
+    def test_timeout(self):
+        server = self.server(auto_ismaster=True)
+        client = motor_asyncio.AsyncIOMotorClient(server.uri,
+                                                  socketTimeoutMS=100,
+                                                  io_loop=self.loop)
+
+        with self.assertRaises(pymongo.errors.AutoReconnect) as context:
+            yield from client.motor_test.test_collection.find_one()
+
+        self.assertEqual(str(context.exception), 'timed out')
+        client.close()
 
 
 class TestAsyncIOClientExhaustCursor(AsyncIOMockServerTestCase):
