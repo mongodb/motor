@@ -19,7 +19,6 @@ from __future__ import unicode_literals
 import concurrent.futures
 import datetime
 import functools
-import logging
 
 try:
     # Python 2.6.
@@ -36,14 +35,6 @@ import motor
 from test.test_environment import env, CLIENT_PEM
 from test.assert_logs_backport import AssertLogsMixin
 from test.version import padded, _parse_version_string
-
-
-def suppress_tornado_warnings():
-    for name in [
-            'tornado.general',
-            'tornado.access']:
-        logger = logging.getLogger(name)
-        logger.setLevel(logging.ERROR)
 
 
 @gen.coroutine
