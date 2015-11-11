@@ -16,7 +16,6 @@ from __future__ import unicode_literals
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-import contextlib
 import logging
 
 try:
