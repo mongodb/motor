@@ -22,6 +22,14 @@ and the docs are on ReadTheDocs_.
 
     --*Ben Darnell, Tornado maintainer*
 
+    "We use Motor in high throughput environments, processing tens of thousands
+    of requests per second. It allows us to take full advantage of modern
+    hardware, ensuring we utilise the entire capacity of our purchased CPUs.
+    This helps us be more efficient with computing power, compute spend and
+    minimises the environmental impact of our infrastructure as a result."
+
+    --*David Mytton, Server Density*
+
     "We develop easy-to-use sensors and sensor systems with open source
     software to ensure every innovator, from school child to laboratory
     researcher, has the same opportunity to create. We integrate Motor into our
