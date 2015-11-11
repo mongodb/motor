@@ -471,6 +471,7 @@ We are going to make a trivial web site with two pages served from MongoDB.
 To begin:
 
 .. literalinclude:: examples/aiohttp_example.py
+  :language: python3
   :start-after: setup-start
   :end-before: setup-end
 
@@ -487,6 +488,7 @@ The ``setup_db`` coroutine is called by a higher-level coroutine,
 ``create_example_server``:
 
 .. literalinclude:: examples/aiohttp_example.py
+  :language: python3
   :start-after: server-start
   :end-before: server-end
 
@@ -504,12 +506,14 @@ In ``create_example_server`` we route requests for all URLs beginning with
 "/pages/" to the ``page_handler`` coroutine:
 
 .. literalinclude:: examples/aiohttp_example.py
+  :language: python3
   :start-after: handler-start
   :end-before: handler-end
 
 Now setup is complete. Start the server and the event loop:
 
 .. literalinclude:: examples/aiohttp_example.py
+  :language: python3
   :start-after: main-start
   :end-before: main-end
 
@@ -530,6 +534,7 @@ When you hit Control-C in the terminal, the event loop exits and ``main`` runs
 the ``shutdown`` coroutine to attempt a graceful exit:
 
 .. literalinclude:: examples/aiohttp_example.py
+  :language: python3
   :start-after: shutdown-start
   :end-before: shutdown-end
 
