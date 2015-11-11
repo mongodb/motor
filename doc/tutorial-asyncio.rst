@@ -97,7 +97,7 @@ Motor also supports `connection URIs`_:
 
   >>> client = motor.motor_asyncio.AsyncIOMotorClient('mongodb://localhost:27017')
 
-.. _high availability and PyMongo: http://api.mongodb.org/python/current/examples/high_availability.html
+.. _high availability and PyMongo: http://api.mongodb.org/python/2.8/examples/high_availability.html
 
 .. _connection URIs: http://docs.mongodb.org/manual/reference/connection-string/
 
