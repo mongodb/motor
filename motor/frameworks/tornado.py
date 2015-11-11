@@ -263,6 +263,11 @@ else:
         return method(*args, **kwargs)
 
 
+def clear_tb_log(future):
+    # Avoid "Future exception was never retrieved".
+    future.exception()
+
+
 class _Wait(concurrent.Future):
     """Utility to wait for a Future with a timeout."""
     def __init__(self, future, io_loop, timeout_td, timeout_exception):
@@ -271,6 +276,7 @@ class _Wait(concurrent.Future):
         self._timeout_exception = timeout_exception
         self._timeout_obj = io_loop.add_timeout(timeout_td, self._on_timeout)
         concurrent.chain_future(future, self)
+        future.add_done_callback(clear_tb_log)
 
     def _on_timeout(self):
         self._timeout_obj = None
