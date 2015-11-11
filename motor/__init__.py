@@ -18,11 +18,15 @@ from __future__ import unicode_literals, absolute_import
 
 import pymongo
 
+from motor.motor_py3_compat import text_type
+
 version_tuple = (0, 5, 'dev0')
 
 
 def get_version_string():
-    return '.'.join(str(v) for v in version_tuple)
+    if isinstance(version_tuple[-1], text_type):
+        return '.'.join(map(str, version_tuple[:-1])) + version_tuple[-1]
+    return '.'.join(map(str, version_tuple))
 
 version = get_version_string()
 """Current version of Motor."""
