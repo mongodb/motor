@@ -5,13 +5,13 @@ Motor
 .. image:: https://raw.github.com/mongodb/motor/master/doc/_static/motor.png
 
 :Info: Motor is a full-featured, non-blocking MongoDB_ driver for Python
-    Tornado_ applications.
+    Tornado_ and asyncio_ applications.
 :Author: A\. Jesse Jiryu Davis
 
 About
 =====
 
-Motor presents a Tornado_callback- or Future-based API for non-blocking access
+Motor presents a callback- or Future-based API for non-blocking access
 to MongoDB. The source is `on GitHub <https://github.com/mongodb/motor>`_
 and the docs are on ReadTheDocs_.
 
@@ -22,6 +22,13 @@ and the docs are on ReadTheDocs_.
 
     --*Ben Darnell, Tornado maintainer*
 
+    "We develop easy-to-use sensors and sensor systems with open source
+    software to ensure every innovator, from school child to laboratory
+    researcher, has the same opportunity to create. We integrate Motor into our
+    software to guarantee massively scalable sensor systems for everyone."
+
+    --*Ryan Smith, inXus Interactive*
+
 Installation
 ============
 
@@ -30,18 +37,18 @@ Installation
 Dependencies
 ============
 
-Motor works in all the environments officially supported by Tornado_. It
-requires:
+Motor works in all the environments officially supported by Tornado or by
+asyncio. It requires:
 
 * Unix, including Mac OS X. Windows is not supported.
-* PyMongo_
-* Tornado_
+* PyMongo_ 2.8.0 exactly.
 * Greenlet_
 * Python 2.6 or later.
 * `backports.pbkdf2`_ for faster authentication with MongoDB 3.0+,
   especially on Python older than 2.7.8, or on Python 3 before Python 3.4.
 
-See "Requirements" for details about compatibility.
+See `requirements <http://motor.readthedocs.org/en/stable/requirements.html>`_
+for details about compatibility.
 
 How To Ask For Help
 ===================
@@ -60,11 +67,11 @@ Please include all of the following information:
 
   $ python -c "import sys; print(sys.version)"
 
-- The exact version of PyMongo used, with patch level::
+- The exact version of PyMongo used:
 
   $ python -c "import pymongo; print(pymongo.version); print(pymongo.has_c())"
 
-- The exact Tornado version::
+- The exact Tornado version, if you are using Tornado::
 
   $ python -c "import tornado; print(tornado.version)"
 
@@ -94,6 +101,8 @@ In Python 2.6, unittest2_ is automatically installed.
 .. _MongoDB: http://mongodb.org/
 
 .. _Tornado: http://tornadoweb.org/
+
+.. _asyncio: https://docs.python.org/3/library/asyncio.html
 
 .. _Greenlet: http://pypi.python.org/pypi/greenlet/
 
