@@ -106,9 +106,10 @@ saving Motor the work of closing it. See `cursor.limit
 SSL hostname validation error
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If SSL hostname validation fails, Motor used to raise a `ConnectionFailure` with
-a useful messsage like "hostname 'X' doesn't match 'Y'". The message is now
-empty and Tornado logs a warning instead.
+When you use Motor with Tornado and SSL hostname validation fails, Motor used
+to raise a `ConnectionFailure` with a useful messsage like "hostname 'X'
+doesn't match 'Y'". The message is now empty and Tornado logs a warning
+instead.
 
 Motor 0.4.1
 -----------
