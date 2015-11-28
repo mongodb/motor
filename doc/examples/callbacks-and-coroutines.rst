@@ -105,7 +105,7 @@ with templates because the callback receives the entire result at once:
             (db.messages.find()
                 .sort([('_id', -1)])
                 .limit(10)
-                .to_list(length=10, self._got_messages))
+                .to_list(length=10, callback=self._got_messages))
 
         def _got_messages(self, messages, error):
             if error:
