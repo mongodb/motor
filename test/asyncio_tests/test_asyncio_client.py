@@ -33,7 +33,7 @@ from test.asyncio_tests import (asyncio_test,
                                 AsyncIOMockServerTestCase,
                                 remove_all_users)
 from test.test_environment import host, port, db_user, db_password
-from test.utils import delay, one
+from test.utils import one
 
 
 class TestAsyncIOClient(AsyncIOTestCase):

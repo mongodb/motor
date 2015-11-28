@@ -38,7 +38,7 @@ import test
 from test import SkipTest
 from test.test_environment import host, port, db_user, db_password
 from test.tornado_tests import remove_all_users, MotorTest, MotorMockServerTest
-from test.utils import delay, one
+from test.utils import one
 from test.version import padded
 
 
