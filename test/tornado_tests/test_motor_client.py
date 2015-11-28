@@ -24,6 +24,7 @@ import unittest
 import pymongo
 import pymongo.mongo_client
 import tornado
+from bson.binary import JAVA_LEGACY, UUID_SUBTYPE
 from mockupdb import OpQuery
 from pymongo.errors import ConfigurationError, OperationFailure
 from pymongo.errors import ConnectionFailure
@@ -240,6 +241,14 @@ class MotorClientTest(MotorTest):
         yield client.server_info()
         ka = client._get_primary_pool()._motor_socket_options.socket_keepalive
         self.assertTrue(ka)
+
+    def test_uuid_subtype(self):
+        cx = self.motor_client(uuidRepresentation='javaLegacy')
+        self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
+        cx.uuid_subtype = UUID_SUBTYPE
+        self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
+        self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
+
 
 
 class MotorClientTimeoutTest(MotorMockServerTest):

@@ -111,6 +111,13 @@ to raise a `ConnectionFailure` with a useful messsage like "hostname 'X'
 doesn't match 'Y'". The message is now empty and Tornado logs a warning
 instead.
 
+Configuring uuid_subtype
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can now get and set `~MotorClient.uuid_subtype` on `MotorClient`,
+`MotorReplicaSetClient`, and `MotorDatabase` instances, not just on
+`MotorCollection`.
+
 Motor 0.4.1
 -----------
 

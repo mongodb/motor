@@ -22,6 +22,7 @@ import unittest
 import pymongo.auth
 import pymongo.errors
 import pymongo.mongo_replica_set_client
+from bson.binary import JAVA_LEGACY, UUID_SUBTYPE
 from tornado import iostream, gen
 from tornado.testing import gen_test
 
@@ -140,6 +141,13 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         # spawn multiple monitors.
         c = self.motor_rsc()
         yield [c.db.collection.find_one(), c.db.collection.find_one()]
+
+    def test_uuid_subtype(self):
+        cx = self.motor_rsc(uuidRepresentation='javaLegacy')
+        self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
+        cx.uuid_subtype = UUID_SUBTYPE
+        self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
+        self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
 
 
 class TestReplicaSetClientAgainstStandalone(MotorTest):

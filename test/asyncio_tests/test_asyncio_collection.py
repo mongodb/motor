@@ -19,6 +19,7 @@ import unittest
 from unittest import SkipTest
 
 import bson
+from bson.binary import JAVA_LEGACY, OLD_UUID_SUBTYPE
 from bson.objectid import ObjectId
 from pymongo import ReadPreference
 
@@ -428,6 +429,12 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             loop=self.loop)
 
         self.assertEqual(len(docs), (yield from collection.count()))
+
+    def test_uuid_subtype(self):
+        collection = self.db.test
+        self.assertEqual(collection.uuid_subtype, OLD_UUID_SUBTYPE)
+        collection.uuid_subtype = JAVA_LEGACY
+        self.assertEqual(collection.uuid_subtype, JAVA_LEGACY)
 
 
 if __name__ == '__main__':

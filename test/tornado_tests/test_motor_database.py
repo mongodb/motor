@@ -19,6 +19,7 @@ from __future__ import unicode_literals
 import unittest
 
 import pymongo.database
+from bson.binary import JAVA_LEGACY, OLD_UUID_SUBTYPE
 from pymongo.errors import OperationFailure, CollectionInvalid
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
 from tornado.testing import gen_test
@@ -216,6 +217,12 @@ class MotorDatabaseTest(MotorTest):
         yield db.test.save({"dummy": "object"})
         self.assertTrue((yield db.validate_collection("test")))
         self.assertTrue((yield db.validate_collection(db.test)))
+
+    def test_uuid_subtype(self):
+        db = self.cx.test
+        self.assertEqual(db.uuid_subtype, OLD_UUID_SUBTYPE)
+        db.uuid_subtype = JAVA_LEGACY
+        self.assertEqual(db.uuid_subtype, JAVA_LEGACY)
 
 
 if __name__ == '__main__':

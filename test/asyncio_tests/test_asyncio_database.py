@@ -19,6 +19,7 @@ import unittest
 from unittest import SkipTest
 
 import pymongo.database
+from bson.binary import JAVA_LEGACY, OLD_UUID_SUBTYPE
 from pymongo.errors import CollectionInvalid, OperationFailure
 from pymongo.son_manipulator import NamespaceInjector, AutoReference
 
@@ -185,6 +186,12 @@ class TestAsyncIODatabase(AsyncIOTestCase):
         yield from db.test.save({"dummy": "object"})
         self.assertTrue((yield from db.validate_collection("test")))
         self.assertTrue((yield from db.validate_collection(db.test)))
+
+    def test_uuid_subtype(self):
+        db = self.cx.test
+        self.assertEqual(db.uuid_subtype, OLD_UUID_SUBTYPE)
+        db.uuid_subtype = JAVA_LEGACY
+        self.assertEqual(db.uuid_subtype, JAVA_LEGACY)
 
 
 if __name__ == '__main__':

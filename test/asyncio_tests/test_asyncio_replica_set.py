@@ -19,6 +19,7 @@ import unittest
 
 import pymongo.errors
 import pymongo.mongo_replica_set_client
+from bson.binary import JAVA_LEGACY, UUID_SUBTYPE
 
 import test
 from motor import motor_asyncio
@@ -48,6 +49,13 @@ class TestAsyncIOReplicaSet(AsyncIOTestCase):
 
         with self.assertRaises(pymongo.errors.ConnectionFailure):
             yield from client.open()
+
+    def test_uuid_subtype(self):
+        cx = self.asyncio_rsc(uuidRepresentation='javaLegacy')
+        self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
+        cx.uuid_subtype = UUID_SUBTYPE
+        self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
+        self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
 
 
 class TestReplicaSetClientAgainstStandalone(AsyncIOTestCase):

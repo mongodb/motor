@@ -19,6 +19,7 @@ from __future__ import unicode_literals
 import unittest
 
 import bson
+from bson.binary import JAVA_LEGACY, OLD_UUID_SUBTYPE
 from bson.objectid import ObjectId
 from pymongo import ReadPreference
 from pymongo.errors import DuplicateKeyError, InvalidOperation
@@ -484,6 +485,13 @@ class MotorCollectionTest(MotorTest):
         cursors = yield collection.parallel_scan(3)
         yield [f(cursor) for cursor in cursors]
         self.assertEqual(len(docs), (yield collection.count()))
+
+    def test_uuid_subtype(self):
+        collection = self.db.test
+        self.assertEqual(collection.uuid_subtype, OLD_UUID_SUBTYPE)
+        collection.uuid_subtype = JAVA_LEGACY
+        self.assertEqual(collection.uuid_subtype, JAVA_LEGACY)
+
 
 if __name__ == '__main__':
     unittest.main()

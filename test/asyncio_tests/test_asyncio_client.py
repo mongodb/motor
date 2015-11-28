@@ -20,6 +20,7 @@ import unittest
 from unittest import SkipTest
 
 import pymongo
+from bson.binary import JAVA_LEGACY, UUID_SUBTYPE
 from mockupdb import OpQuery
 from pymongo.errors import ConnectionFailure, ConfigurationError
 from pymongo.errors import OperationFailure
@@ -249,6 +250,13 @@ class TestAsyncIOClient(AsyncIOTestCase):
         yield from client.server_info()
         ka = client._get_primary_pool()._motor_socket_options.socket_keepalive
         self.assertTrue(ka)
+
+    def test_uuid_subtype(self):
+        cx = self.asyncio_client(uuidRepresentation='javaLegacy')
+        self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
+        cx.uuid_subtype = UUID_SUBTYPE
+        self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
+        self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
 
 
 class TestAsyncIOClientTimeout(AsyncIOMockServerTestCase):

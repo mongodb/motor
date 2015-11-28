@@ -411,6 +411,7 @@ class AgnosticBase(object):
     tag_sets                        = ReadWriteProperty()
     secondary_acceptable_latency_ms = ReadWriteProperty()
     write_concern                   = ReadWriteProperty()
+    uuid_subtype                    = ReadWriteProperty()
 
     def __init__(self, delegate):
         self.delegate = delegate
@@ -981,7 +982,6 @@ class AgnosticCollection(AgnosticBase):
     distinct          = AsyncRead()
     inline_map_reduce = AsyncRead()
     find_one          = AsyncRead()
-    uuid_subtype      = ReadWriteProperty()
     full_name         = ReadOnlyProperty()
 
     _async_aggregate  = AsyncRead(attr_name='aggregate')
