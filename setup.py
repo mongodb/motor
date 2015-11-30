@@ -138,7 +138,7 @@ class test(Command):
 
 
 setup(name='motor',
-      version='0.5b0',
+      version='0.5',
       packages=['motor', 'motor.frameworks'],
       description=description,
       long_description=long_description,

@@ -20,7 +20,7 @@ import pymongo
 
 from motor.motor_py3_compat import text_type
 
-version_tuple = (0, 5, 'b0')
+version_tuple = (0, 5)
 
 
 def get_version_string():
