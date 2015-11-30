@@ -150,7 +150,7 @@ setup(name='motor',
           'pymongo == 2.8.0',
       ],
       license='http://www.apache.org/licenses/LICENSE-2.0',
-      classifiers=filter(None, classifiers.split('\n')),
+      classifiers=[c for c in classifiers.split('\n') if c],
       keywords=[
           "mongo", "mongodb", "pymongo", "gridfs", "bson", "motor", "tornado",
           "asyncio",
