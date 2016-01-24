@@ -34,8 +34,9 @@ if pymongo.version != expected_pymongo_version:
     msg = (
         "Motor %s requires PyMongo at exactly version %s. "
         "You have PyMongo %s. "
-        "Do pip install pymongo==2.8.0"
-    ) % (version, expected_pymongo_version, pymongo.version)
+        "Do pip install pymongo==%s"
+    ) % (version, expected_pymongo_version,
+         pymongo.version, expected_pymongo_version)
 
     raise ImportError(msg)
 
