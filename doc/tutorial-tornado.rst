@@ -43,14 +43,14 @@ You can learn about MongoDB with the `MongoDB Tutorial`_ before you learn Motor.
 
 Install pip_ and then do::
 
-  $ pip install motor
+  $ pip install tornado motor
 
 Once done, the following should run in the Python shell without raising an
 exception:
 
 .. doctest::
 
-  >>> import motor
+  >>> import motor.motor_tornado
 
 This tutorial also assumes that a MongoDB instance is running on the
 default host and port. Assuming you have `downloaded and installed

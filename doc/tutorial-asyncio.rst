@@ -82,6 +82,7 @@ MongoDB replica sets and how PyMongo connects to them.)
 
 .. doctest:: before-inserting-2000-docs
 
+  >>> import motor.motor_asyncio
   >>> client = motor.motor_asyncio.AsyncIOMotorClient()
 
 This connects to a ``mongod`` listening on the default host and port. You can
