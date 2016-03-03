@@ -3,6 +3,33 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 0.6
+---------
+
+A database or collection whose name starts with an underscore can no longer be
+accessed as a property::
+
+    # Now raises AttributeError.
+    db = MotorClient()._mydatabase
+    collection = db._mycollection
+    subcollection = collection._subcollection
+
+Such databases and collections can still be accessed dict-style::
+
+    # Continues to work the same as previous Motor versions.
+    db = MotorClient()['_mydatabase']
+    collection = db['_mycollection']
+
+To ensure a "sub-collection" with a name that includes an underscore is
+accessible, Motor collections now allow dict-style access, the same as Motor
+clients and databases always have::
+
+    # New in Motor 0.6
+    subcollection = collection['_subcollection']    
+
+These changes solve problems with iPython code completion and the Python 3
+`ABC` abstract base class.
+
 Motor 0.5
 ---------
 

@@ -14,6 +14,8 @@
 
 from __future__ import unicode_literals, absolute_import
 
+from unittest import SkipTest
+
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import pymongo
@@ -187,3 +189,36 @@ class MotorTestBasic(MotorTest):
         self.assertRaises(
             ConfigurationError,
             collection.find_one, slaveok=True)
+
+    def test_underscore(self):
+        self.assertIsInstance(self.cx['_db'],
+                              motor.MotorDatabase)
+        self.assertIsInstance(self.db['_collection'],
+                              motor.MotorCollection)
+        self.assertIsInstance(self.collection['_collection'],
+                              motor.MotorCollection)
+
+        with self.assertRaises(AttributeError):
+            self.cx._db
+
+        with self.assertRaises(AttributeError):
+            self.db._collection
+
+        with self.assertRaises(AttributeError):
+            self.collection._collection
+
+    def test_abc(self):
+        try:
+            from abc import ABC
+        except ImportError:
+            # Python 2.
+            raise SkipTest()
+
+        class C(ABC):
+            db = self.db
+            collection = self.collection
+            subcollection = self.collection.subcollection
+
+        # MOTOR-104, TypeError: Can't instantiate abstract class C with abstract
+        # methods collection, db, subcollection.
+        C()

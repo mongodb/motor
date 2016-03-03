@@ -14,6 +14,8 @@
 
 from __future__ import unicode_literals, absolute_import
 
+from abc import ABC
+
 import pymongo
 from pymongo.errors import ConfigurationError
 from pymongo.read_preferences import ReadPreference
@@ -186,3 +188,30 @@ class AIOMotorTestBasic(AsyncIOTestCase):
         self.assertRaises(
             ConfigurationError,
             collection.find_one, slaveok=True)
+
+    def test_underscore(self):
+        self.assertIsInstance(self.cx['_db'],
+                              motor_asyncio.AsyncIOMotorDatabase)
+        self.assertIsInstance(self.db['_collection'],
+                              motor_asyncio.AsyncIOMotorCollection)
+        self.assertIsInstance(self.collection['_collection'],
+                              motor_asyncio.AsyncIOMotorCollection)
+
+        with self.assertRaises(AttributeError):
+            self.cx._db
+
+        with self.assertRaises(AttributeError):
+            self.db._collection
+
+        with self.assertRaises(AttributeError):
+            self.collection._collection
+
+    def test_abc(self):
+        class C(ABC):
+            db = self.db
+            collection = self.collection
+            subcollection = self.collection.subcollection
+
+        # MOTOR-104, TypeError: Can't instantiate abstract class C with abstract
+        # methods collection, db, subcollection.
+        C()

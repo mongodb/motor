@@ -456,12 +456,19 @@ class AgnosticClientBase(AgnosticBase):
         return self.io_loop
 
     def __getattr__(self, name):
+        if name.startswith('_'):
+            raise AttributeError(
+                "%s has no attribute %r. To access the %s"
+                " database, use client['%s']." % (
+                    self.__class__.__name__, name, name, name))
+
+        return self[name]
+
+    def __getitem__(self, name):
         db_class = create_class_with_framework(
             AgnosticDatabase, self._framework, self.__module__)
 
         return db_class(self, name)
-
-    __getitem__ = __getattr__
 
     def get_default_database(self):
         """Get the database named in the MongoDB connection URI.
@@ -798,12 +805,19 @@ class AgnosticDatabase(AgnosticBase):
         super(self.__class__, self).__init__(delegate)
 
     def __getattr__(self, name):
+        if name.startswith('_'):
+            raise AttributeError(
+                "%s has no attribute %r. To access the %s"
+                " collection, use database['%s']." % (
+                    self.__class__.__name__, name, name, name))
+
+        return self[name]
+
+    def __getitem__(self, name):
         collection_class = create_class_with_framework(
             AgnosticCollection, self._framework, self.__module__)
 
         return collection_class(self, name)
-
-    __getitem__ = __getattr__
 
     def __call__(self, *args, **kwargs):
         database_name = self.delegate.name
@@ -1001,6 +1015,16 @@ class AgnosticCollection(AgnosticBase):
 
     def __getattr__(self, name):
         # Dotted collection name, like "foo.bar".
+        if name.startswith('_'):
+            full_name = "%s.%s" % (self.name, name)
+            raise AttributeError(
+                "%s has no attribute %r. To access the %s"
+                " collection, use database['%s']." % (
+                    self.__class__.__name__, name, full_name, full_name))
+
+        return self[name]
+
+    def __getitem__(self, name):
         collection_class = create_class_with_framework(
             AgnosticCollection, self._framework, self.__module__)
 
