@@ -18,6 +18,7 @@ import inspect
 
 from docutils.nodes import field, list_item, paragraph, title_reference, literal
 from docutils.nodes import field_list, field_body, bullet_list, Text, field_name
+from sphinx import addnodes
 from sphinx.addnodes import (desc, desc_content, versionmodified,
                              desc_signature, seealso, pending_xref)
 from sphinx.util.inspect import safe_getattr
@@ -107,6 +108,10 @@ def process_motor_nodes(app, doctree):
             if obj_motor_info:
                 desc_content_node = find_by_path(objnode, [desc_content])[0]
                 if obj_motor_info.get('is_async_method'):
+                    coro_annotation = addnodes.desc_annotation(
+                        'coroutine ', 'coroutine ', classes=['coro-annotation'])
+                    signature_node.insert(0, coro_annotation)
+
                     try:
                         # Find the parameter list, a bullet_list instance
                         parameters_node = find_by_path(
