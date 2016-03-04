@@ -6,6 +6,26 @@ Changelog
 Motor 0.6
 ---------
 
+`motor_asyncio` and `motor_tornado` submodules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These modules have been moved from:
+
+  - `motor_asyncio.py`
+  - `motor_tornado.py`
+
+To:
+
+  - `motor_asyncio/__init__.py`
+  - `motor_tornado/__init__.py`
+
+Motor had to make this change in order to omit the `motor_asyncio` submodule
+entirely and avoid a spurious `SyntaxError` being printed when installing in
+Python 2. The change should be invisible to application code.
+
+Database and collection names with leading underscores
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 A database or collection whose name starts with an underscore can no longer be
 accessed as a property::
 
