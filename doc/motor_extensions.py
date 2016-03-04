@@ -77,7 +77,6 @@ def insert_callback(parameters_node):
             '', paragraph(
                 '', '',
                 literal('', 'callback'),
-                # literal(text='callback'),
                 Text(doc)))
 
         # Insert "callback" before *args and **kwargs
