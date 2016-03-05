@@ -19,6 +19,7 @@ from __future__ import unicode_literals
 import gc
 import sys
 import unittest
+import warnings
 
 import greenlet
 import pymongo
@@ -481,6 +482,20 @@ class MotorCursorTest(MotorMockServerTest):
         with self.assertRaises(TypeError):
             for _ in self.db.test.find():
                 pass
+
+    @gen_test
+    def test_close_with_docs_in_batch(self):
+        # MOTOR-67 Killed cursor with docs batched is "alive", don't kill again.
+        yield self.make_test_data()  # Ensure multiple batches.
+        cursor = self.collection.find()
+        yield cursor.fetch_next
+        yield cursor.close()  # Killed but still "alive": has a batch.
+        self.cx.disconnect()
+
+        with warnings.catch_warnings(record=True) as w:
+            del cursor  # No-op, no error.
+
+        self.assertEqual(0, len(w))
 
 
 class MotorCursorMaxTimeMSTest(MotorTest):

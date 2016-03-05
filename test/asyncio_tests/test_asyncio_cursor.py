@@ -18,6 +18,7 @@ import asyncio
 import gc
 import sys
 import unittest
+import warnings
 from unittest import SkipTest
 
 import greenlet
@@ -427,15 +428,29 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertNotIn(sock, socks)
         self.assertTrue(sock.closed)
 
+    @asyncio_test
+    def test_close_with_docs_in_batch(self):
+        # MOTOR-67 Killed cursor with docs batched is "alive", don't kill again.
+        yield from self.make_test_data()  # Ensure multiple batches.
+        cursor = self.collection.find()
+        yield from cursor.fetch_next
+        yield from cursor.close()  # Killed but still "alive": has a batch.
+        self.cx.disconnect()
 
-class MotorCursorMaxTimeMSTest(AsyncIOTestCase):
+        with warnings.catch_warnings(record=True) as w:
+            del cursor  # No-op, no error.
+
+        self.assertEqual(0, len(w))
+
+
+class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
     def setUp(self):
-        super(MotorCursorMaxTimeMSTest, self).setUp()
+        super(TestAsyncIOCursorMaxTimeMS, self).setUp()
         self.loop.run_until_complete(self.maybe_skip())
 
     def tearDown(self):
         self.loop.run_until_complete(self.disable_timeout())
-        super(MotorCursorMaxTimeMSTest, self).tearDown()
+        super(TestAsyncIOCursorMaxTimeMS, self).tearDown()
 
     @asyncio.coroutine
     def maybe_skip(self):
