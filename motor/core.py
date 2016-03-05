@@ -1562,7 +1562,7 @@ class AgnosticBaseCursor(AgnosticBase):
         # decref, or (if it's referenced from a cycle) whichever is current
         # when the GC kicks in. First, do a quick check whether the cursor
         # is still alive on the server:
-        if self.cursor_id and self.alive:
+        if self.cursor_id and not self._killed():
             client = self.collection.database.connection
             cursor_id = self.cursor_id
 
@@ -1583,6 +1583,9 @@ class AgnosticBaseCursor(AgnosticBase):
         raise NotImplementedError
 
     def _close_exhaust_cursor(self):
+        raise NotImplementedError
+
+    def _killed(self):
         raise NotImplementedError
 
     @motor_coroutine
@@ -1728,6 +1731,9 @@ cursor has any effect.
 
             manager.close()
 
+    def _killed(self):
+        return self.delegate._Cursor__killed
+
     @motor_coroutine
     def _close(self):
         yield self._framework.yieldable(self._Cursor__die())
@@ -1751,6 +1757,9 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
     def _close_exhaust_cursor(self):
         # MongoDB doesn't have exhaust command cursors yet.
         pass
+
+    def _killed(self):
+        return self.delegate._CommandCursor__killed
 
     @motor_coroutine
     def _close(self):
