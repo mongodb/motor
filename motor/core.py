@@ -1288,8 +1288,8 @@ class AgnosticBaseCursor(AgnosticBase):
         self.started = True
         return self._refresh()
 
-    @coroutine_annotation
     @property
+    @coroutine_annotation
     def fetch_next(self):
         """A Future used with `gen.coroutine`_ to asynchronously retrieve the
         next document in the result set, fetching a batch of documents from the
