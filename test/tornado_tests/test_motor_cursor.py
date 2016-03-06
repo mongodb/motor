@@ -161,7 +161,7 @@ class MotorCursorTest(MotorMockServerTest):
         if error:
             raise error
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_each(self):
         yield self.make_test_data()
         cursor = self.collection.find({}, {'_id': 1})

@@ -128,7 +128,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         # Avoid the cursor trying to close itself when it goes out of scope.
         cursor.delegate._Cursor__id = None
 
-    @asyncio_test
+    @asyncio_test(timeout=30)
     def test_each(self):
         yield from self.make_test_data()
         cursor = self.collection.find({}, {'_id': 1}).sort('_id')
