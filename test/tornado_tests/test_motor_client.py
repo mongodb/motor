@@ -315,6 +315,12 @@ class MotorResolverTest(MotorTest):
 
     @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
     def test_threaded_resolver(self):
+        # Tornado issue #635: older Tornado can raise "IOError: close() called
+        # during concurrent operation on the same file object".
+        required_version = padded((3, 2), len(tornado.version_info))
+        if not tornado.version_info >= tuple(required_version):
+            raise SkipTest('requires Tornado version 3.2+')
+
         try:
             import concurrent.futures
         except ImportError:
