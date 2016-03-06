@@ -121,6 +121,15 @@ def motor_coroutine(f):
     return f
 
 
+def coroutine_annotation(f):
+    """In docs, annotate a function that returns a Future with 'coroutine'.
+
+    Unlike @motor_coroutine, this doesn't affect behavior.
+    """
+    f.coroutine_annotation = True
+    return f
+
+
 class MotorAttributeFactory(object):
     # TODO: update.
     """Used by Motor classes to mark attributes that delegate in some way to
@@ -356,6 +365,7 @@ def create_class_with_framework(cls, framework, module_name):
             elif getattr(attr, '_is_motor_coroutine', None) is _coro_token:
                 coro = framework.coroutine(attr)
                 del coro._is_motor_coroutine
+                coro.coroutine_annotation = True
                 setattr(new_class, name, coro)
 
     _class_cache[cache_key] = new_class

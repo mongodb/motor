@@ -107,11 +107,13 @@ def process_motor_nodes(app, doctree):
             obj_motor_info = motor_info.get(name)
             if obj_motor_info:
                 desc_content_node = find_by_path(objnode, [desc_content])[0]
-                if obj_motor_info.get('is_async_method'):
+                if (obj_motor_info.get('is_async_method') or
+                        obj_motor_info.get('has_coroutine_annotation')):
                     coro_annotation = addnodes.desc_annotation(
                         'coroutine ', 'coroutine ', classes=['coro-annotation'])
                     signature_node.insert(0, coro_annotation)
 
+                if obj_motor_info.get('is_async_method'):
                     try:
                         # Find the parameter list, a bullet_list instance
                         parameters_node = find_by_path(
@@ -176,6 +178,7 @@ def get_motor_attr(motor_class, name, *defargs):
     full_name_legacy = 'motor.motor_tornado.%s.%s' % (
         motor_class.__name__, name)
 
+    has_coroutine_annotation = getattr(attr, 'coroutine_annotation', False)
     is_async_method = getattr(attr, 'is_async_method', False)
     is_cursor_method = getattr(attr, 'is_motorcursor_chaining_method', False)
     if is_async_method or is_cursor_method:
@@ -189,6 +192,7 @@ def get_motor_attr(motor_class, name, *defargs):
                       and not getattr(attr, 'doc', None))
 
     motor_info[full_name] = motor_info[full_name_legacy] = {
+        'has_coroutine_annotation': has_coroutine_annotation,
         # These sub-attributes are set in motor.asynchronize()
         'is_async_method': is_async_method,
         'is_pymongo_docstring': is_pymongo_doc,

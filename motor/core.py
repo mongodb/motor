@@ -45,6 +45,7 @@ from . import util
 from .metaprogramming import (AsyncCommand,
                               AsyncRead,
                               AsyncWrite,
+                              coroutine_annotation,
                               create_class_with_framework,
                               DelegateMethod,
                               motor_coroutine,
@@ -532,6 +533,7 @@ class AgnosticClient(AgnosticClientBase):
         # 'MotorClient' that create_class_with_framework created.
         super(self.__class__, self).__init__(io_loop, *args, **kwargs)
 
+    @coroutine_annotation
     def open(self, callback=None):
         """Connect to the server.
 
@@ -1286,6 +1288,7 @@ class AgnosticBaseCursor(AgnosticBase):
         self.started = True
         return self._refresh()
 
+    @coroutine_annotation
     @property
     def fetch_next(self):
         """A Future used with `gen.coroutine`_ to asynchronously retrieve the
@@ -1436,6 +1439,7 @@ class AgnosticBaseCursor(AgnosticBase):
                 self.get_io_loop(),
                 functools.partial(callback, None, None))
 
+    @coroutine_annotation
     def to_list(self, length, callback=None):
         """Get a list of documents.
 

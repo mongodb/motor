@@ -26,6 +26,7 @@ from motor.core import (AgnosticBaseCursor,
                         AgnosticDatabase)
 from motor.metaprogramming import (AsyncCommand,
                                    AsyncRead,
+                                   coroutine_annotation,
                                    create_class_with_framework,
                                    DelegateMethod,
                                    motor_coroutine,
@@ -149,6 +150,7 @@ class AgnosticGridOut(object):
 
         return getattr(self.delegate, item)
 
+    @coroutine_annotation
     def open(self, callback=None):
         """Retrieve this file's attributes from the server.
 
@@ -169,7 +171,7 @@ class AgnosticGridOut(object):
     def get_io_loop(self):
         return self.io_loop
 
-    @motor_coroutine 
+    @motor_coroutine
     def stream_to_handler(self, request_handler):
         """Write the contents of this file to a
         :class:`tornado.web.RequestHandler`. This method calls `flush` on
