@@ -211,7 +211,7 @@ class MotorTestBasic(MotorTest):
         try:
             from abc import ABC
         except ImportError:
-            # Python 2.
+            # Python < 3.4.
             raise SkipTest()
 
         class C(ABC):
