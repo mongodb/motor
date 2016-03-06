@@ -35,7 +35,7 @@ class MotorTestBasic(MotorTest):
         cursor = self.collection.find()
         self.assertTrue(repr(cursor).startswith('MotorCursor'))
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_write_concern(self):
         # Default empty dict means "w=1"
         self.assertEqual({}, self.cx.write_concern)
