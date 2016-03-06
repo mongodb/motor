@@ -14,8 +14,6 @@
 
 from __future__ import unicode_literals, absolute_import
 
-from unittest import SkipTest
-
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import pymongo
@@ -25,6 +23,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
+from test import SkipTest
 from test.tornado_tests import MotorTest
 
 
