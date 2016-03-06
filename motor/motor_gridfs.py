@@ -207,7 +207,9 @@ class AgnosticGridOut(object):
         written = 0
         while written < self.length:
             # Reading chunk_size at a time minimizes buffering.
-            chunk = yield self._framework.yieldable(self.read(self.chunk_size))
+            f = self._framework.yieldable(self.read(self.chunk_size))
+            yield f
+            chunk = f.result()
 
             # write() simply appends the output to a list; flush() sends it
             # over the network and minimizes buffering in the handler.
