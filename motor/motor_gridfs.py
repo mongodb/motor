@@ -89,6 +89,9 @@ class AgnosticGridOutCursor(AgnosticBaseCursor):
         # Exhaust MotorGridOutCursors are prohibited.
         pass
 
+    def _killed(self):
+        return self.delegate._Cursor__killed
+
     @motor_coroutine
     def _close(self):
         yield self._framework.yieldable(self._Cursor__die())
