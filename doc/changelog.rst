@@ -6,6 +6,9 @@ Changelog
 Motor 0.6
 ---------
 
+This is a bugfix release. Fixing these bugs has introduced tiny API changes that
+may affect some programs.
+
 `motor_asyncio` and `motor_tornado` submodules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
