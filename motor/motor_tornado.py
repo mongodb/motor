@@ -23,7 +23,7 @@ from .frameworks import tornado as tornado_framework
 from .metaprogramming import create_class_with_framework
 
 # See https://bugs.python.org/issue21720
-__all__ = map(str, ['MotorClient', 'MotorReplicaSetClient', 'Op'])
+__all__ = list(map(str, ['MotorClient', 'MotorReplicaSetClient', 'Op']))
 
 
 def create_motor_class(cls):
