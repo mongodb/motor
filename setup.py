@@ -137,7 +137,7 @@ class test(Command):
         sys.exit(not result.wasSuccessful())
 
 
-packages = ['motor', 'motor.frameworks.tornado']
+packages = ['motor', 'motor.frameworks', 'motor.frameworks.tornado']
 
 if sys.version_info[0] >= 3:
     # Trying to install and byte-compile motor/frameworks/asyncio/__init__.py
@@ -146,7 +146,7 @@ if sys.version_info[0] >= 3:
 
 setup(name='motor',
       version='0.7.dev0',
-      packages=['motor', 'motor.frameworks'],
+      packages=packages,
       description=description,
       long_description=long_description,
       author='A. Jesse Jiryu Davis',
