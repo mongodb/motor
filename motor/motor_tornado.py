@@ -22,7 +22,8 @@ from . import core, motor_gridfs
 from .frameworks import tornado as tornado_framework
 from .metaprogramming import create_class_with_framework
 
-__all__ = ['MotorClient', 'MotorReplicaSetClient', 'Op']
+# See https://bugs.python.org/issue21720
+__all__ = map(str, ['MotorClient', 'MotorReplicaSetClient', 'Op'])
 
 
 def create_motor_class(cls):
