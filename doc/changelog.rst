@@ -3,6 +3,11 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 0.6.2
+-----------
+
+Fix "from motor import *" for Python 3.
+
 Motor 0.6.1
 -----------
 
