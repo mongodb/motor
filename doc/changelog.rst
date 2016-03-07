@@ -3,6 +3,11 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 0.6.1
+-----------
+
+Fix source distribution, which hadn't included the "frameworks" submodules.
+
 Motor 0.6
 ---------
 
