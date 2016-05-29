@@ -55,7 +55,7 @@ asyncio. It requires:
 * `backports.pbkdf2`_ for faster authentication with MongoDB 3.0+,
   especially on Python older than 2.7.8, or on Python 3 before Python 3.4.
 
-See `requirements <http://motor.readthedocs.org/en/stable/requirements.html>`_
+See `requirements <https://motor.readthedocs.io/en/stable/requirements.html>`_
 for details about compatibility.
 
 How To Ask For Help
@@ -95,7 +95,7 @@ To build the documentation, install sphinx_ and do ``cd doc; make html``.
 Examples
 ========
 
-See the `examples on ReadTheDocs <https://motor.readthedocs.org/en/latest/examples/index.html>`_.
+See the `examples on ReadTheDocs <https://motor.readthedocs.io/en/latest/examples/index.html>`_.
 
 Testing
 =======
@@ -116,7 +116,7 @@ In Python 2.6, unittest2_ is automatically installed.
 
 .. _backports.pbkdf2: https://pypi.python.org/pypi/backports.pbkdf2/
 
-.. _ReadTheDocs: http://motor.readthedocs.org/
+.. _ReadTheDocs: https://motor.readthedocs.io/
 
 .. _mongodb-user list on Google Groups:
    https://groups.google.com/forum/?fromgroups#!forum/mongodb-user

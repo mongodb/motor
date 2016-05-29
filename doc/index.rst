@@ -11,7 +11,7 @@ Motor presents a callback- or Future-based API for non-blocking access to
 MongoDB from Tornado_ or asyncio_.
 
 The `source is on GitHub <https://github.com/mongodb/motor>`_ and
-the docs are on `ReadTheDocs <http://motor.readthedocs.org/>`_.
+the docs are on `ReadTheDocs <https://motor.readthedocs.io/>`_.
 
     "Motor uses a clever greenlet-based approach to fully support both
     synchronous and asynchronous interfaces from a single codebase. It's great

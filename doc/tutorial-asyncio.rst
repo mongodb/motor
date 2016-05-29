@@ -541,7 +541,7 @@ the ``shutdown`` coroutine to attempt a graceful exit:
 
 The complete code is in the Motor repository in ``examples/aiohttp_example.py``.
 
-.. _aiohttp: https://aiohttp.readthedocs.org/
+.. _aiohttp: https://aiohttp.readthedocs.io/
 
 Further Reading
 ---------------
