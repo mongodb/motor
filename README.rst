@@ -15,13 +15,6 @@ Motor presents a callback- or Future-based API for non-blocking access
 to MongoDB. The source is `on GitHub <https://github.com/mongodb/motor>`_
 and the docs are on ReadTheDocs_.
 
-    "Motor uses a clever greenlet-based approach to fully support both
-    synchronous and asynchronous interfaces from a single codebase. It's great
-    to see companies like MongoDB produce first-party asynchronous drivers for
-    their products."
-
-    --*Ben Darnell, Tornado maintainer*
-
     "We use Motor in high throughput environments, processing tens of thousands
     of requests per second. It allows us to take full advantage of modern
     hardware, ensuring we utilise the entire capacity of our purchased CPUs.
@@ -50,8 +43,8 @@ asyncio. It requires:
 
 * Unix, including Mac OS X. Windows is not supported.
 * PyMongo_ 2.8.0 exactly.
-* Greenlet_
 * Python 2.6 or later.
+* `futures`_ on Python 2.6.
 * `backports.pbkdf2`_ for faster authentication with MongoDB 3.0+,
   especially on Python older than 2.7.8, or on Python 3 before Python 3.4.
 
@@ -112,7 +105,7 @@ In Python 2.6, unittest2_ is automatically installed.
 
 .. _asyncio: https://docs.python.org/3/library/asyncio.html
 
-.. _Greenlet: http://pypi.python.org/pypi/greenlet/
+.. _futures: https://pypi.python.org/pypi/futures
 
 .. _backports.pbkdf2: https://pypi.python.org/pypi/backports.pbkdf2/
 

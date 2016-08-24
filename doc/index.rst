@@ -13,13 +13,6 @@ MongoDB from Tornado_ or asyncio_.
 The `source is on GitHub <https://github.com/mongodb/motor>`_ and
 the docs are on `ReadTheDocs <https://motor.readthedocs.io/>`_.
 
-    "Motor uses a clever greenlet-based approach to fully support both
-    synchronous and asynchronous interfaces from a single codebase. It's great
-    to see companies like MongoDB produce first-party asynchronous drivers for
-    their products."
-
-    --*Ben Darnell, Tornado maintainer*
-
     "We use Motor in high throughput environments, processing tens of thousands
     of requests per second. It allows us to take full advantage of modern
     hardware, ensuring we utilise the entire capacity of our purchased CPUs.

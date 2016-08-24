@@ -5,9 +5,10 @@ The current version of Motor requires:
 
 * CPython 2.6, 2.7, or 3.3 and later.
 * PyMongo_ 2.8.0 exactly.
-* Greenlet_
 
 Beginning with version 0.5, Motor can integrate with either Tornado or asyncio.
+
+Requires the `futures`_ package from PyPI on Python 2.6.
 
 The default authentication mechanism for MongoDB 3.0+ is SCRAM-SHA-1.
 Install `backports.pbkdf2`_ for faster authentication with MongoDB 3.0+,
@@ -23,7 +24,7 @@ In Python 2.6, unittest2_ is automatically installed by
 
 .. _PyMongo: https://pypi.python.org/pypi/pymongo/
 
-.. _Greenlet: http://pypi.python.org/pypi/greenlet/
+.. _futures: https://pypi.python.org/pypi/futures
 
 .. _backports.pbkdf2: https://pypi.python.org/pypi/backports.pbkdf2/
 
@@ -146,8 +147,5 @@ with the `asyncio package from PyPI`_.
 
 Not Supported
 -------------
-
-Code that executes greenlets has performed very poorly on PyPy in the past.
-I must reevaluate whether PyPy is supported.
 
 Motor does not support Jython or Windows.
