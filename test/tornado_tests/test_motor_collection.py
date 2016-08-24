@@ -165,8 +165,12 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     def test_save_callback(self):
-        yield self.check_optional_callback(
-            self.collection.save, {})
+        yield self.collection.save({}, callback=None)
+
+        # Should not raise
+        (result, error), _ = yield gen.Task(self.collection.save, {})
+        if error:
+            raise error
 
     @gen_test
     def test_save_with_id(self):

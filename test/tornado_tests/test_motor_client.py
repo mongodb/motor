@@ -234,12 +234,12 @@ class MotorClientTest(MotorTest):
     def test_socketKeepAlive(self):
         # Connect.
         yield self.cx.server_info()
-        ka = self.cx._get_primary_pool()._motor_socket_options.socket_keepalive
+        ka = self.cx._get_primary_pool().socket_keepalive
         self.assertFalse(ka)
 
         client = self.motor_client(socketKeepAlive=True)
         yield client.server_info()
-        ka = client._get_primary_pool()._motor_socket_options.socket_keepalive
+        ka = client._get_primary_pool().socket_keepalive
         self.assertTrue(ka)
 
     def test_uuid_subtype(self):

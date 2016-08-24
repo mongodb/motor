@@ -109,6 +109,8 @@ class MotorCursorTest(MotorMockServerTest):
 
         # Decref'ing the cursor eventually closes it on the server.
         del cursor
+        # Clear Runner's reference.
+        yield gen.moment
         yield self.run_thread(server.receives,
                               OpKillCursors(cursor_ids=[123]))
 
@@ -356,12 +358,10 @@ class MotorCursorTest(MotorMockServerTest):
         self.assertEqual(cursor, cursor.rewind())
 
     @gen_test
-    def test_del_on_main_greenlet(self):
+    def test_cursor_del(self):
         if tornado_version < (4, 0, 0, 0):
             raise SkipTest("Tornado 3")
 
-        # Since __del__ can happen on any greenlet, cursor must be
-        # prepared to close itself correctly on main or a child.
         client, server = self.client_server(auto_ismaster=True)
         cursor = client.test.collection.find()
 
@@ -372,36 +372,6 @@ class MotorCursorTest(MotorMockServerTest):
 
         # Dereference the cursor.
         del cursor
-
-        # Let the event loop iterate once more to clear its references to
-        # callbacks, allowing the cursor to be freed.
-        yield self.pause(0)
-        if 'PyPy' in sys.version:
-            gc.collect()
-
-        yield self.run_thread(server.receives, OpKillCursors)
-
-    @gen_test
-    def test_del_on_child_greenlet(self):
-        if tornado_version < (4, 0, 0, 0):
-            raise SkipTest("Tornado 3")
-
-        # Since __del__ can happen on any greenlet, cursor must be
-        # prepared to close itself correctly on main or a child.
-        client, server = self.client_server(auto_ismaster=True)
-        self.cursor = client.test.collection.find()
-
-        future = self.cursor.fetch_next
-        request = yield self.run_thread(server.receives, OpQuery)
-        request.replies({'_id': 1}, cursor_id=123)
-        yield future  # Complete the first fetch.
-
-        def f():
-            # Last ref, should trigger __del__ immediately in CPython and
-            # allow eventual __del__ in PyPy.
-            del self.cursor
-
-        greenlet.greenlet(f).switch()
 
         # Let the event loop iterate once more to clear its references to
         # callbacks, allowing the cursor to be freed.

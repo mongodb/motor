@@ -71,7 +71,7 @@ excluded_tests = [
     'TestCollection.test_aggregation_cursor',
     'TestCollection.test_aggregation_cursor_validation',
 
-    # Motor always uses greenlets.
+    # Motor never uses greenlets.
     '*.test_use_greenlets',
 
     # Motor's reprs aren't the same as PyMongo's.
