@@ -1,4 +1,4 @@
-# Copyright 2009-2015 MongoDB, Inc.
+# Copyright 2009-2016 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@ from __future__ import unicode_literals, absolute_import
 
 """Some tools for running tests based on MongoDB server version."""
 
+import re
+
 
 def padded(iter, length):
     l = list(iter)
@@ -26,22 +28,22 @@ def padded(iter, length):
 
 
 def _parse_version_string(version_string):
+    match = re.match(r'(\d+\.\d+\.\d+).*', version_string)
+    assert match, "Couldn't parse server version %s" % version_string
+    version = [int(part) for part in match.group(1).split(".")]
     mod = 0
     if version_string.endswith("+"):
-        version_string = version_string[0:-1]
         mod = 1
     elif version_string.endswith("-pre-"):
-        version_string = version_string[0:-5]
         mod = -1
     elif version_string.endswith("-"):
-        version_string = version_string[0:-1]
         mod = -1
-    # Deal with '-rcX' substrings
-    if version_string.find('-rc') != -1:
-        version_string = version_string[0:version_string.find('-rc')]
+    elif version_string.find('-rc') != -1:
         mod = -1
+    elif re.match(r'\d+\.\d+\.\d+-\d+-g[0-9a-fA-F]+', version_string):
+        # Like '3.3.10-421-gbd66e1b'.
+        mod = 1
 
-    version = [int(part) for part in version_string.split(".")]
     version = padded(version, 3)
     version.append(mod)
 
