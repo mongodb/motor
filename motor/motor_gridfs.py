@@ -319,7 +319,7 @@ class _MotorDelegateGridFS(gridfs.GridFS):
     # w >= 1 necessary to avoid running 'filemd5' command before all data
     # is written, especially with sharding.
     #
-    # Motor runs this on a greenlet.
+    # Motor runs this on a thread.
 
     def put(self, data, **kwargs):
         """Put data into GridFS as a new file.

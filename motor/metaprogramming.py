@@ -19,13 +19,11 @@ from __future__ import unicode_literals, absolute_import
 import inspect
 import functools
 
-import greenlet
 from pymongo.cursor import Cursor
 
 from . import motor_py3_compat
-from .motor_common import (callback_type_error,
-                           check_deprecated_kwargs,
-                           mangle_delegate_name)
+from .motor_common import check_deprecated_kwargs, mangle_delegate_name, \
+    callback_type_error
 
 _class_cache = {}
 
@@ -38,8 +36,8 @@ def asynchronize(
         doc=None):
     """Decorate `sync_method` so it accepts a callback or returns a Future.
 
-    The method runs on a child greenlet and calls the callback or resolves
-    the Future when the greenlet completes.
+    The method runs on a thread and calls the callback or resolves
+    the Future when the thread completes.
 
     :Parameters:
      - `motor_class`:       Motor class being created, e.g. MotorClient.
@@ -54,42 +52,15 @@ def asynchronize(
         check_deprecated_kwargs(kwargs)
         loop = self.get_io_loop()
         callback = kwargs.pop('callback', None)
+        if callback and not callable(callback):
+            raise callback_type_error
 
-        if callback:
-            if not callable(callback):
-                raise callback_type_error
-            future = None
-        else:
-            future = framework.get_future(self.get_io_loop())
+        future = framework.run_on_executor(sync_method,
+                                           self.delegate,
+                                           *args,
+                                           **kwargs)
 
-        def call_method():
-            # Runs on child greenlet.
-            try:
-                result = sync_method(self.delegate, *args, **kwargs)
-                if callback:
-                    # Schedule callback(result, None) on main greenlet.
-                    framework.call_soon(
-                        loop,
-                        functools.partial(callback, result, None))
-                else:
-                    # Schedule future to be resolved on main greenlet.
-                    framework.call_soon(
-                        loop,
-                        functools.partial(future.set_result, result))
-            except Exception as e:
-                if callback:
-                    framework.call_soon(
-                        loop,
-                        functools.partial(callback, None, e))
-                else:
-                    # TODO: we lost Tornado's set_exc_info. Frameworkify this.
-                    framework.call_soon(
-                        loop,
-                        functools.partial(future.set_exception, e))
-
-        # Start running the operation on a greenlet.
-        greenlet.greenlet(call_method).switch()
-        return future
+        return framework.future_or_callback(future, callback, loop)
 
     # This is for the benefit of motor_extensions.py, which needs this info to
     # generate documentation with Sphinx.

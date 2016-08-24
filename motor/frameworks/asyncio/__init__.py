@@ -18,15 +18,11 @@
 import asyncio
 import asyncio.tasks
 import functools
-import socket
-import ssl
 
 try:
     from asyncio import ensure_future
 except ImportError:
     from asyncio import async as ensure_future
-
-import greenlet
 
 
 def get_event_loop():
@@ -91,36 +87,6 @@ def call_soon(loop, callback, *args, **kwargs):
         loop.call_soon(callback, *args)
 
 
-def call_soon_threadsafe(loop, callback):
-    loop.call_soon_threadsafe(callback)
-
-
-def call_later(loop, delay, callback, *args, **kwargs):
-    if kwargs:
-        return loop.call_later(delay,
-                               functools.partial(callback, *args, **kwargs))
-    else:
-        return loop.call_later(delay, callback, *args)
-
-
-def call_later_cancel(loop, handle):
-    handle.cancel()
-
-
-def create_task(loop, coro, *args, **kwargs):
-    asyncio.tasks.Task(coro(*args, **kwargs), loop=loop)
-
-
-def get_resolver(loop):
-    # asyncio's resolver just calls getaddrinfo in a thread. It's not yet
-    # configurable, see https://code.google.com/p/tulip/issues/detail?id=160
-    return None
-
-
-def close_resolver(resolver):
-    pass
-
-
 coroutine = asyncio.coroutine
 
 
@@ -147,125 +113,3 @@ def pymongo_class_wrapper(f, pymongo_class):
 def yieldable(future):
     # TODO: really explain.
     return next(iter(future))
-
-
-def asyncio_motor_sock_method(method):
-    """Decorator for socket-like methods on AsyncioMotorSocket.
-
-    The wrapper pauses the current greenlet while I/O is in progress,
-    and uses the asyncio event loop to schedule the greenlet for resumption
-    when I/O is ready.
-    """
-    @functools.wraps(method)
-    def wrapped_method(self, *args, **kwargs):
-        child_gr = greenlet.getcurrent()
-        main = child_gr.parent
-        assert main is not None, "Should be on child greenlet"
-
-        # This is run by the event loop on the main greenlet when operation
-        # completes; switch back to child to continue processing
-        def callback(_):
-            try:
-                res = future.result()
-            except asyncio.TimeoutError:
-                child_gr.throw(socket.timeout("timed out"))
-            except Exception as ex:
-                child_gr.throw(ex)
-            else:
-                child_gr.switch(res)
-
-        coro = method(self, *args, **kwargs)
-        if self.timeout:
-            coro = asyncio.wait_for(coro, self.timeout, loop=self.loop)
-        future = ensure_future(coro, loop=self.loop)
-        future.add_done_callback(callback)
-        return main.switch()
-
-    return wrapped_method
-
-
-class AsyncioMotorSocket:
-    """A fake socket instance that pauses and resumes the current greenlet.
-
-    Pauses the calling greenlet when making blocking calls, and uses the
-    asyncio event loop to schedule the greenlet for resumption when I/O
-    is ready.
-
-    We only implement those socket methods actually used by PyMongo.
-    """
-    def __init__(self, loop, options):
-        self.loop = loop
-        self.options = options
-        self.timeout = None
-        self._writer = None
-        self._reader = None
-
-    def settimeout(self, timeout):
-        self.timeout = timeout
-
-    @asyncio_motor_sock_method
-    @asyncio.coroutine
-    def connect(self):
-        is_unix_socket = (self.options.family == getattr(socket,
-                                                         'AF_UNIX', None))
-        if self.options.use_ssl:
-            # TODO: cache at Pool level.
-            ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-            if self.options.certfile is not None:
-                ctx.load_cert_chain(self.options.certfile,
-                                    self.options.keyfile)
-            if self.options.ca_certs is not None:
-                ctx.load_verify_locations(self.options.ca_certs)
-            if self.options.cert_reqs is not None:
-                ctx.verify_mode = self.options.cert_reqs
-                if ctx.verify_mode in (ssl.CERT_OPTIONAL, ssl.CERT_REQUIRED):
-                    ctx.check_hostname = True
-        else:
-            ctx = None
-
-        if is_unix_socket:
-            path = self.options.address[0]
-            reader, writer = yield from asyncio.open_unix_connection(
-                path, loop=self.loop, ssl=ctx)
-        else:
-            host, port = self.options.address
-            reader, writer = yield from asyncio.open_connection(
-                host=host, port=port, ssl=ctx, loop=self.loop)
-            sock = writer.transport.get_extra_info('socket')
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE,
-                            self.options.socket_keepalive)
-        self._reader, self._writer = reader, writer
-
-    def sendall(self, data):
-        assert greenlet.getcurrent().parent is not None,\
-            "Should be on child greenlet"
-
-        # TODO: backpressure? errors?
-        self._writer.write(data)
-
-    @asyncio_motor_sock_method
-    @asyncio.coroutine
-    def recv(self, num_bytes):
-        try:
-            rv = yield from self._reader.readexactly(num_bytes)
-        except asyncio.streams.IncompleteReadError:
-            # in case of IncompleteReadError we try to return empty bytes,
-            # so pymongo will raise AutoReconnect for us, see:
-            # https://github.com/mongodb/mongo-python-driver/blob
-            # /414250b5ef918656427e1a60fbf203bd023d543b/pymongo
-            # /network.py#L121-L131
-            rv = b''
-        return rv
-
-    def close(self):
-        if self._writer:
-            self._writer.close()
-
-    def fileno(self):
-        assert False, "TODO"
-        return self._writer.transport.something
-
-
-# A create_socket() function is part of Motor's framework interface.
-create_socket = AsyncioMotorSocket
