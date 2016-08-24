@@ -311,9 +311,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(cursor, cursor.rewind())
 
     @asyncio_test
-    def test_del_on_main_greenlet(self):
-        # Since __del__ can happen on any greenlet, cursor must be
-        # prepared to close itself correctly on main or a child.
+    def test_cursor_del(self):
         client, server = self.client_server(auto_ismaster=True)
         cursor = client.test.collection.find()
 
@@ -324,34 +322,6 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
         # Dereference the cursor.
         del cursor
-
-        # Let the event loop iterate once more to clear its references to
-        # callbacks, allowing the cursor to be freed.
-        yield from asyncio.sleep(0, loop=self.loop)
-        if 'PyPy' in sys.version:
-            gc.collect()
-
-        yield from self.run_thread(server.receives, OpKillCursors)
-
-    @asyncio_test
-    def test_del_on_child_greenlet(self):
-        # Since __del__ can happen on any greenlet, cursor must be
-        # prepared to close itself correctly on main or a child.
-        client, server = self.client_server(auto_ismaster=True)
-        cursor = client.test.collection.find()
-
-        future = self.fetch_next(cursor)
-        request = yield from self.run_thread(server.receives, OpQuery)
-        request.replies({'_id': 1}, cursor_id=123)
-        yield from future  # Complete the first fetch.
-
-        def f():
-            nonlocal cursor
-            # Last ref, should trigger __del__ immediately in CPython and
-            # allow eventual __del__ in PyPy.
-            del cursor
-
-        greenlet.greenlet(f).switch()
 
         # Let the event loop iterate once more to clear its references to
         # callbacks, allowing the cursor to be freed.
