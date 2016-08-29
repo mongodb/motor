@@ -14,7 +14,6 @@
 
 """Test AsyncIOReplicaSetClient."""
 
-import logging
 import unittest
 
 import pymongo.errors
@@ -74,14 +73,8 @@ class TestReplicaSetClientAgainstStandalone(AsyncIOTestCase):
             '%s:%s' % (host, port), replicaSet='anything',
             connectTimeoutMS=600, io_loop=self.loop)
 
-        with self.assertLogs("motor", logging.ERROR) as log_ctx:
-            with self.assertRaises(pymongo.errors.ConnectionFailure):
-                yield from client.test.test.find_one()
-
-        # The background Monitor logs an error.
-        output = ' '.join(log_ctx.output)
-        self.assertRegex(output, "Monitor.refresh")
-        self.assertRegex(output, "No suitable hosts")
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            yield from client.test.test.find_one()
 
 
 if __name__ == '__main__':

@@ -16,7 +16,6 @@ from __future__ import unicode_literals
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-import logging
 import unittest
 
 import pymongo.auth
@@ -162,17 +161,11 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
 
     @gen_test
     def test_connect(self):
-        with self.assertLogs("motor", logging.ERROR) as log_ctx:
-            with self.assertRaises(pymongo.errors.ConnectionFailure):
-                yield motor.MotorReplicaSetClient(
-                    '%s:%s' % (host, port), replicaSet='anything',
-                    io_loop=self.io_loop,
-                    connectTimeoutMS=600).test.test.find_one()
-
-        # The background Monitor logs an error.
-        output = ' '.join(log_ctx.output)
-        self.assertTrue("Monitor.refresh" in output)
-        self.assertTrue("No suitable hosts" in output)
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            yield motor.MotorReplicaSetClient(
+                '%s:%s' % (host, port), replicaSet='anything',
+                io_loop=self.io_loop,
+                connectTimeoutMS=600).test.test.find_one()
 
 
 if __name__ == '__main__':
