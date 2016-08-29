@@ -21,7 +21,6 @@ import unittest
 import warnings
 from unittest import SkipTest
 
-import greenlet
 from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
 from mockupdb import OpQuery, OpKillCursors

@@ -21,7 +21,6 @@ import sys
 import unittest
 import warnings
 
-import greenlet
 import pymongo
 from mockupdb import OpQuery
 from mockupdb import OpKillCursors
