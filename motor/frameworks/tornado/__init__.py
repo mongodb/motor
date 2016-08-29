@@ -17,8 +17,10 @@ from __future__ import absolute_import, unicode_literals
 """Tornado compatibility layer for MongoDB, an asynchronous MongoDB driver."""
 
 import functools
+import sys
 from concurrent.futures import ThreadPoolExecutor
 
+import tornado.process
 from tornado import concurrent, gen, ioloop
 
 from motor.motor_common import callback_type_error
@@ -58,8 +60,11 @@ def get_future(loop):
     return _TornadoFuture()
 
 
-# TODO: better default.
-_EXECUTOR = ThreadPoolExecutor(200)
+if sys.version_info >= (3, 5):
+    # Python 3.5+ sets max_workers=(cpu_count * 5) automatically.
+    _EXECUTOR = ThreadPoolExecutor()
+else:
+    _EXECUTOR = ThreadPoolExecutor(max_workers=tornado.process.cpu_count() * 5)
 
 
 def run_on_executor(fn, self, *args, **kwargs):
