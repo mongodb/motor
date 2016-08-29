@@ -25,13 +25,6 @@ from tornado import concurrent, gen, ioloop
 
 from motor.motor_common import callback_type_error
 
-DomainError = None
-try:
-    # If Twisted is installed. See resolve().
-    from twisted.names.error import DomainError
-except ImportError:
-    DomainError = None
-
 
 def get_event_loop():
     return ioloop.IOLoop.current()

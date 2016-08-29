@@ -17,13 +17,10 @@ from __future__ import unicode_literals
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import os
-import socket
-import sys
 import unittest
 
 import pymongo
 import pymongo.mongo_client
-import tornado
 from bson.binary import JAVA_LEGACY, UUID_SUBTYPE
 from mockupdb import OpQuery
 from pymongo.errors import ConfigurationError, OperationFailure
@@ -31,7 +28,7 @@ from pymongo.errors import ConnectionFailure
 from tornado import gen, version_info as tornado_version
 from tornado.concurrent import Future
 from tornado.ioloop import IOLoop
-from tornado.testing import gen_test, netutil
+from tornado.testing import gen_test
 
 import motor
 import test
@@ -39,7 +36,6 @@ from test import SkipTest
 from test.test_environment import host, port, db_user, db_password
 from test.tornado_tests import remove_all_users, MotorTest, MotorMockServerTest
 from test.utils import one
-from test.version import padded
 
 
 class MotorClientTest(MotorTest):
@@ -265,95 +261,6 @@ class MotorClientTimeoutTest(MotorMockServerTest):
 
         self.assertEqual(str(context.exception), 'timed out')
         client.close()
-
-
-RESOLVER_TEST_TIMEOUT = 30
-
-
-class MotorResolverTest(MotorTest):
-    nonexistent_domain = 'doesntexist'
-
-    def setUp(self):
-        super(MotorResolverTest, self).setUp()
-
-        # Caching the lookup helps prevent timeouts, at least on Mac OS.
-        try:
-            socket.getaddrinfo(self.nonexistent_domain, port)
-        except socket.gaierror:
-            pass
-
-    # Helper method.
-    @gen.coroutine
-    def _test_resolver(self, resolver_name, test_for_errors=True):
-        config = netutil.Resolver._save_configuration()
-        try:
-            netutil.Resolver.configure(resolver_name)
-            client = self.motor_client()
-            yield client.open()  # No error.
-
-            if test_for_errors:
-                with self.assertRaises(pymongo.errors.ConnectionFailure):
-                    client = motor.MotorClient(
-                        self.nonexistent_domain,
-                        connectTimeoutMS=100,
-                        io_loop=self.io_loop)
-
-                    yield client.open()
-            else:
-                raise SkipTest('not testing resolution errors for %s' %
-                               resolver_name)
-
-        finally:
-            netutil.Resolver._restore_configuration(config)
-
-    @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
-    def test_blocking_resolver(self):
-        if 'PyPy' in sys.version:
-            raise SkipTest('PyPy')
-
-        yield self._test_resolver('tornado.netutil.BlockingResolver')
-
-    @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
-    def test_threaded_resolver(self):
-        # Tornado issue #635: older Tornado can raise "IOError: close() called
-        # during concurrent operation on the same file object".
-        required_version = padded((3, 2), len(tornado.version_info))
-        if not tornado.version_info >= tuple(required_version):
-            raise SkipTest('requires Tornado version 3.2+')
-
-        try:
-            import concurrent.futures
-        except ImportError:
-            raise SkipTest('concurrent.futures module not available')
-
-        yield self._test_resolver('tornado.netutil.ThreadedResolver')
-
-    @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
-    def test_twisted_resolver(self):
-        required_version = padded((3, 2, 2), len(tornado.version_info))
-        if not tornado.version_info >= tuple(required_version):
-            raise SkipTest('requires Tornado version 3.2.2+')
-
-        try:
-            import twisted
-        except ImportError:
-            raise SkipTest('Twisted not installed')
-        yield self._test_resolver('tornado.platform.twisted.TwistedResolver')
-
-    # Don't test resolution errors with C-ARES - Tornado doesn't either:
-    # https://github.com/tornadoweb/tornado/blob/f098ca/tornado/test/netutil_test.py#L149
-    @gen_test(timeout=RESOLVER_TEST_TIMEOUT)
-    def test_cares_resolver(self):
-        if 'PyPy' in sys.version:
-            raise SkipTest('PyPy')
-
-        try:
-            import pycares
-        except ImportError:
-            raise SkipTest('pycares not installed')
-
-        yield self._test_resolver(
-            'tornado.platform.caresresolver.CaresResolver', False)
 
 
 class MotorClientExhaustCursorTest(MotorMockServerTest):

@@ -10,4 +10,3 @@ Motor Examples
    gridfs
    tailable-cursors
    authentication
-   dns-configuration
