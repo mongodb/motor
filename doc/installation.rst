@@ -3,7 +3,7 @@ Installation
 
 Install Motor from PyPI_ with pip_::
 
-  $ pip install motor
+  $ python -m pip install motor
 
 Pip automatically installs Motor's prerequisite packages.
 See :doc:`requirements`.
