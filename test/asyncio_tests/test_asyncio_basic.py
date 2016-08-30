@@ -38,6 +38,7 @@ class AIOMotorTestBasic(AsyncIOTestCase):
         # Default empty dict means "w=1"
         self.assertEqual({}, self.cx.write_concern)
 
+        yield from self.collection.remove()
         yield from self.collection.insert({'_id': 0})
 
         for gle_options in [

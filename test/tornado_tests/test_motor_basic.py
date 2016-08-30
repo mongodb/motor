@@ -40,6 +40,7 @@ class MotorTestBasic(MotorTest):
         # Default empty dict means "w=1"
         self.assertEqual({}, self.cx.write_concern)
 
+        yield self.collection.remove()
         yield self.collection.insert({'_id': 0})
 
         for gle_options in [
