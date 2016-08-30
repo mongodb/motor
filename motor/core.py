@@ -724,23 +724,27 @@ class AgnosticCollection(AgnosticBase):
         .. note:: Requires server version **>= 2.5.5**.
         """
         io_loop = self.get_io_loop()
-        future = self._framework.get_future(io_loop)
+        original_future = self._framework.get_future(io_loop)
 
         # Return a future, or if user passed a callback chain it to the future.
         callback = kwargs.pop('callback', None)
-        retval = self._framework.future_or_callback(future, callback, io_loop)
+        retval = self._framework.future_or_callback(original_future,
+                                                    callback,
+                                                    io_loop)
 
         # Once we have PyMongo Cursors, wrap in MotorCursors and resolve the
         # future with them, or pass them to the callback.
-        scan_callback = functools.partial(self._scan_callback, future)
-        self.__parallel_scan(num_cursors, callback=scan_callback, **kwargs)
+        future = self.__parallel_scan(num_cursors, **kwargs)
+        future.add_done_callback(
+            functools.partial(self._scan_callback, original_future))
 
         return retval
 
-    def _scan_callback(self, future, command_cursors, error):
-        if error:
-            # TODO: exc_info.
-            future.set_exception(error)
+    def _scan_callback(self, original_future, future):
+        try:
+            command_cursors = future.result()
+        except Exception as exc:
+            original_future.set_exception(exc)
         else:
             command_cursor_class = create_class_with_framework(
                 AgnosticCommandCursor, self._framework, self.__module__)
@@ -749,7 +753,7 @@ class AgnosticCollection(AgnosticBase):
                 command_cursor_class(cursor, self)
                 for cursor in command_cursors]
 
-            future.set_result(motor_command_cursors)
+            original_future.set_result(motor_command_cursors)
 
     def initialize_unordered_bulk_op(self):
         """Initialize an unordered batch of write operations.
@@ -1354,26 +1358,27 @@ class AgnosticAggregationCursor(AgnosticCommandCursor):
     def _get_more(self):
         if not self.started:
             self.started = True
-            future = self._framework.get_future(self.get_io_loop())
-            self.collection._async_aggregate(
+            original_future = self._framework.get_future(self.get_io_loop())
+            future = self.collection._async_aggregate(
                 self.pipeline,
-                callback=functools.partial(self._on_get_more, future),
                 **self.kwargs)
+            future.add_done_callback(functools.partial(self._on_get_more,
+                                                       original_future))
 
-            return future
+            return original_future
 
         return super(self.__class__, self)._get_more()
 
-    def _on_get_more(self, future, result, error):
-        if result:
+    def _on_get_more(self, original_future, future):
+        try:
             # "result" is a CommandCursor from PyMongo's aggregate().
-            self.delegate = result
-
-            # _get_more is complete.
-            future.set_result(len(result._CommandCursor__data))
-        else:
+            self.delegate = future.result()
+        except Exception as exc:
             # TODO: exc_info.
-            future.set_exception(error)
+            original_future.set_exception(exc)
+        else:
+            # _get_more is complete.
+            original_future.set_result(len(self.delegate._CommandCursor__data))
 
 
 class AgnosticBulkOperationBuilder(AgnosticBase):

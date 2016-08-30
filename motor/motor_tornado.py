@@ -77,6 +77,4 @@ def Op(fn, *args, **kwargs):
         fn.__name__)
 
     warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    result = fn(*args, **kwargs)
-    assert tornado_framework.is_future(result)
-    return result
+    return fn(*args, **kwargs)

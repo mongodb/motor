@@ -18,6 +18,9 @@
 import asyncio
 import asyncio.tasks
 import functools
+import multiprocessing
+import sys
+from concurrent.futures import ThreadPoolExecutor
 
 try:
     from asyncio import ensure_future
@@ -42,6 +45,19 @@ def check_event_loop(loop):
 
 def get_future(loop):
     return asyncio.Future(loop=loop)
+
+
+if sys.version_info >= (3, 5):
+    # Python 3.5+ sets max_workers=(cpu_count * 5) automatically.
+    _EXECUTOR = ThreadPoolExecutor()
+else:
+    _EXECUTOR = ThreadPoolExecutor(max_workers=multiprocessing.cpu_count() * 5)
+
+
+def run_on_executor(loop, fn, self, *args, **kwargs):
+    return asyncio.futures.wrap_future(
+        _EXECUTOR.submit(functools.partial(fn, self, *args, **kwargs)),
+        loop=loop)
 
 
 _DEFAULT = object()

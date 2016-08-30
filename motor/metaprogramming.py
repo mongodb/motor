@@ -55,7 +55,8 @@ def asynchronize(
         if callback and not callable(callback):
             raise callback_type_error
 
-        future = framework.run_on_executor(sync_method,
+        future = framework.run_on_executor(loop,
+                                           sync_method,
                                            self.delegate,
                                            *args,
                                            **kwargs)

@@ -56,15 +56,19 @@ def get_future(loop):
 if sys.version_info >= (3, 5):
     # Python 3.5+ sets max_workers=(cpu_count * 5) automatically.
     _EXECUTOR = ThreadPoolExecutor()
+
+    def run_on_executor(loop, fn, self, *args, **kwargs):
+        # Need a Tornado Future for "await" expressions.
+        future = _TornadoFuture()
+        gen.chain_future(_EXECUTOR.submit(fn, self, *args, **kwargs), future)
+        return future
+
 else:
     _EXECUTOR = ThreadPoolExecutor(max_workers=tornado.process.cpu_count() * 5)
 
+    def run_on_executor(loop, fn, self, *args, **kwargs):
+        return _EXECUTOR.submit(fn, self, *args, **kwargs)
 
-def run_on_executor(fn, self, *args, **kwargs):
-    # Need a Tornado Future for "await" expressions.
-    future = _TornadoFuture()
-    gen.chain_future(_EXECUTOR.submit(fn, self, *args, **kwargs), future)
-    return future
 
 _DEFAULT = object()
 
@@ -98,14 +102,14 @@ def future_or_callback(future, callback, io_loop, return_value=_DEFAULT):
 
         def done_callback(_future):
             try:
-                result = _future.result()
-                chained.set_result(result if return_value is _DEFAULT
-                                   else return_value)
+                _future.result()
             except Exception as exc:
                 # TODO: exc_info
                 chained.set_exception(exc)
+            else:
+                chained.set_result(return_value)
 
-        future.add_done_callback(done_callback)
+        io_loop.add_future(future, done_callback)
         return chained
 
     else:
