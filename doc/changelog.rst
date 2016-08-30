@@ -6,7 +6,7 @@ Changelog
 Motor 0.6.2
 -----------
 
-Fix "from motor import *" for Python 3.
+Fix "from motor import \*" for Python 3.
 
 Motor 0.6.1
 -----------

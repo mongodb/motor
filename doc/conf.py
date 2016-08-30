@@ -69,11 +69,11 @@ pygments_style = 'sphinx'
 # -- Options for extensions ----------------------------------------------------
 autoclass_content = 'init'
 
-doctest_path = os.path.abspath('..')
+doctest_path = [os.path.abspath('..')]
 
 # Don't test examples pulled from PyMongo's docstrings just because they start
 # with '>>>'
-doctest_test_doctest_blocks = False
+doctest_test_doctest_blocks = ''
 
 doctest_global_setup = """
 import pprint
