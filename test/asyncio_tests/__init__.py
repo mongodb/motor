@@ -21,7 +21,6 @@ import inspect
 import os
 import unittest
 from unittest import SkipTest
-from concurrent.futures import ThreadPoolExecutor
 
 try:
     from asyncio import ensure_future
@@ -88,9 +87,8 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
 
         # Ensure that the event loop is passed explicitly in Motor.
         asyncio.set_event_loop(None)
-        self.executor = ThreadPoolExecutor(max_workers=4)
         self.loop = asyncio.new_event_loop()
-        self.loop.set_default_executor(self.executor)
+        asyncio.set_event_loop(self.loop)
 
         if self.ssl and not env.mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")
@@ -138,7 +136,6 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
 
     def tearDown(self):
         self.cx.close()
-        self.executor.shutdown()
         self.loop.stop()
         self.loop.run_forever()
         self.loop.close()

@@ -111,7 +111,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
         # IncompleteReadError
         pool = cx._get_primary_pool()
         socket = pool.sockets.pop()
-        socket.sock._writer.close()
+        socket.sock.close()
         pool.sockets.add(socket)
 
         with self.assertRaises(pymongo.errors.AutoReconnect):
@@ -243,12 +243,12 @@ class TestAsyncIOClient(AsyncIOTestCase):
     def test_socketKeepAlive(self):
         # Connect.
         yield from self.cx.server_info()
-        ka = self.cx._get_primary_pool()._motor_socket_options.socket_keepalive
+        ka = self.cx._get_primary_pool().socket_keepalive
         self.assertFalse(ka)
 
         client = self.asyncio_client(socketKeepAlive=True)
         yield from client.server_info()
-        ka = client._get_primary_pool()._motor_socket_options.socket_keepalive
+        ka = client._get_primary_pool().socket_keepalive
         self.assertTrue(ka)
 
     def test_uuid_subtype(self):
