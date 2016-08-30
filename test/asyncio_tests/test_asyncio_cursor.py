@@ -75,6 +75,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(0, cursor.cursor_id)
         self.assertEqual(200, i)
 
+    @unittest.skipUnless(sys.version_info >= (3, 4), "Python 3.4 required")
     @asyncio_test
     def test_fetch_next_delete(self):
         client, server = self.client_server(auto_ismaster={'ismaster': True})
@@ -309,6 +310,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(2, count)
         self.assertEqual(cursor, cursor.rewind())
 
+    @unittest.skipUnless(sys.version_info >= (3, 4), "Python 3.4 required")
     @asyncio_test
     def test_cursor_del(self):
         client, server = self.client_server(auto_ismaster=True)
@@ -330,6 +332,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
         yield from self.run_thread(server.receives, OpKillCursors)
 
+    @unittest.skipUnless(sys.version_info >= (3, 4), "Python 3.4 required")
     @asyncio_test
     def test_exhaust(self):
         if (yield from server_is_mongos(self.cx)):

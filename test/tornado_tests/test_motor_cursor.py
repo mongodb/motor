@@ -95,6 +95,9 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     def test_fetch_next_delete(self):
+        if sys.version_info < (3, 4):
+            raise SkipTest("requires Python 3.4")
+
         if 'PyPy' in sys.version:
             raise SkipTest('PyPy')
 
@@ -108,8 +111,8 @@ class MotorCursorTest(MotorMockServerTest):
 
         # Decref'ing the cursor eventually closes it on the server.
         del cursor
-        # Clear Runner's reference.
-        yield gen.moment
+        # Clear Runner's reference. This is Tornado 3 substitute for gen.moment.
+        yield gen.Task(self.io_loop.add_callback)
         yield self.run_thread(server.receives,
                               OpKillCursors(cursor_ids=[123]))
 
@@ -358,6 +361,9 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     def test_cursor_del(self):
+        if sys.version_info < (3, 4):
+            raise SkipTest("requires Python 3.4")
+
         if tornado_version < (4, 0, 0, 0):
             raise SkipTest("Tornado 3")
 
@@ -382,6 +388,9 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     def test_exhaust(self):
+        if sys.version_info < (3, 4):
+            raise SkipTest("requires Python 3.4")
+
         if (yield server_is_mongos(self.cx)):
             self.assertRaises(InvalidOperation,
                               self.db.test.find, exhaust=True)
