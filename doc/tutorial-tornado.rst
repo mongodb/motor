@@ -24,7 +24,9 @@ Tutorial: Using Motor With Tornado
   from tornado.ioloop import IOLoop
   from tornado import gen
   db = motor.motor_tornado.MotorClient().test_database
-  pymongo.MongoClient().test_database.test_collection.insert(
+  sync_db = pymongo.MongoClient().test_database
+  sync_db.test_collection.drop()
+  sync_db.test_collection.insert(
       [{'i': i} for i in range(2000)])
 
 .. testcleanup:: *
@@ -137,7 +139,7 @@ a Tornado application that uses Motor::
     ], db=db)
 
     application.listen(8888)
-    tornado.ioloop.IOLoop.instance().start()
+    tornado.ioloop.IOLoop.current().start()
 
 There are two things to note in this code. First, the ``MotorClient``
 constructor doesn't actually connect to the server; the client will
@@ -180,11 +182,11 @@ document and a callback:
   >>> from tornado.ioloop import IOLoop
   >>> def my_callback(result, error):
   ...     print('result %s' % repr(result))
-  ...     IOLoop.instance().stop()
+  ...     IOLoop.current().stop()
   ...
   >>> document = {'key': 'value'}
   >>> db.test_collection.insert(document, callback=my_callback)
-  >>> IOLoop.instance().start()
+  >>> IOLoop.current().start()
   result ObjectId('...')
 
 There are several differences to note between Motor and PyMongo. One is that,
@@ -212,19 +214,19 @@ unique id:
 
 .. doctest:: before-inserting-2000-docs
 
-  >>> ncalls = 0
+  >>> loop = IOLoop.current()
   >>> def my_callback(result, error):
-  ...     global ncalls
   ...     print('result %s error %s' % (repr(result), repr(error)))
-  ...     ncalls += 1
-  ...     if ncalls == 2:
-  ...         IOLoop.instance().stop()
+  ...     IOLoop.current().stop()
   ...
-  >>> document = {'_id': 1}
-  >>> db.test_collection.insert(document, callback=my_callback)
-  >>> db.test_collection.insert(document, callback=my_callback)
-  >>> IOLoop.instance().start()
+  >>> def insert_two_documents():
+  ...     db.test_collection.insert({'_id': 1}, callback=my_callback)
+  ...
+  >>> IOLoop.current().add_callback(insert_two_documents)
+  >>> IOLoop.current().start()
   result 1 error None
+  >>> IOLoop.current().add_callback(insert_two_documents)
+  >>> IOLoop.current().start()
   result None error DuplicateKeyError(...)
 
 The first insert results in ``my_callback`` being called with result 1 and
@@ -257,11 +259,11 @@ callbacks:
   ...     if i < 2000:
   ...         db.test_collection.insert({'i': i}, callback=do_insert)
   ...     else:
-  ...         IOLoop.instance().stop()
+  ...         IOLoop.current().stop()
   ...
   >>> # Start
   >>> db.test_collection.insert({'i': i}, callback=do_insert)
-  >>> IOLoop.instance().start()
+  >>> IOLoop.current().start()
 
 You can simplify this code with ``gen.coroutine``.
 
