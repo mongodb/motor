@@ -15,10 +15,6 @@ performing I/O.
 
 .. _asyncio: https://docs.python.org/3/library/asyncio.html
 
-.. important:: This page describes using Motor with Tornado. Beginning in
-  version 0.5 Motor can also integrate with asyncio instead of Tornado. The
-  documentation is not yet updated for Motor's asyncio integration.
-
 Featureful
 ==========
 Motor wraps almost all of PyMongo's API and makes it non-blocking. For the few
