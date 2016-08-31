@@ -219,39 +219,5 @@ class MotorGridfsTest(MotorTest):
         self.assertRaises(TypeError, self.fs.find, {}, {"_id": True})
 
 
-class TestGridfsReplicaSet(MotorReplicaSetTestBase):
-    @gen_test
-    def test_gridfs_secondary(self):
-        primary_host, primary_port = test.env.primary
-        primary = self.motor_client(primary_host, primary_port)
-        if test.env.auth:
-            yield primary.admin.authenticate(test.db_user, test.db_password)
- 
-        secondary_host, secondary_port = test.env.secondaries[0]
-
-        secondary = self.motor_client(
-            secondary_host, secondary_port,
-            read_preference=ReadPreference.SECONDARY)
-
-        if test.env.auth:
-            yield secondary.admin.authenticate(db_user, db_password)
-
-        yield primary.motor_test.drop_collection("fs.files")
-        yield primary.motor_test.drop_collection("fs.chunks")
-
-        # Should detect it's connected to secondary and not attempt to
-        # create index
-        fs = motor.MotorGridFS(secondary.motor_test)
-
-        # This won't detect secondary, raises error
-        with self.assertRaises(AutoReconnect):
-            yield fs.put(b'foo')
-
-    def tearDown(self):
-        self.rsc.motor_test.drop_collection('fs.files')
-        self.rsc.motor_test.drop_collection('fs.chunks')
-        super(TestGridfsReplicaSet, self).tearDown()
-
-
 if __name__ == "__main__":
     unittest.main()

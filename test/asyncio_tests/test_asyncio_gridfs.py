@@ -353,44 +353,5 @@ class TestAsyncIOGridFS(AsyncIOTestCase):
         self.assertRaises(TypeError, self.fs.find, {}, {"_id": True})
 
 
-class TestAsyncIOGridfsReplicaSet(AsyncIOTestCase):
-    def setUp(self):
-        super().setUp()
-        if not test.env.is_replica_set:
-            raise SkipTest("Not connected to a replica set")
-
-    @asyncio_test
-    def test_gridfs_secondary(self):
-        primary_host, primary_port = test.env.primary
-        primary = self.asyncio_client(primary_host, primary_port)
-        if test.env.auth:
-            yield from primary.admin.authenticate(db_user, db_password)
-
-        secondary_host, secondary_port = test.env.secondaries[0]
-
-        secondary = self.asyncio_client(
-            secondary_host, secondary_port,
-            read_preference=ReadPreference.SECONDARY)
-
-        if test.env.auth:
-            yield from secondary.admin.authenticate(db_user, db_password)
-
-        yield from primary.motor_test.drop_collection("fs.files")
-        yield from primary.motor_test.drop_collection("fs.chunks")
-
-        # Should detect it's connected to secondary and not attempt to
-        # create index
-        fs = AsyncIOMotorGridFS(secondary.motor_test)
-
-        # This won't detect secondary, raises error
-        with self.assertRaises(AutoReconnect):
-            yield from fs.put(b'foo')
-
-    def tearDown(self):
-        self.cx.motor_test.drop_collection('fs.files')
-        self.cx.motor_test.drop_collection('fs.chunks')
-        super().tearDown()
-
-
 if __name__ == "__main__":
     unittest.main()
