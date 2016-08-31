@@ -56,19 +56,6 @@ class MotorGridFileTest(MotorTest):
         f.close(callback=None)  # No error
 
     @gen_test
-    def test_grid_out_callback(self):
-        # Some setup: we need to make a GridOut.
-        f = motor.MotorGridIn(self.db.fs, filename="test")
-        yield f.close()
-
-        g = motor.MotorGridOut(self.db.fs, f._id)
-        yield self.check_optional_callback(g.open)
-
-        g = yield motor.MotorGridOut(self.db.fs, f._id).open()
-        yield self.check_optional_callback(g.read)
-        yield self.check_optional_callback(g.readline)
-
-    @gen_test
     def test_attributes(self):
         f = motor.MotorGridIn(
             self.db.fs,
