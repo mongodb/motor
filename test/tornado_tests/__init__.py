@@ -33,7 +33,6 @@ from tornado import gen, testing
 
 import motor
 from test.test_environment import env, CLIENT_PEM
-from test.assert_logs_backport import AssertLogsMixin
 from test.version import padded, _parse_version_string
 
 
@@ -101,7 +100,7 @@ class PauseMixin(object):
             self.io_loop.add_timeout, datetime.timedelta(seconds=seconds))
 
 
-class MotorTest(PauseMixin, AssertLogsMixin, testing.AsyncTestCase):
+class MotorTest(PauseMixin, testing.AsyncTestCase):
     longMessage = True  # Used by unittest.TestCase
     ssl = False  # If True, connect with SSL, skip if mongod isn't SSL
 
