@@ -1003,8 +1003,12 @@ class AgnosticBaseCursor(AgnosticBase):
                 return
 
         if self.alive and (self.cursor_id or not self.started):
-            self._get_more().add_done_callback(
-                functools.partial(self._each_got_more, callback))
+            def got_more(future):
+                self._framework.call_soon(
+                    self.get_io_loop(),
+                    functools.partial(self._each_got_more, callback, future))
+
+            self._get_more().add_done_callback(got_more)
         else:
             # Complete
             self._framework.call_soon(
