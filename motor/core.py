@@ -301,10 +301,15 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
            ``open`` explicitly is now optional.
         """
         loop = self.get_io_loop()
-        future = self._ensure_connected(sync=True)
+
+        # Once _ensure_connected returns, check if we actually connected, then
+        # return "self".
         chained = self._framework.get_future(loop)
-        future.add_done_callback(functools.partial(self._connected_callback,
-                                                   chained))
+        self._framework.add_future(
+            loop,
+            self._ensure_connected(sync=True),
+            self._connected_callback, chained)
+
         return self._framework.future_or_callback(chained, callback, loop)
 
     def _connected_callback(self, chained, future):
@@ -314,11 +319,18 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
             # TODO: exc_info.
             chained.set_exception(error)
         else:
-            if not self._get_member():
-                error = pymongo.errors.AutoReconnect('no primary is available')
+            # Did we actually connect?
+            try:
+                if self._get_member():
+                    chained.set_result(self)
+                    return
+            except Exception as error:
+                # _get_member() can raise ConfigurationError.
                 chained.set_exception(error)
-            else:
-                chained.set_result(self)
+                return
+
+            error = pymongo.errors.AutoReconnect('no primary is available')
+            chained.set_exception(error)
 
     def _get_member(self):
         # TODO: expose the PyMongo RSC members, or otherwise avoid this.
@@ -736,9 +748,10 @@ class AgnosticCollection(AgnosticBase):
 
         # Once we have PyMongo Cursors, wrap in MotorCursors and resolve the
         # future with them, or pass them to the callback.
-        future = self.__parallel_scan(num_cursors, **kwargs)
-        future.add_done_callback(
-            functools.partial(self._scan_callback, original_future))
+        self._framework.add_future(
+            io_loop,
+            self.__parallel_scan(num_cursors, **kwargs),
+            self._scan_callback, original_future)
 
         return retval
 
@@ -1003,12 +1016,10 @@ class AgnosticBaseCursor(AgnosticBase):
                 return
 
         if self.alive and (self.cursor_id or not self.started):
-            def got_more(future):
-                self._framework.call_soon(
-                    self.get_io_loop(),
-                    functools.partial(self._each_got_more, callback, future))
-
-            self._get_more().add_done_callback(got_more)
+            self._framework.add_future(
+                self.get_io_loop(),
+                self._get_more(),
+                self._each_got_more, callback)
         else:
             # Complete
             self._framework.call_soon(
@@ -1078,11 +1089,10 @@ class AgnosticBaseCursor(AgnosticBase):
             to_list_future.set_result([])
         else:
             the_list = []
-            self._get_more().add_done_callback(
-                functools.partial(self._to_list,
-                                  length,
-                                  the_list,
-                                  to_list_future))
+            self._framework.add_future(
+                self.get_io_loop(),
+                self._get_more(),
+                self._to_list, length, the_list, to_list_future)
 
         return retval
 
@@ -1107,11 +1117,10 @@ class AgnosticBaseCursor(AgnosticBase):
             if reached_length or not self.alive:
                 to_list_future.set_result(the_list)
             else:
-                self._get_more().add_done_callback(
-                    functools.partial(self._to_list,
-                                      length,
-                                      the_list,
-                                      to_list_future))
+                self._framework.add_future(
+                    self.get_io_loop(),
+                    self._get_more(),
+                    self._to_list, length, the_list, to_list_future)
         except Exception as exc:
             # TODO: lost exc_info
             to_list_future.set_exception(exc)
@@ -1368,8 +1377,11 @@ class AgnosticAggregationCursor(AgnosticCommandCursor):
             future = self.collection._async_aggregate(
                 self.pipeline,
                 **self.kwargs)
-            future.add_done_callback(functools.partial(self._on_get_more,
-                                                       original_future))
+
+            self._framework.add_future(
+                self.get_io_loop(),
+                future,
+                self._on_get_more, original_future)
 
             return original_future
 

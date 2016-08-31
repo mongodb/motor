@@ -88,7 +88,8 @@ def future_or_callback(future, callback, loop, return_value=_DEFAULT):
         except Exception as exc:
             chained.set_exception(exc)
 
-    future.add_done_callback(done_callback)
+    future.add_done_callback(functools.partial(loop.call_soon_threadsafe,
+                                               done_callback))
     return chained
 
 
@@ -101,6 +102,11 @@ def call_soon(loop, callback, *args, **kwargs):
         loop.call_soon(functools.partial(callback, *args, **kwargs))
     else:
         loop.call_soon(callback, *args)
+
+
+def add_future(loop, future, callback, *args):
+    future.add_done_callback(
+        functools.partial(loop.call_soon_threadsafe, callback, *args))
 
 
 coroutine = asyncio.coroutine

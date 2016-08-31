@@ -95,7 +95,7 @@ def future_or_callback(future, callback, io_loop, return_value=_DEFAULT):
             except Exception as exc:
                 callback(None, exc)
 
-        future.add_done_callback(done_callback)
+        io_loop.add_future(future, done_callback)
 
     elif return_value is not _DEFAULT:
         chained = _TornadoFuture()
@@ -125,6 +125,10 @@ def call_soon(loop, callback, *args, **kwargs):
         loop.add_callback(functools.partial(callback, *args, **kwargs))
     else:
         loop.add_callback(callback)
+
+
+def add_future(loop, future, callback, *args):
+    loop.add_future(future, functools.partial(callback, *args))
 
 
 def coroutine(f):
