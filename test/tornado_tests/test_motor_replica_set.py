@@ -42,14 +42,6 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         cx = self.motor_rsc()
         self.assertEqual(cx, (yield cx.open()))
         self.assertEqual(cx, (yield cx.open()))  # Same the second time.
-        self.assertTrue(isinstance(
-            cx.delegate._MongoReplicaSetClient__monitor,
-            motor.core.MotorReplicaSetMonitor))
-
-        self.assertEqual(
-            self.io_loop,
-            cx.delegate._MongoReplicaSetClient__monitor.loop)
-
         cx.close()
 
     @gen_test
@@ -93,12 +85,12 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
     def test_socketKeepAlive(self):
         # Connect.
         yield self.rsc.server_info()
-        ka = self.rsc._get_primary_pool()._motor_socket_options.socket_keepalive
+        ka = self.rsc._get_primary_pool().socket_keepalive
         self.assertFalse(ka)
 
         client = self.motor_rsc(socketKeepAlive=True)
         yield client.server_info()
-        ka = client._get_primary_pool()._motor_socket_options.socket_keepalive
+        ka = client._get_primary_pool().socket_keepalive
         self.assertTrue(ka)
 
     @gen_test
