@@ -53,20 +53,6 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             motor.MotorReplicaSetClient(test.env.rs_uri, io_loop='foo')
 
     @gen_test
-    def test_auto_reconnect_exception_when_read_preference_is_secondary(self):
-        old_write = iostream.IOStream.write
-        iostream.IOStream.write = lambda self, data: self.close()
-
-        try:
-            cursor = self.rsc.motor_test.test_collection.find(
-                read_preference=pymongo.ReadPreference.SECONDARY)
-
-            with self.assertRaises(pymongo.errors.AutoReconnect):
-                yield cursor.fetch_next
-        finally:
-            iostream.IOStream.write = old_write
-
-    @gen_test
     def test_connection_failure(self):
         # Assuming there isn't anything actually running on this port
         client = motor.MotorReplicaSetClient(
