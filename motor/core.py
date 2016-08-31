@@ -300,10 +300,25 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
            :class:`MotorReplicaSetClient` now opens itself on demand, calling
            ``open`` explicitly is now optional.
         """
-        return self._framework.future_or_callback(self._ensure_connected(True),
-                                                  callback,
-                                                  self.get_io_loop(),
-                                                  self)
+        loop = self.get_io_loop()
+        future = self._ensure_connected(sync=True)
+        chained = self._framework.get_future(loop)
+        future.add_done_callback(functools.partial(self._connected_callback,
+                                                   chained))
+        return self._framework.future_or_callback(chained, callback, loop)
+
+    def _connected_callback(self, chained, future):
+        try:
+            future.result()
+        except Exception as error:
+            # TODO: exc_info.
+            chained.set_exception(error)
+        else:
+            if not self._get_member():
+                error = pymongo.errors.AutoReconnect('no primary is available')
+                chained.set_exception(error)
+            else:
+                chained.set_result(self)
 
     def _get_member(self):
         # TODO: expose the PyMongo RSC members, or otherwise avoid this.
