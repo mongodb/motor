@@ -30,7 +30,7 @@ class MotorBulkTest(MotorTest):
 
     # This is just a smattering of tests, since the logic is all in PyMongo.
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_multiple_error_ordered_batch(self):
         yield self.collection.remove()
         yield self.collection.ensure_index('a', unique=True)
@@ -71,7 +71,7 @@ class MotorBulkTest(MotorTest):
             docs = yield cursor.to_list(None)
             self.assertEqual([{'a': 1, 'b': 1}], docs)
         finally:
-            yield self.collection.drop_index([('a', 1)])
+            yield self.collection.drop()
 
     @gen_test
     def test_single_unordered_batch(self):
