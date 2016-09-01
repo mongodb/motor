@@ -83,7 +83,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         else:
             self.fail('Expected TypeError')
 
-    @asyncio_test
+    @asyncio_test(timeout=30)
     def test_find_is_async(self):
         # Confirm find() is async by launching two operations which will finish
         # out of order. Also test that AsyncIOMotorClient doesn't reuse sockets

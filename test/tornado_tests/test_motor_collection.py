@@ -81,7 +81,7 @@ class MotorCollectionTest(MotorTest):
         else:
             self.fail('Expected TypeError')
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_find_is_async(self):
         # Confirm find() is async by launching two operations which will finish
         # out of order. Also test that MotorClient doesn't reuse sockets
