@@ -157,10 +157,10 @@ class TestAsyncIOClient(AsyncIOTestCase):
         return
         yield from self.make_test_data()
 
-        concurrency = 100
+        concurrency = 25
         cx = self.asyncio_client(max_pool_size=concurrency)
         expected_finds = 200 * concurrency
-        n_inserts = 100
+        n_inserts = 25
 
         collection = cx.motor_test.test_collection
         insert_collection = cx.motor_test.insert_collection

@@ -140,17 +140,17 @@ class MotorClientTest(MotorTest):
         self.assertEqual(cx.max_pool_size, 100)
         cx.close()
 
-    @gen_test(timeout=30)
+    @gen_test(timeout=60)
     def test_high_concurrency(self):
         if tornado_version < (4, 0, 0, 0):
             raise SkipTest("MOTOR-73")
 
         yield self.make_test_data()
 
-        concurrency = 100
+        concurrency = 25
         cx = self.motor_client(max_pool_size=concurrency)
         expected_finds = 200 * concurrency
-        n_inserts = 100
+        n_inserts = 25
 
         collection = cx.motor_test.test_collection
         insert_collection = cx.motor_test.insert_collection
