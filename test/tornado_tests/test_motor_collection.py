@@ -23,6 +23,7 @@ from bson.binary import JAVA_LEGACY, OLD_UUID_SUBTYPE
 from bson.objectid import ObjectId
 from pymongo import ReadPreference
 from pymongo.errors import DuplicateKeyError, InvalidOperation
+import tornado
 from tornado import gen
 from tornado.concurrent import Future
 from tornado.testing import gen_test
@@ -417,6 +418,10 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     def test_aggregation_cursor(self):
+        # Tornado 3 has file-descriptor leak problems with unittests.
+        if tornado.version_info < (4, ):
+            raise SkipTest("requires Tornado 4")
+
         mongo_2_5_1 = yield at_least(self.cx, (2, 5, 1))
 
         db = self.db
@@ -435,6 +440,10 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     def test_aggregation_cursor_to_list_callback(self):
+        # Tornado 3 has file-descriptor leak problems with unittests.
+        if tornado.version_info < (4, ):
+            raise SkipTest("requires Tornado 4")
+
         if not (yield at_least(self.cx, (2, 5, 1))):
             raise SkipTest("Aggregation cursor requires MongoDB >= 2.5.1")
 
