@@ -51,8 +51,9 @@ port = int(os.environ.get("DB_PORT", 27017))
 db_user = os.environ.get("DB_USER", "motor-test-root")
 db_password = os.environ.get("DB_PASSWORD", "pass")
 
-CERT_PATH = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), 'certificates')
+CERT_PATH = os.environ.get(
+    'CERT_DIR',
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), 'certificates'))
 CLIENT_PEM = os.path.join(CERT_PATH, 'client.pem')
 CA_PEM = os.path.join(CERT_PATH, 'ca.pem')
 

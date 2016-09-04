@@ -26,6 +26,8 @@ Control how the tests connect to MongoDB with these environment variables:
    default, or logs in to the admin database with the username provided
  - ``DB_PASSWORD``:   If auth is enabled the test suite creates an admin user by
    default, or logs in to the admin database with the username provided
+- ``CERT_DIR``:       Path with alternate client.pem and ca.pem for testing.
+                      Otherwise the suite uses those in test/certificates/.
 
 Install `tox`_ and run it from the command line in the repository directory.
 You will need a variety of Python interpreters installed. For a minimal test,
