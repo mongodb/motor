@@ -295,17 +295,13 @@ class MotorCollectionTest(MotorTest):
 
         def callback(result, error):
             if error:
-                raise error
-
-            if not result:
-                # Done iterating
-                return
-
-            results[0] += 1
-            if results[0] < 1000:
-                self.collection.find({'_id': 1}).each(callback)
-            else:
-                future.set_result(None)
+                future.set_exception(error)
+            elif result:
+                results[0] += 1
+                if results[0] < 1000:
+                    self.collection.find({'_id': 1}).each(callback)
+                else:
+                    future.set_result(None)
 
         self.collection.find({'_id': 1}).each(callback)
 
