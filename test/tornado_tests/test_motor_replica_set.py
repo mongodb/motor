@@ -18,6 +18,7 @@ from __future__ import unicode_literals
 
 import unittest
 
+import pymongo
 import pymongo.auth
 import pymongo.errors
 import pymongo.mongo_replica_set_client
@@ -120,6 +121,9 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         yield [c.db.collection.find_one(), c.db.collection.find_one()]
 
     def test_uuid_subtype(self):
+        if pymongo.version_tuple < (3, ):
+            raise SkipTest("PYTHON-1145")
+
         cx = self.motor_rsc(uuidRepresentation='javaLegacy')
         self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
         cx.uuid_subtype = UUID_SUBTYPE

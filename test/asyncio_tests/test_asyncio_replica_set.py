@@ -16,6 +16,7 @@
 
 import unittest
 
+import pymongo
 import pymongo.errors
 import pymongo.mongo_replica_set_client
 from bson.binary import JAVA_LEGACY, UUID_SUBTYPE
@@ -49,6 +50,7 @@ class TestAsyncIOReplicaSet(AsyncIOTestCase):
         with self.assertRaises(pymongo.errors.ConnectionFailure):
             yield from client.open()
 
+    @unittest.skipIf(pymongo.version_tuple < (3, ), "PYTHON-1145")
     def test_uuid_subtype(self):
         cx = self.asyncio_rsc(uuidRepresentation='javaLegacy')
         self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
