@@ -56,19 +56,27 @@ def get_future(loop):
 if sys.version_info >= (3, 5):
     # Python 3.5+ sets max_workers=(cpu_count * 5) automatically.
     _EXECUTOR = ThreadPoolExecutor()
-
-    def run_on_executor(loop, fn, self, *args, **kwargs):
-        # Need a Tornado Future for "await" expressions.
-        future = _TornadoFuture()
-        gen.chain_future(_EXECUTOR.submit(fn, self, *args, **kwargs), future)
-        return future
-
 else:
     _EXECUTOR = ThreadPoolExecutor(max_workers=tornado.process.cpu_count() * 5)
 
-    def run_on_executor(loop, fn, self, *args, **kwargs):
-        return _EXECUTOR.submit(fn, self, *args, **kwargs)
 
+def run_on_executor(loop, fn, self, *args, **kwargs):
+    # Need a Tornado Future for "await" expressions. exec_fut is resolved on a
+    # worker thread, loop.add_future ensures "future" is resolved on main.
+    future = _TornadoFuture()
+    exec_fut = _EXECUTOR.submit(fn, self, *args, **kwargs)
+
+    def copy(_):
+        if future.done():
+            return
+        if exec_fut.exception() is not None:
+            future.set_exception(exec_fut.exception())
+        else:
+            future.set_result(exec_fut.result())
+
+    # Ensure copy runs on main thread.
+    loop.add_future(exec_fut, copy)
+    return future
 
 _DEFAULT = object()
 

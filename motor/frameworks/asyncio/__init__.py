@@ -55,6 +55,8 @@ else:
 
 
 def run_on_executor(loop, fn, self, *args, **kwargs):
+    # Ensures the wrapped future is resolved on the main thread, though the
+    # executor's future is resolved on a worker thread.
     return asyncio.futures.wrap_future(
         _EXECUTOR.submit(functools.partial(fn, self, *args, **kwargs)),
         loop=loop)
