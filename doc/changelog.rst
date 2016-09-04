@@ -3,6 +3,11 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 0.7
+---------
+
+Drops dependency on greenlet, updates PyMongo from 2.8.0 exactly to 2.9.x.
+
 Motor 0.6.2
 -----------
 

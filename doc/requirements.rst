@@ -4,7 +4,7 @@ Requirements
 The current version of Motor requires:
 
 * CPython 2.6, 2.7, or 3.3 and later.
-* PyMongo_ 2.8.0 exactly.
+* PyMongo_ 2.9.x.
 
 Beginning with version 0.5, Motor can integrate with either Tornado or asyncio.
 
@@ -39,8 +39,8 @@ Compatibility Matrix
 Motor and PyMongo
 `````````````````
 
-Motor wraps PyMongo and depends on it intimately. You must use the exact
-PyMongo version specified for each version of Motor.
+Older versions of Motor depended on exact PyMongo versions. Starting in 0.7,
+Motor can depend on the latest PyMongo 2.9.x release.
 
 +-------------------+-----------------+
 | Motor Version     | PyMongo Version |
@@ -56,6 +56,8 @@ PyMongo version specified for each version of Motor.
 | 0.5               | 2.8.0           |
 +-------------------+-----------------+
 | 0.6               | 2.8.0           |
++-------------------+-----------------+
+| 0.7               | 2.9.x           |
 +-------------------+-----------------+
 
 Motor and MongoDB

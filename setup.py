@@ -33,7 +33,7 @@ description = 'Non-blocking MongoDB driver for Tornado or asyncio'
 
 long_description = open("README.rst").read()
 
-install_requires = ['pymongo == 2.8.0']
+install_requires = ['pymongo>=2.9,<3']
 
 tests_require = ['mockupdb']
 
