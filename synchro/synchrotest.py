@@ -196,6 +196,9 @@ excluded_tests = [
     # Logs AssertionError, 'Should be on child greenlet' in Cursor.__del__, for
     # reasons not worth getting into.
     'TestClient.test_kill_cursors_warning',
+
+    # Obsolete test in PyMongo 2.8, updated for MongoDB 3.2+ in 519f0682.
+    'TestBulkWriteConcern.test_write_concern_failure_ordered',
 ]
 
 
