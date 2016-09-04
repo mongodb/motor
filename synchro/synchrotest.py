@@ -70,6 +70,7 @@ excluded_tests = [
     'TestCollection.test_aggregate_with_compile_re',
     'TestCollection.test_aggregation_cursor',
     'TestCollection.test_aggregation_cursor_validation',
+    'TestDatabase.test_command_max_time_ms',
 
     # Motor never uses greenlets.
     '*.test_use_greenlets',
