@@ -118,7 +118,7 @@ class MotorSSLTest(MotorTest):
             raise SkipTest("can't test with auth")
 
         client = motor.MotorClient(
-            test.env.fake_hostname_uri,
+            host, port,
             ssl_certfile=CLIENT_PEM,
             ssl_cert_reqs=ssl.CERT_REQUIRED,
             ssl_ca_certs=CA_PEM,
@@ -133,7 +133,7 @@ class MotorSSLTest(MotorTest):
                                "Cannot validate hostname in the certificate")
 
             client = motor.MotorReplicaSetClient(
-                test.env.fake_hostname_uri,
+                host, port,
                 replicaSet=response['setName'],
                 ssl_certfile=CLIENT_PEM,
                 ssl_cert_reqs=ssl.CERT_REQUIRED,
@@ -143,7 +143,7 @@ class MotorSSLTest(MotorTest):
             yield client.db.collection.find_one()
 
     @gen_test
-    def test_cert_ssl_validation_optional(self):
+    def test_cert_ssl_validation_none(self):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
@@ -153,7 +153,7 @@ class MotorSSLTest(MotorTest):
         client = motor.MotorClient(
             test.env.fake_hostname_uri,
             ssl_certfile=CLIENT_PEM,
-            ssl_cert_reqs=ssl.CERT_OPTIONAL,
+            ssl_cert_reqs=ssl.CERT_NONE,
             ssl_ca_certs=CA_PEM,
             io_loop=self.io_loop)
 
@@ -167,7 +167,7 @@ class MotorSSLTest(MotorTest):
                 test.env.fake_hostname_uri,
                 replicaSet=response['setName'],
                 ssl_certfile=CLIENT_PEM,
-                ssl_cert_reqs=ssl.CERT_OPTIONAL,
+                ssl_cert_reqs=ssl.CERT_NONE,
                 ssl_ca_certs=CA_PEM,
                 io_loop=self.io_loop)
 
@@ -191,7 +191,7 @@ class MotorSSLTest(MotorTest):
             # Create client with hostname 'server', not 'localhost',
             # which is what the server cert presents.
             client = motor.MotorClient(
-                host, port,
+                test.env.fake_hostname_uri,
                 ssl_certfile=CLIENT_PEM,
                 ssl_cert_reqs=ssl.CERT_REQUIRED,
                 ssl_ca_certs=CA_PEM,
@@ -202,7 +202,7 @@ class MotorSSLTest(MotorTest):
         if 'setName' in response:
             with self.assertRaises(CertificateError):
                 client = motor.MotorReplicaSetClient(
-                    host, port,
+                    'server', port,
                     replicaSet=response['setName'],
                     ssl_certfile=CLIENT_PEM,
                     ssl_cert_reqs=ssl.CERT_REQUIRED,
