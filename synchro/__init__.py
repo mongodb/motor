@@ -624,10 +624,6 @@ class CursorManager(object):
 class BulkOperationBuilder(Synchro):
     __delegate_class__ = motor.MotorBulkOperationBuilder
 
-    # execute     = Sync()
-    # find        = WrapOutgoing()
-    # insert      = WrapOutgoing()
-
     def __init__(self, motor_bob):
         if not isinstance(motor_bob, motor.MotorBulkOperationBuilder):
             raise TypeError(
