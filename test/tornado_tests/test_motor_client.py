@@ -246,7 +246,6 @@ class MotorClientTest(MotorTest):
         self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
 
 
-
 class MotorClientTimeoutTest(MotorMockServerTest):
     @gen_test
     def test_timeout(self):
