@@ -15,6 +15,7 @@
 """Motor specific extensions to Sphinx."""
 
 import inspect
+import re
 
 from docutils.nodes import field, list_item, paragraph, title_reference, literal
 from docutils.nodes import field_list, field_body, bullet_list, Text, field_name
@@ -166,9 +167,6 @@ def get_motor_attr(motor_class, name, *defargs):
     in the global motor_info dict.
     """
     attr = safe_getattr(motor_class, name)
-    method_class = safe_getattr(attr, 'im_class', None)
-    from_pymongo = not safe_getattr(
-        method_class, '__module__', '').startswith('motor')
 
     # Store some info for process_motor_nodes()
     full_name = '%s.%s.%s' % (
@@ -188,7 +186,7 @@ def get_motor_attr(motor_class, name, *defargs):
         pymongo_method = None
 
     # attr.doc is set by statement like 'error = AsyncRead(doc="OBSOLETE")'.
-    is_pymongo_doc = ((from_pymongo or is_async_method or is_cursor_method)
+    is_pymongo_doc = (getattr(attr, '__doc__', None)
                       and not getattr(attr, 'doc', None))
 
     motor_info[full_name] = motor_info[full_name_legacy] = {
@@ -227,6 +225,21 @@ def format_motor_args(pymongo_method, is_async_method):
     return formatted_argspec.replace('\\', '\\\\')
 
 
+pymongo_ref_pat = re.compile(r':doc:`(.*?)`', re.MULTILINE)
+
+
+def _sub_pymongo_ref(match):
+    ref = match.group(1)
+    return ':doc:`%s`' % ref.lstrip('/')
+
+
+def process_motor_docstring(app, what, name, obj, options, lines):
+    if name in motor_info and motor_info[name].get('is_pymongo_docstring'):
+        joined = '\n'.join(lines)
+        subbed = pymongo_ref_pat.sub(_sub_pymongo_ref, joined, re.MULTILINE)
+        lines[:] = subbed.split('\n')
+
+
 def process_motor_signature(
         app, what, name, obj, options, signature, return_annotation):
     if name in motor_info and motor_info[name].get('pymongo_method'):
@@ -239,5 +252,6 @@ def process_motor_signature(
 
 def setup(app):
     app.add_autodoc_attrgetter(type(motor.core.AgnosticBase), get_motor_attr)
+    app.connect('autodoc-process-docstring', process_motor_docstring)
     app.connect('autodoc-process-signature', process_motor_signature)
     app.connect("doctree-read", process_motor_nodes)

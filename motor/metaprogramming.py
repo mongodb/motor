@@ -301,7 +301,7 @@ class MotorCursorChainingMethod(MotorAttributeFactory):
             cursor_method(self.delegate, *args, **kwargs)
             return self
 
-        # This is for the benefit of motor_extensions.py
+        # This is for the benefit of Synchro, and motor_extensions.py
         return_clone.is_motorcursor_chaining_method = True
         return_clone.pymongo_method_name = attr_name
         if self.doc:

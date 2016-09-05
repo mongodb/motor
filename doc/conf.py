@@ -7,6 +7,7 @@
 import sys, os
 sys.path[0:0] = [os.path.abspath('..')]
 
+from pymongo import version as pymongo_version
 import motor
 
 # -- General configuration -----------------------------------------------------
@@ -183,10 +184,13 @@ latex_documents = [
 autodoc_default_flags = ['inherited-members']
 autodoc_member_order = 'groupwise'
 
+pymongo_inventory = ('http://api.mongodb.org/python/%s/' % pymongo_version,
+                     'pymongo-objects.inv')
+
 intersphinx_mapping = {
-    'bson': ('http://api.mongodb.org/python/2.8/', None),
-    'gridfs': ('http://api.mongodb.org/python/2.8/', None),
-    'pymongo': ('http://api.mongodb.org/python/2.8/', None),
+    'bson': pymongo_inventory,
+    'gridfs': pymongo_inventory,
+    'pymongo': pymongo_inventory,
     'tornado': ('http://www.tornadoweb.org/en/stable/', None),
     'python': ('https://docs.python.org/3/', None),
 }
