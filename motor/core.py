@@ -358,7 +358,6 @@ class AgnosticDatabase(AgnosticBase):
     command             = AsyncCommand()
     authenticate        = AsyncCommand()
     eval                = AsyncCommand()
-    # TODO: for consistency, wrap() takes a string too.
     create_collection   = AsyncCommand().wrap(Collection)
     drop_collection     = AsyncCommand().unwrap('MotorCollection')
     validate_collection = AsyncRead().unwrap('MotorCollection')
