@@ -42,18 +42,22 @@ from motor.metaprogramming import (
 from gridfs.errors import *
 from pymongo import *
 from pymongo import member
+from pymongo import operations
 from pymongo import son_manipulator
 from pymongo import ssl_match_hostname
+from pymongo import write_concern
 from pymongo.helpers import _unpack_response, _check_command_response
 from pymongo.common import *
 from pymongo.cursor import *
 from pymongo.cursor import _QUERY_OPTIONS
 from pymongo.errors import *
 from pymongo.member import PRIMARY, SECONDARY, OTHER
+from pymongo.operations import *
 from pymongo.read_preferences import *
 from pymongo.son_manipulator import *
 from pymongo.uri_parser import *
 from pymongo.uri_parser import _partition, _rpartition
+from pymongo.write_concern import *
 from pymongo import auth
 from pymongo.auth import *
 from pymongo.auth import _password_digest
@@ -353,7 +357,9 @@ class MongoClientBase(Synchro):
 
         if not self.delegate:
             self.delegate = self.__delegate_class__(*args, **kwargs)
-            if kwargs.get('_connect', True):
+
+            # In PyMongo 2.9 "connect" is added as a synonym.
+            if kwargs.get('_connect', kwargs.get('connect', True)):
                 self.synchro_connect()
 
     def synchro_connect(self):
@@ -449,7 +455,8 @@ class Database(Synchro):
             "Expected MongoClient or MongoReplicaSetClient, got %s"
             % repr(client))
 
-        self.connection = client
+        # "client" is modern, "connection" is deprecated.
+        self.client = self.connection = client
 
         self.delegate = client.delegate[name]
         assert isinstance(self.delegate, motor.MotorDatabase), (

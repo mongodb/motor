@@ -69,8 +69,10 @@ excluded_tests = [
     'TestCollection.test_aggregate',
     'TestCollection.test_aggregate_with_compile_re',
     'TestCollection.test_aggregation_cursor',
+    'TestCollection.test_aggregation_cursor_alive',
     'TestCollection.test_aggregation_cursor_validation',
     'TestDatabase.test_command_max_time_ms',
+    'TestDatabase.test_son_manipulator_outgoing',
 
     # Motor never uses greenlets.
     '*.test_use_greenlets',
@@ -136,6 +138,8 @@ excluded_tests = [
     'TestGridfs.test_threaded_reads',
     'TestThreadsAuth.*',
     'TestThreadsAuthReplicaSet.*',
+    'TestCollection.test_ensure_index_threaded',
+    'TestCollection.test_ensure_purge_index_threaded',
 
     # Relies on threads; tested directly.
     'TestCollection.test_parallel_scan',
@@ -158,6 +162,9 @@ excluded_tests = [
     # Profiling format changes in MongoDB 3.2+, SERVER-19566.
     'TestCursor.test_comment',
     'TestDatabase.test_profiling_info',
+
+    # Needs updating for modern MongoDB.
+    'TestCollection.test_index_text',
 
     # No context-manager protocol for MotorCursor.
     'TestCursor.test_with_statement',
@@ -193,12 +200,15 @@ excluded_tests = [
     'TestReplicaSetClientExhaustCursor.*',
     '*.test_wire_version',
 
-    # Logs AssertionError, 'Should be on child greenlet' in Cursor.__del__, for
-    # reasons not worth getting into.
-    'TestClient.test_kill_cursors_warning',
-
     # Obsolete test in PyMongo 2.8, updated for MongoDB 3.2+ in 519f0682.
     'TestBulkWriteConcern.test_write_concern_failure_ordered',
+
+    # Accesses PyMongo internals.
+    'TestCollection.test_message_backport_codec_options',
+    'TestClient.test_kill_cursor_explicit_primary',
+    'TestClient.test_kill_cursor_explicit_secondary',
+    'TestReplicaSetClient.test_kill_cursor_explicit_primary',
+    'TestReplicaSetClient.test_kill_cursor_explicit_secondary',
 ]
 
 
@@ -275,6 +285,7 @@ pymongo_modules = set([
     'pymongo.member',
     'pymongo.mongo_client',
     'pymongo.mongo_replica_set_client',
+    'pymongo.operations',
     'pymongo.pool',
     'pymongo.read_preferences',
     'pymongo.replica_set_connection',
@@ -282,6 +293,7 @@ pymongo_modules = set([
     'pymongo.ssl_match_hostname',
     'pymongo.thread_util',
     'pymongo.uri_parser',
+    'pymongo.write_concern',
 ])
 
 
