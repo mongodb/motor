@@ -86,6 +86,42 @@ class AgnosticBase(object):
         return '%s(%r)' % (self.__class__.__name__, self.delegate)
 
 
+get_database_doc = """
+Get a `MotorDatabase` with the given name and options.
+
+Useful for creating a `MotorDatabase` with different codec options,
+read preference, and/or write concern from this `MotorClient`.
+
+  >>> from pymongo import ReadPreference
+  >>> client.read_preference == ReadPreference.PRIMARY
+  True
+  >>> db1 = client.test
+  >>> db1.read_preference == ReadPreference.PRIMARY
+  True
+  >>> db2 = client.get_database(
+  ...     'test', read_preference=ReadPreference.SECONDARY)
+  >>> db2.read_preference == ReadPreference.SECONDARY
+  True
+
+:Parameters:
+  - `name`: The name of the database - a string.
+  - `codec_options` (optional): An instance of
+    :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+    default) the :attr:`codec_options` of this :class:`MongoClient` is
+    used.
+  - `read_preference` (optional): The read preference to use. If
+    ``None`` (the default) the :attr:`read_preference` of this
+    :class:`MongoClient` is used. See :mod:`~pymongo.read_preferences`
+    for options.
+  - `write_concern` (optional): An instance of
+    :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+    default) the :attr:`write_concern` of this :class:`MongoClient` is
+    used.
+
+.. versionadded:: 2.9
+"""
+
+
 class AgnosticClientBase(AgnosticBase):
     """MotorClient and MotorReplicaSetClient common functionality."""
     _ensure_connected  = AsyncRead()
@@ -96,7 +132,7 @@ class AgnosticClientBase(AgnosticBase):
     database_names     = AsyncRead()
     disconnect         = DelegateMethod()
     drop_database      = AsyncCommand().unwrap('MotorDatabase')
-    get_database       = DelegateMethod()
+    get_database       = DelegateMethod(doc=get_database_doc)
     is_mongos          = ReadOnlyProperty()
     is_primary         = ReadOnlyProperty()
     local_threshold_ms = ReadOnlyProperty()
@@ -453,7 +489,7 @@ class AgnosticDatabase(AgnosticBase):
 mr_doc = """Perform a map/reduce operation on this collection.
 
 If `full_response` is ``False`` (default) returns a
-:class:`~motor.motor_tornado.MotorCollection` instance containing
+`MotorCollection` instance containing
 the results of the operation. Otherwise, returns the full
 response from the server to the `map reduce command`_.
 
@@ -478,8 +514,8 @@ response from the server to the `map reduce command`_.
 If a callback is passed, returns None, else returns a Future.
 
 .. note:: The :meth:`map_reduce` method does **not** obey the
-   :attr:`read_preference` of this :class:`Collection`. To run
-   mapReduce on a secondary use the :meth:`inline_map_reduce` method
+   :attr:`read_preference` of this `MotorCollection`. To run
+   mapReduce on a secondary use the `inline_map_reduce` method
    instead.
 
 .. _map reduce command: http://docs.mongodb.org/manual/reference/command/mapReduce/
