@@ -69,17 +69,6 @@ class AgnosticBase(object):
             return self.delegate == other.delegate
         return NotImplemented
 
-    codec_options                   = ReadOnlyProperty()
-    name                            = ReadOnlyProperty()
-    get_document_class              = DelegateMethod()
-    set_document_class              = DelegateMethod()
-    document_class                  = ReadWriteProperty()
-    read_preference                 = ReadWriteProperty()
-    tag_sets                        = ReadWriteProperty()
-    secondary_acceptable_latency_ms = ReadWriteProperty()
-    write_concern                   = ReadWriteProperty()
-    uuid_subtype                    = ReadWriteProperty()
-
     def __init__(self, delegate):
         self.delegate = delegate
 
@@ -87,7 +76,16 @@ class AgnosticBase(object):
         return '%s(%r)' % (self.__class__.__name__, self.delegate)
 
 
-class AgnosticClientBase(AgnosticBase):
+class AgnosticBaseProperties(AgnosticBase):
+    codec_options                   = ReadOnlyProperty()
+    read_preference                 = ReadWriteProperty()
+    tag_sets                        = ReadWriteProperty()
+    secondary_acceptable_latency_ms = ReadWriteProperty()
+    write_concern                   = ReadWriteProperty()
+    uuid_subtype                    = ReadWriteProperty()
+
+
+class AgnosticClientBase(AgnosticBaseProperties):
     """MotorClient and MotorReplicaSetClient common functionality."""
     _ensure_connected  = AsyncRead()
     address            = ReadOnlyProperty()
@@ -96,10 +94,11 @@ class AgnosticClientBase(AgnosticBase):
     close_cursor       = AsyncCommand()
     database_names     = AsyncRead()
     disconnect         = DelegateMethod()
+    document_class     = ReadWriteProperty()
     drop_database      = AsyncCommand().unwrap('MotorDatabase')
     get_database       = DelegateMethod(doc=get_database_doc)
+    get_document_class = DelegateMethod()
     is_mongos          = ReadOnlyProperty()
-    is_primary         = ReadOnlyProperty()
     local_threshold_ms = ReadOnlyProperty()
     max_bson_size      = ReadOnlyProperty()
     max_message_size   = ReadOnlyProperty()
@@ -107,6 +106,7 @@ class AgnosticClientBase(AgnosticBase):
     max_wire_version   = ReadOnlyProperty()
     min_wire_version   = ReadOnlyProperty()
     server_info        = AsyncRead()
+    set_document_class = DelegateMethod()
     tz_aware           = ReadOnlyProperty()
 
     def __init__(self, io_loop, *args, **kwargs):
@@ -169,6 +169,7 @@ class AgnosticClient(AgnosticClientBase):
 
     kill_cursors = AsyncCommand()
     fsync        = AsyncCommand()
+    is_primary   = ReadOnlyProperty()
     unlock       = AsyncCommand()
     nodes        = ReadOnlyProperty()
     host         = ReadOnlyProperty()
@@ -352,7 +353,7 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
         return primary_member.pool if primary_member else None
 
 
-class AgnosticDatabase(AgnosticBase):
+class AgnosticDatabase(AgnosticBaseProperties):
     __motor_class_name__ = 'MotorDatabase'
     __delegate_class__ = Database
 
@@ -369,6 +370,7 @@ class AgnosticDatabase(AgnosticBase):
     get_collection      = DelegateMethod()
     last_status         = AsyncRead(doc="OBSOLETE")
     logout              = AsyncCommand()
+    name                = ReadOnlyProperty()
     previous_error      = AsyncRead(doc="OBSOLETE")
     profiling_info      = AsyncRead()
     profiling_level     = AsyncRead()
@@ -452,7 +454,7 @@ class AgnosticDatabase(AgnosticBase):
         return self.connection.get_io_loop()
 
 
-class AgnosticCollection(AgnosticBase):
+class AgnosticCollection(AgnosticBaseProperties):
     __motor_class_name__ = 'MotorCollection'
     __delegate_class__ = Collection
 
@@ -479,6 +481,7 @@ class AgnosticCollection(AgnosticBase):
     insert_many          = AsyncWrite()
     insert_one           = AsyncCommand()
     map_reduce           = AsyncCommand(doc=mr_doc).wrap(Collection)
+    name                 = ReadOnlyProperty()
     options              = AsyncRead()
     reindex              = AsyncCommand()
     remove               = AsyncWrite()
@@ -1080,7 +1083,6 @@ class AgnosticBaseCursor(AgnosticBase):
 class AgnosticCursor(AgnosticBaseCursor):
     __motor_class_name__ = 'MotorCursor'
     __delegate_class__ = Cursor
-    address       = ReadOnlyProperty()
     count         = AsyncRead()
     distinct      = AsyncRead()
     explain       = AsyncRead()
