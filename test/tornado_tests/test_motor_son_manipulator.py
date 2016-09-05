@@ -86,3 +86,21 @@ class SONManipulatorTest(MotorTest):
         found = yield cursor.to_list(length=2)
         self.assertEqual(expected, found)
         yield cursor.close()
+
+    @gen_test
+    def test_with_aggregate(self):
+        coll = self.cx.motor_test.son_manipulator_test_collection
+        _id = yield coll.insert({'foo': 'bar'})
+        coll.database.add_son_manipulator(CustomSONManipulator())
+
+        # Test aggregation cursor, both with fetch_next and to_list.
+        cursor = coll.aggregate([])
+        assert (yield cursor.fetch_next)
+        self.assertEqual(
+            {'_id': _id, 'foo': 'bar', 'added_field': 42},
+            cursor.next_object())
+
+        cursor = coll.aggregate([])
+        self.assertEqual(
+            [{'_id': _id, 'foo': 'bar', 'added_field': 42}],
+            (yield cursor.to_list(length=None)))
