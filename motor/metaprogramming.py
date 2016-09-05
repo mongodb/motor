@@ -252,28 +252,21 @@ class AsyncCommand(Async):
             self, attr_name=attr_name, has_write_concern=False, doc=doc)
 
 
-class ReadOnlyPropertyDescriptor(object):
-    def __init__(self, attr_name, doc=None):
-        self.attr_name = attr_name
-        if doc:
-            self.__doc__ = doc
-
-    def __get__(self, obj, objtype):
-        if obj:
-            return getattr(obj.delegate, self.attr_name)
-        else:
-            # We're accessing this property on a class, e.g. when Sphinx wants
-            # MotorClient.read_preference.__doc__.
-            return getattr(objtype.__delegate_class__, self.attr_name)
-
-    def __set__(self, obj, val):
-        raise AttributeError
-
-
 class ReadOnlyProperty(MotorAttributeFactory):
     """Creates a readonly attribute on the wrapped PyMongo object"""
     def create_attribute(self, cls, attr_name):
-        return ReadOnlyPropertyDescriptor(attr_name, self.doc)
+        def fget(obj):
+            return getattr(obj.delegate, attr_name)
+
+        if self.doc:
+            doc = self.doc
+        else:
+            doc = getattr(cls.__delegate_class__, attr_name).__doc__
+
+        if doc:
+            return property(fget=fget, doc=doc)
+        else:
+            return property(fget=fget)
 
 
 class DelegateMethod(ReadOnlyProperty):
@@ -281,15 +274,19 @@ class DelegateMethod(ReadOnlyProperty):
     synchronously"""
 
 
-class ReadWritePropertyDescriptor(ReadOnlyPropertyDescriptor):
-    def __set__(self, obj, val):
-        setattr(obj.delegate, self.attr_name, val)
-
-
 class ReadWriteProperty(MotorAttributeFactory):
     """Creates a mutable attribute on the wrapped PyMongo object"""
     def create_attribute(self, cls, attr_name):
-        return ReadWritePropertyDescriptor(attr_name, self.doc)
+        def fget(obj):
+            return getattr(obj.delegate, attr_name)
+
+        def fset(obj, val):
+            setattr(obj.delegate, attr_name, val)
+
+        if self.doc:
+            return property(fget=fget, fset=fset, doc=self.doc)
+        else:
+            return property(fget=fget, fset=fset)
 
 
 class MotorCursorChainingMethod(MotorAttributeFactory):
