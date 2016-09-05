@@ -68,6 +68,7 @@ class AgnosticBase(object):
             return self.delegate == other.delegate
         return NotImplemented
 
+    codec_options                   = ReadOnlyProperty()
     name                            = ReadOnlyProperty()
     get_document_class              = DelegateMethod()
     set_document_class              = DelegateMethod()
@@ -87,22 +88,25 @@ class AgnosticBase(object):
 
 class AgnosticClientBase(AgnosticBase):
     """MotorClient and MotorReplicaSetClient common functionality."""
-    database_names    = AsyncRead()
-    server_info       = AsyncRead()
-    alive             = AsyncRead()
-    close_cursor      = AsyncCommand()
-    drop_database     = AsyncCommand().unwrap('MotorDatabase')
-    disconnect        = DelegateMethod()
-    tz_aware          = ReadOnlyProperty()
-    close             = DelegateMethod()
-    is_primary        = ReadOnlyProperty()
-    is_mongos         = ReadOnlyProperty()
-    max_bson_size     = ReadOnlyProperty()
-    max_message_size  = ReadOnlyProperty()
-    min_wire_version  = ReadOnlyProperty()
-    max_wire_version  = ReadOnlyProperty()
-    max_pool_size     = ReadOnlyProperty()
-    _ensure_connected = AsyncRead()
+    _ensure_connected  = AsyncRead()
+    address            = ReadOnlyProperty()
+    alive              = AsyncRead()
+    close              = DelegateMethod()
+    close_cursor       = AsyncCommand()
+    database_names     = AsyncRead()
+    disconnect         = DelegateMethod()
+    drop_database      = AsyncCommand().unwrap('MotorDatabase')
+    get_database       = DelegateMethod()
+    is_mongos          = ReadOnlyProperty()
+    is_primary         = ReadOnlyProperty()
+    local_threshold_ms = ReadOnlyProperty()
+    max_bson_size      = ReadOnlyProperty()
+    max_message_size   = ReadOnlyProperty()
+    max_pool_size      = ReadOnlyProperty()
+    max_wire_version   = ReadOnlyProperty()
+    min_wire_version   = ReadOnlyProperty()
+    server_info        = AsyncRead()
+    tz_aware           = ReadOnlyProperty()
 
     def __init__(self, io_loop, *args, **kwargs):
         check_deprecated_kwargs(kwargs)
@@ -351,25 +355,26 @@ class AgnosticDatabase(AgnosticBase):
     __motor_class_name__ = 'MotorDatabase'
     __delegate_class__ = Database
 
-    set_profiling_level = AsyncCommand()
     add_user            = AsyncCommand()
-    remove_user         = AsyncCommand()
-    logout              = AsyncCommand()
-    command             = AsyncCommand()
     authenticate        = AsyncCommand()
-    eval                = AsyncCommand()
-    create_collection   = AsyncCommand().wrap(Collection)
-    drop_collection     = AsyncCommand().unwrap('MotorCollection')
-    validate_collection = AsyncRead().unwrap('MotorCollection')
     collection_names    = AsyncRead()
+    command             = AsyncCommand()
+    create_collection   = AsyncCommand().wrap(Collection)
     current_op          = AsyncRead()
-    profiling_level     = AsyncRead()
-    profiling_info      = AsyncRead()
-    error               = AsyncRead(doc="OBSOLETE")
-    last_status         = AsyncRead(doc="OBSOLETE")
-    previous_error      = AsyncRead(doc="OBSOLETE")
-    reset_error_history = AsyncCommand(doc="OBSOLETE")
     dereference         = AsyncRead()
+    drop_collection     = AsyncCommand().unwrap('MotorCollection')
+    error               = AsyncRead(doc="OBSOLETE")
+    eval                = AsyncCommand()
+    get_collection      = DelegateMethod()
+    last_status         = AsyncRead(doc="OBSOLETE")
+    logout              = AsyncCommand()
+    previous_error      = AsyncRead(doc="OBSOLETE")
+    profiling_info      = AsyncRead()
+    profiling_level     = AsyncRead()
+    remove_user         = AsyncCommand()
+    reset_error_history = AsyncCommand(doc="OBSOLETE")
+    set_profiling_level = AsyncCommand()
+    validate_collection = AsyncRead().unwrap('MotorCollection')
 
     incoming_manipulators         = ReadOnlyProperty()
     incoming_copying_manipulators = ReadOnlyProperty()
@@ -381,7 +386,8 @@ class AgnosticDatabase(AgnosticBase):
             raise TypeError("First argument to MotorDatabase must be "
                             "a Motor client, not %r" % connection)
 
-        self.connection = connection
+        # "client" is modern, "connection" is deprecated.
+        self.client = self.connection = connection
         delegate = Database(connection.delegate, name)
         super(self.__class__, self).__init__(delegate)
 
@@ -553,31 +559,44 @@ when performing updates. For example, here we use the
 
 .. mongodoc:: update"""
 
+
 class AgnosticCollection(AgnosticBase):
     __motor_class_name__ = 'MotorCollection'
     __delegate_class__ = Collection
 
-    create_index      = AsyncCommand()
-    drop_indexes      = AsyncCommand()
-    drop_index        = AsyncCommand()
-    drop              = AsyncCommand()
-    ensure_index      = AsyncCommand()
-    reindex           = AsyncCommand()
-    rename            = AsyncCommand()
-    find_and_modify   = AsyncCommand()
-    map_reduce        = AsyncCommand(doc=mr_doc).wrap(Collection)
-    update            = AsyncWrite(doc=update_doc)
-    insert            = AsyncWrite()
-    remove            = AsyncWrite()
-    save              = AsyncWrite()
-    index_information = AsyncRead()
-    count             = AsyncRead()
-    options           = AsyncRead()
-    group             = AsyncRead()
-    distinct          = AsyncRead()
-    inline_map_reduce = AsyncRead()
-    find_one          = AsyncRead()
-    full_name         = ReadOnlyProperty()
+    bulk_write           = AsyncCommand()
+    count                = AsyncRead()
+    create_index         = AsyncCommand()
+    delete_many          = AsyncCommand()
+    delete_one           = AsyncCommand()
+    distinct             = AsyncRead()
+    drop                 = AsyncCommand()
+    drop_index           = AsyncCommand()
+    drop_indexes         = AsyncCommand()
+    ensure_index         = AsyncCommand()
+    find_and_modify      = AsyncCommand()
+    find_one             = AsyncRead()
+    find_one_and_delete  = AsyncCommand()
+    find_one_and_replace = AsyncCommand()
+    find_one_and_update  = AsyncCommand()
+    full_name            = ReadOnlyProperty()
+    group                = AsyncRead()
+    index_information    = AsyncRead()
+    inline_map_reduce    = AsyncRead()
+    insert               = AsyncWrite()
+    insert_many          = AsyncWrite()
+    insert_one           = AsyncCommand()
+    map_reduce           = AsyncCommand(doc=mr_doc).wrap(Collection)
+    options              = AsyncRead()
+    reindex              = AsyncCommand()
+    remove               = AsyncWrite()
+    rename               = AsyncCommand()
+    replace_one          = AsyncCommand()
+    save                 = AsyncWrite()
+    update               = AsyncWrite(doc=update_doc)
+    update_many          = AsyncCommand()
+    update_one           = AsyncCommand()
+    with_options         = DelegateMethod()
 
     _async_aggregate  = AsyncRead(attr_name='aggregate')
     __parallel_scan   = AsyncRead(attr_name='parallel_scan')
@@ -1169,6 +1188,7 @@ class AgnosticBaseCursor(AgnosticBase):
 class AgnosticCursor(AgnosticBaseCursor):
     __motor_class_name__ = 'MotorCursor'
     __delegate_class__ = Cursor
+    address       = ReadOnlyProperty()
     count         = AsyncRead()
     distinct      = AsyncRead()
     explain       = AsyncRead()
