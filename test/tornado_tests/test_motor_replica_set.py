@@ -23,7 +23,7 @@ import pymongo.auth
 import pymongo.errors
 import pymongo.mongo_replica_set_client
 from bson.binary import JAVA_LEGACY, UUID_SUBTYPE
-from tornado import iostream, gen
+from tornado import gen
 from tornado.testing import gen_test
 
 import motor
