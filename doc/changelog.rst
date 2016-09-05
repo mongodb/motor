@@ -6,7 +6,78 @@ Changelog
 Motor 0.7
 ---------
 
-Drops dependency on greenlet, updates PyMongo from 2.8.0 exactly to 2.9.x.
+For asynchronous I/O Motor now uses a thread pool, which is faster and simpler
+than the prior implementation with greenlets. It no longer requires the
+``greenlet`` package, and now requires the ``futures`` backport package on
+Python 2.
+
+This version updates the PyMongo dependency from 2.8.0 to 2.9.x, and wraps
+PyMongo 2.9's new APIs:
+
+:class:`~motor.motor_tornado.MotorClient` changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The :meth:`~motor.motor_tornado.MotorClient.get_database` method is added for
+getting a Database instance with its options configured differently than the
+MongoClient's.
+
+New read-only attributes:
+
+- :attr:`~motor.motor_tornado.MotorClient.codec_options`
+- :attr:`~motor.motor_tornado.MotorClient.local_threshold_ms`
+
+:class:`~motor.motor_tornado.MotorCursor` changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+New read-only attribute:
+
+- :attr:`~motor.motor_tornado.MotorCursor.address`
+
+:class:`~motor.motor_tornado.MotorDatabase` changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``connection`` property is deprecated in favor of a new read-only attribute
+:attr:`~motor.motor_tornado.MotorDatabase.client`.
+
+New read-only attribute:
+
+- :attr:`~motor.motor_tornado.MotorDatabase.codec_options`
+
+New method:
+
+- :meth:`~motor.motor_tornado.MotorDatabase.get_collection`
+
+:class:`~motor.motor_tornado.MotorCollection` changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+New read-only attribute:
+
+- :attr:`~motor.motor_tornado.MotorCollection.codec_options`
+
+New methods:
+
+- :meth:`~motor.motor_tornado.MotorCollection.with_options`
+- :meth:`~motor.motor_tornado.MotorCollection.create_indexes`
+- :meth:`~motor.motor_tornado.MotorCollection.list_indexes`
+
+The following methods wrap PyMongo's implementation of the standard `CRUD API Spec`_
+for MongoDB Drivers:
+
+- :meth:`~motor.motor_tornado.MotorCollection.bulk_write`
+- :meth:`~motor.motor_tornado.MotorCollection.insert_one`
+- :meth:`~motor.motor_tornado.MotorCollection.insert_many`
+- :meth:`~motor.motor_tornado.MotorCollection.update_one`
+- :meth:`~motor.motor_tornado.MotorCollection.update_many`
+- :meth:`~motor.motor_tornado.MotorCollection.replace_one`
+- :meth:`~motor.motor_tornado.MotorCollection.delete_one`
+- :meth:`~motor.motor_tornado.MotorCollection.delete_many`
+- :meth:`~motor.motor_tornado.MotorCollection.find_one_and_delete`
+- :meth:`~motor.motor_tornado.MotorCollection.find_one_and_replace`
+- :meth:`~motor.motor_tornado.MotorCollection.find_one_and_update`
+
+These methods do not apply SON Manipulators.
+
+.. _CRUD API Spec: https://github.com/mongodb/specifications/blob/master/source/crud/crud.rst
 
 Motor 0.6.2
 -----------
