@@ -6,8 +6,6 @@
 .. autoclass:: MotorClient
   :members:
 
-  .. automethod:: disconnect
-
   .. describe:: client[db_name] || client.db_name
 
      Get the `db_name` :class:`MotorDatabase` on :class:`MotorClient` `client`.
