@@ -50,6 +50,55 @@ read preference, and/or write concern from this `MotorClient`.
 .. versionadded:: 2.9
 """
 
+cmd_doc = """Issue a MongoDB command.
+
+Send command ``command`` to the database and return the
+response. If ``command`` is a string then the command ``{command: value}``
+will be sent. Otherwise, ``command`` must be a
+:class:`dict` and will be sent as-is.
+
+Additional keyword arguments are added to the final
+command document before it is sent.
+
+For example, a command like ``{buildinfo: 1}`` can be sent
+using::
+
+    result = yield db.command("buildinfo")
+
+For a command where the value matters, like ``{collstats:
+collection_name}`` we can do::
+
+    result = yield db.command("collstats", collection_name)
+
+For commands that take additional arguments we can use
+kwargs. So ``{filemd5: object_id, root: file_root}`` becomes::
+
+    result = yield db.command("filemd5", object_id, root=file_root)
+
+:Parameters:
+  - `command`: document representing the command to be issued,
+    or the name of the command (for simple commands only).
+
+    .. note:: the order of keys in the `command` document is
+       significant (the "verb" must come first), so commands
+       which require multiple keys (e.g. `findandmodify`)
+       should use an instance of :class:`~bson.son.SON` or
+       a string and kwargs instead of a Python `dict`.
+
+  - `value` (optional): value to use for the command verb when
+    `command` is passed as a string
+  - `check` (optional): check the response for errors, raising
+    :class:`~pymongo.errors.OperationFailure` if there are any
+  - `allowable_errors`: if `check` is ``True``, error messages
+    in this list will be ignored by error-checking
+  - `read_preference`: The read preference for this operation.
+    See :mod:`~pymongo.read_preferences` for options.
+  - `**kwargs` (optional): additional keyword arguments will
+    be added to the command document before it is sent
+
+.. mongodoc:: commands
+"""
+
 mr_doc = """Perform a map/reduce operation on this collection.
 
 If `full_response` is ``False`` (default) returns a

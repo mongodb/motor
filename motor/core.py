@@ -360,7 +360,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
     add_user            = AsyncCommand()
     authenticate        = AsyncCommand()
     collection_names    = AsyncRead()
-    command             = AsyncCommand()
+    command             = AsyncCommand(doc=cmd_doc)
     create_collection   = AsyncCommand().wrap(Collection)
     current_op          = AsyncRead()
     dereference         = AsyncRead()
