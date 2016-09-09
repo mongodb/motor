@@ -41,11 +41,12 @@ except ImportError:
 import motor
 import test
 from test import SkipTest
-from test.test_environment import host, port, CLIENT_PEM, CA_PEM
 from test.tornado_tests import at_least, MotorTest, remove_all_users
-
-MONGODB_X509_USERNAME = (
-    "C=US,ST=California,L=Palo Alto,O=,OU=Drivers,CN=client")
+from test.test_environment import (CA_PEM,
+                                   CLIENT_PEM,
+                                   host,
+                                   MONGODB_X509_USERNAME,
+                                   port)
 
 # Start a mongod instance like:
 #
@@ -54,10 +55,7 @@ MONGODB_X509_USERNAME = (
 # --sslPEMKeyFile test/certificates/server.pem \
 # --sslCAFile     test/certificates/ca.pem
 #
-#  Also, make sure you have 'server' as an alias for localhost in /etc/hosts
-#
-# Note: For all replica set tests to pass, the replica set configuration must
-# use 'server' for the hostname of all hosts.
+# Also, make sure you have 'server' as an alias for localhost in /etc/hosts
 
 
 class MotorSSLTest(MotorTest):
@@ -128,10 +126,6 @@ class MotorSSLTest(MotorTest):
         response = yield client.admin.command('ismaster')
 
         if 'setName' in response:
-            if response['primary'].split(":")[0] != 'server':
-                raise SkipTest("No hosts in the replicaset for 'server'. "
-                               "Cannot validate hostname in the certificate")
-
             client = motor.MotorReplicaSetClient(
                 host, port,
                 replicaSet=response['setName'],
@@ -157,21 +151,7 @@ class MotorSSLTest(MotorTest):
             ssl_ca_certs=CA_PEM,
             io_loop=self.io_loop)
 
-        response = yield client.admin.command('ismaster')
-        if 'setName' in response:
-            if response['primary'].split(":")[0] != 'server':
-                raise SkipTest("No hosts in the replicaset for 'server'. "
-                               "Cannot validate hostname in the certificate")
-
-            client = motor.MotorReplicaSetClient(
-                test.env.fake_hostname_uri,
-                replicaSet=response['setName'],
-                ssl_certfile=CLIENT_PEM,
-                ssl_cert_reqs=ssl.CERT_NONE,
-                ssl_ca_certs=CA_PEM,
-                io_loop=self.io_loop)
-
-            yield client.db.collection.find_one()
+        yield client.admin.command('ismaster')
 
     @gen_test
     def test_cert_ssl_validation_hostname_fail(self):
@@ -202,7 +182,7 @@ class MotorSSLTest(MotorTest):
         if 'setName' in response:
             with self.assertRaises(CertificateError):
                 client = motor.MotorReplicaSetClient(
-                    'server', port,
+                    test.env.fake_hostname_uri,
                     replicaSet=response['setName'],
                     ssl_certfile=CLIENT_PEM,
                     ssl_cert_reqs=ssl.CERT_REQUIRED,

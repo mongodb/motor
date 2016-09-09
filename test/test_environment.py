@@ -56,6 +56,8 @@ CERT_PATH = os.environ.get(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), 'certificates'))
 CLIENT_PEM = os.path.join(CERT_PATH, 'client.pem')
 CA_PEM = os.path.join(CERT_PATH, 'ca.pem')
+MONGODB_X509_USERNAME = \
+    "CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US"
 
 
 def is_server_resolvable():

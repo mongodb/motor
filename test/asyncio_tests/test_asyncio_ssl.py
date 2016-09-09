@@ -15,53 +15,45 @@
 """Test AsyncIOMotorClient with SSL."""
 
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 import gc
 import ssl
 import unittest
 from unittest import SkipTest
 from urllib.parse import quote_plus  # The 'parse' submodule is Python 3.
 
-from pymongo.errors import (ConfigurationError,
-                            ConnectionFailure,
-                            OperationFailure)
+from pymongo.errors import ConfigurationError, OperationFailure
 
 from motor.motor_asyncio import (AsyncIOMotorClient,
                                  AsyncIOMotorReplicaSetClient)
 import test
 from test.asyncio_tests import asyncio_test, at_least, remove_all_users
-from test.test_environment import host, port, CLIENT_PEM, CA_PEM
+from test.test_environment import (CA_PEM,
+                                   CLIENT_PEM,
+                                   host,
+                                   MONGODB_X509_USERNAME,
+                                   port)
 
-
-# TODO: refactor with test_motor_ssl, probably put in test_environment.
-MONGODB_X509_USERNAME = \
-    "CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US"
-
-# Start a mongod instance (built with SSL support) from the mongo repository
-# checkout:
+# Start a mongod instance like:
 #
-# ./mongod --sslOnNormalPorts
-# --sslPEMKeyFile jstests/libs/server.pem \
-# --sslCAFile jstests/libs/ca.pem \
-# --sslCRLFile jstests/libs/crl.pem
+# mongod \
+# --sslOnNormalPorts \
+# --sslPEMKeyFile test/certificates/server.pem \
+# --sslCAFile     test/certificates/ca.pem
 #
-# Optionally, also pass --sslWeakCertificateValidation to run test_simple_ssl.
-#
-# For all tests to pass with AsyncIOReplicaSetClient, the replica set
-# configuration must use 'server' for the hostname of all hosts.
-# Make sure you have 'server' as an alias for localhost in /etc/hosts.
+# Also, make sure you have 'server' as an alias for localhost in /etc/hosts
 
 
 class TestAsyncIOSSL(unittest.TestCase):
 
     def setUp(self):
+        if not test.env.server_is_resolvable:
+            raise SkipTest("No hosts entry for 'server'. Cannot validate "
+                           "hostname in the certificate")
+
         asyncio.set_event_loop(None)
-        self.executor = ThreadPoolExecutor(max_workers=4)
         self.loop = asyncio.new_event_loop()
-        self.loop.set_default_executor(self.executor)
 
     def tearDown(self):
-        self.executor.shutdown()
         self.loop.stop()
         self.loop.run_forever()
         self.loop.close()
@@ -106,83 +98,38 @@ class TestAsyncIOSSL(unittest.TestCase):
                           io_loop=self.loop, ssl_keyfile=True)
 
     @asyncio_test
-    def test_simple_ssl(self):
-        if not test.env.mongod_started_with_ssl:
-            raise SkipTest("No mongod available over SSL")
-
-        if test.env.mongod_validates_client_cert:
-            raise SkipTest("mongod validates SSL certs")
-
-        if test.env.auth:
-            raise SkipTest("Can't test with auth")
-
-        # Expects the server to be running with ssl and with
-        # no --sslPEMKeyFile or with --sslWeakCertificateValidation.
-        client = AsyncIOMotorClient(test.env.uri, ssl=True, io_loop=self.loop)
-        yield from client.db.collection.find_one()
-        response = yield from client.admin.command('ismaster')
-        if 'setName' in response:
-            client = AsyncIOMotorReplicaSetClient(test.env.rs_uri,
-                                                  ssl=True,
-                                                  io_loop=self.loop)
-
-            yield from client.db.collection.find_one()
-
-    @asyncio_test
     def test_cert_ssl(self):
-        # Expects the server to be running with the server.pem, ca.pem
-        # and crl.pem provided in mongodb and the server tests e.g.:
-        #
-        #   --sslPEMKeyFile=jstests/libs/server.pem
-        #   --sslCAFile=jstests/libs/ca.pem
-        #   --sslCRLFile=jstests/libs/crl.pem
-        #
-        # Also requires an /etc/hosts entry where "server" is resolvable.
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
-        if not test.env.server_is_resolvable:
-            raise SkipTest("No hosts entry for 'server'. Cannot validate "
-                           "hostname in the certificate")
-
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
-        client = AsyncIOMotorClient(test.env.uri,
+        client = AsyncIOMotorClient(host, port,
                                     ssl_certfile=CLIENT_PEM,
                                     io_loop=self.loop)
 
         yield from client.db.collection.find_one()
         response = yield from client.admin.command('ismaster')
         if 'setName' in response:
-            client = AsyncIOMotorReplicaSetClient(test.env.rs_uri,
-                                                  ssl=True,
-                                                  ssl_certfile=CLIENT_PEM,
-                                                  io_loop=self.loop)
+            client = AsyncIOMotorReplicaSetClient(
+                host, port,
+                ssl=True,
+                ssl_certfile=CLIENT_PEM,
+                replicaSet=response['setName'],
+                io_loop=self.loop)
 
             yield from client.db.collection.find_one()
 
     @asyncio_test
     def test_cert_ssl_validation(self):
-        # Expects the server to be running with the server.pem, ca.pem
-        # and crl.pem provided in mongodb and the server tests e.g.:
-        #
-        #   --sslPEMKeyFile=jstests/libs/server.pem
-        #   --sslCAFile=jstests/libs/ca.pem
-        #   --sslCRLFile=jstests/libs/crl.pem
-        #
-        # Also requires an /etc/hosts entry where "server" is resolvable.
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
-
-        if not test.env.server_is_resolvable:
-            raise SkipTest("No hosts entry for 'server'. Cannot validate "
-                           "hostname in the certificate")
 
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
-        client = AsyncIOMotorClient(test.env.fake_hostname_uri,
+        client = AsyncIOMotorClient(host, port,
                                     ssl_certfile=CLIENT_PEM,
                                     ssl_cert_reqs=ssl.CERT_REQUIRED,
                                     ssl_ca_certs=CA_PEM,
@@ -192,12 +139,8 @@ class TestAsyncIOSSL(unittest.TestCase):
         response = yield from client.admin.command('ismaster')
 
         if 'setName' in response:
-            if response['primary'].split(":")[0] != 'server':
-                raise SkipTest("No hosts in the replicaset for 'server'. "
-                               "Cannot validate hostname in the certificate")
-
             client = AsyncIOMotorReplicaSetClient(
-                test.env.fake_hostname_uri,
+                host, port,
                 replicaSet=response['setName'],
                 ssl_certfile=CLIENT_PEM,
                 ssl_cert_reqs=ssl.CERT_REQUIRED,
@@ -207,104 +150,61 @@ class TestAsyncIOSSL(unittest.TestCase):
             yield from client.db.collection.find_one()
 
     @asyncio_test
-    def test_cert_ssl_validation_optional(self):
-        # Expects the server to be running with the server.pem, ca.pem
-        # and crl.pem provided in mongodb and the server tests e.g.:
-        #
-        #   --sslPEMKeyFile=jstests/libs/server.pem
-        #   --sslCAFile=jstests/libs/ca.pem
-        #   --sslCRLFile=jstests/libs/crl.pem
-        #
-        # Also requires an /etc/hosts entry where "server" is resolvable.
+    def test_cert_ssl_validation_none(self):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
-
-        if not test.env.server_is_resolvable:
-            raise SkipTest("No hosts entry for 'server'. Cannot validate "
-                           "hostname in the certificate")
 
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
         client = AsyncIOMotorClient(test.env.fake_hostname_uri,
                                     ssl_certfile=CLIENT_PEM,
-                                    ssl_cert_reqs=ssl.CERT_OPTIONAL,
+                                    ssl_cert_reqs=ssl.CERT_NONE,
                                     ssl_ca_certs=CA_PEM,
                                     io_loop=self.loop)
 
-        response = yield from client.admin.command('ismaster')
-        if 'setName' in response:
-            if response['primary'].split(":")[0] != 'server':
-                raise SkipTest("No hosts in the replicaset for 'server'. "
-                               "Cannot validate hostname in the certificate")
-
-            client = AsyncIOMotorReplicaSetClient(
-                test.env.fake_hostname_uri,
-                replicaSet=response['setName'],
-                ssl_certfile=CLIENT_PEM,
-                ssl_cert_reqs=ssl.CERT_OPTIONAL,
-                ssl_ca_certs=CA_PEM,
-                io_loop=self.loop)
-
-            yield from client.db.collection.find_one()
+        yield from client.admin.command('ismaster')
 
     @asyncio_test
     def test_cert_ssl_validation_hostname_fail(self):
-        # Expects the server to be running with the server.pem, ca.pem
-        # and crl.pem provided in mongodb and the server tests e.g.:
-        #
-        #   --sslPEMKeyFile=jstests/libs/server.pem
-        #   --sslCAFile=jstests/libs/ca.pem
-        #   --sslCRLFile=jstests/libs/crl.pem
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
-        client = AsyncIOMotorClient(test.env.uri,
+        client = AsyncIOMotorClient(host, port,
                                     ssl=True, ssl_certfile=CLIENT_PEM,
                                     io_loop=self.loop)
 
         response = yield from client.admin.command('ismaster')
-        try:
-            # The server presents a certificate named 'server', not localhost.
-            client = AsyncIOMotorClient(test.env.uri,
+        with self.assertRaises(ssl.CertificateError):
+            # Create client with hostname 'server', not 'localhost',
+            # which is what the server cert presents.
+            client = AsyncIOMotorClient(test.env.fake_hostname_uri,
                                         ssl_certfile=CLIENT_PEM,
                                         ssl_cert_reqs=ssl.CERT_REQUIRED,
                                         ssl_ca_certs=CA_PEM,
                                         io_loop=self.loop)
 
             yield from client.db.collection.find_one()
-            self.fail("Invalid hostname should have failed")
-        except ConnectionFailure as exc:
-            self.assertEqual("hostname 'localhost' doesn't match 'server'",
-                             str(exc))
 
         if 'setName' in response:
-            try:
+            with self.assertRaises(ssl.CertificateError):
                 client = AsyncIOMotorReplicaSetClient(
-                    test.env.rs_uri,
+                    test.env.fake_hostname_uri,
+                    replicaSet=response['setName'],
                     ssl_certfile=CLIENT_PEM,
                     ssl_cert_reqs=ssl.CERT_REQUIRED,
                     ssl_ca_certs=CA_PEM,
                     io_loop=self.loop)
 
                 yield from client.db.collection.find_one()
-                self.fail("Invalid hostname should have failed")
-            except ConnectionFailure:
-                pass
 
     @asyncio_test
     def test_mongodb_x509_auth(self):
-        # Expects the server to be running with the server.pem, ca.pem
-        # and crl.pem provided in mongodb and the server tests as well as
-        # --auth:
-        #
-        #   --sslPEMKeyFile=jstests/libs/server.pem
-        #   --sslCAFile=jstests/libs/ca.pem
-        #   --sslCRLFile=jstests/libs/crl.pem
-        #   --auth
+        # Expects the server to be running with SSL config described above,
+        # and with "--auth".
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
