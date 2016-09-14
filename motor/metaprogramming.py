@@ -22,8 +22,7 @@ import functools
 from pymongo.cursor import Cursor
 
 from . import motor_py3_compat
-from .motor_common import check_deprecated_kwargs, mangle_delegate_name, \
-    callback_type_error
+from .motor_common import check_deprecated_kwargs, mangle_delegate_name
 
 _class_cache = {}
 
