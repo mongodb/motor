@@ -46,8 +46,6 @@ read preference, and/or write concern from this `MotorClient`.
     :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
     default) the :attr:`write_concern` of this :class:`MongoClient` is
     used.
-
-.. versionadded:: 2.9
 """
 
 cmd_doc = """Issue a MongoDB command.
