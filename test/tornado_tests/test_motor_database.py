@@ -70,7 +70,7 @@ class MotorDatabaseTest(MotorTest):
     @gen_test
     def test_database_callbacks(self):
         db = self.db
-        yield self.check_optional_callback(db.drop_collection, 'c')
+        yield db.drop_collection('c')
 
         # check_optional_callback would call create_collection twice, and the
         # second call would raise "already exists", so test manually.
