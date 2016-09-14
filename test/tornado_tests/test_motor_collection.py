@@ -14,6 +14,10 @@
 
 from __future__ import unicode_literals
 
+from bson import CodecOptions
+from pymongo import WriteConcern
+from pymongo.read_preferences import Secondary
+
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import unittest
@@ -491,6 +495,30 @@ class MotorCollectionTest(MotorTest):
         self.assertEqual(collection.uuid_subtype, OLD_UUID_SUBTYPE)
         collection.uuid_subtype = JAVA_LEGACY
         self.assertEqual(collection.uuid_subtype, JAVA_LEGACY)
+
+    def test_with_options(self):
+        coll = self.db.test
+        codec_options = CodecOptions(
+            tz_aware=True, uuid_representation=JAVA_LEGACY)
+
+        write_concern = WriteConcern(w=2, j=True)
+        coll2 = coll.with_options(
+            codec_options, ReadPreference.SECONDARY, write_concern)
+
+        self.assertTrue(isinstance(coll2, motor.MotorCollection))
+        self.assertEqual(codec_options, coll2.codec_options)
+        self.assertEqual(JAVA_LEGACY, coll2.uuid_subtype)
+        self.assertEqual(ReadPreference.SECONDARY, coll2.read_preference)
+        self.assertEqual(write_concern.document, coll2.write_concern)
+
+        pref = Secondary([{"dc": "sf"}])
+        coll2 = coll.with_options(read_preference=pref)
+        self.assertEqual(pref.mode, coll2.read_preference)
+        self.assertEqual(pref.tag_sets, coll2.tag_sets)
+        self.assertEqual(coll.codec_options, coll2.codec_options)
+        self.assertEqual(coll.uuid_subtype, coll2.uuid_subtype)
+        self.assertEqual(coll.write_concern, coll2.write_concern)
+
 
 
 if __name__ == '__main__':

@@ -20,8 +20,11 @@ import unittest
 from unittest import SkipTest
 
 import pymongo
+from bson import CodecOptions
 from bson.binary import JAVA_LEGACY, UUID_SUBTYPE
 from mockupdb import OpQuery
+from pymongo import ReadPreference
+from pymongo import WriteConcern
 from pymongo.errors import ConnectionFailure, ConfigurationError
 from pymongo.errors import OperationFailure
 
@@ -257,6 +260,18 @@ class TestAsyncIOClient(AsyncIOTestCase):
         cx.uuid_subtype = UUID_SUBTYPE
         self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
         self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
+
+    def test_get_database(self):
+        codec_options = CodecOptions(tz_aware=True)
+        write_concern = WriteConcern(w=2, j=True)
+        db = self.cx.get_database(
+            'foo', codec_options, ReadPreference.SECONDARY, write_concern)
+
+        assert isinstance(db, motor_asyncio.AsyncIOMotorDatabase)
+        self.assertEqual('foo', db.name)
+        self.assertEqual(codec_options, db.codec_options)
+        self.assertEqual(ReadPreference.SECONDARY, db.read_preference)
+        self.assertEqual(write_concern.document, db.write_concern)
 
 
 class TestAsyncIOClientTimeout(AsyncIOMockServerTestCase):

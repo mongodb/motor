@@ -95,7 +95,7 @@ class AgnosticClientBase(AgnosticBaseProperties):
     disconnect         = DelegateMethod()
     document_class     = ReadWriteProperty()
     drop_database      = AsyncCommand().unwrap('MotorDatabase')
-    get_database       = DelegateMethod(doc=get_database_doc)
+    get_database       = DelegateMethod(doc=get_database_doc).wrap(Database)
     get_document_class = DelegateMethod()
     is_mongos          = ReadOnlyProperty()
     local_threshold_ms = ReadOnlyProperty()
@@ -160,6 +160,15 @@ class AgnosticClientBase(AgnosticBaseProperties):
                 'No default database defined')
 
         return self[default_db_name]
+
+    def wrap(self, db):
+        # Replace pymongo.database.Database with MotorDatabase.
+        db_class = create_class_with_framework(
+            AgnosticDatabase,
+            self._framework,
+            self.__module__)
+
+        return db_class(self, db.name, _delegate=db)
 
 
 class AgnosticClient(AgnosticClientBase):
@@ -366,7 +375,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
     drop_collection     = AsyncCommand().unwrap('MotorCollection')
     error               = AsyncRead(doc="OBSOLETE")
     eval                = AsyncCommand()
-    get_collection      = DelegateMethod()
+    get_collection      = DelegateMethod().wrap(Collection)
     last_status         = AsyncRead(doc="OBSOLETE")
     logout              = AsyncCommand()
     name                = ReadOnlyProperty()
@@ -383,14 +392,14 @@ class AgnosticDatabase(AgnosticBaseProperties):
     outgoing_manipulators         = ReadOnlyProperty()
     outgoing_copying_manipulators = ReadOnlyProperty()
 
-    def __init__(self, connection, name):
+    def __init__(self, connection, name, _delegate=None):
         if not isinstance(connection, AgnosticClientBase):
             raise TypeError("First argument to MotorDatabase must be "
                             "a Motor client, not %r" % connection)
 
         # "client" is modern, "connection" is deprecated.
         self.client = self.connection = connection
-        delegate = Database(connection.delegate, name)
+        delegate = _delegate or Database(connection.delegate, name)
         super(self.__class__, self).__init__(delegate)
 
     def __getattr__(self, name):
@@ -424,7 +433,12 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
     def wrap(self, collection):
         # Replace pymongo.collection.Collection with MotorCollection.
-        return self[collection.name]
+        klass = create_class_with_framework(
+            AgnosticCollection,
+            self._framework,
+            self.__module__)
+
+        return klass(self, collection.name, _delegate=collection)
 
     def add_son_manipulator(self, manipulator):
         """Add a new son manipulator to this database.
@@ -490,12 +504,12 @@ class AgnosticCollection(AgnosticBaseProperties):
     update               = AsyncWrite(doc=update_doc)
     update_many          = AsyncCommand()
     update_one           = AsyncCommand()
-    with_options         = DelegateMethod()
+    with_options         = DelegateMethod().wrap(Collection)
 
     _async_aggregate  = AsyncRead(attr_name='aggregate')
     __parallel_scan   = AsyncRead(attr_name='parallel_scan')
 
-    def __init__(self, database, name):
+    def __init__(self, database, name, _delegate=None):
         db_class = create_class_with_framework(
             AgnosticDatabase, self._framework, self.__module__)
 
@@ -503,7 +517,7 @@ class AgnosticCollection(AgnosticBaseProperties):
             raise TypeError("First argument to MotorCollection must be "
                             "MotorDatabase, not %r" % database)
 
-        delegate = Collection(database.delegate, name)
+        delegate = _delegate or Collection(database.delegate, name)
         super(self.__class__, self).__init__(delegate)
         self.database = database
 
@@ -722,7 +736,7 @@ class AgnosticCollection(AgnosticBaseProperties):
     def wrap(self, obj):
         if obj.__class__ is Collection:
             # Replace pymongo.collection.Collection with MotorCollection.
-            return self.database[obj.name]
+            return self.__class__(self.database, obj.name, _delegate=obj)
         elif obj.__class__ is Cursor:
             return AgnosticCursor(obj, self)
         elif obj.__class__ is CommandCursor:

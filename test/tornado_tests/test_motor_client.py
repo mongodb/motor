@@ -14,6 +14,10 @@
 
 from __future__ import unicode_literals
 
+from bson import CodecOptions
+from pymongo import ReadPreference
+from pymongo import WriteConcern
+
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import os
@@ -244,6 +248,18 @@ class MotorClientTest(MotorTest):
         cx.uuid_subtype = UUID_SUBTYPE
         self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
         self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
+
+    def test_get_database(self):
+        codec_options = CodecOptions(tz_aware=True)
+        write_concern = WriteConcern(w=2, j=True)
+        db = self.cx.get_database(
+            'foo', codec_options, ReadPreference.SECONDARY, write_concern)
+
+        self.assertTrue(isinstance(db, motor.MotorDatabase))
+        self.assertEqual('foo', db.name)
+        self.assertEqual(codec_options, db.codec_options)
+        self.assertEqual(ReadPreference.SECONDARY, db.read_preference)
+        self.assertEqual(write_concern.document, db.write_concern)
 
 
 class MotorClientTimeoutTest(MotorMockServerTest):

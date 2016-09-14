@@ -14,6 +14,11 @@
 
 from __future__ import unicode_literals
 
+from bson import CodecOptions
+from pymongo import ReadPreference
+from pymongo import WriteConcern
+from pymongo.read_preferences import Secondary
+
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import unittest
@@ -223,6 +228,28 @@ class MotorDatabaseTest(MotorTest):
         self.assertEqual(db.uuid_subtype, OLD_UUID_SUBTYPE)
         db.uuid_subtype = JAVA_LEGACY
         self.assertEqual(db.uuid_subtype, JAVA_LEGACY)
+
+    def test_get_collection(self):
+        codec_options = CodecOptions(
+            tz_aware=True, uuid_representation=JAVA_LEGACY)
+        write_concern = WriteConcern(w=2, j=True)
+        coll = self.db.get_collection(
+            'foo', codec_options, ReadPreference.SECONDARY, write_concern)
+
+        self.assertTrue(isinstance(coll, motor.MotorCollection))
+        self.assertEqual('foo', coll.name)
+        self.assertEqual(codec_options, coll.codec_options)
+        self.assertEqual(JAVA_LEGACY, coll.uuid_subtype)
+        self.assertEqual(ReadPreference.SECONDARY, coll.read_preference)
+        self.assertEqual(write_concern.document, coll.write_concern)
+
+        pref = Secondary([{"dc": "sf"}])
+        coll = self.db.get_collection('foo', read_preference=pref)
+        self.assertEqual(pref.mode, coll.read_preference)
+        self.assertEqual(pref.tag_sets, coll.tag_sets)
+        self.assertEqual(self.db.codec_options, coll.codec_options)
+        self.assertEqual(self.db.uuid_subtype, coll.uuid_subtype)
+        self.assertEqual(self.db.write_concern, coll.write_concern)
 
 
 if __name__ == '__main__':

@@ -148,6 +148,41 @@ class WrapBase(MotorAttributeFactory):
         self.property = prop
 
 
+class Wrap(WrapBase):
+    def __init__(self, prop, original_class):
+        """Calls a synchronous method and wraps the PyMongo class instance it
+        returns in a Motor class instance.
+
+        :Parameters:
+        - `prop`: A DelegateMethod, the method to call before wrapping its
+          result in a Motor class.
+        - `original_class`: A PyMongo class to be wrapped.
+        """
+        super(Wrap, self).__init__(prop)
+        self.original_class = original_class
+
+    def create_attribute(self, cls, attr_name):
+        name = mangle_delegate_name(cls, attr_name)
+        method = getattr(cls.__delegate_class__, name)
+        original_class = self.original_class
+
+        @functools.wraps(method)
+        def wrapper(self_, *args, **kwargs):
+            result = method(self_.delegate, *args, **kwargs)
+
+            # Don't call isinstance(), not checking subclasses.
+            if result.__class__ == original_class:
+                # Delegate to the current object to wrap the result.
+                return self_.wrap(result)
+            else:
+                return result
+
+        if self.doc:
+            wrapper.__doc__ = self.doc
+
+        return wrapper
+
+
 class WrapAsync(WrapBase):
     def __init__(self, prop, original_class):
         """Like Async, but before it executes the callback or resolves the
@@ -190,7 +225,8 @@ class Unwrap(WrapBase):
         and passes a PyMongo Database instead.
 
         :Parameters:
-        - `prop`: An Async, the async method to call with unwrapped arguments.
+        - `prop`: An Async or DelegateMethod, the method to call with
+          unwrapped arguments.
         - `motor_class_name`: Like 'MotorDatabase' or 'MotorCollection'.
         """
         super(Unwrap, self).__init__(prop)
@@ -267,6 +303,11 @@ class ReadOnlyProperty(MotorAttributeFactory):
 class DelegateMethod(ReadOnlyProperty):
     """A method on the wrapped PyMongo object that does no I/O and can be called
     synchronously"""
+    def wrap(self, original_class):
+        return Wrap(self, original_class)
+
+    def unwrap(self, class_name):
+        return Unwrap(self, class_name)
 
 
 class ReadWriteProperty(MotorAttributeFactory):
