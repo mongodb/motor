@@ -172,7 +172,6 @@ def get_motor_attr(motor_class, name, *defargs):
     full_name = '%s.%s.%s' % (
         motor_class.__module__, motor_class.__name__, name)
 
-    # TODO: hack! All docstrings should be updated with fully-qualified refs.
     full_name_legacy = 'motor.motor_tornado.%s.%s' % (
         motor_class.__name__, name)
 

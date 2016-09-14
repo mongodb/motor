@@ -62,7 +62,6 @@ PY35 = sys.version_info[:2] >= (3, 5)
 
 class AgnosticBase(object):
     def __eq__(self, other):
-        # TODO: verify this is well-tested, the isinstance test is tricky.
         if (isinstance(other, self.__class__)
                 and hasattr(self, 'delegate')
                 and hasattr(other, 'delegate')):

@@ -130,7 +130,7 @@ class TestAsyncIOAwait(AsyncIOTestCase):
 
     @asyncio_test
     async def test_stream_to_handler(self):
-        # TODO: Sort of Tornado-specific, but it does work with asyncio.
+        # Sort of Tornado-specific, but it does work with asyncio.
         fs = AsyncIOMotorGridFS(self.db)
         content_length = 1000
         await fs.delete(1)
