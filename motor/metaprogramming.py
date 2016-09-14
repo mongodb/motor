@@ -52,9 +52,6 @@ def asynchronize(
         check_deprecated_kwargs(kwargs)
         loop = self.get_io_loop()
         callback = kwargs.pop('callback', None)
-        if callback and not callable(callback):
-            raise callback_type_error
-
         future = framework.run_on_executor(loop,
                                            sync_method,
                                            self.delegate,
