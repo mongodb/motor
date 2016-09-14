@@ -22,16 +22,14 @@ import bson
 from bson import CodecOptions
 from bson.binary import JAVA_LEGACY, OLD_UUID_SUBTYPE
 from bson.objectid import ObjectId
-from pymongo import ReadPreference
-from pymongo import WriteConcern
-
+from pymongo import ReadPreference, WriteConcern
 from pymongo.errors import DuplicateKeyError
+from pymongo.read_preferences import Secondary
 
 from motor import motor_asyncio
 from motor.motor_asyncio import AsyncIOMotorCollection, \
     AsyncIOMotorCommandCursor
 import test
-from pymongo.read_preferences import Secondary
 from test.asyncio_tests import (asyncio_test, AsyncIOTestCase,
                                 skip_if_mongos, at_least)
 from test.utils import delay

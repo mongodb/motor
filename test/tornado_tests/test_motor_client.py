@@ -14,10 +14,6 @@
 
 from __future__ import unicode_literals
 
-from bson import CodecOptions
-from pymongo import ReadPreference
-from pymongo import WriteConcern
-
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import os
@@ -25,8 +21,10 @@ import unittest
 
 import pymongo
 import pymongo.mongo_client
+from bson import CodecOptions
 from bson.binary import JAVA_LEGACY, UUID_SUBTYPE
 from mockupdb import OpQuery
+from pymongo import ReadPreference, WriteConcern
 from pymongo.errors import ConfigurationError, OperationFailure
 from pymongo.errors import ConnectionFailure
 from tornado import gen, version_info as tornado_version

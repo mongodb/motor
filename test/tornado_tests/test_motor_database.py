@@ -14,17 +14,15 @@
 
 from __future__ import unicode_literals
 
-from bson import CodecOptions
-from pymongo import ReadPreference
-from pymongo import WriteConcern
-from pymongo.read_preferences import Secondary
-
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import unittest
 
 import pymongo.database
+from bson import CodecOptions
 from bson.binary import JAVA_LEGACY, OLD_UUID_SUBTYPE
+from pymongo import ReadPreference, WriteConcern
+from pymongo.read_preferences import Secondary
 from pymongo.errors import OperationFailure, CollectionInvalid
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
 from tornado.testing import gen_test
