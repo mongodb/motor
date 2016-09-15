@@ -98,7 +98,7 @@ def wrap_synchro(fn):
         # Not all Motor classes appear here, only those we need to return
         # from methods like map_reduce() or create_collection()
         if isinstance(motor_obj, motor.MotorCollection):
-            client = MongoClient(delegate=motor_obj.database.connection)
+            client = MongoClient(delegate=motor_obj.database.client)
             database = Database(client, motor_obj.database.name)
             return Collection(database, motor_obj.name, delegate=motor_obj)
         if isinstance(motor_obj, motor.MotorDatabase):
@@ -354,9 +354,7 @@ class MongoClientBase(Synchro):
 
         if not self.delegate:
             self.delegate = self.__delegate_class__(*args, **kwargs)
-
-            # In PyMongo 2.9 "connect" is added as a synonym.
-            if kwargs.get('_connect', kwargs.get('connect', True)):
+            if kwargs.get('connect', True):
                 self.synchro_connect()
 
     def synchro_connect(self):
@@ -453,8 +451,10 @@ class Database(Synchro):
             "Expected MongoClient or MongoReplicaSetClient, got %s"
             % repr(client))
 
-        self._client = client
-        self.delegate = delegate or client.delegate[name]
+        # "client" is modern, "connection" is deprecated.
+        self.client = self.connection = client
+
+        self.delegate = client.delegate[name]
         assert isinstance(self.delegate, motor.MotorDatabase), (
             "synchro.Database delegate must be MotorDatabase, not "
             " %s" % repr(self.delegate))
@@ -601,7 +601,7 @@ class Cursor(Synchro):
     _Cursor__comment           = SynchroProperty()
     _Cursor__min               = SynchroProperty()
     _Cursor__max               = SynchroProperty()
-    _Cursor__secondary_acceptable_latency_ms = SynchroProperty()
+    _Cursor__local_threshold_ms = SynchroProperty()
 
 
 class CommandCursor(Cursor):
@@ -623,7 +623,7 @@ class GridOutCursor(Cursor):
         if motor_grid_out:
             return GridOut(self.collection, delegate=motor_grid_out)
 
-    _Cursor__secondary_acceptable_latency_ms = SynchroProperty()
+    _Cursor__local_threshold_ms = SynchroProperty()
 
 
 class CursorManager(object):

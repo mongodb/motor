@@ -83,10 +83,6 @@ excluded_tests = [
     'TestClient.test_from_uri',
     'TestReplicaSetClient.test_properties',
 
-    # MotorClient(uri).open() doesn't raise ConfigurationError if the URI has
-    # the wrong auth credentials.
-    'TestClientAuth.test_auth_from_uri',
-
     # Lazy-connection tests require multithreading; we test concurrent
     # lazy connection directly.
     'TestClientLazyConnect.*',
@@ -239,9 +235,7 @@ class SynchroNosePlugin(Plugin):
 
 
 # So that e.g. 'from pymongo.mongo_client import MongoClient' gets the
-# Synchro MongoClient, not the real one. We include
-# master_slave_connection, connection, etc. even though Motor doesn't support
-# them and we exclude them from tests, so that the import doesn't fail.
+# Synchro MongoClient, not the real one.
 pymongo_modules = set([
     'gridfs',
     'gridfs.errors',
@@ -250,21 +244,17 @@ pymongo_modules = set([
     'pymongo.auth',
     'pymongo.collection',
     'pymongo.common',
-    'pymongo.connection',
     'pymongo.command_cursor',
     'pymongo.cursor',
     'pymongo.cursor_manager',
     'pymongo.database',
     'pymongo.helpers',
     'pymongo.errors',
-    'pymongo.master_slave_connection',
-    'pymongo.member',
     'pymongo.mongo_client',
     'pymongo.mongo_replica_set_client',
     'pymongo.operations',
     'pymongo.pool',
     'pymongo.read_preferences',
-    'pymongo.replica_set_connection',
     'pymongo.son_manipulator',
     'pymongo.ssl_match_hostname',
     'pymongo.thread_util',
