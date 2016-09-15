@@ -63,7 +63,7 @@ class TestAsyncIOAwait(AsyncIOTestCase):
             raise SkipTest("Aggregation cursor requires MongoDB >= 2.5.1")
 
         collection = self.collection
-        await collection.remove()
+        await collection.delete_many({})
         pipeline = [{'$sort': {'_id': 1}}]
 
         # Empty iterator.
@@ -73,7 +73,7 @@ class TestAsyncIOAwait(AsyncIOTestCase):
         for n_docs in 1, 2, 10:
             if n_docs:
                 docs = [{'_id': i} for i in range(n_docs)]
-                await collection.insert(docs)
+                await collection.insert_many(docs)
 
             # Force extra batches to test iteration.
             j = 0

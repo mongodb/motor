@@ -32,8 +32,8 @@ class MotorBulkTest(MotorTest):
 
     @gen_test(timeout=30)
     def test_multiple_error_ordered_batch(self):
-        yield self.collection.remove()
-        yield self.collection.ensure_index('a', unique=True)
+        yield self.collection.delete_many({})
+        yield self.collection.create_index('a', unique=True)
         try:
             bulk = self.collection.initialize_ordered_bulk_op()
             self.assertTrue(isinstance(

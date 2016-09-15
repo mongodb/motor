@@ -29,8 +29,8 @@ class TestAsyncIOBulk(AsyncIOTestCase):
 
     @asyncio_test(timeout=30)
     def test_multiple_error_ordered_batch(self):
-        yield from self.collection.remove()
-        yield from self.collection.ensure_index('a', unique=True)
+        yield from self.collection.delete_many({})
+        yield from self.collection.create_index('a', unique=True)
         try:
             bulk = self.collection.initialize_ordered_bulk_op()
             self.assertTrue(isinstance(bulk,
