@@ -42,7 +42,7 @@ Motor works in all the environments officially supported by Tornado or by
 asyncio. It requires:
 
 * Unix, including Mac OS X. Windows is not supported.
-* PyMongo_ 2.9.x.
+* PyMongo_ 3.3 or later.
 * Python 2.6 or later.
 * `futures`_ on Python 2.6.
 * `backports.pbkdf2`_ for faster authentication with MongoDB 3.0+,

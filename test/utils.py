@@ -60,3 +60,9 @@ def ignore_deprecations(fn=None):
                 yield
 
         return ignore_deprecations_context()
+
+
+def get_primary_pool(client):
+    for s in client.delegate._topology._servers.values():
+        if s.description.is_writable:
+            return s.pool

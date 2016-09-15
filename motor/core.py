@@ -46,8 +46,7 @@ from .metaprogramming import (AsyncCommand,
                               MotorCursorChainingMethod,
                               ReadOnlyProperty,
                               ReadWriteProperty)
-from .motor_common import (callback_type_error,
-                           check_deprecated_kwargs)
+from .motor_common import callback_type_error
 from motor.docstrings import *
 
 HAS_SSL = True
@@ -76,28 +75,18 @@ class AgnosticBase(object):
 
 
 class AgnosticBaseProperties(AgnosticBase):
-    codec_options                   = ReadOnlyProperty()
-    read_preference                 = ReadWriteProperty()
-    tag_sets                        = ReadWriteProperty(
-        deprecation="use the read preference classes from"
-                    " pymongo.read_preferences with get_database,"
-                    " get_collection, or with_options")
-    secondary_acceptable_latency_ms = ReadWriteProperty(
-        deprecation='use "local_threshold_ms"')
-
-    write_concern                   = ReadWriteProperty()
-    uuid_subtype                    = ReadWriteProperty()
+    codec_options   = ReadOnlyProperty()
+    read_preference = ReadOnlyProperty()
+    write_concern   = ReadOnlyProperty()
 
 
 class AgnosticClientBase(AgnosticBaseProperties):
     """MotorClient and MotorReplicaSetClient common functionality."""
-    _ensure_connected    = AsyncRead()
     address              = ReadOnlyProperty()
-    alive                = AsyncRead()
+    arbiters             = ReadOnlyProperty()
     close                = DelegateMethod()
     close_cursor         = AsyncCommand()
     database_names       = AsyncRead()
-    disconnect           = DelegateMethod()
     drop_database        = AsyncCommand().unwrap('MotorDatabase')
     get_database         = DelegateMethod(doc=get_database_doc).wrap(Database)
     get_default_database = DelegateMethod().wrap(Database)
@@ -106,11 +95,12 @@ class AgnosticClientBase(AgnosticBaseProperties):
     max_bson_size        = ReadOnlyProperty()
     max_message_size     = ReadOnlyProperty()
     max_pool_size        = ReadOnlyProperty()
-    max_wire_version     = ReadOnlyProperty()
-    min_wire_version     = ReadOnlyProperty()
     max_write_batch_size = ReadOnlyProperty()
+    min_pool_size        = ReadOnlyProperty()
+    nodes                = ReadOnlyProperty()
+    primary              = ReadOnlyProperty()
+    secondaries          = ReadOnlyProperty()
     server_info          = AsyncRead()
-    tz_aware             = ReadOnlyProperty(deprecation='use "codec_options"')
 
     _doc_class_deprecation = \
         'use CodecOptions with get_database, get_collection, or with_options'
@@ -120,8 +110,7 @@ class AgnosticClientBase(AgnosticBaseProperties):
     document_class     = ReadWriteProperty(deprecation=_doc_class_deprecation)
 
     def __init__(self, io_loop, *args, **kwargs):
-        check_deprecated_kwargs(kwargs)
-        kwargs['_connect'] = False
+        kwargs['connect'] = False
         delegate = self.__delegate_class__(*args, **kwargs)
         super(AgnosticClientBase, self).__init__(delegate)
         if io_loop:
@@ -167,8 +156,6 @@ class AgnosticClient(AgnosticClientBase):
     is_primary   = ReadOnlyProperty()
     unlock       = AsyncCommand()
     nodes        = ReadOnlyProperty()
-    host         = ReadOnlyProperty(deprecation='use "address"')
-    port         = ReadOnlyProperty(deprecation='use "address"')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -189,55 +176,10 @@ class AgnosticClient(AgnosticClientBase):
         # 'MotorClient' that create_class_with_framework created.
         super(self.__class__, self).__init__(io_loop, *args, **kwargs)
 
-    @coroutine_annotation
-    def open(self, callback=None):
-        """**DEPRECATED** Motor clients now open themselves on demand.
-
-        Takes an optional callback, or returns a Future that resolves to
-        ``self`` when opened.
-
-        :Parameters:
-         - `callback`: Optional function taking parameters (self, error)
-
-        .. versionchanged:: 0.7
-           Deprecated.
-        .. versionchanged:: 0.2
-           :class:`MotorClient` now opens itself on demand, calling ``open``
-           explicitly is now optional.
-        """
-        warnings.warn("open is deprecated in this version of Motor and will be"
-                      " removed in Motor 1.0. Motor clients open themselves on"
-                      " demand",
-                      DeprecationWarning, stacklevel=2)
-
-        return self._framework.future_or_callback(self._ensure_connected(True),
-                                                  callback,
-                                                  self.get_io_loop(),
-                                                  self)
-
-    def _get_member(self):
-        # TODO: expose the PyMongo Member, or otherwise avoid this.
-        return self.delegate._MongoClient__member
-
-    def _get_pools(self):
-        member = self._get_member()
-        return [member.pool] if member else [None]
-
-    def _get_primary_pool(self):
-        return self._get_pools()[0]
-
 
 class AgnosticReplicaSetClient(AgnosticClientBase):
     __motor_class_name__ = 'MotorReplicaSetClient'
     __delegate_class__ = pymongo.mongo_replica_set_client.MongoReplicaSetClient
-
-    primary     = ReadOnlyProperty()
-    secondaries = ReadOnlyProperty()
-    arbiters    = ReadOnlyProperty()
-    hosts       = ReadOnlyProperty()
-    refresh     = AsyncCommand()
-    seeds       = DelegateMethod()
-    close       = DelegateMethod()
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a MongoDB replica set.
@@ -258,72 +200,6 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
         # Our class is not actually AgnosticClient here, it's the version of
         # 'MotorClient' that create_class_with_framework created.
         super(self.__class__, self).__init__(io_loop, *args, **kwargs)
-
-    def open(self, callback=None):
-        """**DEPRECATED** Motor clients now open themselves on demand.
-
-        Takes an optional callback, or returns a Future that resolves to
-        ``self`` when opened.
-
-        :Parameters:
-         - `callback`: Optional function taking parameters (self, error)
-
-        .. versionchanged:: 0.7
-           Deprecated.
-        .. versionchanged:: 0.2
-           :class:`MotorReplicaSetClient` now opens itself on demand, calling
-           ``open`` explicitly is now optional.
-        """
-        warnings.warn("open is deprecated in this version of Motor and will be"
-                      " removed in Motor 1.0. Motor clients open themselves on"
-                      " demand",
-                      DeprecationWarning, stacklevel=2)
-
-        loop = self.get_io_loop()
-
-        # Once _ensure_connected returns, check if we actually connected, then
-        # return "self".
-        chained = self._framework.get_future(loop)
-        self._framework.add_future(
-            loop,
-            self._ensure_connected(sync=True),
-            self._connected_callback, chained)
-
-        return self._framework.future_or_callback(chained, callback, loop)
-
-    def _connected_callback(self, chained, future):
-        try:
-            future.result()
-        except Exception as error:
-            # TODO: exc_info.
-            chained.set_exception(error)
-        else:
-            # Did we actually connect?
-            try:
-                if self._get_member():
-                    chained.set_result(self)
-                    return
-            except Exception as error:
-                # _get_member() can raise ConfigurationError.
-                chained.set_exception(error)
-                return
-
-            error = pymongo.errors.AutoReconnect('no primary is available')
-            chained.set_exception(error)
-
-    def _get_member(self):
-        # TODO: expose the PyMongo RSC members, or otherwise avoid this.
-        # This raises if the RSState's error is set.
-        rs_state = self.delegate._MongoReplicaSetClient__get_rs_state()
-        return rs_state.primary_member
-
-    def _get_pools(self):
-        rs_state = self._get_member()
-        return [member.pool for member in rs_state._members]
-
-    def _get_primary_pool(self):
-        primary_member = self._get_member()
-        return primary_member.pool if primary_member else None
 
 
 class AgnosticDatabase(AgnosticBaseProperties):
@@ -452,6 +328,7 @@ class AgnosticCollection(AgnosticBaseProperties):
     bulk_write           = AsyncCommand()
     count                = AsyncRead()
     create_index         = AsyncCommand()
+    create_indexes       = AsyncCommand()
     delete_many          = AsyncCommand()
     delete_one           = AsyncCommand()
     distinct             = AsyncRead()
@@ -471,6 +348,7 @@ class AgnosticCollection(AgnosticBaseProperties):
     insert               = AsyncWrite()
     insert_many          = AsyncWrite()
     insert_one           = AsyncCommand()
+    list_indexes         = AsyncRead()
     map_reduce           = AsyncCommand(doc=mr_doc).wrap(Collection)
     name                 = ReadOnlyProperty()
     options              = AsyncRead()
@@ -570,13 +448,8 @@ class AgnosticCollection(AgnosticBaseProperties):
               async for doc in collection.aggregate(pipeline):
                   print(doc)
 
-        MongoDB versions 2.4 and older do not support aggregation cursors; use
-        ``yield`` and pass ``cursor=False`` for compatibility with older
-        MongoDBs::
-
-          reply = yield collection.aggregate(cursor=False)
-          for doc in reply['results']:
-              print(doc)
+        .. versionchanged:: 1.0
+           `aggregate` now **always** returns a cursor.
 
         .. versionchanged:: 0.5
            `aggregate` now returns a cursor by default, and the cursor is
@@ -733,6 +606,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 class AgnosticBaseCursor(AgnosticBase):
     """Base class for AgnosticCursor and AgnosticCommandCursor"""
     _refresh      = AsyncRead()
+    address       = ReadOnlyProperty()
     cursor_id     = ReadOnlyProperty()
     alive         = ReadOnlyProperty()
     batch_size    = MotorCursorChainingMethod()

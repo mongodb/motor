@@ -18,29 +18,9 @@ from motor.motor_asyncio import AsyncIOMotorGridFS
 import test
 from test import SkipTest
 from test.asyncio_tests import asyncio_test, AsyncIOTestCase, at_least
-from test.utils import ignore_deprecations
 
 
 class TestAsyncIOAwait(AsyncIOTestCase):
-    @asyncio_test
-    async def test_open_client(self):
-        client = self.asyncio_client()
-
-        with ignore_deprecations():
-            self.assertEqual(client, await client.open())
-
-        client.close()
-
-    @asyncio_test
-    async def test_open_client_rs(self):
-        if not test.env.is_replica_set:
-            raise SkipTest("Not connected to a replica set")
-
-        rsc = self.asyncio_rsc()
-
-        with ignore_deprecations():
-            self.assertEqual(rsc, await rsc.open())
-
     @asyncio_test
     async def test_to_list(self):
         collection = self.collection

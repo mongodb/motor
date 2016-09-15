@@ -173,8 +173,7 @@ class AgnosticGridOut(object):
             self.delegate = self.__delegate_class__(
                 root_collection.delegate,
                 file_id,
-                file_document,
-                _connect=False)
+                file_document)
 
         self.io_loop = root_collection.get_io_loop()
 
@@ -346,71 +345,9 @@ Metadata set on the file appears as attributes on a
         return self.io_loop
 
 
-class _MotorDelegateGridFS(gridfs.GridFS):
-
-    # PyMongo's put() implementation uses requests, so rewrite for Motor.
-    # w >= 1 necessary to avoid running 'filemd5' command before all data
-    # is written, especially with sharding.
-    #
-    # Motor runs this on a thread.
-
-    def put(self, data, **kwargs):
-        """Put data into GridFS as a new file.
-
-        Equivalent to doing:
-
-        .. code-block:: python
-
-            @gen.coroutine
-            def f(data, **kwargs):
-                try:
-                    f = yield my_gridfs.new_file(**kwargs)
-                    yield f.write(data)
-                finally:
-                    yield f.close()
-
-        `data` can be either an instance of :class:`str` (:class:`bytes`
-        in python 3) or a file-like object providing a :meth:`read` method.
-        If an `encoding` keyword argument is passed, `data` can also be a
-        :class:`unicode` (:class:`str` in python 3) instance, which will
-        be encoded as `encoding` before being written. Any keyword arguments
-        will be passed through to the created file - see
-        :meth:`~MotorGridIn` for possible arguments.
-
-        If the ``"_id"`` of the file is manually specified, it must
-        not already exist in GridFS. Otherwise
-        :class:`~gridfs.errors.FileExists` is raised.
-
-        :Parameters:
-          - `data`: data to be written as a file.
-          - `callback`: Optional function taking parameters (_id, error)
-          - `**kwargs` (optional): keyword arguments for file creation
-
-        If no callback is provided, returns a Future that resolves to the
-        ``"_id"`` of the created file. Otherwise, executes the callback
-        with arguments (_id, error).
-
-        Note that PyMongo allows unacknowledged ("w=0") puts to GridFS,
-        but Motor does not.
-        """
-        collection = self._GridFS__collection
-        if 0 == collection.write_concern.get('w'):
-            raise pymongo.errors.ConfigurationError(
-                "Motor does not allow unacknowledged put() to GridFS")
-
-        grid_in = grid_file.GridIn(collection, **kwargs)
-
-        try:
-            grid_in.write(data)
-        finally:
-            grid_in.close()
-
-        return grid_in._id
-
-
 class AgnosticGridFS(object):
     __motor_class_name__ = 'MotorGridFS'
-    __delegate_class__ = _MotorDelegateGridFS
+    __delegate_class__ = gridfs.GridFS
 
     find_one = AsyncRead().wrap(grid_file.GridOut)
     new_file = AsyncRead().wrap(grid_file.GridIn)
@@ -446,8 +383,7 @@ class AgnosticGridFS(object):
         self.collection = database[collection]
         self.delegate = self.__delegate_class__(
             database.delegate,
-            collection,
-            _connect=False)
+            collection)
 
     def get_io_loop(self):
         return self.io_loop
@@ -500,8 +436,8 @@ class AgnosticGridFS(object):
           - `read_preference` (optional): The read preference for
             this query.
           - `tag_sets` (optional): The tag sets for this query.
-          - `secondary_acceptable_latency_ms` (optional): Any replica-set
-            member whose ping time is within secondary_acceptable_latency_ms of
+          - `localThresholdMS` (optional): Any replica-set
+            member whose ping time is within localThresholdMS of
             the nearest member may accept reads. Default 15 milliseconds.
             **Ignored by mongos** and must be configured on the command line.
             See the localThreshold_ option for more information.

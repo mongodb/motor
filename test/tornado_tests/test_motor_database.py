@@ -20,7 +20,7 @@ import unittest
 
 import pymongo.database
 from bson import CodecOptions
-from bson.binary import JAVA_LEGACY, OLD_UUID_SUBTYPE
+from bson.binary import JAVA_LEGACY
 from pymongo import ReadPreference, WriteConcern
 from pymongo.read_preferences import Secondary
 from pymongo.errors import OperationFailure, CollectionInvalid
@@ -59,14 +59,6 @@ class MotorDatabaseTest(MotorTest):
             self.cx.foo()
         except TypeError as e:
             self.assertTrue('no such method exists' in str(e))
-        else:
-            self.fail('Expected TypeError')
-
-        try:
-            # First line of applications written for Motor 0.1.
-            self.cx.open_sync()
-        except TypeError as e:
-            self.assertTrue('unnecessary' in str(e))
         else:
             self.fail('Expected TypeError')
 
@@ -222,14 +214,6 @@ class MotorDatabaseTest(MotorTest):
         self.assertTrue((yield db.validate_collection("test")))
         self.assertTrue((yield db.validate_collection(db.test)))
 
-    def test_uuid_subtype(self):
-        db = self.cx.test
-
-        with ignore_deprecations():
-            self.assertEqual(db.uuid_subtype, OLD_UUID_SUBTYPE)
-            db.uuid_subtype = JAVA_LEGACY
-            self.assertEqual(db.uuid_subtype, JAVA_LEGACY)
-
     def test_get_collection(self):
         codec_options = CodecOptions(
             tz_aware=True, uuid_representation=JAVA_LEGACY)
@@ -240,16 +224,13 @@ class MotorDatabaseTest(MotorTest):
         self.assertTrue(isinstance(coll, motor.MotorCollection))
         self.assertEqual('foo', coll.name)
         self.assertEqual(codec_options, coll.codec_options)
-        self.assertEqual(JAVA_LEGACY, coll.uuid_subtype)
         self.assertEqual(ReadPreference.SECONDARY, coll.read_preference)
-        self.assertEqual(write_concern.document, coll.write_concern)
+        self.assertEqual(write_concern, coll.write_concern)
 
         pref = Secondary([{"dc": "sf"}])
         coll = self.db.get_collection('foo', read_preference=pref)
-        self.assertEqual(pref.mode, coll.read_preference)
-        self.assertEqual(pref.tag_sets, coll.tag_sets)
+        self.assertEqual(pref, coll.read_preference)
         self.assertEqual(self.db.codec_options, coll.codec_options)
-        self.assertEqual(self.db.uuid_subtype, coll.uuid_subtype)
         self.assertEqual(self.db.write_concern, coll.write_concern)
 
 

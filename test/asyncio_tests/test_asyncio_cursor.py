@@ -21,15 +21,19 @@ import unittest
 import warnings
 from unittest import SkipTest
 
+from pymongo import CursorType
 from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
 from mockupdb import OpQuery, OpKillCursors
 
 from motor import motor_asyncio
-from test.utils import one, safe_get
+from test.utils import one, safe_get, get_primary_pool
 from test.asyncio_tests import (asyncio_test,
-                                AsyncIOTestCase, AsyncIOMockServerTestCase,
-                                server_is_mongos, at_least, get_command_line)
+                                AsyncIOTestCase,
+                                AsyncIOMockServerTestCase,
+                                server_is_mongos,
+                                at_least,
+                                get_command_line)
 
 
 class TestAsyncIOCursor(AsyncIOMockServerTestCase):
@@ -203,7 +207,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     @asyncio_test
     def test_to_list_tailable(self):
         coll = self.collection
-        cursor = coll.find(tailable=True)
+        cursor = coll.find(cursor_type=CursorType.TAILABLE)
 
         # Can't call to_list on tailable cursor.
         with self.assertRaises(InvalidOperation):
@@ -337,12 +341,12 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     def test_exhaust(self):
         if (yield from server_is_mongos(self.cx)):
             self.assertRaises(InvalidOperation,
-                              self.db.test.find, exhaust=True)
+                              self.db.test.find, cursor_type=CursorType.EXHAUST)
             return
 
-        self.assertRaises(TypeError, self.db.test.find, exhaust=5)
+        self.assertRaises(ValueError, self.db.test.find, cursor_type=5)
 
-        cur = self.db.test.find(exhaust=True)
+        cur = self.db.test.find(cursor_type=CursorType.EXHAUST)
         self.assertRaises(InvalidOperation, cur.limit, 5)
         cur = self.db.test.find(limit=5)
         self.assertRaises(InvalidOperation, cur.add_option, 64)
@@ -355,13 +359,14 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         # Insert enough documents to require more than one batch.
         yield from self.db.test.insert([{} for _ in range(150)])
 
-        client = self.asyncio_client(max_pool_size=1)
+        client = self.asyncio_client(maxPoolSize=1)
         # Ensure a pool.
         yield from client.db.collection.find_one()
-        socks = client._get_primary_pool().sockets
+
+        socks = get_primary_pool(client).sockets
 
         # Make sure the socket is returned after exhaustion.
-        cur = client[self.db.name].test.find(exhaust=True)
+        cur = client[self.db.name].test.find(cursor_type=CursorType.EXHAUST)
         has_next = yield from cur.fetch_next
         self.assertTrue(has_next)
         self.assertEqual(0, len(socks))
@@ -372,7 +377,8 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(1, len(socks))
 
         # Same as previous but with to_list instead of next_object.
-        docs = yield from client[self.db.name].test.find(exhaust=True).to_list(
+        docs = yield from client[self.db.name].test.find(
+            cursor_type=CursorType.EXHAUST).to_list(
             None)
         self.assertEqual(1, len(socks))
         self.assertEqual(
@@ -383,7 +389,8 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         # completely iterated we have to close and
         # discard the socket.
         sock = one(socks)
-        cur = client[self.db.name].test.find(exhaust=True).batch_size(1)
+        cur = client[self.db.name].test.find(
+            cursor_type=CursorType.EXHAUST).batch_size(1)
         has_next = yield from cur.fetch_next
         self.assertTrue(has_next)
         self.assertEqual(0, len(socks))

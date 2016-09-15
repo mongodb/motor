@@ -14,7 +14,7 @@ Major differences
 Connecting to MongoDB
 ---------------------
 
-PyMongo's connection classes are called
+PyMongo's client classes are called
 :class:`~pymongo.mongo_client.MongoClient` and
 :class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient`.
 Motor provides a `MotorClient` and `MotorReplicaSetClient`.
@@ -141,30 +141,6 @@ a single-threaded Tornado application. See Tornado's documentation on
 Minor differences
 =================
 
-Deprecated classes and options
-------------------------------
-
-PyMongo deprecated the ``slave_okay`` / ``slaveok`` option in favor of
-:ref:`read preferences <secondary-reads>` in version 2.3. It deprecated
-:class:`~pymongo.connection.Connection` and
-:class:`~pymongo.replica_set_connection.ReplicaSetConnection` in favor of
-:class:`~pymongo.mongo_client.MongoClient` and
-:class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient` in version
-2.4, as well as deprecating the ``safe`` option in favor of
-:attr:`~motor.motor_tornado.MotorClient.write_concern`.
-Motor supports none of PyMongo's deprecated options and classes at all, and
-will raise :exc:`~pymongo.errors.ConfigurationError` if you use them.
-
-MasterSlaveConnection
----------------------
-
-PyMongo's :class:`~pymongo.master_slave_connection.MasterSlaveConnection`
-offers a few conveniences when connected to a MongoDB `master-slave pair
-<http://dochub.mongodb.org/core/masterslave>`_.
-Master-slave replication has long been superseded by `replica sets
-<http://dochub.mongodb.org/core/rs>`_, so Motor
-has no equivalent to MasterSlaveConnection.
-
 .. _gridfs-differences:
 
 GridFS
@@ -211,7 +187,6 @@ GridFS
         @gen.coroutine
         def f():
             fs = motor.motor_tornado.MotorGridFS(db)
-            yield fs.open()
             grid_in = yield fs.new_file()
             yield grid_in.close()
 

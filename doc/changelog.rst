@@ -3,6 +3,28 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Next Release
+------------
+
+Motor now depends on PyMongo 3.3 and later. The move from PyMongo 2 to 3 brings
+a large number of API changes, read `the PyMongo 3 changelog`_ carefully.
+
+`MotorClient.open` and `MotorReplicaSetClient.open` are deleted; clients have
+opened themselves automatically on demand since version 0.2.
+
+`MotorReplicaSetClient.hosts` is removed, use `MotorReplicaSetClient.nodes`.
+
+Added:
+
+ - `MotorClient.min_pool_size`
+
+Removed:
+
+ - `MotorClient.seeds`, use `pymongo.uri_parser.parse_uri` on your MongoDB URI
+
+
+.. _the PyMongo 3 changelog: http://api.mongodb.com/python/current/changelog.html#changes-in-version-3-0
+
 Motor 0.7
 ---------
 

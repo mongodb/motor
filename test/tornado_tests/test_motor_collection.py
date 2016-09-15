@@ -20,11 +20,11 @@ import unittest
 
 import bson
 from bson import CodecOptions
-from bson.binary import JAVA_LEGACY, OLD_UUID_SUBTYPE
+from bson.binary import JAVA_LEGACY
 from bson.objectid import ObjectId
 from pymongo import ReadPreference, WriteConcern
 from pymongo.read_preferences import Secondary
-from pymongo.errors import DuplicateKeyError, InvalidOperation
+from pymongo.errors import DuplicateKeyError
 from tornado import gen
 from tornado.concurrent import Future
 from tornado.testing import gen_test
@@ -368,7 +368,7 @@ class MotorCollectionTest(MotorTest):
 
         # Ensure the same index, test that callback is executed
         result = yield test_collection.ensure_index([('foo', 1)])
-        self.assertEqual(None, result)
+        self.assertEqual('foo_1', result)
         result2 = yield test_collection.ensure_index([('foo', 1)])
         self.assertEqual(None, result2)
 
@@ -387,55 +387,25 @@ class MotorCollectionTest(MotorTest):
         expected_sum = sum(range(n))
         raise gen.Return(expected_sum)
 
-    pipeline = {'$project': {'_id': '$_id'}}
+    pipeline = [{'$project': {'_id': '$_id'}}]
 
     def assertAllDocs(self, expected_sum, docs):
         self.assertEqual(expected_sum, sum(doc['_id'] for doc in docs))
 
     @gen_test
-    def test_aggregate_callback(self):
-        mongo_2_5_1 = yield at_least(self.cx, (2, 5, 1))
-
-        future = Future()
-
-        def cb(result, error):
-            if error:
-                future.set_exception(error)
-            else:
-                future.set_result(result)
-
-        # Callback is allowed if cursor=False.
-        self.db.test.aggregate(self.pipeline, cursor=False, callback=cb)
-        yield future  # Completes without error.
-
-        if mongo_2_5_1:
-            # Pass a callback to to_list or each, not to aggregate.
-            with self.assertRaises(InvalidOperation):
-                self.db.test.aggregate(self.pipeline, callback=cb)
-
-    @gen_test
     def test_aggregation_cursor(self):
-        mongo_2_5_1 = yield at_least(self.cx, (2, 5, 1))
-
         db = self.db
 
         # A small collection which returns only an initial batch,
         # and a larger one that requires a getMore.
         for collection_size in (10, 1000):
             expected_sum = yield self._make_test_data(collection_size)
-            reply = yield db.test.aggregate(self.pipeline, cursor=False)
-            self.assertAllDocs(expected_sum, reply['result'])
-
-            if mongo_2_5_1:
-                cursor = db.test.aggregate(self.pipeline)
-                docs = yield cursor.to_list(collection_size)
-                self.assertAllDocs(expected_sum, docs)
+            cursor = db.test.aggregate(self.pipeline)
+            docs = yield cursor.to_list(collection_size)
+            self.assertAllDocs(expected_sum, docs)
 
     @gen_test
     def test_aggregation_cursor_to_list_callback(self):
-        if not (yield at_least(self.cx, (2, 5, 1))):
-            raise SkipTest("Aggregation cursor requires MongoDB >= 2.5.1")
-
         db = self.db
 
         # A small collection which returns only an initial batch,
@@ -488,14 +458,6 @@ class MotorCollectionTest(MotorTest):
         yield [f(cursor) for cursor in cursors]
         self.assertEqual(len(docs), (yield collection.count()))
 
-    def test_uuid_subtype(self):
-        collection = self.db.test
-
-        with ignore_deprecations():
-            self.assertEqual(collection.uuid_subtype, OLD_UUID_SUBTYPE)
-            collection.uuid_subtype = JAVA_LEGACY
-            self.assertEqual(collection.uuid_subtype, JAVA_LEGACY)
-
     def test_with_options(self):
         coll = self.db.test
         codec_options = CodecOptions(
@@ -507,18 +469,14 @@ class MotorCollectionTest(MotorTest):
 
         self.assertTrue(isinstance(coll2, motor.MotorCollection))
         self.assertEqual(codec_options, coll2.codec_options)
-        self.assertEqual(JAVA_LEGACY, coll2.uuid_subtype)
-        self.assertEqual(ReadPreference.SECONDARY, coll2.read_preference)
-        self.assertEqual(write_concern.document, coll2.write_concern)
+        self.assertEqual(Secondary(), coll2.read_preference)
+        self.assertEqual(write_concern, coll2.write_concern)
 
         pref = Secondary([{"dc": "sf"}])
         coll2 = coll.with_options(read_preference=pref)
-        self.assertEqual(pref.mode, coll2.read_preference)
-        self.assertEqual(pref.tag_sets, coll2.tag_sets)
+        self.assertEqual(pref, coll2.read_preference)
         self.assertEqual(coll.codec_options, coll2.codec_options)
-        self.assertEqual(coll.uuid_subtype, coll2.uuid_subtype)
         self.assertEqual(coll.write_concern, coll2.write_concern)
-
 
 
 if __name__ == '__main__':

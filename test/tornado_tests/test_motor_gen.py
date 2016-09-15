@@ -34,14 +34,15 @@ class MotorGenTest(MotorTest):
         # Just make sure it still works.
 
         collection = self.collection
+        yield collection.delete_many({})
         doc = {'_id': 'jesse'}
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
 
             # Op works.
-            _id = yield motor.Op(collection.insert, doc)
-            self.assertEqual('jesse', _id)
+            result = yield motor.Op(collection.insert_one, doc)
+            self.assertEqual('jesse', result.inserted_id)
 
             # Raised a DeprecationWarning.
             self.assertEqual(1, len(w))

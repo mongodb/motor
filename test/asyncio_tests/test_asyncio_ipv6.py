@@ -22,7 +22,7 @@ from pymongo.errors import ConnectionFailure
 import test
 from test import SkipTest
 from test.asyncio_tests import asyncio_test, AsyncIOTestCase
-from test.test_environment import db_user, db_password, env
+from test.test_environment import host, port, db_user, db_password, connected
 
 
 class MotorIPv6Test(AsyncIOTestCase):
@@ -33,7 +33,7 @@ class MotorIPv6Test(AsyncIOTestCase):
             "with host %s" % repr(env.host))
 
         try:
-            MongoClient("[::1]")
+            connected(MongoClient("[::1]", serverSelectionTimeoutMS=100))
         except ConnectionFailure:
             # Either mongod was started without --ipv6
             # or the OS doesn't support it (or both).

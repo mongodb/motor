@@ -19,13 +19,12 @@ import unittest
 import pymongo
 import pymongo.errors
 import pymongo.mongo_replica_set_client
-from bson.binary import JAVA_LEGACY, UUID_SUBTYPE
 
 import test
 from motor import motor_asyncio
 from test import env, SkipTest
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from test.utils import ignore_deprecations
+from test.test_environment import env
 
 
 class TestAsyncIOReplicaSet(AsyncIOTestCase):
@@ -36,29 +35,14 @@ class TestAsyncIOReplicaSet(AsyncIOTestCase):
         super().setUp()
 
     @asyncio_test
-    def test_replica_set_client(self):
-        cx = self.asyncio_rsc()
-        self.assertEqual(cx, (yield from cx.open()))
-        self.assertEqual(cx, (yield from cx.open()))  # Same the second time.
-
-    @asyncio_test
     def test_connection_failure(self):
         # Assuming there isn't anything actually running on this port.
         client = motor_asyncio.AsyncIOMotorReplicaSetClient(
-            'localhost:8765', replicaSet='rs', io_loop=self.loop)
+            'localhost:8765', replicaSet='rs', io_loop=self.loop,
+            serverSelectionTimeoutMS=10)
 
         with self.assertRaises(pymongo.errors.ConnectionFailure):
-            yield from client.admin.command('ping')
-
-    @unittest.skipIf(pymongo.version_tuple < (2, 9, 4), "PYTHON-1145")
-    def test_uuid_subtype(self):
-        cx = self.asyncio_rsc(uuidRepresentation='javaLegacy')
-
-        with ignore_deprecations():
-            self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
-            cx.uuid_subtype = UUID_SUBTYPE
-            self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
-            self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
+            yield from client.admin.command('ismaster')
 
 
 class TestReplicaSetClientAgainstStandalone(AsyncIOTestCase):
@@ -75,9 +59,9 @@ class TestReplicaSetClientAgainstStandalone(AsyncIOTestCase):
     def test_connect(self):
         client = motor_asyncio.AsyncIOMotorReplicaSetClient(
             '%s:%s' % (env.host, env.port), replicaSet='anything',
-            connectTimeoutMS=600, io_loop=self.loop)
+            serverSelectionTimeoutMS=10, io_loop=self.loop)
 
-        with self.assertRaises(pymongo.errors.ConnectionFailure):
+        with self.assertRaises(pymongo.errors.ServerSelectionTimeoutError):
             yield from client.test.test.find_one()
 
 

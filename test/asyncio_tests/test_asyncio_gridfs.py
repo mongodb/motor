@@ -19,14 +19,15 @@ import asyncio
 import datetime
 import unittest
 
+from pymongo.errors import InvalidOperation, ConfigurationError
+
 import test
 from gridfs.errors import FileExists, NoFile
 from motor.motor_asyncio import (AsyncIOMotorGridFS,
                                  AsyncIOMotorGridIn,
                                  AsyncIOMotorGridOut)
 from motor.motor_py3_compat import StringIO
-from pymongo.errors import ConfigurationError, InvalidOperation
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.asyncio_tests import asyncio_test, AsyncIOTestCase
 
 
 class TestAsyncIOGridFile(AsyncIOTestCase):
@@ -329,9 +330,8 @@ class TestAsyncIOGridFS(AsyncIOTestCase):
     @asyncio_test
     def test_put_unacknowledged(self):
         client = self.asyncio_client(w=0)
-        fs = AsyncIOMotorGridFS(client.motor_test)
         with self.assertRaises(ConfigurationError):
-            yield from fs.put(b"hello")
+            AsyncIOMotorGridFS(client.motor_test)
 
         client.close()
 

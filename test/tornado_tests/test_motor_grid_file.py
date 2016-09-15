@@ -19,7 +19,6 @@ from __future__ import unicode_literals
 
 import datetime
 import unittest
-from functools import partial
 
 from bson.objectid import ObjectId
 from gridfs.errors import NoFile
@@ -184,7 +183,6 @@ class MotorGridFileTest(MotorTest):
         yield a.set("metadata", {"foo": 1})
         self.assertEqual({"foo": 1}, a.metadata)
 
-        self.assertRaises(AttributeError, getattr, a, "md5")
         self.assertRaises(AttributeError, setattr, a, "md5", 5)
 
         yield a.close()

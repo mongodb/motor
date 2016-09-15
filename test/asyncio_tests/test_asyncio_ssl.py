@@ -60,7 +60,7 @@ class TestAsyncIOSSL(unittest.TestCase):
 
     def test_config_ssl(self):
         # This test doesn't require a running mongod.
-        self.assertRaises(ConfigurationError,
+        self.assertRaises(ValueError,
                           AsyncIOMotorClient,
                           io_loop=self.loop,
                           ssl='foo')
@@ -71,7 +71,7 @@ class TestAsyncIOSSL(unittest.TestCase):
                           ssl=False,
                           ssl_certfile=CLIENT_PEM)
 
-        self.assertRaises(ConfigurationError,
+        self.assertRaises(ValueError,
                           AsyncIOMotorReplicaSetClient,
                           io_loop=self.loop,
                           replicaSet='rs',

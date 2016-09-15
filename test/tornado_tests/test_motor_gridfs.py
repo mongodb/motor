@@ -185,9 +185,8 @@ class MotorGridfsTest(MotorTest):
     @gen_test
     def test_put_unacknowledged(self):
         client = self.motor_client(w=0)
-        fs = motor.MotorGridFS(client.motor_test)
         with self.assertRaises(ConfigurationError):
-            yield fs.put(b"hello")
+            motor.MotorGridFS(client.motor_test)
 
         client.close()
 

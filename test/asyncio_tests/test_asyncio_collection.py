@@ -20,19 +20,21 @@ from unittest import SkipTest
 
 import bson
 from bson import CodecOptions
-from bson.binary import JAVA_LEGACY, OLD_UUID_SUBTYPE
+from bson.binary import JAVA_LEGACY
 from bson.objectid import ObjectId
 from pymongo import ReadPreference, WriteConcern
 from pymongo.errors import DuplicateKeyError
 from pymongo.read_preferences import Secondary
 
 from motor import motor_asyncio
-from motor.motor_asyncio import AsyncIOMotorCollection, \
-    AsyncIOMotorCommandCursor
+from motor.motor_asyncio import (AsyncIOMotorCollection,
+                                 AsyncIOMotorCommandCursor)
 import test
-from test.asyncio_tests import (asyncio_test, AsyncIOTestCase,
-                                skip_if_mongos, at_least)
-from test.utils import delay, ignore_deprecations
+from test.asyncio_tests import (asyncio_test,
+                                AsyncIOTestCase,
+                                skip_if_mongos,
+                                at_least)
+from test.utils import delay
 
 
 class TestAsyncIOCollection(AsyncIOTestCase):
@@ -354,7 +356,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
         # Ensure the same index, test that callback is executed
         result = yield from test_collection.ensure_index([('foo', 1)])
-        self.assertEqual(None, result)
+        self.assertEqual('foo_1', result)
         result2 = yield from test_collection.ensure_index([('foo', 1)])
         self.assertEqual(None, result2)
 
@@ -368,8 +370,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
     @asyncio_test
     def test_aggregation_cursor(self):
-        mongo_2_5_1 = yield from at_least(self.cx, (2, 5, 1))
-
         db = self.db
 
         # A small collection which returns only an initial batch,
@@ -378,18 +378,13 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             yield from db.drop_collection("test")
             yield from db.test.insert([{'_id': i} for i in
                                        range(collection_size)])
-            pipeline = {'$project': {'_id': '$_id'}}
+
+            pipeline = [{'$project': {'_id': '$_id'}}]
             expected_sum = sum(range(collection_size))
-
-            reply = yield from db.test.aggregate(pipeline, cursor=False)
+            cursor = db.test.aggregate(pipeline)
+            docs = yield from cursor.to_list(collection_size)
             self.assertEqual(expected_sum,
-                             sum(doc['_id'] for doc in reply['result']))
-
-            if mongo_2_5_1:
-                cursor = db.test.aggregate(pipeline)
-                docs = yield from cursor.to_list(collection_size)
-                self.assertEqual(expected_sum,
-                                 sum(doc['_id'] for doc in docs))
+                             sum(doc['_id'] for doc in docs))
 
     @asyncio_test(timeout=30)
     def test_parallel_scan(self):
@@ -427,14 +422,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
         self.assertEqual(len(docs), (yield from collection.count()))
 
-    def test_uuid_subtype(self):
-        collection = self.db.test
-
-        with ignore_deprecations():
-            self.assertEqual(collection.uuid_subtype, OLD_UUID_SUBTYPE)
-            collection.uuid_subtype = JAVA_LEGACY
-            self.assertEqual(collection.uuid_subtype, JAVA_LEGACY)
-
     def test_with_options(self):
         coll = self.db.test
         codec_options = CodecOptions(
@@ -446,16 +433,13 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
         self.assertTrue(isinstance(coll2, AsyncIOMotorCollection))
         self.assertEqual(codec_options, coll2.codec_options)
-        self.assertEqual(JAVA_LEGACY, coll2.uuid_subtype)
-        self.assertEqual(ReadPreference.SECONDARY, coll2.read_preference)
-        self.assertEqual(write_concern.document, coll2.write_concern)
+        self.assertEqual(Secondary(), coll2.read_preference)
+        self.assertEqual(write_concern, coll2.write_concern)
 
         pref = Secondary([{"dc": "sf"}])
         coll2 = coll.with_options(read_preference=pref)
-        self.assertEqual(pref.mode, coll2.read_preference)
-        self.assertEqual(pref.tag_sets, coll2.tag_sets)
+        self.assertEqual(pref, coll2.read_preference)
         self.assertEqual(coll.codec_options, coll2.codec_options)
-        self.assertEqual(coll.uuid_subtype, coll2.uuid_subtype)
         self.assertEqual(coll.write_concern, coll2.write_concern)
 
 

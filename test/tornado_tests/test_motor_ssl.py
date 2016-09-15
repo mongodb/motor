@@ -67,13 +67,13 @@ class MotorSSLTest(MotorTest):
         super(MotorSSLTest, self).setUp()
 
     def test_config_ssl(self):
-        self.assertRaises(ConfigurationError, motor.MotorClient, ssl='foo')
+        self.assertRaises(ValueError, motor.MotorClient, ssl='foo')
         self.assertRaises(ConfigurationError,
                           motor.MotorClient,
                           ssl=False,
                           ssl_certfile=CLIENT_PEM)
 
-        self.assertRaises(ConfigurationError,
+        self.assertRaises(ValueError,
                           motor.MotorReplicaSetClient,
                           replicaSet='rs',
                           ssl='foo')

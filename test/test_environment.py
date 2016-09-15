@@ -16,6 +16,7 @@
 
 import os
 import socket
+import warnings
 
 from test.utils import safe_get
 
@@ -44,7 +45,31 @@ except ImportError:
 
 import pymongo
 import pymongo.errors
-from pymongo.mongo_client import _partition_node
+
+
+# Copied from PyMongo.
+def partition_node(node):
+    """Split a host:port string into (host, int(port)) pair."""
+    host = node
+    port = 27017
+    idx = node.rfind(':')
+    if idx != -1:
+        host, port = node[:idx], int(node[idx + 1:])
+    if host.startswith('['):
+        host = host[1:-1]
+    return host, port
+
+
+def connected(client):
+    """Convenience, wait for a new PyMongo MongoClient to connect."""
+    with warnings.catch_warnings():
+        # Ignore warning that "ismaster" is always routed to primary even
+        # if client's read preference isn't PRIMARY.
+        warnings.simplefilter("ignore", UserWarning)
+        client.admin.command('ismaster')  # Force connection.
+
+    return client
+
 
 db_user = os.environ.get("DB_USER", "motor-test-root")
 db_password = os.environ.get("DB_PASSWORD", "pass")
@@ -112,59 +137,60 @@ class TestEnvironment(object):
         host = os.environ.get("DB_IP", "localhost")
         port = int(os.environ.get("DB_PORT", 27017))
         connectTimeoutMS = 100
-        socketTimeoutMS = 30 * 1000
+        serverSelectionTimeoutMS = 100
         try:
-            client = pymongo.MongoClient(
+            client = connected(pymongo.MongoClient(
                 host, port,
                 connectTimeoutMS=connectTimeoutMS,
-                socketTimeoutMS=socketTimeoutMS,
-                ssl=True)
+                serverSelectionTimeoutMS=serverSelectionTimeoutMS,
+                ssl_ca_certs=CA_PEM,
+                ssl=True))
 
             self.mongod_started_with_ssl = True
-        except pymongo.errors.ConnectionFailure:
+        except pymongo.errors.ServerSelectionTimeoutError:
             try:
-                client = pymongo.MongoClient(
+                client = connected(pymongo.MongoClient(
                     host, port,
                     connectTimeoutMS=connectTimeoutMS,
-                    socketTimeoutMS=socketTimeoutMS,
-                    ssl_certfile=CLIENT_PEM)
+                    serverSelectionTimeoutMS=serverSelectionTimeoutMS,
+                    ssl_ca_certs=CA_PEM,
+                    ssl_certfile=CLIENT_PEM))
 
                 self.mongod_started_with_ssl = True
                 self.mongod_validates_client_cert = True
-            except pymongo.errors.ConnectionFailure:
-                client = pymongo.MongoClient(
+            except pymongo.errors.ServerSelectionTimeoutError:
+                client = connected(pymongo.MongoClient(
                     host, port,
                     connectTimeoutMS=connectTimeoutMS,
-                    socketTimeoutMS=socketTimeoutMS,
-                    ssl=False)
+                    serverSelectionTimeoutMS=serverSelectionTimeoutMS))
 
         response = client.admin.command('ismaster')
         if 'setName' in response:
             self.is_replica_set = True
             self.rs_name = str(response['setName'])
             self.w = len(response['hosts'])
-            self.hosts = set([_partition_node(h) for h in response["hosts"]])
-            host, port = self.primary = _partition_node(response['primary'])
+            self.hosts = set([partition_node(h) for h in response["hosts"]])
+            host, port = self.primary = partition_node(response['primary'])
             self.arbiters = set([
-                _partition_node(h) for h in response.get("arbiters", [])])
+                partition_node(h) for h in response.get("arbiters", [])])
 
             self.secondaries = [
-                _partition_node(m) for m in response['hosts']
+                partition_node(m) for m in response['hosts']
                 if m != self.primary and m not in self.arbiters]
 
             # Reconnect to discovered primary.
             if self.mongod_started_with_ssl:
-                client = pymongo.MongoClient(
+                client = connected(pymongo.MongoClient(
                     host, port,
                     connectTimeoutMS=connectTimeoutMS,
-                    socketTimeoutMS=socketTimeoutMS,
-                    ssl_certfile=CLIENT_PEM)
+                    serverSelectionTimeoutMS=serverSelectionTimeoutMS,
+                    ssl_certfile=CLIENT_PEM))
             else:
-                client = pymongo.MongoClient(
+                client = connected(pymongo.MongoClient(
                     host, port,
                     connectTimeoutMS=connectTimeoutMS,
-                    socketTimeoutMS=socketTimeoutMS,
-                    ssl=False)
+                    serverSelectionTimeoutMS=serverSelectionTimeoutMS,
+                    ssl=False))
 
         self.sync_cx = client
         self.host = host

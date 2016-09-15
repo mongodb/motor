@@ -25,7 +25,7 @@ from tornado.testing import gen_test
 import motor
 import test
 from test import SkipTest
-from test.test_environment import db_user, db_password, env
+from test.test_environment import connected, db_user, db_password, env
 from test.tornado_tests import MotorTest
 
 
@@ -37,7 +37,7 @@ class MotorIPv6Test(MotorTest):
             repr(env.host))
 
         try:
-            MongoClient("[::1]")
+            connected(MongoClient("[::1]", serverSelectionTimeoutMS=100))
         except ConnectionFailure:
             # Either mongod was started without --ipv6
             # or the OS doesn't support it (or both).

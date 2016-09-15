@@ -23,12 +23,8 @@ from unittest import SkipTest
 import bson
 import pymongo
 from bson import CodecOptions
-from bson.binary import JAVA_LEGACY, UUID_SUBTYPE
-from mockupdb import OpQuery
-from pymongo import ReadPreference
-from pymongo import WriteConcern
-from pymongo.errors import ConnectionFailure, ConfigurationError
-from pymongo.errors import OperationFailure
+from pymongo import ReadPreference, WriteConcern
+from pymongo.errors import ConnectionFailure, OperationFailure
 
 from motor import motor_asyncio
 
@@ -37,8 +33,7 @@ from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase,
                                 AsyncIOMockServerTestCase,
                                 remove_all_users)
-from test.test_environment import db_user, db_password, env
-from test.utils import one, ignore_deprecations
+from test.test_environment import host, port, db_user, db_password
 
 
 class TestAsyncIOClient(AsyncIOTestCase):
@@ -60,13 +55,6 @@ class TestAsyncIOClient(AsyncIOTestCase):
             with self.assertRaises(DeprecationWarning):
                 # Setting the property is deprecated, too.
                 self.cx.document_class = bson.SON
-
-    @asyncio_test
-    def test_client_open(self):
-        cx = self.asyncio_client()
-        with ignore_deprecations():
-            self.assertEqual(cx, (yield from cx.open()))
-            self.assertEqual(cx, (yield from cx.open()))  # Same, second time.
 
     @asyncio_test
     def test_client_lazy_connect(self):
@@ -95,7 +83,8 @@ class TestAsyncIOClient(AsyncIOTestCase):
         if not os.access(mongodb_socket, os.R_OK):
             raise SkipTest("Socket file is not accessible")
 
-        uri = 'mongodb://%s' % mongodb_socket
+        encoded_socket = '%2Ftmp%2Fmongodb-27017.sock'
+        uri = 'mongodb://%s' % encoded_socket
         client = self.asyncio_client(uri)
         collection = client.motor_test.test
 
@@ -105,22 +94,12 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
         # Confirm it fails with a missing socket.
         client = motor_asyncio.AsyncIOMotorClient(
-            "mongodb:///tmp/non-existent.sock", io_loop=self.loop)
+            "mongodb://%2Ftmp%2Fnon-existent.sock", io_loop=self.loop,
+            serverSelectionTimeoutMS=100)
 
         with self.assertRaises(ConnectionFailure):
-            yield from client.admin.command('ping')
+            yield from client.admin.command('ismaster')
         client.close()
-
-    def test_open_sync(self):
-        loop = asyncio.new_event_loop()
-        with ignore_deprecations():
-            cx = loop.run_until_complete(self.asyncio_client(io_loop=loop).open())
-
-        self.assertTrue(isinstance(cx, motor_asyncio.AsyncIOMotorClient))
-        cx.close()
-        loop.stop()
-        loop.run_forever()
-        loop.close()
 
     def test_database_named_delegate(self):
         self.assertTrue(
@@ -148,10 +127,11 @@ class TestAsyncIOClient(AsyncIOTestCase):
     def test_connection_failure(self):
         # Assuming there isn't anything actually running on this port
         client = motor_asyncio.AsyncIOMotorClient('localhost', 8765,
+                                                  serverSelectionTimeoutMS=10,
                                                   io_loop=self.loop)
 
         with self.assertRaises(ConnectionFailure):
-            yield from client.admin.command('ping')
+            yield from client.admin.command('ismaster')
 
     @asyncio_test(timeout=30)
     def test_connection_timeout(self):
@@ -160,22 +140,22 @@ class TestAsyncIOClient(AsyncIOTestCase):
         # the timeout. So don't measure how long this takes.
         client = motor_asyncio.AsyncIOMotorClient(
             'example.com', port=12345,
-            connectTimeoutMS=1, io_loop=self.loop)
+            serverSelectionTimeoutMS=1, io_loop=self.loop)
 
         with self.assertRaises(ConnectionFailure):
-            yield from client.admin.command('ping')
+            yield from client.admin.command('ismaster')
 
     @asyncio_test
     def test_max_pool_size_validation(self):
-        with self.assertRaises(ConfigurationError):
-            motor_asyncio.AsyncIOMotorClient(max_pool_size=-1,
+        with self.assertRaises(ValueError):
+            motor_asyncio.AsyncIOMotorClient(maxPoolSize=-1,
                                              io_loop=self.loop)
 
-        with self.assertRaises(ConfigurationError):
-            motor_asyncio.AsyncIOMotorClient(max_pool_size='foo',
+        with self.assertRaises(ValueError):
+            motor_asyncio.AsyncIOMotorClient(maxPoolSize='foo',
                                              io_loop=self.loop)
 
-        cx = self.asyncio_client(max_pool_size=100)
+        cx = self.asyncio_client(maxPoolSize=100)
         self.assertEqual(cx.max_pool_size, 100)
         cx.close()
 
@@ -185,7 +165,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
         yield from self.make_test_data()
 
         concurrency = 25
-        cx = self.asyncio_client(max_pool_size=concurrency)
+        cx = self.asyncio_client(maxPoolSize=concurrency)
         expected_finds = 200 * concurrency
         n_inserts = 25
 
@@ -278,15 +258,6 @@ class TestAsyncIOClient(AsyncIOTestCase):
         ka = client._get_primary_pool().socket_keepalive
         self.assertTrue(ka)
 
-    def test_uuid_subtype(self):
-        cx = self.asyncio_client(uuidRepresentation='javaLegacy')
-
-        with ignore_deprecations():
-            self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
-            cx.uuid_subtype = UUID_SUBTYPE
-            self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
-            self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
-
     def test_get_database(self):
         codec_options = CodecOptions(tz_aware=True)
         write_concern = WriteConcern(w=2, j=True)
@@ -313,86 +284,6 @@ class TestAsyncIOClientTimeout(AsyncIOMockServerTestCase):
 
         self.assertEqual(str(context.exception), 'timed out')
         client.close()
-
-
-class TestAsyncIOClientExhaustCursor(AsyncIOMockServerTestCase):
-    def primary_server(self):
-        primary = self.server()
-        hosts = [primary.address_string]
-        primary.autoresponds(
-            'ismaster', ismaster=True, setName='rs', hosts=hosts)
-
-        return primary
-
-    def primary_or_standalone(self, rs):
-        if rs:
-            return self.primary_server()
-        else:
-            return self.server(auto_ismaster=True)
-
-    @asyncio.coroutine
-    def _test_exhaust_query_server_error(self, rs):
-        # When doing an exhaust query, the socket stays checked out on success
-        # but must be checked in on error to avoid counter leak.
-        server = self.primary_or_standalone(rs=rs)
-        client = motor_asyncio.AsyncIOMotorClient(server.uri,
-                                                  max_pool_size=1,
-                                                  io_loop=self.loop)
-
-        yield from client.admin.command('ismaster')
-        pool = client._get_primary_pool()
-        sock_info = one(pool.sockets)
-        cursor = client.db.collection.find(exhaust=True)
-        fetch_next = self.fetch_next(cursor)
-        request = yield from self.run_thread(server.receives, OpQuery)
-        request.fail()
-
-        with self.assertRaises(pymongo.errors.OperationFailure):
-            yield from fetch_next
-
-        self.assertFalse(sock_info.closed)
-        self.assertEqual(sock_info, one(pool.sockets))
-
-    @asyncio_test
-    def test_exhaust_query_server_error_standalone(self):
-        yield from self._test_exhaust_query_server_error(rs=False)
-
-    @asyncio_test
-    def test_exhaust_query_server_error_rs(self):
-        yield from self._test_exhaust_query_server_error(rs=True)
-
-    @asyncio.coroutine
-    def _test_exhaust_query_network_error(self, rs):
-        # When doing an exhaust query, the socket stays checked out on success
-        # but must be checked in on error to avoid counter leak.
-        server = self.primary_or_standalone(rs=rs)
-        client = motor_asyncio.AsyncIOMotorClient(server.uri,
-                                                  max_pool_size=1,
-                                                  io_loop=self.loop)
-
-        yield from client.admin.command('ismaster')
-        pool = client._get_primary_pool()
-        pool._check_interval_seconds = None  # Never check.
-        sock_info = one(pool.sockets)
-        cursor = client.db.collection.find(exhaust=True)
-        fetch_next = self.fetch_next(cursor)
-        request = yield from self.run_thread(server.receives, OpQuery)
-        request.hangs_up()
-
-        with self.assertRaises(pymongo.errors.ConnectionFailure):
-            yield from fetch_next
-
-        self.assertTrue(sock_info.closed)
-        del cursor
-        self.assertNotIn(sock_info, pool.sockets)
-
-    @asyncio_test
-    def test_exhaust_query_network_error_standalone(self):
-        yield from self._test_exhaust_query_network_error(rs=False)
-
-    @asyncio_test
-    def test_exhaust_query_network_error_rs(self):
-        yield from self._test_exhaust_query_network_error(rs=True)
 
 
 if __name__ == '__main__':

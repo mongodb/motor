@@ -22,7 +22,6 @@ import pymongo
 import pymongo.auth
 import pymongo.errors
 import pymongo.mongo_replica_set_client
-from bson.binary import JAVA_LEGACY, UUID_SUBTYPE
 from tornado import gen
 from tornado.testing import gen_test
 
@@ -32,23 +31,12 @@ import test
 from test import SkipTest
 from test.test_environment import db_user, db_password, env
 from test.tornado_tests import MotorReplicaSetTestBase, MotorTest
-from test.utils import one, ignore_deprecations
+from test.utils import one, get_primary_pool
 
 from motor.motor_py3_compat import text_type
 
 
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
-    @gen_test
-    def test_replica_set_client(self):
-        cx = self.motor_rsc()
-        self.assertEqual(cx, (yield cx.open()))
-        self.assertEqual(cx, (yield cx.open()))  # Same the second time.
-        cx.close()
-
-    @gen_test
-    def test_open_callback(self):
-        yield self.check_optional_callback(self.rsc.open)
-
     def test_io_loop(self):
         with self.assertRaises(TypeError):
             motor.MotorReplicaSetClient(test.env.rs_uri, io_loop='foo')
@@ -57,16 +45,15 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
     def test_connection_failure(self):
         # Assuming there isn't anything actually running on this port
         client = motor.MotorReplicaSetClient(
-            'localhost:8765', replicaSet='rs', io_loop=self.io_loop)
+            'localhost:8765', replicaSet='rs', io_loop=self.io_loop,
+            serverSelectionTimeoutMS=10)
 
-        with ignore_deprecations():
-            # Test the Future interface.
-            with self.assertRaises(pymongo.errors.ConnectionFailure):
-                yield client.open()
+        # Test the Future interface.
+        with self.assertRaises(pymongo.errors.ConnectionFailure):
+            yield client.admin.command('ismaster')
 
-            # Test with a callback.
-            (result, error), _ = yield gen.Task(client.open)
-
+        # Test with a callback.
+        (result, error), _ = yield gen.Task(client.admin.command, 'ismaster')
         self.assertEqual(None, result)
         self.assertTrue(isinstance(error, pymongo.errors.ConnectionFailure))
 
@@ -79,7 +66,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
 
         client = self.motor_rsc(socketKeepAlive=True)
         yield client.server_info()
-        ka = client._get_primary_pool().socket_keepalive
+        ka = get_primary_pool(client).socket_keepalive
         self.assertTrue(ka)
 
     @gen_test
@@ -90,8 +77,8 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         # Make sure there's no semaphore leak if we get a network error
         # when authenticating a new socket with cached credentials.
         # Get a client with one socket so we detect if it's leaked.
-        c = self.motor_rsc(max_pool_size=1, waitQueueTimeoutMS=1)
-        yield c.open()
+        c = self.motor_rsc(maxPoolSize=1, waitQueueTimeoutMS=1)
+        yield c.admin.command('ismaster')
 
         # Simulate an authenticate() call on a different socket.
         credentials = pymongo.auth._build_credentials_tuple(
@@ -122,18 +109,6 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         c = self.motor_rsc()
         yield [c.db.collection.find_one(), c.db.collection.find_one()]
 
-    def test_uuid_subtype(self):
-        if pymongo.version_tuple < (2, 9, 4):
-            raise SkipTest("PYTHON-1145")
-
-        cx = self.motor_rsc(uuidRepresentation='javaLegacy')
-
-        with ignore_deprecations():
-            self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
-            cx.uuid_subtype = UUID_SUBTYPE
-            self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
-            self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
-
 
 class TestReplicaSetClientAgainstStandalone(MotorTest):
     """This is a funny beast -- we want to run tests for MotorReplicaSetClient
@@ -147,11 +122,11 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
 
     @gen_test
     def test_connect(self):
-        with self.assertRaises(pymongo.errors.ConnectionFailure):
+        with self.assertRaises(pymongo.errors.ServerSelectionTimeoutError):
             yield motor.MotorReplicaSetClient(
                 '%s:%s' % (env.host, env.port), replicaSet='anything',
                 io_loop=self.io_loop,
-                connectTimeoutMS=600).test.test.find_one()
+                serverSelectionTimeoutMS=10).test.test.find_one()
 
 
 if __name__ == '__main__':

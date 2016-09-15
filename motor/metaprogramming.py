@@ -23,7 +23,6 @@ import warnings
 from pymongo.cursor import Cursor
 
 from . import motor_py3_compat
-from .motor_common import check_deprecated_kwargs
 
 _class_cache = {}
 
@@ -50,10 +49,6 @@ def asynchronize(
     """
     @functools.wraps(sync_method)
     def method(self, *args, **kwargs):
-        if deprecation_msg:
-            warnings.warn(deprecation_msg, DeprecationWarning, stacklevel=2)
-
-        check_deprecated_kwargs(kwargs)
         loop = self.get_io_loop()
         callback = kwargs.pop('callback', None)
         future = framework.run_on_executor(loop,
