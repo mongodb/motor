@@ -284,7 +284,7 @@ class AsyncCommand(Async):
 
 
 class ReadOnlyProperty(MotorAttributeFactory):
-    """Creates a readonly attribute on the wrapped PyMongo object"""
+    """Creates a readonly attribute on the wrapped PyMongo object."""
     def create_attribute(self, cls, attr_name):
         def fget(obj):
             return getattr(obj.delegate, attr_name)
