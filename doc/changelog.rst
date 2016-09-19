@@ -17,6 +17,8 @@ opened themselves automatically on demand since version 0.2.
 Added:
 
  - `MotorClient.min_pool_size`
+ - `MotorDatabase.create_indexes`
+ - `MotorDatabase.list_indexes`
 
 Removed:
 
