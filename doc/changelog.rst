@@ -12,72 +12,97 @@ than the prior implementation with greenlets. It no longer requires the
 Python 2.
 
 This version updates the PyMongo dependency from 2.8.0 to 2.9.x, and wraps
-PyMongo 2.9's new APIs:
+PyMongo 2.9's new APIs.
 
-:class:`~motor.motor_tornado.MotorClient` changes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`MotorClient` changes
+~~~~~~~~~~~~~~~~~~~~~
 
-The :meth:`~motor.motor_tornado.MotorClient.get_database` method is added for
-getting a Database instance with its options configured differently than the
-MongoClient's.
+The `~MotorClient.get_database` method is added for getting a `MotorDatabase`
+instance with its options configured differently than the MotorClient's.
 
 New read-only attributes:
 
-- :attr:`~motor.motor_tornado.MotorClient.codec_options`
-- :attr:`~motor.motor_tornado.MotorClient.local_threshold_ms`
+- `~MotorClient.codec_options`
+- `~MotorClient.local_threshold_ms`
+- `~MotorClient.max_write_batch_size`
 
-:class:`~motor.motor_tornado.MotorCursor` changes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`MotorReplicaSetClient` changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-New read-only attribute:
+The `~MotorReplicaSetClient.get_database` method is added for getting a
+`MotorDatabase` instance with its options configured differently than the
+MotorReplicaSetClient's.
 
-- :attr:`~motor.motor_tornado.MotorCursor.address`
+New read-only attributes:
 
-:class:`~motor.motor_tornado.MotorDatabase` changes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- `~MotorReplicaSetClient.codec_options`
+- `~MotorReplicaSetClient.local_threshold_ms`
+
+`MotorDatabase` changes
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The `~MotorDatabase.get_collection` method is added for getting a
+`MotorCollection` instance with its options configured differently than the
+MotorDatabase's.
 
 The ``connection`` property is deprecated in favor of a new read-only attribute
-:attr:`~motor.motor_tornado.MotorDatabase.client`.
+`~MotorDatabase.client`.
 
 New read-only attribute:
 
-- :attr:`~motor.motor_tornado.MotorDatabase.codec_options`
+- `~MotorDatabase.codec_options`
 
-New method:
+`MotorCollection` changes
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- :meth:`~motor.motor_tornado.MotorDatabase.get_collection`
-
-:class:`~motor.motor_tornado.MotorCollection` changes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The `~MotorCollection.with_options` method is added for getting a
+`MotorCollection` instance with its options configured differently than this
+MotorCollection's.
 
 New read-only attribute:
 
-- :attr:`~motor.motor_tornado.MotorCollection.codec_options`
-
-New methods:
-
-- :meth:`~motor.motor_tornado.MotorCollection.with_options`
-- :meth:`~motor.motor_tornado.MotorCollection.create_indexes`
-- :meth:`~motor.motor_tornado.MotorCollection.list_indexes`
+- `~MotorCollection.codec_options`
 
 The following methods wrap PyMongo's implementation of the standard `CRUD API Spec`_
 for MongoDB Drivers:
 
-- :meth:`~motor.motor_tornado.MotorCollection.bulk_write`
-- :meth:`~motor.motor_tornado.MotorCollection.insert_one`
-- :meth:`~motor.motor_tornado.MotorCollection.insert_many`
-- :meth:`~motor.motor_tornado.MotorCollection.update_one`
-- :meth:`~motor.motor_tornado.MotorCollection.update_many`
-- :meth:`~motor.motor_tornado.MotorCollection.replace_one`
-- :meth:`~motor.motor_tornado.MotorCollection.delete_one`
-- :meth:`~motor.motor_tornado.MotorCollection.delete_many`
-- :meth:`~motor.motor_tornado.MotorCollection.find_one_and_delete`
-- :meth:`~motor.motor_tornado.MotorCollection.find_one_and_replace`
-- :meth:`~motor.motor_tornado.MotorCollection.find_one_and_update`
+- `~MotorCollection.bulk_write`
+- `~MotorCollection.insert_one`
+- `~MotorCollection.insert_many`
+- `~MotorCollection.update_one`
+- `~MotorCollection.update_many`
+- `~MotorCollection.replace_one`
+- `~MotorCollection.delete_one`
+- `~MotorCollection.delete_many`
+- `~MotorCollection.find_one_and_delete`
+- `~MotorCollection.find_one_and_replace`
+- `~MotorCollection.find_one_and_update`
 
-These methods do not apply SON Manipulators.
+These new methods do not apply SON Manipulators.
 
 .. _CRUD API Spec: https://github.com/mongodb/specifications/blob/master/source/crud/crud.rst
+
+:doc:`GridFS <api/gridfs>` changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+New `MotorGridOutCursor` methods:
+
+- `~MotorGridOutCursor.add_option`
+- `~MotorGridOutCursor.remove_option`
+- `~MotorGridOutCursor.clone`
+
+Added `MotorGridOut` documentation:
+
+- `~MotorGridOut.aliases`
+- `~MotorGridOut.chunk_size`
+- `~MotorGridOut.close`
+- `~MotorGridOut.content_type`
+- `~MotorGridOut.filename`
+- `~MotorGridOut.length`
+- `~MotorGridOut.md5`
+- `~MotorGridOut.metadata`
+- `~MotorGridOut.name`
+- `~MotorGridOut.upload_date`
 
 Motor 0.6.2
 -----------
