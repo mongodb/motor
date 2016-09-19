@@ -38,22 +38,28 @@ class AgnosticGridOutCursor(AgnosticBaseCursor):
     __motor_class_name__ = 'MotorGridOutCursor'
     __delegate_class__ = gridfs.GridOutCursor
 
-    count = AsyncRead()
-    distinct = AsyncRead()
-    explain = AsyncRead()
-    limit = MotorCursorChainingMethod()
-    skip = MotorCursorChainingMethod()
-    max_scan = MotorCursorChainingMethod()
-    sort = MotorCursorChainingMethod()
-    hint = MotorCursorChainingMethod()
-    where = MotorCursorChainingMethod()
-    max_time_ms = MotorCursorChainingMethod()
-    min = MotorCursorChainingMethod()
-    max = MotorCursorChainingMethod()
-    comment = MotorCursorChainingMethod()
+    add_option    = MotorCursorChainingMethod()
+    comment       = MotorCursorChainingMethod()
+    count         = AsyncRead()
+    distinct      = AsyncRead()
+    explain       = AsyncRead()
+    hint          = MotorCursorChainingMethod()
+    limit         = MotorCursorChainingMethod()
+    max           = MotorCursorChainingMethod()
+    max_scan      = MotorCursorChainingMethod()
+    max_time_ms   = MotorCursorChainingMethod()
+    min           = MotorCursorChainingMethod()
+    remove_option = MotorCursorChainingMethod()
+    skip          = MotorCursorChainingMethod()
+    sort          = MotorCursorChainingMethod()
+    where         = MotorCursorChainingMethod()
 
     # PyMongo's GridOutCursor inherits __die from Cursor.
     _Cursor__die = AsyncCommand()
+
+    def clone(self):
+        """Get a clone of this cursor."""
+        return self.__class__(self.delegate.clone(), self.collection)
 
     def next_object(self):
         """Get next GridOut object from cursor."""
@@ -97,6 +103,21 @@ class AgnosticGridOutCursor(AgnosticBaseCursor):
         yield self._framework.yieldable(self._Cursor__die())
 
 
+class MotorGridOutProperty(ReadOnlyProperty):
+    """Creates a readonly attribute on the wrapped PyMongo GridOut."""
+    def create_attribute(self, cls, attr_name):
+        def fget(obj):
+            if not obj.delegate._file:
+                raise pymongo.errors.InvalidOperation(
+                    "You must call MotorGridOut.open() before accessing "
+                    "the %s property" % attr_name)
+
+            return getattr(obj.delegate, attr_name)
+
+        doc = getattr(cls.__delegate_class__, attr_name).__doc__
+        return property(fget=fget, doc=doc)
+
+
 class AgnosticGridOut(object):
     """Class to read data out of GridFS.
 
@@ -112,12 +133,22 @@ class AgnosticGridOut(object):
     __motor_class_name__ = 'MotorGridOut'
     __delegate_class__ = gridfs.GridOut
 
-    tell         = DelegateMethod()
-    seek         = DelegateMethod()
+    _ensure_file = AsyncCommand()
+    aliases      = MotorGridOutProperty()
+    chunk_size   = MotorGridOutProperty()
+    close        = MotorGridOutProperty()
+    content_type = MotorGridOutProperty()
+    filename     = MotorGridOutProperty()
+    length       = MotorGridOutProperty()
+    md5          = MotorGridOutProperty()
+    metadata     = MotorGridOutProperty()
+    name         = MotorGridOutProperty()
     read         = AsyncRead()
     readchunk    = AsyncRead()
     readline     = AsyncRead()
-    _ensure_file = AsyncCommand()
+    seek         = DelegateMethod()
+    tell         = DelegateMethod()
+    upload_date  = MotorGridOutProperty()
 
     def __init__(
         self,

@@ -86,27 +86,28 @@ class AgnosticBaseProperties(AgnosticBase):
 
 class AgnosticClientBase(AgnosticBaseProperties):
     """MotorClient and MotorReplicaSetClient common functionality."""
-    _ensure_connected  = AsyncRead()
-    address            = ReadOnlyProperty()
-    alive              = AsyncRead()
-    close              = DelegateMethod()
-    close_cursor       = AsyncCommand()
-    database_names     = AsyncRead()
-    disconnect         = DelegateMethod()
-    document_class     = ReadWriteProperty()
-    drop_database      = AsyncCommand().unwrap('MotorDatabase')
-    get_database       = DelegateMethod(doc=get_database_doc).wrap(Database)
-    get_document_class = DelegateMethod()
-    is_mongos          = ReadOnlyProperty()
-    local_threshold_ms = ReadOnlyProperty()
-    max_bson_size      = ReadOnlyProperty()
-    max_message_size   = ReadOnlyProperty()
-    max_pool_size      = ReadOnlyProperty()
-    max_wire_version   = ReadOnlyProperty()
-    min_wire_version   = ReadOnlyProperty()
-    server_info        = AsyncRead()
-    set_document_class = DelegateMethod()
-    tz_aware           = ReadOnlyProperty()
+    _ensure_connected    = AsyncRead()
+    address              = ReadOnlyProperty()
+    alive                = AsyncRead()
+    close                = DelegateMethod()
+    close_cursor         = AsyncCommand()
+    database_names       = AsyncRead()
+    disconnect           = DelegateMethod()
+    document_class       = ReadWriteProperty()
+    drop_database        = AsyncCommand().unwrap('MotorDatabase')
+    get_database         = DelegateMethod(doc=get_database_doc).wrap(Database)
+    get_document_class   = DelegateMethod()
+    is_mongos            = ReadOnlyProperty()
+    local_threshold_ms   = ReadOnlyProperty()
+    max_bson_size        = ReadOnlyProperty()
+    max_message_size     = ReadOnlyProperty()
+    max_pool_size        = ReadOnlyProperty()
+    max_wire_version     = ReadOnlyProperty()
+    min_wire_version     = ReadOnlyProperty()
+    max_write_batch_size = ReadOnlyProperty()
+    server_info          = AsyncRead()
+    set_document_class   = DelegateMethod()
+    tz_aware             = ReadOnlyProperty()
 
     def __init__(self, io_loop, *args, **kwargs):
         check_deprecated_kwargs(kwargs)
@@ -258,6 +259,7 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
     secondaries = ReadOnlyProperty()
     arbiters    = ReadOnlyProperty()
     hosts       = ReadOnlyProperty()
+    refresh     = AsyncCommand()
     seeds       = DelegateMethod()
     close       = DelegateMethod()
 
@@ -397,10 +399,15 @@ class AgnosticDatabase(AgnosticBaseProperties):
             raise TypeError("First argument to MotorDatabase must be "
                             "a Motor client, not %r" % connection)
 
-        # "client" is modern, "connection" is deprecated.
-        self.client = self.connection = connection
+        self.connection = connection
         delegate = _delegate or Database(connection.delegate, name)
         super(self.__class__, self).__init__(delegate)
+
+    @property
+    def client(self):
+        """This MotorDatabase's `MotorClient` or `MotorReplicaSetClient`."""
+        # "client" is modern, "connection" is deprecated.
+        return self.connection
 
     def __getattr__(self, name):
         if name.startswith('_'):
