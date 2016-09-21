@@ -383,7 +383,7 @@ class MongoClientBase(Synchro):
         return self
 
     def __exit__(self, *args):
-        self.delegate.disconnect()
+        self.delegate.close()
 
     def __getattr__(self, name):
         # If this is like client.db, then wrap the outgoing object with
@@ -453,7 +453,7 @@ class Database(Synchro):
             "Expected MongoClient or MongoReplicaSetClient, got %s"
             % repr(client))
 
-        self.connection = client
+        self._client = client
         self.delegate = delegate or client.delegate[name]
         assert isinstance(self.delegate, motor.MotorDatabase), (
             "synchro.Database delegate must be MotorDatabase, not "
@@ -466,6 +466,14 @@ class Database(Synchro):
                 manipulator.database = db.delegate.delegate
 
         self.delegate.add_son_manipulator(manipulator)
+
+    @property
+    def client(self):
+        return self._client
+
+    @property
+    def connection(self):
+        return self._client
 
     def __getattr__(self, name):
         return Collection(self, name)

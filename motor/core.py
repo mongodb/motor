@@ -19,6 +19,7 @@ from __future__ import unicode_literals, absolute_import
 import functools
 import sys
 import textwrap
+import warnings
 
 import pymongo
 import pymongo.auth
@@ -208,32 +209,25 @@ class AgnosticClient(AgnosticClientBase):
 
     @coroutine_annotation
     def open(self, callback=None):
-        """Connect to the server.
+        """**DEPRECATED** Motor clients now open themselves on demand.
 
         Takes an optional callback, or returns a Future that resolves to
-        ``self`` when opened. This is convenient for checking at program
-        startup time whether you can connect.
-
-        .. doctest::
-
-          >>> from tornado.ioloop import IOLoop
-          >>> from motor.motor_tornado import MotorClient
-          >>> client = MotorClient()
-          >>> # run_sync() returns the open client.
-          >>> IOLoop.current().run_sync(client.open)
-          MotorClient(MongoClient('localhost', 27017))
-
-        ``open`` raises a :exc:`~pymongo.errors.ConnectionFailure` if it
-        cannot connect, but note that auth failures aren't revealed until
-        you attempt an operation on the open client.
+        ``self`` when opened.
 
         :Parameters:
          - `callback`: Optional function taking parameters (self, error)
 
+        .. versionchanged:: 0.7
+           Deprecated.
         .. versionchanged:: 0.2
            :class:`MotorClient` now opens itself on demand, calling ``open``
            explicitly is now optional.
         """
+        warnings.warn("open is deprecated in this version of Motor and will be"
+                      " removed in Motor 1.0. Motor clients open themselves on"
+                      " demand",
+                      DeprecationWarning, stacklevel=2)
+
         return self._framework.future_or_callback(self._ensure_connected(True),
                                                   callback,
                                                   self.get_io_loop(),
@@ -287,35 +281,25 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
         super(self.__class__, self).__init__(io_loop, *args, **kwargs)
 
     def open(self, callback=None):
-        """Connect to the server.
+        """**DEPRECATED** Motor clients now open themselves on demand.
 
         Takes an optional callback, or returns a Future that resolves to
-        ``self`` when opened. This is convenient for checking at program
-        startup time whether you can connect.
-
-        .. Not a doctest: don't require a replica set for doctests to pass.
-
-        .. code-block:: python
-
-          >>> from tornado.ioloop import IOLoop
-          >>> from motor.motor_tornado import MotorReplicaSetClient
-          >>> uri = 'mongodb://localhost:27017/?replicaSet=rs'
-          >>> client = MotorReplicaSetClient(uri)
-          >>> # run_sync() returns the open client.
-          >>> IOLoop.current().run_sync(client.open)
-          MotorReplicaSetClient(MongoReplicaSetClient(['localhost:27017', ...]))
-
-        ``open`` raises a :exc:`~pymongo.errors.ConnectionFailure` if it
-        cannot connect, but note that auth failures aren't revealed until
-        you attempt an operation on the open client.
+        ``self`` when opened.
 
         :Parameters:
          - `callback`: Optional function taking parameters (self, error)
 
+        .. versionchanged:: 0.7
+           Deprecated.
         .. versionchanged:: 0.2
            :class:`MotorReplicaSetClient` now opens itself on demand, calling
            ``open`` explicitly is now optional.
         """
+        warnings.warn("open is deprecated in this version of Motor and will be"
+                      " removed in Motor 1.0. Motor clients open themselves on"
+                      " demand",
+                      DeprecationWarning, stacklevel=2)
+
         loop = self.get_io_loop()
 
         # Once _ensure_connected returns, check if we actually connected, then
@@ -394,20 +378,28 @@ class AgnosticDatabase(AgnosticBaseProperties):
     outgoing_manipulators         = ReadOnlyProperty()
     outgoing_copying_manipulators = ReadOnlyProperty()
 
-    def __init__(self, connection, name, _delegate=None):
-        if not isinstance(connection, AgnosticClientBase):
+    def __init__(self, client, name, _delegate=None):
+        if not isinstance(client, AgnosticClientBase):
             raise TypeError("First argument to MotorDatabase must be "
-                            "a Motor client, not %r" % connection)
+                            "a Motor client, not %r" % client)
 
-        self.connection = connection
-        delegate = _delegate or Database(connection.delegate, name)
+        self._client = client
+        delegate = _delegate or Database(client.delegate, name)
         super(self.__class__, self).__init__(delegate)
 
     @property
     def client(self):
         """This MotorDatabase's `MotorClient` or `MotorReplicaSetClient`."""
-        # "client" is modern, "connection" is deprecated.
-        return self.connection
+        return self._client
+
+    @property
+    def connection(self):
+        """**DEPRECATED** Use `client` instead."""
+        warnings.warn("'connection' is deprecated in this version of Motor and"
+                      " will be removed in Motor 1.0. Use 'client'.",
+                      DeprecationWarning, stacklevel=2)
+
+        return self._client
 
     def __getattr__(self, name):
         if name.startswith('_'):
@@ -426,7 +418,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
     def __call__(self, *args, **kwargs):
         database_name = self.delegate.name
-        client_class_name = self.connection.__class__.__name__
+        client_class_name = self._client.__class__.__name__
         if database_name == 'open_sync':
             raise TypeError(
                 "%s.open_sync() is unnecessary Motor 0.2, "
@@ -471,7 +463,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         self.delegate.add_son_manipulator(manipulator)
 
     def get_io_loop(self):
-        return self.connection.get_io_loop()
+        return self._client.get_io_loop()
 
 
 class AgnosticCollection(AgnosticBaseProperties):
