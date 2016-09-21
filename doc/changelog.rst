@@ -14,6 +14,10 @@ Python 2.
 This version updates the PyMongo dependency from 2.8.0 to 2.9.x, and wraps
 PyMongo 2.9's new APIs.
 
+Most of Motor 1.0's API is now implemented, and APIs that will be removed in
+Motor 1.0 are now deprecated and raise warnings. See the
+:doc:`/migrate-to-motor-1` to prepare your code for Motor 1.0.
+
 `MotorClient` changes
 ~~~~~~~~~~~~~~~~~~~~~
 

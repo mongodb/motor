@@ -58,6 +58,7 @@ Contents
    tutorial-asyncio
    examples/index
    changelog
+   migrate-to-motor-1
    contributors
 
 Classes
