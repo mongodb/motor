@@ -57,8 +57,6 @@ excluded_modules = [
 ]
 
 excluded_tests = [
-    'TestReplicaSetClientLazyConnectGevent.*',
-
     # Motor no longer has a copy_database method.
     '*.test_copy_db',
 
@@ -89,10 +87,6 @@ excluded_tests = [
     # the wrong auth credentials.
     'TestClientAuth.test_auth_from_uri',
 
-    # Motor's pool is different, we test it separately.
-    '*.test_waitQueueMultiple',
-    '*.test_socketKeepAlive',
-
     # Lazy-connection tests require multithreading; we test concurrent
     # lazy connection directly.
     'TestClientLazyConnect.*',
@@ -112,20 +106,11 @@ excluded_tests = [
     'TestGridfs.test_request',
     'TestGridfs.test_gridfs_request',
 
-    # We test this directly, because it requires monkey-patching either socket
-    # or IOStream, depending on whether it's PyMongo or Motor.
-    ('TestReplicaSetClient.'
-     'test_auto_reconnect_exception_when_read_preference_is_secondary'),
-
     # No pinning in Motor since there are no requests.
     'TestReplicaSetClient.test_pinned_member',
 
     # Not allowed to call schedule_refresh directly in Motor.
     'TestReplicaSetClient.test_schedule_refresh',
-
-    # We don't make the same guarantee as PyMongo when connecting an
-    # RS client to a standalone.
-    'TestReplicaSetClientAgainstStandalone.test_connect',
 
     # test_read_preference: requires patching MongoReplicaSetClient specially.
     'TestCommandAndReadPreference.*',
@@ -158,13 +143,6 @@ excluded_tests = [
     'TestCursor.test_getitem_numeric_index',
     'TestCursor.test_getitem_slice_index',
     'TestCollection.test_min_query',
-
-    # Profiling format changes in MongoDB 3.2+, SERVER-19566.
-    'TestCursor.test_comment',
-    'TestDatabase.test_profiling_info',
-
-    # Needs updating for modern MongoDB.
-    'TestCollection.test_index_text',
 
     # No context-manager protocol for MotorCursor.
     'TestCursor.test_with_statement',
@@ -200,9 +178,6 @@ excluded_tests = [
     'TestExhaustCursor.*',
     'TestReplicaSetClientExhaustCursor.*',
     '*.test_wire_version',
-
-    # Obsolete test in PyMongo 2.8, updated for MongoDB 3.2+ in 519f0682.
-    'TestBulkWriteConcern.test_write_concern_failure_ordered',
 
     # Accesses PyMongo internals.
     'TestCollection.test_message_backport_codec_options',
