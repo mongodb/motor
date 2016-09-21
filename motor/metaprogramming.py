@@ -180,6 +180,7 @@ class Wrap(WrapBase):
         if self.doc:
             wrapper.__doc__ = self.doc
 
+        wrapper.is_wrap_method = True  # For Synchro.
         return wrapper
 
 
@@ -253,6 +254,7 @@ class Unwrap(WrapBase):
         if self.doc:
             _f.__doc__ = self.doc
 
+        _f.is_unwrap_method = True  # For Synchro.
         return _f
 
 

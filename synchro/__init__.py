@@ -32,7 +32,7 @@ from tornado.ioloop import IOLoop
 import motor
 import motor.frameworks.tornado
 import motor.motor_tornado
-from motor.metaprogramming import MotorAttributeFactory, Unwrap
+from motor.metaprogramming import MotorAttributeFactory, Unwrap, Wrap
 
 # Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
 # importing * won't pick up underscore-prefixed attrs.
@@ -163,6 +163,15 @@ class SynchroProperty(object):
         return setattr(obj.delegate.delegate, self.name, val)
 
 
+def wrap_outgoing(delegate_attr):
+    for decoration in ('is_motorcursor_chaining_method',
+                       'is_wrap_method'):
+        if getattr(delegate_attr, decoration, False):
+            return True
+
+    return False
+
+
 class SynchroMeta(type):
     """This metaclass customizes creation of Synchro's MongoClient, Database,
     etc., classes:
@@ -197,29 +206,22 @@ class SynchroMeta(type):
                 # If attrname is in attrs, it means Synchro has overridden
                 # this attribute, e.g. Database.add_son_manipulator which is
                 # special-cased. Ignore such attrs.
-                if attrname not in attrs:
-                    if getattr(
-                            delegate_attr, 'is_async_method', False):
-                        # Re-synchronize the method.
-                        sync_method = Sync(
-                            attrname, delegate_attr.has_write_concern)
-                        setattr(new_class, attrname, sync_method)
-                    elif isinstance(delegate_attr, Unwrap):
-                        # Re-synchronize the method.
-                        sync_method = Sync(
-                            attrname, delegate_attr.prop.has_write_concern)
-                        setattr(new_class, attrname, sync_method)
-                    elif getattr(
-                            delegate_attr,
-                            'is_motorcursor_chaining_method',
-                            False):
-                        # Wrap MotorCursors in Synchro Cursors.
-                        wrapper = WrapOutgoing()
-                        wrapper.name = attrname
-                        setattr(new_class, attrname, wrapper)
-                    elif isinstance(delegate_attr, property):
-                        # Delegate the property from Synchro to Motor.
-                        setattr(new_class, attrname, delegate_attr)
+                if attrname in attrs:
+                    continue
+
+                if getattr(delegate_attr, 'is_async_method', False):
+                    # Re-synchronize the method.
+                    sync_method = Sync(
+                        attrname, delegate_attr.has_write_concern)
+                    setattr(new_class, attrname, sync_method)
+                elif wrap_outgoing(delegate_attr):
+                    # Wrap MotorCursors in Synchro Cursors.
+                    wrapper = WrapOutgoing()
+                    wrapper.name = attrname
+                    setattr(new_class, attrname, wrapper)
+                elif isinstance(delegate_attr, property):
+                    # Delegate the property from Synchro to Motor.
+                    setattr(new_class, attrname, delegate_attr)
 
         # Set DelegateProperties' and SynchroProperties' names.
         for name, attr in attrs.items():
