@@ -50,7 +50,7 @@ class TestAsyncIOReplicaSet(AsyncIOTestCase):
         with self.assertRaises(pymongo.errors.ConnectionFailure):
             yield from client.open()
 
-    @unittest.skipIf(pymongo.version_tuple < (3, ), "PYTHON-1145")
+    @unittest.skipIf(pymongo.version_tuple < (2, 9, 4), "PYTHON-1145")
     def test_uuid_subtype(self):
         cx = self.asyncio_rsc(uuidRepresentation='javaLegacy')
         self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)

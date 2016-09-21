@@ -121,7 +121,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         yield [c.db.collection.find_one(), c.db.collection.find_one()]
 
     def test_uuid_subtype(self):
-        if pymongo.version_tuple < (3, ):
+        if pymongo.version_tuple < (2, 9, 4):
             raise SkipTest("PYTHON-1145")
 
         cx = self.motor_rsc(uuidRepresentation='javaLegacy')
