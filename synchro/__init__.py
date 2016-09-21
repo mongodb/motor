@@ -100,10 +100,10 @@ def wrap_synchro(fn):
         if isinstance(motor_obj, motor.MotorCollection):
             client = MongoClient(delegate=motor_obj.database.connection)
             database = Database(client, motor_obj.database.name)
-            return Collection(database, motor_obj.name)
+            return Collection(database, motor_obj.name, delegate=motor_obj)
         if isinstance(motor_obj, motor.MotorDatabase):
             client = MongoClient(delegate=motor_obj.connection)
-            return Database(client, motor_obj.name)
+            return Database(client, motor_obj.name, delegate=motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorCommandCursor):
             return CommandCursor(motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorCursor):
@@ -308,6 +308,7 @@ class Synchro(object):
 
 class MongoClientBase(Synchro):
     _cache_credentials = SynchroProperty()
+    get_database = WrapOutgoing()
     get_default_database = WrapOutgoing()
     max_pool_size = SynchroProperty()
     max_write_batch_size = SynchroProperty()
@@ -443,16 +444,15 @@ class MongoReplicaSetClient(MongoClientBase):
 
 class Database(Synchro):
     __delegate_class__ = motor.MotorDatabase
+    get_collection     = WrapOutgoing()
 
-    def __init__(self, client, name):
+    def __init__(self, client, name, delegate=None):
         assert isinstance(client, (MongoClient, MongoReplicaSetClient)), (
             "Expected MongoClient or MongoReplicaSetClient, got %s"
             % repr(client))
 
-        # "client" is modern, "connection" is deprecated.
-        self.client = self.connection = client
-
-        self.delegate = client.delegate[name]
+        self.connection = client
+        self.delegate = delegate or client.delegate[name]
         assert isinstance(self.delegate, motor.MotorDatabase), (
             "synchro.Database delegate must be MotorDatabase, not "
             " %s" % repr(self.delegate))
@@ -478,14 +478,14 @@ class Collection(Synchro):
     initialize_unordered_bulk_op    = WrapOutgoing()
     initialize_ordered_bulk_op      = WrapOutgoing()
 
-    def __init__(self, database, name):
+    def __init__(self, database, name, delegate=None):
         if not isinstance(database, Database):
             raise TypeError(
                 "First argument to synchro Collection must be synchro "
                 "Database, not %s" % repr(database))
 
         self.database = database
-        self.delegate = database.delegate[name]
+        self.delegate = delegate or database.delegate[name]
 
         if not isinstance(self.delegate, motor.MotorCollection):
             raise TypeError(
