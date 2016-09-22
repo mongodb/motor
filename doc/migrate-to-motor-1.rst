@@ -338,7 +338,7 @@ MotorClient and MotorReplicaSetClient
 -------------------------------------
 
 The ``open`` method
-.................
+...................
 
 In Motor 1.0, the `MotorClient.open` and `MotorReplicaSetClient.open` methods
 are removed. Motor clients have opened themselves on demand since Motor 0.2.
