@@ -18,19 +18,15 @@
 import asyncio
 import datetime
 import unittest
-from unittest import SkipTest
-
-from gridfs.errors import NoFile, FileExists
-from pymongo import ReadPreference
-from pymongo.errors import InvalidOperation, ConfigurationError, AutoReconnect
 
 import test
+from gridfs.errors import FileExists, NoFile
 from motor.motor_asyncio import (AsyncIOMotorGridFS,
                                  AsyncIOMotorGridIn,
                                  AsyncIOMotorGridOut)
 from motor.motor_py3_compat import StringIO
-from test.asyncio_tests import asyncio_test, AsyncIOTestCase
-from test.test_environment import db_password, db_user
+from pymongo.errors import ConfigurationError, InvalidOperation
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 
 class TestAsyncIOGridFile(AsyncIOTestCase):

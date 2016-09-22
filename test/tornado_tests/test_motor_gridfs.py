@@ -22,16 +22,13 @@ from functools import partial
 from bson import ObjectId
 
 from gridfs.errors import FileExists, NoFile
-from pymongo.errors import AutoReconnect, ConfigurationError
-from pymongo.read_preferences import ReadPreference
+from pymongo.errors import ConfigurationError
 from tornado import gen
 from tornado.testing import gen_test
 
 import motor
-import test
-from test.test_environment import db_password, db_user
 from motor.motor_py3_compat import StringIO
-from test.tornado_tests import MotorTest, MotorReplicaSetTestBase
+from test.tornado_tests import MotorTest
 
 
 class MotorGridfsTest(MotorTest):
