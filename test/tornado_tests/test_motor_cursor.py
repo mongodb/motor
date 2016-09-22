@@ -468,7 +468,7 @@ class MotorCursorTest(MotorMockServerTest):
         cursor = self.collection.find()
         yield cursor.fetch_next
         yield cursor.close()  # Killed but still "alive": has a batch.
-        self.cx.disconnect()
+        self.cx.close()
 
         with warnings.catch_warnings(record=True) as w:
             del cursor  # No-op, no error.

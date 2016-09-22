@@ -32,7 +32,7 @@ from motor.motor_asyncio import AsyncIOMotorCollection, \
 import test
 from test.asyncio_tests import (asyncio_test, AsyncIOTestCase,
                                 skip_if_mongos, at_least)
-from test.utils import delay
+from test.utils import delay, ignore_deprecations
 
 
 class TestAsyncIOCollection(AsyncIOTestCase):
@@ -223,7 +223,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         while (yield from coll.count()):
             yield from asyncio.sleep(0.1, loop=self.loop)
 
-        coll.database.connection.close()
+        coll.database.client.close()
 
     @asyncio_test
     def test_unacknowledged_insert(self):
@@ -257,7 +257,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
         # Clean up.
         yield from future
-        coll.database.connection.close()
+        coll.database.client.close()
 
     @asyncio_test
     def test_unacknowledged_update(self):
@@ -270,7 +270,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         while not (yield from coll.find_one({'a': 1})):
             yield from asyncio.sleep(0.1, loop=self.loop)
 
-        coll.database.connection.close()
+        coll.database.client.close()
 
     @asyncio_test
     def test_nested_callbacks(self):
@@ -429,9 +429,11 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
     def test_uuid_subtype(self):
         collection = self.db.test
-        self.assertEqual(collection.uuid_subtype, OLD_UUID_SUBTYPE)
-        collection.uuid_subtype = JAVA_LEGACY
-        self.assertEqual(collection.uuid_subtype, JAVA_LEGACY)
+
+        with ignore_deprecations():
+            self.assertEqual(collection.uuid_subtype, OLD_UUID_SUBTYPE)
+            collection.uuid_subtype = JAVA_LEGACY
+            self.assertEqual(collection.uuid_subtype, JAVA_LEGACY)
 
     def test_with_options(self):
         coll = self.db.test

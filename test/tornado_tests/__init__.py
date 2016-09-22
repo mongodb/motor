@@ -70,7 +70,7 @@ def skip_if_mongos(client):
 
 @gen.coroutine
 def remove_all_users(db):
-    version_check = yield at_least(db.connection, (2, 5, 4))
+    version_check = yield at_least(db.client, (2, 5, 4))
     if version_check:
         yield db.command({"dropAllUsersFromDatabase": 1})
     else:
@@ -86,7 +86,7 @@ def skip_if_mongos(client):
 
 @gen.coroutine
 def remove_all_users(db):
-    version_check = yield at_least(db.connection, (2, 5, 4))
+    version_check = yield at_least(db.client, (2, 5, 4))
     if version_check:
         yield db.command({"dropAllUsersFromDatabase": 1})
     else:

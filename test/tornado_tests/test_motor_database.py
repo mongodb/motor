@@ -51,7 +51,7 @@ class MotorDatabaseTest(MotorTest):
         db = self.db
         self.assertTrue(isinstance(db.delegate, pymongo.database.Database))
         self.assertTrue(isinstance(db['delegate'], motor.MotorCollection))
-        db.connection.close()
+        db.client.close()
 
     def test_call(self):
         # Prevents user error with nice message.
@@ -202,7 +202,7 @@ class MotorDatabaseTest(MotorTest):
 
         finally:
             yield remove_all_users(self.db)
-            test.env.sync_cx.disconnect()
+            test.env.sync_cx.close()
 
     @gen_test
     def test_validate_collection(self):
@@ -223,9 +223,11 @@ class MotorDatabaseTest(MotorTest):
 
     def test_uuid_subtype(self):
         db = self.cx.test
-        self.assertEqual(db.uuid_subtype, OLD_UUID_SUBTYPE)
-        db.uuid_subtype = JAVA_LEGACY
-        self.assertEqual(db.uuid_subtype, JAVA_LEGACY)
+
+        with ignore_deprecations():
+            self.assertEqual(db.uuid_subtype, OLD_UUID_SUBTYPE)
+            db.uuid_subtype = JAVA_LEGACY
+            self.assertEqual(db.uuid_subtype, JAVA_LEGACY)
 
     def test_get_collection(self):
         codec_options = CodecOptions(

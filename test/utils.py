@@ -17,6 +17,7 @@ from __future__ import unicode_literals
 """Utilities for testing Motor with any framework."""
 
 import contextlib
+import functools
 import warnings
 
 
@@ -40,8 +41,22 @@ def safe_get(dct, dotted_key, default=None):
     return dct
 
 
-@contextlib.contextmanager
-def ignore_deprecations():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        yield
+# Use as a decorator or in a "with" statement.
+def ignore_deprecations(fn=None):
+    if fn:
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                return fn(*args, **kwargs)
+
+        return wrapper
+
+    else:
+        @contextlib.contextmanager
+        def ignore_deprecations_context():
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                yield
+
+        return ignore_deprecations_context()

@@ -25,6 +25,7 @@ import motor
 import test
 from test import SkipTest
 from test.tornado_tests import MotorTest
+from test.utils import ignore_deprecations
 
 
 class MotorTestBasic(MotorTest):
@@ -108,6 +109,7 @@ class MotorTestBasic(MotorTest):
         cxw2.close()
 
     @gen_test
+    @ignore_deprecations
     def test_read_preference(self):
         # Check the default
         cx = motor.MotorClient(test.env.uri, io_loop=self.io_loop)

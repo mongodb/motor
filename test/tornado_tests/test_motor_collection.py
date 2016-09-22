@@ -34,7 +34,7 @@ import motor.motor_tornado
 import test
 from test import SkipTest
 from test.tornado_tests import at_least, MotorTest, skip_if_mongos
-from test.utils import delay
+from test.utils import delay, ignore_deprecations
 
 
 class MotorCollectionTest(MotorTest):
@@ -239,7 +239,7 @@ class MotorCollectionTest(MotorTest):
         while (yield coll.count()):
             yield self.pause(0.1)
 
-        coll.database.connection.close()
+        coll.database.client.close()
 
     @gen_test
     def test_unacknowledged_insert(self):
@@ -273,7 +273,7 @@ class MotorCollectionTest(MotorTest):
         # DuplicateKeyError not raised
         coll.save({'_id': 201})
         yield coll.save({'_id': 201}, w=0)
-        coll.database.connection.close()
+        coll.database.client.close()
 
     @gen_test
     def test_unacknowledged_update(self):
@@ -286,7 +286,7 @@ class MotorCollectionTest(MotorTest):
         while not (yield coll.find_one({'a': 1})):
             yield self.pause(0.1)
 
-        coll.database.connection.close()
+        coll.database.client.close()
 
     @gen_test
     def test_nested_callbacks(self):
@@ -490,9 +490,11 @@ class MotorCollectionTest(MotorTest):
 
     def test_uuid_subtype(self):
         collection = self.db.test
-        self.assertEqual(collection.uuid_subtype, OLD_UUID_SUBTYPE)
-        collection.uuid_subtype = JAVA_LEGACY
-        self.assertEqual(collection.uuid_subtype, JAVA_LEGACY)
+
+        with ignore_deprecations():
+            self.assertEqual(collection.uuid_subtype, OLD_UUID_SUBTYPE)
+            collection.uuid_subtype = JAVA_LEGACY
+            self.assertEqual(collection.uuid_subtype, JAVA_LEGACY)
 
     def test_with_options(self):
         coll = self.db.test

@@ -26,6 +26,7 @@ from motor import motor_asyncio
 from test import SkipTest
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.test_environment import port, host
+from test.utils import ignore_deprecations
 
 
 class TestAsyncIOReplicaSet(AsyncIOTestCase):
@@ -48,15 +49,17 @@ class TestAsyncIOReplicaSet(AsyncIOTestCase):
             'localhost:8765', replicaSet='rs', io_loop=self.loop)
 
         with self.assertRaises(pymongo.errors.ConnectionFailure):
-            yield from client.open()
+            yield from client.admin.command('ping')
 
     @unittest.skipIf(pymongo.version_tuple < (2, 9, 4), "PYTHON-1145")
     def test_uuid_subtype(self):
         cx = self.asyncio_rsc(uuidRepresentation='javaLegacy')
-        self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
-        cx.uuid_subtype = UUID_SUBTYPE
-        self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
-        self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
+
+        with ignore_deprecations():
+            self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
+            cx.uuid_subtype = UUID_SUBTYPE
+            self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
+            self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
 
 
 class TestReplicaSetClientAgainstStandalone(AsyncIOTestCase):

@@ -36,15 +36,16 @@ from test.asyncio_tests import (asyncio_test,
                                 AsyncIOMockServerTestCase,
                                 remove_all_users)
 from test.test_environment import host, port, db_user, db_password
-from test.utils import one
+from test.utils import one, ignore_deprecations
 
 
 class TestAsyncIOClient(AsyncIOTestCase):
     @asyncio_test
     def test_client_open(self):
         cx = self.asyncio_client()
-        self.assertEqual(cx, (yield from cx.open()))
-        self.assertEqual(cx, (yield from cx.open()))  # Same the second time.
+        with ignore_deprecations():
+            self.assertEqual(cx, (yield from cx.open()))
+            self.assertEqual(cx, (yield from cx.open()))  # Same, second time.
 
     @asyncio_test
     def test_client_lazy_connect(self):
@@ -61,9 +62,9 @@ class TestAsyncIOClient(AsyncIOTestCase):
         cx.close()
 
     @asyncio_test
-    def test_disconnect(self):
+    def test_close(self):
         cx = self.asyncio_client()
-        cx.disconnect()
+        cx.close()
         self.assertEqual(None, cx._get_primary_pool())
 
     @asyncio_test
@@ -86,12 +87,14 @@ class TestAsyncIOClient(AsyncIOTestCase):
             "mongodb:///tmp/non-existent.sock", io_loop=self.loop)
 
         with self.assertRaises(ConnectionFailure):
-            yield from client.open()
+            yield from client.admin.command('ping')
         client.close()
 
     def test_open_sync(self):
         loop = asyncio.new_event_loop()
-        cx = loop.run_until_complete(self.asyncio_client(io_loop=loop).open())
+        with ignore_deprecations():
+            cx = loop.run_until_complete(self.asyncio_client(io_loop=loop).open())
+
         self.assertTrue(isinstance(cx, motor_asyncio.AsyncIOMotorClient))
         cx.close()
         loop.stop()
@@ -107,7 +110,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
     @asyncio_test
     def test_reconnect_in_case_connection_closed_by_mongo(self):
         cx = self.asyncio_client(max_pool_size=1)
-        yield from cx.open()
+        yield from cx.admin.command('ping')
 
         # close motor_socket, we imitate that connection to mongo server
         # lost, as result we should have AutoReconnect instead of
@@ -127,7 +130,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
                                                   io_loop=self.loop)
 
         with self.assertRaises(ConnectionFailure):
-            yield from client.open()
+            yield from client.admin.command('ping')
 
     @asyncio_test(timeout=30)
     def test_connection_timeout(self):
@@ -139,7 +142,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
             connectTimeoutMS=1, io_loop=self.loop)
 
         with self.assertRaises(ConnectionFailure):
-            yield from client.open()
+            yield from client.admin.command('ping')
 
     @asyncio_test
     def test_max_pool_size_validation(self):
@@ -227,8 +230,8 @@ class TestAsyncIOClient(AsyncIOTestCase):
                 'mongodb://u:pass@%s:%d' % (host, port),
                 io_loop=self.loop)
 
-            # Note: open() only calls ismaster, doesn't throw auth errors.
-            yield from client.open()
+            # ismaster doesn't throw auth errors.
+            yield from client.admin.command('ismaster')
 
             with self.assertRaises(OperationFailure):
                 yield from client.db.collection.find_one()
@@ -256,10 +259,12 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
     def test_uuid_subtype(self):
         cx = self.asyncio_client(uuidRepresentation='javaLegacy')
-        self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
-        cx.uuid_subtype = UUID_SUBTYPE
-        self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
-        self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
+
+        with ignore_deprecations():
+            self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
+            cx.uuid_subtype = UUID_SUBTYPE
+            self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
+            self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
 
     def test_get_database(self):
         codec_options = CodecOptions(tz_aware=True)
@@ -312,7 +317,8 @@ class TestAsyncIOClientExhaustCursor(AsyncIOMockServerTestCase):
         client = motor_asyncio.AsyncIOMotorClient(server.uri,
                                                   max_pool_size=1,
                                                   io_loop=self.loop)
-        yield from client.open()
+
+        yield from client.admin.command('ismaster')
         pool = client._get_primary_pool()
         sock_info = one(pool.sockets)
         cursor = client.db.collection.find(exhaust=True)
@@ -343,7 +349,7 @@ class TestAsyncIOClientExhaustCursor(AsyncIOMockServerTestCase):
                                                   max_pool_size=1,
                                                   io_loop=self.loop)
 
-        yield from client.open()
+        yield from client.admin.command('ismaster')
         pool = client._get_primary_pool()
         pool._check_interval_seconds = None  # Never check.
         sock_info = one(pool.sockets)

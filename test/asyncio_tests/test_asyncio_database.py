@@ -36,6 +36,7 @@ from test.asyncio_tests import (asyncio_test,
                                 at_least,
                                 remove_all_users)
 from test.test_environment import host, port
+from test.utils import ignore_deprecations
 
 
 class TestAsyncIODatabase(AsyncIOTestCase):
@@ -56,7 +57,7 @@ class TestAsyncIODatabase(AsyncIOTestCase):
         db = self.db
         self.assertTrue(isinstance(db.delegate, pymongo.database.Database))
         self.assertTrue(isinstance(db['delegate'], AsyncIOMotorCollection))
-        db.connection.close()
+        db.client.close()
 
     def test_call(self):
         # Prevents user error with nice message.
@@ -172,7 +173,7 @@ class TestAsyncIODatabase(AsyncIOTestCase):
 
         finally:
             yield from remove_all_users(self.db)
-            test.env.sync_cx.disconnect()
+            test.env.sync_cx.close()
 
     @asyncio_test
     def test_validate_collection(self):
@@ -193,9 +194,11 @@ class TestAsyncIODatabase(AsyncIOTestCase):
 
     def test_uuid_subtype(self):
         db = self.cx.test
-        self.assertEqual(db.uuid_subtype, OLD_UUID_SUBTYPE)
-        db.uuid_subtype = JAVA_LEGACY
-        self.assertEqual(db.uuid_subtype, JAVA_LEGACY)
+
+        with ignore_deprecations():
+            self.assertEqual(db.uuid_subtype, OLD_UUID_SUBTYPE)
+            db.uuid_subtype = JAVA_LEGACY
+            self.assertEqual(db.uuid_subtype, JAVA_LEGACY)
 
     def test_get_collection(self):
         codec_options = CodecOptions(

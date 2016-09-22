@@ -407,7 +407,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         cursor = self.collection.find()
         yield from cursor.fetch_next
         yield from cursor.close()  # Killed but still "alive": has a batch.
-        self.cx.disconnect()
+        self.cx.close()
 
         with warnings.catch_warnings(record=True) as w:
             del cursor  # No-op, no error.

@@ -22,13 +22,17 @@ from motor import MotorGridFS
 import test
 from test import SkipTest
 from test.tornado_tests import at_least, MotorTest
+from test.utils import ignore_deprecations
 
 
 class MotorTestAwait(MotorTest):
     @gen_test
     async def test_open_client(self):
         client = self.motor_client()
-        self.assertEqual(client, await client.open())
+
+        with ignore_deprecations():
+            self.assertEqual(client, await client.open())
+
         client.close()
 
     @gen_test
@@ -37,7 +41,8 @@ class MotorTestAwait(MotorTest):
             raise SkipTest("Not connected to a replica set")
 
         rsc = self.motor_rsc()
-        self.assertEqual(rsc, await rsc.open())
+        with ignore_deprecations():
+            self.assertEqual(rsc, await rsc.open())
 
     @gen_test
     async def test_to_list(self):

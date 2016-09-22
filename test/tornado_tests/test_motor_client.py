@@ -37,15 +37,16 @@ import test
 from test import SkipTest
 from test.test_environment import host, port, db_user, db_password
 from test.tornado_tests import remove_all_users, MotorTest, MotorMockServerTest
-from test.utils import one
+from test.utils import one, ignore_deprecations
 
 
 class MotorClientTest(MotorTest):
     @gen_test
     def test_client_open(self):
         cx = self.motor_client()
-        self.assertEqual(cx, (yield cx.open()))
-        self.assertEqual(cx, (yield cx.open()))  # Same the second time.
+        with ignore_deprecations():
+            self.assertEqual(cx, (yield cx.open()))
+            self.assertEqual(cx, (yield cx.open()))  # Same the second time.
 
     @gen_test
     def test_client_lazy_connect(self):
@@ -63,9 +64,9 @@ class MotorClientTest(MotorTest):
         cx.close()
 
     @gen_test
-    def test_disconnect(self):
+    def test_close(self):
         cx = self.motor_client()
-        cx.disconnect()
+        cx.close()
         self.assertEqual(None, cx._get_primary_pool())
 
     @gen_test
@@ -87,7 +88,7 @@ class MotorClientTest(MotorTest):
             "mongodb:///tmp/non-existent.sock", io_loop=self.io_loop)
 
         with self.assertRaises(ConnectionFailure):
-            yield client.open()
+            yield client.admin.command('ping')
 
     def test_io_loop(self):
         with self.assertRaises(TypeError):
@@ -95,7 +96,10 @@ class MotorClientTest(MotorTest):
 
     def test_open_sync(self):
         loop = IOLoop()
-        cx = loop.run_sync(self.motor_client(io_loop=loop).open)
+
+        with ignore_deprecations():
+            cx = loop.run_sync(self.motor_client(io_loop=loop).open)
+
         self.assertTrue(isinstance(cx, motor.MotorClient))
 
     def test_database_named_delegate(self):
@@ -111,10 +115,12 @@ class MotorClientTest(MotorTest):
 
         # Test the Future interface.
         with self.assertRaises(ConnectionFailure):
-            yield client.open()
+            yield client.admin.command('ping')
 
         # Test with a callback.
-        (result, error), _ = yield gen.Task(client.open)
+        with ignore_deprecations():
+            (result, error), _ = yield gen.Task(client.open)
+
         self.assertEqual(None, result)
         self.assertTrue(isinstance(error, ConnectionFailure))
 
@@ -128,7 +134,7 @@ class MotorClientTest(MotorTest):
             connectTimeoutMS=1, io_loop=self.io_loop)
 
         with self.assertRaises(ConnectionFailure):
-            yield client.open()
+            yield client.admin.command('ping')
 
     @gen_test
     def test_max_pool_size_validation(self):
@@ -213,8 +219,8 @@ class MotorClientTest(MotorTest):
                 'mongodb://u:pass@%s:%d' % (host, port),
                 io_loop=self.io_loop)
 
-            # Note: open() only calls ismaster, doesn't throw auth errors.
-            yield client.open()
+            # ismaster doesn't throw auth errors.
+            yield client.admin.command('ismaster')
 
             with self.assertRaises(OperationFailure):
                 yield client.db.collection.find_one()
@@ -242,10 +248,12 @@ class MotorClientTest(MotorTest):
 
     def test_uuid_subtype(self):
         cx = self.motor_client(uuidRepresentation='javaLegacy')
-        self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
-        cx.uuid_subtype = UUID_SUBTYPE
-        self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
-        self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
+
+        with ignore_deprecations():
+            self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
+            cx.uuid_subtype = UUID_SUBTYPE
+            self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
+            self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
 
     def test_get_database(self):
         codec_options = CodecOptions(tz_aware=True)
@@ -297,7 +305,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         # but must be checked in on error to avoid counter leak.
         server = self.primary_or_standalone(rs=rs)
         client = motor.MotorClient(server.uri, max_pool_size=1)
-        yield client.open()
+        yield client.admin.command('ismaster')
         pool = client._get_primary_pool()
         sock_info = one(pool.sockets)
         cursor = client.db.collection.find(exhaust=True)
@@ -328,7 +336,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         server = self.primary_or_standalone(rs=rs)
         client = motor.MotorClient(server.uri, max_pool_size=1)
 
-        yield client.open()
+        yield client.admin.command('ismaster')
         pool = client._get_primary_pool()
         pool._check_interval_seconds = None  # Never check.
         sock_info = one(pool.sockets)

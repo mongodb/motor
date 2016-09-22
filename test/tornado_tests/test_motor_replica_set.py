@@ -32,7 +32,7 @@ import test
 from test import SkipTest
 from test.test_environment import db_user, db_password, port, host
 from test.tornado_tests import MotorReplicaSetTestBase, MotorTest
-from test.utils import one
+from test.utils import one, ignore_deprecations
 
 from motor.motor_py3_compat import text_type
 
@@ -59,12 +59,14 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         client = motor.MotorReplicaSetClient(
             'localhost:8765', replicaSet='rs', io_loop=self.io_loop)
 
-        # Test the Future interface.
-        with self.assertRaises(pymongo.errors.ConnectionFailure):
-            yield client.open()
+        with ignore_deprecations():
+            # Test the Future interface.
+            with self.assertRaises(pymongo.errors.ConnectionFailure):
+                yield client.open()
 
-        # Test with a callback.
-        (result, error), _ = yield gen.Task(client.open)
+            # Test with a callback.
+            (result, error), _ = yield gen.Task(client.open)
+
         self.assertEqual(None, result)
         self.assertTrue(isinstance(error, pymongo.errors.ConnectionFailure))
 
@@ -125,10 +127,12 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             raise SkipTest("PYTHON-1145")
 
         cx = self.motor_rsc(uuidRepresentation='javaLegacy')
-        self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
-        cx.uuid_subtype = UUID_SUBTYPE
-        self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
-        self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
+
+        with ignore_deprecations():
+            self.assertEqual(cx.uuid_subtype, JAVA_LEGACY)
+            cx.uuid_subtype = UUID_SUBTYPE
+            self.assertEqual(cx.uuid_subtype, UUID_SUBTYPE)
+            self.assertEqual(cx.delegate.uuid_subtype, UUID_SUBTYPE)
 
 
 class TestReplicaSetClientAgainstStandalone(MotorTest):

@@ -23,6 +23,7 @@ from motor import motor_asyncio
 
 import test
 from test.asyncio_tests import asyncio_test, AsyncIOTestCase
+from test.utils import ignore_deprecations
 
 
 class AIOMotorTestBasic(AsyncIOTestCase):
@@ -106,6 +107,7 @@ class AIOMotorTestBasic(AsyncIOTestCase):
         cxw2.close()
 
     @asyncio_test
+    @ignore_deprecations
     def test_read_preference(self):
         # Check the default
         cx = motor_asyncio.AsyncIOMotorClient(test.env.uri, io_loop=self.loop)
