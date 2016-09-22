@@ -22,17 +22,12 @@ import functools
 from pymongo.cursor import Cursor
 
 from . import motor_py3_compat
-from .motor_common import check_deprecated_kwargs, mangle_delegate_name
+from .motor_common import check_deprecated_kwargs
 
 _class_cache = {}
 
 
-def asynchronize(
-        motor_class,
-        framework,
-        sync_method,
-        has_write_concern,
-        doc=None):
+def asynchronize(framework, sync_method, has_write_concern, doc=None):
     """Decorate `sync_method` so it accepts a callback or returns a Future.
 
     The method runs on a thread and calls the callback or resolves
@@ -64,7 +59,7 @@ def asynchronize(
     method.is_async_method = True
     method.has_write_concern = has_write_concern
     name = sync_method.__name__
-    method.pymongo_method_name = mangle_delegate_name(motor_class, name)
+    method.pymongo_method_name = name
     if doc is not None:
         method.__doc__ = doc
 
@@ -126,10 +121,9 @@ class Async(MotorAttributeFactory):
         self.has_write_concern = has_write_concern
 
     def create_attribute(self, cls, attr_name):
-        name = mangle_delegate_name(cls, self.attr_name or attr_name)
+        name = self.attr_name or attr_name
         method = getattr(cls.__delegate_class__, name)
         return asynchronize(
-            motor_class=cls,
             framework=cls._framework,
             sync_method=method,
             has_write_concern=self.has_write_concern,
@@ -162,8 +156,7 @@ class Wrap(WrapBase):
         self.original_class = original_class
 
     def create_attribute(self, cls, attr_name):
-        name = mangle_delegate_name(cls, attr_name)
-        method = getattr(cls.__delegate_class__, name)
+        method = getattr(cls.__delegate_class__, attr_name)
         original_class = self.original_class
 
         @functools.wraps(method)

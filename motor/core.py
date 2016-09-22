@@ -47,8 +47,7 @@ from .metaprogramming import (AsyncCommand,
                               ReadOnlyProperty,
                               ReadWriteProperty)
 from .motor_common import (callback_type_error,
-                           check_deprecated_kwargs,
-                           mangle_delegate_name)
+                           check_deprecated_kwargs)
 from motor.docstrings import *
 
 HAS_SSL = True
@@ -97,6 +96,7 @@ class AgnosticClientBase(AgnosticBaseProperties):
     document_class       = ReadWriteProperty()
     drop_database        = AsyncCommand().unwrap('MotorDatabase')
     get_database         = DelegateMethod(doc=get_database_doc).wrap(Database)
+    get_default_database = DelegateMethod().wrap(Database)
     get_document_class   = DelegateMethod()
     is_mongos            = ReadOnlyProperty()
     local_threshold_ms   = ReadOnlyProperty()
@@ -139,30 +139,6 @@ class AgnosticClientBase(AgnosticBaseProperties):
 
         return db_class(self, name)
 
-    def get_default_database(self):
-        """Get the database named in the MongoDB connection URI.
-
-        .. doctest::
-
-          >>> uri = 'mongodb://localhost/my_database'
-          >>> client = MotorClient(uri)
-          >>> db = client.get_default_database()
-          >>> assert db.name == 'my_database'
-
-        Useful in scripts where you want to choose which database to use
-        based only on the URI in a configuration file.
-        """
-        attr_name = mangle_delegate_name(
-            self.__class__,
-            '__default_database_name')
-
-        default_db_name = getattr(self.delegate, attr_name)
-        if default_db_name is None:
-            raise pymongo.errors.ConfigurationError(
-                'No default database defined')
-
-        return self[default_db_name]
-
     def wrap(self, db):
         # Replace pymongo.database.Database with MotorDatabase.
         db_class = create_class_with_framework(
@@ -184,9 +160,6 @@ class AgnosticClient(AgnosticClientBase):
     nodes        = ReadOnlyProperty()
     host         = ReadOnlyProperty()
     port         = ReadOnlyProperty()
-
-    _simple_command = AsyncRead(attr_name='__simple_command')
-    _socket         = AsyncRead(attr_name='__socket')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -256,9 +229,6 @@ class AgnosticReplicaSetClient(AgnosticClientBase):
     refresh     = AsyncCommand()
     seeds       = DelegateMethod()
     close       = DelegateMethod()
-
-    _simple_command = AsyncRead(attr_name='__simple_command')
-    _socket         = AsyncRead(attr_name='__socket')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a MongoDB replica set.

@@ -34,12 +34,3 @@ def check_deprecated_kwargs(kwargs):
     if 'auto_start_request' in kwargs:
         raise pymongo.errors.ConfigurationError(
             "Motor does not support requests")
-
-
-def mangle_delegate_name(motor_class, name):
-    if name.startswith('__') and not name.endswith("__"):
-        # Mangle, e.g. Cursor.__die -> Cursor._Cursor__die
-        classname = motor_class.__delegate_class__.__name__
-        return '_%s%s' % (classname, name)
-    else:
-        return name
