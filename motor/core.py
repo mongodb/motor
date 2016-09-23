@@ -1065,6 +1065,7 @@ class AgnosticBaseCursor(AgnosticBase):
 class AgnosticCursor(AgnosticBaseCursor):
     __motor_class_name__ = 'MotorCursor'
     __delegate_class__ = Cursor
+    address       = ReadOnlyProperty()
     count         = AsyncRead()
     distinct      = AsyncRead()
     explain       = AsyncRead()

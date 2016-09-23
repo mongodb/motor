@@ -38,6 +38,7 @@ class AgnosticGridOutCursor(AgnosticBaseCursor):
     __motor_class_name__ = 'MotorGridOutCursor'
     __delegate_class__ = gridfs.GridOutCursor
 
+    address       = ReadOnlyProperty()
     add_option    = MotorCursorChainingMethod()
     comment       = MotorCursorChainingMethod()
     count         = AsyncRead()
