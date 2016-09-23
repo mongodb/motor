@@ -45,17 +45,6 @@ class MotorGridFileTest(MotorTest):
         super(MotorGridFileTest, self).tearDown()
 
     @gen_test
-    def test_grid_in_callback(self):
-        f = motor.MotorGridIn(self.db.fs, filename="test")
-        yield self.check_optional_callback(partial(f.set, 'name', 'value'))
-        yield self.check_optional_callback(partial(f.write, b'a'))
-        yield self.check_optional_callback(partial(f.writelines, [b'a']))
-
-        self.assertRaises(TypeError, f.close, callback='foo')
-        self.assertRaises(TypeError, f.close, callback=1)
-        f.close(callback=None)  # No error
-
-    @gen_test
     def test_attributes(self):
         f = motor.MotorGridIn(
             self.db.fs,
