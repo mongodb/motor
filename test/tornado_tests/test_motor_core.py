@@ -31,32 +31,17 @@ def attrs(klass):
 
 motor_only = set([
     'delegate',
+    'get_io_loop',
     'io_loop',
-    'wrap',
-    'get_io_loop'])
+    'wrap'])
 
-pymongo_only = set([
-    'get_lasterror_options',
-    'next',
-    'safe',
-    'set_lasterror_options',
-    'slave_okay',
-    'unset_lasterror_options'])
+pymongo_only = set(['next'])
 
-motor_client_only = motor_only.union([
-    'open'])
+motor_client_only = motor_only.union(['open'])
 
 pymongo_client_only = set([
-    'HOST',
-    'PORT',
-    'auto_start_request',
-    'copy_database',
-    'end_request',
-    'in_request',
     'is_locked',
-    'set_cursor_manager',
-    'start_request',
-    'use_greenlets']).union(pymongo_only)
+    'set_cursor_manager']).union(pymongo_only)
 
 motor_cursor_only = set([
     'fetch_next',
@@ -66,9 +51,7 @@ motor_cursor_only = set([
     'next_object',
     'closed']).union(motor_only)
 
-pymongo_cursor_only = set([
-    'retrieved'
-]).union(pymongo_only)
+pymongo_cursor_only = set(['retrieved']).union(pymongo_only)
 
 
 class MotorCoreTest(MotorTest):
@@ -111,13 +94,9 @@ class MotorCoreTest(MotorTest):
 
 class MotorCoreTestRS(MotorReplicaSetTestBase):
     def test_rs_client_attrs(self):
-        pymongo_rs_client_only = set([
-            'pool_class'
-        ]).union(pymongo_client_only)
-
         sync_cx_rs = MongoReplicaSetClient(env.rs_uri)
         self.assertEqual(
-            attrs(sync_cx_rs) - pymongo_rs_client_only,
+            attrs(sync_cx_rs) - pymongo_client_only,
             attrs(self.rsc) - motor_client_only)
 
 
@@ -138,18 +117,14 @@ class MotorCoreTestGridFS(MotorTest):
             'open',
             'remove'])
 
-        motor_gridfs_only = set([
-            'collection'
-        ]).union(motor_only)
+        motor_gridfs_only = set(['collection']).union(motor_only)
 
         self.assertEqual(
             attrs(GridFS(env.sync_cx.test)) - pymongo_gridfs_only,
             attrs(MotorGridFS(self.cx.test)) - motor_gridfs_only)
 
     def test_gridin_attrs(self):
-        motor_gridin_only = set([
-            'set'
-        ]).union(motor_only)
+        motor_gridin_only = set(['set']).union(motor_only)
 
         self.assertEqual(
             attrs(GridIn(env.sync_cx.test.fs)),

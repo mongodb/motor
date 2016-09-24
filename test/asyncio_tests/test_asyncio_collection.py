@@ -400,10 +400,8 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         yield from collection.insert(({'_id': i} for i in range(8000)),
                                      w=test.env.w)
         if test.env.is_replica_set:
-            client = self.asyncio_rsc()
-
             # Test that getMore messages are sent to the right server.
-            client.read_preference = ReadPreference.SECONDARY
+            client = self.asyncio_rsc(read_preference=Secondary())
             collection = client.motor_test.test_collection
 
         docs = []

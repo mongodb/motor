@@ -82,7 +82,7 @@ class MotorClientTest(MotorTest):
         if not os.access(mongodb_socket, os.R_OK):
             raise SkipTest("Socket file is not accessible")
 
-        encoded_socket = '%2Ftmp%2Fmongodb-27017.sock'
+        encoded_socket = '%2Ftmp%2Fmongodb-' + str(env.port) + '.sock'
         uri = 'mongodb://%s' % encoded_socket
         client = self.motor_client(uri)
 

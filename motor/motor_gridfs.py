@@ -38,23 +38,23 @@ class AgnosticGridOutCursor(AgnosticBaseCursor):
     __motor_class_name__ = 'MotorGridOutCursor'
     __delegate_class__ = gridfs.GridOutCursor
 
-    address       = ReadOnlyProperty()
-    add_option    = MotorCursorChainingMethod()
-    comment       = MotorCursorChainingMethod()
-    conn_id       = ReadOnlyProperty()
-    count         = AsyncRead()
-    distinct      = AsyncRead()
-    explain       = AsyncRead()
-    hint          = MotorCursorChainingMethod()
-    limit         = MotorCursorChainingMethod()
-    max           = MotorCursorChainingMethod()
-    max_scan      = MotorCursorChainingMethod()
-    max_time_ms   = MotorCursorChainingMethod()
-    min           = MotorCursorChainingMethod()
-    remove_option = MotorCursorChainingMethod()
-    skip          = MotorCursorChainingMethod()
-    sort          = MotorCursorChainingMethod()
-    where         = MotorCursorChainingMethod()
+    add_option        = MotorCursorChainingMethod()
+    address           = ReadOnlyProperty()
+    comment           = MotorCursorChainingMethod()
+    count             = AsyncRead()
+    distinct          = AsyncRead()
+    explain           = AsyncRead()
+    hint              = MotorCursorChainingMethod()
+    limit             = MotorCursorChainingMethod()
+    max               = MotorCursorChainingMethod()
+    max_await_time_ms = MotorCursorChainingMethod()
+    max_scan          = MotorCursorChainingMethod()
+    max_time_ms       = MotorCursorChainingMethod()
+    min               = MotorCursorChainingMethod()
+    remove_option     = MotorCursorChainingMethod()
+    skip              = MotorCursorChainingMethod()
+    sort              = MotorCursorChainingMethod()
+    where             = MotorCursorChainingMethod()
 
     # PyMongo's GridOutCursor inherits __die from Cursor.
     _Cursor__die = AsyncCommand()
@@ -258,6 +258,7 @@ class AgnosticGridIn(object):
     __delegate_class__ = gridfs.GridIn
 
     __getattr__ = DelegateMethod()
+    abort = AsyncCommand()
     closed = ReadOnlyProperty()
     close = AsyncCommand()
     write = AsyncCommand().unwrap('MotorGridOut')

@@ -337,31 +337,6 @@ class DelegateMethod(ReadOnlyProperty):
         return Unwrap(self, class_name)
 
 
-class ReadWriteProperty(MotorAttributeFactory):
-    """Creates a mutable attribute on the wrapped PyMongo object"""
-    def create_attribute(self, cls, attr_name):
-        def fget(obj):
-            if self.deprecation:
-                warnings.warn(self.deprecation_msg(attr_name),
-                              DeprecationWarning,
-                              stacklevel=2)
-
-            return getattr(obj.delegate, attr_name)
-
-        def fset(obj, val):
-            if self.deprecation:
-                warnings.warn(self.deprecation_msg(attr_name),
-                              DeprecationWarning,
-                              stacklevel=2)
-
-            setattr(obj.delegate, attr_name, val)
-
-        if self.doc:
-            return property(fget=fget, fset=fset, doc=self.doc)
-        else:
-            return property(fget=fget, fset=fset)
-
-
 class MotorCursorChainingMethod(MotorAttributeFactory):
     def create_attribute(self, cls, attr_name):
         cursor_method = getattr(Cursor, attr_name)

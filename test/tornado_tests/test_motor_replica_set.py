@@ -61,12 +61,12 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
     def test_socketKeepAlive(self):
         # Connect.
         yield self.rsc.server_info()
-        ka = self.rsc._get_primary_pool().socket_keepalive
+        ka = get_primary_pool(self.rsc).opts.socket_keepalive
         self.assertFalse(ka)
 
         client = self.motor_rsc(socketKeepAlive=True)
         yield client.server_info()
-        ka = get_primary_pool(client).socket_keepalive
+        ka = get_primary_pool(client).opts.socket_keepalive
         self.assertTrue(ka)
 
     @gen_test
@@ -89,7 +89,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         c.delegate._cache_credentials('test', credentials, connect=False)
 
         # Cause a network error on the actual socket.
-        pool = c._get_primary_pool()
+        pool = get_primary_pool(c)
         socket_info = one(pool.sockets)
         socket_info.sock.close()
 

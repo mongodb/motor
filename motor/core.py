@@ -19,7 +19,6 @@ from __future__ import unicode_literals, absolute_import
 import functools
 import sys
 import textwrap
-import warnings
 
 import pymongo
 import pymongo.auth
@@ -44,8 +43,7 @@ from .metaprogramming import (AsyncCommand,
                               DelegateMethod,
                               motor_coroutine,
                               MotorCursorChainingMethod,
-                              ReadOnlyProperty,
-                              ReadWriteProperty)
+                              ReadOnlyProperty)
 from .motor_common import callback_type_error
 from motor.docstrings import *
 
@@ -77,37 +75,41 @@ class AgnosticBase(object):
 class AgnosticBaseProperties(AgnosticBase):
     codec_options   = ReadOnlyProperty()
     read_preference = ReadOnlyProperty()
+    read_concern    = ReadOnlyProperty()
     write_concern   = ReadOnlyProperty()
 
 
 class AgnosticClientBase(AgnosticBaseProperties):
     """MotorClient and MotorReplicaSetClient common functionality."""
-    address              = ReadOnlyProperty()
-    arbiters             = ReadOnlyProperty()
-    close                = DelegateMethod()
-    close_cursor         = AsyncCommand()
-    database_names       = AsyncRead()
-    drop_database        = AsyncCommand().unwrap('MotorDatabase')
-    get_database         = DelegateMethod(doc=get_database_doc).wrap(Database)
-    get_default_database = DelegateMethod().wrap(Database)
-    is_mongos            = ReadOnlyProperty()
-    local_threshold_ms   = ReadOnlyProperty()
-    max_bson_size        = ReadOnlyProperty()
-    max_message_size     = ReadOnlyProperty()
-    max_pool_size        = ReadOnlyProperty()
-    max_write_batch_size = ReadOnlyProperty()
-    min_pool_size        = ReadOnlyProperty()
-    nodes                = ReadOnlyProperty()
-    primary              = ReadOnlyProperty()
-    secondaries          = ReadOnlyProperty()
-    server_info          = AsyncRead()
-
-    _doc_class_deprecation = \
-        'use CodecOptions with get_database, get_collection, or with_options'
-
-    get_document_class = DelegateMethod(deprecation='use "codec_options"')
-    set_document_class = DelegateMethod(deprecation=_doc_class_deprecation)
-    document_class     = ReadWriteProperty(deprecation=_doc_class_deprecation)
+    address                  = ReadOnlyProperty()
+    arbiters                 = ReadOnlyProperty()
+    close                    = DelegateMethod()
+    close_cursor             = AsyncCommand()
+    database_names           = AsyncRead()
+    drop_database            = AsyncCommand().unwrap('MotorDatabase')
+    event_listeners          = ReadOnlyProperty()
+    fsync                    = AsyncCommand()
+    get_database             = DelegateMethod(doc=get_database_doc).wrap(Database)
+    get_default_database     = DelegateMethod().wrap(Database)
+    HOST                     = ReadOnlyProperty()
+    is_mongos                = ReadOnlyProperty()
+    is_primary               = ReadOnlyProperty()
+    kill_cursors             = AsyncCommand()
+    local_threshold_ms       = ReadOnlyProperty()
+    max_bson_size            = ReadOnlyProperty()
+    max_idle_time_ms         = ReadOnlyProperty()
+    max_message_size         = ReadOnlyProperty()
+    max_pool_size            = ReadOnlyProperty()
+    max_write_batch_size     = ReadOnlyProperty()
+    min_pool_size            = ReadOnlyProperty()
+    nodes                    = ReadOnlyProperty()
+    PORT                     = ReadOnlyProperty()
+    primary                  = ReadOnlyProperty()
+    read_concern             = ReadOnlyProperty()
+    secondaries              = ReadOnlyProperty()
+    server_info              = AsyncRead()
+    server_selection_timeout = ReadOnlyProperty()
+    unlock                   = AsyncCommand()
 
     def __init__(self, io_loop, *args, **kwargs):
         kwargs['connect'] = False
@@ -150,12 +152,6 @@ class AgnosticClientBase(AgnosticBaseProperties):
 class AgnosticClient(AgnosticClientBase):
     __motor_class_name__ = 'MotorClient'
     __delegate_class__ = pymongo.mongo_client.MongoClient
-
-    kill_cursors = AsyncCommand()
-    fsync        = AsyncCommand()
-    is_primary   = ReadOnlyProperty()
-    unlock       = AsyncCommand()
-    nodes        = ReadOnlyProperty()
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -245,15 +241,6 @@ class AgnosticDatabase(AgnosticBaseProperties):
     @property
     def client(self):
         """This MotorDatabase's `MotorClient` or `MotorReplicaSetClient`."""
-        return self._client
-
-    @property
-    def connection(self):
-        """**DEPRECATED** Use `client` instead."""
-        warnings.warn("'connection' is deprecated in this version of Motor and"
-                      " will be removed in Motor 1.0. Use 'client'.",
-                      DeprecationWarning, stacklevel=2)
-
         return self._client
 
     def __getattr__(self, name):
@@ -947,23 +934,23 @@ class AgnosticBaseCursor(AgnosticBase):
 class AgnosticCursor(AgnosticBaseCursor):
     __motor_class_name__ = 'MotorCursor'
     __delegate_class__ = Cursor
-    address       = ReadOnlyProperty()
-    conn_id       = ReadOnlyProperty()
-    count         = AsyncRead()
-    distinct      = AsyncRead()
-    explain       = AsyncRead()
-    add_option    = MotorCursorChainingMethod()
-    remove_option = MotorCursorChainingMethod()
-    limit         = MotorCursorChainingMethod()
-    skip          = MotorCursorChainingMethod()
-    max_scan      = MotorCursorChainingMethod()
-    sort          = MotorCursorChainingMethod(doc=cursor_sort_doc)
-    hint          = MotorCursorChainingMethod()
-    where         = MotorCursorChainingMethod()
-    max_time_ms   = MotorCursorChainingMethod()
-    min           = MotorCursorChainingMethod()
-    max           = MotorCursorChainingMethod()
-    comment       = MotorCursorChainingMethod()
+    address           = ReadOnlyProperty()
+    count             = AsyncRead()
+    distinct          = AsyncRead()
+    explain           = AsyncRead()
+    add_option        = MotorCursorChainingMethod()
+    remove_option     = MotorCursorChainingMethod()
+    limit             = MotorCursorChainingMethod()
+    skip              = MotorCursorChainingMethod()
+    max_scan          = MotorCursorChainingMethod()
+    sort              = MotorCursorChainingMethod(doc=cursor_sort_doc)
+    hint              = MotorCursorChainingMethod()
+    where             = MotorCursorChainingMethod()
+    max_await_time_ms = MotorCursorChainingMethod()
+    max_time_ms       = MotorCursorChainingMethod()
+    min               = MotorCursorChainingMethod()
+    max               = MotorCursorChainingMethod()
+    comment           = MotorCursorChainingMethod()
 
     _Cursor__die  = AsyncRead()
 

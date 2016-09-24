@@ -196,7 +196,6 @@ class MotorReplicaSetTestBase(MotorTest):
             raise SkipTest("Not connected to a replica set")
 
         self.rsc = self.motor_rsc()
-        self.rsc = self.motor_rsc()
 
 
 class MotorMockServerTest(MotorTest):

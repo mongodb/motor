@@ -33,7 +33,8 @@ from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase,
                                 AsyncIOMockServerTestCase,
                                 remove_all_users)
-from test.test_environment import host, port, db_user, db_password
+from test.test_environment import db_user, db_password, env
+from test.utils import get_primary_pool
 
 
 class TestAsyncIOClient(AsyncIOTestCase):
@@ -74,7 +75,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
     def test_close(self):
         cx = self.asyncio_client()
         cx.close()
-        self.assertEqual(None, cx._get_primary_pool())
+        self.assertEqual(None, get_primary_pool(cx))
 
     @asyncio_test
     def test_unix_socket(self):
@@ -83,7 +84,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
         if not os.access(mongodb_socket, os.R_OK):
             raise SkipTest("Socket file is not accessible")
 
-        encoded_socket = '%2Ftmp%2Fmongodb-27017.sock'
+        encoded_socket = '%2Ftmp%2Fmongodb-' + str(env.port) + '.sock'
         uri = 'mongodb://%s' % encoded_socket
         client = self.asyncio_client(uri)
         collection = client.motor_test.test
@@ -109,13 +110,13 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
     @asyncio_test
     def test_reconnect_in_case_connection_closed_by_mongo(self):
-        cx = self.asyncio_client(max_pool_size=1)
+        cx = self.asyncio_client(maxPoolSize=1)
         yield from cx.admin.command('ping')
 
         # close motor_socket, we imitate that connection to mongo server
         # lost, as result we should have AutoReconnect instead of
         # IncompleteReadError
-        pool = cx._get_primary_pool()
+        pool = get_primary_pool(cx)
         socket = pool.sockets.pop()
         socket.sock.close()
         pool.sockets.add(socket)
@@ -250,12 +251,12 @@ class TestAsyncIOClient(AsyncIOTestCase):
     def test_socketKeepAlive(self):
         # Connect.
         yield from self.cx.server_info()
-        ka = self.cx._get_primary_pool().socket_keepalive
+        ka = get_primary_pool(self.cx).opts.socket_keepalive
         self.assertFalse(ka)
 
         client = self.asyncio_client(socketKeepAlive=True)
         yield from client.server_info()
-        ka = client._get_primary_pool().socket_keepalive
+        ka = get_primary_pool(client).opts.socket_keepalive
         self.assertTrue(ka)
 
     def test_get_database(self):
@@ -268,7 +269,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
         self.assertEqual('foo', db.name)
         self.assertEqual(codec_options, db.codec_options)
         self.assertEqual(ReadPreference.SECONDARY, db.read_preference)
-        self.assertEqual(write_concern.document, db.write_concern)
+        self.assertEqual(write_concern, db.write_concern)
 
 
 class TestAsyncIOClientTimeout(AsyncIOMockServerTestCase):
@@ -282,7 +283,7 @@ class TestAsyncIOClientTimeout(AsyncIOMockServerTestCase):
         with self.assertRaises(pymongo.errors.AutoReconnect) as context:
             yield from client.motor_test.test_collection.find_one()
 
-        self.assertEqual(str(context.exception), 'timed out')
+        self.assertIn('timed out', str(context.exception))
         client.close()
 
 

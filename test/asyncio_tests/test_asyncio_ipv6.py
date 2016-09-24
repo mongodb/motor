@@ -22,7 +22,7 @@ from pymongo.errors import ConnectionFailure
 import test
 from test import SkipTest
 from test.asyncio_tests import asyncio_test, AsyncIOTestCase
-from test.test_environment import host, port, db_user, db_password, connected
+from test.test_environment import db_user, db_password, connected, env
 
 
 class MotorIPv6Test(AsyncIOTestCase):
