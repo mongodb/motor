@@ -23,35 +23,52 @@ DO NOT USE THIS MODULE.
 
 import functools
 import inspect
-import os
-import sys
-import time
-import traceback
 from tornado.ioloop import IOLoop
 
 import motor
 import motor.frameworks.tornado
 import motor.motor_tornado
-from motor.metaprogramming import MotorAttributeFactory, Unwrap, Wrap
+from motor.metaprogramming import MotorAttributeFactory
 
 # Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
 # importing * won't pick up underscore-prefixed attrs.
 from gridfs.errors import *
 from pymongo import *
-from pymongo import member
-from pymongo import operations
-from pymongo import son_manipulator
-from pymongo import ssl_match_hostname
-from pymongo import write_concern
+from pymongo import (operations,
+                     server_selectors,
+                     server_type,
+                     son_manipulator,
+                     ssl_match_hostname,
+                     ssl_support,
+                     write_concern)
+from pymongo.auth import _build_credentials_tuple
 from pymongo.helpers import _unpack_response, _check_command_response
 from pymongo.common import *
 from pymongo.cursor import *
 from pymongo.cursor import _QUERY_OPTIONS
 from pymongo.errors import *
-from pymongo.member import PRIMARY, SECONDARY, OTHER
+from pymongo.message import (_COMMAND_OVERHEAD,
+                             _CursorAddress,
+                             _gen_find_command,
+                             _maybe_add_read_preference)
+from pymongo.monitor import *
+from pymongo.monitoring import *
+from pymongo.monitoring import _LISTENERS, _Listeners
 from pymongo.operations import *
+from pymongo.pool import *
+from pymongo.periodic_executor import *
+from pymongo.periodic_executor import _EXECUTORS
 from pymongo.read_preferences import *
+from pymongo.read_preferences import _ServerMode
+from pymongo.results import *
+from pymongo.results import _WriteResult
+from pymongo.server import *
+from pymongo.server_selectors import *
+from pymongo.settings import *
+from pymongo.ssl_support import *
 from pymongo.son_manipulator import *
+from pymongo.topology import *
+from pymongo.topology_description import *
 from pymongo.uri_parser import *
 from pymongo.uri_parser import _partition, _rpartition
 from pymongo.write_concern import *
@@ -60,12 +77,8 @@ from pymongo.auth import *
 from pymongo.auth import _password_digest
 from gridfs.grid_file import DEFAULT_CHUNK_SIZE, _SEEK_CUR, _SEEK_END
 
-GridFile = None
-have_gevent = False
-
 from pymongo import GEOSPHERE, HASHED
-from pymongo.pool import NO_REQUEST, NO_SOCKET_YET, SocketInfo, Pool, _closed
-from pymongo.mongo_replica_set_client import _partition_node, Member, Monitor
+from pymongo.pool import SocketInfo, Pool
 
 
 def unwrap_synchro(fn):
@@ -102,8 +115,10 @@ def wrap_synchro(fn):
             database = Database(client, motor_obj.database.name)
             return Collection(database, motor_obj.name, delegate=motor_obj)
         if isinstance(motor_obj, motor.MotorDatabase):
-            client = MongoClient(delegate=motor_obj.connection)
+            client = MongoClient(delegate=motor_obj.client)
             return Database(client, motor_obj.name, delegate=motor_obj)
+        if isinstance(motor_obj, motor.motor_tornado.MotorAggregationCursor):
+            return CommandCursor(motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorCommandCursor):
             return CommandCursor(motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorCursor):
@@ -125,9 +140,8 @@ def wrap_synchro(fn):
 
 
 class Sync(object):
-    def __init__(self, name, has_write_concern):
+    def __init__(self, name):
         self.name = name
-        self.has_write_concern = has_write_concern
 
     def __get__(self, obj, objtype):
         async_method = getattr(obj.delegate, self.name)
@@ -185,8 +199,8 @@ class SynchroMeta(type):
     - Motor methods which return Motor class instances are wrapped to return
       Synchro class instances.
 
-    - Certain properties that are included only because PyMongo's unittests
-      access them, such as _BaseObject__set_slave_okay, are simulated.
+    - Certain internals accessed by PyMongo's unittests, such as _Cursor__data,
+      are delegated from Synchro directly to PyMongo.
     """
 
     def __new__(cls, name, bases, attrs):
@@ -211,9 +225,7 @@ class SynchroMeta(type):
 
                 if getattr(delegate_attr, 'is_async_method', False):
                     # Re-synchronize the method.
-                    sync_method = Sync(
-                        attrname, delegate_attr.has_write_concern)
-                    setattr(new_class, attrname, sync_method)
+                    setattr(new_class, attrname, Sync(attrname))
                 elif wrap_outgoing(delegate_attr):
                     # Wrap MotorCursors in Synchro Cursors.
                     wrapper = WrapOutgoing()
@@ -225,10 +237,9 @@ class SynchroMeta(type):
 
         # Set DelegateProperties' and SynchroProperties' names.
         for name, attr in attrs.items():
-            if isinstance(
-                    attr,
-                    (MotorAttributeFactory, SynchroProperty, WrapOutgoing)
-            ):
+            if isinstance(attr, (MotorAttributeFactory,
+                                 SynchroProperty,
+                                 WrapOutgoing)):
                 attr.name = name
 
         return new_class
@@ -245,25 +256,13 @@ class Synchro(object):
     def __cmp__(self, other):
         return cmp(self.delegate, other.delegate)
 
-    _BaseObject__set_slave_okay = SynchroProperty()
-    _BaseObject__set_safe       = SynchroProperty()
-
     def synchronize(self, async_method):
         """
-        @param async_method:        Bound method of a MotorClient,
-                                    MotorDatabase, etc.
-        @return:                    A synchronous wrapper around the method
+        @param async_method: Bound method of a MotorClient, MotorDatabase, etc.
+        @return:             A synchronous wrapper around the method
         """
         @functools.wraps(async_method)
         def synchronized_method(*args, **kwargs):
-            # Motor doesn't support 'safe'; simulate it.
-            if 'safe' in kwargs:
-                safe = kwargs.pop('safe')
-                if not isinstance(safe, bool):
-                    raise TypeError('%r not valid for "safe"' % safe)
-
-                kwargs['w'] = 1 if safe else 0
-
             @functools.wraps(async_method)
             def partial():
                 return async_method(*args, **kwargs)
@@ -272,103 +271,29 @@ class Synchro(object):
     
         return synchronized_method
 
-    # Motor doesn't support these deprecated attrs, but PyMongo still tests
-    # that its classes do.
-    @property
-    def safe(self):
-        try:
-            safe, opts = self.delegate.delegate._get_write_mode()
-            return safe
-        except (AttributeError, InvalidOperation):
-            return True
 
-    @safe.setter
-    def safe(self, value):
-        if value:
-            # Set Motor object's write_concern. Safe by default with no 'w'.
-            self.delegate.write_concern.pop('w', None)
-        else:
-            # Unsafe.
-            self.delegate.write_concern['w'] = 0
+class MongoClient(Synchro):
+    __delegate_class__ = motor.MotorClient
+    HOST = 'localhost'
+    PORT = 27017
 
-    @property
-    def slave_okay(self):
-        motor_obj = self.delegate
-        pymongo_obj = motor_obj.delegate
-
-        pref = getattr(motor_obj, 'read_preference', ReadPreference.PRIMARY)
-        slave_okay = getattr(pymongo_obj, 'slave_okay', False)
-
-        return (pref != ReadPreference.PRIMARY) or slave_okay
-
-    def __eq__(self, other):
-        return self.delegate == other.delegate
-
-    _get_write_mode       = SynchroProperty()
-    get_lasterror_options = SynchroProperty()
-
-
-class MongoClientBase(Synchro):
     _cache_credentials = SynchroProperty()
     get_database = WrapOutgoing()
     get_default_database = WrapOutgoing()
     max_pool_size = SynchroProperty()
     max_write_batch_size = SynchroProperty()
 
-    def __init__(self, *args, **kwargs):
-        # Make a unittest happy.
-        self.use_greenlets = False
-        self.auto_start_request = False
-
-        # Motor doesn't implement auto_start_request.
-        kwargs.pop('auto_start_request', None)
-
-        if 'read_preference' not in kwargs and (
-                kwargs.get('tag_sets') not in (None, [], [{}])):
-            # Make test_mongos_connection.TestMongosConnection pass.
-            raise ConfigurationError()
-
-        # Motor doesn't support deprecated options slave_okay and safe; but
-        # PyMongo still does.
-        if 'read_preference' not in kwargs and (
-                'slaveok' in kwargs or 'slave_okay' in kwargs):
-
-            secondary = kwargs.pop('slave_okay', kwargs.pop('slaveok', False))
-            kwargs['read_preference'] = (
-                ReadPreference.SECONDARY_PREFERRED if secondary
-                else ReadPreference.PRIMARY)
-
-        gle_opts = dict([
-            (k, v) for k, v in kwargs.items()
-            if k in SAFE_OPTIONS])
-
-        if gle_opts and 'w' not in gle_opts:
-            kwargs['w'] = 1
-
-        if 'safe' in kwargs:
-            safe = kwargs.pop('safe')
-            if not safe:
-                kwargs.setdefault('w', 0)
+    def __init__(self, host=None, port=None, *args, **kwargs):
+        # So that TestClient.test_constants and test_types work.
+        host = host if host is not None else MongoClient.HOST
+        port = port if port is not None else MongoClient.PORT
 
         self.delegate = kwargs.pop('delegate', None)
 
+        # Motor passes connect=False by default.
+        kwargs.setdefault('_connect', True)
         if not self.delegate:
-            self.delegate = self.__delegate_class__(*args, **kwargs)
-            if kwargs.get('connect', True):
-                self.synchro_connect()
-
-    def synchro_connect(self):
-        # Try to connect the MotorClient before continuing; raise
-        # ConnectionFailure if it times out.
-        try:
-            self.synchronize(self.delegate.open)()
-        except AutoReconnect as e:
-            raise ConnectionFailure(str(e))
-
-    def start_request(self):
-        raise NotImplementedError()
-
-    in_request = end_request = start_request
+            self.delegate = self.__delegate_class__(host, port, *args, **kwargs)
 
     @property
     def is_locked(self):
@@ -384,62 +309,18 @@ class MongoClientBase(Synchro):
         self.delegate.close()
 
     def __getattr__(self, name):
-        # If this is like client.db, then wrap the outgoing object with
-        # Synchro's Database.
-        return Database(self, name)
+        return Database(self, name, delegate=getattr(self.delegate, name))
 
-    __getitem__ = __getattr__
+    def __getitem__(self, name):
+        return Database(self, name, delegate=self.delegate[name])
 
-
-class MongoClient(MongoClientBase):
-    __delegate_class__ = motor.MotorClient
-
-    HOST = 'localhost'
-    PORT = 27017
-
-    def __init__(self, host=None, port=None, *args, **kwargs):
-        # So that TestClient.test_constants and test_types work.
-        host = host if host is not None else self.HOST
-        port = port if port is not None else self.PORT
-
-        super(MongoClient, self).__init__(host, port, *args, **kwargs)
-
-    _MongoClient__member                = SynchroProperty()
-    _MongoClient__repl                  = SynchroProperty()
-    _MongoClient__net_timeout           = SynchroProperty()
-    _MongoClient__conn_timeout          = SynchroProperty()
-    _MongoClient__wait_queue_timeout    = SynchroProperty()
-    _MongoClient__wait_queue_multiple   = SynchroProperty()
-    _MongoClient__socket_keepalive      = SynchroProperty()
-    _MongoClient__use_ssl               = SynchroProperty()
-    _MongoClient__ssl_keyfile           = SynchroProperty()
-    _MongoClient__ssl_certfile          = SynchroProperty()
-    _MongoClient__ssl_ca_certs          = SynchroProperty()
-
-class MasterSlaveConnection(object):
-    """Motor doesn't support master-slave connections, this is just here so
-       Synchro can import pymongo.master_slave_connection without error
-    """
-    pass
+    _MongoClient__options  = SynchroProperty()
+    _get_topology          = SynchroProperty()
+    _kill_cursors_executor = SynchroProperty()
 
 
-class MongoReplicaSetClient(MongoClientBase):
+class MongoReplicaSetClient(MongoClient):
     __delegate_class__ = motor.MotorReplicaSetClient
-
-    get_default_database                        = WrapOutgoing()
-    _MongoReplicaSetClient__writer              = SynchroProperty()
-    _MongoReplicaSetClient__rs_state            = SynchroProperty()
-    _MongoReplicaSetClient__schedule_refresh    = SynchroProperty()
-    _MongoReplicaSetClient__net_timeout         = SynchroProperty()
-    _MongoReplicaSetClient__conn_timeout        = SynchroProperty()
-    _MongoReplicaSetClient__wait_queue_timeout  = SynchroProperty()
-    _MongoReplicaSetClient__wait_queue_multiple = SynchroProperty()
-    _MongoReplicaSetClient__socket_keepalive    = SynchroProperty()
-    _MongoReplicaSetClient__name                = SynchroProperty()
-    _MongoReplicaSetClient__use_ssl             = SynchroProperty()
-    _MongoReplicaSetClient__ssl_keyfile         = SynchroProperty()
-    _MongoReplicaSetClient__ssl_certfile        = SynchroProperty()
-    _MongoReplicaSetClient__ssl_ca_certs        = SynchroProperty()
 
 
 class Database(Synchro):
@@ -451,10 +332,8 @@ class Database(Synchro):
             "Expected MongoClient or MongoReplicaSetClient, got %s"
             % repr(client))
 
-        # "client" is modern, "connection" is deprecated.
-        self.client = self.connection = client
-
-        self.delegate = client.delegate[name]
+        self._client = client
+        self.delegate = delegate or client.delegate[name]
         assert isinstance(self.delegate, motor.MotorDatabase), (
             "synchro.Database delegate must be MotorDatabase, not "
             " %s" % repr(self.delegate))
@@ -471,14 +350,11 @@ class Database(Synchro):
     def client(self):
         return self._client
 
-    @property
-    def connection(self):
-        return self._client
-
     def __getattr__(self, name):
-        return Collection(self, name)
+        return Collection(self, name, delegate=getattr(self.delegate, name))
 
-    __getitem__ = __getattr__
+    def __getitem__(self, name):
+        return Collection(self, name, delegate=self.delegate[name])
 
 
 class Collection(Synchro):
@@ -502,19 +378,29 @@ class Collection(Synchro):
                 "Expected to get synchro Collection from Database,"
                 " got %s" % repr(self.delegate))
 
+    def aggregate(self, *args, **kwargs):
+        # Motor does no I/O initially in aggregate() but PyMongo does.
+        cursor = wrap_synchro(self.delegate.aggregate)(*args, **kwargs)
+        self.synchronize(cursor.delegate._get_more)()
+        return cursor
+
     def __getattr__(self, name):
         # Access to collections with dotted names, like db.test.mike
-        return Collection(self.database, self.name + '.' + name)
+        fullname = self.name + '.' + name
+        return Collection(self.database, fullname, getattr(self.delegate, name))
 
-    __getitem__ = __getattr__
+    def __getitem__(self, name):
+        # Access to collections with dotted names, like db.test.mike
+        fullname = self.name + '.' + name
+        return Collection(self.database, fullname, self.delegate[name])
 
 
 class Cursor(Synchro):
     __delegate_class__ = motor.motor_tornado.MotorCursor
 
-    rewind                     = WrapOutgoing()
-    clone                      = WrapOutgoing()
-    close                      = Sync('close', False)
+    rewind = WrapOutgoing()
+    clone  = WrapOutgoing()
+    close  = Sync('close')
 
     def __init__(self, motor_cursor):
         self.delegate = motor_cursor
@@ -538,7 +424,7 @@ class Cursor(Synchro):
         if cursor._buffer_size():
             return cursor.next_object()
         elif cursor.alive:
-            self.synchronize(cursor._refresh)()
+            self.synchronize(cursor._get_more)()
             if cursor._buffer_size():
                 return cursor.next_object()
 
@@ -565,43 +451,15 @@ class Cursor(Synchro):
         # Don't suppress exceptions.
         return False
 
-    @property
-    def _Cursor__slave_okay(self):
-        # Another hack; PyMongo's tests don't check this field on
-        # CommandCursor, so assume self.delegate is a regular Cursor.
-        pymongo_cursor = self.delegate.delegate
-        pref = pymongo_cursor._Cursor__read_preference
-        return (
-            pymongo_cursor._Cursor__slave_okay
-            or pref != ReadPreference.PRIMARY)
-
-    _Cursor__id                = SynchroProperty()
-    _Cursor__query_options     = SynchroProperty()
-    _Cursor__query_spec        = SynchroProperty()
-    _Cursor__retrieved         = SynchroProperty()
-    _Cursor__skip              = SynchroProperty()
-    _Cursor__limit             = SynchroProperty()
-    _Cursor__timeout           = SynchroProperty()
-    _Cursor__snapshot          = SynchroProperty()
-    _Cursor__tailable          = SynchroProperty()
-    _Cursor__as_class          = SynchroProperty()
-    _Cursor__await_data        = SynchroProperty()
-    _Cursor__partial           = SynchroProperty()
-    _Cursor__manipulate        = SynchroProperty()
-    _Cursor__query_flags       = SynchroProperty()
-    _Cursor__connection_id     = SynchroProperty()
-    _Cursor__read_preference   = SynchroProperty()
-    _Cursor__tag_sets          = SynchroProperty()
-    _Cursor__fields            = SynchroProperty()
-    _Cursor__spec              = SynchroProperty()
-    _Cursor__hint              = SynchroProperty()
-    _Cursor__exhaust           = SynchroProperty()
-    _Cursor__compile_re        = SynchroProperty()
-    _Cursor__max_time_ms       = SynchroProperty()
-    _Cursor__comment           = SynchroProperty()
-    _Cursor__min               = SynchroProperty()
-    _Cursor__max               = SynchroProperty()
-    _Cursor__local_threshold_ms = SynchroProperty()
+    # For PyMongo tests that access cursor internals.
+    _Cursor__data            = SynchroProperty()
+    _Cursor__exhaust         = SynchroProperty()
+    _Cursor__max_time_ms     = SynchroProperty()
+    _Cursor__query_flags     = SynchroProperty()
+    _Cursor__query_spec      = SynchroProperty()
+    _Cursor__read_preference = SynchroProperty()
+    _Cursor__retrieved       = SynchroProperty()
+    _Cursor__spec            = SynchroProperty()
 
 
 class CommandCursor(Cursor):
@@ -623,12 +481,11 @@ class GridOutCursor(Cursor):
         if motor_grid_out:
             return GridOut(self.collection, delegate=motor_grid_out)
 
-    _Cursor__local_threshold_ms = SynchroProperty()
+    __next__ = next
 
 
 class CursorManager(object):
-    """Motor doesn't support cursor managers, just avoid ImportError.
-    """
+    # Motor doesn't support cursor managers, just avoid ImportError.
     pass
 
 
@@ -646,7 +503,7 @@ class BulkOperationBuilder(Synchro):
 class GridFS(Synchro):
     __delegate_class__ = motor.MotorGridFS
 
-    def __init__(self, database, collection='fs', _connect=True):
+    def __init__(self, database, collection='fs'):
         if not isinstance(database, Database):
             raise TypeError(
                 "Expected Database, got %s" % repr(database))
@@ -683,12 +540,32 @@ class GridIn(Synchro):
         return getattr(self.delegate, item)
 
 
+class SynchroGridOutProperty(object):
+    def __init__(self, name):
+        self.name = name
+
+    def __get__(self, obj, objtype):
+        obj.synchronize(obj.delegate.open)()
+        return getattr(obj.delegate, self.name)
+
+
 class GridOut(Synchro):
     __delegate_class__ = motor.MotorGridOut
 
+    aliases      = SynchroGridOutProperty('aliases')
+    chunk_size   = SynchroGridOutProperty('chunk_size')
+    close        = SynchroGridOutProperty('close')
+    content_type = SynchroGridOutProperty('content_type')
+    filename     = SynchroGridOutProperty('filename')
+    length       = SynchroGridOutProperty('length')
+    md5          = SynchroGridOutProperty('md5')
+    metadata     = SynchroGridOutProperty('metadata')
+    name         = SynchroGridOutProperty('name')
+    upload_date  = SynchroGridOutProperty('upload_date')
+
     def __init__(
             self, root_collection, file_id=None, file_document=None,
-            _connect=True, delegate=None):
+            delegate=None):
         """Can be created with collection and kwargs like a PyMongo GridOut,
         or with a 'delegate' keyword arg, where delegate is a MotorGridOut.
         """
@@ -701,9 +578,6 @@ class GridOut(Synchro):
 
             self.delegate = motor.MotorGridOut(
                 root_collection.delegate, file_id, file_document)
-
-            if _connect:
-                self.synchronize(self.delegate.open)()
 
     def __getattr__(self, item):
         self.synchronize(self.delegate.open)()
