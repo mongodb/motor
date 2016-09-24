@@ -112,7 +112,8 @@ class AgnosticClientBase(AgnosticBaseProperties):
     unlock                   = AsyncCommand()
 
     def __init__(self, io_loop, *args, **kwargs):
-        kwargs['connect'] = False
+        # For Synchro, add undocumented "_connect" option, default False.
+        kwargs['connect'] = kwargs.pop('_connect', False)
         delegate = self.__delegate_class__(*args, **kwargs)
         super(AgnosticClientBase, self).__init__(delegate)
         if io_loop:
