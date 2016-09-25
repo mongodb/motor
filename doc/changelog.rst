@@ -9,10 +9,25 @@ Next Release
 Motor now depends on PyMongo 3.3 and later. The move from PyMongo 2 to 3 brings
 a large number of API changes, read `the PyMongo 3 changelog`_ carefully.
 
-`MotorClient.open` and `MotorReplicaSetClient.open` are deleted; clients have
-opened themselves automatically on demand since version 0.2.
 
-`MotorReplicaSetClient.hosts` is removed, use `MotorReplicaSetClient.nodes`.
+`MotorClient` changes
+~~~~~~~~~~~~~~~~~~~~~
+
+`MotorClient` is now the only client class; `MotorReplicaSetClient` is no longer
+necessary for connecting to a replica set. To connect to a replica set::
+
+    MotorClient(host, port, replicaSet='my-replicaset-name')
+
+Or::
+
+    MotorClient('mongodb://host:port/?replicaSet=my-replicaset-name')
+
+Removed:
+
+ - `MotorClient.open`; clients have opened themselves automatically on demand
+   since version 0.2.
+ - `MotorClient.seeds`, use `pymongo.uri_parser.parse_uri` on your MongoDB URI.
+ - `MotorReplicaSetClient.hosts`, use `MotorReplicaSetClient.nodes`.
 
 Added:
 
@@ -20,10 +35,11 @@ Added:
  - `MotorDatabase.create_indexes`
  - `MotorDatabase.list_indexes`
 
-Removed:
+Unix domain socket paths must be quoted with `urllib.parse.quote_plus` (or
+`urllib.quote_plus` in Python 2) before they are included in a URI:
 
- - `MotorClient.seeds`, use `pymongo.uri_parser.parse_uri` on your MongoDB URI
-
+    path = '/tmp/mongodb-27017.sock'
+    MotorClient('mongodb://%s' % urllib.parse.quote_plus(path))
 
 .. _the PyMongo 3 changelog: http://api.mongodb.com/python/current/changelog.html#changes-in-version-3-0
 
