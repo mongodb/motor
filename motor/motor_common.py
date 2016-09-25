@@ -17,12 +17,3 @@ from __future__ import unicode_literals, absolute_import
 """Common code to support all async frameworks."""
 
 callback_type_error = TypeError("callback must be a callable")
-
-
-def mangle_delegate_name(motor_class, name):
-    if name.startswith('__') and not name.endswith("__"):
-        # Mangle, e.g. Cursor.__die -> Cursor._Cursor__die
-        classname = motor_class.__delegate_class__.__name__
-        return '_%s%s' % (classname, name)
-    else:
-        return name
