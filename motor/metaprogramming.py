@@ -136,7 +136,7 @@ class WrapBase(MotorAttributeFactory):
 
 
 class Wrap(WrapBase):
-    def __init__(self, prop, original_class):
+    def __init__(self, prop, original_class, doc=None):
         """Calls a synchronous method and wraps the PyMongo class instance it
         returns in a Motor class instance.
 
@@ -145,7 +145,7 @@ class Wrap(WrapBase):
           result in a Motor class.
         - `original_class`: A PyMongo class to be wrapped.
         """
-        super(Wrap, self).__init__(prop)
+        super(Wrap, self).__init__(prop, doc=doc)
         self.original_class = original_class
 
     def create_attribute(self, cls, attr_name):
@@ -206,7 +206,7 @@ class WrapAsync(WrapBase):
 
 
 class Unwrap(WrapBase):
-    def __init__(self, prop, motor_class_name):
+    def __init__(self, prop, motor_class_name, doc=None):
         """A descriptor that checks if arguments are Motor classes and unwraps
         them. E.g., Motor's drop_database takes a MotorDatabase, unwraps it,
         and passes a PyMongo Database instead.
@@ -216,7 +216,7 @@ class Unwrap(WrapBase):
           unwrapped arguments.
         - `motor_class_name`: Like 'MotorDatabase' or 'MotorCollection'.
         """
-        super(Unwrap, self).__init__(prop)
+        super(Unwrap, self).__init__(prop, doc=doc)
         assert isinstance(motor_class_name, motor_py3_compat.text_type)
         self.motor_class_name = motor_class_name
 
@@ -289,10 +289,10 @@ class DelegateMethod(ReadOnlyProperty):
     """A method on the wrapped PyMongo object that does no I/O and can be called
     synchronously"""
     def wrap(self, original_class):
-        return Wrap(self, original_class)
+        return Wrap(self, original_class, doc=self.doc)
 
     def unwrap(self, class_name):
-        return Unwrap(self, class_name)
+        return Unwrap(self, class_name, doc=self.doc)
 
 
 class MotorCursorChainingMethod(MotorAttributeFactory):
