@@ -216,7 +216,7 @@ Pass a field name and a direction, either
 .. testsetup:: sort
 
   MongoClient().test.test_collection.drop()
-  MongoClient().test.test_collection.insert([
+  MongoClient().test.test_collection.insert_many([
       {'_id': i, 'field1': i % 2, 'field2': i}
       for i in range(5)])
   collection = MotorClient().test.test_collection
@@ -254,7 +254,7 @@ sorted by relevance:
 .. testsetup:: sort_text
 
   MongoClient().test.test_collection.drop()
-  MongoClient().test.test_collection.insert([
+  MongoClient().test.test_collection.insert_many([
       {'field': 'words'},
       {'field': 'words about some words'}])
 

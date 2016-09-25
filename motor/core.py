@@ -241,7 +241,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
     @property
     def client(self):
-        """This MotorDatabase's `MotorClient` or `MotorReplicaSetClient`."""
+        """This MotorDatabase's `MotorClient`."""
         return self._client
 
     def __getattr__(self, name):
@@ -412,9 +412,8 @@ class AgnosticCollection(AgnosticBaseProperties):
     def aggregate(self, pipeline, **kwargs):
         """Execute an aggregation pipeline on this collection.
 
-        The aggregation can be run on a secondary if the client is a
-        :class:`~motor.MotorReplicaSetClient` and its ``read_preference`` is not
-        :attr:`PRIMARY`.
+        The aggregation can be run on a secondary if the client is connected
+        to a replica set and its ``read_preference`` is not :attr:`PRIMARY`.
 
         :Parameters:
           - `pipeline`: a single command or list of aggregation commands
@@ -492,7 +491,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         If ``process_document()`` is a coroutine, do
         ``yield process_document(document)``.
 
-        With :class:`MotorReplicaSetClient`, pass `read_preference` of
+        With a replica set, pass `read_preference` of
         :attr:`~pymongo.read_preference.ReadPreference.SECONDARY_PREFERRED`
         to scan a secondary.
 
@@ -651,14 +650,14 @@ class AgnosticBaseCursor(AgnosticBase):
 
         .. testsetup:: fetch_next
 
-          MongoClient().test.test_collection.remove()
+          MongoClient().test.test_collection.delete_many({})
           collection = MotorClient().test.test_collection
 
         .. doctest:: fetch_next
 
           >>> @gen.coroutine
           ... def f():
-          ...     yield collection.insert([{'_id': i} for i in range(5)])
+          ...     yield collection.insert_many([{'_id': i} for i in range(5)])
           ...     cursor = collection.find().sort([('_id', 1)])
           ...     while (yield cursor.fetch_next):
           ...         doc = cursor.next_object()
@@ -721,7 +720,7 @@ class AgnosticBaseCursor(AgnosticBase):
         .. testsetup:: each
 
           from tornado.ioloop import IOLoop
-          MongoClient().test.test_collection.remove()
+          MongoClient().test.test_collection.delete_many({})
           collection = MotorClient().test.test_collection
 
         .. doctest:: each
@@ -742,7 +741,7 @@ class AgnosticBaseCursor(AgnosticBase):
           ...         IOLoop.current().stop()
           ...         print('done')
           ...
-          >>> collection.insert(
+          >>> collection.insert_many(
           ...     [{'_id': i} for i in range(5)], callback=inserted)
           >>> IOLoop.current().start()
           0, 1, 2, 3, 4, done
@@ -797,7 +796,7 @@ class AgnosticBaseCursor(AgnosticBase):
 
         .. testsetup:: to_list
 
-          MongoClient().test.test_collection.remove()
+          MongoClient().test.test_collection.delete_many({})
           from tornado import ioloop
 
         .. doctest:: to_list
@@ -807,7 +806,7 @@ class AgnosticBaseCursor(AgnosticBase):
           >>>
           >>> @gen.coroutine
           ... def f():
-          ...     yield collection.insert([{'_id': i} for i in range(4)])
+          ...     yield collection.insert_many([{'_id': i} for i in range(4)])
           ...     cursor = collection.find().sort([('_id', 1)])
           ...     docs = yield cursor.to_list(length=2)
           ...     while docs:
