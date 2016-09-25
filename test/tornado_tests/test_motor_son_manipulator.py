@@ -19,7 +19,9 @@ from __future__ import unicode_literals
 import pymongo.son_manipulator
 from tornado.testing import gen_test
 
+from test import env
 from test.tornado_tests import MotorTest
+from test.utils import ignore_deprecations
 
 
 class CustomSONManipulator(pymongo.son_manipulator.SONManipulator):
@@ -36,13 +38,18 @@ class CustomSONManipulator(pymongo.son_manipulator.SONManipulator):
 
 
 class SONManipulatorTest(MotorTest):
+    def _clear_collection(self):
+        env.sync_cx.motor_test.son_manipulator_test_collection.delete_many({})
+
     def setUp(self):
         super(SONManipulatorTest, self).setUp()
+        self._clear_collection()
 
     def tearDown(self):
-        self.io_loop.run_sync(self.db.son_manipulator_test_collection.remove)
+        self._clear_collection()
         super(SONManipulatorTest, self).tearDown()
 
+    @ignore_deprecations
     @gen_test
     def test_with_find_one(self):
         coll = self.cx.motor_test.son_manipulator_test_collection
@@ -57,6 +64,7 @@ class SONManipulatorTest(MotorTest):
             {'_id': _id, 'foo': 'bar', 'added_field': 42},
             (yield coll.find_one()))
 
+    @ignore_deprecations
     @gen_test
     def test_with_fetch_next(self):
         coll = self.cx.motor_test.son_manipulator_test_collection
@@ -70,6 +78,7 @@ class SONManipulatorTest(MotorTest):
 
         yield cursor.close()
 
+    @ignore_deprecations
     @gen_test
     def test_with_to_list(self):
         coll = self.cx.motor_test.son_manipulator_test_collection
@@ -87,6 +96,7 @@ class SONManipulatorTest(MotorTest):
         self.assertEqual(expected, found)
         yield cursor.close()
 
+    @ignore_deprecations
     @gen_test
     def test_with_aggregate(self):
         coll = self.cx.motor_test.son_manipulator_test_collection

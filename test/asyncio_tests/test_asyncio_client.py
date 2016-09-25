@@ -59,13 +59,13 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
     @asyncio_test
     def test_client_lazy_connect(self):
-        yield from self.db.test_client_lazy_connect.remove()
+        yield from self.db.test_client_lazy_connect.delete_many({})
 
         # Create client without connecting; connect on demand.
         cx = self.asyncio_client()
         collection = cx.motor_test.test_client_lazy_connect
-        future0 = collection.insert({'foo': 'bar'})
-        future1 = collection.insert({'foo': 'bar'})
+        future0 = collection.insert_one({'foo': 'bar'})
+        future1 = collection.insert_one({'foo': 'bar'})
         yield from asyncio.gather(future0, future1, loop=self.loop)
         resp = yield from collection.find({'foo': 'bar'}).count()
         self.assertEqual(2, resp)
@@ -91,7 +91,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
         if test.env.auth:
             yield from client.admin.authenticate(db_user, db_password)
-        yield from collection.insert({"dummy": "object"})
+        yield from collection.insert_one({"dummy": "object"})
 
         # Confirm it fails with a missing socket.
         client = motor_asyncio.AsyncIOMotorClient(
@@ -172,7 +172,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
         collection = cx.motor_test.test_collection
         insert_collection = cx.motor_test.insert_collection
-        yield from insert_collection.remove()
+        yield from insert_collection.delete_many({})
 
         ndocs = 0
         insert_future = asyncio.Future(loop=self.loop)
@@ -192,7 +192,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
         @asyncio.coroutine
         def insert():
             for i in range(n_inserts):
-                yield from insert_collection.insert({'s': hex(i)})
+                yield from insert_collection.insert_one({'s': hex(i)})
 
             insert_future.set_result(None)  # Finished
 
@@ -201,14 +201,14 @@ class TestAsyncIOClient(AsyncIOTestCase):
         yield from insert_future
         self.assertEqual(expected_finds, ndocs)
         self.assertEqual(n_inserts, (yield from insert_collection.count()))
-        yield from collection.remove()
+        yield from collection.delete_many({})
 
     @asyncio_test(timeout=30)
     def test_drop_database(self):
         # Make sure we can pass an AsyncIOMotorDatabase instance
         # to drop_database
         db = self.cx.test_drop_database
-        yield from db.test_collection.insert({})
+        yield from db.test_collection.insert_one({})
         names = yield from self.cx.database_names()
         self.assertTrue('test_drop_database' in names)
         yield from self.cx.drop_database(db)

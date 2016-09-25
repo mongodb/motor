@@ -47,8 +47,8 @@ class TestAsyncIODatabase(AsyncIOTestCase):
 
         # Make sure we got the right DB and it can do an operation.
         self.assertEqual('motor_test', db.name)
-        yield from db.test_collection.remove()
-        yield from db.test_collection.insert({'_id': 1})
+        yield from db.test_collection.delete_many({})
+        yield from db.test_collection.insert_one({'_id': 1})
         doc = yield from db.test_collection.find_one({'_id': 1})
         self.assertEqual(1, doc['_id'])
 
@@ -93,13 +93,14 @@ class TestAsyncIODatabase(AsyncIOTestCase):
         # drop_collection.
         db = self.db
         collection = db.test_drop_collection
-        yield from collection.insert({})
+        yield from collection.insert_one({})
         names = yield from db.collection_names()
         self.assertTrue('test_drop_collection' in names)
         yield from db.drop_collection(collection)
         names = yield from db.collection_names()
         self.assertFalse('test_drop_collection' in names)
 
+    @ignore_deprecations
     @asyncio_test
     def test_auto_ref_and_deref(self):
         # Test same functionality as in PyMongo's test_database.py; the
@@ -118,9 +119,9 @@ class TestAsyncIODatabase(AsyncIOTestCase):
         b = {"test": a}
         c = {"another test": b}
 
-        yield from db.a.remove({})
-        yield from db.b.remove({})
-        yield from db.c.remove({})
+        yield from db.a.delete_many({})
+        yield from db.b.delete_many({})
+        yield from db.c.delete_many({})
         yield from db.a.save(a)
         yield from db.b.save(b)
         yield from db.c.save(c)
@@ -180,7 +181,7 @@ class TestAsyncIODatabase(AsyncIOTestCase):
         with self.assertRaises(OperationFailure):
             yield from db.validate_collection(db.test.doesnotexist)
 
-        yield from db.test.save({"dummy": "object"})
+        yield from db.test.insert_one({"dummy": "object"})
         self.assertTrue((yield from db.validate_collection("test")))
         self.assertTrue((yield from db.validate_collection(db.test)))
 

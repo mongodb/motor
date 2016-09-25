@@ -62,7 +62,7 @@ class TestAsyncIOBulk(AsyncIOTestCase):
 
     @asyncio_test
     def test_single_unordered_batch(self):
-        yield from self.collection.remove()
+        yield from self.collection.delete_many({})
 
         bulk = self.collection.initialize_unordered_bulk_op()
         self.assertTrue(isinstance(bulk,

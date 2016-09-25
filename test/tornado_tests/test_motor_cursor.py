@@ -330,7 +330,7 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     def test_rewind(self):
-        yield self.collection.insert([{}, {}, {}])
+        yield self.collection.insert_many([{}, {}, {}])
         cursor = self.collection.find().limit(2)
 
         count = 0
@@ -408,7 +408,7 @@ class MotorCursorTest(MotorMockServerTest):
         yield self.db.drop_collection("test")
 
         # Insert enough documents to require more than one batch.
-        yield self.db.test.insert([{} for _ in range(150)])
+        yield self.db.test.insert_many([{} for _ in range(150)])
 
         client = self.motor_client(maxPoolSize=1)
         # Ensure a pool.
@@ -529,7 +529,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
     @gen_test(timeout=60)
     def test_max_time_ms_getmore(self):
         # Cursor handles server timeout during getmore, also.
-        yield self.collection.insert({} for _ in range(200))
+        yield self.collection.insert_many({} for _ in range(200))
         try:
             # Send initial query.
             cursor = self.collection.find().max_time_ms(100000)
@@ -560,7 +560,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
         finally:
             # Cleanup.
             yield self.disable_timeout()
-            yield self.collection.remove()
+            yield self.collection.delete_many({})
 
     @gen_test
     def test_max_time_ms_each_query(self):
@@ -583,7 +583,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
     @gen_test(timeout=30)
     def test_max_time_ms_each_getmore(self):
         # Cursor.each() handles server timeout during getmore.
-        yield self.collection.insert({} for _ in range(200))
+        yield self.collection.insert_many({} for _ in range(200))
         try:
             # Send initial query.
             cursor = self.collection.find().max_time_ms(100000)
@@ -608,7 +608,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
         finally:
             # Cleanup.
             yield self.disable_timeout()
-            yield self.collection.remove()
+            yield self.collection.delete_many({})
 
 
 if __name__ == '__main__':

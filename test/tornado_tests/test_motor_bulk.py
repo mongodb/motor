@@ -75,7 +75,7 @@ class MotorBulkTest(MotorTest):
 
     @gen_test
     def test_single_unordered_batch(self):
-        yield self.collection.remove()
+        yield self.collection.delete_many({})
 
         bulk = self.collection.initialize_unordered_bulk_op()
         self.assertTrue(isinstance(

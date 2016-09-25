@@ -73,17 +73,6 @@ class MotorSSLTest(MotorTest):
                           ssl=False,
                           ssl_certfile=CLIENT_PEM)
 
-        self.assertRaises(ValueError,
-                          motor.MotorReplicaSetClient,
-                          replicaSet='rs',
-                          ssl='foo')
-
-        self.assertRaises(ConfigurationError,
-                          motor.MotorReplicaSetClient,
-                          replicaSet='rs',
-                          ssl=False,
-                          ssl_certfile=CLIENT_PEM)
-
         self.assertRaises(IOError, motor.MotorClient, ssl_certfile="NoFile")
         self.assertRaises(TypeError, motor.MotorClient, ssl_certfile=True)
         self.assertRaises(IOError, motor.MotorClient, ssl_keyfile="NoFile")
@@ -125,7 +114,7 @@ class MotorSSLTest(MotorTest):
         response = yield client.admin.command('ismaster')
 
         if 'setName' in response:
-            client = motor.MotorReplicaSetClient(
+            client = motor.MotorClient(
                 env.host, env.port,
                 replicaSet=response['setName'],
                 ssl_certfile=CLIENT_PEM,
@@ -180,7 +169,7 @@ class MotorSSLTest(MotorTest):
 
         if 'setName' in response:
             with self.assertRaises(CertificateError):
-                client = motor.MotorReplicaSetClient(
+                client = motor.MotorClient(
                     test.env.fake_hostname_uri,
                     replicaSet=response['setName'],
                     ssl_certfile=CLIENT_PEM,

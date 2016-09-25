@@ -75,8 +75,8 @@ class TestAsyncIOGridFile(AsyncIOTestCase):
 
     @asyncio_test
     def test_alternate_collection(self):
-        yield from self.db.alt.files.remove()
-        yield from self.db.alt.chunks.remove()
+        yield from self.db.alt.files.delete_many({})
+        yield from self.db.alt.chunks.delete_many({})
 
         f = AsyncIOMotorGridIn(self.db.alt)
         yield from f.write(b"hello world")

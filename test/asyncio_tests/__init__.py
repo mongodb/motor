@@ -113,24 +113,24 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         Ignores self.ssl, you must pass 'ssl' argument.
         """
         return motor_asyncio.AsyncIOMotorClient(
-            uri or env.uri,
+            uri or env.rs_uri,
             *args,
             **self.get_client_kwargs(**kwargs))
 
     def asyncio_rsc(self, uri=None, *args, **kwargs):
-        """Get an AsyncIOMotorReplicaSetClient.
+        """Get an open MotorClient for replica set.
 
         Ignores self.ssl, you must pass 'ssl' argument.
         """
-        return motor_asyncio.AsyncIOMotorReplicaSetClient(
+        return motor_asyncio.AsyncIOMotorClient(
             uri or env.rs_uri,
             *args,
             **self.get_client_kwargs(**kwargs))
 
     @asyncio.coroutine
     def make_test_data(self):
-        yield from self.collection.remove()
-        yield from self.collection.insert([{'_id': i} for i in range(200)])
+        yield from self.collection.delete_many({})
+        yield from self.collection.insert_many([{'_id': i} for i in range(200)])
 
     make_test_data.__test__ = False
 
@@ -291,4 +291,4 @@ def remove_all_users(db):
     if version_check:
         yield from db.command({"dropAllUsersFromDatabase": 1})
     else:
-        yield from db.system.users.remove({})
+        yield from db.system.users.delete_many({})

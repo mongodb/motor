@@ -23,8 +23,7 @@ from urllib.parse import quote_plus  # The 'parse' submodule is Python 3.
 
 from pymongo.errors import ConfigurationError, OperationFailure
 
-from motor.motor_asyncio import (AsyncIOMotorClient,
-                                 AsyncIOMotorReplicaSetClient)
+from motor.motor_asyncio import AsyncIOMotorClient
 import test
 from test.asyncio_tests import asyncio_test, at_least, remove_all_users
 from test.test_environment import (CA_PEM,
@@ -71,19 +70,6 @@ class TestAsyncIOSSL(unittest.TestCase):
                           ssl=False,
                           ssl_certfile=CLIENT_PEM)
 
-        self.assertRaises(ValueError,
-                          AsyncIOMotorReplicaSetClient,
-                          io_loop=self.loop,
-                          replicaSet='rs',
-                          ssl='foo')
-
-        self.assertRaises(ConfigurationError,
-                          AsyncIOMotorReplicaSetClient,
-                          io_loop=self.loop,
-                          replicaSet='rs',
-                          ssl=False,
-                          ssl_certfile=CLIENT_PEM)
-
         self.assertRaises(IOError, AsyncIOMotorClient,
                           io_loop=self.loop, ssl_certfile="NoFile")
 
@@ -111,7 +97,7 @@ class TestAsyncIOSSL(unittest.TestCase):
         yield from client.db.collection.find_one()
         response = yield from client.admin.command('ismaster')
         if 'setName' in response:
-            client = AsyncIOMotorReplicaSetClient(
+            client = AsyncIOMotorClient(
                 env.host, env.port,
                 ssl=True,
                 ssl_certfile=CLIENT_PEM,
@@ -138,7 +124,7 @@ class TestAsyncIOSSL(unittest.TestCase):
         response = yield from client.admin.command('ismaster')
 
         if 'setName' in response:
-            client = AsyncIOMotorReplicaSetClient(
+            client = AsyncIOMotorClient(
                 env.host, env.port,
                 replicaSet=response['setName'],
                 ssl_certfile=CLIENT_PEM,
@@ -190,7 +176,7 @@ class TestAsyncIOSSL(unittest.TestCase):
 
         if 'setName' in response:
             with self.assertRaises(ssl.CertificateError):
-                client = AsyncIOMotorReplicaSetClient(
+                client = AsyncIOMotorClient(
                     test.env.fake_hostname_uri,
                     replicaSet=response['setName'],
                     ssl_certfile=CLIENT_PEM,
@@ -229,7 +215,7 @@ class TestAsyncIOSSL(unittest.TestCase):
         yield from client.admin.authenticate(
             MONGODB_X509_USERNAME, mechanism='MONGODB-X509')
 
-        yield from collection.remove()
+        yield from collection.delete_many({})
         uri = ('mongodb://%s@%s:%d/?authMechanism='
                'MONGODB-X509' % (
                    quote_plus(MONGODB_X509_USERNAME), env.host, env.port))

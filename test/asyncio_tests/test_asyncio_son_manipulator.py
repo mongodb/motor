@@ -15,6 +15,7 @@
 import pymongo.son_manipulator
 
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.utils import ignore_deprecations
 
 
 class CustomSONManipulator(pymongo.son_manipulator.SONManipulator):
@@ -35,36 +36,39 @@ class SONManipulatorTest(AsyncIOTestCase):
         super(SONManipulatorTest, self).setUp()
 
     def tearDown(self):
-        remove_coro = self.db.son_manipulator_test_collection.remove()
+        remove_coro = self.db.son_manipulator_test_collection.delete_many({})
         self.loop.run_until_complete(remove_coro)
         super(SONManipulatorTest, self).tearDown()
 
+    @ignore_deprecations
     @asyncio_test
     def test_with_find_one(self):
         coll = self.cx.motor_test.son_manipulator_test_collection
-        _id = yield from coll.insert({'foo': 'bar'})
-        expected = {'_id': _id, 'foo': 'bar'}
+        result = yield from coll.insert_one({'foo': 'bar'})
+        expected = {'_id': result.inserted_id, 'foo': 'bar'}
         self.assertEqual(expected, (yield from coll.find_one()))
 
         # Add SONManipulator and test again.
         coll.database.add_son_manipulator(CustomSONManipulator())
-        expected = {'_id': _id, 'foo': 'bar', 'added_field': 42}
+        expected = {'_id': result.inserted_id, 'foo': 'bar', 'added_field': 42}
         self.assertEqual(expected, (yield from coll.find_one()))
 
+    @ignore_deprecations
     @asyncio_test
     def test_with_fetch_next(self):
         coll = self.cx.motor_test.son_manipulator_test_collection
         coll.database.add_son_manipulator(CustomSONManipulator())
-        _id = yield from coll.insert({'foo': 'bar'})
+        result = yield from coll.insert_one({'foo': 'bar'})
         cursor = coll.find()
         self.assertTrue((yield from cursor.fetch_next))
-        expected = {'_id': _id, 'foo': 'bar', 'added_field': 42}
+        expected = {'_id': result.inserted_id, 'foo': 'bar', 'added_field': 42}
         self.assertEqual(expected, cursor.next_object())
 
+    @ignore_deprecations
     @asyncio_test
     def test_with_to_list(self):
         coll = self.cx.motor_test.son_manipulator_test_collection
-        _id1, _id2 = yield from coll.insert([{}, {}])
+        _id1, _id2 = (yield from coll.insert_many([{}, {}])).inserted_ids
         found = yield from coll.find().sort([('_id', 1)]).to_list(length=2)
         self.assertEqual([{'_id': _id1}, {'_id': _id2}], found)
 

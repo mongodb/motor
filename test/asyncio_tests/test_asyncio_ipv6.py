@@ -47,7 +47,7 @@ class MotorIPv6Test(AsyncIOTestCase):
 
         cx = self.asyncio_client(uri=cx_string)
         collection = cx.motor_test.test_collection
-        yield from collection.insert({"dummy": "object"})
+        yield from collection.insert_one({"dummy": "object"})
         self.assertTrue((yield from collection.find_one({"dummy": "object"})))
 
 

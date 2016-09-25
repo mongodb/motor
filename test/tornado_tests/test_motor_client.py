@@ -63,13 +63,13 @@ class MotorClientTest(MotorTest):
 
     @gen_test
     def test_client_lazy_connect(self):
-        yield self.db.test_client_lazy_connect.remove()
+        yield self.db.test_client_lazy_connect.delete_many({})
 
         # Create client without connecting; connect on demand.
         cx = self.motor_client()
         collection = cx.motor_test.test_client_lazy_connect
-        future0 = collection.insert({'foo': 'bar'})
-        future1 = collection.insert({'foo': 'bar'})
+        future0 = collection.insert_one({'foo': 'bar'})
+        future1 = collection.insert_one({'foo': 'bar'})
         yield [future0, future1]
 
         self.assertEqual(2, (yield collection.find({'foo': 'bar'}).count()))
@@ -89,7 +89,7 @@ class MotorClientTest(MotorTest):
         if test.env.auth:
             yield client.admin.authenticate(db_user, db_password)
 
-        yield client.motor_test.test.save({"dummy": "object"})
+        yield client.motor_test.test.insert_one({"dummy": "object"})
 
         # Confirm it fails with a missing socket.
         client = motor.MotorClient(
@@ -162,7 +162,7 @@ class MotorClientTest(MotorTest):
 
         collection = cx.motor_test.test_collection
         insert_collection = cx.motor_test.insert_collection
-        yield insert_collection.remove()
+        yield insert_collection.delete_many({})
 
         ndocs = [0]
         insert_future = Future()
@@ -181,7 +181,7 @@ class MotorClientTest(MotorTest):
         @gen.coroutine
         def insert():
             for i in range(n_inserts):
-                yield insert_collection.insert({'s': hex(i)})
+                yield insert_collection.insert_one({'s': hex(i)})
 
             insert_future.set_result(None)  # Finished
 
@@ -189,13 +189,13 @@ class MotorClientTest(MotorTest):
         yield insert_future
         self.assertEqual(expected_finds, ndocs[0])
         self.assertEqual(n_inserts, (yield insert_collection.count()))
-        yield collection.remove()
+        yield collection.delete_many({})
 
     @gen_test(timeout=30)
     def test_drop_database(self):
         # Make sure we can pass a MotorDatabase instance to drop_database
         db = self.cx.test_drop_database
-        yield db.test_collection.insert({})
+        yield db.test_collection.insert_one({})
         names = yield self.cx.database_names()
         self.assertTrue('test_drop_database' in names)
         yield self.cx.drop_database(db)

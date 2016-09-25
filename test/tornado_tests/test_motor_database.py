@@ -43,7 +43,7 @@ class MotorDatabaseTest(MotorTest):
 
         # Make sure we got the right DB and it can do an operation
         self.assertEqual('motor_test', db.name)
-        yield db.test_collection.insert({'_id': 1})
+        yield db.test_collection.insert_one({'_id': 1})
         doc = yield db.test_collection.find_one({'_id': 1})
         self.assertEqual(1, doc['_id'])
 
@@ -120,7 +120,7 @@ class MotorDatabaseTest(MotorTest):
         # Make sure we can pass a MotorCollection instance to drop_collection
         db = self.db
         collection = db.test_drop_collection
-        yield collection.insert({})
+        yield collection.insert_one({})
         names = yield db.collection_names()
         self.assertTrue('test_drop_collection' in names)
         yield db.drop_collection(collection)
@@ -132,6 +132,7 @@ class MotorDatabaseTest(MotorTest):
         yield self.check_optional_callback(
             self.cx.admin.command, 'buildinfo', check=False)
 
+    @ignore_deprecations
     @gen_test
     def test_auto_ref_and_deref(self):
         # Test same functionality as in PyMongo's test_database.py; the
@@ -149,9 +150,9 @@ class MotorDatabaseTest(MotorTest):
         b = {"test": a}
         c = {"another test": b}
 
-        yield db.a.remove({})
-        yield db.b.remove({})
-        yield db.c.remove({})
+        yield db.a.delete_many({})
+        yield db.b.delete_many({})
+        yield db.c.delete_many({})
         yield db.a.save(a)
         yield db.b.save(b)
         yield db.c.save(c)
@@ -210,7 +211,7 @@ class MotorDatabaseTest(MotorTest):
         with self.assertRaises(OperationFailure):
             yield db.validate_collection(db.test.doesnotexist)
 
-        yield db.test.save({"dummy": "object"})
+        yield db.test.insert_one({"dummy": "object"})
         self.assertTrue((yield db.validate_collection("test")))
         self.assertTrue((yield db.validate_collection(db.test)))
 

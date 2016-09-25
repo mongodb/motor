@@ -284,7 +284,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
     @asyncio_test
     def test_rewind(self):
-        yield from self.collection.insert([{}, {}, {}])
+        yield from self.collection.insert_many([{}, {}, {}])
         cursor = self.collection.find().limit(2)
 
         count = 0
@@ -357,7 +357,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         yield from self.db.drop_collection("test")
 
         # Insert enough documents to require more than one batch.
-        yield from self.db.test.insert([{} for _ in range(150)])
+        yield from self.db.test.insert_many([{} for _ in range(150)])
 
         client = self.asyncio_client(maxPoolSize=1)
         # Ensure a pool.
@@ -474,7 +474,7 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
     @asyncio_test(timeout=60)
     def test_max_time_ms_getmore(self):
         # Cursor handles server timeout during getmore, also.
-        yield from self.collection.insert({} for _ in range(200))
+        yield from self.collection.insert_many({} for _ in range(200))
         try:
             # Send initial query.
             cursor = self.collection.find().max_time_ms(100000)
@@ -505,7 +505,7 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
         finally:
             # Cleanup.
             yield from self.disable_timeout()
-            yield from self.collection.remove()
+            yield from self.collection.delete_many({})
 
     @asyncio_test
     def test_max_time_ms_each_query(self):
@@ -528,7 +528,7 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
     @asyncio_test(timeout=30)
     def test_max_time_ms_each_getmore(self):
         # Cursor.each() handles server timeout during getmore.
-        yield from self.collection.insert({} for _ in range(200))
+        yield from self.collection.insert_many({} for _ in range(200))
         try:
             # Send initial query.
             cursor = self.collection.find().max_time_ms(100000)
@@ -553,7 +553,7 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
         finally:
             # Cleanup.
             yield from self.disable_timeout()
-            yield from self.collection.remove()
+            yield from self.collection.delete_many({})
 
     def test_iter(self):
         # Iteration should be prohibited.

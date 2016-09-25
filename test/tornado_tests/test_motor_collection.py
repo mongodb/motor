@@ -46,7 +46,7 @@ class MotorCollectionTest(MotorTest):
 
         # Make sure we got the right collection and it can do an operation
         self.assertEqual('test_collection', collection.name)
-        yield collection.insert({'_id': 1})
+        yield collection.insert_one({'_id': 1})
         doc = yield collection.find_one({'_id': 1})
         self.assertEqual(1, doc['_id'])
 
@@ -67,11 +67,12 @@ class MotorCollectionTest(MotorTest):
         for coll in (
                 self.db.foo.bar,
                 self.db.foo.bar.baz):
-            yield coll.remove()
-            self.assertEqual('xyzzy', (yield coll.insert({'_id': 'xyzzy'})))
+            yield coll.delete_many({})
+            result = yield coll.insert_one({'_id': 'xyzzy'})
+            self.assertEqual('xyzzy', result.inserted_id)
             result = yield coll.find_one({'_id': 'xyzzy'})
             self.assertEqual(result['_id'], 'xyzzy')
-            yield coll.remove()
+            yield coll.delete_many({})
             self.assertEqual(None, (yield coll.find_one({'_id': 'xyzzy'})))
 
     def test_call(self):
@@ -92,7 +93,7 @@ class MotorCollectionTest(MotorTest):
         # Launch find operations for _id's 1 and 2 which will finish in order
         # 2, then 1.
         coll = self.collection
-        yield coll.insert([{'_id': 1}, {'_id': 2}])
+        yield coll.insert_many([{'_id': 1}, {'_id': 2}])
         results = []
 
         futures = [Future(), Future()]
@@ -113,9 +114,10 @@ class MotorCollectionTest(MotorTest):
         # Results were appended in order 2, 1.
         self.assertEqual([{'_id': 2}, {'_id': 1}], results)
 
+    @ignore_deprecations
     @gen_test
     def test_update(self):
-        yield self.collection.insert({'_id': 1})
+        yield self.collection.insert_one({'_id': 1})
         result = yield self.collection.update(
             {'_id': 1}, {'$set': {'foo': 'bar'}})
 
@@ -124,34 +126,38 @@ class MotorCollectionTest(MotorTest):
         self.assertEqual(1, result['n'])
         self.assertEqual(None, result.get('err'))
 
+    @ignore_deprecations
     @gen_test
     def test_update_bad(self):
         # Violate a unique index, make sure we handle error well
         coll = self.db.unique_collection
-        yield coll.ensure_index('s', unique=True)
+        yield coll.create_index('s', unique=True)
 
         try:
-            yield coll.insert([{'s': 1}, {'s': 2}])
+            yield coll.insert_many([{'s': 1}, {'s': 2}])
             with self.assertRaises(DuplicateKeyError):
                 yield coll.update({'s': 2}, {'$set': {'s': 1}})
 
         finally:
             yield coll.drop()
 
+    @ignore_deprecations
     @gen_test
     def test_update_callback(self):
         yield self.check_optional_callback(
             self.collection.update, {}, {})
 
     @gen_test
-    def test_insert(self):
+    def test_insert_one(self):
         collection = self.collection
-        self.assertEqual(201, (yield collection.insert({'_id': 201})))
+        result = yield collection.insert_one({'_id': 201})
+        self.assertEqual(201, result.inserted_id)
 
+    @ignore_deprecations
     @gen_test
     def test_insert_many_one_bad(self):
         collection = self.collection
-        yield collection.insert({'_id': 2})
+        yield collection.insert_one({'_id': 2})
 
         # Violate a unique index in one of many updates, handle error.
         with self.assertRaises(DuplicateKeyError):
@@ -165,6 +171,7 @@ class MotorCollectionTest(MotorTest):
             set([1, 2]),
             set((yield collection.distinct('_id'))))
 
+    @ignore_deprecations
     @gen_test
     def test_save_callback(self):
         yield self.collection.save({}, callback=None)
@@ -174,6 +181,7 @@ class MotorCollectionTest(MotorTest):
         if error:
             raise error
 
+    @ignore_deprecations
     @gen_test
     def test_save_with_id(self):
         # save() returns the _id, in this case 5.
@@ -181,6 +189,7 @@ class MotorCollectionTest(MotorTest):
             5,
             (yield self.collection.save({'_id': 5})))
 
+    @ignore_deprecations
     @gen_test
     def test_save_without_id(self):
         collection = self.collection
@@ -189,6 +198,7 @@ class MotorCollectionTest(MotorTest):
         # save() returns the new _id
         self.assertTrue(isinstance(result, ObjectId))
 
+    @ignore_deprecations
     @gen_test
     def test_save_bad(self):
         coll = self.db.unique_collection
@@ -202,52 +212,37 @@ class MotorCollectionTest(MotorTest):
             yield coll.drop()
 
     @gen_test
-    def test_remove(self):
+    def test_delete_one(self):
         # Remove a document twice, check that we get a success responses
         # and n = 0 for the second time.
-        yield self.collection.insert({'_id': 1})
-        result = yield self.collection.remove({'_id': 1})
+        yield self.collection.insert_one({'_id': 1})
+        result = yield self.collection.delete_one({'_id': 1})
 
         # First time we remove, n = 1
-        self.assertEqual(1, result['n'])
-        self.assertEqual(1, result['ok'])
-        self.assertEqual(None, result.get('err'))
+        self.assertEqual(1, result.raw_result['n'])
+        self.assertEqual(1, result.raw_result['ok'])
+        self.assertEqual(None, result.raw_result.get('err'))
 
-        result = yield self.collection.remove({'_id': 1})
+        result = yield self.collection.delete_one({'_id': 1})
 
         # Second time, document is already gone, n = 0
-        self.assertEqual(0, result['n'])
-        self.assertEqual(1, result['ok'])
-        self.assertEqual(None, result.get('err'))
+        self.assertEqual(0, result.raw_result['n'])
+        self.assertEqual(1, result.raw_result['ok'])
+        self.assertEqual(None, result.raw_result.get('err'))
 
+    @ignore_deprecations
     @gen_test
     def test_remove_callback(self):
         yield self.check_optional_callback(self.collection.remove)
 
-    @gen_test
-    def test_unacknowledged_remove(self):
-        coll = self.collection
-        yield coll.remove()
-        yield coll.insert([{'_id': i} for i in range(3)])
-
-        # Don't yield the futures.
-        coll.remove({'_id': 0}, w=0)
-        coll.remove({'_id': 1}, w=0)
-        coll.remove({'_id': 2}, w=0)
-
-        # Wait for them to complete
-        while (yield coll.count()):
-            yield self.pause(0.1)
-
-        coll.database.client.close()
-
+    @ignore_deprecations
     @gen_test
     def test_unacknowledged_insert(self):
         # Test that unsafe inserts with no callback still work
 
         # Insert id 1 without a callback or w=1.
         coll = self.db.test_unacknowledged_insert
-        coll.insert({'_id': 1}, w=0)
+        coll.with_options(write_concern=WriteConcern(0)).insert_one({'_id': 1})
 
         # The insert is eventually executed.
         while not (yield coll.count()):
@@ -260,6 +255,7 @@ class MotorCollectionTest(MotorTest):
         with self.assertRaises(DuplicateKeyError):
             yield future
 
+    @ignore_deprecations
     @gen_test
     def test_unacknowledged_save(self):
         # Test that unsafe saves with no callback still work
@@ -275,12 +271,13 @@ class MotorCollectionTest(MotorTest):
         yield coll.save({'_id': 201}, w=0)
         coll.database.client.close()
 
+    @ignore_deprecations
     @gen_test
     def test_unacknowledged_update(self):
         # Test that unsafe updates with no callback still work
         coll = self.collection
 
-        yield coll.insert({'_id': 1})
+        yield coll.insert_one({'_id': 1})
         coll.update({'_id': 1}, {'$set': {'a': 1}}, w=0)
 
         while not (yield coll.find_one({'a': 1})):
@@ -292,8 +289,8 @@ class MotorCollectionTest(MotorTest):
     def test_nested_callbacks(self):
         results = [0]
         future = Future()
-        yield self.collection.remove()
-        yield self.collection.insert({'_id': 1})
+        yield self.collection.delete_many({})
+        yield self.collection.insert_one({'_id': 1})
 
         def callback(result, error):
             if error:
@@ -357,6 +354,7 @@ class MotorCollectionTest(MotorTest):
         result.sort(key=lambda doc: doc['_id'])
         self.assertEqual(expected_result, result)
 
+    @ignore_deprecations
     @gen_test
     def test_indexes(self):
         test_collection = self.collection
@@ -383,7 +381,7 @@ class MotorCollectionTest(MotorTest):
     @gen.coroutine
     def _make_test_data(self, n):
         yield self.db.drop_collection("test")
-        yield self.db.test.insert([{'_id': i} for i in range(n)])
+        yield self.db.test.insert_many([{'_id': i} for i in range(n)])
         expected_sum = sum(range(n))
         raise gen.Return(expected_sum)
 
@@ -432,11 +430,12 @@ class MotorCollectionTest(MotorTest):
 
         yield skip_if_mongos(self.cx)
 
-        collection = self.collection
+        collection = self.collection.with_options(
+            write_concern=WriteConcern(test.env.w))
 
         # Enough documents that each cursor requires multiple batches.
-        yield collection.remove()
-        yield collection.insert(({'_id': i} for i in range(8000)), w=test.env.w)
+        yield collection.delete_many({})
+        yield collection.insert_many(({'_id': i} for i in range(8000)))
         if test.env.is_replica_set:
             # Test that getMore messages are sent to the right server.
             client = self.motor_rsc(read_preference=Secondary())

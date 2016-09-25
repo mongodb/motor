@@ -42,8 +42,8 @@ class MotorTestBasic(MotorTest):
         # Default empty dict means "w=1"
         self.assertEqual(WriteConcern(), self.cx.write_concern)
 
-        yield self.collection.remove()
-        yield self.collection.insert({'_id': 0})
+        yield self.collection.delete_many({})
+        yield self.collection.insert_one({'_id': 0})
 
         for gle_options in [
             {},
@@ -63,17 +63,17 @@ class MotorTestBasic(MotorTest):
 
             if wc.acknowledged:
                 with self.assertRaises(pymongo.errors.DuplicateKeyError):
-                    yield collection.insert({'_id': 0})
+                    yield collection.insert_one({'_id': 0})
             else:
-                yield collection.insert({'_id': 0})  # No error
+                yield collection.insert_one({'_id': 0})  # No error
 
             # No error
             c = collection.with_options(write_concern=WriteConcern(w=0))
-            yield c.insert({'_id': 0})
+            yield c.insert_one({'_id': 0})
             cx.close()
 
-    @gen_test
     @ignore_deprecations
+    @gen_test
     def test_read_preference(self):
         # Check the default
         cx = motor.MotorClient(test.env.uri, io_loop=self.io_loop)

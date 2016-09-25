@@ -14,7 +14,7 @@
 
 from __future__ import unicode_literals
 
-"""Test Motor, an asynchronous driver for MongoDB and Tornado."""
+"""Test replica set MotorClient."""
 
 import unittest
 
@@ -39,12 +39,12 @@ from motor.motor_py3_compat import text_type
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
     def test_io_loop(self):
         with self.assertRaises(TypeError):
-            motor.MotorReplicaSetClient(test.env.rs_uri, io_loop='foo')
+            motor.MotorClient(test.env.rs_uri, io_loop='foo')
 
     @gen_test
     def test_connection_failure(self):
         # Assuming there isn't anything actually running on this port
-        client = motor.MotorReplicaSetClient(
+        client = motor.MotorClient(
             'localhost:8765', replicaSet='rs', io_loop=self.io_loop,
             serverSelectionTimeoutMS=10)
 
@@ -111,8 +111,8 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
 
 
 class TestReplicaSetClientAgainstStandalone(MotorTest):
-    """This is a funny beast -- we want to run tests for MotorReplicaSetClient
-    but only if the database at DB_IP and DB_PORT is a standalone.
+    """This is a funny beast -- we want to run tests for a replica set
+    MotorClient but only if the database at DB_IP and DB_PORT is a standalone.
     """
     def setUp(self):
         super(TestReplicaSetClientAgainstStandalone, self).setUp()
@@ -123,7 +123,7 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
     @gen_test
     def test_connect(self):
         with self.assertRaises(pymongo.errors.ServerSelectionTimeoutError):
-            yield motor.MotorReplicaSetClient(
+            yield motor.MotorClient(
                 '%s:%s' % (env.host, env.port), replicaSet='anything',
                 io_loop=self.io_loop,
                 serverSelectionTimeoutMS=10).test.test.find_one()

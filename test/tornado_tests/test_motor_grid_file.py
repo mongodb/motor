@@ -125,8 +125,8 @@ class MotorGridFileTest(MotorTest):
 
     @gen_test
     def test_alternate_collection(self):
-        yield self.db.alt.files.remove()
-        yield self.db.alt.chunks.remove()
+        yield self.db.alt.files.delete_many({})
+        yield self.db.alt.chunks.delete_many({})
 
         f = motor.MotorGridIn(self.db.alt)
         yield f.write(b"hello world")

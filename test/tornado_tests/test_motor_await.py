@@ -28,13 +28,13 @@ class MotorTestAwait(MotorTest):
     @gen_test
     async def test_to_list(self):
         collection = self.collection
-        await collection.remove()
+        await collection.delete_many({})
 
         results = await collection.find().sort('_id').to_list(length=None)
         self.assertEqual([], results)
 
         docs = [{'_id': 1}, {'_id': 2}]
-        await collection.insert(docs)
+        await collection.insert_many(docs)
         cursor = collection.find().sort('_id')
         results = await cursor.to_list(length=None)
         self.assertEqual(docs, results)
@@ -44,12 +44,12 @@ class MotorTestAwait(MotorTest):
     @gen_test
     async def test_iter_cursor(self):
         collection = self.collection
-        await collection.remove()
+        await collection.delete_many({})
 
         for n_docs in 0, 1, 2, 10:
             if n_docs:
                 docs = [{'_id': i} for i in range(n_docs)]
-                await collection.insert(docs)
+                await collection.insert_many(docs)
 
             # Force extra batches to test iteration.
             j = 0
@@ -59,7 +59,7 @@ class MotorTestAwait(MotorTest):
 
             self.assertEqual(j, n_docs)
 
-            await collection.remove()
+            await collection.delete_many({})
 
     @gen_test
     async def test_iter_aggregate(self):
@@ -67,7 +67,7 @@ class MotorTestAwait(MotorTest):
             raise SkipTest("Aggregation cursor requires MongoDB >= 2.5.1")
 
         collection = self.collection
-        await collection.remove()
+        await collection.delete_many({})
         pipeline = [{'$sort': {'_id': 1}}]
 
         # Empty iterator.
@@ -77,7 +77,7 @@ class MotorTestAwait(MotorTest):
         for n_docs in 1, 2, 10:
             if n_docs:
                 docs = [{'_id': i} for i in range(n_docs)]
-                await collection.insert(docs)
+                await collection.insert_many(docs)
 
             # Force extra batches to test iteration.
             j = 0
@@ -88,15 +88,15 @@ class MotorTestAwait(MotorTest):
 
             self.assertEqual(j, n_docs)
 
-            await collection.remove()
+            await collection.delete_many({})
 
     @gen_test
     async def test_iter_gridfs(self):
         gfs = MotorGridFS(self.db)
 
         async def cleanup():
-            await self.db.fs.files.remove()
-            await self.db.fs.chunks.remove()
+            await self.db.fs.files.delete_many({})
+            await self.db.fs.chunks.delete_many({})
 
         await cleanup()
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Test AsyncIOReplicaSetClient."""
+"""Test replica set AsyncIOClient."""
 
 import unittest
 
@@ -37,7 +37,7 @@ class TestAsyncIOReplicaSet(AsyncIOTestCase):
     @asyncio_test
     def test_connection_failure(self):
         # Assuming there isn't anything actually running on this port.
-        client = motor_asyncio.AsyncIOMotorReplicaSetClient(
+        client = motor_asyncio.AsyncIOMotorClient(
             'localhost:8765', replicaSet='rs', io_loop=self.loop,
             serverSelectionTimeoutMS=10)
 
@@ -46,8 +46,9 @@ class TestAsyncIOReplicaSet(AsyncIOTestCase):
 
 
 class TestReplicaSetClientAgainstStandalone(AsyncIOTestCase):
-    """This is a funny beast -- we want to run tests for MotorReplicaSetClient
-    but only if the database at DB_IP and DB_PORT is a standalone.
+    """This is a funny beast -- we want to run tests for a replica set
+    AsyncIOMotorClient but only if the database at DB_IP and DB_PORT is a
+    standalone.
     """
     def setUp(self):
         super(TestReplicaSetClientAgainstStandalone, self).setUp()
@@ -57,7 +58,7 @@ class TestReplicaSetClientAgainstStandalone(AsyncIOTestCase):
 
     @asyncio_test
     def test_connect(self):
-        client = motor_asyncio.AsyncIOMotorReplicaSetClient(
+        client = motor_asyncio.AsyncIOMotorClient(
             '%s:%s' % (env.host, env.port), replicaSet='anything',
             serverSelectionTimeoutMS=10, io_loop=self.loop)
 

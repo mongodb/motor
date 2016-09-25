@@ -74,7 +74,7 @@ def remove_all_users(db):
     if version_check:
         yield db.command({"dropAllUsersFromDatabase": 1})
     else:
-        yield db.system.users.remove({})
+        yield db.system.users.delete_many({})
 
 
 @gen.coroutine
@@ -90,7 +90,7 @@ def remove_all_users(db):
     if version_check:
         yield db.command({"dropAllUsersFromDatabase": 1})
     else:
-        yield db.system.users.remove({})
+        yield db.system.users.delete_many({})
 
 
 class PauseMixin(object):
@@ -120,8 +120,8 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
 
     @gen.coroutine
     def make_test_data(self):
-        yield self.collection.remove()
-        yield self.collection.insert([{'_id': i} for i in range(200)])
+        yield self.collection.delete_many({})
+        yield self.collection.insert_many([{'_id': i} for i in range(200)])
 
     make_test_data.__test__ = False
 
@@ -147,12 +147,11 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
             **self.get_client_kwargs(**kwargs))
 
     def motor_rsc(self, uri=None, *args, **kwargs):
-        """Get an open MotorReplicaSetClient. Ignores self.ssl, you must pass
-        'ssl' argument. You'll probably need to close the client to avoid
-        file-descriptor problems after AsyncTestCase calls
-        self.io_loop.close(all_fds=True).
+        """Get an open MotorClient for replica set.
+
+        Ignores self.ssl, you must pass 'ssl' argument.
         """
-        return motor.MotorReplicaSetClient(
+        return motor.MotorClient(
             uri or env.rs_uri,
             *args,
             **self.get_client_kwargs(**kwargs))
@@ -184,7 +183,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
             raise error
 
     def tearDown(self):
-        env.sync_cx.motor_test.test_collection.remove()
+        env.sync_cx.motor_test.test_collection.delete_many({})
         self.cx.close()
         super(MotorTest, self).tearDown()
 

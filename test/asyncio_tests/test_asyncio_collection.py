@@ -16,6 +16,7 @@
 
 import asyncio
 import unittest
+import warnings
 from unittest import SkipTest
 
 import bson
@@ -34,7 +35,7 @@ from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase,
                                 skip_if_mongos,
                                 at_least)
-from test.utils import delay
+from test.utils import delay, ignore_deprecations
 
 
 class TestAsyncIOCollection(AsyncIOTestCase):
@@ -46,8 +47,8 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
         # Make sure we got the right collection and it can do an operation
         self.assertEqual('test_collection', collection.name)
-        yield from collection.remove()
-        yield from collection.insert({'_id': 1})
+        yield from collection.delete_many({})
+        yield from collection.insert_one({'_id': 1})
         doc = yield from collection.find_one({'_id': 1})
         self.assertEqual(1, doc['_id'])
 
@@ -68,12 +69,12 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         for coll in (
                 self.db.foo.bar,
                 self.db.foo.bar.baz):
-            yield from coll.remove()
-            self.assertEqual('xyzzy',
-                             (yield from coll.insert({'_id': 'xyzzy'})))
+            yield from coll.delete_many({})
+            result = yield from coll.insert_one({'_id': 'xyzzy'})
+            self.assertEqual('xyzzy', result.inserted_id)
             result = yield from coll.find_one({'_id': 'xyzzy'})
             self.assertEqual(result['_id'], 'xyzzy')
-            yield from coll.remove()
+            yield from coll.delete_many({})
             resp = yield from coll.find_one({'_id': 'xyzzy'})
             self.assertEqual(None, resp)
 
@@ -95,7 +96,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         # Launch find operations for _id's 1 and 2 which will finish in order
         # 2, then 1.
         coll = self.collection
-        yield from coll.insert([{'_id': 1}, {'_id': 2}])
+        yield from coll.insert_many([{'_id': 1}, {'_id': 2}])
         results = []
 
         futures = [asyncio.Future(loop=self.loop),
@@ -117,9 +118,10 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         # Results were appended in order 2, 1.
         self.assertEqual([{'_id': 2}, {'_id': 1}], results)
 
+    @ignore_deprecations
     @asyncio_test
     def test_update(self):
-        yield from self.collection.insert({'_id': 1})
+        yield from self.collection.insert_one({'_id': 1})
         result = yield from self.collection.update(
             {'_id': 1}, {'$set': {'foo': 'bar'}})
 
@@ -128,14 +130,15 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         self.assertEqual(1, result['n'])
         self.assertEqual(None, result.get('err'))
 
+    @ignore_deprecations
     @asyncio_test
     def test_update_bad(self):
         # Violate a unique index, make sure we handle error well
         coll = self.db.unique_collection
-        yield from coll.ensure_index('s', unique=True)
+        yield from coll.create_index('s', unique=True)
 
         try:
-            yield from coll.insert([{'s': 1}, {'s': 2}])
+            yield from coll.insert_many([{'s': 1}, {'s': 2}])
             with self.assertRaises(DuplicateKeyError):
                 yield from coll.update({'s': 2}, {'$set': {'s': 1}})
 
@@ -143,14 +146,16 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             yield from coll.drop()
 
     @asyncio_test
-    def test_insert(self):
+    def test_insert_one(self):
         collection = self.collection
-        self.assertEqual(201, (yield from collection.insert({'_id': 201})))
+        result = yield from collection.insert_one({'_id': 201})
+        self.assertEqual(201, result.inserted_id)
 
+    @ignore_deprecations
     @asyncio_test
     def test_insert_many_one_bad(self):
         collection = self.collection
-        yield from collection.insert({'_id': 2})
+        yield from collection.insert_one({'_id': 2})
 
         # Violate a unique index in one of many updates, handle error.
         with self.assertRaises(DuplicateKeyError):
@@ -164,6 +169,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             set([1, 2]),
             set((yield from collection.distinct('_id'))))
 
+    @ignore_deprecations
     @asyncio_test
     def test_save_with_id(self):
         # save() returns the _id, in this case 5.
@@ -171,6 +177,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             5,
             (yield from self.collection.save({'_id': 5})))
 
+    @ignore_deprecations
     @asyncio_test
     def test_save_without_id(self):
         collection = self.collection
@@ -179,6 +186,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         # save() returns the new _id
         self.assertTrue(isinstance(result, ObjectId))
 
+    @ignore_deprecations
     @asyncio_test
     def test_save_bad(self):
         coll = self.db.unique_collection
@@ -192,45 +200,29 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             yield from coll.drop()
 
     @asyncio_test
-    def test_remove(self):
+    def test_delete_one(self):
         # Remove a document twice, check that we get a success responses
         # and n = 0 for the second time.
-        yield from self.collection.insert({'_id': 1})
-        result = yield from self.collection.remove({'_id': 1})
+        yield from self.collection.insert_one({'_id': 1})
+        result = yield from self.collection.delete_one({'_id': 1})
 
         # First time we remove, n = 1
-        self.assertEqual(1, result['n'])
-        self.assertEqual(1, result['ok'])
-        self.assertEqual(None, result.get('err'))
+        self.assertEqual(1, result.raw_result['n'])
+        self.assertEqual(1, result.raw_result['ok'])
+        self.assertEqual(None, result.raw_result.get('err'))
 
-        result = yield from self.collection.remove({'_id': 1})
+        result = yield from self.collection.delete_one({'_id': 1})
 
         # Second time, document is already gone, n = 0
-        self.assertEqual(0, result['n'])
-        self.assertEqual(1, result['ok'])
-        self.assertEqual(None, result.get('err'))
+        self.assertEqual(0, result.raw_result['n'])
+        self.assertEqual(1, result.raw_result['ok'])
+        self.assertEqual(None, result.raw_result.get('err'))
 
-    @asyncio_test
-    def test_unacknowledged_remove(self):
-        coll = self.collection
-        yield from coll.remove()
-        yield from coll.insert([{'_id': i} for i in range(3)])
-
-        # Don't yield from the futures.
-        coll.remove({'_id': 0}, w=0)
-        coll.remove({'_id': 1}, w=0)
-        coll.remove({'_id': 2}, w=0)
-
-        # Wait for them to complete
-        while (yield from coll.count()):
-            yield from asyncio.sleep(0.1, loop=self.loop)
-
-        coll.database.client.close()
-
+    @ignore_deprecations
     @asyncio_test
     def test_unacknowledged_insert(self):
         coll = self.db.test_unacknowledged_insert
-        coll.insert({'_id': 1}, w=0)
+        coll.with_options(write_concern=WriteConcern(0)).insert_one({'_id': 1})
 
         # The insert is eventually executed.
         while not (yield from coll.count()):
@@ -243,6 +235,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         with self.assertRaises(DuplicateKeyError):
             yield from future
 
+    @ignore_deprecations
     @asyncio_test
     def test_unacknowledged_save(self):
         # Test that unsafe saves with no callback still work
@@ -261,12 +254,13 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         yield from future
         coll.database.client.close()
 
+    @ignore_deprecations
     @asyncio_test
     def test_unacknowledged_update(self):
         # Test that unsafe updates with no callback still work
         coll = self.collection
 
-        yield from coll.insert({'_id': 1})
+        yield from coll.insert_one({'_id': 1})
         coll.update({'_id': 1}, {'$set': {'a': 1}}, w=0)
 
         while not (yield from coll.find_one({'a': 1})):
@@ -278,8 +272,8 @@ class TestAsyncIOCollection(AsyncIOTestCase):
     def test_nested_callbacks(self):
         results = [0]
         future = asyncio.Future(loop=self.loop)
-        yield from self.collection.remove()
-        yield from self.collection.insert({'_id': 1})
+        yield from self.collection.delete_many({})
+        yield from self.collection.insert_one({'_id': 1})
 
         def callback(result, error):
             if error:
@@ -345,6 +339,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         result.sort(key=lambda doc: doc['_id'])
         self.assertEqual(expected_result, result)
 
+    @ignore_deprecations
     @asyncio_test
     def test_indexes(self):
         test_collection = self.collection
@@ -376,7 +371,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         # and a larger one that requires a getMore.
         for collection_size in (10, 1000):
             yield from db.drop_collection("test")
-            yield from db.test.insert([{'_id': i} for i in
+            yield from db.test.insert_many([{'_id': i} for i in
                                        range(collection_size)])
 
             pipeline = [{'$project': {'_id': '$_id'}}]
@@ -393,12 +388,13 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
         yield from skip_if_mongos(self.cx)
 
-        collection = self.collection
+        collection = self.collection.with_options(
+            write_concern=WriteConcern(test.env.w))
 
         # Enough documents that each cursor requires multiple batches.
-        yield from collection.remove()
-        yield from collection.insert(({'_id': i} for i in range(8000)),
-                                     w=test.env.w)
+        yield from collection.delete_many({})
+        yield from collection.insert_many(({'_id': i} for i in range(8000)))
+
         if test.env.is_replica_set:
             # Test that getMore messages are sent to the right server.
             client = self.asyncio_rsc(read_preference=Secondary())

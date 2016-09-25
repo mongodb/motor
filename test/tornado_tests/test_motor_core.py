@@ -18,11 +18,10 @@ from __future__ import unicode_literals
 
 from tornado.testing import gen_test
 from gridfs import GridFS, GridIn
-from pymongo import MongoReplicaSetClient
 
 from motor import MotorGridFS, MotorGridIn, MotorGridOut
 from test import env
-from test.tornado_tests import MotorReplicaSetTestBase, MotorTest
+from test.tornado_tests import MotorTest
 
 
 def attrs(klass):
@@ -90,14 +89,6 @@ class MotorCoreTest(MotorTest):
         self.assertEqual(
             attrs(pymongo_cursor) - pymongo_cursor_only,
             attrs(motor_cursor) - motor_agg_cursor_only)
-
-
-class MotorCoreTestRS(MotorReplicaSetTestBase):
-    def test_rs_client_attrs(self):
-        sync_cx_rs = MongoReplicaSetClient(env.rs_uri)
-        self.assertEqual(
-            attrs(sync_cx_rs) - pymongo_client_only,
-            attrs(self.rsc) - motor_client_only)
 
 
 class MotorCoreTestGridFS(MotorTest):
