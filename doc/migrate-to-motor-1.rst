@@ -3,8 +3,9 @@ Motor 1.0 Migration Guide
 
 .. currentmodule:: motor.motor_tornado
 
-Motor 1.0 will bring a number of backward breaking changes. Follow this guide to
-migrate an existing application that had used an older version of Motor. 
+Motor 1.0 brings a number of backward breaking changes to the pre-1.0 API.
+Follow this guide to migrate an existing application that had used an older
+version of Motor.
 
 Removed features with no migration path
 ---------------------------------------

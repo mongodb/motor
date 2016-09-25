@@ -7,20 +7,20 @@ Next Release
 ------------
 
 Motor now depends on PyMongo 3.3 and later. The move from PyMongo 2 to 3 brings
-a large number of API changes, read `the PyMongo 3 changelog`_ carefully.
+a large number of API changes, read :doc:`migrate-to-motor-1` and
+`the PyMongo 3 changelog`_ carefully.
 
+:class:`MotorReplicaSetClient` is removed
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`MotorClient` changes
-~~~~~~~~~~~~~~~~~~~~~
+In Motor 1.0, :class:`MotorClient` is the only class. Connect to a replica set with
+a "replicaSet" URI option or parameter::
 
-`MotorClient` is now the only client class; `MotorReplicaSetClient` is no longer
-necessary for connecting to a replica set. To connect to a replica set::
+  MotorClient("mongodb://localhost/?replicaSet=my-rs")
+  MotorClient(host, port, replicaSet="my-rs")
 
-    MotorClient(host, port, replicaSet='my-replicaset-name')
-
-Or::
-
-    MotorClient('mongodb://host:port/?replicaSet=my-replicaset-name')
+:class:`MotorClient` changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Removed:
 
