@@ -3,11 +3,10 @@
 Motor GridFS Examples
 =====================
 
-.. important:: This page describes using Motor with Tornado. Beginning in
-  version 0.5 Motor can also integrate with asyncio instead of Tornado. The
-  documentation is not yet updated for Motor's asyncio integration.
+These examples describe using Motor with Tornado. Beginning in
+version 0.5 Motor can also integrate with asyncio instead of Tornado.
 
-.. seealso:: :doc:`../api/web`
+.. seealso:: :doc:`../api-tornado/web`
 
 Writing a file to GridFS with `MotorGridFS.put`
 -----------------------------------------------

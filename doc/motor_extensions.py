@@ -172,8 +172,8 @@ def get_motor_attr(motor_class, name, *defargs):
     full_name = '%s.%s.%s' % (
         motor_class.__module__, motor_class.__name__, name)
 
-    full_name_legacy = 'motor.motor_tornado.%s.%s' % (
-        motor_class.__name__, name)
+    full_name_legacy = 'motor.%s.%s.%s' % (
+        motor_class.__module__, motor_class.__name__, name)
 
     has_coroutine_annotation = getattr(attr, 'coroutine_annotation', False)
     is_async_method = getattr(attr, 'is_async_method', False)

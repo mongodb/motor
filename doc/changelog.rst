@@ -126,8 +126,8 @@ These new methods do not apply SON Manipulators.
 
 .. _CRUD API Spec: https://github.com/mongodb/specifications/blob/master/source/crud/crud.rst
 
-:doc:`GridFS <api/gridfs>` changes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:doc:`GridFS <api-tornado/gridfs>` changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 New `MotorGridOutCursor` methods:
 

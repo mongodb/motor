@@ -27,6 +27,8 @@ try:
 except ImportError:
     from asyncio import async as ensure_future
 
+CLASS_PREFIX = 'AsyncIO'
+
 
 def get_event_loop():
     return asyncio.get_event_loop()

@@ -29,11 +29,13 @@ from test.utils import ignore_deprecations
 
 class AIOMotorTestBasic(AsyncIOTestCase):
     def test_repr(self):
-        self.assertTrue(repr(self.cx).startswith('MotorClient'))
-        self.assertTrue(repr(self.db).startswith('MotorDatabase'))
-        self.assertTrue(repr(self.collection).startswith('MotorCollection'))
+        self.assertTrue(repr(self.cx).startswith('AsyncIOMotorClient'))
+        self.assertTrue(repr(self.db).startswith('AsyncIOMotorDatabase'))
+        self.assertTrue(repr(self.collection).startswith(
+            'AsyncIOMotorCollection'))
+
         cursor = self.collection.find()
-        self.assertTrue(repr(cursor).startswith('MotorCursor'))
+        self.assertTrue(repr(cursor).startswith('AsyncIOMotorCursor'))
 
     @asyncio_test
     def test_write_concern(self):

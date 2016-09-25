@@ -228,7 +228,7 @@ class Unwrap(WrapBase):
         def _f(self, *args, **kwargs):
             # Don't call isinstance(), not checking subclasses.
             unwrapped_args = [
-                obj.delegate if obj.__class__.__name__ == name else obj
+                obj.delegate if obj.__class__.__name__.endswith(name) else obj
                 for obj in args]
 
             unwrapped_kwargs = dict([
@@ -314,7 +314,7 @@ class MotorCursorChainingMethod(MotorAttributeFactory):
 
 
 def create_class_with_framework(cls, framework, module_name):
-    motor_class_name = cls.__motor_class_name__
+    motor_class_name = framework.CLASS_PREFIX + cls.__motor_class_name__
     cache_key = (cls, motor_class_name, framework)
     cached_class = _class_cache.get(cache_key)
     if cached_class:

@@ -3,9 +3,8 @@
 Authentication With Motor
 =========================
 
-.. important:: This page describes using Motor with Tornado. Beginning in
-  version 0.5 Motor can also integrate with asyncio instead of Tornado. The
-  documentation is not yet updated for Motor's asyncio integration.
+This page describes using Motor with Tornado. Beginning in
+version 0.5 Motor can also integrate with asyncio instead of Tornado.
 
 To use authentication, you must start ``mongod`` with ``--auth`` or, for
 replica sets or sharded clusters, ``--keyFile``. Create an admin user and

@@ -66,7 +66,8 @@ Classes
 
 .. toctree::
 
-   api/index
+   api-tornado/index
+   api-asyncio/index
 
 .. getting the caption italicized with a hyperlink in it requires some RST hackage
 

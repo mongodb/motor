@@ -5,8 +5,7 @@ Differences between Motor and PyMongo
 =====================================
 
 .. important:: This page describes using Motor with Tornado. Beginning in
-  version 0.5 Motor can also integrate with asyncio instead of Tornado. The
-  documentation is not yet updated for Motor's asyncio integration.
+  version 0.5 Motor can also integrate with asyncio instead of Tornado.
 
 Major differences
 =================
@@ -127,7 +126,7 @@ GridFS
     `MotorGridOut.read` method. For convenience ``MotorGridOut``
     provides `MotorGridOut.stream_to_handler`.
 
-    .. seealso:: :ref:`reading-from-gridfs` and :doc:`../api/web`
+    .. seealso:: :ref:`reading-from-gridfs` and :doc:`../api-tornado/web`
 
 - Setting properties
 

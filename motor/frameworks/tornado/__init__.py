@@ -25,6 +25,8 @@ from tornado import concurrent, gen, ioloop
 
 from motor.motor_common import callback_type_error
 
+CLASS_PREFIX = ''
+
 
 def get_event_loop():
     return ioloop.IOLoop.current()
