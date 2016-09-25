@@ -8,8 +8,8 @@ version 0.5 Motor can also integrate with asyncio instead of Tornado.
 
 .. seealso:: :doc:`../api-tornado/web`
 
-Writing a file to GridFS with `MotorGridFS.put`
------------------------------------------------
+Writing a file to GridFS with :meth:`~MotorGridFS.put`
+------------------------------------------------------
 
 .. code-block:: python
 
@@ -34,8 +34,8 @@ Writing a file to GridFS with `MotorGridFS.put`
         specified_id = yield fs.put('Contents', _id=42)
         assert 42 == specified_id
 
-Streaming a file to GridFS with `MotorGridIn`
----------------------------------------------
+Streaming a file to GridFS with :class:`MotorGridIn`
+----------------------------------------------------
 
 .. code-block:: python
 
@@ -73,8 +73,8 @@ Streaming a file to GridFS with `MotorGridIn`
 
 .. _setting-attributes-on-a-motor-gridin:
 
-Setting attributes on a `MotorGridIn`
--------------------------------------
+Setting attributes on a :class:`MotorGridIn`
+--------------------------------------------
 
 .. code-block:: python
 
@@ -102,8 +102,8 @@ Setting attributes on a `MotorGridIn`
 
 .. _reading-from-gridfs:
 
-Reading from GridFS with `MotorGridOut`
----------------------------------------
+Reading from GridFS with :class:`MotorGridOut`
+----------------------------------------------
 
 .. code-block:: python
 

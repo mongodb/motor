@@ -80,8 +80,8 @@ An application that can create and display short messages:
     application.listen(8888)
     tornado.ioloop.IOLoop.instance().start()
 
-The call to `MotorCursor.each` could be
-replaced with `MotorCursor.to_list`, which is easier to use
+The call to :meth:`~MotorCursor.each` could be
+replaced with :meth:`~MotorCursor.to_list`, which is easier to use
 with templates because the callback receives the entire result at once:
 
 .. code-block:: python

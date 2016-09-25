@@ -209,7 +209,8 @@ class AgnosticGridOut(object):
     @motor_coroutine
     def stream_to_handler(self, request_handler):
         """Write the contents of this file to a
-        :class:`tornado.web.RequestHandler`. This method calls `flush` on
+        :class:`tornado.web.RequestHandler`. This method calls
+        :meth:`~tornado.web.RequestHandler.flush` on
         the RequestHandler, so ensure all headers have already been set.
         For a more complete example see the implementation of
         :class:`~motor.web.GridFSHandler`.
@@ -274,7 +275,7 @@ class AgnosticGridIn(object):
     set = AsyncCommand(attr_name='__setattr__', doc="""
 Set an arbitrary metadata attribute on the file. Stores value on the server
 as a key-value pair within the file document once the file is closed. If
-the file is already closed, calling `set` will immediately update the file
+the file is already closed, calling :meth:`set` will immediately update the file
 document on the server.
 
 Metadata set on the file appears as attributes on a

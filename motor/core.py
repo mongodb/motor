@@ -241,7 +241,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
     @property
     def client(self):
-        """This MotorDatabase's `MotorClient`."""
+        """This MotorDatabase's :class:`MotorClient`."""
         return self._client
 
     def __getattr__(self, name):
@@ -419,8 +419,8 @@ class AgnosticCollection(AgnosticBaseProperties):
           - `pipeline`: a single command or list of aggregation commands
           - `**kwargs`: send arbitrary parameters to the aggregate command
 
-        Returns a `MotorCommandCursor` that can be iterated like a cursor from
-        `find`::
+        Returns a :class:`MotorCommandCursor` that can be iterated like a
+        cursor from :meth:`find`::
 
           pipeline = [{'$project': {'name': {'$toUpper': '$name'}}}]
           cursor = collection.aggregate(pipeline)
@@ -436,11 +436,11 @@ class AgnosticCollection(AgnosticBaseProperties):
                   print(doc)
 
         .. versionchanged:: 1.0
-           `aggregate` now **always** returns a cursor.
+           :meth:`aggregate` now **always** returns a cursor.
 
         .. versionchanged:: 0.5
-           `aggregate` now returns a cursor by default, and the cursor is
-           returned immediately without a ``yield``.
+           :meth:`aggregate` now returns a cursor by default,
+           and the cursor is returned immediately without a ``yield``.
            See :ref:`aggregation changes in Motor 0.5 <aggregate_changes_0_5>`.
 
         .. versionchanged:: 0.2
@@ -710,7 +710,7 @@ class AgnosticBaseCursor(AgnosticBase):
     def each(self, callback):
         """Iterates over all the documents for this cursor.
 
-        `each` returns immediately, and `callback` is executed asynchronously
+        :meth:`each` returns immediately, and `callback` is executed asynchronously
         for each document. `callback` is passed ``(None, None)`` when iteration
         is complete.
 

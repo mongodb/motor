@@ -24,16 +24,15 @@ Or::
 
 Removed:
 
- - `MotorClient.open`; clients have opened themselves automatically on demand
+ - :meth:`MotorClient.open`; clients have opened themselves automatically on demand
    since version 0.2.
- - `MotorClient.seeds`, use `pymongo.uri_parser.parse_uri` on your MongoDB URI.
- - `MotorReplicaSetClient.hosts`, use `MotorReplicaSetClient.nodes`.
+ - :attr:`MotorClient.seeds`, use :meth:`pymongo.uri_parser.parse_uri` on your MongoDB URI.
 
 Added:
 
- - `MotorClient.min_pool_size`
- - `MotorDatabase.create_indexes`
- - `MotorDatabase.list_indexes`
+ - :attr:`MotorClient.min_pool_size`
+ - :meth:`MotorCollection.create_indexes`
+ - :meth:`MotorCollection.list_indexes`
 
 Unix domain socket paths must be quoted with `urllib.parse.quote_plus` (or
 `urllib.quote_plus` in Python 2) before they are included in a URI:
@@ -58,69 +57,69 @@ Most of Motor 1.0's API is now implemented, and APIs that will be removed in
 Motor 1.0 are now deprecated and raise warnings. See the
 :doc:`/migrate-to-motor-1` to prepare your code for Motor 1.0.
 
-`MotorClient` changes
-~~~~~~~~~~~~~~~~~~~~~
+:class:`MotorClient` changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The `~MotorClient.get_database` method is added for getting a `MotorDatabase`
+The :class:`~MotorClient.get_database` method is added for getting a :class:`MotorDatabase`
 instance with its options configured differently than the MotorClient's.
 
 New read-only attributes:
 
-- `~MotorClient.codec_options`
-- `~MotorClient.local_threshold_ms`
-- `~MotorClient.max_write_batch_size`
+- :attr:`~MotorClient.codec_options`
+- :attr:`~MotorClient.local_threshold_ms`
+- :attr:`~MotorClient.max_write_batch_size`
 
-`MotorReplicaSetClient` changes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:class:`MotorReplicaSetClient` changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The `~MotorReplicaSetClient.get_database` method is added for getting a
-`MotorDatabase` instance with its options configured differently than the
+The :meth:`~MotorReplicaSetClient.get_database` method is added for getting a
+:class:`MotorDatabase` instance with its options configured differently than the
 MotorReplicaSetClient's.
 
 New read-only attributes:
 
-- `~MotorReplicaSetClient.codec_options`
-- `~MotorReplicaSetClient.local_threshold_ms`
+- :attr:`~MotorReplicaSetClient.codec_options`
+- :attr:`~MotorReplicaSetClient.local_threshold_ms`
 
-`MotorDatabase` changes
-~~~~~~~~~~~~~~~~~~~~~~~
+:class:`MotorDatabase` changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The `~MotorDatabase.get_collection` method is added for getting a
-`MotorCollection` instance with its options configured differently than the
+The :meth:`~MotorDatabase.get_collection` method is added for getting a
+:class:`MotorCollection` instance with its options configured differently than the
 MotorDatabase's.
 
 The ``connection`` property is deprecated in favor of a new read-only attribute
-`~MotorDatabase.client`.
+:attr:`~MotorDatabase.client`.
 
 New read-only attribute:
 
-- `~MotorDatabase.codec_options`
+- :attr:`~MotorDatabase.codec_options`
 
-`MotorCollection` changes
-~~~~~~~~~~~~~~~~~~~~~~~~~
+:class:`MotorCollection` changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The `~MotorCollection.with_options` method is added for getting a
-`MotorCollection` instance with its options configured differently than this
+The :meth:`~MotorCollection.with_options` method is added for getting a
+:class:`MotorCollection` instance with its options configured differently than this
 MotorCollection's.
 
 New read-only attribute:
 
-- `~MotorCollection.codec_options`
+- :attr:`~MotorCollection.codec_options`
 
 The following methods wrap PyMongo's implementation of the standard `CRUD API Spec`_
 for MongoDB Drivers:
 
-- `~MotorCollection.bulk_write`
-- `~MotorCollection.insert_one`
-- `~MotorCollection.insert_many`
-- `~MotorCollection.update_one`
-- `~MotorCollection.update_many`
-- `~MotorCollection.replace_one`
-- `~MotorCollection.delete_one`
-- `~MotorCollection.delete_many`
-- `~MotorCollection.find_one_and_delete`
-- `~MotorCollection.find_one_and_replace`
-- `~MotorCollection.find_one_and_update`
+- :meth:`~MotorCollection.bulk_write`
+- :meth:`~MotorCollection.insert_one`
+- :meth:`~MotorCollection.insert_many`
+- :meth:`~MotorCollection.update_one`
+- :meth:`~MotorCollection.update_many`
+- :meth:`~MotorCollection.replace_one`
+- :meth:`~MotorCollection.delete_one`
+- :meth:`~MotorCollection.delete_many`
+- :meth:`~MotorCollection.find_one_and_delete`
+- :meth:`~MotorCollection.find_one_and_replace`
+- :meth:`~MotorCollection.find_one_and_update`
 
 These new methods do not apply SON Manipulators.
 
@@ -129,24 +128,24 @@ These new methods do not apply SON Manipulators.
 :doc:`GridFS <api-tornado/gridfs>` changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-New `MotorGridOutCursor` methods:
+New :class:`MotorGridOutCursor` methods:
 
-- `~MotorGridOutCursor.add_option`
-- `~MotorGridOutCursor.remove_option`
-- `~MotorGridOutCursor.clone`
+- :meth:`~MotorGridOutCursor.add_option`
+- :meth:`~MotorGridOutCursor.remove_option`
+- :meth:`~MotorGridOutCursor.clone`
 
-Added `MotorGridOut` documentation:
+Added :class:`MotorGridOut` documentation:
 
-- `~MotorGridOut.aliases`
-- `~MotorGridOut.chunk_size`
-- `~MotorGridOut.close`
-- `~MotorGridOut.content_type`
-- `~MotorGridOut.filename`
-- `~MotorGridOut.length`
-- `~MotorGridOut.md5`
-- `~MotorGridOut.metadata`
-- `~MotorGridOut.name`
-- `~MotorGridOut.upload_date`
+- :attr:`~MotorGridOut.aliases`
+- :attr:`~MotorGridOut.chunk_size`
+- :meth:`~MotorGridOut.close`
+- :attr:`~MotorGridOut.content_type`
+- :attr:`~MotorGridOut.filename`
+- :attr:`~MotorGridOut.length`
+- :attr:`~MotorGridOut.md5`
+- :attr:`~MotorGridOut.metadata`
+- :attr:`~MotorGridOut.name`
+- :attr:`~MotorGridOut.upload_date`
 
 Bugfix
 ~~~~~~
@@ -185,7 +184,7 @@ To:
   - `motor_tornado/__init__.py`
 
 Motor had to make this change in order to omit the `motor_asyncio` submodule
-entirely and avoid a spurious `SyntaxError` being printed when installing in
+entirely and avoid a spurious :exc:`SyntaxError` being printed when installing in
 Python 2. The change should be invisible to application code.
 
 Database and collection names with leading underscores
@@ -213,7 +212,7 @@ clients and databases always have::
     subcollection = collection['_subcollection']    
 
 These changes solve problems with iPython code completion and the Python 3
-`ABC` abstract base class.
+:class:`ABC` abstract base class.
 
 Motor 0.5
 ---------
@@ -230,7 +229,7 @@ Python 3.5
 
 Motor is now compatible with Python 3.5, which required some effort.
 Motor not only supports users' coroutines, it uses coroutines to implement
-some of its own features, like `MotorClient.open` and `MotorGridFS.put`.
+some of its own features, like :meth:`~MotorClient.open` and :meth:`~MotorGridFS.put`.
 There is no single way to return a value from a Python 3.5 native coroutine
 or a Python 2 generator-based coroutine, so Motor internal coroutines that
 return values were rewritten. (See `commit message dc19418c`_ for an
@@ -247,8 +246,8 @@ Motor now supports Python 3.5 native coroutines, written with the `async` and
     async def f():
         await collection.insert({'_id': 1})
 
-Cursors from `~MotorCollection.find`, `~MotorCollection.aggregate`, or
-`MotorGridFS.find` can be iterated elegantly and very efficiently in native
+Cursors from :meth:`~MotorCollection.find`, :meth:`~MotorCollection.aggregate`, or
+:meth:`~MotorGridFS.find` can be iterated elegantly and very efficiently in native
 coroutines with `async for`::
 
     async def f():
@@ -257,10 +256,10 @@ coroutines with `async for`::
 
 .. _aggregate_changes_0_5:
 
-`aggregate`
-~~~~~~~~~~~
+:meth:`~MotorCollection.aggregate`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`MotorCollection.aggregate` now returns a cursor by default, and the cursor
+:meth:`MotorCollection.aggregate` now returns a cursor by default, and the cursor
 is returned immediately without a `yield`. The old syntax is no longer
 supported::
 
@@ -285,7 +284,7 @@ Or with Python 3.5 and later::
         print(doc)
 
 MongoDB versions 2.4 and older do not support aggregation cursors. For
-compatibility with older MongoDBs, `~MotorCollection.aggregate` now takes an
+compatibility with older MongoDBs, :meth:`~MotorCollection.aggregate` now takes an
 argument ``cursor=False``, and returns a Future that you can yield to get all
 the results in one document::
 
@@ -353,16 +352,16 @@ SSL hostname validation error
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When you use Motor with Tornado and SSL hostname validation fails, Motor used
-to raise a `ConnectionFailure` with a useful messsage like "hostname 'X'
+to raise a :exc:`~pymongo.errors.ConnectionFailure` with a useful messsage like "hostname 'X'
 doesn't match 'Y'". The message is now empty and Tornado logs a warning
 instead.
 
 Configuring uuid_subtype
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can now get and set `~MotorClient.uuid_subtype` on `MotorClient`,
-`MotorReplicaSetClient`, and `MotorDatabase` instances, not just on
-`MotorCollection`.
+You can now get and set :attr:`~MotorClient.uuid_subtype` on :class:`MotorClient`,
+:class:`MotorReplicaSetClient`, and :class:`MotorDatabase` instances, not just on
+:class:`MotorCollection`.
 
 Motor 0.4.1
 -----------
@@ -440,7 +439,7 @@ No new features.
 * Motor continues to support Python 2.6, 2.7, 3.3, and 3.4,
   but now with single-source.
   2to3 no longer runs during installation with Python 3.
-* `nosetests` is no longer required for regular Motor tests.
+* ``nosetests`` is no longer required for regular Motor tests.
 * Fixes `a mistake in the docstring <https://jira.mongodb.org/browse/MOTOR-34>`_
   for aggregate().
 

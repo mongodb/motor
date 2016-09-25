@@ -6,7 +6,7 @@ Motor Tailable Cursor Example
 This example describes using Motor with Tornado. Beginning in
 version 0.5 Motor can also integrate with asyncio instead of Tornado.
 
-A cursor on a capped collection can be tailed using `MotorCursor.fetch_next`:
+A cursor on a capped collection can be tailed using :meth:`~MotorCursor.fetch_next`:
 
 .. code-block:: python
 

@@ -1,7 +1,7 @@
 .. currentmodule:: motor.motor_asyncio
 
-Tutorial: Using Motor With `asyncio`
-====================================
+Tutorial: Using Motor With :mod:`asyncio`
+=========================================
 
 .. These setups are redundant because I can't figure out how to make doctest
   run a common setup *before* the setup for the two groups. A "testsetup:: *"
@@ -59,22 +59,22 @@ Object Hierarchy
 ----------------
 Motor, like PyMongo, represents data with a 4-level object hierarchy:
 
-* `AsyncIOMotorClient`
+* :class:`~motor.motor_asyncio.AsyncIOMotorClient`
   represents a mongod process, or a cluster of them. You explicitly create one
   of these client objects, connect it to a running mongod or mongods, and
   use it for the lifetime of your application.
-* `AsyncIOMotorDatabase`: Each mongod has a set of databases (distinct
+* :class:`~motor.motor_asyncio.AsyncIOMotorDatabase`: Each mongod has a set of databases (distinct
   sets of data files on disk). You can get a reference to a database from a
   client.
-* `AsyncIOMotorCollection`: A database has a set of collections, which
+* :class:`~motor.motor_asyncio.AsyncIOMotorCollection`: A database has a set of collections, which
   contain documents; you get a reference to a collection from a database.
-* `AsyncIOMotorCursor`: Executing `AsyncIOMotorCollection.find` on
-  an `AsyncIOMotorCollection` gets an `AsyncIOMotorCursor`, which
+* :class:`~motor.motor_asyncio.AsyncIOMotorCursor`: Executing :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find` on
+  an :class:`~motor.motor_asyncio.AsyncIOMotorCollection` gets an :class:`~motor.motor_asyncio.AsyncIOMotorCursor`, which
   represents the set of documents matching a query.
 
 Creating a Client
 -----------------
-You typically create a single instance of `AsyncIOMotorClient` at the time your
+You typically create a single instance of :class:`~motor.motor_asyncio.AsyncIOMotorClient` at the time your
 application starts up.
 
 .. doctest:: before-inserting-2000-docs
@@ -134,7 +134,7 @@ collection does no I/O and doesn't require a ``yield from`` statement.
 Inserting a Document
 --------------------
 As in PyMongo, Motor represents MongoDB documents with Python dictionaries. To
-store a document in MongoDB, call `AsyncIOMotorCollection.insert_one` in a
+store a document in MongoDB, call :meth:`~AsyncIOMotorCollection.insert_one` in a
 ``yield from`` statement:
 
 .. doctest:: before-inserting-2000-docs
@@ -163,7 +163,7 @@ Using native coroutines
 -----------------------
 
 Starting in Python 3.5, you can define a `native coroutine`_ with `async def`
-instead of the `coroutine` decorator. Within a native coroutine, wait
+instead of the ``coroutine`` decorator. Within a native coroutine, wait
 for an async operation with `await` instead of `yield`:
 
 .. doctest:: before-inserting-2000-docs
@@ -183,7 +183,7 @@ is often identical.
 Getting a Single Document With `find_one`
 -----------------------------------------
 
-Use `AsyncIOMotorCollection.find_one` to get the first document that
+Use :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find_one` to get the first document that
 matches a query. For example, to get a document where the value for key "i" is
 less than 1:
 
@@ -207,11 +207,11 @@ The result is a dictionary matching the one that we inserted previously.
 
 Querying for More Than One Document
 -----------------------------------
-Use `AsyncIOMotorCollection.find` to query for a set of documents.
-`AsyncIOMotorCollection.find` does no I/O and does not require a ``yield from``
-statement. It merely creates an `AsyncIOMotorCursor` instance. The query is
-actually executed on the server when you call `AsyncIOMotorCursor.to_list` or
-`AsyncIOMotorCursor.each`, or yield from :attr:`~motor.motor_asyncio.AsyncIOMotorCursor.fetch_next`.
+Use :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find` to query for a set of documents.
+:meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find` does no I/O and does not require a ``yield from``
+statement. It merely creates an :class:`~motor.motor_asyncio.AsyncIOMotorCursor` instance. The query is
+actually executed on the server when you call :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.to_list` or
+:meth:`~motor.motor_asyncio.AsyncIOMotorCursor.each`, or yield from :attr:`~motor.motor_asyncio.AsyncIOMotorCursor.fetch_next`.
 
 To find all documents with "i" less than 5:
 
@@ -235,7 +235,7 @@ A ``length`` argument is required when you call ``to_list`` to prevent Motor
 from buffering an unlimited number of documents.
 
 To get one document at a time with :attr:`~motor.motor_asyncio.AsyncIOMotorCursor.fetch_next`
-and `AsyncIOMotorCursor.next_object`:
+and :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.next_object`:
 
 .. doctest:: after-inserting-2000-docs
 
@@ -299,7 +299,7 @@ This version of the code is dramatically faster.
 
 Counting Documents
 ------------------
-Use `AsyncIOMotorCursor.count` to determine the number of documents in
+Use :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.count` to determine the number of documents in
 a collection, or the number of documents that match a query:
 
 .. doctest:: after-inserting-2000-docs
@@ -316,7 +316,7 @@ a collection, or the number of documents that match a query:
   2000 documents in collection
   999 documents where i > 1000
 
-`AsyncIOMotorCursor.count` uses the *count command* internally; we'll
+:meth:`~motor.motor_asyncio.AsyncIOMotorCursor.count` uses the *count command* internally; we'll
 cover commands_ below.
 
 .. seealso:: `Count command <http://docs.mongodb.org/manual/reference/command/count/>`_
@@ -324,7 +324,7 @@ cover commands_ below.
 Updating Documents
 ------------------
 
-`AsyncIOMotorCollection.replace_one` changes a document. It requires two
+:meth:`~motor.motor_asyncio.AsyncIOMotorCollection.replace_one` changes a document. It requires two
 parameters: a *query* that specifies which document to replace, and a
 replacement document. The query follows the same syntax as for :meth:`find` or
 :meth:`find_one`. To replace a document:
@@ -351,7 +351,7 @@ replacement document. The query follows the same syntax as for :meth:`find` or
 You can see that :meth:`replace_one` replaced everything in the old document
 except its ``_id`` with the new document.
 
-Use `AsyncIOMotorCollection.update_one` with MongoDB's modifier operators to
+Use :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.update_one` with MongoDB's modifier operators to
 update part of a document and leave the
 rest intact. We'll find the document whose "i" is 51 and use the ``$set``
 operator to set "key" to "value":
@@ -384,8 +384,8 @@ update all of them with :meth:`update_many`::
 Deleting Documents
 ------------------
 
-`AsyncIOMotorCollection.delete_many` takes a query with the same syntax as
-`AsyncIOMotorCollection.find`.
+:meth:`~motor.motor_asyncio.AsyncIOMotorCollection.delete_many` takes a query with the same syntax as
+:meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find`.
 :meth:`delete_many` immediately removes all matching documents.
 
 .. doctest:: after-inserting-2000-docs
@@ -409,7 +409,7 @@ Commands
 --------
 Besides the "CRUD" operations--insert, update, delete, and find--all other
 operations on MongoDB are commands. Run them using
-the `AsyncIOMotorDatabase.command` method on `AsyncIOMotorDatabase`:
+the :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.command` method on :class:`~motor.motor_asyncio.AsyncIOMotorDatabase`:
 
 .. doctest:: after-inserting-2000-docs
 
@@ -430,14 +430,14 @@ from the ``bson`` module included with PyMongo::
     yield from db.command(SON([("distinct", "test_collection"), ("key", "my_key"]))
 
 Many commands have special helper methods, such as
-`AsyncIOMotorDatabase.create_collection` or
-`AsyncIOMotorCollection.aggregate`, but these are just conveniences atop
+:meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.create_collection` or
+:meth:`~motor.motor_asyncio.AsyncIOMotorCollection.aggregate`, but these are just conveniences atop
 the basic :meth:`command` method.
 
 .. mongodoc:: commands
 
-A Web Application With `aiohttp`
---------------------------------
+A Web Application With `aiohttp`_
+---------------------------------
 
 Let us create a web application using `aiohttp`_, a popular HTTP package for
 asyncio. Install it with::
@@ -522,8 +522,8 @@ The complete code is in the Motor repository in ``examples/aiohttp_example.py``.
 Further Reading
 ---------------
 The handful of classes and methods introduced here are sufficient for daily
-tasks. The API documentation for `AsyncIOMotorClient`, `AsyncIOMotorDatabase`,
-`AsyncIOMotorCollection`, and `AsyncIOMotorCursor` provides a
+tasks. The API documentation for :class:`~motor.motor_asyncio.AsyncIOMotorClient`, :class:`~motor.motor_asyncio.AsyncIOMotorDatabase`,
+:class:`~motor.motor_asyncio.AsyncIOMotorCollection`, and :class:`~motor.motor_asyncio.AsyncIOMotorCursor` provides a
 reference to Motor's complete feature set.
 
 Learning to use the MongoDB driver is just the beginning, of course. For

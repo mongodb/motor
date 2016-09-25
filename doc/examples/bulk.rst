@@ -21,7 +21,7 @@ Bulk Insert
 -----------
 
 A batch of documents can be inserted by passing a list or generator
-to the `MotorCollection.insert_many` method. Motor
+to the :meth:`~MotorCollection.insert_many` method. Motor
 will automatically split the batch into smaller sub-batches based on
 the maximum message size accepted by MongoDB, supporting very large
 bulk insert operations.
@@ -167,10 +167,10 @@ Write Concern
 .............
 
 By default bulk operations are executed with the
-`MotorCollection.write_concern` of the collection they are
+:meth:`~MotorCollection.write_concern` of the collection they are
 executed against, typically the default write concern ``{w: 1}``. A custom
 write concern can be passed to the
-`MotorBulkOperationBuilder.execute` method. Write concern
+:meth:`~MotorBulkOperationBuilder.execute` method. Write concern
 errors (e.g. wtimeout) will be reported after all operations are attempted,
 regardless of execution order.
 

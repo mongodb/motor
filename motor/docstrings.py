@@ -16,10 +16,10 @@ from __future__ import unicode_literals
 
 
 get_database_doc = """
-Get a `MotorDatabase` with the given name and options.
+Get a :class:`MotorDatabase` with the given name and options.
 
-Useful for creating a `MotorDatabase` with different codec options,
-read preference, and/or write concern from this `MotorClient`.
+Useful for creating a :class:`MotorDatabase` with different codec options,
+read preference, and/or write concern from this :class:`MotorClient`.
 
   >>> from pymongo import ReadPreference
   >>> client.read_preference == ReadPreference.PRIMARY
@@ -81,7 +81,7 @@ kwargs. So ``{filemd5: object_id, root: file_root}`` becomes::
        significant (the "verb" must come first), so commands
        which require multiple keys (e.g. `findandmodify`)
        should use an instance of :class:`~bson.son.SON` or
-       a string and kwargs instead of a Python `dict`.
+       a string and kwargs instead of a Python :class:`dict`.
 
   - `value` (optional): value to use for the command verb when
     `command` is passed as a string
@@ -100,7 +100,7 @@ kwargs. So ``{filemd5: object_id, root: file_root}`` becomes::
 mr_doc = """Perform a map/reduce operation on this collection.
 
 If `full_response` is ``False`` (default) returns a
-`MotorCollection` instance containing
+:class:`MotorCollection` instance containing
 the results of the operation. Otherwise, returns the full
 response from the server to the `map reduce command`_.
 
@@ -125,9 +125,9 @@ response from the server to the `map reduce command`_.
 If a callback is passed, returns None, else returns a Future.
 
 .. note:: The :meth:`map_reduce` method does **not** obey the
-   :attr:`read_preference` of this `MotorCollection`. To run
-   mapReduce on a secondary use the `inline_map_reduce` method
-   instead.
+   :attr:`read_preference` of this :class:`MotorCollection`. To run
+   mapReduce on a secondary use the :meth:`inline_map_reduce`
+   method instead.
 
 .. _map reduce command: http://docs.mongodb.org/manual/reference/command/mapReduce/
 

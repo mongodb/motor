@@ -9,10 +9,10 @@ migrate an existing application that had used an older version of Motor.
 Removed features with no migration path
 ---------------------------------------
 
-`MotorReplicaSetClient` is removed
-..................................
+:class:`MotorReplicaSetClient` is removed
+..........................................
 
-In Motor 1.0, `MotorClient` is the only class. Connect to a replica set with
+In Motor 1.0, :class:`MotorClient` is the only class. Connect to a replica set with
 a "replicaSet" URI option or parameter::
 
   MotorClient("mongodb://localhost/?replicaSet=my-rs")
@@ -40,7 +40,7 @@ migration much easier.
 Enable Deprecation Warnings
 ---------------------------
 
-Starting with Motor 0.7, `DeprecationWarning` is raised by most methods
+Starting with Motor 0.7, :exc:`DeprecationWarning` is raised by most methods
 removed in Motor 1.0. Make sure you enable runtime warnings to see
 where deprecated functions and methods are being used in your application::
 
@@ -157,7 +157,7 @@ or with any version of Motor::
 Tailable cursors
 ~~~~~~~~~~~~~~~~
 
-The ``tailable`` and ``await_data`` options have been replaced by `cursor_type`.
+The ``tailable`` and ``await_data`` options have been replaced by ``cursor_type``.
 Code like this::
 
   cursor = collection.find({"a": 1}, tailable=True)
@@ -203,8 +203,7 @@ can be changed to this with Motor 0.7 or later::
   coll2 = collection.with_options(read_preference=ReadPreference.SECONDARY)
   cursor = coll2.find({"a": 1})
 
-.. seealso:: `MotorDatabase.get_collection` and
-  `MotorCollection.with_options`
+.. seealso:: :meth:`~MotorDatabase.get_collection`
 
 The "tag_sets" option and attribute are removed
 ...............................................
@@ -246,8 +245,7 @@ can be changed to this with Motor 0.7 or later::
       read_preference=Secondary([{"dc": "ny"}]))
   cursor = coll2.find({"a": 1})
 
-.. seealso:: `MotorDatabase.get_collection` and
-  `MotorCollection.with_options`
+.. seealso:: :meth:`~MotorDatabase.get_collection`
 
 The "secondary_acceptable_latency_ms" option and attribute are removed
 ......................................................................
@@ -306,8 +304,7 @@ can be changed to this with Motor 0.7 or later::
       write_concern=WriteConcern(w="majority"))
   oid = coll2.insert({"a": 2})
 
-.. seealso:: `MotorDatabase.get_collection` and
-  `MotorCollection.with_options`
+.. seealso:: :meth:`~MotorDatabase.get_collection`
 
 Codec Options
 -------------
@@ -326,15 +323,15 @@ can be replaced by this in any version of Motor::
   from bson.son import SON
   client = MotorClient(document_class=SON)
 
-or to change the ``document_class`` for a `MotorDatabase`
+or to change the ``document_class`` for a :class:`MotorDatabase`
 with Motor 0.7 or later::
 
   from bson.codec_options import CodecOptions
   from bson.son import SON
   db = client.get_database("my_database", CodecOptions(SON))
 
-.. seealso:: `MotorDatabase.get_collection` and
-  `MotorCollection.with_options`
+.. seealso:: :meth:`~MotorDatabase.get_collection` and
+  :meth:`~MotorCollection.with_options`
 
 The "uuid_subtype" option and attribute are removed
 ...................................................
@@ -352,8 +349,8 @@ can be replaced by this with Motor 0.7 or later::
   db = client.get_database("my_database",
                            CodecOptions(uuid_representation=JAVA_LEGACY))
 
-.. seealso:: `MotorDatabase.get_collection` and
-  `MotorCollection.with_options`
+.. seealso:: :meth:`~MotorDatabase.get_collection` and
+  :meth:`~MotorCollection.with_options`
 
 MotorClient
 -----------
@@ -361,7 +358,7 @@ MotorClient
 The ``open`` method
 ...................
 
-The `MotorClient.open` method is removed in Motor 1.0.
+The :meth:`~MotorClient.open` method is removed in Motor 1.0.
 Motor clients have opened themselves on demand since Motor 0.2.
 
 The max_pool_size parameter is removed

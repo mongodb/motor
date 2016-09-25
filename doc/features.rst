@@ -36,5 +36,5 @@ client instance.
 Streams Static Files from GridFS
 ================================
 Motor can stream data from `GridFS <http://dochub.mongodb.org/core/gridfs>`_
-to a Tornado `~tornado.web.RequestHandler`
-using `MotorGridOut.stream_to_handler` or the `~motor.web.GridFSHandler` class.
+to a Tornado :class:`~tornado.web.RequestHandler`
+using :meth:`~MotorGridOut.stream_to_handler` or the :class:`~motor.web.GridFSHandler` class.

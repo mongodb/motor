@@ -70,21 +70,21 @@ Object Hierarchy
 ----------------
 Motor, like PyMongo, represents data with a 4-level object hierarchy:
 
-* `MotorClient` represents a mongod process, or a cluster of them. You
+* :class:`MotorClient` represents a mongod process, or a cluster of them. You
   explicitly create one of these client objects, connect it to a running mongod
   or mongods, and use it for the lifetime of your application.
-* `MotorDatabase`: Each mongod has a set of databases (distinct
+* :class:`MotorDatabase`: Each mongod has a set of databases (distinct
   sets of data files on disk). You can get a reference to a database from a
   client.
-* `MotorCollection`: A database has a set of collections, which
+* :class:`MotorCollection`: A database has a set of collections, which
   contain documents; you get a reference to a collection from a database.
-* `MotorCursor`: Executing `MotorCollection.find` on
-  a `MotorCollection` gets a `MotorCursor`, which
+* :class:`MotorCursor`: Executing :meth:`~MotorCollection.find` on
+  a :class:`MotorCollection` gets a :class:`MotorCursor`, which
   represents the set of documents matching a query.
 
 Creating a Client
 -----------------
-You typically create a single instance of `MotorClient` at the time your
+You typically create a single instance of :class:`MotorClient` at the time your
 application starts up.
 
 .. doctest:: before-inserting-2000-docs
@@ -172,7 +172,7 @@ collection does no I/O and doesn't accept a callback or return a Future.
 Inserting a Document
 --------------------
 As in PyMongo, Motor represents MongoDB documents with Python dictionaries. To
-store a document in MongoDB, call `MotorCollection.insert_one` with a
+store a document in MongoDB, call :meth:`~MotorCollection.insert_one` with a
 document and a callback:
 
 .. doctest:: before-inserting-2000-docs
@@ -328,9 +328,9 @@ is often identical.
 
 .. _native coroutine: https://www.python.org/dev/peps/pep-0492/
 
-Getting a Single Document With `MotorCollection.find_one`
----------------------------------------------------------
-Use `MotorCollection.find_one` to get the first document that
+Getting a Single Document With :meth:`~MotorCollection.find_one`
+----------------------------------------------------------------
+Use :meth:`~MotorCollection.find_one` to get the first document that
 matches a query. For example, to get a document where the value for key "i" is
 less than 1:
 
@@ -356,11 +356,11 @@ are sorted the same in your output as ours.)
 
 Querying for More Than One Document
 -----------------------------------
-Use `MotorCollection.find` to query for a set of documents.
-`MotorCollection.find` does no I/O and does not take a callback,
-it merely creates a `MotorCursor` instance. The query is actually
-executed on the server when you call `MotorCursor.to_list` or
-`MotorCursor.each`, or yield :attr:`~motor.motor_tornado.MotorCursor.fetch_next`.
+Use :meth:`~MotorCollection.find` to query for a set of documents.
+:meth:`~MotorCollection.find` does no I/O and does not take a callback,
+it merely creates a :class:`MotorCursor` instance. The query is actually
+executed on the server when you call :meth:`~MotorCursor.to_list` or
+:meth:`~MotorCursor.each`, or yield :attr:`~motor.motor_tornado.MotorCursor.fetch_next`.
 
 To find all documents with "i" less than 5:
 
@@ -383,7 +383,7 @@ A ``length`` argument is required when you call to_list to prevent Motor from
 buffering an unlimited number of documents.
 
 To get one document at a time with :attr:`~motor.motor_tornado.MotorCursor.fetch_next`
-and `MotorCursor.next_object`:
+and :meth:`~MotorCursor.next_object`:
 
 .. doctest:: after-inserting-2000-docs
 
@@ -445,7 +445,7 @@ This version of the code is dramatically faster.
 
 Counting Documents
 ------------------
-Use `MotorCursor.count` to determine the number of documents in
+Use :meth:`~MotorCursor.count` to determine the number of documents in
 a collection, or the number of documents that match a query:
 
 .. doctest:: after-inserting-2000-docs
@@ -461,7 +461,7 @@ a collection, or the number of documents that match a query:
   2000 documents in collection
   999 documents where i > 1000
 
-`MotorCursor.count` uses the *count command* internally; we'll
+:meth:`~MotorCursor.count` uses the *count command* internally; we'll
 cover commands_ below.
 
 .. seealso:: `Count command <http://docs.mongodb.org/manual/reference/command/count/>`_
@@ -469,7 +469,7 @@ cover commands_ below.
 Updating Documents
 ------------------
 
-`MotorCollection.replace_one` changes a document. It requires two
+:meth:`~MotorCollection.replace_one` changes a document. It requires two
 parameters: a *query* that specifies which document to replace, and a
 replacement document. The query follows the same syntax as for :meth:`find` or
 :meth:`find_one`. To replace a document:
@@ -495,7 +495,7 @@ replacement document. The query follows the same syntax as for :meth:`find` or
 You can see that :meth:`replace_one` replaced everything in the old document
 except its ``_id`` with the new document.
 
-Use `MotorCollection.update_one` with MongoDB's modifier operators to
+Use :meth:`~MotorCollection.update_one` with MongoDB's modifier operators to
 update part of a document and leave the
 rest intact. We'll find the document whose "i" is 51 and use the ``$set``
 operator to set "key" to "value":
@@ -527,8 +527,8 @@ update all of them with :meth:`update_many`::
 Removing Documents
 ------------------
 
-`MotorCollection.delete_many` takes a query with the same syntax as
-`MotorCollection.find`.
+:meth:`~MotorCollection.delete_many` takes a query with the same syntax as
+:meth:`~MotorCollection.find`.
 :meth:`delete_many` immediately removes all matching documents.
 
 .. doctest:: after-inserting-2000-docs
@@ -551,7 +551,7 @@ Commands
 --------
 Besides the "CRUD" operations--insert, update, delete, and find--all other
 operations on MongoDB are commands. Run them using
-the `MotorDatabase.command` method on `MotorDatabase`:
+the :meth:`~MotorDatabase.command` method on :class:`MotorDatabase`:
 
 .. doctest:: after-inserting-2000-docs
 
@@ -571,8 +571,8 @@ from the ``bson`` module included with PyMongo::
     yield db.command(SON([("distinct", "test_collection"), ("key", "my_key"]))
 
 Many commands have special helper methods, such as
-`MotorDatabase.create_collection` or
-`MotorCollection.aggregate`, but these are just conveniences atop
+:meth:`~MotorDatabase.create_collection` or
+:meth:`~MotorCollection.aggregate`, but these are just conveniences atop
 the basic :meth:`command` method.
 
 .. mongodoc:: commands
@@ -580,8 +580,8 @@ the basic :meth:`command` method.
 Further Reading
 ---------------
 The handful of classes and methods introduced here are sufficient for daily
-tasks. The API documentation for `MotorClient`, `MotorDatabase`,
-`MotorCollection`, and `MotorCursor` provides a
+tasks. The API documentation for :class:`MotorClient`, :class:`MotorDatabase`,
+:class:`MotorCollection`, and :class:`MotorCursor` provides a
 reference to Motor's complete feature set.
 
 Learning to use the MongoDB driver is just the beginning, of course. For
