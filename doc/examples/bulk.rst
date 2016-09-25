@@ -22,7 +22,7 @@ Bulk Insert
 -----------
 
 A batch of documents can be inserted by passing a list or generator
-to the `MotorCollection.insert` method. Motor
+to the `MotorCollection.insert_many` method. Motor
 will automatically split the batch into smaller sub-batches based on
 the maximum message size accepted by MongoDB, supporting very large
 bulk insert operations.
@@ -31,7 +31,7 @@ bulk insert operations.
 
   >>> @gen.coroutine
   ... def f():
-  ...     yield db.test.insert(({'i': i} for i in range(10000)))
+  ...     yield db.test.insert_many(({'i': i} for i in range(10000)))
   ...     count = yield db.test.count()
   ...     print("Final count: %d" % count)
   >>>
@@ -44,15 +44,8 @@ Mixed Bulk Write Operations
 .. versionadded:: 0.2
 
 Motor also supports executing mixed bulk write operations. A batch
-of insert, update, and remove operations can be executed together using
+of insert, update, and delete operations can be executed together using
 the Bulk API.
-
-.. note::
-
-  Though the following API will work with all versions of MongoDB, it is
-  designed to be used with MongoDB versions >= 2.6. Much better bulk insert
-  performance can be achieved with older versions of MongoDB through the
-  `MotorCollection.insert` method.
 
 .. _ordered_bulk:
 

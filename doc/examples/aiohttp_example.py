@@ -11,11 +11,11 @@ def setup_db():
     db = AsyncIOMotorClient().test
     yield from db.pages.drop()
     html = '<html><body>{}</body></html>'
-    yield from db.pages.insert({'_id': 'page-one',
-                                'body': html.format('Hello!')})
+    yield from db.pages.insert_one({'_id': 'page-one',
+                                    'body': html.format('Hello!')})
 
-    yield from db.pages.insert({'_id': 'page-two',
-                                'body': html.format('Goodbye.')})
+    yield from db.pages.insert_one({'_id': 'page-two',
+                                    'body': html.format('Goodbye.')})
 
     return db
 # -- setup-end --

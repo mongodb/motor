@@ -22,13 +22,13 @@ Tutorial: Using Motor With `asyncio`
   import asyncio
   from asyncio import coroutine
   db = motor.motor_asyncio.AsyncIOMotorClient().test_database
-  pymongo.MongoClient().test_database.test_collection.insert(
+  pymongo.MongoClient().test_database.test_collection.insert_many(
       [{'i': i} for i in range(2000)])
 
 .. testcleanup:: *
 
   import pymongo
-  pymongo.MongoClient().test_database.test_collection.remove()
+  pymongo.MongoClient().test_database.test_collection.delete_many({})
 
 A guide to using MongoDB and asyncio with Motor.
 
@@ -59,7 +59,7 @@ Object Hierarchy
 ----------------
 Motor, like PyMongo, represents data with a 4-level object hierarchy:
 
-* `AsyncIOMotorClient` / `AsyncIOMotorReplicaSetClient`:
+* `AsyncIOMotorClient`
   represents a mongod process, or a cluster of them. You explicitly create one
   of these client objects, connect it to a running mongod or mongods, and
   use it for the lifetime of your application.
@@ -74,10 +74,8 @@ Motor, like PyMongo, represents data with a 4-level object hierarchy:
 
 Creating a Client
 -----------------
-You typically create a single instance of either `AsyncIOMotorClient`
-or `AsyncIOMotorReplicaSetClient` at the time your application starts
-up. (See `high availability and PyMongo`_ for an introduction to
-MongoDB replica sets and how PyMongo connects to them.)
+You typically create a single instance of `AsyncIOMotorClient` at the time your
+application starts up.
 
 .. doctest:: before-inserting-2000-docs
 
@@ -97,7 +95,9 @@ Motor also supports `connection URIs`_:
 
   >>> client = motor.motor_asyncio.AsyncIOMotorClient('mongodb://localhost:27017')
 
-.. _high availability and PyMongo: http://api.mongodb.com/python/3.3.0/examples/high_availability.html
+Connect to a replica set like:
+
+  >>> client = motor.motor_asyncio.AsyncIOMotorClient('mongodb://host1,host2/?replicaSet=my-replicaset-name')
 
 .. _connection URIs: http://docs.mongodb.org/manual/reference/connection-string/
 
@@ -134,7 +134,7 @@ collection does no I/O and doesn't require a ``yield from`` statement.
 Inserting a Document
 --------------------
 As in PyMongo, Motor represents MongoDB documents with Python dictionaries. To
-store a document in MongoDB, call `AsyncIOMotorCollection.insert` in a
+store a document in MongoDB, call `AsyncIOMotorCollection.insert_one` in a
 ``yield from`` statement:
 
 .. doctest:: before-inserting-2000-docs
@@ -142,7 +142,7 @@ store a document in MongoDB, call `AsyncIOMotorCollection.insert` in a
   >>> @coroutine
   ... def do_insert():
   ...     document = {'key': 'value'}
-  ...     result = yield from db.test_collection.insert(document)
+  ...     result = yield from db.test_collection.insert_one(document)
   ...     print('result %s' % repr(result))
   ...
   >>>
@@ -156,7 +156,7 @@ store a document in MongoDB, call `AsyncIOMotorCollection.insert` in a
   :hide:
 
   >>> # Clean up from previous insert
-  >>> pymongo.MongoClient().test_database.test_collection.remove()
+  >>> pymongo.MongoClient().test_database.test_collection.delete_many({})
   {...}
 
 Using native coroutines
@@ -170,7 +170,7 @@ for an async operation with `await` instead of `yield`:
 
   >>> async def do_insert():
   ...     for i in range(2000):
-  ...         result = await db.test_collection.insert({'i': i})
+  ...         result = await db.test_collection.insert_one({'i': i})
   ...
   >>> loop = asyncio.get_event_loop()
   >>> loop.run_until_complete(do_insert())
@@ -323,11 +323,11 @@ cover commands_ below.
 
 Updating Documents
 ------------------
-`AsyncIOMotorCollection.update` changes documents. It requires two
-parameters: a *query* that specifies which documents to update, and an update
-document. The query follows the same syntax as for :meth:`find` or
-:meth:`find_one`. The update document has two modes: it can replace the whole
-document, or it can update some fields of a document. To replace a document:
+
+`AsyncIOMotorCollection.replace_one` changes a document. It requires two
+parameters: a *query* that specifies which document to replace, and a
+replacement document. The query follows the same syntax as for :meth:`find` or
+:meth:`find_one`. To replace a document:
 
 .. doctest:: after-inserting-2000-docs
 
@@ -337,7 +337,7 @@ document, or it can update some fields of a document. To replace a document:
   ...     old_document = yield from coll.find_one({'i': 50})
   ...     print('found document: %s' % pprint.pformat(old_document))
   ...     _id = old_document['_id']
-  ...     result = yield from coll.update({'_id': _id}, {'key': 'value'})
+  ...     result = yield from coll.replace_one({'_id': _id}, {'key': 'value'})
   ...     print('replaced %s document' % result['n'])
   ...     new_document = yield from coll.find_one({'_id': _id})
   ...     print('document is now %s' % pprint.pformat(new_document))
@@ -348,10 +348,11 @@ document, or it can update some fields of a document. To replace a document:
   replaced 1 document
   document is now {'_id': ObjectId('...'), 'key': 'value'}
 
-You can see that :meth:`update` replaced everything in the old document except
-its ``_id`` with the new document.
+You can see that :meth:`replace_one` replaced everything in the old document
+except its ``_id`` with the new document.
 
-Use MongoDB's modifier operators to update part of a document and leave the
+Use `AsyncIOMotorCollection.update_one` with MongoDB's modifier operators to
+update part of a document and leave the
 rest intact. We'll find the document whose "i" is 51 and use the ``$set``
 operator to set "key" to "value":
 
@@ -360,7 +361,7 @@ operator to set "key" to "value":
   >>> @coroutine
   ... def do_update():
   ...     coll = db.test_collection
-  ...     result = yield from coll.update({'i': 51}, {'$set': {'key': 'value'}})
+  ...     result = yield from coll.update_one({'i': 51}, {'$set': {'key': 'value'}})
   ...     print('updated %s document' % result['n'])
   ...     new_document = yield from coll.find_one({'i': 51})
   ...     print('document is now %s' % pprint.pformat(new_document))
@@ -372,65 +373,41 @@ operator to set "key" to "value":
 
 "key" is set to "value" and "i" is still 51.
 
-By default :meth:`update` only affects the first document it finds, you can
-update all of them with the ``multi`` flag::
+:meth:`update_one` only affects the first document it finds, you can
+update all of them with :meth:`update_many`::
 
-    yield from coll.update({'i': {'$gt': 100}}, {'$set': {'key': 'value'}}, multi=True)
+    yield from coll.update_many({'i': {'$gt': 100}},
+                                {'$set': {'key': 'value'}})
 
 .. mongodoc:: update
 
-Saving Documents
-----------------
-
-`AsyncIOMotorCollection.save` is a convenience method provided to insert
-a new document or update an existing one. If the dict passed to :meth:`save`
-has an ``"_id"`` key then Motor performs an :meth:`update` (upsert) operation
-and any existing document with that ``"_id"`` is overwritten. Otherwise Motor
-performs an :meth:`insert`.
-
-.. doctest:: after-inserting-2000-docs
-
-  >>> @coroutine
-  ... def do_save():
-  ...     coll = db.test_collection
-  ...     doc = {'key': 'value'}
-  ...     yield from coll.save(doc)
-  ...     print('document _id: %s' % repr(doc['_id']))
-  ...     doc['other_key'] = 'other_value'
-  ...     yield from coll.save(doc)
-  ...     yield from coll.remove(doc)
-  ...
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_save())
-  document _id: ObjectId('...')
-
-Removing Documents
+Deleting Documents
 ------------------
 
-`AsyncIOMotorCollection.remove` takes a query with the same syntax as
+`AsyncIOMotorCollection.delete_many` takes a query with the same syntax as
 `AsyncIOMotorCollection.find`.
-:meth:`remove` immediately removes all matching documents.
+:meth:`delete_many` immediately removes all matching documents.
 
 .. doctest:: after-inserting-2000-docs
 
   >>> @coroutine
-  ... def do_remove():
+  ... def do_delete_many():
   ...     coll = db.test_collection
   ...     n = yield from coll.count()
-  ...     print('%s documents before calling remove()' % n)
-  ...     result = yield from db.test_collection.remove({'i': {'$gte': 1000}})
+  ...     print('%s documents before calling delete_many()' % n)
+  ...     result = yield from db.test_collection.delete_many({'i': {'$gte': 1000}})
   ...     print('%s documents after' % (yield from coll.count()))
   ...
   >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_remove())
-  2000 documents before calling remove()
+  >>> loop.run_until_complete(do_delete_many())
+  2000 documents before calling delete_many()
   1000 documents after
 
 .. mongodoc:: remove
 
 Commands
 --------
-Besides the "CRUD" operations--insert, update, remove, and find--all other
+Besides the "CRUD" operations--insert, update, delete, and find--all other
 operations on MongoDB are commands. Run them using
 the `AsyncIOMotorDatabase.command` method on `AsyncIOMotorDatabase`:
 
@@ -544,6 +521,11 @@ The complete code is in the Motor repository in ``examples/aiohttp_example.py``.
 
 Further Reading
 ---------------
+The handful of classes and methods introduced here are sufficient for daily
+tasks. The API documentation for `AsyncIOMotorClient`, `AsyncIOMotorDatabase`,
+`AsyncIOMotorCollection`, and `AsyncIOMotorCursor` provides a
+reference to Motor's complete feature set.
+
 Learning to use the MongoDB driver is just the beginning, of course. For
 in-depth instruction in MongoDB itself, see `The MongoDB Manual`_.
 

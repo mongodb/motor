@@ -30,8 +30,7 @@ Configurable IOLoops
 ====================
 Motor supports Tornado applications with multiple
 :class:`IOLoops <tornado.ioloop.IOLoop>`. Pass the ``io_loop``
-argument to :class:`MotorClient`
-or :class:`MotorReplicaSetClient` to configure the loop for a
+argument to :class:`MotorClient` to configure the loop for a
 client instance.
 
 Streams Static Files from GridFS

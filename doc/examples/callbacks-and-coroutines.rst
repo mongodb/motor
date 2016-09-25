@@ -37,7 +37,7 @@ An application that can create and display short messages:
             msg = self.get_argument('msg')
 
             # Async insert; callback is executed when insert completes
-            self.settings['db'].messages.insert(
+            self.settings['db'].messages.insert_one(
                 {'msg': msg},
                 callback=self._on_response)
 
@@ -136,8 +136,8 @@ Yield a Future to resolve it into a result or an exception:
             msg = self.get_argument('msg')
             db = self.settings['db']
 
-            # insert() returns a Future. Yield the Future to get the result.
-            result = yield db.messages.insert({'msg': msg})
+            # insert_one() returns a Future. Yield the Future to get the result.
+            result = yield db.messages.insert_one({'msg': msg})
 
             # Success
             self.redirect('/')

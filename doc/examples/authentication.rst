@@ -34,9 +34,8 @@ in after starting the IOLoop::
     def login(c):
         yield c.my_database.authenticate("user", "pass")
 
-After you've logged in to a database with a given `MotorClient`
-or `MotorReplicaSetClient`, all further operations on that
-database using that client will already be authenticated until you
-call `~MotorDatabase.logout`.
+After you've logged in to a database with a given `MotorClient`, all further
+operations on that database using that client will already be authenticated
+until you call `~MotorDatabase.logout`.
 
 .. _MongoDB connection URI: http://docs.mongodb.org/manual/reference/connection-string/

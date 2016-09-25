@@ -6,6 +6,24 @@ Motor 1.0 Migration Guide
 Motor 1.0 will bring a number of backward breaking changes. Follow this guide to
 migrate an existing application that had used an older version of Motor. 
 
+Removed features with no migration path
+---------------------------------------
+
+`MotorReplicaSetClient` is removed
+..................................
+
+In Motor 1.0, `MotorClient` is the only class. Connect to a replica set with
+a "replicaSet" URI option or parameter::
+
+  MotorClient("mongodb://localhost/?replicaSet=my-rs")
+  MotorClient(host, port, replicaSet="my-rs")
+
+The "compile_re" option is removed
+..................................
+
+In Motor 1.0 regular expressions are never compiled to Python `re.match`
+objects.
+
 Motor 0.7
 ---------
 
@@ -337,13 +355,13 @@ can be replaced by this with Motor 0.7 or later::
 .. seealso:: `MotorDatabase.get_collection` and
   `MotorCollection.with_options`
 
-MotorClient and MotorReplicaSetClient
--------------------------------------
+MotorClient
+-----------
 
 The ``open`` method
 ...................
 
-In Motor 1.0, the `MotorClient.open` method is removed.
+The `MotorClient.open` method is removed in Motor 1.0.
 Motor clients have opened themselves on demand since Motor 0.2.
 
 The max_pool_size parameter is removed
@@ -382,22 +400,3 @@ can be replaced by this with Motor 0.7 or later::
 
   address = client.address
   host, port = address or (None, None)
-
-
-Removed features with no migration path
----------------------------------------
-
-`MotorReplicaSetClient` is removed
-..................................
-
-In Motor 1.0, `MotorClient` is the only class. Connect to a replica set with
-a "replicaSet" URI option or parameter::
-
-  MotorClient("mongodb://localhost/?replicaSet=my-rs")
-  MotorClient(host, port, replicaSet="my-rs")
-
-The "compile_re" option is removed
-..................................
-
-In Motor 1.0 regular expressions are never compiled to Python `re.match`
-objects.

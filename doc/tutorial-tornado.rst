@@ -26,13 +26,13 @@ Tutorial: Using Motor With Tornado
   db = motor.motor_tornado.MotorClient().test_database
   sync_db = pymongo.MongoClient().test_database
   sync_db.test_collection.drop()
-  sync_db.test_collection.insert(
+  sync_db.test_collection.insert_many(
       [{'i': i} for i in range(2000)])
 
 .. testcleanup:: *
 
   import pymongo
-  pymongo.MongoClient().test_database.test_collection.remove()
+  pymongo.MongoClient().test_database.test_collection.delete_many({})
 
 A guide to using MongoDB and Tornado with Motor.
 
@@ -70,10 +70,9 @@ Object Hierarchy
 ----------------
 Motor, like PyMongo, represents data with a 4-level object hierarchy:
 
-* `MotorClient` / `MotorReplicaSetClient`:
-  represents a mongod process, or a cluster of them. You explicitly create one
-  of these client objects, connect it to a running mongod or mongods, and
-  use it for the lifetime of your application.
+* `MotorClient` represents a mongod process, or a cluster of them. You
+  explicitly create one of these client objects, connect it to a running mongod
+  or mongods, and use it for the lifetime of your application.
 * `MotorDatabase`: Each mongod has a set of databases (distinct
   sets of data files on disk). You can get a reference to a database from a
   client.
@@ -85,10 +84,8 @@ Motor, like PyMongo, represents data with a 4-level object hierarchy:
 
 Creating a Client
 -----------------
-You typically create a single instance of either `MotorClient`
-or `MotorReplicaSetClient` at the time your application starts
-up. (See `high availability and PyMongo`_ for an introduction to
-MongoDB replica sets and how PyMongo connects to them.)
+You typically create a single instance of `MotorClient` at the time your
+application starts up.
 
 .. doctest:: before-inserting-2000-docs
 
@@ -107,7 +104,9 @@ Motor also supports `connection URIs`_:
 
   >>> client = motor.motor_tornado.MotorClient('mongodb://localhost:27017')
 
-.. _high availability and PyMongo: http://api.mongodb.com/python/3.3.0/examples/high_availability.html
+Connect to a replica set like:
+
+  >>> client = motor.motor_tornado.MotorClient('mongodb://host1,host2/?replicaSet=my-replicaset-name')
 
 .. _connection URIs: http://docs.mongodb.org/manual/reference/connection-string/
 
@@ -173,7 +172,7 @@ collection does no I/O and doesn't accept a callback or return a Future.
 Inserting a Document
 --------------------
 As in PyMongo, Motor represents MongoDB documents with Python dictionaries. To
-store a document in MongoDB, call `MotorCollection.insert` with a
+store a document in MongoDB, call `MotorCollection.insert_one` with a
 document and a callback:
 
 .. doctest:: before-inserting-2000-docs
@@ -184,17 +183,17 @@ document and a callback:
   ...     IOLoop.current().stop()
   ...
   >>> document = {'key': 'value'}
-  >>> db.test_collection.insert(document, callback=my_callback)
+  >>> db.test_collection.insert_one(document, callback=my_callback)
   >>> IOLoop.current().start()
   result ObjectId('...')
 
 There are several differences to note between Motor and PyMongo. One is that,
-unlike PyMongo's :meth:`~pymongo.collection.Collection.insert`, Motor's has no
-return value. Another is that ``insert`` accepts an optional callback function.
-The function must take two arguments and it must be passed to ``insert`` as a
+unlike PyMongo's :meth:`~pymongo.collection.Collection.insert_one`, Motor's has no
+return value. Another is that ``insert_one`` accepts an optional callback function.
+The function must take two arguments and it must be passed to ``insert_one`` as a
 keyword argument, like::
 
-  db.test_collection.insert(document, callback=some_function)
+  db.test_collection.insert_one(document, callback=some_function)
 
 .. warning:: Passing the callback function using the ``callback=`` syntax is
   required. (This requirement is a side-effect of the technique Motor uses to
@@ -202,14 +201,15 @@ keyword argument, like::
   you may see an exception like ``TypeError: method takes exactly 1 argument (2
   given)``, or ``TypeError: callable is required``, or some silent misbehavior.
 
-:meth:`insert` is *asynchronous*. This means it returns immediately, and the
-actual work of inserting the document into the collection is performed in the
-background. When it completes, the callback is executed. If the
-insert succeeded, the ``result`` parameter is the new document's unique id
-and the ``error`` parameter is ``None``. If there was an error, ``result`` is
-``None`` and ``error`` is an ``Exception`` object. For example, we can
-trigger a duplicate-key error by trying to insert two documents with the same
-unique id:
+:meth:`insert_one` is *asynchronous*. This means it returns immediately, and
+the actual work of inserting the document into the collection is performed in
+the background. When it completes, the callback is executed. If the insert
+succeeded, the ``result`` parameter is a
+:class:`~pymongo.results.InsertOneResult` with the new document's unique id and
+the ``error`` parameter is ``None``. If there was an error, ``result`` is
+``None`` and ``error`` is an ``Exception`` object. For example, we can trigger
+a duplicate-key error by trying to insert two documents with the same unique
+id:
 
 .. doctest:: before-inserting-2000-docs
 
@@ -219,7 +219,7 @@ unique id:
   ...     IOLoop.current().stop()
   ...
   >>> def insert_two_documents():
-  ...     db.test_collection.insert({'_id': 1}, callback=my_callback)
+  ...     db.test_collection.insert_one({'_id': 1}, callback=my_callback)
   ...
   >>> IOLoop.current().add_callback(insert_two_documents)
   >>> IOLoop.current().start()
@@ -236,12 +236,12 @@ A typical beginner's mistake with Motor is to insert documents in a loop,
 not waiting for each insert to complete before beginning the next::
 
   >>> for i in range(2000):
-  ...     db.test_collection.insert({'i': i})
+  ...     db.test_collection.insert_one({'i': i})
 
 .. Note that the above is NOT a doctest!!
 
 In PyMongo this would insert each document in turn using a single socket, but
-Motor attempts to run all the :meth:`insert` operations at once. This requires
+Motor attempts to run all the :meth:`insert_one` operations at once. This requires
 up to ``max_pool_size`` open sockets connected to MongoDB,
 which taxes the client and server. To ensure instead that all inserts use a
 single connection, wait for acknowledgment of each. This is a bit complex using
@@ -256,12 +256,12 @@ callbacks:
   ...         raise error
   ...     i += 1
   ...     if i < 2000:
-  ...         db.test_collection.insert({'i': i}, callback=do_insert)
+  ...         db.test_collection.insert_one({'i': i}, callback=do_insert)
   ...     else:
   ...         IOLoop.current().stop()
   ...
   >>> # Start
-  >>> db.test_collection.insert({'i': i}, callback=do_insert)
+  >>> db.test_collection.insert_one({'i': i}, callback=do_insert)
   >>> IOLoop.current().start()
 
 You can simplify this code with ``gen.coroutine``.
@@ -288,7 +288,7 @@ and obtain its result:
   >>> @gen.coroutine
   ... def do_insert():
   ...     for i in range(2000):
-  ...         future = db.test_collection.insert({'i': i})
+  ...         future = db.test_collection.insert_one({'i': i})
   ...         result = yield future
   ...
   >>> IOLoop.current().run_sync(do_insert)
@@ -305,7 +305,7 @@ In the code above, ``result`` is the ``_id`` of each inserted document.
   :hide:
 
   >>> # Clean up from previous insert
-  >>> pymongo.MongoClient().test_database.test_collection.remove()
+  >>> pymongo.MongoClient().test_database.test_collection.delete_many({})
   {...}
 
 Using native coroutines
@@ -319,7 +319,7 @@ for an async operation with `await` instead of `yield`:
 
   >>> async def do_insert():
   ...     for i in range(2000):
-  ...         result = await db.test_collection.insert({'i': i})
+  ...         result = await db.test_collection.insert_one({'i': i})
   ...
   >>> IOLoop.current().run_sync(do_insert)
 
@@ -468,21 +468,21 @@ cover commands_ below.
 
 Updating Documents
 ------------------
-`MotorCollection.update` changes documents. It requires two
-parameters: a *query* that specifies which documents to update, and an update
-document. The query follows the same syntax as for :meth:`find` or
-:meth:`find_one`. The update document has two modes: it can replace the whole
-document, or it can update some fields of a document. To replace a document:
+
+`MotorCollection.replace_one` changes a document. It requires two
+parameters: a *query* that specifies which document to replace, and a
+replacement document. The query follows the same syntax as for :meth:`find` or
+:meth:`find_one`. To replace a document:
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.coroutine
+  >>> @coroutine
   ... def do_replace():
   ...     coll = db.test_collection
   ...     old_document = yield coll.find_one({'i': 50})
   ...     print('found document: %s' % pprint.pformat(old_document))
   ...     _id = old_document['_id']
-  ...     result = yield coll.update({'_id': _id}, {'key': 'value'})
+  ...     result = yield coll.replace_one({'_id': _id}, {'key': 'value'})
   ...     print('replaced %s document' % result['n'])
   ...     new_document = yield coll.find_one({'_id': _id})
   ...     print('document is now %s' % pprint.pformat(new_document))
@@ -492,10 +492,11 @@ document, or it can update some fields of a document. To replace a document:
   replaced 1 document
   document is now {'_id': ObjectId('...'), 'key': 'value'}
 
-You can see that :meth:`update` replaced everything in the old document except
-its ``_id`` with the new document.
+You can see that :meth:`replace_one` replaced everything in the old document
+except its ``_id`` with the new document.
 
-Use MongoDB's modifier operators to update part of a document and leave the
+Use `MotorCollection.update_one` with MongoDB's modifier operators to
+update part of a document and leave the
 rest intact. We'll find the document whose "i" is 51 and use the ``$set``
 operator to set "key" to "value":
 
@@ -504,7 +505,7 @@ operator to set "key" to "value":
   >>> @gen.coroutine
   ... def do_update():
   ...     coll = db.test_collection
-  ...     result = yield coll.update({'i': 51}, {'$set': {'key': 'value'}})
+  ...     result = yield coll.update_one({'i': 51}, {'$set': {'key': 'value'}})
   ...     print('updated %s document' % result['n'])
   ...     new_document = yield coll.find_one({'i': 51})
   ...     print('document is now %s' % pprint.pformat(new_document))
@@ -515,63 +516,40 @@ operator to set "key" to "value":
 
 "key" is set to "value" and "i" is still 51.
 
-By default :meth:`update` only affects the first document it finds, you can
-update all of them with the ``multi`` flag::
+:meth:`update_one` only affects the first document it finds, you can
+update all of them with :meth:`update_many`::
 
-    yield coll.update({'i': {'$gt': 100}}, {'$set': {'key': 'value'}}, multi=True)
+    yield coll.update_many({'i': {'$gt': 100}},
+                           {'$set': {'key': 'value'}})
 
 .. mongodoc:: update
-
-Saving Documents
-----------------
-
-`MotorCollection.save` is a convenience method provided to insert
-a new document or update an existing one. If the dict passed to :meth:`save`
-has an ``"_id"`` key then Motor performs an :meth:`update` (upsert) operation
-and any existing document with that ``"_id"`` is overwritten. Otherwise Motor
-performs an :meth:`insert`.
-
-.. doctest:: after-inserting-2000-docs
-
-  >>> @gen.coroutine
-  ... def do_save():
-  ...     coll = db.test_collection
-  ...     doc = {'key': 'value'}
-  ...     yield coll.save(doc)
-  ...     print('document _id: %s' % repr(doc['_id']))
-  ...     doc['other_key'] = 'other_value'
-  ...     yield coll.save(doc)
-  ...     yield coll.remove(doc)
-  ...
-  >>> IOLoop.current().run_sync(do_save)
-  document _id: ObjectId('...')
 
 Removing Documents
 ------------------
 
-`MotorCollection.remove` takes a query with the same syntax as
+`MotorCollection.delete_many` takes a query with the same syntax as
 `MotorCollection.find`.
-:meth:`remove` immediately removes all matching documents.
+:meth:`delete_many` immediately removes all matching documents.
 
 .. doctest:: after-inserting-2000-docs
 
   >>> @gen.coroutine
-  ... def do_remove():
+  ... def do_delete_many():
   ...     coll = db.test_collection
   ...     n = yield coll.count()
-  ...     print('%s documents before calling remove()' % n)
-  ...     result = yield db.test_collection.remove({'i': {'$gte': 1000}})
+  ...     print('%s documents before calling delete_many()' % n)
+  ...     result = yield db.test_collection.delete_many({'i': {'$gte': 1000}})
   ...     print('%s documents after' % (yield coll.count()))
   ...
-  >>> IOLoop.current().run_sync(do_remove)
-  2000 documents before calling remove()
+  >>> IOLoop.current().run_sync(do_delete_many)
+  2000 documents before calling delete_many()
   1000 documents after
 
 .. mongodoc:: remove
 
 Commands
 --------
-Besides the "CRUD" operations--insert, update, remove, and find--all other
+Besides the "CRUD" operations--insert, update, delete, and find--all other
 operations on MongoDB are commands. Run them using
 the `MotorDatabase.command` method on `MotorDatabase`:
 
@@ -602,8 +580,7 @@ the basic :meth:`command` method.
 Further Reading
 ---------------
 The handful of classes and methods introduced here are sufficient for daily
-tasks. The API documentation for `MotorClient`,
-`MotorReplicaSetClient`, `MotorDatabase`,
+tasks. The API documentation for `MotorClient`, `MotorDatabase`,
 `MotorCollection`, and `MotorCursor` provides a
 reference to Motor's complete feature set.
 

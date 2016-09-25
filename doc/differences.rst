@@ -14,13 +14,10 @@ Major differences
 Connecting to MongoDB
 ---------------------
 
-PyMongo's client classes are called
-:class:`~pymongo.mongo_client.MongoClient` and
-:class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient`.
-Motor provides a `MotorClient` and `MotorReplicaSetClient`.
-
-Motor's client classes do no I/O in their constructors; they connect
-on demand, when you first attempt an operation.
+Motor provides a single client class, `MotorClient`. Unlike PyMongo's
+:class:`~pymongo.mongo_client.MongoClient`, Motor's client class does
+not begin connecting in the background when it is instantiated. Instead it
+connects on demand, when you first attempt an operation.
 
 Callbacks and Futures
 ---------------------
@@ -85,49 +82,10 @@ in a :func:`coroutine <tornado.gen.coroutine>`:
 
     @gen.coroutine
     def f():
-        yield motor_db.collection.insert({'name': 'Randall'})
+        result = yield motor_db.collection.insert_one({'name': 'Randall'})
         doc = yield motor_db.collection.find_one()
 
 See :ref:`the coroutine example <coroutine-example>`.
-
-Requests
---------
-
-PyMongo provides "requests" to ensure that a series of operations are performed
-in order by the MongoDB server, even with unacknowledged writes (writes with
-``w=0``). Motor does not support requests, so the only way to guarantee order
-is by doing acknowledged writes. Register a callback for each operation and
-perform the next operation in the callback::
-
-    def inserted(result, error):
-        if error:
-            raise error
-
-        db.users.find_one({'name': 'Ben'}, callback=found_one)
-
-    def found_one(result, error):
-        if error:
-            raise error
-
-        print result
-
-    # Acknowledged insert:
-    db.users.insert({'name': 'Ben', 'maintains': 'Tornado'}, callback=inserted)
-
-This ensures ``find_one`` isn't run until ``insert`` has been acknowledged by
-the server. Obviously, this code is improved by :mod:`tornado.gen`::
-
-    @gen.coroutine
-    def f():
-        yield db.users.insert({'name': 'Ben', 'maintains': 'Tornado'})
-        result = yield db.users.find_one({'name': 'Ben'})
-        print result
-
-Motor ignores the ``auto_start_request`` parameter to
-`MotorClient` or `MotorReplicaSetClient`.
-
-.. note:: Requests are deprecated in PyMongo 2.8 and will be removed in
-   PyMongo 3.0.
 
 Threading and forking
 ---------------------
