@@ -185,8 +185,7 @@ def get_motor_attr(motor_class, name, *defargs):
         pymongo_method = None
 
     # attr.doc is set by statement like 'error = AsyncRead(doc="OBSOLETE")'.
-    is_pymongo_doc = (getattr(attr, '__doc__', None)
-                      and not getattr(attr, 'doc', None))
+    is_pymongo_doc = pymongo_method and not getattr(attr, 'doc', None)
 
     motor_info[full_name] = motor_info[full_name_legacy] = {
         'has_coroutine_annotation': has_coroutine_annotation,
