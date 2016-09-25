@@ -417,41 +417,34 @@ class AgnosticGridFS(object):
         in :class:`~motor.MotorCollection`.
 
         :Parameters:
-          - `spec` (optional): a SON object specifying elements which
+          - `filter` (optional): a SON object specifying elements which
             must be present for a document to be included in the
             result set
           - `skip` (optional): the number of files to omit (from
             the start of the result set) when returning the results
           - `limit` (optional): the maximum number of results to
             return
-          - `timeout` (optional): if True (the default), any returned
-            cursor is closed by the server after 10 minutes of
-            inactivity. If set to False, the returned cursor will never
+          - `no_cursor_timeout` (optional): if False (the default), any
+            returned cursor is closed by the server after 10 minutes of
+            inactivity. If set to True, the returned cursor will never
             time out on the server. Care should be taken to ensure that
-            cursors with timeout turned off are properly closed.
+            cursors with no_cursor_timeout turned on are properly closed.
           - `sort` (optional): a list of (key, direction) pairs
             specifying the sort order for this query. See
             :meth:`~pymongo.cursor.Cursor.sort` for details.
-          - `max_scan` (optional): limit the number of file documents
-            examined when performing the query
-          - `read_preference` (optional): The read preference for
-            this query.
-          - `tag_sets` (optional): The tag sets for this query.
-          - `localThresholdMS` (optional): Any replica-set
-            member whose ping time is within localThresholdMS of
-            the nearest member may accept reads. Default 15 milliseconds.
-            **Ignored by mongos** and must be configured on the command line.
-            See the localThreshold_ option for more information.
-          - `compile_re` (optional): if ``False``, don't attempt to compile
-            BSON regex objects into Python regexes. Return instances of
-            :class:`~bson.regex.Regex` instead.
 
-        Returns an instance of :class:`~motor.MotorGridOutCursor`
+        Raises :class:`TypeError` if any of the arguments are of
+        improper type. Returns an instance of
+        :class:`~gridfs.grid_file.GridOutCursor`
         corresponding to this query.
 
+        .. versionchanged:: 1.0
+           Removed the read_preference, tag_sets, and
+           secondary_acceptable_latency_ms options.
+
         .. versionadded:: 0.2
+
         .. mongodoc:: find
-        .. _localThreshold: http://docs.mongodb.org/manual/reference/mongos/#cmdoption-mongos--localThreshold
         """
         cursor = self.delegate.find(*args, **kwargs)
         grid_out_cursor = create_class_with_framework(
