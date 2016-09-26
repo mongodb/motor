@@ -79,8 +79,10 @@ class AgnosticBaseProperties(AgnosticBase):
     write_concern   = ReadOnlyProperty()
 
 
-class AgnosticClientBase(AgnosticBaseProperties):
-    """MotorClient and MotorReplicaSetClient common functionality."""
+class AgnosticClient(AgnosticBaseProperties):
+    __motor_class_name__ = 'MotorClient'
+    __delegate_class__ = pymongo.mongo_client.MongoClient
+
     address                  = ReadOnlyProperty()
     arbiters                 = ReadOnlyProperty()
     close                    = DelegateMethod()
@@ -111,11 +113,26 @@ class AgnosticClientBase(AgnosticBaseProperties):
     server_selection_timeout = ReadOnlyProperty()
     unlock                   = AsyncCommand()
 
-    def __init__(self, io_loop, *args, **kwargs):
-        # For Synchro, add undocumented "_connect" option, default False.
+    def __init__(self, *args, **kwargs):
+        """Create a new connection to a single MongoDB instance at *host:port*.
+
+        Takes the same constructor arguments as
+        :class:`~pymongo.mongo_client.MongoClient`, as well as:
+
+        :Parameters:
+          - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
+            instance to use instead of default
+        """
+        if 'io_loop' in kwargs:
+            io_loop = kwargs.pop('io_loop')
+        else:
+            io_loop = self._framework.get_event_loop()
+
+        # For Synchro's sake, add undocumented "_connect" option, default False.
         kwargs['connect'] = kwargs.pop('_connect', False)
         delegate = self.__delegate_class__(*args, **kwargs)
-        super(AgnosticClientBase, self).__init__(delegate)
+
+        super(AgnosticBaseProperties, self).__init__(delegate)
         if io_loop:
             self._framework.check_event_loop(io_loop)
             self.io_loop = io_loop
@@ -150,55 +167,6 @@ class AgnosticClientBase(AgnosticBaseProperties):
         return db_class(self, db.name, _delegate=db)
 
 
-class AgnosticClient(AgnosticClientBase):
-    __motor_class_name__ = 'MotorClient'
-    __delegate_class__ = pymongo.mongo_client.MongoClient
-
-    def __init__(self, *args, **kwargs):
-        """Create a new connection to a single MongoDB instance at *host:port*.
-
-        MotorClient takes the same constructor arguments as
-        :class:`~pymongo.mongo_client.MongoClient`, as well as:
-
-        :Parameters:
-          - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
-            instance to use instead of default
-        """
-        if 'io_loop' in kwargs:
-            io_loop = kwargs.pop('io_loop')
-        else:
-            io_loop = self._framework.get_event_loop()
-
-        # Our class is not actually AgnosticClient here, it's the version of
-        # 'MotorClient' that create_class_with_framework created.
-        super(self.__class__, self).__init__(io_loop, *args, **kwargs)
-
-
-class AgnosticReplicaSetClient(AgnosticClientBase):
-    __motor_class_name__ = 'MotorReplicaSetClient'
-    __delegate_class__ = pymongo.mongo_replica_set_client.MongoReplicaSetClient
-
-    def __init__(self, *args, **kwargs):
-        """Create a new connection to a MongoDB replica set.
-
-        MotorReplicaSetClient takes the same constructor arguments as
-        :class:`~pymongo.mongo_replica_set_client.MongoReplicaSetClient`,
-        as well as:
-
-        :Parameters:
-          - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
-            instance to use instead of default
-        """
-        if 'io_loop' in kwargs:
-            io_loop = kwargs.pop('io_loop')
-        else:
-            io_loop = self._framework.get_event_loop()
-
-        # Our class is not actually AgnosticClient here, it's the version of
-        # 'MotorClient' that create_class_with_framework created.
-        super(self.__class__, self).__init__(io_loop, *args, **kwargs)
-
-
 class AgnosticDatabase(AgnosticBaseProperties):
     __motor_class_name__ = 'MotorDatabase'
     __delegate_class__ = Database
@@ -231,10 +199,6 @@ class AgnosticDatabase(AgnosticBaseProperties):
     outgoing_copying_manipulators = ReadOnlyProperty()
 
     def __init__(self, client, name, _delegate=None):
-        if not isinstance(client, AgnosticClientBase):
-            raise TypeError("First argument to MotorDatabase must be "
-                            "a Motor client, not %r" % client)
-
         self._client = client
         delegate = _delegate or Database(client.delegate, name)
         super(self.__class__, self).__init__(delegate)

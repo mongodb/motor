@@ -319,17 +319,13 @@ class MongoClient(Synchro):
     _kill_cursors_executor = SynchroProperty()
 
 
-class MongoReplicaSetClient(MongoClient):
-    __delegate_class__ = motor.MotorReplicaSetClient
-
-
 class Database(Synchro):
     __delegate_class__ = motor.MotorDatabase
     get_collection     = WrapOutgoing()
 
     def __init__(self, client, name, delegate=None):
-        assert isinstance(client, (MongoClient, MongoReplicaSetClient)), (
-            "Expected MongoClient or MongoReplicaSetClient, got %s"
+        assert isinstance(client, MongoClient), (
+            "Expected MongoClient, got %s"
             % repr(client))
 
         self._client = client

@@ -14,7 +14,7 @@
 
 """Asyncio support for Motor, an asynchronous driver for MongoDB."""
 
-__all__ = ['AsyncIOMotorClient', 'AsyncIOMotorReplicaSetClient']
+__all__ = ['AsyncIOMotorClient']
 
 from . import core, motor_gridfs
 from .frameworks import asyncio as asyncio_framework
@@ -26,10 +26,6 @@ def create_asyncio_class(cls):
 
 
 AsyncIOMotorClient = create_asyncio_class(core.AgnosticClient)
-
-
-AsyncIOMotorReplicaSetClient = create_asyncio_class(
-    core.AgnosticReplicaSetClient)
 
 
 AsyncIOMotorDatabase = create_asyncio_class(

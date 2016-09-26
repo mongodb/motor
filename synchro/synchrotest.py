@@ -63,9 +63,6 @@ excluded_tests = [
     # lazy connection directly.
     'TestClientLazyConnect.*',
 
-    # test_read_preference: requires patching MongoReplicaSetClient specially.
-    'TestCommandAndReadPreference.*',
-
     # Motor doesn't support forking or threading.
     '*.test_fork',
     '*.test_interrupt_signal',
@@ -133,6 +130,7 @@ excluded_tests = [
     'TestClient.test_kill_cursor_explicit_secondary',
     'TestClient.test_stale_getmore',
     'TestCollection.test_aggregation_cursor',
+    'TestCommandAndReadPreference.*',
     'TestCommandMonitoring.test_get_more_failure',
     'TestCommandMonitoring.test_sensitive_commands',
     'TestGridfsReplicaSet.test_gridfs_replica_set',
