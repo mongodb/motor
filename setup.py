@@ -1,15 +1,13 @@
 import sys
-
-# Don't force people to install distribute unless we have to.
-try:
-    from setuptools import setup, Feature
-except ImportError:
-    from distribute_setup import use_setuptools
-    use_setuptools()
-    from setuptools import setup, Feature
-
 from distutils.cmd import Command
 from distutils.errors import DistutilsOptionError
+
+try:
+    from setuptools import setup
+except ImportError:
+    from ez_setup import use_setuptools
+    use_setuptools('28.0')
+    from setuptools import setup
 
 classifiers = """\
 Intended Audience :: Developers
