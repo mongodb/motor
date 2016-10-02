@@ -67,7 +67,6 @@ motor_cursor_only = set([
     'closed']).union(motor_only)
 
 pymongo_cursor_only = set([
-    'conn_id',
     'retrieved'
 ]).union(pymongo_only)
 
