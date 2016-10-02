@@ -30,8 +30,7 @@ Tutorial: Using Motor With `asyncio`
   import pymongo
   pymongo.MongoClient().test_database.test_collection.remove()
 
-A guide to using MongoDB and asyncio with Motor, the
-non-blocking driver.
+A guide to using MongoDB and asyncio with Motor.
 
 .. contents::
 
@@ -164,7 +163,7 @@ Using native coroutines
 -----------------------
 
 Starting in Python 3.5, you can define a `native coroutine`_ with `async def`
-instead of the `gen.coroutine` decorator. Within a native coroutine, wait
+instead of the `coroutine` decorator. Within a native coroutine, wait
 for an async operation with `await` instead of `yield`:
 
 .. doctest:: before-inserting-2000-docs

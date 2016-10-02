@@ -8,7 +8,7 @@ Non-Blocking
 ============
 Motor is an asynchronous driver for MongoDB. It can be used from Tornado_ or
 asyncio_ applications.
-Motor never blocks Tornado's IOLoop while connecting to MongoDB or
+Motor never blocks the event loop while connecting to MongoDB or
 performing I/O.
 
 .. _Tornado: http://tornadoweb.org/
@@ -25,19 +25,6 @@ Convenient With `tornado.gen`
 The :mod:`tornado.gen` module lets you use coroutines to simplify asynchronous
 code. Motor methods return Futures that are convenient to use with coroutines.
 See :ref:`the coroutine example <coroutine-example>`.
-
-Timeouts
-========
-Unlike most non-blocking libraries for Tornado, Motor provides a convenient
-timeout interface::
-
-    @gen.coroutine
-    def f():
-        try:
-            document = yield db.collection.find_one(my_complex_query, network_timeout=5)
-        except pymongo.errors.ConnectionFailure:
-            # find_one took more than 5 seconds
-            pass
 
 Configurable IOLoops
 ====================

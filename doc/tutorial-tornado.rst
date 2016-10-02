@@ -34,8 +34,7 @@ Tutorial: Using Motor With Tornado
   import pymongo
   pymongo.MongoClient().test_database.test_collection.remove()
 
-A guide to using MongoDB and Tornado with Motor, the
-non-blocking driver.
+A guide to using MongoDB and Tornado with Motor.
 
 .. contents::
 

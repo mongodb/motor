@@ -32,10 +32,10 @@ Warnings can also be changed to errors::
 
   python -Wd -Werror <your application>
 
-.. note:: Not all deprecated features raise `DeprecationWarning` when
-  used. For example, the `~MotorCollection.find` options
-  renamed in Motor 1.0 do not raise `DeprecationWarning` when used in
-  Motor 0.x. See also `Removed features with no migration path`_.
+Not all deprecated features raise `DeprecationWarning` when
+used. For example, `~motor.motor_tornado.MotorReplicaSetClient` will be
+removed in Motor 1.0 but it does not raise `DeprecationWarning`
+in Motor 0.7. See also `Removed features with no migration path`_.
 
 CRUD API
 --------
@@ -185,7 +185,8 @@ can be changed to this with Motor 0.7 or later::
   coll2 = collection.with_options(read_preference=ReadPreference.SECONDARY)
   cursor = coll2.find({"a": 1})
 
-.. seealso:: `MotorDatabase.get_collection`
+.. seealso:: `MotorDatabase.get_collection` and
+  `MotorCollection.with_options`
 
 The "tag_sets" option and attribute are removed
 ...............................................
@@ -227,7 +228,8 @@ can be changed to this with Motor 0.7 or later::
       read_preference=Secondary([{"dc": "ny"}]))
   cursor = coll2.find({"a": 1})
 
-.. seealso:: `MotorDatabase.get_collection`
+.. seealso:: `MotorDatabase.get_collection` and
+  `MotorCollection.with_options`
 
 The "secondary_acceptable_latency_ms" option and attribute are removed
 ......................................................................
@@ -286,7 +288,8 @@ can be changed to this with Motor 0.7 or later::
       write_concern=WriteConcern(w="majority"))
   oid = coll2.insert({"a": 2})
 
-.. seealso:: `MotorDatabase.get_collection`
+.. seealso:: `MotorDatabase.get_collection` and
+  `MotorCollection.with_options`
 
 Codec Options
 -------------
@@ -340,8 +343,8 @@ MotorClient and MotorReplicaSetClient
 The ``open`` method
 ...................
 
-In Motor 1.0, the `MotorClient.open` and `MotorReplicaSetClient.open` methods
-are removed. Motor clients have opened themselves on demand since Motor 0.2.
+In Motor 1.0, the `MotorClient.open` method is removed.
+Motor clients have opened themselves on demand since Motor 0.2.
 
 The max_pool_size parameter is removed
 ......................................
