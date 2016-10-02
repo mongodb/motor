@@ -29,11 +29,11 @@ def get_version_string():
 version = get_version_string()
 """Current version of Motor."""
 
-if pymongo.version_tuple[:2] != (2, 9):
+if pymongo.version_tuple < (2, 9, 4) or pymongo.version_tuple >= (3, ):
     msg = (
-        "Motor %s requires PyMongo at version 2.9.x. "
+        "Motor %s supports PyMongo 2.9.4 or later, but not PyMongo 3.x. "
         "You have PyMongo %s. "
-        "Do python -m pip install \"pymongo>=2.9,<3\""
+        "Do python -m pip install \"pymongo>=2.9.4,<3\""
     ) % (version, pymongo.version)
 
     raise ImportError(msg)
