@@ -147,7 +147,7 @@ if sys.version_info[0] >= 3:
     packages.append('motor.frameworks.asyncio')
 
 setup(name='motor',
-      version='0.7b0',
+      version='0.7.dev0',
       packages=packages,
       description=description,
       long_description=long_description,
