@@ -29,7 +29,7 @@ from tornado.testing import gen_test
 
 import motor
 import test
-from test.test_environment import host, port
+from test.test_environment import env
 from test.tornado_tests import MotorTest, remove_all_users, at_least
 from test.utils import ignore_deprecations
 
@@ -183,7 +183,8 @@ class MotorDatabaseTest(MotorTest):
         with ignore_deprecations():
             yield self.db.add_user("mike", "password")
 
-        client = motor.MotorClient(host, port, **self.get_client_kwargs())
+        client = motor.MotorClient(env.host, env.port,
+                                   **self.get_client_kwargs())
         db = client.motor_test
         try:
             # Authenticate many times at once to test concurrency.

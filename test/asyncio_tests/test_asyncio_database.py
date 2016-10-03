@@ -31,11 +31,11 @@ from motor.motor_asyncio import (AsyncIOMotorDatabase,
                                  AsyncIOMotorClient,
                                  AsyncIOMotorCollection)
 import test
+from test import env
 from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase,
                                 at_least,
                                 remove_all_users)
-from test.test_environment import host, port
 from test.utils import ignore_deprecations
 
 
@@ -153,7 +153,8 @@ class TestAsyncIODatabase(AsyncIOTestCase):
 
         # self.db is logged in as root.
         yield from self.db.add_user("jesse", "password")
-        db = AsyncIOMotorClient(host, port, io_loop=self.loop).motor_test
+        db = AsyncIOMotorClient(env.host, env.port,
+                                io_loop=self.loop).motor_test
         try:
             # Authenticate many times at once to test concurrency.
             yield from asyncio.wait(

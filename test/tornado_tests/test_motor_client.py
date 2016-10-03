@@ -35,7 +35,7 @@ from tornado.testing import gen_test
 import motor
 import test
 from test import SkipTest
-from test.test_environment import host, port, db_user, db_password
+from test.test_environment import db_user, db_password, env
 from test.tornado_tests import remove_all_users, MotorTest, MotorMockServerTest
 from test.utils import one, ignore_deprecations
 
@@ -71,7 +71,7 @@ class MotorClientTest(MotorTest):
 
     @gen_test
     def test_unix_socket(self):
-        mongodb_socket = '/tmp/mongodb-27017.sock'
+        mongodb_socket = '/tmp/mongodb-%d.sock' % env.port
         if not os.access(mongodb_socket, os.R_OK):
             raise SkipTest("Socket file is not accessible")
 
@@ -216,7 +216,7 @@ class MotorClientTest(MotorTest):
                 roles=['userAdmin', 'readWrite'])
 
             client = motor.MotorClient(
-                'mongodb://u:pass@%s:%d' % (host, port),
+                'mongodb://u:pass@%s:%d' % (env.host, env.port),
                 io_loop=self.io_loop)
 
             # ismaster doesn't throw auth errors.
@@ -227,7 +227,7 @@ class MotorClientTest(MotorTest):
 
             client = motor.MotorClient(
                 'mongodb://mike:password@%s:%d/%s' %
-                (host, port, db.name),
+                (env.host, env.port, db.name),
                 io_loop=self.io_loop)
 
             yield client[db.name].collection.find_one()

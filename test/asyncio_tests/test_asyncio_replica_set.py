@@ -23,9 +23,8 @@ from bson.binary import JAVA_LEGACY, UUID_SUBTYPE
 
 import test
 from motor import motor_asyncio
-from test import SkipTest
+from test import env, SkipTest
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from test.test_environment import port, host
 from test.utils import ignore_deprecations
 
 
@@ -75,7 +74,7 @@ class TestReplicaSetClientAgainstStandalone(AsyncIOTestCase):
     @asyncio_test
     def test_connect(self):
         client = motor_asyncio.AsyncIOMotorReplicaSetClient(
-            '%s:%s' % (host, port), replicaSet='anything',
+            '%s:%s' % (env.host, env.port), replicaSet='anything',
             connectTimeoutMS=600, io_loop=self.loop)
 
         with self.assertRaises(pymongo.errors.ConnectionFailure):

@@ -44,9 +44,8 @@ from test import SkipTest
 from test.tornado_tests import at_least, MotorTest, remove_all_users
 from test.test_environment import (CA_PEM,
                                    CLIENT_PEM,
-                                   host,
-                                   MONGODB_X509_USERNAME,
-                                   port)
+                                   env,
+                                   MONGODB_X509_USERNAME)
 
 # Start a mongod instance like:
 #
@@ -99,7 +98,7 @@ class MotorSSLTest(MotorTest):
             raise SkipTest("can't test with auth")
 
         client = motor.MotorClient(
-            host, port, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
+            env.host, env.port, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
 
         yield client.db.collection.find_one()
         response = yield client.admin.command('ismaster')
@@ -116,7 +115,7 @@ class MotorSSLTest(MotorTest):
             raise SkipTest("can't test with auth")
 
         client = motor.MotorClient(
-            host, port,
+            env.host, env.port,
             ssl_certfile=CLIENT_PEM,
             ssl_cert_reqs=ssl.CERT_REQUIRED,
             ssl_ca_certs=CA_PEM,
@@ -127,7 +126,7 @@ class MotorSSLTest(MotorTest):
 
         if 'setName' in response:
             client = motor.MotorReplicaSetClient(
-                host, port,
+                env.host, env.port,
                 replicaSet=response['setName'],
                 ssl_certfile=CLIENT_PEM,
                 ssl_cert_reqs=ssl.CERT_REQUIRED,
@@ -162,7 +161,7 @@ class MotorSSLTest(MotorTest):
             raise SkipTest("can't test with auth")
 
         client = motor.MotorClient(
-            host, port,
+            env.host, env.port,
             ssl_certfile=CLIENT_PEM,
             io_loop=self.io_loop)
 

@@ -29,9 +29,8 @@ import test
 from test.asyncio_tests import asyncio_test, at_least, remove_all_users
 from test.test_environment import (CA_PEM,
                                    CLIENT_PEM,
-                                   host,
-                                   MONGODB_X509_USERNAME,
-                                   port)
+                                   env,
+                                   MONGODB_X509_USERNAME)
 
 # Start a mongod instance like:
 #
@@ -105,7 +104,7 @@ class TestAsyncIOSSL(unittest.TestCase):
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
-        client = AsyncIOMotorClient(host, port,
+        client = AsyncIOMotorClient(env.host, env.port,
                                     ssl_certfile=CLIENT_PEM,
                                     io_loop=self.loop)
 
@@ -113,7 +112,7 @@ class TestAsyncIOSSL(unittest.TestCase):
         response = yield from client.admin.command('ismaster')
         if 'setName' in response:
             client = AsyncIOMotorReplicaSetClient(
-                host, port,
+                env.host, env.port,
                 ssl=True,
                 ssl_certfile=CLIENT_PEM,
                 replicaSet=response['setName'],
@@ -129,7 +128,7 @@ class TestAsyncIOSSL(unittest.TestCase):
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
-        client = AsyncIOMotorClient(host, port,
+        client = AsyncIOMotorClient(env.host, env.port,
                                     ssl_certfile=CLIENT_PEM,
                                     ssl_cert_reqs=ssl.CERT_REQUIRED,
                                     ssl_ca_certs=CA_PEM,
@@ -140,7 +139,7 @@ class TestAsyncIOSSL(unittest.TestCase):
 
         if 'setName' in response:
             client = AsyncIOMotorReplicaSetClient(
-                host, port,
+                env.host, env.port,
                 replicaSet=response['setName'],
                 ssl_certfile=CLIENT_PEM,
                 ssl_cert_reqs=ssl.CERT_REQUIRED,
@@ -173,7 +172,7 @@ class TestAsyncIOSSL(unittest.TestCase):
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
-        client = AsyncIOMotorClient(host, port,
+        client = AsyncIOMotorClient(env.host, env.port,
                                     ssl=True, ssl_certfile=CLIENT_PEM,
                                     io_loop=self.loop)
 
@@ -233,7 +232,7 @@ class TestAsyncIOSSL(unittest.TestCase):
         yield from collection.remove()
         uri = ('mongodb://%s@%s:%d/?authMechanism='
                'MONGODB-X509' % (
-                   quote_plus(MONGODB_X509_USERNAME), host, port))
+                   quote_plus(MONGODB_X509_USERNAME), env.host, env.port))
 
         # SSL options aren't supported in the URI....
         auth_uri_client = AsyncIOMotorClient(uri,

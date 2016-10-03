@@ -35,7 +35,7 @@ from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase,
                                 AsyncIOMockServerTestCase,
                                 remove_all_users)
-from test.test_environment import host, port, db_user, db_password
+from test.test_environment import db_user, db_password, env
 from test.utils import one, ignore_deprecations
 
 
@@ -69,7 +69,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
     @asyncio_test
     def test_unix_socket(self):
-        mongodb_socket = '/tmp/mongodb-27017.sock'
+        mongodb_socket = '/tmp/mongodb-%d.sock' % env.port
 
         if not os.access(mongodb_socket, os.R_OK):
             raise SkipTest("Socket file is not accessible")
@@ -227,7 +227,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
                 roles=['userAdmin', 'readWrite'])
 
             client = motor_asyncio.AsyncIOMotorClient(
-                'mongodb://u:pass@%s:%d' % (host, port),
+                'mongodb://u:pass@%s:%d' % (env.host, env.port),
                 io_loop=self.loop)
 
             # ismaster doesn't throw auth errors.
@@ -238,7 +238,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
             client = motor_asyncio.AsyncIOMotorClient(
                 'mongodb://mike:password@%s:%d/%s' %
-                (host, port, db.name),
+                (env.host, env.port, db.name),
                 io_loop=self.loop)
 
             yield from client[db.name].collection.find_one()

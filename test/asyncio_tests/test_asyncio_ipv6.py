@@ -22,15 +22,15 @@ from pymongo.errors import ConnectionFailure
 import test
 from test import SkipTest
 from test.asyncio_tests import asyncio_test, AsyncIOTestCase
-from test.test_environment import host, port, db_user, db_password
+from test.test_environment import db_user, db_password, env
 
 
 class MotorIPv6Test(AsyncIOTestCase):
     @asyncio_test
     def test_ipv6(self):
-        assert host in ('localhost', '127.0.0.1'), (
+        assert env.host in ('localhost', '127.0.0.1'), (
             "This unittest isn't written to test IPv6 "
-            "with host %s" % repr(host))
+            "with host %s" % repr(env.host))
 
         try:
             MongoClient("[::1]")
@@ -41,9 +41,9 @@ class MotorIPv6Test(AsyncIOTestCase):
 
         if test.env.auth:
             cx_string = 'mongodb://%s:%s@[::1]:%d' % (
-                db_user, db_password, port)
+                db_user, db_password, env.port)
         else:
-            cx_string = 'mongodb://[::1]:%d' % port
+            cx_string = 'mongodb://[::1]:%d' % env.port
 
         cx = self.asyncio_client(uri=cx_string)
         collection = cx.motor_test.test_collection

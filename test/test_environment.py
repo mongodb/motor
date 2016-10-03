@@ -46,8 +46,6 @@ import pymongo
 import pymongo.errors
 from pymongo.mongo_client import _partition_node
 
-host = os.environ.get("DB_IP", "localhost")
-port = int(os.environ.get("DB_PORT", 27017))
 db_user = os.environ.get("DB_USER", "motor-test-root")
 db_password = os.environ.get("DB_PASSWORD", "pass")
 
@@ -76,6 +74,8 @@ def is_server_resolvable():
 class TestEnvironment(object):
     def __init__(self):
         self.initialized = False
+        self.host = None
+        self.port = None
         self.mongod_started_with_ssl = False
         self.mongod_validates_client_cert = False
         self.server_is_resolvable = is_server_resolvable()
@@ -99,7 +99,6 @@ class TestEnvironment(object):
         self.setup_sync_cx()
         self.setup_auth()
         self.setup_mongos()
-        self.setup_rs()
         self.setup_v8()
         self.initialized = True
 
@@ -110,10 +109,12 @@ class TestEnvironment(object):
 
     def setup_sync_cx(self):
         """Get a synchronous PyMongo MongoClient and determine SSL config."""
+        host = os.environ.get("DB_IP", "localhost")
+        port = int(os.environ.get("DB_PORT", 27017))
         connectTimeoutMS = 100
         socketTimeoutMS = 30 * 1000
         try:
-            self.sync_cx = pymongo.MongoClient(
+            client = pymongo.MongoClient(
                 host, port,
                 connectTimeoutMS=connectTimeoutMS,
                 socketTimeoutMS=socketTimeoutMS,
@@ -122,7 +123,7 @@ class TestEnvironment(object):
             self.mongod_started_with_ssl = True
         except pymongo.errors.ConnectionFailure:
             try:
-                self.sync_cx = pymongo.MongoClient(
+                client = pymongo.MongoClient(
                     host, port,
                     connectTimeoutMS=connectTimeoutMS,
                     socketTimeoutMS=socketTimeoutMS,
@@ -131,11 +132,43 @@ class TestEnvironment(object):
                 self.mongod_started_with_ssl = True
                 self.mongod_validates_client_cert = True
             except pymongo.errors.ConnectionFailure:
-                self.sync_cx = pymongo.MongoClient(
+                client = pymongo.MongoClient(
                     host, port,
                     connectTimeoutMS=connectTimeoutMS,
                     socketTimeoutMS=socketTimeoutMS,
                     ssl=False)
+
+        response = client.admin.command('ismaster')
+        if 'setName' in response:
+            self.is_replica_set = True
+            self.rs_name = str(response['setName'])
+            self.w = len(response['hosts'])
+            self.hosts = set([_partition_node(h) for h in response["hosts"]])
+            host, port = self.primary = _partition_node(response['primary'])
+            self.arbiters = set([
+                _partition_node(h) for h in response.get("arbiters", [])])
+
+            self.secondaries = [
+                _partition_node(m) for m in response['hosts']
+                if m != self.primary and m not in self.arbiters]
+
+            # Reconnect to discovered primary.
+            if self.mongod_started_with_ssl:
+                client = pymongo.MongoClient(
+                    host, port,
+                    connectTimeoutMS=connectTimeoutMS,
+                    socketTimeoutMS=socketTimeoutMS,
+                    ssl_certfile=CLIENT_PEM)
+            else:
+                client = pymongo.MongoClient(
+                    host, port,
+                    connectTimeoutMS=connectTimeoutMS,
+                    socketTimeoutMS=socketTimeoutMS,
+                    ssl=False)
+
+        self.sync_cx = client
+        self.host = host
+        self.port = port
 
     def setup_auth(self):
         """Set self.auth and self.uri, and maybe create an admin user."""
@@ -170,15 +203,17 @@ class TestEnvironment(object):
 
         if self.auth:
             uri_template = 'mongodb://%s:%s@%s:%s/admin'
-            self.uri = uri_template % (db_user, db_password, host, port)
+            self.uri = uri_template % (db_user, db_password,
+                                       self.host, self.port)
 
             # If the hostname 'server' is resolvable, this URI lets us use it
             # to test SSL hostname validation with auth.
             self.fake_hostname_uri = uri_template % (
-                db_user, db_password, 'server', port)
+                db_user, db_password, 'server', self.port)
 
             try:
-                self.sync_cx.admin.add_user(db_user, db_password, roles=['root'])
+                self.sync_cx.admin.add_user(db_user, db_password,
+                                            roles=['root'])
             except pymongo.errors.OperationFailure:
                 # User was added before setup(), e.g. by Mongo Orchestration.
                 self.user_provided = True
@@ -186,35 +221,19 @@ class TestEnvironment(object):
             self.sync_cx.admin.authenticate(db_user, db_password)
 
         else:
-            self.uri = 'mongodb://%s:%s/admin' % (host, port)
-            self.fake_hostname_uri = 'mongodb://%s:%s/admin' % ('server', port)
+            self.uri = 'mongodb://%s:%s/admin' % (
+                self.host, self.port)
+
+            self.fake_hostname_uri = 'mongodb://%s:%s/admin' % (
+                'server', self.port)
+
+        if self.rs_name:
+            self.rs_uri = self.uri + '?replicaSet=' + self.rs_name
 
     def setup_mongos(self):
         """Set self.is_mongos."""
         response = self.sync_cx.admin.command('ismaster')
         self.is_mongos = response.get('msg') == 'isdbgrid'
-
-    def setup_rs(self):
-        """Determine server's replica set config."""
-        response = self.sync_cx.admin.command('ismaster')
-        if 'setName' in response:
-            self.is_replica_set = True
-            self.rs_name = str(response['setName'])
-            self.rs_uri = self.uri + '?replicaSet=' + self.rs_name
-            self.w = len(response['hosts'])
-            self.hosts = set([_partition_node(h) for h in response["hosts"]])
-            self.arbiters = set([
-                _partition_node(h) for h in response.get("arbiters", [])])
-
-            repl_set_status = self.sync_cx.admin.command('replSetGetStatus')
-            primary_info = [
-                m for m in repl_set_status['members']
-                if m['stateStr'] == 'PRIMARY'][0]
-
-            self.primary = _partition_node(primary_info['name'])
-            self.secondaries = [
-                _partition_node(m['name']) for m in repl_set_status['members']
-                if m['stateStr'] == 'SECONDARY']
 
     def setup_v8(self):
         """Determine if server is running SpiderMonkey or V8."""

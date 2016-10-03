@@ -30,7 +30,7 @@ import motor
 import motor.core
 import test
 from test import SkipTest
-from test.test_environment import db_user, db_password, port, host
+from test.test_environment import db_user, db_password, env
 from test.tornado_tests import MotorReplicaSetTestBase, MotorTest
 from test.utils import one, ignore_deprecations
 
@@ -149,7 +149,7 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
     def test_connect(self):
         with self.assertRaises(pymongo.errors.ConnectionFailure):
             yield motor.MotorReplicaSetClient(
-                '%s:%s' % (host, port), replicaSet='anything',
+                '%s:%s' % (env.host, env.port), replicaSet='anything',
                 io_loop=self.io_loop,
                 connectTimeoutMS=600).test.test.find_one()
 
