@@ -14,6 +14,8 @@
 
 from __future__ import unicode_literals, absolute_import
 
+import warnings
+
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 from tornado.testing import gen_test
@@ -129,3 +131,14 @@ class MotorTestAwait(MotorTest):
         await gridout.stream_to_handler(handler)
         self.assertEqual(content_length, handler.n_written)
         await fs.delete(1)
+
+    @gen_test
+    async def test_cursor_iter(self):
+        # Have we handled the async iterator change in Python 3.5.2?:
+        # python.org/dev/peps/pep-0492/#api-design-and-implementation-revisions
+        with warnings.catch_warnings(record=True) as w:
+            async for _ in self.collection.find():
+                pass
+
+        if w:
+            self.fail(w[0].message)

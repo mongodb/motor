@@ -54,7 +54,8 @@ except ImportError:
     ssl = None
     HAS_SSL = False
 
-PY35 = sys.version_info[:2] >= (3, 5)
+PY352 = sys.version_info >= (3, 5, 2)
+PY35 = sys.version_info >= (3, 5)
 
 
 class AgnosticBase(object):
@@ -579,7 +580,20 @@ class AgnosticBaseCursor(AgnosticBase):
         self.started = False
         self.closed = False
 
-    if PY35:
+    # python.org/dev/peps/pep-0492/#api-design-and-implementation-revisions
+    if PY352:
+        exec(textwrap.dedent("""
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            # An optimization: skip the "await" if possible.
+            if self._buffer_size() or await self.fetch_next:
+                return self.next_object()
+            raise StopAsyncIteration()
+        """), globals(), locals())
+
+    elif PY35:
         exec(textwrap.dedent("""
         async def __aiter__(self):
             return self
