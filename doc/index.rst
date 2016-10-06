@@ -59,6 +59,7 @@ Contents
    examples/index
    changelog
    migrate-to-motor-1
+   developer-guide
    contributors
 
 Classes
