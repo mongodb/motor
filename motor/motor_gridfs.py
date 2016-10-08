@@ -136,6 +136,7 @@ class AgnosticGridOut(object):
     __delegate_class__ = gridfs.GridOut
 
     _ensure_file = AsyncCommand()
+    _id          = MotorGridOutProperty()
     aliases      = MotorGridOutProperty()
     chunk_size   = MotorGridOutProperty()
     close        = MotorGridOutProperty()
