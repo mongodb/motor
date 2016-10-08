@@ -10,3 +10,6 @@ Motor Examples
    gridfs
    tailable-cursors
    authentication
+   aiohttp_gridfs_example
+
+See also :ref:`example-web-application-aiohttp`.

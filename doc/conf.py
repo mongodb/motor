@@ -190,6 +190,7 @@ intersphinx_mapping = {
     'bson': pymongo_inventory,
     'gridfs': pymongo_inventory,
     'pymongo': pymongo_inventory,
+    'aiohttp': ('http://aiohttp.readthedocs.io/en/stable/', None),
     'tornado': ('http://www.tornadoweb.org/en/stable/', None),
     'python': ('https://docs.python.org/3/', None),
 }

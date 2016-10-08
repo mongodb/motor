@@ -8,6 +8,7 @@ Motor asyncio API
     asyncio_motor_collection
     asyncio_motor_cursor
     asyncio_gridfs
+    aiohttp
 
 .. seealso:: :doc:`../tutorial-asyncio`
 

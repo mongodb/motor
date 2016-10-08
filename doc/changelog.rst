@@ -28,6 +28,11 @@ New classes :class:`~motor.motor_tornado.MotorGridFSBucket` and :class:`~motor.m
 conform to the `GridFS API Spec <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_
 for MongoDB drivers.
 
+Serve GridFS files over HTTP using `aiohttp`_ and
+:class:`~motor.aiohttp.AIOHTTPGridFS`.
+
+.. _aiohttp: https://aiohttp.readthedocs.io/
+
 :class:`MotorClient` changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

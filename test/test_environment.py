@@ -18,6 +18,9 @@ import os
 import socket
 import warnings
 
+import pymongo.errors
+from pymongo.common import partition_node
+
 from test.utils import safe_get
 
 HAVE_SSL = True
@@ -43,8 +46,12 @@ except ImportError:
     HAVE_ASYNCIO = False
     asyncio = None
 
-import pymongo
-import pymongo.errors
+HAVE_AIOHTTP = True
+try:
+    import aiohttp
+except ImportError:
+    HAVE_AIOHTTP = False
+    aiohttp = None
 
 
 # Copied from PyMongo.

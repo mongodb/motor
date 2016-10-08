@@ -436,6 +436,8 @@ the basic :meth:`command` method.
 
 .. mongodoc:: commands
 
+.. _example-web-application-aiohttp:
+
 A Web Application With `aiohttp`_
 ---------------------------------
 
@@ -518,6 +520,8 @@ the ``shutdown`` coroutine to attempt a graceful exit:
 The complete code is in the Motor repository in ``examples/aiohttp_example.py``.
 
 .. _aiohttp: https://aiohttp.readthedocs.io/
+
+See also the :doc:`examples/aiohttp_gridfs_example`.
 
 Further Reading
 ---------------
