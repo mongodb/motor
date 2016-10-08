@@ -77,7 +77,7 @@ class GridFSHandler(tornado.web.RequestHandler):
                     return fs.get(file_id=ObjectId(path))
 
         :Parameters:
-          - `fs`: An open :class:`~motor.MotorGridFS` object
+          - `fs`: A :class:`~motor.MotorGridFS`
           - `path`: A string, the trailing portion of the URL pattern being
             served
 
