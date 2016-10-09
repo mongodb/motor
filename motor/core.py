@@ -498,33 +498,49 @@ class AgnosticCollection(AgnosticBaseProperties):
 
             original_future.set_result(motor_command_cursors)
 
-    def initialize_unordered_bulk_op(self):
+    def initialize_unordered_bulk_op(self, bypass_document_validation=False):
         """Initialize an unordered batch of write operations.
 
         Operations will be performed on the server in arbitrary order,
         possibly in parallel. All operations will be attempted.
 
+        :Parameters:
+          - `bypass_document_validation`: (optional) If ``True``, allows the
+            write to opt-out of document level validation. Default is ``False``.
+
         Returns a :class:`~motor.MotorBulkOperationBuilder` instance.
 
         See :ref:`unordered_bulk` for examples.
+
+        .. versionchanged:: 1.0
+          Added bypass_document_validation support
 
         .. versionadded:: 0.2
         """
         bob_class = create_class_with_framework(
             AgnosticBulkOperationBuilder, self._framework, self.__module__)
 
-        return bob_class(self, ordered=False)
+        return bob_class(self,
+                         ordered=False,
+                         bypass_document_validation=bypass_document_validation)
 
-    def initialize_ordered_bulk_op(self):
+    def initialize_ordered_bulk_op(self, bypass_document_validation=False):
         """Initialize an ordered batch of write operations.
 
         Operations will be performed on the server serially, in the
         order provided. If an error occurs all remaining operations
         are aborted.
 
+        :Parameters:
+          - `bypass_document_validation`: (optional) If ``True``, allows the
+            write to opt-out of document level validation. Default is ``False``.
+
         Returns a :class:`~motor.MotorBulkOperationBuilder` instance.
 
         See :ref:`ordered_bulk` for examples.
+
+        .. versionchanged:: 1.0
+          Added bypass_document_validation support
 
         .. versionadded:: 0.2
         """
@@ -533,7 +549,9 @@ class AgnosticCollection(AgnosticBaseProperties):
             self._framework,
             self.__module__)
 
-        return bob_class(self, ordered=True)
+        return bob_class(self,
+                         ordered=True,
+                         bypass_document_validation=bypass_document_validation)
 
     def wrap(self, obj):
         if obj.__class__ is Collection:
@@ -1070,9 +1088,11 @@ class AgnosticBulkOperationBuilder(AgnosticBase):
     insert      = DelegateMethod()
     execute     = AsyncCommand()
 
-    def __init__(self, collection, ordered):
+    def __init__(self, collection, ordered, bypass_document_validation):
         self.io_loop = collection.get_io_loop()
-        delegate = BulkOperationBuilder(collection.delegate, ordered)
+        delegate = BulkOperationBuilder(collection.delegate,
+                                        ordered,
+                                        bypass_document_validation)
         super(self.__class__, self).__init__(delegate)
 
     def get_io_loop(self):

@@ -51,6 +51,13 @@ Motor versions, you disabled the timeout by passing ``timeout=False`` to
 parameter has been renamed to ``no_cursor_timeout``, it defaults to ``False``,
 and you must now pass ``no_cursor_timeout=True`` to disable timeouts.
 
+Document validation
+~~~~~~~~~~~~~~~~~~~
+
+New ``bypass_document_validation`` parameter for
+:meth:`~.MotorCollection.initialize_ordered_bulk_op` and
+:meth:`~.MotorCollection.initialize_unordered_bulk_op`.
+
 Motor 0.7
 ---------
 
