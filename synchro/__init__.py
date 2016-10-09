@@ -448,14 +448,15 @@ class Cursor(Synchro):
         return False
 
     # For PyMongo tests that access cursor internals.
-    _Cursor__data            = SynchroProperty()
-    _Cursor__exhaust         = SynchroProperty()
-    _Cursor__max_time_ms     = SynchroProperty()
-    _Cursor__query_flags     = SynchroProperty()
-    _Cursor__query_spec      = SynchroProperty()
-    _Cursor__read_preference = SynchroProperty()
-    _Cursor__retrieved       = SynchroProperty()
-    _Cursor__spec            = SynchroProperty()
+    _Cursor__data              = SynchroProperty()
+    _Cursor__exhaust           = SynchroProperty()
+    _Cursor__max_await_time_ms = SynchroProperty()
+    _Cursor__max_time_ms       = SynchroProperty()
+    _Cursor__query_flags       = SynchroProperty()
+    _Cursor__query_spec        = SynchroProperty()
+    _Cursor__read_preference   = SynchroProperty()
+    _Cursor__retrieved         = SynchroProperty()
+    _Cursor__spec              = SynchroProperty()
 
 
 class CommandCursor(Cursor):
