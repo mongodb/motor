@@ -143,7 +143,7 @@ store a document in MongoDB, call :meth:`~AsyncIOMotorCollection.insert_one` in 
   ... def do_insert():
   ...     document = {'key': 'value'}
   ...     result = yield from db.test_collection.insert_one(document)
-  ...     print('result %s' % repr(result))
+  ...     print('result %s' % repr(result.inserted_id))
   ...
   >>>
   >>> loop = asyncio.get_event_loop()
@@ -157,7 +157,7 @@ store a document in MongoDB, call :meth:`~AsyncIOMotorCollection.insert_one` in 
 
   >>> # Clean up from previous insert
   >>> pymongo.MongoClient().test_database.test_collection.delete_many({})
-  {...}
+  <pymongo.results.DeleteResult ...>
 
 Using native coroutines
 -----------------------
@@ -338,7 +338,7 @@ replacement document. The query follows the same syntax as for :meth:`find` or
   ...     print('found document: %s' % pprint.pformat(old_document))
   ...     _id = old_document['_id']
   ...     result = yield from coll.replace_one({'_id': _id}, {'key': 'value'})
-  ...     print('replaced %s document' % result['n'])
+  ...     print('replaced %s document' % result.modified_count)
   ...     new_document = yield from coll.find_one({'_id': _id})
   ...     print('document is now %s' % pprint.pformat(new_document))
   ...
@@ -362,7 +362,7 @@ operator to set "key" to "value":
   ... def do_update():
   ...     coll = db.test_collection
   ...     result = yield from coll.update_one({'i': 51}, {'$set': {'key': 'value'}})
-  ...     print('updated %s document' % result['n'])
+  ...     print('updated %s document' % result.modified_count)
   ...     new_document = yield from coll.find_one({'i': 51})
   ...     print('document is now %s' % pprint.pformat(new_document))
   ...
@@ -421,7 +421,7 @@ the :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.command` method on :class:`
   ...
   >>> loop = asyncio.get_event_loop()
   >>> loop.run_until_complete(use_count_command())
-  response: {'n': 1000, 'ok': 1.0}
+  response: {'n': 1000, 'ok': 1.0, ...}
 
 Since the order of command parameters matters, don't use a Python dict to pass
 the command's parameters. Instead, make a habit of using :class:`bson.SON`,

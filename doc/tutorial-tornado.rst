@@ -179,7 +179,7 @@ document and a callback:
 
   >>> from tornado.ioloop import IOLoop
   >>> def my_callback(result, error):
-  ...     print('result %s' % repr(result))
+  ...     print('result %s' % repr(result.inserted_id))
   ...     IOLoop.current().stop()
   ...
   >>> document = {'key': 'value'}
@@ -223,7 +223,7 @@ id:
   ...
   >>> IOLoop.current().add_callback(insert_two_documents)
   >>> IOLoop.current().start()
-  result 1 error None
+  result <pymongo.results.InsertOneResult ...> error None
   >>> IOLoop.current().add_callback(insert_two_documents)
   >>> IOLoop.current().start()
   result None error DuplicateKeyError(...)
@@ -306,7 +306,7 @@ In the code above, ``result`` is the ``_id`` of each inserted document.
 
   >>> # Clean up from previous insert
   >>> pymongo.MongoClient().test_database.test_collection.delete_many({})
-  {...}
+  <pymongo.results.DeleteResult ...>
 
 Using native coroutines
 -----------------------
@@ -476,14 +476,14 @@ replacement document. The query follows the same syntax as for :meth:`find` or
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @coroutine
+  >>> @gen.coroutine
   ... def do_replace():
   ...     coll = db.test_collection
   ...     old_document = yield coll.find_one({'i': 50})
   ...     print('found document: %s' % pprint.pformat(old_document))
   ...     _id = old_document['_id']
   ...     result = yield coll.replace_one({'_id': _id}, {'key': 'value'})
-  ...     print('replaced %s document' % result['n'])
+  ...     print('replaced %s document' % result.modified_count)
   ...     new_document = yield coll.find_one({'_id': _id})
   ...     print('document is now %s' % pprint.pformat(new_document))
   ...
@@ -506,7 +506,7 @@ operator to set "key" to "value":
   ... def do_update():
   ...     coll = db.test_collection
   ...     result = yield coll.update_one({'i': 51}, {'$set': {'key': 'value'}})
-  ...     print('updated %s document' % result['n'])
+  ...     print('updated %s document' % result.modified_count)
   ...     new_document = yield coll.find_one({'i': 51})
   ...     print('document is now %s' % pprint.pformat(new_document))
   ...
@@ -562,7 +562,7 @@ the :meth:`~MotorDatabase.command` method on :class:`MotorDatabase`:
   ...     print('response: %s' % pprint.pformat(response))
   ...
   >>> IOLoop.current().run_sync(use_count_command)
-  response: {'n': 1000, 'ok': 1.0}
+  response: {'n': 1000, 'ok': 1.0, ...}
 
 Since the order of command parameters matters, don't use a Python dict to pass
 the command's parameters. Instead, make a habit of using :class:`bson.SON`,
