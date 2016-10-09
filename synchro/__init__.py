@@ -565,6 +565,7 @@ class SynchroGridOutProperty(object):
 class GridOut(Synchro):
     __delegate_class__ = motor.MotorGridOut
 
+    _id          = SynchroGridOutProperty('_id')
     aliases      = SynchroGridOutProperty('aliases')
     chunk_size   = SynchroGridOutProperty('chunk_size')
     close        = SynchroGridOutProperty('close')
