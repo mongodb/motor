@@ -258,21 +258,21 @@ class AgnosticGridIn(object):
     __motor_class_name__ = 'MotorGridIn'
     __delegate_class__ = gridfs.GridIn
 
-    __getattr__ = DelegateMethod()
-    abort = AsyncCommand()
-    closed = ReadOnlyProperty()
-    close = AsyncCommand()
-    write = AsyncCommand().unwrap('MotorGridOut')
-    writelines = AsyncCommand().unwrap('MotorGridOut')
-    _id = ReadOnlyProperty()
-    md5 = ReadOnlyProperty()
-    filename = ReadOnlyProperty()
-    name = ReadOnlyProperty()
+    __getattr__  = DelegateMethod()
+    abort        = AsyncCommand()
+    closed       = ReadOnlyProperty()
+    close        = AsyncCommand()
+    write        = AsyncCommand().unwrap('MotorGridOut')
+    writelines   = AsyncCommand().unwrap('MotorGridOut')
+    _id          = ReadOnlyProperty()
+    md5          = ReadOnlyProperty()
+    filename     = ReadOnlyProperty()
+    name         = ReadOnlyProperty()
     content_type = ReadOnlyProperty()
-    length = ReadOnlyProperty()
-    chunk_size = ReadOnlyProperty()
-    upload_date = ReadOnlyProperty()
-    set = AsyncCommand(attr_name='__setattr__', doc="""
+    length       = ReadOnlyProperty()
+    chunk_size   = ReadOnlyProperty()
+    upload_date  = ReadOnlyProperty()
+    set          = AsyncCommand(attr_name='__setattr__', doc="""
 Set an arbitrary metadata attribute on the file. Stores value on the server
 as a key-value pair within the file document once the file is closed. If
 the file is already closed, calling :meth:`set` will immediately update the file
@@ -351,15 +351,15 @@ class AgnosticGridFS(object):
     __motor_class_name__ = 'MotorGridFS'
     __delegate_class__ = gridfs.GridFS
 
-    find_one = AsyncRead().wrap(grid_file.GridOut)
-    new_file = AsyncRead().wrap(grid_file.GridIn)
-    get = AsyncRead().wrap(grid_file.GridOut)
-    get_version = AsyncRead().wrap(grid_file.GridOut)
+    find_one         = AsyncRead().wrap(grid_file.GridOut)
+    new_file         = AsyncRead().wrap(grid_file.GridIn)
+    get              = AsyncRead().wrap(grid_file.GridOut)
+    get_version      = AsyncRead().wrap(grid_file.GridOut)
     get_last_version = AsyncRead().wrap(grid_file.GridOut)
-    list = AsyncRead()
-    exists = AsyncRead()
-    delete = AsyncCommand()
-    put = AsyncCommand()
+    list             = AsyncRead()
+    exists           = AsyncRead()
+    delete           = AsyncCommand()
+    put              = AsyncCommand()
 
     def __init__(self, database, collection="fs"):
         """An instance of GridFS on top of a single Database.
