@@ -42,6 +42,15 @@ Unix domain socket paths must be quoted with `urllib.parse.quote_plus` (or
 
 .. _the PyMongo 3 changelog: http://api.mongodb.com/python/current/changelog.html#changes-in-version-3-0
 
+Cursor timeouts
+~~~~~~~~~~~~~~~
+
+By default, MongoDB closes a cursor after 10 minutes of inactivity. In previous
+Motor versions, you disabled the timeout by passing ``timeout=False`` to
+:meth:`.MotorCollection.find` or :meth:`.MotorGridFS.find`. The ``timeout``
+parameter has been renamed to ``no_cursor_timeout``, it defaults to ``False``,
+and you must now pass ``no_cursor_timeout=True`` to disable timeouts.
+
 Motor 0.7
 ---------
 

@@ -397,14 +397,14 @@ class AgnosticGridFS(object):
         arbitrary queries on the files collection. Can be combined
         with other modifiers for additional control. For example::
 
-          cursor = fs.find({"filename": "lisa.txt"}, timeout=False)
+          cursor = fs.find({"filename": "lisa.txt"}, no_cursor_timeout=True)
           while (yield cursor.fetch_next):
               grid_out = cursor.next_object()
               data = yield grid_out.read()
 
         This iterates through all versions of "lisa.txt" stored in GridFS.
-        Note that setting timeout to False may be important to prevent the
-        cursor from timing out during long multi-file processing work.
+        Note that setting no_cursor_timeout may be important to prevent
+        the cursor from timing out during long multi-file processing work.
 
         As another example, the call::
 
