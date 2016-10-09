@@ -48,10 +48,6 @@ excluded_modules = [
     # Complex PyMongo-specific mocking.
     'test.test_replica_set_reconfig',
     'test.test_mongos_ha',
-
-    # Not yet wrapped by Motor.
-    'test.test_gridfs_bucket',
-    'test.test_gridfs_spec',
 ]
 
 excluded_tests = [

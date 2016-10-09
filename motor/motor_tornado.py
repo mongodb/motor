@@ -54,6 +54,9 @@ MotorBulkOperationBuilder = create_motor_class(core.AgnosticBulkOperationBuilder
 MotorGridFS = create_motor_class(motor_gridfs.AgnosticGridFS)
 
 
+MotorGridFSBucket = create_motor_class(motor_gridfs.AgnosticGridFSBucket)
+
+
 MotorGridIn = create_motor_class(motor_gridfs.AgnosticGridIn)
 
 

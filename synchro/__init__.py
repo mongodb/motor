@@ -516,6 +516,22 @@ class GridFS(Synchro):
         return unwrapping_method(*args, **kwargs)
 
 
+class GridFSBucket(Synchro):
+    __delegate_class__ = motor.MotorGridFSBucket
+
+    def __init__(self, database, bucket_name='fs'):
+        if not isinstance(database, Database):
+            raise TypeError(
+                "Expected Database, got %s" % repr(database))
+
+        self.delegate = motor.MotorGridFSBucket(database.delegate, bucket_name)
+
+    def find(self, *args, **kwargs):
+        motor_method = self.delegate.find
+        unwrapping_method = wrap_synchro(unwrap_synchro(motor_method))
+        return unwrapping_method(*args, **kwargs)
+
+
 class GridIn(Synchro):
     __delegate_class__ = motor.MotorGridIn
 

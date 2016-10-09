@@ -10,6 +10,9 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
 
 .. seealso:: :doc:`web`
 
+.. autoclass:: MotorGridFSBucket
+  :members:
+
 .. autoclass:: MotorGridFS
   :members:
 

@@ -347,7 +347,54 @@ Metadata set on the file appears as attributes on a
         return self.io_loop
 
 
-class AgnosticGridFS(object):
+class _GFSBase(object):
+    __delegate_class__ = None
+
+    def __init__(self, database, collection="fs"):
+        db_class = create_class_with_framework(
+            AgnosticDatabase, self._framework, self.__module__)
+
+        if not isinstance(database, db_class):
+            raise TypeError(
+                "First argument to %s must be  MotorDatabase, not %r" % (
+                    self.__class__, database))
+
+        self.io_loop = database.get_io_loop()
+        self.collection = database[collection]
+        self.delegate = self.__delegate_class__(
+            database.delegate,
+            collection)
+
+    def get_io_loop(self):
+        return self.io_loop
+
+    def wrap(self, obj):
+        if obj.__class__ is grid_file.GridIn:
+            grid_in_class = create_class_with_framework(
+                AgnosticGridIn, self._framework, self.__module__)
+
+            return grid_in_class(
+                root_collection=self.collection,
+                delegate=obj)
+
+        elif obj.__class__ is grid_file.GridOut:
+            grid_out_class = create_class_with_framework(
+                AgnosticGridOut, self._framework, self.__module__)
+
+            return grid_out_class(
+                root_collection=self.collection,
+                delegate=obj)
+
+        elif obj.__class__ is gridfs.GridOutCursor:
+            grid_out_class = create_class_with_framework(
+                AgnosticGridOutCursor, self._framework, self.__module__)
+
+            return grid_out_class(
+                cursor=obj,
+                collection=self.collection)
+
+
+class AgnosticGridFS(_GFSBase):
     __motor_class_name__ = 'MotorGridFS'
     __delegate_class__ = gridfs.GridFS
 
@@ -374,21 +421,7 @@ class AgnosticGridFS(object):
         .. versionchanged:: 0.2
            ``open`` method removed; no longer needed.
         """
-        db_class = create_class_with_framework(
-            AgnosticDatabase, self._framework, self.__module__)
-
-        if not isinstance(database, db_class):
-            raise TypeError("First argument to MotorGridFS must be "
-                            "MotorDatabase, not %r" % database)
-
-        self.io_loop = database.get_io_loop()
-        self.collection = database[collection]
-        self.delegate = self.__delegate_class__(
-            database.delegate,
-            collection)
-
-    def get_io_loop(self):
-        return self.io_loop
+        super(self.__class__, self).__init__(database, collection)
 
     def find(self, *args, **kwargs):
         """Query GridFS for files.
@@ -453,27 +486,94 @@ class AgnosticGridFS(object):
 
         return grid_out_cursor(cursor, self.collection)
 
-    def wrap(self, obj):
-        if obj.__class__ is grid_file.GridIn:
-            grid_in_class = create_class_with_framework(
-                AgnosticGridIn, self._framework, self.__module__)
 
-            return grid_in_class(
-                root_collection=self.collection,
-                delegate=obj)
+class AgnosticGridFSBucket(_GFSBase):
+    __motor_class_name__ = 'MotorGridFSBucket'
+    __delegate_class__ = gridfs.GridFSBucket
 
-        elif obj.__class__ is grid_file.GridOut:
-            grid_out_class = create_class_with_framework(
-                AgnosticGridOut, self._framework, self.__module__)
+    delete                       = AsyncCommand()
+    download_to_stream           = AsyncCommand()
+    download_to_stream_by_name   = AsyncCommand()
+    open_download_stream         = AsyncCommand().wrap(gridfs.GridOut)
+    open_download_stream_by_name = AsyncCommand().wrap(gridfs.GridOut)
+    open_upload_stream           = DelegateMethod().wrap(gridfs.GridIn)
+    open_upload_stream_with_id   = DelegateMethod().wrap(gridfs.GridIn)
+    rename                       = AsyncCommand()
+    upload_from_stream           = AsyncCommand()
+    upload_from_stream_with_id   = AsyncCommand()
 
-            return grid_out_class(
-                root_collection=self.collection,
-                delegate=obj)
+    def __init__(self, database, collection="fs"):
+        """Create a handle to a GridFS bucket.
 
-        elif obj.__class__ is gridfs.GridOutCursor:
-            grid_out_class = create_class_with_framework(
-                AgnosticGridOutCursor, self._framework, self.__module__)
+        Raises :exc:`~pymongo.errors.ConfigurationError` if `write_concern`
+        is not acknowledged.
 
-            return grid_out_class(
-                cursor=obj,
-                collection=self.collection)
+        This class is a replacement for :class:`.MotorGridFS`; it conforms to the
+        `GridFS API Spec <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_
+        for MongoDB drivers.
+
+        :Parameters:
+          - `database`: database to use.
+          - `bucket_name` (optional): The name of the bucket. Defaults to 'fs'.
+          - `chunk_size_bytes` (optional): The chunk size in bytes. Defaults
+            to 255KB.
+          - `write_concern` (optional): The
+            :class:`~pymongo.write_concern.WriteConcern` to use. If ``None``
+            (the default) db.write_concern is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) db.read_preference is used.
+
+        .. versionadded:: 1.0
+
+        .. mongodoc:: gridfs
+        """
+        super(self.__class__, self).__init__(database, collection)
+
+    def find(self, *args, **kwargs):
+        """Find and return the files collection documents that match ``filter``.
+
+        Returns a cursor that iterates across files matching
+        arbitrary queries on the files collection. Can be combined
+        with other modifiers for additional control.
+
+        For example::
+
+          cursor = bucket.find({"filename": "lisa.txt"}, no_cursor_timeout=True)
+          while (yield cursor.fetch_next):
+              grid_out = cursor.next_object()
+              data = yield grid_out.read()
+
+        This iterates through all versions of "lisa.txt" stored in GridFS.
+        Note that setting no_cursor_timeout to True may be important to
+        prevent the cursor from timing out during long multi-file processing
+        work.
+
+        As another example, the call::
+
+          most_recent_three = fs.find().sort("uploadDate", -1).limit(3)
+
+        would return a cursor to the three most recently uploaded files
+        in GridFS.
+
+        Follows a similar interface to
+        :meth:`~motor.MotorCollection.find`
+        in :class:`~motor.MotorCollection`.
+
+        :Parameters:
+          - `filter`: Search query.
+          - `batch_size` (optional): The number of documents to return per
+            batch.
+          - `limit` (optional): The maximum number of documents to return.
+          - `no_cursor_timeout` (optional): The server normally times out idle
+            cursors after an inactivity period (10 minutes) to prevent excess
+            memory use. Set this option to True prevent that.
+          - `skip` (optional): The number of documents to skip before
+            returning.
+          - `sort` (optional): The order by which to sort results. Defaults to
+            None.
+        """
+        cursor = self.delegate.find(*args, **kwargs)
+        grid_out_cursor = create_class_with_framework(
+            AgnosticGridOutCursor, self._framework, self.__module__)
+
+        return grid_out_cursor(cursor, self.collection)

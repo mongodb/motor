@@ -64,6 +64,7 @@ else:
     from .motor_tornado import (MotorCollection,
                                 MotorDatabase,
                                 MotorGridFS,
+                                MotorGridFSBucket,
                                 MotorGridIn,
                                 MotorGridOut,
                                 MotorBulkOperationBuilder)

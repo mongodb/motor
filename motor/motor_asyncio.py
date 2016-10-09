@@ -56,6 +56,10 @@ AsyncIOMotorGridFS = create_asyncio_class(
     motor_gridfs.AgnosticGridFS)
 
 
+AsyncIOMotorGridFSBucket = create_asyncio_class(
+    motor_gridfs.AgnosticGridFSBucket)
+
+
 AsyncIOMotorGridIn = create_asyncio_class(
     motor_gridfs.AgnosticGridIn)
 

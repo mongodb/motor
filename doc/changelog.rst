@@ -10,6 +10,8 @@ Motor now depends on PyMongo 3.3 and later. The move from PyMongo 2 to 3 brings
 a large number of API changes, read :doc:`migrate-to-motor-1` and
 `the PyMongo 3 changelog`_ carefully.
 
+.. _the PyMongo 3 changelog: http://api.mongodb.com/python/current/changelog.html#changes-in-version-3-0
+
 :class:`MotorReplicaSetClient` is removed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -18,6 +20,13 @@ a "replicaSet" URI option or parameter::
 
   MotorClient("mongodb://hostname/?replicaSet=my-rs")
   MotorClient(host, port, replicaSet="my-rs")
+
+New features
+~~~~~~~~~~~~
+
+New classes :class:`~motor.motor_tornado.MotorGridFSBucket` and :class:`~motor.motor_asyncio.AsyncIOMotorGridFSBucket`
+conform to the `GridFS API Spec <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_
+for MongoDB drivers.
 
 :class:`MotorClient` changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -42,8 +51,6 @@ Unix domain socket paths must be quoted with :func:`urllib.parse.quote_plus` (or
 
     path = '/tmp/mongodb-27017.sock'
     MotorClient('mongodb://%s' % urllib.parse.quote_plus(path))
-
-.. _the PyMongo 3 changelog: http://api.mongodb.com/python/current/changelog.html#changes-in-version-3-0
 
 :class:`~motor.motor_tornado.MotorCollection` changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
