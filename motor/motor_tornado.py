@@ -27,7 +27,7 @@ __all__ = list(map(str, ['MotorClient', 'Op']))
 
 
 def create_motor_class(cls):
-    return create_class_with_framework(cls, tornado_framework, 'motor')
+    return create_class_with_framework(cls, tornado_framework, 'motor_tornado')
 
 
 MotorClient = create_motor_class(core.AgnosticClient)
