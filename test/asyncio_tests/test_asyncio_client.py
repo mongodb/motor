@@ -38,25 +38,6 @@ from test.utils import get_primary_pool
 
 
 class TestAsyncIOClient(AsyncIOTestCase):
-    def test_host_port_deprecated(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            with self.assertRaises(DeprecationWarning):
-                self.cx.host
-
-            with self.assertRaises(DeprecationWarning):
-                self.cx.port
-
-    def test_document_class_deprecated(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            with self.assertRaises(DeprecationWarning):
-                self.cx.document_class
-
-            with self.assertRaises(DeprecationWarning):
-                # Setting the property is deprecated, too.
-                self.cx.document_class = bson.SON
-
     @asyncio_test
     def test_client_lazy_connect(self):
         yield from self.db.test_client_lazy_connect.delete_many({})
