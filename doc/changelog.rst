@@ -16,7 +16,7 @@ a large number of API changes, read :doc:`migrate-to-motor-1` and
 In Motor 1.0, :class:`MotorClient` is the only class. Connect to a replica set with
 a "replicaSet" URI option or parameter::
 
-  MotorClient("mongodb://localhost/?replicaSet=my-rs")
+  MotorClient("mongodb://hostname/?replicaSet=my-rs")
   MotorClient(host, port, replicaSet="my-rs")
 
 :class:`MotorClient` changes
@@ -26,37 +26,125 @@ Removed:
 
  - :meth:`MotorClient.open`; clients have opened themselves automatically on demand
    since version 0.2.
- - :attr:`MotorClient.seeds`, use :meth:`pymongo.uri_parser.parse_uri` on your MongoDB URI.
+ - :attr:`MotorClient.seeds`, use :func:`pymongo.uri_parser.parse_uri` on your MongoDB URI.
+ - :attr:`MotorClient.alive`
 
 Added:
 
+ - :attr:`MotorClient.event_listeners`
+ - :attr:`MotorClient.max_idle_time_ms`
  - :attr:`MotorClient.min_pool_size`
- - :meth:`MotorCollection.create_indexes`
- - :meth:`MotorCollection.list_indexes`
 
-Unix domain socket paths must be quoted with `urllib.parse.quote_plus` (or
-`urllib.quote_plus` in Python 2) before they are included in a URI:
+Unix domain socket paths must be quoted with :func:`urllib.parse.quote_plus` (or
+``urllib.quote_plus`` in Python 2) before they are included in a URI:
+
+.. code-block:: python
 
     path = '/tmp/mongodb-27017.sock'
     MotorClient('mongodb://%s' % urllib.parse.quote_plus(path))
 
 .. _the PyMongo 3 changelog: http://api.mongodb.com/python/current/changelog.html#changes-in-version-3-0
 
-Cursor timeouts
-~~~~~~~~~~~~~~~
+:class:`~motor.motor_tornado.MotorCollection` changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By default, MongoDB closes a cursor after 10 minutes of inactivity. In previous
-Motor versions, you disabled the timeout by passing ``timeout=False`` to
-:meth:`.MotorCollection.find` or :meth:`.MotorGridFS.find`. The ``timeout``
-parameter has been renamed to ``no_cursor_timeout``, it defaults to ``False``,
-and you must now pass ``no_cursor_timeout=True`` to disable timeouts.
+Added:
 
-Document validation
-~~~~~~~~~~~~~~~~~~~
+ - :meth:`MotorCollection.create_indexes`
+ - :meth:`MotorCollection.list_indexes`
 
 New ``bypass_document_validation`` parameter for
 :meth:`~.MotorCollection.initialize_ordered_bulk_op` and
 :meth:`~.MotorCollection.initialize_unordered_bulk_op`.
+
+Changes to :meth:`~motor.motor_tornado.MotorCollection.find` and :meth:`~motor.motor_tornado.MotorCollection.find_one`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following find/find_one options have been renamed:
+
+These renames only affect your code if you passed these as keyword arguments,
+like ``find(fields=['fieldname'])``. If you passed only positional parameters these
+changes are not significant for your application.
+
+- spec -> filter
+- fields -> projection
+- partial -> allow_partial_results
+
+The following find/find_one options have been added:
+
+- cursor_type (see :class:`~pymongo.cursor.CursorType` for values)
+- oplog_replay
+- modifiers
+
+The following find/find_one options have been removed:
+
+- network_timeout (use :meth:`~motor.motor_tornado.MotorCursor.max_time_ms` instead)
+- read_preference (use :meth:`~motor.motor_tornado.MotorCollection.with_options`
+  instead)
+- tag_sets (use one of the read preference classes from
+  :mod:`~pymongo.read_preferences` and
+  :meth:`~motor.motor_tornado.MotorCollection.with_options` instead)
+- secondary_acceptable_latency_ms (use the ``localThresholdMS`` URI option
+  instead)
+- max_scan (use the new ``modifiers`` option instead)
+- snapshot (use the new ``modifiers`` option instead)
+- tailable (use the new ``cursor_type`` option instead)
+- await_data (use the new ``cursor_type`` option instead)
+- exhaust (use the new ``cursor_type`` option instead)
+- as_class (use :meth:`~motor.motor_tornado.MotorCollection.with_options` with
+  :class:`~bson.codec_options.CodecOptions` instead)
+- compile_re (BSON regular expressions are always decoded to
+  :class:`~bson.regex.Regex`)
+
+The following find/find_one options are deprecated:
+
+- manipulate
+
+The following renames need special handling.
+
+- timeout -> no_cursor_timeout -
+  By default, MongoDB closes a cursor after 10 minutes of inactivity. In previous
+  Motor versions, you disabled the timeout by passing ``timeout=False`` to
+  :meth:`.MotorCollection.find` or :meth:`.MotorGridFS.find`. The ``timeout``
+  parameter has been renamed to ``no_cursor_timeout``, it defaults to ``False``,
+  and you must now pass ``no_cursor_timeout=True`` to disable timeouts.
+
+:class:`~motor.motor_tornado.MotorCursor`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Added:
+
+ - :attr:`.MotorCursor.address`
+ - :meth:`.MotorCursor.max_await_time_ms`
+
+Removed:
+
+ - :attr:`.MotorCursor.conn_id`, use :attr:`~.MotorCursor.address`
+
+:class:`~motor.motor_tornado.MotorGridOutCursor`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Added:
+
+ - :attr:`.MotorGridOutCursor.address`
+ - :meth:`.MotorGridOutCursor.max_await_time_ms`
+
+Removed:
+
+ - :attr:`.MotorGridOutCursor.conn_id`, use :attr:`~.MotorGridOutCursor.address`
+
+:class:`~motor.motor_tornado.MotorGridIn`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+New method :meth:`.MotorGridIn.abort`.
+
+Documentation
+~~~~~~~~~~~~~
+
+The :doc:`/api-asyncio/index` is now fully documented, side by side with the
+:doc:`/api-tornado/index`.
+
+New :doc:`developer-guide` added.
 
 Motor 0.7
 ---------
@@ -112,7 +200,7 @@ New read-only attribute:
 - :attr:`~MotorDatabase.codec_options`
 
 :class:`MotorCollection` changes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :meth:`~MotorCollection.with_options` method is added for getting a
 :class:`MotorCollection` instance with its options configured differently than this
