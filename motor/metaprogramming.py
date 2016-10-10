@@ -18,6 +18,7 @@ from __future__ import unicode_literals, absolute_import
 
 import inspect
 import functools
+import warnings
 
 from pymongo.cursor import Cursor
 
@@ -27,7 +28,12 @@ from .motor_common import check_deprecated_kwargs
 _class_cache = {}
 
 
-def asynchronize(framework, sync_method, has_write_concern, doc=None):
+def asynchronize(
+        framework,
+        sync_method,
+        has_write_concern,
+        doc=None,
+        deprecation_msg=None):
     """Decorate `sync_method` so it accepts a callback or returns a Future.
 
     The method runs on a thread and calls the callback or resolves
@@ -40,9 +46,13 @@ def asynchronize(framework, sync_method, has_write_concern, doc=None):
                             MongoClient, etc.
      - `has_write_concern`: Whether the method accepts getLastError options
      - `doc`:               Optionally override sync_method's docstring
+     - `deprecation_msg`:   Optional deprecation warning message
     """
     @functools.wraps(sync_method)
     def method(self, *args, **kwargs):
+        if deprecation_msg:
+            warnings.warn(deprecation_msg, DeprecationWarning, stacklevel=2)
+
         check_deprecated_kwargs(kwargs)
         loop = self.get_io_loop()
         callback = kwargs.pop('callback', None)
@@ -98,15 +108,27 @@ class MotorAttributeFactory(object):
     PyMongo. At module import time, create_class_with_framework calls
     create_attribute() for each attr to create the final class attribute.
     """
-    def __init__(self, doc=None):
+    def __init__(self, doc=None, deprecation=None):
         self.doc = doc
+        self.deprecation = deprecation
+
+    def deprecation_msg(self, attr_name):
+        if self.deprecation:
+            return (
+                "%s is deprecated, %s. "
+                "See motor.rtfd.io/en/latest/migrate-to-motor-1.html" % (
+                    attr_name, self.deprecation))
 
     def create_attribute(self, cls, attr_name):
         raise NotImplementedError
 
 
 class Async(MotorAttributeFactory):
-    def __init__(self, attr_name, has_write_concern, doc=None):
+    def __init__(self,
+                 attr_name,
+                 has_write_concern,
+                 doc=None,
+                 deprecation=None):
         """A descriptor that wraps a PyMongo method, such as insert or remove,
         and returns an asynchronous version of the method, which accepts a
         callback or returns a Future.
@@ -116,7 +138,7 @@ class Async(MotorAttributeFactory):
            different from attribute on the Motor class
          - `has_write_concern`: Whether the method accepts getLastError options
         """
-        super(Async, self).__init__(doc)
+        super(Async, self).__init__(doc, deprecation)
         self.attr_name = attr_name
         self.has_write_concern = has_write_concern
 
@@ -127,7 +149,8 @@ class Async(MotorAttributeFactory):
             framework=cls._framework,
             sync_method=method,
             has_write_concern=self.has_write_concern,
-            doc=self.doc)
+            doc=self.doc,
+            deprecation_msg=self.deprecation_msg(attr_name))
 
     def wrap(self, original_class):
         return WrapAsync(self, original_class)
@@ -137,8 +160,8 @@ class Async(MotorAttributeFactory):
 
 
 class WrapBase(MotorAttributeFactory):
-    def __init__(self, prop, doc=None):
-        super(WrapBase, self).__init__(doc)
+    def __init__(self, prop, doc=None, deprecation=None):
+        super(WrapBase, self).__init__(doc, deprecation)
         self.property = prop
 
 
@@ -252,36 +275,50 @@ class Unwrap(WrapBase):
 
 
 class AsyncRead(Async):
-    def __init__(self, attr_name=None, doc=None):
+    def __init__(self, attr_name=None, doc=None, deprecation=None):
         """A descriptor that wraps a PyMongo read method like find_one() that
         returns a Future.
         """
-        Async.__init__(
-            self, attr_name=attr_name, has_write_concern=False, doc=doc)
+        Async.__init__(self,
+                       attr_name=attr_name,
+                       has_write_concern=False,
+                       doc=doc,
+                       deprecation=deprecation)
 
 
 class AsyncWrite(Async):
-    def __init__(self, attr_name=None, doc=None):
+    def __init__(self, attr_name=None, doc=None, deprecation=None):
         """A descriptor that wraps a PyMongo write method like update() that
         accepts getLastError options and returns a Future.
         """
-        Async.__init__(
-            self, attr_name=attr_name, has_write_concern=True, doc=doc)
+        Async.__init__(self,
+                       attr_name=attr_name,
+                       has_write_concern=True,
+                       doc=doc,
+                       deprecation=deprecation)
 
 
 class AsyncCommand(Async):
-    def __init__(self, attr_name=None, doc=None):
+    def __init__(self, attr_name=None, doc=None, deprecation=None):
         """A descriptor that wraps a PyMongo command like copy_database() that
         returns a Future and does not accept getLastError options.
         """
-        Async.__init__(
-            self, attr_name=attr_name, has_write_concern=False, doc=doc)
+        Async.__init__(self,
+                       attr_name=attr_name,
+                       has_write_concern=False,
+                       doc=doc,
+                       deprecation=deprecation)
 
 
 class ReadOnlyProperty(MotorAttributeFactory):
     """Creates a readonly attribute on the wrapped PyMongo object."""
     def create_attribute(self, cls, attr_name):
         def fget(obj):
+            if self.deprecation:
+                warnings.warn(self.deprecation_msg(attr_name),
+                              DeprecationWarning,
+                              stacklevel=2)
+
             return getattr(obj.delegate, attr_name)
 
         if self.doc:
@@ -309,9 +346,19 @@ class ReadWriteProperty(MotorAttributeFactory):
     """Creates a mutable attribute on the wrapped PyMongo object"""
     def create_attribute(self, cls, attr_name):
         def fget(obj):
+            if self.deprecation:
+                warnings.warn(self.deprecation_msg(attr_name),
+                              DeprecationWarning,
+                              stacklevel=2)
+
             return getattr(obj.delegate, attr_name)
 
         def fset(obj, val):
+            if self.deprecation:
+                warnings.warn(self.deprecation_msg(attr_name),
+                              DeprecationWarning,
+                              stacklevel=2)
+
             setattr(obj.delegate, attr_name, val)
 
         if self.doc:
@@ -323,9 +370,13 @@ class ReadWriteProperty(MotorAttributeFactory):
 class MotorCursorChainingMethod(MotorAttributeFactory):
     def create_attribute(self, cls, attr_name):
         cursor_method = getattr(Cursor, attr_name)
+        deprecation_msg = self.deprecation_msg(attr_name)
 
         @functools.wraps(cursor_method)
         def return_clone(self, *args, **kwargs):
+            if deprecation_msg:
+                warnings.warn(deprecation_msg, DeprecationWarning, stacklevel=2)
+
             cursor_method(self.delegate, *args, **kwargs)
             return self
 

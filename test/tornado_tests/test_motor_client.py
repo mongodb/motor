@@ -18,7 +18,9 @@ from __future__ import unicode_literals
 
 import os
 import unittest
+import warnings
 
+import bson
 import pymongo
 import pymongo.mongo_client
 from bson import CodecOptions
@@ -41,6 +43,25 @@ from test.utils import one, ignore_deprecations
 
 
 class MotorClientTest(MotorTest):
+    def test_host_port_deprecated(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            with self.assertRaises(DeprecationWarning):
+                self.cx.host
+
+            with self.assertRaises(DeprecationWarning):
+                self.cx.port
+
+    def test_document_class_deprecated(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            with self.assertRaises(DeprecationWarning):
+                self.cx.document_class
+
+            with self.assertRaises(DeprecationWarning):
+                # Setting the property is deprecated, too.
+                self.cx.document_class = bson.SON
+
     @gen_test
     def test_client_open(self):
         cx = self.motor_client()

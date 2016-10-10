@@ -247,6 +247,40 @@ the results in one document::
     for doc in reply['results']:
         print(doc)
 
+Deprecations
+~~~~~~~~~~~~
+
+Motor 0.5 deprecates a large number of APIs that will be removed in version 1.0:
+
+  `MotorClient`:
+    - `~MotorClient.host`
+    - `~MotorClient.port`
+    - `~MotorClient.document_class`
+    - `~MotorClient.tz_aware`
+    - `~MotorClient.secondary_acceptable_latency_ms`
+    - `~MotorClient.tag_sets`
+    - `~MotorClient.uuid_subtype`
+    - `~MotorClient.disconnect`
+    - `~MotorClient.alive`
+
+  `MotorReplicaSetClient`:
+    - `~MotorReplicaSetClient.document_class`
+    - `~MotorReplicaSetClient.tz_aware`
+    - `~MotorReplicaSetClient.secondary_acceptable_latency_ms`
+    - `~MotorReplicaSetClient.tag_sets`
+    - `~MotorReplicaSetClient.uuid_subtype`
+    - `~MotorReplicaSetClient.alive`
+
+  `MotorDatabase`:
+    - `~MotorDatabase.secondary_acceptable_latency_ms`
+    - `~MotorDatabase.tag_sets`
+    - `~MotorDatabase.uuid_subtype`
+
+  `MotorCollection`:
+    - `~MotorCollection.secondary_acceptable_latency_ms`
+    - `~MotorCollection.tag_sets`
+    - `~MotorCollection.uuid_subtype`
+
 Cursor slicing
 ~~~~~~~~~~~~~~
 

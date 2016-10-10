@@ -17,8 +17,10 @@
 import asyncio
 import os
 import unittest
+import warnings
 from unittest import SkipTest
 
+import bson
 import pymongo
 from bson import CodecOptions
 from bson.binary import JAVA_LEGACY, UUID_SUBTYPE
@@ -40,6 +42,25 @@ from test.utils import one, ignore_deprecations
 
 
 class TestAsyncIOClient(AsyncIOTestCase):
+    def test_host_port_deprecated(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            with self.assertRaises(DeprecationWarning):
+                self.cx.host
+
+            with self.assertRaises(DeprecationWarning):
+                self.cx.port
+
+    def test_document_class_deprecated(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            with self.assertRaises(DeprecationWarning):
+                self.cx.document_class
+
+            with self.assertRaises(DeprecationWarning):
+                # Setting the property is deprecated, too.
+                self.cx.document_class = bson.SON
+
     @asyncio_test
     def test_client_open(self):
         cx = self.asyncio_client()

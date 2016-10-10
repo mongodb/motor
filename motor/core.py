@@ -78,8 +78,13 @@ class AgnosticBase(object):
 class AgnosticBaseProperties(AgnosticBase):
     codec_options                   = ReadOnlyProperty()
     read_preference                 = ReadWriteProperty()
-    tag_sets                        = ReadWriteProperty()
-    secondary_acceptable_latency_ms = ReadWriteProperty()
+    tag_sets                        = ReadWriteProperty(
+        deprecation="use the read preference classes from"
+                    " pymongo.read_preferences with get_database,"
+                    " get_collection, or with_options")
+    secondary_acceptable_latency_ms = ReadWriteProperty(
+        deprecation='use "local_threshold_ms"')
+
     write_concern                   = ReadWriteProperty()
     uuid_subtype                    = ReadWriteProperty()
 
@@ -93,11 +98,9 @@ class AgnosticClientBase(AgnosticBaseProperties):
     close_cursor         = AsyncCommand()
     database_names       = AsyncRead()
     disconnect           = DelegateMethod()
-    document_class       = ReadWriteProperty()
     drop_database        = AsyncCommand().unwrap('MotorDatabase')
     get_database         = DelegateMethod(doc=get_database_doc).wrap(Database)
     get_default_database = DelegateMethod().wrap(Database)
-    get_document_class   = DelegateMethod()
     is_mongos            = ReadOnlyProperty()
     local_threshold_ms   = ReadOnlyProperty()
     max_bson_size        = ReadOnlyProperty()
@@ -107,8 +110,14 @@ class AgnosticClientBase(AgnosticBaseProperties):
     min_wire_version     = ReadOnlyProperty()
     max_write_batch_size = ReadOnlyProperty()
     server_info          = AsyncRead()
-    set_document_class   = DelegateMethod()
-    tz_aware             = ReadOnlyProperty()
+    tz_aware             = ReadOnlyProperty(deprecation='use "codec_options"')
+
+    _doc_class_deprecation = \
+        'use CodecOptions with get_database, get_collection, or with_options'
+
+    get_document_class = DelegateMethod(deprecation='use "codec_options"')
+    set_document_class = DelegateMethod(deprecation=_doc_class_deprecation)
+    document_class     = ReadWriteProperty(deprecation=_doc_class_deprecation)
 
     def __init__(self, io_loop, *args, **kwargs):
         check_deprecated_kwargs(kwargs)
@@ -158,8 +167,8 @@ class AgnosticClient(AgnosticClientBase):
     is_primary   = ReadOnlyProperty()
     unlock       = AsyncCommand()
     nodes        = ReadOnlyProperty()
-    host         = ReadOnlyProperty()
-    port         = ReadOnlyProperty()
+    host         = ReadOnlyProperty(deprecation='use "address"')
+    port         = ReadOnlyProperty(deprecation='use "address"')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
