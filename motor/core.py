@@ -568,7 +568,6 @@ class AgnosticCollection(AgnosticBaseProperties):
 
           async def f():
               async for doc in collection.aggregate(pipeline):
-                  doc = cursor.next_object()
                   print(doc)
 
         MongoDB versions 2.4 and older do not support aggregation cursors; use
