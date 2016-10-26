@@ -178,19 +178,18 @@ class TestEnvironment(object):
                 partition_node(m) for m in response['hosts']
                 if m != self.primary and m not in self.arbiters]
 
-            # Reconnect to discovered primary.
-            if self.mongod_started_with_ssl:
-                client = connected(pymongo.MongoClient(
-                    host, port,
-                    connectTimeoutMS=connectTimeoutMS,
-                    serverSelectionTimeoutMS=serverSelectionTimeoutMS,
-                    ssl_certfile=CLIENT_PEM))
-            else:
-                client = connected(pymongo.MongoClient(
-                    host, port,
-                    connectTimeoutMS=connectTimeoutMS,
-                    serverSelectionTimeoutMS=serverSelectionTimeoutMS,
-                    ssl=False))
+        # Reconnect to found primary, without short serverSelectionTimeoutMS.
+        if self.mongod_started_with_ssl:
+            client = connected(pymongo.MongoClient(
+                host, port,
+                connectTimeoutMS=connectTimeoutMS,
+                ssl_ca_certs=CA_PEM,
+                ssl_certfile=CLIENT_PEM))
+        else:
+            client = connected(pymongo.MongoClient(
+                host, port,
+                connectTimeoutMS=connectTimeoutMS,
+                ssl=False))
 
         self.sync_cx = client
         self.host = host
