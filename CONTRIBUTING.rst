@@ -35,7 +35,7 @@ ensure you have Python 2.6 and 3.5, and run::
 
   > tox -e tornado4-py26-min,tornado4-py35-min
 
-The doctests pass with Python 3.5 and a MongoDB 3 instance running on
+The doctests pass with Python 3.5 and a MongoDB 3.2 instance running on
 port 27017:
 
   > tox -e py3-sphinx-doctest
