@@ -16,7 +16,6 @@
 
 import asyncio
 import unittest
-import warnings
 from unittest import SkipTest
 
 import bson
