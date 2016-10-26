@@ -108,6 +108,13 @@ Added `MotorGridOut` documentation:
 - `~MotorGridOut.name`
 - `~MotorGridOut.upload_date`
 
+Bugfix
+~~~~~~
+
+`MOTOR-124 <https://jira.mongodb.org/browse/MOTOR-124>`_: an import deadlock
+in Python 2 and Tornado 3 led to an :exc:`~pymongo.errors.AutoReconnect`
+exception with some replica sets.
+
 Motor 0.6.2
 -----------
 
