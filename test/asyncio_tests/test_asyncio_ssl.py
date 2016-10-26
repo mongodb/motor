@@ -21,7 +21,9 @@ import unittest
 from unittest import SkipTest
 from urllib.parse import quote_plus  # The 'parse' submodule is Python 3.
 
-from pymongo.errors import ConfigurationError, OperationFailure
+from pymongo.errors import (ConfigurationError,
+                            ConnectionFailure,
+                            OperationFailure)
 
 from motor.motor_asyncio import AsyncIOMotorClient
 import test
@@ -92,6 +94,7 @@ class TestAsyncIOSSL(unittest.TestCase):
 
         client = AsyncIOMotorClient(env.host, env.port,
                                     ssl_certfile=CLIENT_PEM,
+                                    ssl_ca_certs=CA_PEM,
                                     io_loop=self.loop)
 
         yield from client.db.collection.find_one()
@@ -101,6 +104,7 @@ class TestAsyncIOSSL(unittest.TestCase):
                 env.host, env.port,
                 ssl=True,
                 ssl_certfile=CLIENT_PEM,
+                ssl_ca_certs=CA_PEM,
                 replicaSet=response['setName'],
                 io_loop=self.loop)
 
@@ -160,13 +164,15 @@ class TestAsyncIOSSL(unittest.TestCase):
 
         client = AsyncIOMotorClient(env.host, env.port,
                                     ssl=True, ssl_certfile=CLIENT_PEM,
+                                    ssl_ca_certs=CA_PEM,
                                     io_loop=self.loop)
 
         response = yield from client.admin.command('ismaster')
-        with self.assertRaises(ssl.CertificateError):
+        with self.assertRaises(ConnectionFailure):
             # Create client with hostname 'server', not 'localhost',
             # which is what the server cert presents.
             client = AsyncIOMotorClient(test.env.fake_hostname_uri,
+                                        serverSelectionTimeoutMS=1000,
                                         ssl_certfile=CLIENT_PEM,
                                         ssl_cert_reqs=ssl.CERT_REQUIRED,
                                         ssl_ca_certs=CA_PEM,
@@ -175,9 +181,10 @@ class TestAsyncIOSSL(unittest.TestCase):
             yield from client.db.collection.find_one()
 
         if 'setName' in response:
-            with self.assertRaises(ssl.CertificateError):
+            with self.assertRaises(ConnectionFailure):
                 client = AsyncIOMotorClient(
                     test.env.fake_hostname_uri,
+                    serverSelectionTimeoutMS=1000,
                     replicaSet=response['setName'],
                     ssl_certfile=CLIENT_PEM,
                     ssl_cert_reqs=ssl.CERT_REQUIRED,
@@ -195,6 +202,7 @@ class TestAsyncIOSSL(unittest.TestCase):
 
         client = AsyncIOMotorClient(test.env.uri,
                                     ssl_certfile=CLIENT_PEM,
+                                    ssl_ca_certs=CA_PEM,
                                     io_loop=self.loop)
 
         if not (yield from at_least(client, (2, 5, 3, -1))):
@@ -223,6 +231,7 @@ class TestAsyncIOSSL(unittest.TestCase):
         # SSL options aren't supported in the URI....
         auth_uri_client = AsyncIOMotorClient(uri,
                                              ssl_certfile=CLIENT_PEM,
+                                             ssl_ca_certs=CA_PEM,
                                              io_loop=self.loop)
 
         yield from auth_uri_client.db.collection.find_one()

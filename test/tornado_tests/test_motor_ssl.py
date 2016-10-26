@@ -29,14 +29,9 @@ except ImportError:
     from urllib.parse import quote_plus
 
 from pymongo.errors import (ConfigurationError,
+                            ConnectionFailure,
                             OperationFailure)
 from tornado.testing import gen_test
-
-try:
-    from ssl import CertificateError
-except ImportError:
-    # PyMongo's backport for Python 2.6.
-    from pymongo.ssl_match_hostname import CertificateError
 
 import motor
 import test
@@ -86,13 +81,16 @@ class MotorSSLTest(MotorTest):
         if test.env.auth:
             raise SkipTest("can't test with auth")
 
-        client = motor.MotorClient(
-            env.host, env.port, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
+        client = motor.MotorClient(env.host, env.port,
+                                   ssl_certfile=CLIENT_PEM,
+                                   ssl_ca_certs=CA_PEM,
+                                   io_loop=self.io_loop)
 
         yield client.db.collection.find_one()
         response = yield client.admin.command('ismaster')
         if 'setName' in response:
-            client = self.motor_rsc(ssl_certfile=CLIENT_PEM)
+            client = self.motor_rsc(ssl_certfile=CLIENT_PEM,
+                                    ssl_ca_certs=CA_PEM)
             yield client.db.collection.find_one()
 
     @gen_test
@@ -152,14 +150,16 @@ class MotorSSLTest(MotorTest):
         client = motor.MotorClient(
             env.host, env.port,
             ssl_certfile=CLIENT_PEM,
+            ssl_ca_certs=CA_PEM,
             io_loop=self.io_loop)
 
         response = yield client.admin.command('ismaster')
-        with self.assertRaises(CertificateError):
+        with self.assertRaises(ConnectionFailure):
             # Create client with hostname 'server', not 'localhost',
             # which is what the server cert presents.
             client = motor.MotorClient(
                 test.env.fake_hostname_uri,
+                serverSelectionTimeoutMS=100,
                 ssl_certfile=CLIENT_PEM,
                 ssl_cert_reqs=ssl.CERT_REQUIRED,
                 ssl_ca_certs=CA_PEM,
@@ -168,9 +168,10 @@ class MotorSSLTest(MotorTest):
             yield client.db.collection.find_one()
 
         if 'setName' in response:
-            with self.assertRaises(CertificateError):
+            with self.assertRaises(ConnectionFailure):
                 client = motor.MotorClient(
                     test.env.fake_hostname_uri,
+                    serverSelectionTimeoutMS=100,
                     replicaSet=response['setName'],
                     ssl_certfile=CLIENT_PEM,
                     ssl_cert_reqs=ssl.CERT_REQUIRED,
@@ -187,7 +188,10 @@ class MotorSSLTest(MotorTest):
             raise SkipTest("No mongod available over SSL with certs")
 
         authenticated_client = motor.MotorClient(
-            test.env.uri, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
+            test.env.uri,
+            ssl_certfile=CLIENT_PEM,
+            ssl_ca_certs=CA_PEM,
+            io_loop=self.io_loop)
 
         if not (yield at_least(authenticated_client, (2, 5, 3, -1))):
             raise SkipTest("MONGODB-X509 tests require MongoDB 2.5.3 or newer")
@@ -202,18 +206,24 @@ class MotorSSLTest(MotorTest):
                 {'role': 'userAdminAnyDatabase', 'db': 'admin'}])
 
         client = motor.MotorClient(
-            "server", port, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
+            "server", test.env.port,
+            ssl_certfile=CLIENT_PEM,
+            ssl_ca_certs=CA_PEM,
+            io_loop=self.io_loop)
 
         with self.assertRaises(OperationFailure):
             yield client.motor_test.test.count()
 
         uri = ('mongodb://%s@%s:%d/?authMechanism='
                'MONGODB-X509' % (
-               quote_plus(MONGODB_X509_USERNAME), "server", port))
+                   quote_plus(MONGODB_X509_USERNAME), "server", test.env.port))
 
         # SSL options aren't supported in the URI....
         auth_uri_client = motor.MotorClient(
-            uri, ssl_certfile=CLIENT_PEM, io_loop=self.io_loop)
+            uri,
+            ssl_certfile=CLIENT_PEM,
+            ssl_ca_certs=CA_PEM,
+            io_loop=self.io_loop)
 
         yield auth_uri_client.db.collection.find_one()
 
