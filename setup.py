@@ -39,9 +39,9 @@ tests_require = ['mockupdb']
 if sys.version_info[0] < 3:
     # Need concurrent.futures backport in Python 2 for MotorMockServerTest.
     tests_require.append('futures')
+    install_requires.append('futures')
 
 if sys.version_info[:2] < (2, 7):
-    install_requires.append('futures')
     tests_require.append('unittest2')
     test_suite = 'unittest2.collector'
 else:
