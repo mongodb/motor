@@ -40,6 +40,17 @@ if pymongo.version_tuple < (2, 9, 4) or pymongo.version_tuple >= (3, ):
 
     raise ImportError(msg)
 
+# MotorClient runs getaddrinfo on a thread. If the hostname is unicode,
+# getaddrinfo attempts to import encodings.idna. If this is done at
+# module-import time, perhaps with "loop.run_sync(MotorClient.open)" at
+# module scope, the import lock is already held by the main thread, leading to
+# AutoReconnect. Avoid it by caching the idna encoder on the main thread now.
+#
+# Only required in Python 2 and Tornado 3.
+#
+# See also https://github.com/tornadoweb/tornado/pull/964
+u'foo'.encode('idna')
+
 try:
     import tornado
 except ImportError:
