@@ -159,10 +159,7 @@ class TestEnvironment(object):
                 self.mongod_started_with_ssl = True
                 self.mongod_validates_client_cert = True
             except pymongo.errors.ServerSelectionTimeoutError:
-                client = connected(pymongo.MongoClient(
-                    host, port,
-                    connectTimeoutMS=connectTimeoutMS,
-                    serverSelectionTimeoutMS=serverSelectionTimeoutMS))
+                client = connected(pymongo.MongoClient(host, port))
 
         response = client.admin.command('ismaster')
         if 'setName' in response:
@@ -178,18 +175,13 @@ class TestEnvironment(object):
                 partition_node(m) for m in response['hosts']
                 if m != self.primary and m not in self.arbiters]
 
-        # Reconnect to found primary, without short serverSelectionTimeoutMS.
+        # Reconnect to found primary, without short timeouts.
         if self.mongod_started_with_ssl:
-            client = connected(pymongo.MongoClient(
-                host, port,
-                connectTimeoutMS=connectTimeoutMS,
-                ssl_ca_certs=CA_PEM,
-                ssl_certfile=CLIENT_PEM))
+            client = connected(pymongo.MongoClient(host, port,
+                                                   ssl_ca_certs=CA_PEM,
+                                                   ssl_certfile=CLIENT_PEM))
         else:
-            client = connected(pymongo.MongoClient(
-                host, port,
-                connectTimeoutMS=connectTimeoutMS,
-                ssl=False))
+            client = connected(pymongo.MongoClient(host, port, ssl=False))
 
         self.sync_cx = client
         self.host = host
