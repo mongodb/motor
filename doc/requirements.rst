@@ -40,7 +40,8 @@ Motor and PyMongo
 `````````````````
 
 Older versions of Motor depended on exact PyMongo versions. Starting in 0.7,
-Motor can depend on the latest PyMongo 2.9.x release.
+Motor can depend on the latest PyMongo 2.9.x release, starting with 2.9.4
+and above.
 
 +-------------------+-----------------+
 | Motor Version     | PyMongo Version |
@@ -57,7 +58,7 @@ Motor can depend on the latest PyMongo 2.9.x release.
 +-------------------+-----------------+
 | 0.6               | 2.8.0           |
 +-------------------+-----------------+
-| 0.7               | 2.9.x           |
+| 0.7               | 2.9.4+          |
 +-------------------+-----------------+
 
 Motor and MongoDB
