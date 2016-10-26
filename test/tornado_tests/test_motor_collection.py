@@ -392,6 +392,9 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     def test_aggregation_cursor(self):
+        if not (yield at_least(self.cx, (2, 6))):
+            raise SkipTest("Requires MongoDB >= 2.6")
+
         db = self.db
 
         # A small collection which returns only an initial batch,
@@ -404,6 +407,9 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     def test_aggregation_cursor_to_list_callback(self):
+        if not (yield at_least(self.cx, (2, 6))):
+            raise SkipTest("Requires MongoDB >= 2.6")
+
         db = self.db
 
         # A small collection which returns only an initial batch,
