@@ -78,6 +78,11 @@ excluded_tests = [
     # Relies on threads; tested directly.
     'TestCollection.test_parallel_scan',
 
+    # Motor's aggregate API is different, always sends "cursor={}" by default.
+    'TestCollection.test_aggregate',
+    'TestCollection.test_aggregate_raw_bson',
+    'TestAllScenarios.test_read_aggregate_Aggregate_with_multiple_stages',
+
     # Motor doesn't support PyMongo's syntax, db.system_js['my_func'] = "code",
     # users should just use system.js as a regular collection.
     'TestDatabase.test_system_js',
