@@ -129,8 +129,7 @@ class AgnosticClient(AgnosticBaseProperties):
         else:
             io_loop = self._framework.get_event_loop()
 
-        # For Synchro's sake, add undocumented "_connect" option, default False.
-        kwargs['connect'] = kwargs.pop('_connect', False)
+        kwargs.setdefault('connect', False)
         delegate = self.__delegate_class__(*args, **kwargs)
 
         super(AgnosticBaseProperties, self).__init__(delegate)

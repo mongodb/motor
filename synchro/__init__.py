@@ -291,7 +291,7 @@ class MongoClient(Synchro):
         self.delegate = kwargs.pop('delegate', None)
 
         # Motor passes connect=False by default.
-        kwargs.setdefault('_connect', True)
+        kwargs.setdefault('connect', True)
         if not self.delegate:
             self.delegate = self.__delegate_class__(host, port, *args, **kwargs)
 
