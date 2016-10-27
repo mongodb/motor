@@ -82,6 +82,7 @@ excluded_tests = [
     'TestCollection.test_aggregate',
     'TestCollection.test_aggregate_raw_bson',
     'TestAllScenarios.test_read_aggregate_Aggregate_with_multiple_stages',
+    'TestSingleSlaveOk.test_reads_from_secondary',
 
     # Motor doesn't support PyMongo's syntax, db.system_js['my_func'] = "code",
     # users should just use system.js as a regular collection.
