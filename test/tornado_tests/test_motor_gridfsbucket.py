@@ -37,6 +37,7 @@ class MotorGridFSBucketTest(MotorTest):
 
     def setUp(self):
         super(MotorGridFSBucketTest, self).setUp()
+        self.io_loop.run_sync(self._reset)
         self.bucket = motor.MotorGridFSBucket(self.db)
 
     def tearDown(self):
