@@ -113,8 +113,8 @@ dot-notation or bracket-notation:
   >>> db = client.test_database
   >>> db = client['test_database']
 
-Creating a reference to a database does no I/O and does not require a
-``yield from`` statement.
+Creating a reference to a database does no I/O and does not require an
+``await`` expression.
 
 Getting a Collection
 --------------------
@@ -129,20 +129,19 @@ collection in Motor works the same as getting a database:
   >>> collection = db['test_collection']
 
 Just like getting a reference to a database, getting a reference to a
-collection does no I/O and doesn't require a ``yield from`` statement.
+collection does no I/O and doesn't require an ``await`` expression.
 
 Inserting a Document
 --------------------
 As in PyMongo, Motor represents MongoDB documents with Python dictionaries. To
-store a document in MongoDB, call :meth:`~AsyncIOMotorCollection.insert_one` in a
-``yield from`` statement:
+store a document in MongoDB, call :meth:`~AsyncIOMotorCollection.insert_one` in an
+``await`` expression:
 
 .. doctest:: before-inserting-2000-docs
 
-  >>> @coroutine
-  ... def do_insert():
+  >>> async def do_insert():
   ...     document = {'key': 'value'}
-  ...     result = yield from db.test_collection.insert_one(document)
+  ...     result = await db.test_collection.insert_one(document)
   ...     print('result %s' % repr(result.inserted_id))
   ...
   >>>
@@ -189,9 +188,8 @@ less than 1:
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @coroutine
-  ... def do_find_one():
-  ...     document = yield from db.test_collection.find_one({'i': {'$lt': 1}})
+  >>> async def do_find_one():
+  ...     document = await db.test_collection.find_one({'i': {'$lt': 1}})
   ...     pprint.pprint(document)
   ...
   >>> loop = asyncio.get_event_loop()
@@ -208,19 +206,18 @@ The result is a dictionary matching the one that we inserted previously.
 Querying for More Than One Document
 -----------------------------------
 Use :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find` to query for a set of documents.
-:meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find` does no I/O and does not require a ``yield from``
-statement. It merely creates an :class:`~motor.motor_asyncio.AsyncIOMotorCursor` instance. The query is
-actually executed on the server when you call :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.to_list` or
-:meth:`~motor.motor_asyncio.AsyncIOMotorCursor.each`, or yield from :attr:`~motor.motor_asyncio.AsyncIOMotorCursor.fetch_next`.
+:meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find` does no I/O and does not require an ``await``
+expression. It merely creates an :class:`~motor.motor_asyncio.AsyncIOMotorCursor` instance. The query is
+actually executed on the server when you call :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.to_list`
+or execute an ``async for`` loop.
 
 To find all documents with "i" less than 5:
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @coroutine
-  ... def do_find():
+  >>> async def do_find():
   ...     cursor = db.test_collection.find({'i': {'$lt': 5}}).sort('i')
-  ...     for document in (yield from cursor.to_list(length=100)):
+  ...     for document in await cursor.to_list(length=100):
   ...         pprint.pprint(document)
   ...
   >>> loop = asyncio.get_event_loop()
@@ -234,7 +231,49 @@ To find all documents with "i" less than 5:
 A ``length`` argument is required when you call ``to_list`` to prevent Motor
 from buffering an unlimited number of documents.
 
-To get one document at a time with :attr:`~motor.motor_asyncio.AsyncIOMotorCursor.fetch_next`
+``async for``
+~~~~~~~~~~~~~
+
+You can handle one document at a time in an ``async for`` loop:
+
+.. doctest:: after-inserting-2000-docs
+
+  >>> async def do_find():
+  ...     c = db.test_collection
+  ...     async for document in c.find({'i': {'$lt': 2}}):
+  ...         pprint.pprint(document)
+  ...
+  >>> loop = asyncio.get_event_loop()
+  >>> loop.run_until_complete(do_find())
+  {'_id': ObjectId('...'), 'i': 0}
+  {'_id': ObjectId('...'), 'i': 1}
+
+You can apply a sort, limit, or skip to a query before you begin iterating:
+
+.. doctest:: after-inserting-2000-docs
+
+  >>> async def do_find():
+  ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
+  ...     # Modify the query before iterating
+  ...     cursor.sort('i', -1).limit(2).skip(2)
+  ...     async for document in cursor:
+  ...         pprint.pprint(document)
+  ...
+  >>> loop = asyncio.get_event_loop()
+  >>> loop.run_until_complete(do_find())
+  {'_id': ObjectId('...'), 'i': 2}
+  {'_id': ObjectId('...'), 'i': 1}
+
+The cursor does not actually retrieve each document from the server
+individually; it gets documents efficiently in `large batches`_.
+
+.. _`large batches`: http://docs.mongodb.org/manual/core/read-operations/#cursor-behaviors
+
+Iteration in Python 3.3 and 3.4
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In Python versions without ``async for``, handle one document at a time with
+:attr:`~motor.motor_asyncio.AsyncIOMotorCursor.fetch_next`
 and :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.next_object`:
 
 .. doctest:: after-inserting-2000-docs
@@ -254,49 +293,6 @@ and :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.next_object`:
   {'_id': ObjectId('...'), 'i': 3}
   {'_id': ObjectId('...'), 'i': 4}
 
-You can apply a sort, limit, or skip to a query before you begin iterating:
-
-.. doctest:: after-inserting-2000-docs
-
-  >>> @coroutine
-  ... def do_find():
-  ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
-  ...     # Modify the query before iterating
-  ...     cursor.sort('i', -1).limit(2).skip(2)
-  ...     while (yield from cursor.fetch_next):
-  ...         document = cursor.next_object()
-  ...         pprint.pprint(document)
-  ...
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_find())
-  {'_id': ObjectId('...'), 'i': 2}
-  {'_id': ObjectId('...'), 'i': 1}
-
-``fetch_next`` does not actually retrieve each document from the server
-individually; it gets documents efficiently in `large batches`_.
-
-.. _`large batches`: http://docs.mongodb.org/manual/core/read-operations/#cursor-behaviors
-
-`async for`
------------
-
-In a native coroutine defined with `async def`, replace the while-loop with
-`async for`:
-
-.. doctest:: after-inserting-2000-docs
-
-  >>> async def do_find():
-  ...     c = db.test_collection
-  ...     async for document in c.find({'i': {'$lt': 2}}):
-  ...         pprint.pprint(document)
-  ...
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_find())
-  {'_id': ObjectId('...'), 'i': 0}
-  {'_id': ObjectId('...'), 'i': 1}
-
-This version of the code is dramatically faster.
-
 Counting Documents
 ------------------
 Use :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.count` to determine the number of documents in
@@ -304,11 +300,10 @@ a collection, or the number of documents that match a query:
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @coroutine
-  ... def do_count():
-  ...     n = yield from db.test_collection.find().count()
+  >>> async def do_count():
+  ...     n = await db.test_collection.find().count()
   ...     print('%s documents in collection' % n)
-  ...     n = yield from db.test_collection.find({'i': {'$gt': 1000}}).count()
+  ...     n = await db.test_collection.find({'i': {'$gt': 1000}}).count()
   ...     print('%s documents where i > 1000' % n)
   ...
   >>> loop = asyncio.get_event_loop()
@@ -331,15 +326,14 @@ replacement document. The query follows the same syntax as for :meth:`find` or
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @coroutine
-  ... def do_replace():
+  >>> async def do_replace():
   ...     coll = db.test_collection
-  ...     old_document = yield from coll.find_one({'i': 50})
+  ...     old_document = await coll.find_one({'i': 50})
   ...     print('found document: %s' % pprint.pformat(old_document))
   ...     _id = old_document['_id']
-  ...     result = yield from coll.replace_one({'_id': _id}, {'key': 'value'})
+  ...     result = await coll.replace_one({'_id': _id}, {'key': 'value'})
   ...     print('replaced %s document' % result.modified_count)
-  ...     new_document = yield from coll.find_one({'_id': _id})
+  ...     new_document = await coll.find_one({'_id': _id})
   ...     print('document is now %s' % pprint.pformat(new_document))
   ...
   >>> loop = asyncio.get_event_loop()
@@ -358,12 +352,11 @@ operator to set "key" to "value":
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @coroutine
-  ... def do_update():
+  >>> async def do_update():
   ...     coll = db.test_collection
-  ...     result = yield from coll.update_one({'i': 51}, {'$set': {'key': 'value'}})
+  ...     result = await coll.update_one({'i': 51}, {'$set': {'key': 'value'}})
   ...     print('updated %s document' % result.modified_count)
-  ...     new_document = yield from coll.find_one({'i': 51})
+  ...     new_document = await coll.find_one({'i': 51})
   ...     print('document is now %s' % pprint.pformat(new_document))
   ...
   >>> loop = asyncio.get_event_loop()
@@ -376,8 +369,8 @@ operator to set "key" to "value":
 :meth:`update_one` only affects the first document it finds, you can
 update all of them with :meth:`update_many`::
 
-    yield from coll.update_many({'i': {'$gt': 100}},
-                                {'$set': {'key': 'value'}})
+    await coll.update_many({'i': {'$gt': 100}},
+                           {'$set': {'key': 'value'}})
 
 .. mongodoc:: update
 
@@ -390,13 +383,12 @@ Deleting Documents
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @coroutine
-  ... def do_delete_many():
+  >>> async def do_delete_many():
   ...     coll = db.test_collection
-  ...     n = yield from coll.count()
+  ...     n = await coll.count()
   ...     print('%s documents before calling delete_many()' % n)
-  ...     result = yield from db.test_collection.delete_many({'i': {'$gte': 1000}})
-  ...     print('%s documents after' % (yield from coll.count()))
+  ...     result = await db.test_collection.delete_many({'i': {'$gte': 1000}})
+  ...     print('%s documents after' % (await coll.count()))
   ...
   >>> loop = asyncio.get_event_loop()
   >>> loop.run_until_complete(do_delete_many())
@@ -414,9 +406,8 @@ the :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.command` method on :class:`
 .. doctest:: after-inserting-2000-docs
 
   >>> from bson import SON
-  >>> @coroutine
-  ... def use_count_command():
-  ...     response = yield from db.command(SON([("count", "test_collection")]))
+  >>> async def use_count_command():
+  ...     response = await db.command(SON([("count", "test_collection")]))
   ...     print('response: %s' % pprint.pformat(response))
   ...
   >>> loop = asyncio.get_event_loop()
@@ -427,7 +418,7 @@ Since the order of command parameters matters, don't use a Python dict to pass
 the command's parameters. Instead, make a habit of using :class:`bson.SON`,
 from the ``bson`` module included with PyMongo::
 
-    yield from db.command(SON([("distinct", "test_collection"), ("key", "my_key"]))
+    await db.command(SON([("distinct", "test_collection"), ("key", "my_key"]))
 
 Many commands have special helper methods, such as
 :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.create_collection` or
