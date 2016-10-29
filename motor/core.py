@@ -679,7 +679,7 @@ class AgnosticBaseCursor(AgnosticBase):
           >>> IOLoop.current().run_sync(f)
           0, 1, 2, 3, 4, done
 
-        .. _`large batches`: http://docs.mongodb.org/manual/core/read-operations/#cursor-behaviors
+        .. _`large batches`: https://docs.mongodb.com/manual/tutorial/iterate-a-cursor/#cursor-batches
         """
         if not self._buffer_size() and self.alive:
             # Return the Future, which resolves to number of docs fetched or 0.

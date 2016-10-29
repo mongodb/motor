@@ -422,7 +422,7 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
 ``fetch_next`` does not actually retrieve each document from the server
 individually; it gets documents efficiently in `large batches`_.
 
-.. _`large batches`: http://docs.mongodb.org/manual/core/read-operations/#cursor-behaviors
+.. _`large batches`: https://docs.mongodb.com/manual/tutorial/iterate-a-cursor/#cursor-batches
 
 `async for`
 -----------
