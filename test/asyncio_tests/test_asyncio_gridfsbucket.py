@@ -33,6 +33,7 @@ class TestAsyncIOGridFSBucket(AsyncIOTestCase):
 
     def setUp(self):
         super(TestAsyncIOGridFSBucket, self).setUp()
+        self.loop.run_until_complete(self._reset())
         self.bucket = AsyncIOMotorGridFSBucket(self.db)
 
     def tearDown(self):
