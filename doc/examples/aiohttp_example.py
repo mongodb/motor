@@ -36,51 +36,16 @@ def page_handler(request):
     if not document:
         return web.HTTPNotFound(text='No page named {!r}'.format(page_name))
 
-    return web.Response(body=document['body'].encode())
+    return web.Response(body=document['body'].encode(),
+                        content_type='text/html')
 # -- handler-end --
 
-
-# -- create-server-start --
-@asyncio.coroutine
-def create_example_server(loop):
-    db = yield from setup_db()
-
-    app = web.Application(loop=loop)
-    app['db'] = db
-    app.router.add_route('GET', '/pages/{page_name}', page_handler)
-    handler = app.make_handler()
-    server = yield from loop.create_server(handler, '127.0.0.1', 8080)
-    return server, app, handler
-# -- create-server-end --
-
-
-# -- shutdown-start --
-@asyncio.coroutine
-def shutdown(server, app, handler):
-    sock = server.sockets[0]
-    app.loop.remove_reader(sock.fileno())
-    sock.close()
-
-    yield from handler.finish_connections(1.0)
-    server.close()
-    yield from server.wait_closed()
-    yield from app.finish()
-# -- shutdown-end --
-
-
 # -- main-start --
-def main():
-    loop = asyncio.get_event_loop()
-    server, app, handler = loop.run_until_complete(create_example_server(loop))
-
-    try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        loop.run_until_complete(shutdown(server, app, handler))
-    loop.close()
+loop = asyncio.get_event_loop()
+db = loop.run_until_complete(setup_db())
+app = web.Application()
+app['db'] = db
+# Route requests to the page_handler() coroutine.
+app.router.add_get('/pages/{page_name}', page_handler)
+web.run_app(app)
 # -- main-end --
-
-if __name__ == '__main__':
-    main()
