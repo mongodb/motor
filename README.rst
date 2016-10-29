@@ -83,7 +83,8 @@ Documentation
 
 Motor's documentation is on ReadTheDocs_.
 
-To build the documentation, install sphinx_ and do ``cd doc; make html``.
+Build the documentation with Python 3.5. Install sphinx, Tornado, and aiohttp,
+and do ``cd doc; make html``.
 
 Examples
 ========
