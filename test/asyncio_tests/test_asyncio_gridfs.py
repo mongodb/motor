@@ -17,6 +17,8 @@
 
 import asyncio
 import datetime
+import sys
+import traceback
 import unittest
 
 from pymongo.errors import InvalidOperation, ConfigurationError
@@ -72,6 +74,17 @@ class TestAsyncIOGridFile(AsyncIOTestCase):
         yield from g.open()
         for attr_name in attr_names:
             getattr(g, attr_name)
+
+    @asyncio_test
+    def test_gridout_open_exc_info(self):
+        g = AsyncIOMotorGridOut(self.db.fs, "_id that doesn't exist")
+        try:
+            yield from g.open()
+        except NoFile:
+            _, _, tb = sys.exc_info()
+            # The call tree should include PyMongo code we ran on a thread.
+            formatted = '\n'.join(traceback.format_tb(tb))
+            self.assertTrue('_ensure_file' in formatted)
 
     @asyncio_test
     def test_alternate_collection(self):

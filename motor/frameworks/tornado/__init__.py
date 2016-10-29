@@ -114,7 +114,6 @@ def future_or_callback(future, callback, io_loop, return_value=_DEFAULT):
             try:
                 _future.result()
             except Exception as exc:
-                # TODO: exc_info
                 chained.set_exception(exc)
             else:
                 chained.set_result(return_value)

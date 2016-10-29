@@ -18,6 +18,7 @@ from __future__ import unicode_literals
 
 import gc
 import sys
+import traceback
 import unittest
 import warnings
 
@@ -244,6 +245,26 @@ class MotorCursorTest(MotorMockServerTest):
 
         # Nothing left.
         self.assertEqual([], (yield cursor.to_list(100)))
+
+    @gen_test
+    def test_to_list_exc_info(self):
+        if sys.version_info < (3,):
+            raise SkipTest("Requires Python 3")
+
+        yield self.make_test_data()
+        coll = self.collection
+        cursor = coll.find()
+        yield cursor.to_list(length=10)
+        yield self.collection.drop()
+        try:
+            yield cursor.to_list(length=None)
+        except OperationFailure:
+            _, _, tb = sys.exc_info()
+
+            # The call tree should include PyMongo code we ran on a thread.
+            formatted = '\n'.join(traceback.format_tb(tb))
+            self.assertTrue('_unpack_response' in formatted
+                            or '_check_command_response' in formatted)
 
     @gen_test
     def test_to_list_with_length_of_none(self):

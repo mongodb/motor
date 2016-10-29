@@ -15,6 +15,8 @@
 """Test AsyncIOMotorCollection."""
 
 import asyncio
+import sys
+import traceback
 import unittest
 from unittest import SkipTest
 
@@ -23,7 +25,7 @@ from bson import CodecOptions
 from bson.binary import JAVA_LEGACY
 from bson.objectid import ObjectId
 from pymongo import ReadPreference, WriteConcern
-from pymongo.errors import DuplicateKeyError
+from pymongo.errors import DuplicateKeyError, OperationFailure
 from pymongo.read_preferences import Secondary
 
 from motor import motor_asyncio
@@ -362,6 +364,15 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
         # Don't test drop_index or drop_indexes -- Synchro tests them
 
+    @asyncio.coroutine
+    def _make_test_data(self, n):
+        yield from self.db.drop_collection("test")
+        yield from self.db.test.insert_many([{'_id': i} for i in range(n)])
+        expected_sum = sum(range(n))
+        return expected_sum
+
+    pipeline = [{'$project': {'_id': '$_id'}}]
+
     @asyncio_test
     def test_aggregation_cursor(self):
         if not (yield from at_least(self.cx, (2, 6))):
@@ -372,16 +383,29 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         # A small collection which returns only an initial batch,
         # and a larger one that requires a getMore.
         for collection_size in (10, 1000):
-            yield from db.drop_collection("test")
-            yield from db.test.insert_many([{'_id': i} for i in
-                                       range(collection_size)])
-
-            pipeline = [{'$project': {'_id': '$_id'}}]
-            expected_sum = sum(range(collection_size))
-            cursor = db.test.aggregate(pipeline)
+            expected_sum = yield from self._make_test_data(collection_size)
+            cursor = db.test.aggregate(self.pipeline)
             docs = yield from cursor.to_list(collection_size)
             self.assertEqual(expected_sum,
                              sum(doc['_id'] for doc in docs))
+
+    @asyncio_test
+    def test_aggregation_cursor_exc_info(self):
+        if not (yield from at_least(self.cx, (2, 6))):
+            raise SkipTest("Requires MongoDB >= 2.6")
+
+        yield from self._make_test_data(200)
+        cursor = self.db.test.aggregate(self.pipeline)
+        yield from cursor.to_list(length=10)
+        yield from self.db.test.drop()
+        try:
+            yield from cursor.to_list(length=None)
+        except OperationFailure:
+            _, _, tb = sys.exc_info()
+
+            # The call tree should include PyMongo code we ran on a thread.
+            self.assertIn('_check_command_response',
+                          '\n'.join(traceback.format_tb(tb)))
 
     @asyncio_test(timeout=30)
     def test_parallel_scan(self):

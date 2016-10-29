@@ -17,6 +17,7 @@
 import asyncio
 import gc
 import sys
+import traceback
 import unittest
 import warnings
 from unittest import SkipTest
@@ -194,6 +195,23 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual([], (yield from cursor.to_list(100)))
 
         yield from cursor.close()
+
+    @asyncio_test
+    def test_to_list_exc_info(self):
+        yield from self.make_test_data()
+        coll = self.collection
+        cursor = coll.find()
+        yield from cursor.to_list(length=10)
+        yield from self.collection.drop()
+        try:
+            yield from cursor.to_list(length=None)
+        except OperationFailure:
+            _, _, tb = sys.exc_info()
+
+            # The call tree should include PyMongo code we ran on a thread.
+            formatted = '\n'.join(traceback.format_tb(tb))
+            self.assertTrue('_unpack_response' in formatted
+                            or '_check_command_response' in formatted)
 
     @asyncio_test
     def test_to_list_with_length_of_none(self):

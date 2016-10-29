@@ -881,7 +881,6 @@ class AgnosticBaseCursor(AgnosticBase):
                     self._get_more(),
                     self._to_list, length, the_list, to_list_future)
         except Exception as exc:
-            # TODO: lost exc_info
             to_list_future.set_exception(exc)
 
     def get_io_loop(self):
@@ -1072,7 +1071,6 @@ class AgnosticAggregationCursor(AgnosticCommandCursor):
             # "result" is a CommandCursor from PyMongo's aggregate().
             self.delegate = future.result()
         except Exception as exc:
-            # TODO: exc_info.
             original_future.set_exception(exc)
         else:
             # _get_more is complete.

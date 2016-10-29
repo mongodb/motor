@@ -16,6 +16,8 @@ from __future__ import unicode_literals
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+import sys
+import traceback
 import unittest
 
 import bson
@@ -24,7 +26,7 @@ from bson.binary import JAVA_LEGACY
 from bson.objectid import ObjectId
 from pymongo import ReadPreference, WriteConcern
 from pymongo.read_preferences import Secondary
-from pymongo.errors import DuplicateKeyError
+from pymongo.errors import DuplicateKeyError, OperationFailure
 from tornado import gen
 from tornado.concurrent import Future
 from tornado.testing import gen_test
@@ -404,6 +406,27 @@ class MotorCollectionTest(MotorTest):
             cursor = db.test.aggregate(self.pipeline)
             docs = yield cursor.to_list(collection_size)
             self.assertAllDocs(expected_sum, docs)
+
+    @gen_test
+    def test_aggregation_cursor_exc_info(self):
+        if not (yield at_least(self.cx, (2, 6))):
+            raise SkipTest("Requires MongoDB >= 2.6")
+
+        if sys.version_info < (3,):
+            raise SkipTest("Requires Python 3")
+
+        yield self._make_test_data(200)
+        cursor = self.db.test.aggregate(self.pipeline)
+        yield cursor.to_list(length=10)
+        yield self.db.test.drop()
+        try:
+            yield cursor.to_list(length=None)
+        except OperationFailure:
+            _, _, tb = sys.exc_info()
+
+            # The call tree should include PyMongo code we ran on a thread.
+            self.assertIn('_check_command_response',
+                          '\n'.join(traceback.format_tb(tb)))
 
     @gen_test
     def test_aggregation_cursor_to_list_callback(self):

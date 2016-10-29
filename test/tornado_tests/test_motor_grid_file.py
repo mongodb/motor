@@ -18,6 +18,8 @@ from __future__ import unicode_literals
 """Test GridFS with Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import datetime
+import sys
+import traceback
 import unittest
 
 from bson.objectid import ObjectId
@@ -27,7 +29,7 @@ from tornado.testing import gen_test
 from pymongo.errors import InvalidOperation
 
 import motor
-from test import MockRequestHandler
+from test import MockRequestHandler, SkipTest
 from test.tornado_tests import MotorTest
 
 
@@ -122,6 +124,20 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual(1, len((yield g.readchunk())))
 
         self.assertEqual(0, len((yield g.readchunk())))
+
+    @gen_test
+    def test_gridout_open_exc_info(self):
+        if sys.version_info < (3, ):
+            raise SkipTest("Requires Python 3")
+
+        g = motor.MotorGridOut(self.db.fs, "_id that doesn't exist")
+        try:
+            yield g.open()
+        except NoFile:
+            _, _, tb = sys.exc_info()
+            # The call tree should include PyMongo code we ran on a thread.
+            formatted = '\n'.join(traceback.format_tb(tb))
+            self.assertTrue('_ensure_file' in formatted)
 
     @gen_test
     def test_alternate_collection(self):
