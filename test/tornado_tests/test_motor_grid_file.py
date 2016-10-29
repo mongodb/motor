@@ -135,9 +135,11 @@ class MotorGridFileTest(MotorTest):
             yield g.open()
         except NoFile:
             _, _, tb = sys.exc_info()
+
             # The call tree should include PyMongo code we ran on a thread.
             formatted = '\n'.join(traceback.format_tb(tb))
-            self.assertTrue('_ensure_file' in formatted)
+            self.assertTrue('_unpack_response' in formatted
+                            or '_check_command_response' in formatted)
 
     @gen_test
     def test_alternate_collection(self):

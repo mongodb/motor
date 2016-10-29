@@ -404,8 +404,9 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             _, _, tb = sys.exc_info()
 
             # The call tree should include PyMongo code we ran on a thread.
-            self.assertIn('_check_command_response',
-                          '\n'.join(traceback.format_tb(tb)))
+            formatted = '\n'.join(traceback.format_tb(tb))
+            self.assertTrue('_unpack_response' in formatted
+                            or '_check_command_response' in formatted)
 
     @asyncio_test(timeout=30)
     def test_parallel_scan(self):
