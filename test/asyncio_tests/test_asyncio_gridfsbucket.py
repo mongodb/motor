@@ -53,7 +53,7 @@ class TestAsyncIOGridFSBucket(AsyncIOTestCase):
         yield from self.bucket.download_to_stream(gout._id, dst)
         self.assertEqual(b"hello world", dst.getvalue())
 
-        self.bucket.delete(oid)
+        yield from self.bucket.delete(oid)
         with self.assertRaises(NoFile):
             yield from self.bucket.open_download_stream(oid)
         self.assertEqual(0, (yield from self.db.fs.files.count()))

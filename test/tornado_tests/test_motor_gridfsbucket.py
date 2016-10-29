@@ -53,7 +53,7 @@ class MotorGridFSBucketTest(MotorTest):
         self.assertEqual(1, (yield self.db.fs.files.count()))
         self.assertEqual(1, (yield self.db.fs.chunks.count()))
 
-        self.bucket.delete(oid)
+        yield self.bucket.delete(oid)
         with self.assertRaises(NoFile):
             yield self.bucket.open_download_stream(oid)
         self.assertEqual(0, (yield self.db.fs.files.count()))
