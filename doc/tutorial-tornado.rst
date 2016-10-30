@@ -568,7 +568,7 @@ Since the order of command parameters matters, don't use a Python dict to pass
 the command's parameters. Instead, make a habit of using :class:`bson.SON`,
 from the ``bson`` module included with PyMongo::
 
-    yield db.command(SON([("distinct", "test_collection"), ("key", "my_key"]))
+    yield db.command(SON([("distinct", "test_collection"), ("key", "my_key")]))
 
 Many commands have special helper methods, such as
 :meth:`~MotorDatabase.create_collection` or
