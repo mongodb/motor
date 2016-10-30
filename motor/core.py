@@ -742,9 +742,9 @@ class AgnosticBaseCursor(AgnosticBase):
           0, 1, 2, 3, 4, done
 
         .. note:: Unlike other Motor methods, ``each`` requires a callback and
-           does not return a Future, so it cannot be used with
-           ``gen.coroutine.`` :meth:`to_list` or :attr:`fetch_next` are much
-           easier to use.
+           does not return a Future, so it cannot be used in a coroutine.
+           ``async for``, :meth:`to_list`, :attr:`fetch_next` are much easier to
+           use.
 
         :Parameters:
          - `callback`: function taking (document, error)
@@ -888,14 +888,11 @@ class AgnosticBaseCursor(AgnosticBase):
 
     @motor_coroutine
     def close(self):
-        """Explicitly kill this cursor on the server. Call like (in Tornado)::
+        """Explicitly kill this cursor on the server. Call like (in Tornado):
 
-           yield cursor.close()
+        .. code-block:: python
 
-        :Parameters:
-         - `callback` (optional): function taking (result, error).
-
-        If a callback is passed, returns None, else returns a Future.
+            yield cursor.close()
         """
         if not self.closed:
             self.closed = True

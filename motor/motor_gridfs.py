@@ -216,11 +216,6 @@ class AgnosticGridOut(object):
         For a more complete example see the implementation of
         :class:`~motor.web.GridFSHandler`.
 
-        Takes an optional callback, or returns a Future.
-
-        :Parameters:
-         - `callback`: Optional function taking parameters (self, error)
-
         .. code-block:: python
 
             class FileHandler(tornado.web.RequestHandler):
@@ -286,7 +281,6 @@ Metadata set on the file appears as attributes on a
   - `name`: Name of the attribute, will be stored as a key in the file
     document on the server
   - `value`: Value of the attribute
-  - `callback`: Optional callback to execute once attribute is set.
 """)
 
     def __init__(self, root_collection, delegate=None, **kwargs):
