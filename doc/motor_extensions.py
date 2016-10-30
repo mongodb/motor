@@ -56,11 +56,11 @@ def get_parameter_names(parameters_node):
     return parameter_names
 
 
-def insert_callback(parameters_node):
+def insert_callback(name, parameters_node):
     # We need to know what params are here already
     parameter_names = get_parameter_names(parameters_node)
 
-    if 'callback' not in parameter_names:
+    if 'callback' not in parameter_names and 'motor_asyncio.' not in name:
         if '*args' in parameter_names:
             args_pos = parameter_names.index('*args')
         else:
@@ -133,7 +133,7 @@ def process_motor_nodes(app, doctree):
 
                         desc_content_node.append(parameters_field_list_node)
 
-                    insert_callback(parameters_node)
+                    insert_callback(name, parameters_node)
 
                     callback_future_text = (
                         "If a callback is passed, returns None, else returns a"
@@ -198,7 +198,7 @@ def get_motor_attr(motor_class, name, *defargs):
     return attr
 
 
-def get_motor_argspec(pymongo_method, is_async_method):
+def get_motor_argspec(name, pymongo_method, is_async_method):
     args, varargs, kwargs, defaults = inspect.getargspec(pymongo_method)
 
     # This part is copied from Sphinx's autodoc.py
@@ -207,7 +207,7 @@ def get_motor_argspec(pymongo_method, is_async_method):
 
     defaults = list(defaults) if defaults else []
 
-    if is_async_method:
+    if is_async_method and 'motor_asyncio.' not in name:
         # Add 'callback=None' argument
         args.append('callback')
         defaults.append(None)
@@ -216,8 +216,8 @@ def get_motor_argspec(pymongo_method, is_async_method):
 
 
 # Adapted from MethodDocumenter.format_args
-def format_motor_args(pymongo_method, is_async_method):
-    argspec = get_motor_argspec(pymongo_method, is_async_method)
+def format_motor_args(name, pymongo_method, is_async_method):
+    argspec = get_motor_argspec(name, pymongo_method, is_async_method)
     formatted_argspec = inspect.formatargspec(*argspec)
     # escape backslashes for reST
     return formatted_argspec.replace('\\', '\\\\')
@@ -244,7 +244,7 @@ def process_motor_signature(
         # Real sig obscured by decorator, reconstruct it
         pymongo_method = motor_info[name]['pymongo_method']
         is_async_method = motor_info[name]['is_async_method']
-        args = format_motor_args(pymongo_method, is_async_method)
+        args = format_motor_args(name, pymongo_method, is_async_method)
         return args, return_annotation
 
 
