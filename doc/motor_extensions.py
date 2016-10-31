@@ -101,6 +101,13 @@ def insert_callback(parameters_node):
         parameters_node.insert(min(args_pos, kwargs_pos), new_item)
 
 
+def has_coro_annotation(signature_node):
+    try:
+        return 'coroutine' in signature_node[0][0]
+    except IndexError:
+        return False
+
+
 def process_motor_nodes(app, doctree):
     # Search doctree for Motor's methods and attributes whose docstrings were
     # copied from PyMongo, and fix them up for Motor:
@@ -125,14 +132,19 @@ def process_motor_nodes(app, doctree):
             if obj_motor_info:
                 desc_content_node = find_by_path(objnode, [desc_content])[0]
                 if obj_motor_info['is_async_method']:
-                    coro_annotation = addnodes.desc_annotation(
-                        'coroutine ', 'coroutine ', classes=['coro-annotation'])
-                    signature_node.insert(0, coro_annotation)
+                    # Might be a handwritten RST with "coroutine" already.
+                    if not has_coro_annotation(signature_node):
+                        coro_annotation = addnodes.desc_annotation(
+                            'coroutine ', 'coroutine ',
+                            classes=['coro-annotation'])
+
+                        signature_node.insert(0, coro_annotation)
 
                     if not is_asyncio_api(name):
-                        callback_p = paragraph('', Text(
-                            "If a callback is passed, returns None, else"
-                            " returns a Future."))
+                        retval = ("If a callback is passed, returns None, else"
+                                  " returns a Future.")
+
+                        callback_p = paragraph('', Text(retval))
 
                         # Find the parameter list.
                         parameters_nodes = find_by_path(
@@ -157,7 +169,8 @@ def process_motor_nodes(app, doctree):
                             desc_content_node.append(parameters_field_list_node)
 
                         insert_callback(parameters_node)
-                        desc_content_node.append(callback_p)
+                        if retval not in str(desc_content_node):
+                            desc_content_node.append(callback_p)
 
                 if obj_motor_info['is_pymongo_docstring']:
                     # Remove all "versionadded", "versionchanged" and
@@ -234,13 +247,11 @@ def get_motor_argspec(name, method):
 
 # Adapted from MethodDocumenter.format_args
 def format_motor_args(name, motor_method, pymongo_method):
-    try:
-        if pymongo_method:
-            argspec = get_motor_argspec(name, pymongo_method)
-        else:
-            argspec = get_motor_argspec(name, motor_method)
-    except:
-        print()
+    if pymongo_method:
+        argspec = get_motor_argspec(name, pymongo_method)
+    else:
+        argspec = get_motor_argspec(name, motor_method)
+
     formatted_argspec = inspect.formatargspec(*argspec)
     # escape backslashes for reST
     return formatted_argspec.replace('\\', '\\\\')

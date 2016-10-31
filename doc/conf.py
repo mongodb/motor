@@ -16,7 +16,7 @@ import motor
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.coverage',
               'sphinx.ext.todo', 'doc.mongo_extensions', 'doc.motor_extensions',
-              'sphinx.ext.intersphinx']
+              'sphinx.ext.intersphinx', 'doc.coroutine_annotation']
 
 primary_domain = 'py'
 
