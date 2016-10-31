@@ -116,7 +116,9 @@ class TestAsyncIOAwait(AsyncIOTestCase):
             self.assertEqual(j, n_files)
             await cleanup()
 
-        await gfs.put(data, filename='filename', _id=1, chunk_size=1)
+        async with await gfs.new_file(_id=1, chunk_size=1) as f:
+            await f.write(data)
+
         gout = await gfs.find_one({'_id': 1})
         chunks = []
         async for chunk in gout:

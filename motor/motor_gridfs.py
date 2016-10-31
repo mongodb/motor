@@ -368,6 +368,16 @@ Metadata set on the file appears as attributes on a
                 root_collection.delegate,
                 **kwargs)
 
+    if PY35:
+        # Support "async with fs.new_file() as f:"
+        exec(textwrap.dedent("""
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            await self.close()
+        """), globals(), locals())
+
     def get_io_loop(self):
         return self.io_loop
 

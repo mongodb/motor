@@ -71,6 +71,17 @@ Streaming a file to GridFS with :class:`MotorGridIn`
         yield gridin.write(file)
         yield gridin.close()
 
+In a Python 3.5 native coroutine, the "async with" statement calls
+:meth:`~MotorGridIn.close` automatically::
+
+    async def write_file_streaming():
+        fs = motor.motor_tornado.MotorGridFS(db)
+        async with await fs.new_file() as gridin:
+            await gridin.write(b'First part\n')
+            await gridin.write(b'Second part')
+
+        # gridin is now closed automatically.
+
 .. _setting-attributes-on-a-motor-gridin:
 
 Setting attributes on a :class:`MotorGridIn`
