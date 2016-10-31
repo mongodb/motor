@@ -20,6 +20,7 @@ from itertools import chain
 
 from docutils.nodes import field, list_item, paragraph, title_reference, literal
 from docutils.nodes import field_list, field_body, bullet_list, Text, field_name
+from docutils.nodes import literal_block
 from sphinx import addnodes
 from sphinx.addnodes import (desc, desc_content, versionmodified,
                              desc_signature, seealso, pending_xref)
@@ -35,6 +36,17 @@ motor_info = {}
 
 def is_asyncio_api(name):
     return 'motor_asyncio.' in name
+
+
+def has_node_of_type(root, klass):
+    if isinstance(root, klass):
+        return True
+
+    for child in root.children:
+        if has_node_of_type(child, klass):
+            return True
+
+    return False
 
 
 def find_by_path(root, classes):
@@ -101,6 +113,14 @@ def insert_callback(parameters_node):
         parameters_node.insert(min(args_pos, kwargs_pos), new_item)
 
 
+docstring_warnings = []
+
+
+def maybe_warn_about_code_block(name, content_node):
+    if has_node_of_type(content_node, literal_block):
+        docstring_warnings.append(name)
+
+
 def has_coro_annotation(signature_node):
     try:
         return 'coroutine' in signature_node[0][0]
@@ -112,8 +132,9 @@ def process_motor_nodes(app, doctree):
     # Search doctree for Motor's methods and attributes whose docstrings were
     # copied from PyMongo, and fix them up for Motor:
     #   1. Add a 'callback' param (sometimes optional, sometimes required) to
-    #      all async methods. If the PyMongo method took no params, we create
-    #      a parameter-list from scratch, otherwise we edit PyMongo's list.
+    #      all Motor Tornado methods. If the PyMongo method took no params, we
+    #      create a parameter-list from scratch, otherwise we edit PyMongo's
+    #      list.
     #   2. Remove all version annotations like "New in version 2.0" since
     #      PyMongo's version numbers are meaningless in Motor's docs.
     #   3. Remove "seealso" directives that reference PyMongo's docs.
@@ -139,6 +160,9 @@ def process_motor_nodes(app, doctree):
                             classes=['coro-annotation'])
 
                         signature_node.insert(0, coro_annotation)
+
+                        if obj_motor_info['is_pymongo_docstring']:
+                            maybe_warn_about_code_block(name, desc_content_node)
 
                     if not is_asyncio_api(name):
                         retval = ("If a callback is passed, returns None, else"
@@ -283,8 +307,16 @@ def process_motor_signature(
             return args, return_annotation
 
 
+def build_finished(app, exception):
+    if not exception and docstring_warnings:
+        print("PyMongo docstrings with code blocks that need update:")
+        for name in sorted(docstring_warnings):
+            print(name)
+
+
 def setup(app):
     app.add_autodoc_attrgetter(type(motor.core.AgnosticBase), get_motor_attr)
     app.connect('autodoc-process-docstring', process_motor_docstring)
     app.connect('autodoc-process-signature', process_motor_signature)
     app.connect('doctree-read', process_motor_nodes)
+    app.connect('build-finished', build_finished)
