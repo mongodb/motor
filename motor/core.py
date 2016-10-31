@@ -611,6 +611,7 @@ class AgnosticBaseCursor(AgnosticBase):
         """), globals(), locals())
 
     elif PY35:
+        # In Python 3.5.0 and 3.5.1, __aiter__ is a coroutine.
         exec(textwrap.dedent("""
         async def __aiter__(self):
             return self
