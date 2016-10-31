@@ -120,6 +120,15 @@ class MotorTestAwait(MotorTest):
             self.assertEqual(j, n_files)
             await cleanup()
 
+        await gfs.put(data, filename='filename', _id=1, chunk_size=1)
+        gout = await gfs.find_one({'_id': 1})
+        chunks = []
+        async for chunk in gout:
+            chunks.append(chunk)
+
+        self.assertEqual(len(chunks), len(data))
+        self.assertEqual(b''.join(chunks), data)
+
     @gen_test
     async def test_stream_to_handler(self):
         fs = MotorGridFS(self.db)

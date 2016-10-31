@@ -107,6 +107,8 @@ Reading from GridFS with :class:`MotorGridOut`
 
 .. code-block:: python
 
+    import sys
+
     from tornado import gen
     import motor
 
@@ -120,15 +122,30 @@ Reading from GridFS with :class:`MotorGridOut`
         gridout = yield fs.get(file_id)
         content = yield gridout.read()
 
-        # Or read in chunks - every chunk_size bytes is one MongoDB document
-        # in the db.fs.chunks collection.
-        gridout = yield fs.get(file_id)
-        content = ''
-        while len(content) < gridout.length:
-            content += (yield gridout.read(gridout.chunk_size))
-
         # Get a file by name.
         gridout = yield fs.get_last_version(filename='my_file')
         content = yield gridout.read()
+
+        # Or read in chunks - each chunk is one document in db.fs.chunks.
+        gridout = yield fs.get(file_id)
+
+        while True:
+            chunk = yield gridout.readchunk()
+            if not chunk:
+                break
+            sys.stdout.write(chunk)
+
+        sys.stdout.flush()
+
+Reading a chunk at a time is much simpler with a Python 3 native coroutine::
+
+    async def read_file(file_id):
+        fs = motor.motor_tornado.MotorGridFS(db)
+        gridout = await fs.get(file_id)
+
+        async for chunk in gridout:
+            sys.stdout.write(chunk)
+
+        sys.stdout.flush()
 
 .. TODO: examples of static-url generation

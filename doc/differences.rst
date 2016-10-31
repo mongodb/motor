@@ -112,22 +112,6 @@ GridFS
     :class:`MotorGridOut` are asynchronous, so they cannot obey the
     file API and aren't suitable in the same circumstances as files.
 
-- Iteration
-
-    It's convenient in PyMongo to iterate a :class:`~gridfs.grid_file.GridOut`::
-
-        fs = gridfs.GridFS(db)
-        grid_out = fs.get(file_id)
-        for chunk in grid_out:
-            print chunk
-
-    :class:`MotorGridOut` cannot support this API asynchronously.
-    To read a ``MotorGridOut`` use the non-blocking
-    :meth:`~MotorGridOut.read` method. For convenience ``MotorGridOut``
-    provides :meth:`~MotorGridOut.stream_to_handler`.
-
-    .. seealso:: :ref:`reading-from-gridfs` and :doc:`../api-tornado/web`
-
 - Setting properties
 
     In PyMongo, you can set arbitrary attributes on
@@ -162,6 +146,8 @@ GridFS
 
     But the ``MotorGridIn`` method :meth:`~MotorGridIn.close` is
     asynchronous, so it must be called explicitly.
+
+.. seealso:: :ref:`reading-from-gridfs` and :doc:`../api-tornado/web`
 
 is_locked
 ---------

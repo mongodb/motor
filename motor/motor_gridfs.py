@@ -16,6 +16,8 @@ from __future__ import unicode_literals, absolute_import
 
 """GridFS implementation for Motor, an asynchronous driver for MongoDB."""
 
+import textwrap
+
 import gridfs
 import pymongo
 import pymongo.errors
@@ -23,7 +25,9 @@ from gridfs import grid_file
 
 from motor.core import (AgnosticBaseCursor,
                         AgnosticCollection,
-                        AgnosticDatabase)
+                        AgnosticDatabase,
+                        PY35,
+                        PY352)
 from motor.metaprogramming import (AsyncCommand,
                                    AsyncRead,
                                    coroutine_annotation,
@@ -177,6 +181,32 @@ class AgnosticGridOut(object):
                 file_document)
 
         self.io_loop = root_collection.get_io_loop()
+
+    # python.org/dev/peps/pep-0492/#api-design-and-implementation-revisions
+    if PY352:
+        exec(textwrap.dedent("""
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            chunk = await self.readchunk()
+            if chunk:
+                return chunk
+            raise StopAsyncIteration()
+        """), globals(), locals())
+
+    elif PY35:
+        # In Python 3.5.0 and 3.5.1, __aiter__ is a coroutine.
+        exec(textwrap.dedent("""
+        async def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            chunk = await self.readchunk()
+            if chunk:
+                return chunk
+            raise StopAsyncIteration()
+        """), globals(), locals())
 
     def __getattr__(self, item):
         if not self.delegate._file:
