@@ -405,6 +405,63 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
 
 .. autoclass:: MotorGridFS
   :members:
+  :exclude-members: find_one, put
+
+  .. coroutinemethod:: find_one(self, filter=None, *args, callback=None, **kwargs)
+
+      Get a single file from gridfs.
+
+      All arguments to :meth:`find` are also valid arguments for
+      :meth:`find_one`, although any `limit` argument will be
+      ignored. Returns a single :class:`MotorGridOut`,
+      or ``None`` if no matching file is found. For example::
+
+          file = yield fs.find_one({"filename": "lisa.txt"})
+
+      :Parameters:
+        - `filter` (optional): a dictionary specifying
+          the query to be performing OR any other type to be used as
+          the value for a query for ``"_id"`` in the file collection.
+        - `*args` (optional): any additional positional arguments are
+          the same as the arguments to :meth:`find`.
+        - `callback`: (optional): function taking (result, error), executed
+          when operation completes
+        - `**kwargs` (optional): any additional keyword arguments
+          are the same as the arguments to :meth:`find`.
+
+      If a callback is passed, returns None, else returns a Future.
+
+  .. coroutinemethod:: put(self, data, callback=None, **kwargs)
+
+      Put data in GridFS as a new file.
+
+      Equivalent to doing::
+
+        try:
+            f = yield fs.new_file(**kwargs)
+            yield f.write(data)
+        finally:
+            yield f.close()
+
+      `data` can be a :class:`bytes` instance or a file-like object providing a :meth:`read` method.
+      If an `encoding` keyword argument is passed, `data` can also be a
+      :class:`unicode` (:class:`str` in python 3) instance, which will
+      be encoded as `encoding` before being written. Any keyword arguments
+      will be passed through to the created file - see
+      :class:`MotorGridIn` for possible arguments. Returns the
+      ``"_id"`` of the created file.
+
+      If the ``"_id"`` of the file is manually specified, it must
+      not already exist in GridFS. Otherwise
+      :class:`~gridfs.errors.FileExists` is raised.
+
+      :Parameters:
+        - `data`: data to be written as a file.
+        - `callback`: (optional): function taking (result, error), executed
+          when operation completes
+        - `**kwargs` (optional): keyword arguments for file creation
+
+      If a callback is passed, returns None, else returns a Future.
 
 .. autoclass:: MotorGridIn
   :members:
