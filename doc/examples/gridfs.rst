@@ -23,15 +23,15 @@ Writing a file to GridFS with :meth:`~MotorGridFS.put`
         fs = motor.motor_tornado.MotorGridFS(db)
 
         # file_id is the ObjectId of the resulting file.
-        file_id = yield fs.put('Contents')
+        file_id = yield fs.put(b'Contents')
 
         # put() can take a file or a file-like object, too.
-        from cStringIO import StringIO
-        file_like = StringIO('Lengthy contents')
+        from io import BytesIO
+        file_like = BytesIO(b'Lengthy contents')
         file_id = yield fs.put(file_like)
 
         # Specify the _id.
-        specified_id = yield fs.put('Contents', _id=42)
+        specified_id = yield fs.put(b'Contents', _id=42)
         assert 42 == specified_id
 
 Streaming a file to GridFS with :class:`MotorGridIn`
@@ -51,8 +51,8 @@ Streaming a file to GridFS with :class:`MotorGridIn`
         # Create a MotorGridIn and write in chunks, then close the file to
         # flush all data to the server.
         gridin = yield fs.new_file()
-        yield gridin.write('First part\n')
-        yield gridin.write('Second part')
+        yield gridin.write(b'First part\n')
+        yield gridin.write(b'Second part')
         yield gridin.close()
 
         # By default, the MotorGridIn's _id is an ObjectId.
@@ -60,7 +60,7 @@ Streaming a file to GridFS with :class:`MotorGridIn`
 
         gridout = yield fs.get(file_id)
         content = yield gridout.read()
-        assert 'First part\nSecond part' == content
+        assert b'First part\nSecond part' == content
 
         # Specify the _id.
         gridin = yield fs.new_file(_id=42)
