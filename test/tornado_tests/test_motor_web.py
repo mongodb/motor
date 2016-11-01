@@ -208,10 +208,10 @@ class TZAwareGridFSHandlerTest(GridFSHandlerTestBase):
 class CustomGridFSHandlerTest(GridFSHandlerTestBase):
     def get_app(self):
         class CustomGridFSHandler(motor.web.GridFSHandler):
-            def get_gridfs_file(self, fs, path):
+            def get_gridfs_file(self, bucket, filename, request):
                 # Test overriding the get_gridfs_file() method, path is
                 # interpreted as file_id instead of filename.
-                return fs.get(file_id=path)  # A Future MotorGridOut
+                return bucket.open_download_stream(file_id=filename)
 
             def get_cache_time(self, path, modified, mime_type):
                 return 10

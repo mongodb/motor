@@ -7,7 +7,6 @@ Motor Examples
 
    callbacks-and-coroutines
    bulk
-   gridfs
    tailable-cursors
    authentication
    aiohttp_gridfs_example

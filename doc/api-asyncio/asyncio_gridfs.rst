@@ -229,6 +229,18 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
       that file exists.
       Raises :exc:`~ValueError` if `filename` is not a string.
 
+      In a Python 3.5 native coroutine, the "async with" statement calls
+      :meth:`~AsyncIOMotorGridIn.close` automatically::
+
+          async def upload():
+              my_db = AsyncIOMotorClient().test
+              fs = AsyncIOMotorGridFSBucket(my_db)
+              async with await fs.new_file() as gridin:
+                  await gridin.write(b'First part\n')
+                  await gridin.write(b'Second part')
+
+              # gridin is now closed automatically.
+
       :Parameters:
         - `filename`: The name of the file to upload.
         - `chunk_size_bytes` (options): The number of bytes per chunk of this

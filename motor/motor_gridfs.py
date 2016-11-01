@@ -132,7 +132,7 @@ class AgnosticGridOut(object):
     etc.
 
     You don't need to instantiate this class directly - use the
-    methods provided by :class:`~motor.MotorGridFS`. If it **is**
+    methods provided by :class:`~motor.MotorGridFSBucket`. If it **is**
     instantiated directly, call :meth:`open`, :meth:`read`, or
     :meth:`readline` before accessing its attributes.
     """
@@ -253,9 +253,9 @@ class AgnosticGridOut(object):
                 @gen.coroutine
                 def get(self, filename):
                     db = self.settings['db']
-                    fs = yield motor.MotorGridFS(db()).open()
+                    fs = yield motor.MotorGridFSBucket(db())
                     try:
-                        gridout = yield fs.get_last_version(filename)
+                        gridout = yield fs.open_download_stream_by_name(filename)
                     except gridfs.NoFile:
                         raise tornado.web.HTTPError(404)
 
@@ -317,7 +317,7 @@ Metadata set on the file appears as attributes on a
         """
         Class to write data to GridFS. Application developers should not
         generally need to instantiate this class - see
-        :meth:`~motor.MotorGridFS.new_file`.
+        :meth:`~motor.MotorGridFSBucket.open_upload_stream`.
 
         Any of the file level options specified in the `GridFS Spec
         <http://dochub.mongodb.org/core/gridfs>`_ may be passed as
@@ -444,7 +444,10 @@ class AgnosticGridFS(_GFSBase):
     put              = AsyncCommand()
 
     def __init__(self, database, collection="fs"):
-        """An instance of GridFS on top of a single Database.
+        """**DEPRECATED**: Use :class:`MotorGridFSBucket` or
+        :class:`AsyncIOMotorGridFSBucket`.
+
+        An instance of GridFS on top of a single Database.
 
         :Parameters:
           - `database`: a :class:`~motor.MotorDatabase`

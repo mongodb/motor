@@ -118,7 +118,8 @@ GridFS
     a :class:`~gridfs.grid_file.GridIn` and they're stored as metadata on
     the server, even after the ``GridIn`` is closed::
 
-        grid_in = fs.new_file()
+        fs = gridfs.GridFSBucket(db)
+        grid_in, file_id = fs.open_upload_stream('test_file')
         grid_in.close()
         grid_in.my_field = 'my_value'  # Sends update to server.
 
@@ -127,8 +128,8 @@ GridFS
 
         @gen.coroutine
         def f():
-            fs = motor.motor_tornado.MotorGridFS(db)
-            grid_in = yield fs.new_file()
+            fs = motor.motor_tornado.MotorGridFSBucket(db)
+            grid_in, file_id = fs.open_upload_stream('test_file')
             yield grid_in.close()
 
             # Sends update to server.

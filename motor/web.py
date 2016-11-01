@@ -57,42 +57,48 @@ class GridFSHandler(tornado.web.RequestHandler):
         self.database = database
         self.root_collection = root_collection
 
-    def get_gridfs_file(self, fs, path):
+    def get_gridfs_file(self, bucket, filename, request):
         """Overridable method to choose a GridFS file to serve at a URL.
 
         By default, if a URL pattern like ``"/static/(.*)"`` is mapped to this
         ``GridFSHandler``, then the trailing portion of the URL is used as the
-        filename, so a request for "/static/image.png" results in a call
-        to :meth:`MotorGridFS.get` with "image.png" as the ``filename``
-        argument. To customize the mapping of path to GridFS file, override
-        ``get_gridfs_file`` and return a Future :class:`~motor.MotorGridOut`
-        from it.
+        filename, so a request for "/static/image.png" results in a call to
+        :meth:`MotorGridFSBucket.open_download_stream_by_name` with "image.png"
+        as the ``filename`` argument. To customize the mapping of path to
+        GridFS file, override ``get_gridfs_file`` and return a Future
+        :class:`~motor.MotorGridOut` from it.
 
         For example, to retrieve the file by ``_id`` instead of filename::
 
             class CustomGridFSHandler(motor.web.GridFSHandler):
-                def get_gridfs_file(self, fs, path):
+                def get_gridfs_file(self, bucket, filename, request):
                     # Path is interpreted as _id instead of name.
                     # Return a Future MotorGridOut.
-                    return fs.get(file_id=ObjectId(path))
+                    return fs.open_download_stream(file_id=ObjectId(path))
 
         :Parameters:
-          - `fs`: A :class:`~motor.MotorGridFS`
-          - `path`: A string, the trailing portion of the URL pattern being
-            served
+          - `bucket`: A :class:`~motor.motor_tornado.MotorGridFSBucket`
+          - `filename`: A string, the matched group of the URL pattern
+          - `request`: An :class:`tornado.httputil.HTTPServerRequest`
+
+        .. versionchanged:: 1.0
+          **BREAKING CHANGE**: Now takes a
+          :class:`~motor.motor_tornado.MotorGridFSBucket`, not a
+          :class:`~motor.motor_tornado.MotorGridFS`.
+          Also takes an additional ``request`` parameter.
 
         .. versionchanged:: 0.2
            ``get_gridfs_file`` no longer accepts a callback, instead returns
            a Future.
         """
-        return fs.get_last_version(path)  # A Future MotorGridOut
+        return bucket.open_download_stream_by_name(filename)
 
     @gen.coroutine
     def get(self, path, include_body=True):
-        fs = motor.MotorGridFS(self.database, self.root_collection)
+        fs = motor.MotorGridFSBucket(self.database, self.root_collection)
 
         try:
-            gridout = yield self.get_gridfs_file(fs, path)
+            gridout = yield self.get_gridfs_file(fs, path, self.request)
         except gridfs.NoFile:
             raise tornado.web.HTTPError(404)
 

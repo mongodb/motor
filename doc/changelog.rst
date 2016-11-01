@@ -26,7 +26,11 @@ New features
 
 New classes :class:`~motor.motor_tornado.MotorGridFSBucket` and :class:`~motor.motor_asyncio.AsyncIOMotorGridFSBucket`
 conform to the `GridFS API Spec <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_
-for MongoDB drivers.
+for MongoDB drivers. These classes supersede the old
+:class:`~motor.motor_tornado.MotorGridFS` and
+:class:`~motor.motor_asyncio.AsyncIOMotorGridFS`. See `GridFS`_ changes below,
+especially note the **breaking change** in
+:class:`~motor.motor_web.GridFSHandler`.
 
 Serve GridFS files over HTTP using `aiohttp`_ and
 :class:`~motor.aiohttp.AIOHTTPGridFS`.
@@ -133,6 +137,23 @@ Removed:
 
  - :attr:`.MotorCursor.conn_id`, use :attr:`~.MotorCursor.address`
 
+GridFS
+~~~~~~
+
+The old GridFS classes :class:`~motor.motor_tornado.MotorGridFS` and
+:class:`~motor.motor_asyncio.AsyncIOMotorGridFS` are deprecated in favor of
+:class:`~motor.motor_tornado.MotorGridFSBucket` and :class:`~motor.motor_asyncio.AsyncIOMotorGridFSBucket`,
+which comply with MongoDB's cross-language driver spec for GridFS.
+
+The old classes are still supported, but will be removed in Motor 2.0.
+
+**BREAKING CHANGE**: The overridable method
+:class:`~motor.web.GridFSHandler.get_gridfs_file` of
+:class:`~motor.web.GridFSHandler` now takes a
+:class:`~motor.motor_tornado.MotorGridFSBucket`, not a
+:class:`~motor.motor_tornado.MotorGridFS`.
+It also takes an additional ``request`` parameter.
+
 :class:`~motor.motor_tornado.MotorGridOutCursor`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -149,6 +170,33 @@ Removed:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 New method :meth:`.MotorGridIn.abort`.
+
+In a Python 3.5 native coroutine, the "async with" statement calls
+:meth:`~MotorGridIn.close` automatically::
+
+  async def upload():
+      my_db = MotorClient().test
+      fs = MotorGridFSBucket(my_db)
+      async with await fs.new_file() as gridin:
+          await gridin.write(b'First part\n')
+          await gridin.write(b'Second part')
+
+      # gridin is now closed automatically.
+
+:class:`~motor.motor_tornado.MotorGridOut`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:class:`~motor.motor_tornado.MotorGridOut` is now an async iterable, so
+reading a chunk at a time is much simpler with a Python 3 native coroutine::
+
+    async def read_file(file_id):
+        fs = motor.motor_tornado.MotorGridFS(db)
+        gridout = await fs.get(file_id)
+
+        async for chunk in gridout:
+            sys.stdout.write(chunk)
+
+        sys.stdout.flush()
 
 Documentation
 ~~~~~~~~~~~~~
