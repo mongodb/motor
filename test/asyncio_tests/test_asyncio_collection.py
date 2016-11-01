@@ -90,6 +90,10 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
     @asyncio_test(timeout=30)
     def test_find_is_async(self):
+        # Need parallel Javascript.
+        if not (yield from at_least(self.cx, (3,))):
+            raise SkipTest("Requires MongoDB >= 3.0")
+
         # Confirm find() is async by launching two operations which will finish
         # out of order. Also test that AsyncIOMotorClient doesn't reuse sockets
         # incorrectly.
