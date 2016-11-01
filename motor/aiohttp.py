@@ -21,10 +21,9 @@ import asyncio
 import datetime
 import mimetypes
 
-import aiohttp
-import gridfs
-from aiohttp.web_exceptions import HTTPNotModified
+import aiohttp.web
 from aiohttp.web_reqrep import StreamResponse
+import gridfs
 from motor.motor_asyncio import (AsyncIOMotorDatabase,
                                  AsyncIOMotorGridFSBucket)
 
@@ -118,7 +117,7 @@ def _config_error(request):
         # aiohttp API changed? Fall back to simpler error message.
         msg = ('Bad AIOHTTPGridFS route for request: %s' % request)
 
-    raise aiohttp.errors.HttpProcessingError(code=500, message=msg) from None
+    raise aiohttp.web.HTTPInternalServerError(text=msg) from None
 
 
 class AIOHTTPGridFS:
@@ -181,14 +180,15 @@ class AIOHTTPGridFS:
             _config_error(request)
 
         if request.method not in ('GET', 'HEAD'):
-            raise aiohttp.errors.HttpMethodNotAllowed(message=request.method)
+            raise aiohttp.web.HTTPMethodNotAllowed(
+                method=request.method, allowed_methods={'GET', 'HEAD'})
 
         try:
             gridout = yield from self._get_gridfs_file(self._bucket,
                                                        filename,
                                                        request)
         except gridfs.NoFile:
-            raise aiohttp.web_exceptions.HTTPNotFound(text=request.path)
+            raise aiohttp.web.HTTPNotFound(text=request.path)
 
         resp = StreamResponse()
         self._set_standard_headers(request.path, resp, gridout)
