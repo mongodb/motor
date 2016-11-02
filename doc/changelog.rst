@@ -3,8 +3,8 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
-Next Release
-------------
+Motor 1.0
+---------
 
 Motor now depends on PyMongo 3.3 and later. The move from PyMongo 2 to 3 brings
 a large number of API changes, read :doc:`migrate-to-motor-1` and
