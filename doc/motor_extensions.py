@@ -20,7 +20,7 @@ from itertools import chain
 
 from docutils.nodes import field, list_item, paragraph, title_reference, literal
 from docutils.nodes import field_list, field_body, bullet_list, Text, field_name
-from docutils.nodes import literal_block
+from docutils.nodes import literal_block, doctest_block
 from sphinx import addnodes
 from sphinx.addnodes import (desc, desc_content, versionmodified,
                              desc_signature, seealso, pending_xref)
@@ -117,7 +117,7 @@ docstring_warnings = []
 
 
 def maybe_warn_about_code_block(name, content_node):
-    if has_node_of_type(content_node, literal_block):
+    if has_node_of_type(content_node, (literal_block, doctest_block)):
         docstring_warnings.append(name)
 
 
@@ -152,6 +152,9 @@ def process_motor_nodes(app, doctree):
             obj_motor_info = motor_info.get(name)
             if obj_motor_info:
                 desc_content_node = find_by_path(objnode, [desc_content])[0]
+                if obj_motor_info['is_pymongo_docstring']:
+                    maybe_warn_about_code_block(name, desc_content_node)
+
                 if obj_motor_info['is_async_method']:
                     # Might be a handwritten RST with "coroutine" already.
                     if not has_coro_annotation(signature_node):
@@ -160,9 +163,6 @@ def process_motor_nodes(app, doctree):
                             classes=['coro-annotation'])
 
                         signature_node.insert(0, coro_annotation)
-
-                        if obj_motor_info['is_pymongo_docstring']:
-                            maybe_warn_about_code_block(name, desc_content_node)
 
                     if not is_asyncio_api(name):
                         retval = ("If a callback is passed, returns None, else"
