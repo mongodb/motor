@@ -128,7 +128,6 @@ Yield a Future to resolve it into a result or an exception:
     from tornado import gen
 
     class NewMessageHandler(tornado.web.RequestHandler):
-        @tornado.web.asynchronous
         @gen.coroutine
         def post(self):
             """Insert a message."""
@@ -143,7 +142,6 @@ Yield a Future to resolve it into a result or an exception:
 
 
     class MessagesHandler(tornado.web.RequestHandler):
-        @tornado.web.asynchronous
         @gen.coroutine
         def get(self):
             """Display all messages."""
@@ -185,7 +183,6 @@ keywords. Starting in Python 3.5, you can use `async def` instead of the
 .. code-block:: python
 
     class MessagesHandler(tornado.web.RequestHandler):
-        @tornado.web.asynchronous
         async def get(self):
             """Display all messages."""
             self.write('<a href="/compose">Compose a message</a><br>')

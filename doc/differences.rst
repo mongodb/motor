@@ -135,20 +135,7 @@ GridFS
             # Sends update to server.
             yield grid_in.set('my_field', 'my_value')
 
-    .. seealso:: :ref:`setting-attributes-on-a-motor-gridin`
-
-- The "with" statement
-
-    :class:`~gridfs.grid_file.GridIn` is a context manager--you can use it in a
-    "with" statement and it is closed on exit::
-
-        with fs.new_file() as grid_in:
-            grid_in.write('data')
-
-    But the ``MotorGridIn`` method :meth:`~MotorGridIn.close` is
-    asynchronous, so it must be called explicitly.
-
-.. seealso:: :ref:`reading-from-gridfs` and :doc:`../api-tornado/web`
+.. seealso:: :doc:`../api-tornado/gridfs`.
 
 is_locked
 ---------
