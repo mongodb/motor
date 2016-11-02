@@ -30,19 +30,22 @@ the docs are on `ReadTheDocs <https://motor.readthedocs.io/>`_.
 
 Install with::
 
-    $ pip install motor
-
-Post questions about Motor to the
-`mongodb-user list on Google Groups
-<https://groups.google.com/forum/?fromgroups#!forum/mongodb-user>`_.
-For confirmed issues or feature requests, open a case in
-`Jira <http://jira.mongodb.org>`_ in the "MOTOR" project.
+    $ python -m pip install motor
 
 .. _Tornado: http://tornadoweb.org/
 
 .. _asyncio: https://docs.python.org/3/library/asyncio.html
 
 .. _PyMongo: http://pypi.python.org/pypi/pymongo/
+
+How To Ask For Help
+-------------------
+
+Post questions about Motor to the
+`mongodb-user list on Google Groups
+<https://groups.google.com/forum/?fromgroups#!forum/mongodb-user>`_.
+For confirmed issues or feature requests, open a case in
+`Jira <http://jira.mongodb.org>`_ in the "MOTOR" project.
 
 Contents
 --------
