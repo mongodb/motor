@@ -159,4 +159,13 @@ with the `asyncio package from PyPI`_.
 Not Supported
 -------------
 
-Motor does not support Jython or Windows.
+Motor does not support Windows:
+
+* The author does not test Motor on Windows to ensure it is correct or fast.
+* Tornado `is not officially supported on Windows
+  <http://www.tornadoweb.org/en/stable/index.html#installation>`_,
+  so Motor's Tornado integration on Windows is doubly-unsupported.
+* Since asyncio *does* officially support Windows, Motor's asyncio integration
+  is more likely to work there, but it is untested.
+
+Motor also does not support Jython.
