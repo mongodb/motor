@@ -54,6 +54,7 @@ excluded_tests = [
     # Motor's reprs aren't the same as PyMongo's.
     '*.test_repr',
     '*.test_repr_replica_set',
+    'TestClient.test_unix_socket',
 
     # Lazy-connection tests require multithreading; we test concurrent
     # lazy connection directly.
@@ -138,10 +139,13 @@ excluded_tests = [
     'TestCommandAndReadPreference.*',
     'TestCommandMonitoring.test_get_more_failure',
     'TestCommandMonitoring.test_sensitive_commands',
+    'TestGridFile.test_grid_out_cursor_options',
     'TestGridfsReplicaSet.test_gridfs_replica_set',
+    'TestMaxStaleness.test_last_write_date_absent',
     'TestMonitor.test_atexit_hook',
     'TestReplicaSetClient.test_kill_cursor_explicit_primary',
     'TestReplicaSetClient.test_kill_cursor_explicit_secondary',
+    'TestSelections.test_bool',
 ]
 
 
@@ -176,8 +180,11 @@ class SynchroNosePlugin(Plugin):
         return True
 
     def wantFunction(self, fn):
-        # PyMongo test generators work with unittest.TestLoader, not nose.
-        if fn.__name__ in ('test_cases', 'create_test'):
+        # PyMongo's test generators run at import time; tell Nose not to run
+        # them as unittests.
+        if fn.__name__ in ('test_cases',
+                           'create_test',
+                           'create_selection_tests'):
             return False
 
     def wantMethod(self, method):

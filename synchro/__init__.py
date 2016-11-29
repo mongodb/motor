@@ -34,7 +34,8 @@ from motor.metaprogramming import MotorAttributeFactory
 # importing * won't pick up underscore-prefixed attrs.
 from gridfs.errors import *
 from pymongo import *
-from pymongo import (operations,
+from pymongo import (collation,
+                     operations,
                      server_selectors,
                      server_type,
                      son_manipulator,
@@ -43,7 +44,9 @@ from pymongo import (operations,
                      write_concern)
 from pymongo.auth import _build_credentials_tuple
 from pymongo.helpers import _unpack_response, _check_command_response
+from pymongo.collation import *
 from pymongo.common import *
+from pymongo.common import _UUID_REPRESENTATIONS
 from pymongo.cursor import *
 from pymongo.cursor import _QUERY_OPTIONS
 from pymongo.errors import *
@@ -56,6 +59,7 @@ from pymongo.monitoring import *
 from pymongo.monitoring import _LISTENERS, _Listeners
 from pymongo.operations import *
 from pymongo.pool import *
+from pymongo.pool import _METADATA
 from pymongo.periodic_executor import *
 from pymongo.periodic_executor import _EXECUTORS
 from pymongo.read_preferences import *

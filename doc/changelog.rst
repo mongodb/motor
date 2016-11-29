@@ -3,6 +3,67 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 1.1
+---------
+
+Motor depends on PyMongo 3.4 or later. It wraps the latest PyMongo code which
+support the new server features introduced in MongoDB 3.4. (It is a coincidence
+that the latest MongoDB and PyMongo versions are the same number.)
+
+Highlights include:
+
+- Complete support for MongoDB 3.4:
+
+  - Unicode aware string comparison using collations. See :ref:`PyMongo's examples for collation <collation-on-operation>`.
+  - :class:`MotorCursor` and :class:`MotorGridOutCursor` have a new attribute :meth:`~MotorCursor.collation`.
+  - Support for the new :class:`~bson.decimal128.Decimal128` BSON type.
+  - A new maxStalenessSeconds read preference option.
+  - A username is no longer required for the MONGODB-X509 authentication
+    mechanism when connected to MongoDB >= 3.4.
+  - :meth:`~MotorCollection.parallel_scan` supports maxTimeMS.
+  - :class:`~pymongo.write_concern.WriteConcern` is automatically
+    applied by all helpers for commands that write to the database when
+    connected to MongoDB 3.4+. This change affects the following helpers:
+
+    - :meth:`MotorClient.drop_database`
+    - :meth:`MotorDatabase.create_collection`
+    - :meth:`MotorDatabase.drop_collection`
+    - :meth:`MotorCollection.aggregate` (when using $out)
+    - :meth:`MotorCollection.create_indexes`
+    - :meth:`MotorCollection.create_index`
+    - :meth:`MotorCollection.drop_indexes`
+    - :meth:`MotorCollection.drop_indexes`
+    - :meth:`MotorCollection.drop_index`
+    - :meth:`MotorCollection.map_reduce` (when output is not
+      "inline")
+    - :meth:`MotorCollection.reindex`
+    - :meth:`MotorCollection.rename`
+
+- Improved support for logging server discovery and monitoring events. See
+  :mod:`PyMongo's monitoring documentation <pymongo.monitoring>` for examples.
+- Support for matching iPAddress subjectAltName values for TLS certificate
+  verification.
+- TLS compression is now explicitly disabled when possible.
+- The Server Name Indication (SNI) TLS extension is used when possible.
+- PyMongo's `bson` module provides finer control over JSON encoding/decoding
+  with :class:`~bson.json_util.JSONOptions`.
+- Allow :class:`~bson.code.Code` objects to have a scope of ``None``,
+  signifying no scope. Also allow encoding Code objects with an empty scope
+  (i.e. ``{}``).
+
+.. warning:: Starting in PyMongo 3.4, :attr:`bson.code.Code.scope` may return
+  ``None``, as the default scope is ``None`` instead of ``{}``.
+
+.. note:: PyMongo 3.4+ attempts to create sockets non-inheritable when possible
+  (i.e. it sets the close-on-exec flag on socket file descriptors). Support
+  is limited to a subset of POSIX operating systems (not including Windows) and
+  the flag usually cannot be set in a single atomic operation. CPython 3.4+
+  implements `PEP 446`_, creating all file descriptors non-inheritable by
+  default. Users that require this behavior are encouraged to upgrade to
+  CPython 3.4+.
+
+.. _PEP 446: https://www.python.org/dev/peps/pep-0446/
+
 Motor 1.0
 ---------
 

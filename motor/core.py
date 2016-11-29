@@ -928,6 +928,7 @@ class AgnosticCursor(AgnosticBaseCursor):
     __delegate_class__ = Cursor
     address           = ReadOnlyProperty()
     count             = AsyncRead()
+    collation         = ReadOnlyProperty()
     distinct          = AsyncRead()
     explain           = AsyncRead()
     add_option        = MotorCursorChainingMethod()

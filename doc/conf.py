@@ -184,7 +184,7 @@ autodoc_default_flags = ['inherited-members']
 autodoc_member_order = 'groupwise'
 
 pymongo_inventory = ('http://api.mongodb.org/python/%s/' % pymongo_version,
-                     'pymongo-objects.inv')
+                     None)
 
 intersphinx_mapping = {
     'bson': pymongo_inventory,
