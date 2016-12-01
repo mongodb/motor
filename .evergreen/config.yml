@@ -65,10 +65,10 @@ functions:
            export MONGO_ORCHESTRATION_HOME="$DRIVERS_TOOLS/.evergreen/orchestration"
            export MONGODB_BINARIES="$DRIVERS_TOOLS/mongodb/bin"
 
-           echo 'DRIVERS_TOOLS: "$DRIVERS_TOOLS"' >> expansion.yml
-           echo 'MONGO_ORCHESTRATION_HOME: "$MONGO_ORCHESTRATION_HOME"' >> expansion.yml
-           echo 'MONGODB_BINARIES: "$MONGODB_BINARIES"' >> expansion.yml
-           echo 'UPLOAD_BUCKET: "mongo-c-driver/changeme"' >> expansion.yml
+           echo DRIVERS_TOOLS: "$DRIVERS_TOOLS" >> expansion.yml
+           echo MONGO_ORCHESTRATION_HOME: "$MONGO_ORCHESTRATION_HOME" >> expansion.yml
+           echo MONGODB_BINARIES: "$MONGODB_BINARIES" >> expansion.yml
+           echo UPLOAD_BUCKET: "motor" >> expansion.yml
 
            # Make it easier to get a good shell
            cat <<EOT >> expansion.yml
@@ -78,7 +78,7 @@ functions:
               export DRIVERS_TOOLS="$DRIVERS_TOOLS"
               export MONGO_ORCHESTRATION_HOME="$MONGO_ORCHESTRATION_HOME"
               export MONGODB_BINARIES="$MONGODB_BINARIES"
-              export UPLOAD_BUCKET="mongo-c-driver/changeme"
+              export UPLOAD_BUCKET="motor"
 
               export TMPDIR="$MONGO_ORCHESTRATION_HOME/db"
               export PATH="$MONGODB_BINARIES:$PATH"
@@ -326,7 +326,7 @@ functions:
         working_dir: "src"
         script: |
           ${PREPARE_SHELL}
-          AUTH=${AUTH} SSL=${SSL} MONGODB_URI="${MONGODB_URI}" sh ${DRIVERS_TOOLS}/.evergreen/run-tests.sh
+          AUTH=${AUTH} SSL=${SSL} MONGODB_URI="${MONGODB_URI}" sh .evergreen/run-tests.sh
 
   "cleanup":
     - command: shell.exec
