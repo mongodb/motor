@@ -49,45 +49,46 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
     fs = None
     file_id = None
 
-    def tearDown(self):
-        self.loop.run_until_complete(self.stop())
-        super().tearDown()
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUp(self):
+        super().setUp()
         logging.getLogger('aiohttp.web').setLevel(logging.CRITICAL)
 
-        cls.fs = gridfs.GridFS(test.env.sync_cx.motor_test)
+        self.fs = gridfs.GridFS(test.env.sync_cx.motor_test)
 
         # Make a 500k file in GridFS with filename 'foo'
-        cls.contents = b'Jesse' * 100 * 1024
-        cls.contents_hash = hashlib.md5(cls.contents).hexdigest()
+        self.contents = b'Jesse' * 100 * 1024
+        self.contents_hash = hashlib.md5(self.contents).hexdigest()
 
         # Record when we created the file, to check the Last-Modified header
-        cls.put_start = datetime.datetime.utcnow().replace(microsecond=0)
-        cls.file_id = 'id'
-        cls.fs.delete(cls.file_id)
-        cls.fs.put(cls.contents,
-                   _id='id',
-                   filename='foo',
-                   content_type='my type')
+        self.put_start = datetime.datetime.utcnow().replace(microsecond=0)
+        self.file_id = 'id'
+        self.fs.delete(self.file_id)
+        self.fs.put(self.contents,
+                    _id='id',
+                    filename='foo',
+                    content_type='my type')
 
-        cls.put_end = datetime.datetime.utcnow().replace(microsecond=0)
-        cls.app = cls.srv = cls.app_handler = None
+        self.put_end = datetime.datetime.utcnow().replace(microsecond=0)
+        self.app = self.srv = self.app_handler = None
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.fs.delete(cls.file_id)
-        super().tearDownClass()
+    def tearDown(self):
+        self.loop.run_until_complete(self.stop())
+        self.fs.delete(self.file_id)
+        super().tearDown()
 
     @asyncio.coroutine
-    def start_app(self, http_gridfs=None):
+    def start_app(self, http_gridfs=None, extra_routes=None):
         self.app = aiohttp.web.Application()
         resource = self.app.router.add_resource('/fs/{filename}')
         handler = http_gridfs or AIOHTTPGridFS(self.db)
         resource.add_route('GET', handler)
         resource.add_route('HEAD', handler)
+
+        if extra_routes:
+            for route, handler in extra_routes.items():
+                resource = self.app.router.add_resource(route)
+                resource.add_route('GET', handler)
+
         self.app_handler = self.app.make_handler()
         server = self.loop.create_server(self.app_handler,
                                          host='localhost',
@@ -206,10 +207,8 @@ class AIOHTTPGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
 
     @asyncio_test
     def test_bad_route(self):
-        yield from self.start_app()
-        resource = self.app.router.add_resource('/x/{wrongname}')
         handler = AIOHTTPGridFS(self.db)
-        resource.add_route('GET', handler)
+        yield from self.start_app(extra_routes={'/x/{wrongname}': handler})
         response = yield from self.get('/x/foo')
         self.assertEqual(500, response.status)
         msg = 'Bad AIOHTTPGridFS route "/x/{wrongname}"'
@@ -241,10 +240,8 @@ class AIOHTTPGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
     @asyncio_test
     def test_post(self):
         # Only allow GET and HEAD, even if a POST route is added.
-        yield from self.start_app()
-        resource = self.app.router.add_resource('/fs/{filename}')
         handler = AIOHTTPGridFS(self.db)
-        resource.add_route('POST', handler)
+        yield from self.start_app(extra_routes={'/fs/{filename}': handler})
         result = yield from self.request('post', '/fs/foo')
         self.assertEqual(405, result.status)
 
