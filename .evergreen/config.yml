@@ -303,10 +303,10 @@ functions:
   "upload test results":
     - command: attach.results
       params:
-        file_location: "src/test-results.json"
-    - command: attach.results
-      params:
         file_location: "${DRIVERS_TOOLS}/results.json"
+    - command: attach.xunit_results
+      params:
+        file: .tox/*/*-results.xml
 
   "bootstrap mongo-orchestration":
     - command: shell.exec
