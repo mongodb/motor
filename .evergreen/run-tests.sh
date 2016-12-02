@@ -46,10 +46,10 @@ python3 ./virtualenv-15.1.0/virtualenv.py .tox-venv
 
 if [ "$TASK" = "test" ]; then
   ./.tox-venv/bin/python3 -m tox -e py35-tornado4
-else if [ "$TASK" = "doctest" ]; then
+elif [ "$TASK" = "doctest" ]; then
   ./.tox-venv/bin/python3 -m tox -e py3-sphinx-doctest
-else if [ "$TASK" = "docs" ]; then
+elif [ "$TASK" = "docs" ]; then
   ./.tox-venv/bin/python3 -m tox -e py3-sphinx-docs
-else if [ "$TASK" = "synchro" ]; then
+elif [ "$TASK" = "synchro" ]; then
   ./.tox-venv/bin/python3 -m tox -e synchro
 fi

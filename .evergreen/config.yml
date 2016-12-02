@@ -410,90 +410,6 @@ tasks:
             AUTH: ${AUTH}
             SSL: ${SSL}
 
-
-    - name: "test-3.2-replicaset"
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.2"
-            TOPOLOGY: "replica_set"
-            AUTH: ${AUTH}
-            SSL: ${SSL}
-        - func: "run tests"
-          vars:
-            AUTH: ${AUTH}
-            SSL: ${SSL}
-
-
-    - name: "test-3.2-sharded"
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.2"
-            TOPOLOGY: "sharded_cluster"
-            AUTH: ${AUTH}
-            SSL: ${SSL}
-        - func: "run tests"
-          vars:
-            AUTH: ${AUTH}
-            SSL: ${SSL}
-
-
-    - name: "test-3.2-standalone"
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.2"
-            TOPOLOGY: "server"
-            AUTH: ${AUTH}
-            SSL: ${SSL}
-        - func: "run tests"
-          vars:
-            AUTH: ${AUTH}
-            SSL: ${SSL}
-
-
-    - name: "test-2.6-replicaset"
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "2.6"
-            TOPOLOGY: "replica_set"
-            AUTH: ${AUTH}
-            SSL: ${SSL}
-        - func: "run tests"
-          vars:
-            AUTH: ${AUTH}
-            SSL: ${SSL}
-
-
-    - name: "test-2.6-sharded"
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "2.6"
-            TOPOLOGY: "sharded_cluster"
-            AUTH: ${AUTH}
-            SSL: ${SSL}
-        - func: "run tests"
-          vars:
-            AUTH: ${AUTH}
-            SSL: ${SSL}
-
-
-    - name: "test-2.6-standalone"
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "2.6"
-            TOPOLOGY: "server"
-            AUTH: ${AUTH}
-            SSL: ${SSL}
-        - func: "run tests"
-          vars:
-            AUTH: ${AUTH}
-            SSL: ${SSL}
-
 # }}}
 
 
@@ -506,7 +422,7 @@ axes:
         variables:
            VERSION: "latest"
 
-  - id: os-fully-featured
+  - id: os
     display_name: OS
     values:
       - id: ubuntu-16.04
@@ -556,10 +472,9 @@ axes:
 
 buildvariants:
 
-#  matrix_spec: {os: "*", topology: "*", auth: "*", ssl: "*", versions: "*" }
 - matrix_name: "tests-all"
-  matrix_spec: {"os-fully-featured": "*", auth: "*", ssl: "*" }
-  display_name: "${os-fully-featured} ${auth} ${ssl}"
+  matrix_spec: {os: "*", topology: "*", auth: "*", ssl: "*", versions: "*" }
+  display_name: "${os} ${auth} ${ssl} ${topology}"
   tasks:
      - name: "test-latest-replicaset"
      - name: "test-latest-sharded"
@@ -573,45 +488,6 @@ buildvariants:
      - name: "test-2.6-replicaset"
      - name: "test-2.6-sharded"
      - name: "test-2.6-standalone"
-
-- matrix_name: "tests-ssl-requires-34"
-  matrix_spec: {"os-ssl-requires-34": "*", auth: "*", ssl: "ssl" }
-  display_name: "${os-ssl-requires-34} ${auth} ${ssl}"
-  tasks:
-     - name: "test-latest-replicaset"
-     - name: "test-latest-sharded"
-     - name: "test-latest-standalone"
-     - name: "test-3.4-replicaset"
-     - name: "test-3.4-sharded"
-     - name: "test-3.4-standalone"
-
-- matrix_name: "tests-nossl"
-  matrix_spec: {"os-nossl": "*", auth: "*", ssl: "nossl" }
-  display_name: "${os-nossl} ${auth} ${ssl}"
-  tasks:
-     - name: "test-latest-replicaset"
-     - name: "test-latest-sharded"
-     - name: "test-latest-standalone"
-     - name: "test-3.4-replicaset"
-     - name: "test-3.4-sharded"
-     - name: "test-3.4-standalone"
-     - name: "test-3.2-replicaset"
-     - name: "test-3.2-sharded"
-     - name: "test-3.2-standalone"
-     - name: "test-2.6-replicaset"
-     - name: "test-2.6-sharded"
-     - name: "test-2.6-standalone"
-
-- matrix_name: "tests-os-requires-34"
-  matrix_spec: {"os-requires-34": "*", auth: "*", ssl: "*" }
-  display_name: "${os-requires-34} ${auth} ${ssl}"
-  tasks:
-     - name: "test-latest-replicaset"
-     - name: "test-latest-sharded"
-     - name: "test-latest-standalone"
-     - name: "test-3.4-replicaset"
-     - name: "test-3.4-sharded"
-     - name: "test-3.4-standalone"
 
 
 
