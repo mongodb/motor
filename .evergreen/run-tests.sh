@@ -7,6 +7,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       SSL                     Set to enable SSL. Defaults to "nossl"
 #       MONGODB_URI             Set the suggested connection MONGODB_URI (including credentials and topology info)
 #       MARCH                   Machine Architecture. Defaults to lowercase uname -m
+#       TASK                    "test", "docs", "doctest", "synchro"
 
 
 AUTH=${AUTH:-noauth}
@@ -42,4 +43,13 @@ python3 ./virtualenv-15.1.0/virtualenv.py .tox-venv
 
 # TODO: run all environments:
 # tox or tox --skip-missing-interpreters
-./.tox-venv/bin/python3 -m tox -e py35-tornado4
+
+if [ "$TASK" = "test" ]; then
+  ./.tox-venv/bin/python3 -m tox -e py35-tornado4
+else if [ "$TASK" = "doctest" ]; then
+  ./.tox-venv/bin/python3 -m tox -e py3-sphinx-doctest
+else if [ "$TASK" = "docs" ]; then
+  ./.tox-venv/bin/python3 -m tox -e py3-sphinx-docs
+else if [ "$TASK" = "synchro" ]; then
+  ./.tox-venv/bin/python3 -m tox -e synchro
+fi

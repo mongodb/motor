@@ -110,63 +110,6 @@ functions:
           fi
           echo "{ \"releases\": { \"default\": \"$MONGODB_BINARIES\" }}" > $MONGO_ORCHESTRATION_HOME/orchestration.config
 
-  "upload release":
-    - command: shell.exec
-      params:
-        script: |
-          ${PREPARE_SHELL}
-          [ -f "src/${project}*gz" ] && mv src/${project}*gz ${project}.tar.gz
-    - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file: ${project}.tar.gz
-        remote_file: ${UPLOAD_BUCKET}/${project}-${CURRENT_VERSION}.tar.gz
-        bucket: mciuploads
-        permissions: public-read
-        content_type: ${content_type|application/x-gzip}
-
-  # Upload build artifacts that other tasks may depend on
-  # Note this URL needs to be totally unique, while predictable for the next task
-  # so it can automatically download the artifacts
-  "upload build":
-    # Compress and upload the entire build directory
-    - command: archive.targz_pack
-      params:
-        # Example: mongo_c_driver_releng_9dfb7d741efbca16faa7859b9349d7a942273e43_16_11_08_19_29_52.tar.gz
-        target: "${build_id}.tar.gz"
-        source_dir: "src"
-        include:
-          - "./**"
-    - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file: ${build_id}.tar.gz
-        # Example: /mciuploads/${UPLOAD_BUCKET}/gcc49/9dfb7d741efbca16faa7859b9349d7a942273e43/debug-compile-nosasl-nossl/mongo_c_driver_releng_9dfb7d741efbca16faa7859b9349d7a942273e43_16_11_08_19_29_52.tar.gz
-        remote_file: ${UPLOAD_BUCKET}/${build_variant}/${revision}/${task_name}/${build_id}.tar.gz
-        bucket: mciuploads
-        permissions: public-read
-        content_type: ${content_type|application/x-gzip}
-
-  "fetch build":
-    - command: shell.exec
-      params:
-        continue_on_err: true
-        script: "set -o xtrace && rm -rf src"
-    - command: s3.get
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        remote_file: ${UPLOAD_BUCKET}/${build_variant}/${revision}/${BUILD_NAME}/${build_id}.tar.gz
-        bucket: mciuploads
-        local_file: build.tar.gz
-    - command: shell.exec
-      params:
-        continue_on_err: true
-        # EVG-1105: Use s3.get extract_to: src/
-        script: "set -o xtrace && rm -rf src && mkdir src && tar xf build.tar.gz -C src/"
-
   "upload docs" :
     - command: shell.exec
       params:
@@ -175,7 +118,7 @@ functions:
         script: |
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
-           aws s3 cp doc/html s3://mciuploads/${UPLOAD_BUCKET}/docs/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
+           aws s3 cp ./.tox/py3-sphinx-docs/tmp/html s3://mciuploads/${UPLOAD_BUCKET}/docs/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
     - command: s3.put
       params:
         aws_key: ${aws_key}
@@ -206,36 +149,6 @@ functions:
         permissions: public-read
         content_type: text/html
         display_name: "Coverage Report"
-
-  "upload scan artifacts" :
-    - command: shell.exec
-      type: test
-      params:
-        working_dir: "src"
-        script: |
-          if find scan -name \*.html | grep -q html; then
-            (cd scan && find . -name index.html -exec echo "<li><a href='{}'>{}</a></li>" \;) >> scan.html
-          else
-            echo "No issues found" > scan.html
-          fi
-    - command: shell.exec
-      params:
-        silent: true
-        working_dir: "src"
-        script: |
-           export AWS_ACCESS_KEY_ID=${aws_key}
-           export AWS_SECRET_ACCESS_KEY=${aws_secret}
-           aws s3 cp scan s3://mciuploads/${UPLOAD_BUCKET}/${build_variant}/${revision}/${version_id}/${build_id}/scan/ --recursive --acl public-read --region us-east-1
-    - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file:  src/scan.html
-        remote_file: ${UPLOAD_BUCKET}/${build_variant}/${revision}/${version_id}/${build_id}/scan/index.html
-        bucket: mciuploads
-        permissions: public-read
-        content_type: text/html
-        display_name: "Scan Build Report"
 
   "upload mo artifacts":
     - command: shell.exec
@@ -326,7 +239,7 @@ functions:
         working_dir: "src"
         script: |
           ${PREPARE_SHELL}
-          AUTH=${AUTH} SSL=${SSL} MONGODB_URI="${MONGODB_URI}" sh .evergreen/run-tests.sh
+          AUTH=${AUTH} SSL=${SSL} MONGODB_URI="${MONGODB_URI}" TASK=test sh .evergreen/run-tests.sh
 
   "cleanup":
     - command: shell.exec
@@ -401,51 +314,6 @@ post:
 
 tasks:
 
-
-    # Wildcard task. Do you need to find out what tools are available and where?
-    # Throw it here, and execute this task on all buildvariants
-    - name: getdata
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "src"
-            script: |
-               set -o xtrace
-               . ${DRIVERS_TOOLS}/.evergreen/download-mongodb.sh || true
-               get_distro || true
-               echo $DISTRO
-               echo $MARCH
-               echo $OS
-               uname -a || true
-               ls /etc/*release* || true
-               cc --version || true
-               gcc --version || true
-               clang --version || true
-               gcov --version || true
-               lcov --version || true
-               llvm-cov --version || true
-               echo $PATH
-               ls -la /usr/local/Cellar/llvm/*/bin/ || true
-               ls -la /usr/local/Cellar/ || true
-               scan-build --version || true
-               genhtml --version || true
-               valgrind --version || true
-
-# Release Engineering Matrix {{{
-    - name: make-release-archive
-      tags: ["releng"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "src"
-            script: |
-              ${PREPARE_SHELL}
-              sh ${DRIVERS_TOOLS}/.evergreen/make-release.sh
-        - func: "upload release"
-        - func: "upload build"
-
     - name: make-docs
       tags: ["releng"]
       commands:
@@ -455,44 +323,8 @@ tasks:
             working_dir: "src"
             script: |
               ${PREPARE_SHELL}
-              sh ${DRIVERS_TOOLS}/.evergreen/make-docs.sh
+              AUTH=${AUTH} SSL=${SSL} MONGODB_URI="${MONGODB_URI}" TASK=docs sh .evergreen/run-tests.sh
         - func: "upload docs"
-
-    - name: release-compile
-      tags: ["releng"]
-      depends_on:
-        - name: "make-release-archive"
-          variant: "releng-release-archive-creator"
-      commands:
-        # Fetch the make-release-archive generated archive, rather then the git clone
-        - func: "fetch build"
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "src"
-            script: |
-              ${PREPARE_SHELL}
-              sh ${DRIVERS_TOOLS}/.evergreen/compile.sh
-        - func: "upload build"
-
-    - name: release-compile-cmake
-      tags: ["releng"]
-      depends_on:
-        - name: "make-release-archive"
-          variant: "releng-release-archive-creator"
-      commands:
-        # Fetch the make-release-archive generated archive, rather then the git clone
-        - func: "fetch build"
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "src"
-            script: |
-              ${PREPARE_SHELL}
-              BUILDTOOL="cmake" sh ${DRIVERS_TOOLS}/.evergreen/compile.sh
-        - func: "upload build"
-# }}}
-
 
 # Standard test tasks {{{
     - name: "test-latest-replicaset"
@@ -803,16 +635,6 @@ axes:
 
 buildvariants:
 
-# Test packaging and other release related routines
-- name: releng-release-archive-creator
-  display_name: "** Release Archive Creator"
-  run_on:
-    - ubuntu1404-build
-  tasks:
-    - ".releng" # Run all tasks with the "releng" tag
-
-
-
 #  matrix_spec: {os: "*", topology: "*", auth: "*", ssl: "*", versions: "*" }
 - matrix_name: "tests-all"
   matrix_spec: {"os-fully-featured": "*", auth: "*", ssl: "*" }
@@ -893,3 +715,4 @@ buildvariants:
 
       # Motor-specific notes:
       # No Windows.
+      # No Python3.5 on Ubuntu before 16.04
