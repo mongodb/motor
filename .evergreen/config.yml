@@ -522,26 +522,14 @@ axes:
   - id: os-fully-featured
     display_name: OS
     values:
-      - id: ubuntu1204-build
-        display_name: "Ubuntu 12.04"
-        run_on: ubuntu1204-build
-
-      - id: ubuntu-14.04
-        display_name: "Ubuntu 14.04"
-        run_on: ubuntu1404-build
-
-      - id: rhel70
-        display_name: "RHEL 7.0"
-        run_on: rhel70
+      - id: ubuntu-16.04
+        display_name: "Ubuntu 16.04"
+        run_on: ubuntu1604-build
 
 
   - id: os-nossl
     display_name: OS
     values:
-      - id: archlinux-build
-        display_name: "Archlinux"
-        run_on: archlinux-build
-
       - id: solaris
         display_name: "Solaris"
         run_on: solaris
@@ -549,6 +537,7 @@ axes:
       - id: osx-1010
         display_name: "macOS 10.10"
         run_on: osx-1010
+
 
   - id: os-ssl-requires-34
     display_name: OS
@@ -561,26 +550,6 @@ axes:
   - id: os-requires-34
     display_name: OS
     values:
-      - id: debian81-build
-        display_name: "Debian 8.1"
-        run_on: debian81-build
-
-      - id: ubuntu-16.04
-        display_name: "Ubuntu 16.04"
-        run_on: ubuntu1604-build
-
-      - id: rhel71-power8-build
-        display_name: "RHEL 7.1 (POWER8)"
-        run_on: rhel71-power8-build
-
-      - id: rhel72-zseries-build
-        display_name: "RHEL 7.2 (zSeries)"
-        run_on: rhel72-zseries-build
-
-      - id: suse12-zseries-build
-        display_name: "SUSE 12 (zSeries)"
-        run_on: suse12-zseries-build
-
       - id: ubuntu1604-arm64-large
         display_name: "Ubuntu 16.04 (ARM64)"
         run_on: ubuntu1604-arm64-large
