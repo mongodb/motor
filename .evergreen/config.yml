@@ -505,19 +505,6 @@ axes:
         display_name: "latest"
         variables:
            VERSION: "latest"
-      - id: "3.2"
-        display_name: "3.2"
-        variables:
-           VERSION: "3.2"
-      - id: "3.0"
-        display_name: "3.0"
-        variables:
-           VERSION: "3.0"
-      - id: "2.6"
-        display_name: "2.6"
-        variables:
-           VERSION: "2.6"
-
 
   - id: os-fully-featured
     display_name: OS
@@ -525,43 +512,6 @@ axes:
       - id: ubuntu-16.04
         display_name: "Ubuntu 16.04"
         run_on: ubuntu1604-build
-
-
-  - id: os-nossl
-    display_name: OS
-    values:
-      - id: solaris
-        display_name: "Solaris"
-        run_on: solaris
-
-      - id: osx-1010
-        display_name: "macOS 10.10"
-        run_on: osx-1010
-
-
-  - id: os-ssl-requires-34
-    display_name: OS
-    values:
-      - id: osx-1010
-        display_name: "macOS 10.10"
-        run_on: osx-1010
-
-
-  - id: os-requires-34
-    display_name: OS
-    values:
-      - id: ubuntu1604-arm64-large
-        display_name: "Ubuntu 16.04 (ARM64)"
-        run_on: ubuntu1604-arm64-large
-
-      - id: ubuntu1604-power8-build
-        display_name: "Ubuntu 16.04 (POWER8)"
-        run_on: ubuntu1604-power8-build
-
-      - id: ubuntu1604-zseries-large
-        display_name: "Ubuntu 16.04 (zSeries)"
-        run_on: ubuntu1604-zseries-large
-
 
   - id: topology
     display_name: Topology
@@ -578,6 +528,7 @@ axes:
         display_name: Sharded Cluster
         variables:
            TOPOLOGY: "sharded_cluster"
+
   - id: auth
     display_name: Authentication
     values:
@@ -589,6 +540,7 @@ axes:
         display_name: NoAuth
         variables:
            AUTH: "noauth"
+
   - id: ssl
     display_name: SSL
     values:
