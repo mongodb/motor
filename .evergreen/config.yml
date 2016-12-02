@@ -301,12 +301,12 @@ functions:
         display_name: "drivers-dir.tar.gz"
 
   "upload test results":
+    - command: attach.xunit_results
+      params:
+        file: "src/xunit-results/TEST-*.xml"
     - command: attach.results
       params:
         file_location: "${DRIVERS_TOOLS}/results.json"
-    - command: attach.xunit_results
-      params:
-        file: .tox/*/*-results.xml
 
   "bootstrap mongo-orchestration":
     - command: shell.exec

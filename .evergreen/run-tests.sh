@@ -33,7 +33,6 @@ export ASYNC_TEST_TIMEOUT=30
 export TOX_TESTENV_PASSENV="JENKINS DB_IP ASYNC_TEST_TIMEOUT"
 
 export MOTOR_TEST_DEPENDENCIES="pytest"
-export MOTOR_TEST_RUNNER="python -m pytest -x --junitxml={envname}-results.xml"
 
 # Don't rely on build machine having pip and virtualenv installed globally.
 curl -LO https://pypi.python.org/packages/d4/0c/9840c08189e030873387a73b90ada981885010dd9aea134d6de30cd24cb8/virtualenv-15.1.0.tar.gz
