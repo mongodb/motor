@@ -49,32 +49,37 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
     fs = None
     file_id = None
 
-    def setUp(self):
-        super().setUp()
-        logging.getLogger('aiohttp.web').setLevel(logging.CRITICAL)
-
-        self.fs = gridfs.GridFS(test.env.sync_cx.motor_test)
-
-        # Make a 500k file in GridFS with filename 'foo'
-        self.contents = b'Jesse' * 100 * 1024
-        self.contents_hash = hashlib.md5(self.contents).hexdigest()
-
-        # Record when we created the file, to check the Last-Modified header
-        self.put_start = datetime.datetime.utcnow().replace(microsecond=0)
-        self.file_id = 'id'
-        self.fs.delete(self.file_id)
-        self.fs.put(self.contents,
-                    _id='id',
-                    filename='foo',
-                    content_type='my type')
-
-        self.put_end = datetime.datetime.utcnow().replace(microsecond=0)
-        self.app = self.srv = self.app_handler = None
-
     def tearDown(self):
         self.loop.run_until_complete(self.stop())
-        self.fs.delete(self.file_id)
         super().tearDown()
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        logging.getLogger('aiohttp.web').setLevel(logging.CRITICAL)
+
+        cls.fs = gridfs.GridFS(test.env.sync_cx.motor_test)
+
+        # Make a 500k file in GridFS with filename 'foo'
+        cls.contents = b'Jesse' * 100 * 1024
+        cls.contents_hash = hashlib.md5(cls.contents).hexdigest()
+
+        # Record when we created the file, to check the Last-Modified header
+        cls.put_start = datetime.datetime.utcnow().replace(microsecond=0)
+        cls.file_id = 'id'
+        cls.fs.delete(cls.file_id)
+        cls.fs.put(cls.contents,
+                   _id='id',
+                   filename='foo',
+                   content_type='my type')
+
+        cls.put_end = datetime.datetime.utcnow().replace(microsecond=0)
+        cls.app = cls.srv = cls.app_handler = None
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.fs.delete(cls.file_id)
+        super().tearDownClass()
 
     @asyncio.coroutine
     def start_app(self, http_gridfs=None, extra_routes=None):

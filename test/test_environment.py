@@ -103,7 +103,7 @@ def is_server_resolvable():
         socket.setdefaulttimeout(socket_timeout)
 
 
-class Environment(object):
+class TestEnvironment(object):
     def __init__(self):
         self.initialized = False
         self.host = None
@@ -265,4 +265,4 @@ class Environment(object):
             self.v8 = True
 
 
-env = Environment()
+env = TestEnvironment()
