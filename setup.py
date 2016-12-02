@@ -58,13 +58,16 @@ class test(Command):
         ("test-suite=", "s",
          "Test suite to run (e.g. 'some_module.test_suite')"),
         ("failfast", "f", "Stop running tests on first failure or error"),
-        ("tornado-warnings", "w", "Let Tornado log warnings")]
+        ("tornado-warnings", "w", "Let Tornado log warnings"),
+        ("xunit-output=", "x",
+         "Generate a results directory with XUnit XML format")]
 
     def initialize_options(self):
         self.test_module = None
         self.test_suite = None
         self.failfast = False
         self.tornado_warnings = False
+        self.xunit_output = None
 
     def finalize_options(self):
         if self.test_suite is None and self.test_module is None:
@@ -82,17 +85,22 @@ class test(Command):
                 self.distribution.install_requires)
         if self.distribution.tests_require:
             self.distribution.fetch_build_eggs(self.distribution.tests_require)
+        if self.xunit_output:
+            self.distribution.fetch_build_eggs(
+                ["unittest-xml-reporting>=1.14.0,<2.0.0a0"])
         self.run_command('egg_info')
         build_ext_cmd = self.reinitialize_command('build_ext')
         build_ext_cmd.inplace = 1
         self.run_command('build_ext')
 
-        # Construct a MotorTestRunner directly from the unittest imported from
+        # Construct a test runner directly from the unittest imported from
         # test (this will be unittest2 under Python 2.6), which creates a
         # TestResult that supports the 'addSkip' method. setuptools will by
         # default create a TextTestRunner that uses the old TestResult class,
         # resulting in DeprecationWarnings instead of skipping tests under 2.6.
-        from test import (unittest, MotorTestLoader, MotorTestRunner,
+        from test import (env,
+                          suppress_tornado_warnings,
+                          unittest, MotorTestLoader,
                           test_environment as testenv)
 
         loader = MotorTestLoader()
@@ -128,17 +136,22 @@ class test(Command):
         else:
             suite = loader.loadTestsFromName(self.test_suite)
 
-        runner_kwargs = dict(
-            verbosity=2,
-            failfast=self.failfast,
-            tornado_warnings=self.tornado_warnings)
+        runner_kwargs = dict(verbosity=2, failfast=self.failfast)
 
-        if sys.version_info[:2] >= (3, 2) and unittest.__name__ != 'unittest2':
-            # 'warnings' argument added to TextTestRunner in Python 3.2.
-            runner_kwargs['warnings'] = 'default'
+        if self.xunit_output:
+            runner_kwargs['output'] = self.xunit_output
+            from xmlrunner import XMLTestRunner
+            runner_class = XMLTestRunner
+        else:
+            runner_class = unittest.TextTestRunner
 
-        runner = MotorTestRunner(**runner_kwargs)
+        runner = runner_class(**runner_kwargs)
+        env.setup()
+        if not self.tornado_warnings:
+            suppress_tornado_warnings()
+
         result = runner.run(suite)
+        env.teardown()
         sys.exit(not result.wasSuccessful())
 
 

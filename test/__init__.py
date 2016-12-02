@@ -76,22 +76,6 @@ class MotorTestLoader(unittest.TestLoader):
         return super(MotorTestLoader, self)._get_module_from_name(name)
 
 
-class MotorTestRunner(unittest.TextTestRunner):
-    """Runs suite-level setup and teardown."""
-    def __init__(self, *args, **kwargs):
-        self.tornado_warnings = kwargs.pop('tornado_warnings', False)
-        super(MotorTestRunner, self).__init__(*args, **kwargs)
-
-    def run(self, test):
-        env.setup()
-        if not self.tornado_warnings:
-            suppress_tornado_warnings()
-
-        result = super(MotorTestRunner, self).run(test)
-        env.teardown()
-        return result
-
-
 class MockRequestHandler(object):
     """For testing MotorGridOut.stream_to_handler."""
     def __init__(self):
