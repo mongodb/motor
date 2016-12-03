@@ -143,10 +143,12 @@ class TestEnvironment(object):
         port = int(os.environ.get("DB_PORT", 27017))
         connectTimeoutMS = 100
         serverSelectionTimeoutMS = 100
+        socketTimeoutMS = 10000
         try:
             client = connected(pymongo.MongoClient(
                 host, port,
                 connectTimeoutMS=connectTimeoutMS,
+                socketTimeoutMS=socketTimeoutMS,
                 serverSelectionTimeoutMS=serverSelectionTimeoutMS,
                 ssl_ca_certs=CA_PEM,
                 ssl=True))
@@ -157,6 +159,7 @@ class TestEnvironment(object):
                 client = connected(pymongo.MongoClient(
                     host, port,
                     connectTimeoutMS=connectTimeoutMS,
+                    socketTimeoutMS=socketTimeoutMS,
                     serverSelectionTimeoutMS=serverSelectionTimeoutMS,
                     ssl_ca_certs=CA_PEM,
                     ssl_certfile=CLIENT_PEM))
@@ -164,7 +167,11 @@ class TestEnvironment(object):
                 self.mongod_started_with_ssl = True
                 self.mongod_validates_client_cert = True
             except pymongo.errors.ServerSelectionTimeoutError:
-                client = connected(pymongo.MongoClient(host, port))
+                client = connected(pymongo.MongoClient(
+                    host, port,
+                    connectTimeoutMS=connectTimeoutMS,
+                    socketTimeoutMS=socketTimeoutMS,
+                    serverSelectionTimeoutMS=serverSelectionTimeoutMS))
 
         response = client.admin.command('ismaster')
         if 'setName' in response:
