@@ -59,6 +59,9 @@ class MotorClientTest(MotorTest):
 
     @gen_test
     def test_unix_socket(self):
+        if env.mongod_started_with_ssl:
+            raise SkipTest("Server started with SSL")
+
         mongodb_socket = '/tmp/mongodb-%d.sock' % env.port
         if not os.access(mongodb_socket, os.R_OK):
             raise SkipTest("Socket file is not accessible")
@@ -196,17 +199,15 @@ class MotorClientTest(MotorTest):
                 'mike', 'password',
                 roles=['userAdmin', 'readWrite'])
 
-            client = motor.MotorClient(
-                'mongodb://u:pass@%s:%d' % (env.host, env.port),
-                io_loop=self.io_loop)
+            client = self.motor_client(
+                'mongodb://u:pass@%s:%d' % (env.host, env.port))
 
             with self.assertRaises(OperationFailure):
                 yield client.db.collection.find_one()
 
-            client = motor.MotorClient(
+            client = self.motor_client(
                 'mongodb://mike:password@%s:%d/%s' %
-                (env.host, env.port, db.name),
-                io_loop=self.io_loop)
+                (env.host, env.port, db.name))
 
             yield client[db.name].collection.find_one()
         finally:

@@ -146,7 +146,7 @@ class TestAsyncIODatabase(AsyncIOTestCase):
         # self.db is logged in as root.
         yield from self.db.add_user("jesse", "password")
         db = AsyncIOMotorClient(env.host, env.port,
-                                io_loop=self.loop).motor_test
+                                **self.get_client_kwargs()).motor_test
         try:
             # Authenticate many times at once to test concurrency.
             yield from asyncio.wait(

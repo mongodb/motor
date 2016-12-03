@@ -32,7 +32,7 @@ from mockupdb import MockupDB
 from tornado import gen, testing
 
 import motor
-from test.test_environment import env, CLIENT_PEM
+from test.test_environment import env, CA_PEM, CLIENT_PEM
 from test.version import padded, _parse_version_string
 
 
@@ -110,11 +110,7 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
         if self.ssl and not env.mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")
 
-        if env.auth:
-            self.cx = self.motor_client(env.uri, ssl=self.ssl)
-        else:
-            self.cx = self.motor_client(ssl=self.ssl)
-
+        self.cx = self.motor_client()
         self.db = self.cx.motor_test
         self.collection = self.db.test_collection
 
@@ -126,11 +122,12 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
     make_test_data.__test__ = False
 
     def get_client_kwargs(self, **kwargs):
-        kwargs.setdefault('io_loop', self.io_loop)
-        ssl = env.mongod_started_with_ssl
-        kwargs.setdefault('ssl', ssl)
-        if kwargs['ssl'] and env.mongod_validates_client_cert:
+        if env.mongod_started_with_ssl:
             kwargs.setdefault('ssl_certfile', CLIENT_PEM)
+            kwargs.setdefault('ssl_ca_certs', CA_PEM)
+
+        kwargs.setdefault('ssl', env.mongod_started_with_ssl)
+        kwargs.setdefault('io_loop', self.io_loop)
 
         return kwargs
 

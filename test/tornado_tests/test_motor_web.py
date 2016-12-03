@@ -30,7 +30,7 @@ from tornado.web import Application
 import motor
 import motor.web
 import test
-from test.test_environment import env, CLIENT_PEM
+from test.test_environment import env, CA_PEM, CLIENT_PEM
 
 
 # We're using Tornado's AsyncHTTPTestCase instead of our own MotorTestCase for
@@ -55,10 +55,10 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
         self.put_end = datetime.datetime.utcnow().replace(microsecond=0)
         self.assertTrue(self.fs.get_last_version('foo'))
 
-    def motor_db(self):
-        kwargs = {}
-        if env.mongod_validates_client_cert:
+    def motor_db(self, **kwargs):
+        if env.mongod_started_with_ssl:
             kwargs.setdefault('ssl_certfile', CLIENT_PEM)
+            kwargs.setdefault('ssl_ca_certs', CA_PEM)
 
         kwargs.setdefault('ssl', env.mongod_started_with_ssl)
 
@@ -186,12 +186,7 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
 
 class TZAwareGridFSHandlerTest(GridFSHandlerTestBase):
     def motor_db(self):
-        client = motor.MotorClient(
-            test.env.uri,
-            tz_aware=True,
-            io_loop=self.io_loop)
-
-        return client.motor_test
+        return super(TZAwareGridFSHandlerTest, self).motor_db(tz_aware=True)
 
     def test_tz_aware(self):
         now = datetime.datetime.utcnow()

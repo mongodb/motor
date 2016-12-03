@@ -29,9 +29,10 @@ fi
 
 echo "Running $AUTH tests over $SSL, connecting to $MONGODB_URI"
 
+export EVERGREEN=1
 export DB_IP=localhost
 export ASYNC_TEST_TIMEOUT=30
-export TOX_TESTENV_PASSENV="JENKINS DB_IP ASYNC_TEST_TIMEOUT"
+export TOX_TESTENV_PASSENV="EVERGREEN DB_IP ASYNC_TEST_TIMEOUT"
 
 export MOTOR_TEST_DEPENDENCIES="pytest"
 

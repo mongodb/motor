@@ -16,6 +16,7 @@
 
 import asyncio
 import gc
+import os
 import ssl
 import unittest
 from unittest import SkipTest
@@ -194,27 +195,36 @@ class TestAsyncIOSSL(unittest.TestCase):
                 yield from client.db.collection.find_one()
 
     @asyncio_test
+    @unittest.skipIf('EVERGREEN' in os.environ, "TODO: fix on Evergreen")
     def test_mongodb_x509_auth(self):
         # Expects the server to be running with SSL config described above,
         # and with "--auth".
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
-        client = AsyncIOMotorClient(test.env.uri,
+        # self.env.uri includes username and password.
+        authenticated_client = AsyncIOMotorClient(test.env.uri,
                                     ssl_certfile=CLIENT_PEM,
                                     ssl_ca_certs=CA_PEM,
                                     io_loop=self.loop)
 
-        if not (yield from at_least(client, (2, 5, 3, -1))):
+        if not (yield from at_least(authenticated_client, (2, 5, 3, -1))):
             raise SkipTest("MONGODB-X509 tests require MongoDB 2.5.3 or newer")
 
         if not test.env.auth:
             raise SkipTest('Authentication is not enabled on server')
 
         # Give admin all necessary privileges.
-        yield from client['$external'].add_user(MONGODB_X509_USERNAME, roles=[
-            {'role': 'readWriteAnyDatabase', 'db': 'admin'},
-            {'role': 'userAdminAnyDatabase', 'db': 'admin'}])
+        yield from authenticated_client['$external'].add_user(
+            MONGODB_X509_USERNAME, roles=[
+                {'role': 'readWriteAnyDatabase', 'db': 'admin'},
+                {'role': 'userAdminAnyDatabase', 'db': 'admin'}])
+
+        # Not authenticated.
+        client = AsyncIOMotorClient(env.host, env.port,
+                                    ssl_certfile=CLIENT_PEM,
+                                    ssl_ca_certs=CA_PEM,
+                                    io_loop=self.loop)
 
         collection = client.motor_test.test
         with self.assertRaises(OperationFailure):
@@ -237,5 +247,5 @@ class TestAsyncIOSSL(unittest.TestCase):
         yield from auth_uri_client.db.collection.find_one()
 
         # Cleanup.
-        yield from remove_all_users(client['$external'])
-        yield from client['$external'].logout()
+        yield from remove_all_users(authenticated_client['$external'])
+        yield from authenticated_client['$external'].logout()

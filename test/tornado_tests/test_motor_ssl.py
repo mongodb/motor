@@ -16,6 +16,8 @@ from __future__ import unicode_literals
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+import os
+
 try:
     import ssl
 except ImportError:
@@ -182,11 +184,15 @@ class MotorSSLTest(MotorTest):
 
     @gen_test
     def test_mongodb_x509_auth(self):
+        if 'EVERGREEN' in os.environ:
+            raise SkipTest("TODO: fix on Evergreen")
+
         # Expects the server to be running with SSL config described above,
         # and with "--auth".
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
+        # self.env.uri includes username and password.
         authenticated_client = motor.MotorClient(
             test.env.uri,
             ssl_certfile=CLIENT_PEM,
@@ -205,6 +211,7 @@ class MotorSSLTest(MotorTest):
                 {'role': 'readWriteAnyDatabase', 'db': 'admin'},
                 {'role': 'userAdminAnyDatabase', 'db': 'admin'}])
 
+        # Not authenticated.
         client = motor.MotorClient(
             "server", test.env.port,
             ssl_certfile=CLIENT_PEM,

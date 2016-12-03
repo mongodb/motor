@@ -17,10 +17,8 @@
 import asyncio
 import os
 import unittest
-import warnings
 from unittest import SkipTest
 
-import bson
 import pymongo
 from bson import CodecOptions
 from pymongo import ReadPreference, WriteConcern
@@ -60,6 +58,9 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
     @asyncio_test
     def test_unix_socket(self):
+        if env.mongod_started_with_ssl:
+            raise SkipTest("Server started with SSL")
+
         mongodb_socket = '/tmp/mongodb-%d.sock' % env.port
 
         if not os.access(mongodb_socket, os.R_OK):
@@ -209,17 +210,15 @@ class TestAsyncIOClient(AsyncIOTestCase):
                 'mike', 'password',
                 roles=['userAdmin', 'readWrite'])
 
-            client = motor_asyncio.AsyncIOMotorClient(
-                'mongodb://u:pass@%s:%d' % (env.host, env.port),
-                io_loop=self.loop)
+            client = self.asyncio_client(
+                'mongodb://u:pass@%s:%d' % (env.host, env.port))
 
             with self.assertRaises(OperationFailure):
                 yield from client.db.collection.find_one()
 
-            client = motor_asyncio.AsyncIOMotorClient(
+            client = self.asyncio_client(
                 'mongodb://mike:password@%s:%d/%s' %
-                (env.host, env.port, db.name),
-                io_loop=self.loop)
+                (env.host, env.port, db.name))
 
             yield from client[db.name].collection.find_one()
         finally:

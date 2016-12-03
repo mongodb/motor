@@ -32,7 +32,7 @@ from mockupdb import MockupDB
 from motor import motor_asyncio
 from test.assert_logs_backport import AssertLogsMixin
 from test.version import _parse_version_string, padded
-from test.test_environment import env, CLIENT_PEM
+from test.test_environment import env, CA_PEM, CLIENT_PEM
 
 
 class _TestMethodWrapper(object):
@@ -99,7 +99,8 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         self.loop.run_until_complete(self.collection.drop())
 
     def get_client_kwargs(self, **kwargs):
-        if env.mongod_validates_client_cert:
+        if env.mongod_started_with_ssl:
+            kwargs.setdefault('ssl_ca_certs', CA_PEM)
             kwargs.setdefault('ssl_certfile', CLIENT_PEM)
 
         kwargs.setdefault('ssl', env.mongod_started_with_ssl)

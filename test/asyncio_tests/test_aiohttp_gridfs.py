@@ -26,7 +26,6 @@ import aiohttp.web
 import gridfs
 
 from motor.aiohttp import AIOHTTPGridFS
-from motor.motor_asyncio import AsyncIOMotorClient
 
 import test
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
@@ -254,11 +253,7 @@ class AIOHTTPGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
 class AIOHTTPTZAwareGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
     @asyncio_test
     def test_tz_aware(self):
-        client = AsyncIOMotorClient(
-            test.env.uri,
-            tz_aware=True,
-            io_loop=self.loop)
-
+        client = self.asyncio_client(tz_aware=True)
         yield from self.start_app(AIOHTTPGridFS(client.motor_test))
         now = datetime.datetime.utcnow()
         ago = now - datetime.timedelta(minutes=10)
