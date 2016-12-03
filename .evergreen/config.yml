@@ -482,14 +482,6 @@ buildvariants:
      - name: "test-3.4-replicaset"
      - name: "test-3.4-sharded"
      - name: "test-3.4-standalone"
-     - name: "test-3.2-replicaset"
-     - name: "test-3.2-sharded"
-     - name: "test-3.2-standalone"
-     - name: "test-2.6-replicaset"
-     - name: "test-2.6-sharded"
-     - name: "test-2.6-standalone"
-
-
 
       # Platform notes
       # i386 builds of OpenSSL or Cyrus SASL are not available
