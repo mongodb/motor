@@ -11,3 +11,4 @@ setup.cfg
 .tox
 doc/_build/
 .idea/
+xunit-results
