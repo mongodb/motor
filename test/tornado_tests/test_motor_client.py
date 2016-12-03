@@ -200,9 +200,6 @@ class MotorClientTest(MotorTest):
                 'mongodb://u:pass@%s:%d' % (env.host, env.port),
                 io_loop=self.io_loop)
 
-            # ismaster doesn't throw auth errors.
-            yield client.admin.command('ismaster')
-
             with self.assertRaises(OperationFailure):
                 yield client.db.collection.find_one()
 

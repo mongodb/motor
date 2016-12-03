@@ -213,9 +213,6 @@ class TestAsyncIOClient(AsyncIOTestCase):
                 'mongodb://u:pass@%s:%d' % (env.host, env.port),
                 io_loop=self.loop)
 
-            # ismaster doesn't throw auth errors.
-            yield from client.admin.command('ismaster')
-
             with self.assertRaises(OperationFailure):
                 yield from client.db.collection.find_one()
 
