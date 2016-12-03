@@ -19,8 +19,6 @@ import socket
 import warnings
 
 import pymongo.errors
-from pymongo.common import partition_node
-
 from test.utils import safe_get
 
 HAVE_SSL = True
