@@ -162,6 +162,9 @@ if sys.version_info[0] >= 3:
     # causes SyntaxError in Python 2.
     packages.append('motor.frameworks.asyncio')
 
+    # Install aiohttp integration - aiohttp itself need not be installed.
+    packages.append('motor.aiohttp')
+
 setup(name='motor',
       version='1.2.dev0',
       packages=packages,
