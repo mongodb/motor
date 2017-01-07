@@ -18,7 +18,6 @@ from __future__ import unicode_literals, absolute_import
 
 import inspect
 import functools
-import warnings
 
 from pymongo.cursor import Cursor
 
