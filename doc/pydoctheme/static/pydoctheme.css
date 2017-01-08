@@ -56,6 +56,14 @@ div.sphinxsidebar input[type=text] {
     max-width: 150px;
 }
 
+/* override an apparently misguided "hyphens: auto" style in Sphinx basic.css */
+div.body p, div.body dd, div.body li, div.body blockquote {
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    -webkit-hyphens: none;
+    hyphens: none;
+}
+
 div.body {
     padding: 0 0 0 1.2em;
 }
