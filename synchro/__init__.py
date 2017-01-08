@@ -121,7 +121,7 @@ def wrap_synchro(fn):
         if isinstance(motor_obj, motor.MotorDatabase):
             client = MongoClient(delegate=motor_obj.client)
             return Database(client, motor_obj.name, delegate=motor_obj)
-        if isinstance(motor_obj, motor.motor_tornado.MotorAggregationCursor):
+        if isinstance(motor_obj, motor.motor_tornado.MotorLatentCommandCursor):
             return CommandCursor(motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorCommandCursor):
             return CommandCursor(motor_obj)

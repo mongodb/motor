@@ -300,7 +300,6 @@ class AgnosticCollection(AgnosticBaseProperties):
     insert               = AsyncWrite()
     insert_many          = AsyncWrite()
     insert_one           = AsyncCommand()
-    list_indexes         = AsyncRead()
     map_reduce           = AsyncCommand(doc=mr_doc).wrap(Collection)
     name                 = ReadOnlyProperty()
     options              = AsyncRead()
@@ -314,8 +313,9 @@ class AgnosticCollection(AgnosticBaseProperties):
     update_one           = AsyncCommand()
     with_options         = DelegateMethod().wrap(Collection)
 
-    _async_aggregate  = AsyncRead(attr_name='aggregate')
-    __parallel_scan   = AsyncRead(attr_name='parallel_scan')
+    _async_aggregate    = AsyncRead(attr_name='aggregate')
+    _async_list_indexes = AsyncRead(attr_name='list_indexes')
+    __parallel_scan     = AsyncRead(attr_name='parallel_scan')
 
     def __init__(self, database, name, _delegate=None):
         db_class = create_class_with_framework(
@@ -425,10 +425,25 @@ class AgnosticCollection(AgnosticBaseProperties):
 
             kwargs.setdefault('cursor', {})
             cursor_class = create_class_with_framework(
-                AgnosticAggregationCursor, self._framework, self.__module__)
+                AgnosticLatentCommandCursor, self._framework, self.__module__)
 
             # Latent cursor that will send initial command on first "async for".
-            return cursor_class(self, pipeline, **kwargs)
+            return cursor_class(self, self._async_aggregate, pipeline, **kwargs)
+
+    def list_indexes(self):
+        """Get a cursor over the index documents for this collection.
+
+        .. code-block:: python3
+
+          async def print_indexes():
+              async for index in await db.test.list_indexes():
+                  print(index)
+        """
+        cursor_class = create_class_with_framework(
+            AgnosticLatentCommandCursor, self._framework, self.__module__)
+
+        # Latent cursor that will send initial command on first "async for".
+        return cursor_class(self, self._async_list_indexes)
 
     def parallel_scan(self, num_cursors, **kwargs):
         """Scan this entire collection in parallel.
@@ -1033,28 +1048,32 @@ class _LatentCursor(object):
         pass
 
 
-class AgnosticAggregationCursor(AgnosticCommandCursor):
-    __motor_class_name__ = 'MotorAggregationCursor'
+class AgnosticLatentCommandCursor(AgnosticCommandCursor):
+    __motor_class_name__ = 'MotorLatentCommandCursor'
 
-    def __init__(self, collection, pipeline, **kwargs):
+    def __init__(self, collection, start, *args, **kwargs):
         # We're being constructed without yield or await, like:
         #
         #     cursor = collection.aggregate(pipeline)
         #
         # ... so we can't send the "aggregate" command to the server and get
         # a PyMongo CommandCursor back yet. Set self.delegate to a latent
-        # cursor until the first yield or await triggers _get_more().
+        # cursor until the first yield or await triggers _get_more(), which
+        # will execute the callback "start", which gets a PyMongo CommandCursor.
         super(self.__class__, self).__init__(_LatentCursor(), collection)
-        self.pipeline = pipeline
+        self.start = start
+        self.args = args
         self.kwargs = kwargs
 
     def _get_more(self):
         if not self.started:
             self.started = True
             original_future = self._framework.get_future(self.get_io_loop())
-            future = self.collection._async_aggregate(
-                self.pipeline,
+            future = self.start(
+                *self.args,
                 **self.kwargs)
+
+            self.start = self.args = self.kwargs = None
 
             self._framework.add_future(
                 self.get_io_loop(),

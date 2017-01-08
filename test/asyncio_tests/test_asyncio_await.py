@@ -150,3 +150,14 @@ class TestAsyncIOAwait(AsyncIOTestCase):
 
         if w:
             self.fail(w[0].message)
+
+    @asyncio_test
+    async def test_list_indexes(self):
+        await self.collection.drop()
+        await self.collection.create_index([('x', 1)])
+        await self.collection.create_index([('y', -1)])
+        keys = set()
+        async for info in self.collection.list_indexes():
+            keys.add(info['name'])
+
+        self.assertEqual(keys, {'_id_', 'x_1', 'y_-1'})

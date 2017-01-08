@@ -45,7 +45,7 @@ MotorCursor = create_motor_class(core.AgnosticCursor)
 MotorCommandCursor = create_motor_class(core.AgnosticCommandCursor)
 
 
-MotorAggregationCursor = create_motor_class(core.AgnosticAggregationCursor)
+MotorLatentCommandCursor = create_motor_class(core.AgnosticLatentCommandCursor)
 
 
 MotorBulkOperationBuilder = create_motor_class(core.AgnosticBulkOperationBuilder)

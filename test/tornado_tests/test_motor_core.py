@@ -84,6 +84,8 @@ class MotorCoreTest(MotorTest):
 
         motor_agg_cursor_only = set([
             'collection',
+            'start',
+            'args',
             'kwargs',
             'pipeline'
         ]).union(motor_cursor_only)
