@@ -28,6 +28,7 @@ from motor.core import (AgnosticBaseCursor,
                         AgnosticDatabase,
                         PY35,
                         PY352)
+from motor.docstrings import *
 from motor.metaprogramming import (AsyncCommand,
                                    AsyncRead,
                                    coroutine_annotation,
@@ -58,7 +59,7 @@ class AgnosticGridOutCursor(AgnosticBaseCursor):
     min               = MotorCursorChainingMethod()
     remove_option     = MotorCursorChainingMethod()
     skip              = MotorCursorChainingMethod()
-    sort              = MotorCursorChainingMethod()
+    sort              = MotorCursorChainingMethod(doc=cursor_sort_doc)
     where             = MotorCursorChainingMethod()
 
     # PyMongo's GridOutCursor inherits __die from Cursor.
@@ -440,7 +441,7 @@ class AgnosticGridFS(_GFSBase):
     get_version      = AsyncRead().wrap(grid_file.GridOut)
     get_last_version = AsyncRead().wrap(grid_file.GridOut)
     list             = AsyncRead()
-    exists           = AsyncRead()
+    exists           = AsyncRead(doc=exists_doc)
     delete           = AsyncCommand()
     put              = AsyncCommand()
 

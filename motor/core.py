@@ -277,40 +277,40 @@ class AgnosticCollection(AgnosticBaseProperties):
     __motor_class_name__ = 'MotorCollection'
     __delegate_class__ = Collection
 
-    bulk_write           = AsyncCommand()
+    bulk_write           = AsyncCommand(doc=bulk_write_doc)
     count                = AsyncRead()
     create_index         = AsyncCommand()
-    create_indexes       = AsyncCommand()
-    delete_many          = AsyncCommand()
-    delete_one           = AsyncCommand()
+    create_indexes       = AsyncCommand(doc=create_indexes_doc)
+    delete_many          = AsyncCommand(doc=delete_many_doc)
+    delete_one           = AsyncCommand(doc=delete_one_doc)
     distinct             = AsyncRead()
-    drop                 = AsyncCommand()
+    drop                 = AsyncCommand(doc=drop_doc)
     drop_index           = AsyncCommand()
     drop_indexes         = AsyncCommand()
     ensure_index         = AsyncCommand()
     find_and_modify      = AsyncCommand()
-    find_one             = AsyncRead()
-    find_one_and_delete  = AsyncCommand()
-    find_one_and_replace = AsyncCommand()
-    find_one_and_update  = AsyncCommand()
+    find_one             = AsyncRead(doc=find_one_doc)
+    find_one_and_delete  = AsyncCommand(doc=find_one_and_delete_doc)
+    find_one_and_replace = AsyncCommand(doc=find_one_and_replace_doc)
+    find_one_and_update  = AsyncCommand(doc=find_one_and_update_doc)
     full_name            = ReadOnlyProperty()
     group                = AsyncRead()
-    index_information    = AsyncRead()
+    index_information    = AsyncRead(doc=index_information_doc)
     inline_map_reduce    = AsyncRead()
     insert               = AsyncWrite()
-    insert_many          = AsyncWrite()
-    insert_one           = AsyncCommand()
+    insert_many          = AsyncWrite(doc=insert_many_doc)
+    insert_one           = AsyncCommand(doc=insert_one_doc)
     map_reduce           = AsyncCommand(doc=mr_doc).wrap(Collection)
     name                 = ReadOnlyProperty()
     options              = AsyncRead()
     reindex              = AsyncCommand()
     remove               = AsyncWrite()
     rename               = AsyncCommand()
-    replace_one          = AsyncCommand()
+    replace_one          = AsyncCommand(doc=replace_one_doc)
     save                 = AsyncWrite()
     update               = AsyncWrite(doc=update_doc)
-    update_many          = AsyncCommand()
-    update_one           = AsyncCommand()
+    update_many          = AsyncCommand(doc=update_many_doc)
+    update_one           = AsyncCommand(doc=update_one_doc)
     with_options         = DelegateMethod().wrap(Collection)
 
     _async_aggregate    = AsyncRead(attr_name='aggregate')
@@ -431,13 +431,15 @@ class AgnosticCollection(AgnosticBaseProperties):
             return cursor_class(self, self._async_aggregate, pipeline, **kwargs)
 
     def list_indexes(self):
-        """Get a cursor over the index documents for this collection.
-
-        .. code-block:: python3
+        """Get a cursor over the index documents for this collection. ::
 
           async def print_indexes():
-              async for index in await db.test.list_indexes():
+              for index in await db.test.list_indexes():
                   print(index)
+
+        If the only index is the default index on ``_id``, this might print::
+
+            SON([('v', 1), ('key', SON([('_id', 1)])), ('name', '_id_'), ('ns', 'test.test')])
         """
         cursor_class = create_class_with_framework(
             AgnosticLatentCommandCursor, self._framework, self.__module__)

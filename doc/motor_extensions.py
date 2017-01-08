@@ -152,7 +152,8 @@ def process_motor_nodes(app, doctree):
             obj_motor_info = motor_info.get(name)
             if obj_motor_info:
                 desc_content_node = find_by_path(objnode, [desc_content])[0]
-                if obj_motor_info['is_pymongo_docstring']:
+                if (desc_content_node.line is None and
+                        obj_motor_info['is_pymongo_docstring']):
                     maybe_warn_about_code_block(name, desc_content_node)
 
                 if obj_motor_info['is_async_method']:
