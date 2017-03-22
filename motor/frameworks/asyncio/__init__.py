@@ -24,7 +24,6 @@ import os
 
 import functools
 import multiprocessing
-import sys
 from concurrent.futures import ThreadPoolExecutor
 
 try:
@@ -56,9 +55,6 @@ def get_future(loop):
 
 if 'MOTOR_MAX_WORKERS' in os.environ:
     max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
-elif sys.version_info >= (3, 5):
-    # Python 3.5+ sets max_workers=(cpu_count * 5) automatically.
-    max_workers = None
 else:
     max_workers = multiprocessing.cpu_count() * 5
 

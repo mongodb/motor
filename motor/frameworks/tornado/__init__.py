@@ -18,7 +18,6 @@ from __future__ import absolute_import, unicode_literals
 
 import functools
 import os
-import sys
 from concurrent.futures import ThreadPoolExecutor
 
 import tornado.process
@@ -58,9 +57,6 @@ def get_future(loop):
 
 if 'MOTOR_MAX_WORKERS' in os.environ:
     max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
-elif sys.version_info >= (3, 5):
-    # Python 3.5+ sets max_workers=(cpu_count * 5) automatically.
-    max_workers = None
 else:
     max_workers = tornado.process.cpu_count() * 5
 
