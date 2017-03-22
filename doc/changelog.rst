@@ -3,6 +3,12 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 1.2
+---------
+
+The maximum number of workers in the thread pool can be overridden with an
+environment variable, see :doc:`configuration`.
+
 Motor 1.1
 ---------
 

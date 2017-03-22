@@ -20,6 +20,8 @@ See "Frameworks" in the Developer Guide.
 
 import asyncio
 import asyncio.tasks
+import os
+
 import functools
 import multiprocessing
 import sys
@@ -52,11 +54,15 @@ def get_future(loop):
     return asyncio.Future(loop=loop)
 
 
-if sys.version_info >= (3, 5):
+if 'MOTOR_MAX_WORKERS' in os.environ:
+    max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
+elif sys.version_info >= (3, 5):
     # Python 3.5+ sets max_workers=(cpu_count * 5) automatically.
-    _EXECUTOR = ThreadPoolExecutor()
+    max_workers = None
 else:
-    _EXECUTOR = ThreadPoolExecutor(max_workers=multiprocessing.cpu_count() * 5)
+    max_workers = multiprocessing.cpu_count() * 5
+
+_EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
 
 
 def run_on_executor(loop, fn, self, *args, **kwargs):

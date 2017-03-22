@@ -57,6 +57,7 @@ Contents
    features
    installation
    requirements
+   configuration
    tutorial-tornado
    tutorial-asyncio
    examples/index

@@ -17,6 +17,7 @@ from __future__ import absolute_import, unicode_literals
 """Tornado compatibility layer for MongoDB, an asynchronous MongoDB driver."""
 
 import functools
+import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
 
@@ -55,11 +56,15 @@ def get_future(loop):
     return _TornadoFuture()
 
 
-if sys.version_info >= (3, 5):
+if 'MOTOR_MAX_WORKERS' in os.environ:
+    max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
+elif sys.version_info >= (3, 5):
     # Python 3.5+ sets max_workers=(cpu_count * 5) automatically.
-    _EXECUTOR = ThreadPoolExecutor()
+    max_workers = None
 else:
-    _EXECUTOR = ThreadPoolExecutor(max_workers=tornado.process.cpu_count() * 5)
+    max_workers = tornado.process.cpu_count() * 5
+
+_EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
 
 
 def run_on_executor(loop, fn, self, *args, **kwargs):
