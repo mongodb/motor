@@ -30,12 +30,10 @@ functions:
     - command: git.get_project
       params:
         directory: "src"
-    # Applies the subitted patch, if any
-    # Deprecated. Should be removed. But still needed for certain agents (ZAP)
-    - command: git.apply_patch
     # Make an evergreen exapanstion file with dynamic values
     - command: shell.exec
       params:
+        working_dir: "src"
         script: |
            # Get the current unique version of this checkout
            if [ "${is_patch}" = "true" ]; then
@@ -88,6 +86,7 @@ functions:
   "prepare resources":
     - command: shell.exec
       params:
+        working_dir: "src"
         script: |
           ${PREPARE_SHELL}
           rm -rf $DRIVERS_TOOLS
@@ -620,6 +619,28 @@ tasks:
             TOPOLOGY: "server"
         - func: "run enterprise auth tests"
 
+    - name: "synchro"
+      commands:
+        - func: "run tox"
+          vars:
+             TOX_ENV: py3-sphinx-docs
+
+    - name: "docs"
+      commands:
+        - func: "run tox"
+          vars:
+             TOX_ENV: py3-sphinx-docs
+
+    - name: "doctest"
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+        - func: "run tox"
+          vars:
+             TOX_ENV: py3-sphinx-doctest
+
 # }}}
 
 
@@ -744,12 +765,6 @@ axes:
       - id: "tornado4-py27-unittest2"
         variables:
            TOX_ENV: "tornado4-py27-unittest2"
-      - id: "py3-sphinx-docs"
-        variables:
-           TOX_ENV: "py3-sphinx-docs"
-      - id: "py3-sphinx-doctest"
-        variables:
-           TOX_ENV: "py3-sphinx-doctest"
       - id: "asyncio-py33"
         variables:
            TOX_ENV: "asyncio-py33"
@@ -768,22 +783,16 @@ axes:
       - id: "py3-pymongo-master"
         variables:
            TOX_ENV: "py3-pymongo-master"
-      - id: "synchro"
-        variables:
-           TOX_ENV: "synchro"
 
 buildvariants:
 
-- matrix_name: "all-mongodb-versions"
-  matrix_spec: {"python-version": "2.7 3.6", auth: "*", ssl: "*"}
-  display_name: "${python-version} ${auth} ${ssl}"
+- matrix_name: "old-mongodb-versions"
+  matrix_spec: {"tox-env": "tornado4-py36", auth: "*", ssl: "*"}
+  display_name: "${auth} ${ssl}"
   run_on:
      - ubuntu1604-test
   tasks:
      # TODO: can I star this?
-     - name: "test-latest-replica_set"
-     - name: "test-latest-sharded_cluster"
-     - name: "test-latest-standalone"
      - name: "test-3.4-replica_set"
      - name: "test-3.4-sharded_cluster"
      - name: "test-3.4-standalone"
@@ -801,9 +810,9 @@ buildvariants:
      - name: "test-2.4-standalone"
 
 # Test all versions of Python against latest MongoDB.
-- matrix_name: "all-python-versions"
-  matrix_spec: {"python-version": "*", auth: "*", ssl: "ssl"}
-  display_name: "${python-version} ${auth} ${ssl}"
+- matrix_name: "latest-mongodb-versions"
+  matrix_spec: {"tox-env": "*", auth: "*", ssl: "*"}
+  display_name: "${tox-env} ${auth} ${ssl}"
   run_on:
      - ubuntu1604-test
   tasks:
@@ -813,8 +822,8 @@ buildvariants:
      - name: "test-latest-standalone"
 
 - matrix_name: "enterprise-auth"
-  matrix_spec: {"python-version": "*", auth: "auth"}
-  display_name: "Enterprise Auth ${python-version}"
+  matrix_spec: {"tox-env": ["tornado4-py27", "tornado4-py36"], auth: "auth"}
+  display_name: "Enterprise Auth ${tox-env}"
   run_on:
      - ubuntu1604-test
   tasks:
@@ -823,11 +832,15 @@ buildvariants:
 - name: "docs"
   run_on:
      - ubuntu1604-test
+  expansions:
+     TOX_ENV: "py3-sphinx-docs"
   tasks:
      - name: "docs"
 
 - name: "doctests"
   run_on:
      - ubuntu1604-test
+  expansions:
+     TOX_ENV: "py3-sphinx-doctest"
   tasks:
-     - name: "doctests"
+     - name: "doctest"
