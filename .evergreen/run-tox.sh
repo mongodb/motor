@@ -5,13 +5,10 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # Supported/used environment variables:
 #       AUTH                    Set to enable authentication. Defaults to "noauth"
 #       SSL                     Set to enable SSL. Defaults to "nossl"
-#       MONGODB_URI             Set the suggested connection MONGODB_URI (including credentials and topology info)
 #       TOX_ENV                 Tox environment name, e.g. "tornado4-py36"
-#       TOX_BINARY              Path to "tox"
 
 AUTH=${AUTH:-noauth}
 SSL=${SSL:-nossl}
-MONGODB_URI=${MONGODB_URI:-}
 
 if [ "$AUTH" != "noauth" ]; then
     export DB_USER="bob"
@@ -24,4 +21,4 @@ if [ "$SSL" != "nossl" ]; then
 fi
 
 # Run the tests, and store the results in Evergreen compatible XUnit XML
-$TOX_BINARY -e "$TOX_ENV"
+/opt/python/3.6/bin/python3 -m tox -e "$TOX_ENV"

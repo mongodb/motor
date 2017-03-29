@@ -35,6 +35,7 @@ from motor.metaprogramming import MotorAttributeFactory
 from gridfs.errors import *
 from pymongo import *
 from pymongo import (collation,
+                     errors,
                      operations,
                      server_selectors,
                      server_type,

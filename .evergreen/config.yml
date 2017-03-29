@@ -332,7 +332,7 @@ functions:
         working_dir: "src"
         script: |
           ${PREPARE_SHELL}
-          AUTH=${AUTH} SSL=${SSL} sh ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
+          PYTHON_BINARY=${PYTHON_BINARY} TOX_ENV=${TOX_ENV} AUTH=${AUTH} SSL=${SSL} sh ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
 
   "run enterprise auth tests":
     - command: shell.exec
@@ -342,7 +342,7 @@ functions:
         working_dir: "src"
         script: |
           # DO NOT ECHO WITH XTRACE (which PREPARE_SHELL does)
-          SASL_HOST=${sasl_host} SASL_PORT=${sasl_port} SASL_USER=${sasl_user} SASL_PASS=${sasl_pass} SASL_DB=${sasl_db} PRINCIPAL=${principal} GSSAPI_DB=${gssapi_db} KEYTAB_BASE64=${keytab_base64} PROJECT_DIRECTORY=${PROJECT_DIRECTORY} sh ${PROJECT_DIRECTORY}/.evergreen/run-enterprise-auth-tests.sh
+          PYTHON_BINARY=${PYTHON_BINARY} TOX_ENV=${TOX_ENV} SASL_HOST=${sasl_host} SASL_PORT=${sasl_port} SASL_USER=${sasl_user} SASL_PASS=${sasl_pass} SASL_DB=${sasl_db} PRINCIPAL=${principal} GSSAPI_DB=${gssapi_db} KEYTAB_BASE64=${keytab_base64} PROJECT_DIRECTORY=${PROJECT_DIRECTORY} sh ${PROJECT_DIRECTORY}/.evergreen/run-enterprise-auth-tests.sh
 
   "cleanup":
     - command: shell.exec
@@ -720,109 +720,137 @@ axes:
       - id: "tornado3-py26"
         variables:
            TOX_ENV: "tornado3-py26"
+           PYTHON_BINARY: "/opt/python/2.6/bin/python"
       - id: "tornado3-py27"
         variables:
            TOX_ENV: "tornado3-py27"
-      - id: "tornado4-py26"
+           PYTHON_BINARY: "/opt/python/2.7/bin/python"
+      - id: "tornado4for26-py26"
         variables:
-           TOX_ENV: "tornado4-py26"
+           TOX_ENV: "tornado4for26-py26"
+           PYTHON_BINARY: "/opt/python/2.6/bin/python"
       - id: "tornado4-py27"
         variables:
            TOX_ENV: "tornado4-py27"
+           PYTHON_BINARY: "/opt/python/2.7/bin/python"
       - id: "tornado4-pypy"
         variables:
            TOX_ENV: "tornado4-pypy"
+           PYTHON_BINARY: "/opt/python/pypy/bin/pypy"
       - id: "tornado4-pypy3"
         variables:
            TOX_ENV: "tornado4-pypy3"
+           PYTHON_BINARY: "/opt/python/pypy3/bin/pypy3"
       - id: "tornado4-py33"
         variables:
            TOX_ENV: "tornado4-py33"
+           PYTHON_BINARY: "/opt/python/3.3/bin/python3"
       - id: "tornado4-py34"
         variables:
            TOX_ENV: "tornado4-py34"
+           PYTHON_BINARY: "/opt/python/3.4/bin/python3"
       - id: "tornado4-py35"
         variables:
            TOX_ENV: "tornado4-py35"
+           PYTHON_BINARY: "/opt/python/3.5/bin/python3"
       - id: "tornado4-py36"
         variables:
            TOX_ENV: "tornado4-py36"
-      - id: "tornado_git-py26"
-        variables:
-           TOX_ENV: "tornado_git-py26"
+           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
       - id: "tornado_git-py27"
         variables:
            TOX_ENV: "tornado_git-py27"
+           PYTHON_BINARY: "/opt/python/2.7/bin/python"
       - id: "tornado_git-py34"
         variables:
            TOX_ENV: "tornado_git-py34"
+           PYTHON_BINARY: "/opt/python/3.4/bin/python3"
       - id: "tornado_git-py35"
         variables:
            TOX_ENV: "tornado_git-py35"
+           PYTHON_BINARY: "/opt/python/3.5/bin/python3"
       - id: "tornado_git-py36"
         variables:
            TOX_ENV: "tornado_git-py36"
+           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
       - id: "tornado4-py27-unittest2"
         variables:
            TOX_ENV: "tornado4-py27-unittest2"
+           PYTHON_BINARY: "/opt/python/2.7/bin/python"
       - id: "asyncio-py33"
         variables:
            TOX_ENV: "asyncio-py33"
+           PYTHON_BINARY: "/opt/python/3.3/bin/python3"
       - id: "asyncio-py34"
         variables:
            TOX_ENV: "asyncio-py34"
+           PYTHON_BINARY: "/opt/python/3.4/bin/python3"
       - id: "asyncio-py35"
         variables:
            TOX_ENV: "asyncio-py35"
+           PYTHON_BINARY: "/opt/python/3.5/bin/python3"
       - id: "asyncio-py36"
         variables:
            TOX_ENV: "asyncio-py36"
+           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
       - id: "asyncio-tornado4-py33"
         variables:
            TOX_ENV: "asyncio-tornado4-py33"
+           PYTHON_BINARY: "/opt/python/3.3/bin/python3"
       - id: "py3-pymongo-master"
         variables:
            TOX_ENV: "py3-pymongo-master"
+           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+      - id: "synchro"
+        variables:
+           TOX_ENV: "synchro"
+           # The synchro tests are configured for py27 in tox.ini.
+           PYTHON_BINARY: "/opt/python/2.7/bin/python"
 
 buildvariants:
 
-- matrix_name: "old-mongodb-versions"
-  matrix_spec: {"tox-env": "tornado4-py36", auth: "*", ssl: "*"}
-  display_name: "${auth} ${ssl}"
-  run_on:
-     - ubuntu1604-test
-  tasks:
-     # TODO: can I star this?
-     - name: "test-3.4-replica_set"
-     - name: "test-3.4-sharded_cluster"
-     - name: "test-3.4-standalone"
-     - name: "test-3.2-replica_set"
-     - name: "test-3.2-sharded_cluster"
-     - name: "test-3.2-standalone"
-     - name: "test-3.0-replica_set"
-     - name: "test-3.0-sharded_cluster"
-     - name: "test-3.0-standalone"
-     - name: "test-2.6-replica_set"
-     - name: "test-2.6-sharded_cluster"
-     - name: "test-2.6-standalone"
-     - name: "test-2.4-replica_set"
-     - name: "test-2.4-sharded_cluster"
-     - name: "test-2.4-standalone"
-
-# Test all versions of Python against latest MongoDB.
-- matrix_name: "latest-mongodb-versions"
+- matrix_name: "test-mongodb-versions"
   matrix_spec: {"tox-env": "*", auth: "*", ssl: "*"}
+  exclude_spec:
+   # TODO: Python 2.6 and synchro need PyMongo master's updated SSL test certs,
+   # which may require Motor test suite changes.
+   - tox-env: ["tornado3-py26", "tornado4for26-py26", "synchro"]
+     auth: "*"
+     ssl: "ssl"
+   # TODO: pip from virtualenv 15.1.0 barfs on the version of pypy3
+   # in evergreen (pypy3-2.4.0) because it's based on python 3.2.5.
+   - tox-env: ["tornado4-pypy3"]
+     auth: "*"
+     ssl: "*"
   display_name: "${tox-env} ${auth} ${ssl}"
   run_on:
      - ubuntu1604-test
   tasks:
-     # TODO: star?
-     - name: "test-latest-replica_set"
-     - name: "test-latest-sharded_cluster"
-     - name: "test-latest-standalone"
+     - ".latest"
+     - ".3.4"
+     - ".3.2"
+  rules:
+     # There are no builds of MongoDB <= 3.0 with SSL for Ubuntu 16.04
+     - if:
+         tox-env: "*"
+         auth: "*"
+         ssl: "nossl"
+       then:
+         add_tasks:
+            - ".3.0"
+            - ".2.6"
+            - ".2.4"
+     - if:
+         # synchro uses pymongo 3.4.0, which doesn't have MongoDB 3.5+ fixes.
+         tox-env: ["synchro"]
+         auth: "*"
+         ssl: "*"
+       then:
+         remove_tasks:
+           - ".latest"
 
 - matrix_name: "enterprise-auth"
-  matrix_spec: {"tox-env": ["tornado4-py27", "tornado4-py36"], auth: "auth"}
+  matrix_spec: {"tox-env": ["synchro"], auth: "auth"}
   display_name: "Enterprise Auth ${tox-env}"
   run_on:
      - ubuntu1604-test

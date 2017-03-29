@@ -18,11 +18,8 @@ export GSSAPI_HOST=${SASL_HOST}
 export GSSAPI_PORT=${SASL_PORT}
 export GSSAPI_PRINCIPAL=${PRINCIPAL}
 
-echo "Running tests"
-if [ ${PYTHON_VERSION} = "2.7" ]; then
-  ENV="tornado4-py27"
-else
-  ENV="tornado4-py36"
-fi
+# Pass needed env variables to the test environment.
+export TOX_TESTENV_PASSENV=*
 
-${TOX_BINARY} -e "$TOX_ENV"
+# --sitepackages allows use of pykerberos without a test dep.
+/opt/python/3.6/bin/python3 -m tox -e "$TOX_ENV" --sitepackages -- -x test.test_auth
