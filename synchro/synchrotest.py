@@ -82,6 +82,9 @@ excluded_tests = [
     'TestAllScenarios.test_read_aggregate_Aggregate_with_multiple_stages',
     'TestSingleSlaveOk.test_reads_from_secondary',
 
+    # Can't do MotorCollection(name, create=True), Motor constructors do no I/O.
+    'TestCollection.test_create',
+
     # Motor doesn't support PyMongo's syntax, db.system_js['my_func'] = "code",
     # users should just use system.js as a regular collection.
     'TestDatabase.test_system_js',
