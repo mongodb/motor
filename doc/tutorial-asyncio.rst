@@ -412,7 +412,7 @@ the :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.command` method on :class:`
   ...
   >>> loop = asyncio.get_event_loop()
   >>> loop.run_until_complete(use_count_command())
-  response: {'n': 1000, 'ok': 1.0, ...}
+  response: {'n': 1000, 'ok': 1.0...}
 
 Since the order of command parameters matters, don't use a Python dict to pass
 the command's parameters. Instead, make a habit of using :class:`bson.SON`,

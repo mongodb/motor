@@ -562,7 +562,7 @@ the :meth:`~MotorDatabase.command` method on :class:`MotorDatabase`:
   ...     print('response: %s' % pprint.pformat(response))
   ...
   >>> IOLoop.current().run_sync(use_count_command)
-  response: {'n': 1000, 'ok': 1.0, ...}
+  response: {'n': 1000, 'ok': 1.0...}
 
 Since the order of command parameters matters, don't use a Python dict to pass
 the command's parameters. Instead, make a habit of using :class:`bson.SON`,

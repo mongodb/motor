@@ -858,6 +858,7 @@ buildvariants:
      - name: "test-enterprise-auth"
 
 - name: "docs"
+  display_name: "Build Docs"
   run_on:
      - ubuntu1604-test
   expansions:
@@ -867,6 +868,7 @@ buildvariants:
      - name: "docs"
 
 - name: "doctests"
+  display_name: "Test Docs"
   run_on:
      - ubuntu1604-test
   expansions:
