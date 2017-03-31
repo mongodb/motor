@@ -71,6 +71,7 @@ excluded_tests = [
     'TestLegacy.test_ensure_unique_index_threaded',
     'TestThreadsAuth.*',
     'TestThreadsAuthReplicaSet.*',
+    'TestGSSAPI.test_gssapi_threaded',
 
     # Relies on threads; tested directly.
     'TestCollection.test_parallel_scan',
