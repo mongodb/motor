@@ -862,6 +862,7 @@ buildvariants:
      - ubuntu1604-test
   expansions:
      TOX_ENV: "py3-sphinx-docs"
+     PYTHON_BINARY: "/opt/python/3.6/bin/python3"
   tasks:
      - name: "docs"
 
@@ -870,5 +871,6 @@ buildvariants:
      - ubuntu1604-test
   expansions:
      TOX_ENV: "py3-sphinx-doctest"
+     PYTHON_BINARY: "/opt/python/3.6/bin/python3"
   tasks:
      - name: "doctest"
