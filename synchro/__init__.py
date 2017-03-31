@@ -364,6 +364,7 @@ class Collection(Synchro):
     find                            = WrapOutgoing()
     initialize_unordered_bulk_op    = WrapOutgoing()
     initialize_ordered_bulk_op      = WrapOutgoing()
+    list_indexes                    = WrapOutgoing()
 
     def __init__(self, database, name, delegate=None):
         if not isinstance(database, Database):
