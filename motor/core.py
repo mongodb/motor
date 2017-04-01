@@ -319,7 +319,9 @@ class AgnosticCollection(AgnosticBaseProperties):
     _async_list_indexes = AsyncRead(attr_name='list_indexes')
     __parallel_scan     = AsyncRead(attr_name='parallel_scan')
 
-    def __init__(self, database, name, **kwargs):
+    def __init__(self, database, name, codec_options=None,
+                 read_preference=None, write_concern=None, read_concern=None,
+                 _delegate=None):
         db_class = create_class_with_framework(
             AgnosticDatabase, self._framework, self.__module__)
 
@@ -327,8 +329,10 @@ class AgnosticCollection(AgnosticBaseProperties):
             raise TypeError("First argument to MotorCollection must be "
                             "MotorDatabase, not %r" % database)
 
-        delegate = kwargs.get('_delegate') or Collection(
-            database.delegate, name, **kwargs)
+        delegate = _delegate or Collection(
+            database.delegate, name, codec_options=codec_options,
+            read_preference=read_preference, write_concern=write_concern,
+            read_concern=read_concern)
 
         super(self.__class__, self).__init__(delegate)
         self.database = database

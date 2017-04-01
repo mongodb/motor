@@ -9,6 +9,11 @@ Motor 1.2
 The maximum number of workers in the thread pool can be overridden with an
 environment variable, see :doc:`configuration`.
 
+:class:`MotorCollection` accepts codec_options, read_preference, write_concern,
+and read_concern arguments. This is rarely needed; you typically create a
+:class:`MotorCollection` from a :class:`MotorDatabase`, not by calling its
+constructor directly.
+
 Motor 1.1
 ---------
 
