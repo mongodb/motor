@@ -840,14 +840,6 @@ buildvariants:
             - ".3.0"
             - ".2.6"
             - ".2.4"
-     - if:
-         # synchro uses pymongo 3.4.0, which doesn't have MongoDB 3.5+ fixes.
-         tox-env: ["synchro"]
-         auth: "*"
-         ssl: "*"
-       then:
-         remove_tasks:
-           - ".latest"
 
 - matrix_name: "enterprise-auth"
   matrix_spec: {"tox-env": ["synchro"], auth: "auth"}
