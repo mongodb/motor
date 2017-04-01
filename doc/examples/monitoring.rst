@@ -29,7 +29,7 @@ You can register any number of listeners, of any of the four listener types.
 
 Although you use only APIs from PyMongo's :mod:`~pymongo.monitoring` module to configure monitoring, if you create a :class:`MotorClient` its commands are monitored, the same as a PyMongo :class:`~pymongo.mongo_client.MongoClient`.
 
-.. literalinclude::
+.. literalinclude:: monitoring_example.py
   :language: py3
   :start-after: motorclient start
   :end-before: motorclient end
