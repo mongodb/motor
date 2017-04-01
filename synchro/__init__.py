@@ -328,13 +328,15 @@ class Database(Synchro):
     __delegate_class__ = motor.MotorDatabase
     get_collection     = WrapOutgoing()
 
-    def __init__(self, client, name, delegate=None):
+    def __init__(self, client, name, **kwargs):
         assert isinstance(client, MongoClient), (
             "Expected MongoClient, got %s"
             % repr(client))
 
         self._client = client
-        self.delegate = delegate or client.delegate[name]
+        self.delegate = kwargs.get('delegate') or motor.MotorDatabase(
+            client.delegate, name, **kwargs)
+
         assert isinstance(self.delegate, motor.MotorDatabase), (
             "synchro.Database delegate must be MotorDatabase, not "
             " %s" % repr(self.delegate))
@@ -366,14 +368,15 @@ class Collection(Synchro):
     initialize_ordered_bulk_op      = WrapOutgoing()
     list_indexes                    = WrapOutgoing()
 
-    def __init__(self, database, name, delegate=None):
+    def __init__(self, database, name, **kwargs):
         if not isinstance(database, Database):
             raise TypeError(
                 "First argument to synchro Collection must be synchro "
                 "Database, not %s" % repr(database))
 
         self.database = database
-        self.delegate = delegate or database.delegate[name]
+        self.delegate = kwargs.get('delegate') or motor.MotorCollection(
+            self.database.delegate, name, **kwargs)
 
         if not isinstance(self.delegate, motor.MotorCollection):
             raise TypeError(
@@ -393,12 +396,14 @@ class Collection(Synchro):
     def __getattr__(self, name):
         # Access to collections with dotted names, like db.test.mike
         fullname = self.name + '.' + name
-        return Collection(self.database, fullname, getattr(self.delegate, name))
+        return Collection(self.database, fullname,
+                          delegate=getattr(self.delegate, name))
 
     def __getitem__(self, name):
-        # Access to collections with dotted names, like db.test.mike
+        # Access to collections with dotted names, like db.test['mike']
         fullname = self.name + '.' + name
-        return Collection(self.database, fullname, self.delegate[name])
+        return Collection(self.database, fullname,
+                          delegate=self.delegate[name])
 
 
 class Cursor(Synchro):
