@@ -73,7 +73,6 @@ functions:
               export TMPDIR="$MONGO_ORCHESTRATION_HOME/db"
               export PATH="$MONGODB_BINARIES:$PATH"
               export PROJECT="${project}"
-              export TOX_BINARY="/opt/python/3.6/bin/tox"
            EOT
            # See what we've done
            cat expansion.yml
@@ -332,7 +331,7 @@ functions:
         working_dir: "src"
         script: |
           ${PREPARE_SHELL}
-          PYTHON_BINARY=${PYTHON_BINARY} TOX_ENV=${TOX_ENV} AUTH=${AUTH} SSL=${SSL} sh ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
+          PYTHON_BINARY=${PYTHON_BINARY} TOX_BINARY=${TOX_BINARY} TOX_ENV=${TOX_ENV} AUTH=${AUTH} SSL=${SSL} sh ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
 
   "run enterprise auth tests":
     - command: shell.exec
@@ -807,24 +806,59 @@ axes:
            # The synchro tests are configured for py27 in tox.ini.
            PYTHON_BINARY: "/opt/python/2.7/bin/python"
 
+  - id: tox-env-osx
+    display_name: "Tox Env OSX"
+    values:
+      - id: "tornado3-py27"
+        variables:
+           TOX_ENV: "tornado3-py27"
+           PYTHON_BINARY: "python2.7"
+      - id: "tornado4-py27"
+        variables:
+           TOX_ENV: "tornado4-py27"
+           PYTHON_BINARY: "python2.7"
+      - id: "tornado_git-py27"
+        variables:
+           TOX_ENV: "tornado_git-py27"
+           PYTHON_BINARY: "python2.7"
+      - id: "synchro"
+        variables:
+           TOX_ENV: "synchro"
+           # The synchro tests are configured for py27 in tox.ini.
+           PYTHON_BINARY: "python2.7"
+
+  - id: os
+    display_name: "Operating System"
+    values:
+      - id: "ubuntu"
+        display_name: "Ubuntu 16.04"
+        run_on: "ubuntu1604-test"
+        variables:
+           TOX_BINARY: "/opt/python/3.6/bin/tox"
+      - id: "osx"
+        display_name: "OSX 10.10"
+        run_on: "osx-1010"
+        variables:
+           TOX_BINARY: "tox"
+
 buildvariants:
 
 - matrix_name: "test-mongodb-versions"
-  matrix_spec: {"tox-env": "*", auth: "*", ssl: "*"}
+  matrix_spec: {"os": "ubuntu", "tox-env": "*", auth: "*", ssl: "*"}
   exclude_spec:
    # TODO: Python 2.6 and synchro need PyMongo master's updated SSL test certs,
    # which may require Motor test suite changes.
-   - tox-env: ["tornado3-py26", "tornado4for26-py26", "synchro"]
+   - os: "*"
+     tox-env: ["tornado3-py26", "tornado4for26-py26", "synchro"]
      auth: "*"
      ssl: "ssl"
    # TODO: pip from virtualenv 15.1.0 barfs on the version of pypy3
    # in evergreen (pypy3-2.4.0) because it's based on python 3.2.5.
-   - tox-env: ["tornado4-pypy3"]
+   - os: "*"
+     tox-env: ["tornado4-pypy3"]
      auth: "*"
      ssl: "*"
-  display_name: "${tox-env} ${auth} ${ssl}"
-  run_on:
-     - ubuntu1604-test
+  display_name: "${os} ${tox-env} ${auth} ${ssl}"
   tasks:
      - ".latest"
      - ".3.4"
@@ -832,6 +866,7 @@ buildvariants:
   rules:
      # There are no builds of MongoDB <= 3.0 with SSL for Ubuntu 16.04
      - if:
+         os: "*"
          tox-env: "*"
          auth: "*"
          ssl: "nossl"
@@ -843,28 +878,57 @@ buildvariants:
 
 - matrix_name: "enterprise-auth"
   matrix_spec: {"tox-env": ["synchro"], auth: "auth"}
-  display_name: "Enterprise Auth ${tox-env}"
+  display_name: "Enterprise Auth"
   run_on:
      - ubuntu1604-test
   tasks:
      - name: "test-enterprise-auth"
 
 - name: "docs"
-  display_name: "Build Docs"
+  display_name: "Docs - Build"
   run_on:
      - ubuntu1604-test
   expansions:
      TOX_ENV: "py3-sphinx-docs"
+     TOX_BINARY: "/opt/python/3.6/bin/tox"
      PYTHON_BINARY: "/opt/python/3.6/bin/python3"
   tasks:
      - name: "docs"
 
 - name: "doctests"
-  display_name: "Test Docs"
+  display_name: "Docs - Test"
   run_on:
      - ubuntu1604-test
   expansions:
      TOX_ENV: "py3-sphinx-doctest"
+     TOX_BINARY: "/opt/python/3.6/bin/tox"
      PYTHON_BINARY: "/opt/python/3.6/bin/python3"
   tasks:
      - name: "doctest"
+
+- matrix_name: "test-mongodb-versions-macos"
+  matrix_spec: {"os": "osx", "tox-env-osx": "*", auth: "*", ssl: "*"}
+  exclude_spec:
+   # TODO: synchro needs PyMongo master's updated SSL test certs,
+   # which may require Motor test suite changes.
+   - os: "*"
+     tox-env-osx: ["synchro"]
+     auth: "*"
+     ssl: "ssl"
+  display_name: "${os} ${tox-env-osx} ${ssl} ${auth}"
+  tasks:
+     - ".latest"
+     - ".3.4"
+     - ".3.2"
+  rules:
+     # There are no builds of MongoDB <= 3.0 with SSL for macOS
+     - if:
+         os: "*"
+         tox-env-osx: "*"
+         auth: "*"
+         ssl: "nossl"
+       then:
+         add_tasks:
+            - ".3.0"
+            - ".2.6"
+            - ".2.4"

@@ -21,4 +21,4 @@ if [ "$SSL" != "nossl" ]; then
 fi
 
 # Run the tests, and store the results in Evergreen compatible XUnit XML
-/opt/python/3.6/bin/python3 -m tox -e "$TOX_ENV"
+${TOX_BINARY} -e ${TOX_ENV}
