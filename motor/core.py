@@ -198,9 +198,11 @@ class AgnosticDatabase(AgnosticBaseProperties):
     outgoing_manipulators         = ReadOnlyProperty()
     outgoing_copying_manipulators = ReadOnlyProperty()
 
-    def __init__(self, client, name, _delegate=None):
+    def __init__(self, client, name, **kwargs):
         self._client = client
-        delegate = _delegate or Database(client.delegate, name)
+        delegate = kwargs.get('_delegate') or Database(
+            client.delegate, name, **kwargs)
+
         super(self.__class__, self).__init__(delegate)
 
     @property
@@ -317,7 +319,7 @@ class AgnosticCollection(AgnosticBaseProperties):
     _async_list_indexes = AsyncRead(attr_name='list_indexes')
     __parallel_scan     = AsyncRead(attr_name='parallel_scan')
 
-    def __init__(self, database, name, _delegate=None):
+    def __init__(self, database, name, **kwargs):
         db_class = create_class_with_framework(
             AgnosticDatabase, self._framework, self.__module__)
 
@@ -325,7 +327,9 @@ class AgnosticCollection(AgnosticBaseProperties):
             raise TypeError("First argument to MotorCollection must be "
                             "MotorDatabase, not %r" % database)
 
-        delegate = _delegate or Collection(database.delegate, name)
+        delegate = kwargs.get('_delegate') or Collection(
+            database.delegate, name, **kwargs)
+
         super(self.__class__, self).__init__(delegate)
         self.database = database
 
