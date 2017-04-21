@@ -739,7 +739,7 @@ axes:
       - id: "tornado4-pypy3"
         variables:
            TOX_ENV: "tornado4-pypy3"
-           PYTHON_BINARY: "/opt/python/pypy3/bin/pypy3"
+           PYTHON_BINARY: "/opt/python/pypy3.5/bin/pypy3"
       - id: "tornado4-py33"
         variables:
            TOX_ENV: "tornado4-py33"
@@ -831,8 +831,8 @@ axes:
     display_name: "Operating System"
     values:
       - id: "ubuntu"
-        display_name: "Ubuntu 16.04"
-        run_on: "ubuntu1604-test"
+        display_name: "Ubuntu 12.04"
+        run_on: "ubuntu1204-test"
         variables:
            TOX_BINARY: "/opt/python/3.6/bin/tox"
       - id: "osx"
@@ -852,29 +852,14 @@ buildvariants:
      tox-env: ["tornado3-py26", "tornado4for26-py26", "synchro"]
      auth: "*"
      ssl: "ssl"
-   # TODO: pip from virtualenv 15.1.0 barfs on the version of pypy3
-   # in evergreen (pypy3-2.4.0) because it's based on python 3.2.5.
-   - os: "*"
-     tox-env: ["tornado4-pypy3"]
-     auth: "*"
-     ssl: "*"
   display_name: "${os} ${tox-env} ${auth} ${ssl}"
   tasks:
      - ".latest"
      - ".3.4"
      - ".3.2"
-  rules:
-     # There are no builds of MongoDB <= 3.0 with SSL for Ubuntu 16.04
-     - if:
-         os: "*"
-         tox-env: "*"
-         auth: "*"
-         ssl: "nossl"
-       then:
-         add_tasks:
-            - ".3.0"
-            - ".2.6"
-            - ".2.4"
+     - ".3.0"
+     - ".2.6"
+     - ".2.4"
 
 - matrix_name: "enterprise-auth"
   matrix_spec: {"tox-env": ["synchro"], auth: "auth"}
@@ -887,7 +872,7 @@ buildvariants:
 - name: "docs"
   display_name: "Docs - Build"
   run_on:
-     - ubuntu1604-test
+     - ubuntu1204-test
   expansions:
      TOX_ENV: "py3-sphinx-docs"
      TOX_BINARY: "/opt/python/3.6/bin/tox"
@@ -898,7 +883,7 @@ buildvariants:
 - name: "doctests"
   display_name: "Docs - Test"
   run_on:
-     - ubuntu1604-test
+     - ubuntu1204-test
   expansions:
      TOX_ENV: "py3-sphinx-doctest"
      TOX_BINARY: "/opt/python/3.6/bin/tox"
