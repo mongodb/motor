@@ -26,11 +26,6 @@ def one(s):
     return next(iter(s))
 
 
-def delay(sec):
-    # Javascript sleep() available in MongoDB since version ~1.9
-    return 'sleep(%s * 1000); return true' % sec
-
-
 def safe_get(dct, dotted_key, default=None):
     for key in dotted_key.split('.'):
         if key not in dct:

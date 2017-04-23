@@ -36,7 +36,7 @@ from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase,
                                 skip_if_mongos,
                                 at_least)
-from test.utils import delay, ignore_deprecations
+from test.utils import ignore_deprecations
 
 
 class TestAsyncIOCollection(AsyncIOTestCase):
@@ -87,41 +87,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             self.assertTrue('no such method exists' in str(e))
         else:
             self.fail('Expected TypeError')
-
-    @asyncio_test(timeout=30)
-    def test_find_is_async(self):
-        # Need parallel Javascript.
-        if not (yield from at_least(self.cx, (3,))):
-            raise SkipTest("Requires MongoDB >= 3.0")
-
-        # Confirm find() is async by launching two operations which will finish
-        # out of order. Also test that AsyncIOMotorClient doesn't reuse sockets
-        # incorrectly.
-
-        # Launch find operations for _id's 1 and 2 which will finish in order
-        # 2, then 1.
-        coll = self.collection
-        yield from coll.insert_many([{'_id': 1}, {'_id': 2}])
-        results = []
-
-        futures = [asyncio.Future(loop=self.loop),
-                   asyncio.Future(loop=self.loop)]
-
-        def callback(result, error):
-            if result:
-                results.append(result)
-                futures.pop().set_result(None)
-
-        # This find() takes 0.5 seconds.
-        coll.find({'_id': 1, '$where': delay(0.5)}).limit(1).each(callback)
-
-        # Very fast lookup.
-        coll.find({'_id': 2}).limit(1).each(callback)
-
-        yield from asyncio.gather(*futures, loop=self.loop)
-
-        # Results were appended in order 2, 1.
-        self.assertEqual([{'_id': 2}, {'_id': 1}], results)
 
     @ignore_deprecations
     @asyncio_test

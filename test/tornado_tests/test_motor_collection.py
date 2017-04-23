@@ -36,7 +36,7 @@ import motor.motor_tornado
 import test
 from test import SkipTest
 from test.tornado_tests import at_least, MotorTest, skip_if_mongos
-from test.utils import delay, ignore_deprecations
+from test.utils import ignore_deprecations
 
 
 class MotorCollectionTest(MotorTest):
@@ -85,40 +85,6 @@ class MotorCollectionTest(MotorTest):
             self.assertTrue('no such method exists' in str(e))
         else:
             self.fail('Expected TypeError')
-
-    @gen_test(timeout=30)
-    def test_find_is_async(self):
-        # Need parallel Javascript.
-        if not (yield at_least(self.cx, (3,))):
-            raise SkipTest("Requires MongoDB >= 3.0")
-
-        # Confirm find() is async by launching two operations which will finish
-        # out of order. Also test that MotorClient doesn't reuse sockets
-        # incorrectly.
-
-        # Launch find operations for _id's 1 and 2 which will finish in order
-        # 2, then 1.
-        coll = self.collection
-        yield coll.insert_many([{'_id': 1}, {'_id': 2}])
-        results = []
-
-        futures = [Future(), Future()]
-
-        def callback(result, error):
-            if result:
-                results.append(result)
-                futures.pop().set_result(None)
-
-        # This find() takes 0.5 seconds.
-        coll.find({'_id': 1, '$where': delay(0.5)}).limit(1).each(callback)
-
-        # Very fast lookup.
-        coll.find({'_id': 2}).limit(1).each(callback)
-
-        yield futures
-
-        # Results were appended in order 2, 1.
-        self.assertEqual([{'_id': 2}, {'_id': 1}], results)
 
     @ignore_deprecations
     @gen_test
