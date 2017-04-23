@@ -68,7 +68,7 @@ Please include all of the following information:
 
   $ python -c "import sys; print(sys.version)"
 
-- The exact version of PyMongo used:
+- The exact version of PyMongo used::
 
   $ python -c "import pymongo; print(pymongo.version); print(pymongo.has_c())"
 
