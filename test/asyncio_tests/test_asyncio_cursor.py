@@ -81,6 +81,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(200, i)
 
     @unittest.skipUnless(sys.version_info >= (3, 4), "Python 3.4 required")
+    @unittest.skipIf('PyPy' in sys.version, "PyPy")
     @asyncio_test
     def test_fetch_next_delete(self):
         client, server = self.client_server(auto_ismaster={'ismaster': True})
@@ -414,7 +415,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(0, len(socks))
         if 'PyPy' in sys.version:
             # Don't wait for GC or use gc.collect(), it's unreliable.
-            cur.close()
+            yield from cur.close()
 
         del cur
 

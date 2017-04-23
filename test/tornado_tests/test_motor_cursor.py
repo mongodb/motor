@@ -466,7 +466,7 @@ class MotorCursorTest(MotorMockServerTest):
         self.assertEqual(0, len(socks))
         if 'PyPy' in sys.version:
             # Don't wait for GC or use gc.collect(), it's unreliable.
-            cur.close()
+            yield cur.close()
 
         del cur
 
