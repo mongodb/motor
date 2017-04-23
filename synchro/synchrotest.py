@@ -132,6 +132,7 @@ excluded_tests = [
     'TestReplicaSetClientExhaustCursor.*',
     'TestReplicaSetClientInternalIPs.*',
     'TestReplicaSetClientMaxWriteBatchSize.*',
+    'TestSSL.test_system_certs_config_error',
 
     # Motor is correct here, it's just unreliable on slow CI servers.
     'TestReplicaSetClient.test_timeout_does_not_mark_member_down',
