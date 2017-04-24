@@ -334,6 +334,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(cursor, cursor.rewind())
 
     @unittest.skipUnless(sys.version_info >= (3, 4), "Python 3.4 required")
+    @unittest.skipIf("PyPy" in sys.version, "PyPy")
     @asyncio_test
     def test_cursor_del(self):
         client, server = self.client_server(auto_ismaster=True)
@@ -350,9 +351,6 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         # Let the event loop iterate once more to clear its references to
         # callbacks, allowing the cursor to be freed.
         yield from asyncio.sleep(0, loop=self.loop)
-        if 'PyPy' in sys.version:
-            gc.collect()
-
         yield from self.run_thread(server.receives, OpKillCursors)
 
     @unittest.skipUnless(sys.version_info >= (3, 4), "Python 3.4 required")

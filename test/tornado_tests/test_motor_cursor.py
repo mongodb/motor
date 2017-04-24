@@ -386,6 +386,9 @@ class MotorCursorTest(MotorMockServerTest):
         if sys.version_info < (3, 4):
             raise SkipTest("requires Python 3.4")
 
+        if 'PyPy' in sys.version:
+            raise SkipTest("PyPy")
+
         if tornado_version < (4, 0, 0, 0):
             raise SkipTest("Tornado 3")
 
@@ -403,9 +406,6 @@ class MotorCursorTest(MotorMockServerTest):
         # Let the event loop iterate once more to clear its references to
         # callbacks, allowing the cursor to be freed.
         yield self.pause(0)
-        if 'PyPy' in sys.version:
-            gc.collect()
-
         yield self.run_thread(server.receives, OpKillCursors)
 
     @gen_test
