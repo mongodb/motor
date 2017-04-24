@@ -16,8 +16,6 @@
 
 from __future__ import unicode_literals, absolute_import
 
-import warnings
-
 from . import core, motor_gridfs
 from .frameworks import tornado as tornado_framework
 from .metaprogramming import create_class_with_framework
@@ -63,15 +61,3 @@ MotorGridOut = create_motor_class(motor_gridfs.AgnosticGridOut)
 
 
 MotorGridOutCursor = create_motor_class(motor_gridfs.AgnosticGridOutCursor)
-
-
-def Op(fn, *args, **kwargs):
-    """Obsolete; here for backwards compatibility with Motor 0.1.
-
-    Op had been necessary for ease-of-use with Tornado 2 and @gen.engine.
-    """
-    msg = "motor.Op is deprecated, simply call %s and yield its Future." % (
-        fn.__name__)
-
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    return fn(*args, **kwargs)
