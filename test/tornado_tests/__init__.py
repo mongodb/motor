@@ -18,15 +18,7 @@ from __future__ import unicode_literals
 
 import concurrent.futures
 import datetime
-import functools
-
-try:
-    # Python 2.6.
-    from unittest2 import SkipTest
-    import unittest2 as unittest
-except ImportError:
-    from unittest import SkipTest  # If this fails you need unittest2.
-    import unittest
+from unittest import SkipTest
 
 from mockupdb import MockupDB
 from tornado import gen, testing

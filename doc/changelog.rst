@@ -6,6 +6,8 @@ Changelog
 Motor 1.2
 ---------
 
+Dropped support for Python 2.6. Motor continues to support Python 2.7, and 3.3+.
+
 The maximum number of workers in the thread pool can be overridden with an
 environment variable, see :doc:`configuration`.
 

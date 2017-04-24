@@ -7,6 +7,11 @@ Some explanations for those who would like to contribute to Motor development.
 Compatibility
 -------------
 
+Motor supports the asyncio module in the standard library of Python 3.4 and
+later, as well as the asyncio package on PyPI for Python 3.3.
+Motor also works with Tornado 4 and later along with all the Python versions it
+supports.
+
 Motor is single-source compatible with all supported Python versions, although
 there are some tricks for Python 3. There is some code for the ``async``
 and ``await`` features of Python 3.5+ that is conditionally compiled with ``eval``
@@ -15,11 +20,6 @@ in ``core.py``.
 In ``setup.py`` there are tricks to conditionally import tests depending on
 Python version. ``setup.py`` also avoids installing the ``frameworks/asyncio``
 directory in a Python 2 environment.
-
-Motor supports a range of Tornado versions, and all the Python versions those
-Tornado versions work with. Motor still supports Tornado 3 because New Relic
-has `only begun to support Tornado 4`_, and therefore Motor continues to
-support Python 2.6.
 
 Frameworks
 ----------
@@ -103,5 +103,3 @@ the Tornado IOLoop's ``run_sync`` method. ``synchrotest.py`` overrides the Pytho
 interpreter's import machinery to allow Synchro to masquerade as PyMongo, and
 runs PyMongo's test suite against it. Use ``tox -e synchro`` to check out
 PyMongo test suite and run it with Synchro.
-
-.. _only begun to support Tornado 4: https://docs.newrelic.com/docs/agents/python-agent/hosting-mechanisms/introductory-tornado-4-support

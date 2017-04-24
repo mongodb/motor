@@ -3,10 +3,10 @@ Requirements
 
 The current version of Motor requires:
 
-* CPython 2.6, 2.7, or 3.3 and later.
+* CPython 2.7, or 3.3 and later.
 * PyMongo_ 3.4 and later.
 
-Beginning with version 0.5, Motor can integrate with either Tornado or asyncio.
+Motor can integrate with either Tornado or asyncio.
 
 Requires the `futures`_ package from PyPI on Python 2.
 
@@ -19,9 +19,6 @@ nearly as fast as backports.pbkdf2.)
 
 Building the docs requires `sphinx`_.
 
-In Python 2.6, unittest2_ is automatically installed by
-``python setup.py test``.
-
 .. _PyMongo: https://pypi.python.org/pypi/pymongo/
 
 .. _futures: https://pypi.python.org/pypi/futures
@@ -29,8 +26,6 @@ In Python 2.6, unittest2_ is automatically installed by
 .. _backports.pbkdf2: https://pypi.python.org/pypi/backports.pbkdf2/
 
 .. _sphinx: http://sphinx.pocoo.org/
-
-.. _unittest2: https://pypi.python.org/pypi/unittest2
 
 
 Compatibility Matrix
@@ -167,6 +162,8 @@ with the `asyncio package from PyPI`_.
 |               | 1.0 |**N**|  Y  |  Y  |  Y   |  Y  |  Y  |  Y  |
 +---------------+-----+-----+-----+-----+------+-----+-----+-----+
 |               | 1.1 |**N**|  Y  |  Y  |  Y   |  Y  |  Y  |  Y  |
++---------------+-----+-----+-----+-----+------+-----+-----+-----+
+|               | 1.2 |**N**|**N**|  Y  |  Y   |  Y  |  Y  |  Y  |
 +---------------+-----+-----+-----+-----+------+-----+-----+-----+
 
 .. _asyncio package from PyPI: https://pypi.python.org/pypi/asyncio

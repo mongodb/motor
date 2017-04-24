@@ -31,9 +31,9 @@ Control how the tests connect to MongoDB with these environment variables:
 
 Install `tox`_ and run it from the command line in the repository directory.
 You will need a variety of Python interpreters installed. For a minimal test,
-ensure you have Python 2.6 and 3.5, and run::
+ensure you have Python 2.7 and 3.5, and run::
 
-  > tox -e tornado4-py26-min,tornado4-py35-min
+  > tox -e tornado4-py27,tornado4-py35
 
 The doctests pass with Python 3.5 and a MongoDB 3.2 instance running on
 port 27017:

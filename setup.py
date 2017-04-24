@@ -15,7 +15,6 @@ License :: OSI Approved :: Apache Software License
 Development Status :: 4 - Beta
 Natural Language :: English
 Programming Language :: Python :: 2
-Programming Language :: Python :: 2.6
 Programming Language :: Python :: 2.7
 Programming Language :: Python :: 3
 Programming Language :: Python :: 3.3
@@ -40,14 +39,6 @@ if sys.version_info[0] < 3:
     # Need concurrent.futures backport in Python 2 for MotorMockServerTest.
     tests_require.append('futures')
     install_requires.append('futures')
-
-if sys.version_info[:2] < (2, 7):
-    tests_require.append('unittest2')
-    test_suite = 'unittest2.collector'
-else:
-    # In Python 2.7+, unittest has a built-in collector.
-    # Test everything under 'test/'.
-    test_suite = 'test'
 
 
 class test(Command):
@@ -93,14 +84,9 @@ class test(Command):
         build_ext_cmd.inplace = 1
         self.run_command('build_ext')
 
-        # Construct a test runner directly from the unittest imported from
-        # test (this will be unittest2 under Python 2.6), which creates a
-        # TestResult that supports the 'addSkip' method. setuptools will by
-        # default create a TextTestRunner that uses the old TestResult class,
-        # resulting in DeprecationWarnings instead of skipping tests under 2.6.
         from test import (env,
                           suppress_tornado_warnings,
-                          unittest, MotorTestLoader,
+                          MotorTestLoader,
                           test_environment as testenv)
 
         loader = MotorTestLoader()
@@ -144,6 +130,7 @@ class test(Command):
             from xmlrunner import XMLTestRunner
             runner_class = XMLTestRunner
         else:
+            import unittest
             runner_class = unittest.TextTestRunner
 
         runner = runner_class(**runner_kwargs)
@@ -182,6 +169,6 @@ setup(name='motor',
           "asyncio",
       ],
       tests_require=tests_require,
-      test_suite=test_suite,
+      test_suite='test',
       zip_safe=False,
       cmdclass={'test': test})

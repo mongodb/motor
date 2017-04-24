@@ -43,8 +43,8 @@ asyncio. It requires:
 
 * Unix, including Mac OS X. Windows is not supported.
 * PyMongo_ 3.4 or later.
-* Python 2.6 or later.
-* `futures`_ on Python 2.6.
+* Python 2.7 or later.
+* `futures`_ on Python 2.7.
 * `backports.pbkdf2`_ for faster authentication with MongoDB 3.0+,
   especially on Python older than 2.7.8, or on Python 3 before Python 3.4.
 
@@ -96,7 +96,6 @@ Testing
 
 Run ``python setup.py test``.
 Tests are located in the ``test/`` directory.
-In Python 2.6, unittest2_ is automatically installed.
 
 .. _PyMongo: http://pypi.python.org/pypi/pymongo/
 
@@ -116,5 +115,3 @@ In Python 2.6, unittest2_ is automatically installed.
    https://groups.google.com/forum/?fromgroups#!forum/mongodb-user
 
 .. _sphinx: http://sphinx.pocoo.org/
-
-.. _unittest2: https://pypi.python.org/pypi/unittest2

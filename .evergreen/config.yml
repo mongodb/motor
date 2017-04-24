@@ -716,18 +716,10 @@ axes:
     display_name: "Tox Env"
     values:
       # TODO: avoid repetition?
-      - id: "tornado3-py26"
-        variables:
-           TOX_ENV: "tornado3-py26"
-           PYTHON_BINARY: "/opt/python/2.6/bin/python"
       - id: "tornado3-py27"
         variables:
            TOX_ENV: "tornado3-py27"
            PYTHON_BINARY: "/opt/python/2.7/bin/python"
-      - id: "tornado4for26-py26"
-        variables:
-           TOX_ENV: "tornado4for26-py26"
-           PYTHON_BINARY: "/opt/python/2.6/bin/python"
       - id: "tornado4-py27"
         variables:
            TOX_ENV: "tornado4-py27"
@@ -772,10 +764,6 @@ axes:
         variables:
            TOX_ENV: "tornado_git-py36"
            PYTHON_BINARY: "/opt/python/3.6/bin/python3"
-      - id: "tornado4-py27-unittest2"
-        variables:
-           TOX_ENV: "tornado4-py27-unittest2"
-           PYTHON_BINARY: "/opt/python/2.7/bin/python"
       - id: "asyncio-py33"
         variables:
            TOX_ENV: "asyncio-py33"
@@ -846,10 +834,10 @@ buildvariants:
 - matrix_name: "test-mongodb-versions"
   matrix_spec: {"os": "ubuntu", "tox-env": "*", auth: "*", ssl: "*"}
   exclude_spec:
-   # TODO: Python 2.6 and synchro need PyMongo master's updated SSL test certs,
+   # TODO: synchro needs PyMongo master's updated SSL test certs,
    # which may require Motor test suite changes.
    - os: "*"
-     tox-env: ["tornado3-py26", "tornado4for26-py26", "synchro"]
+     tox-env: ["synchro"]
      auth: "*"
      ssl: "ssl"
   display_name: "${os} ${tox-env} ${auth} ${ssl}"

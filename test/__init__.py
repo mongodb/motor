@@ -17,14 +17,8 @@ from __future__ import unicode_literals
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import logging
-
-try:
-    # Python 2.6.
-    from unittest2 import SkipTest
-    import unittest2 as unittest
-except ImportError:
-    from unittest import SkipTest  # If this fails you need unittest2.
-    import unittest
+import unittest
+from unittest import SkipTest
 
 from test.test_environment import env, db_user, CLIENT_PEM
 
@@ -67,11 +61,7 @@ class MotorTestLoader(unittest.TestLoader):
     def _get_module_from_name(self, name):
         for prefix, reason in self._avoid:
             if name.startswith(prefix):
-                # By experiment, need two tactics to work in unittest2 & stdlib.
-                if unittest.__name__ == 'unittest2':
-                    raise SkipTest(reason)
-                else:
-                    return SkippedModule(name, reason)
+                return SkippedModule(name, reason)
 
         return super(MotorTestLoader, self)._get_module_from_name(name)
 

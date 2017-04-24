@@ -14,7 +14,7 @@
 
 from __future__ import unicode_literals, absolute_import
 
-"""Python 2.6+ compatibility utilities for Motor."""
+"""Python 2/3 compatibility utilities for Motor."""
 
 import sys
 
