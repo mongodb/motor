@@ -14,11 +14,11 @@
 
 """Asyncio support for Motor, an asynchronous driver for MongoDB."""
 
-__all__ = ['AsyncIOMotorClient']
-
 from . import core, motor_gridfs
 from .frameworks import asyncio as asyncio_framework
 from .metaprogramming import create_class_with_framework
+
+__all__ = ['AsyncIOMotorClient']
 
 
 def create_asyncio_class(cls):
