@@ -149,10 +149,33 @@ makes it available to request handlers::
         def get(self):
             db = self.settings['db']
 
-.. warning:: It is a common mistake to create a new client object for every
-  request; this comes at a dire performance cost. Create the client
-  when your application starts and reuse that one client for the lifetime
-  of the process, as shown in these examples.
+It is a common mistake to create a new client object for every
+request; **this comes at a dire performance cost**. Create the client
+when your application starts and reuse that one client for the lifetime
+of the process, as shown in these examples.
+
+The Tornado :class:`~tornado.httpserver.HTTPServer` class's :meth:`start`
+method is a simple way to fork multiple web servers and use all of your
+machine's CPUs. However, you must create your ``MotorClient`` after forking::
+
+    # Create the application before creating a MotorClient.
+    application = tornado.web.Application([
+        (r'/', MainHandler)
+    ])
+
+    server = tornado.httpserver.HTTPServer(application)
+    server.bind(8888)
+
+    # Forks one process per CPU.
+    server.start(0)
+
+    # Now, in each child process, create a MotorClient.
+    application.settings['db'] = MotorClient().test_database
+    IOLoop.current().start()
+
+For production-ready, multiple-CPU deployments of Tornado there are better
+methods than ``HTTPServer.start()``. See Tornado's guide to
+:doc:`tornado:guide/running`.
 
 Getting a Collection
 --------------------
