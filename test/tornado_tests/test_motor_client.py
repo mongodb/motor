@@ -18,9 +18,7 @@ from __future__ import unicode_literals
 
 import os
 import unittest
-import warnings
 
-import bson
 import pymongo
 from pymongo import CursorType
 import pymongo.mongo_client
