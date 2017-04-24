@@ -293,7 +293,7 @@ def _sub_pymongo_ref(match):
 def process_motor_docstring(app, what, name, obj, options, lines):
     if name in motor_info and motor_info[name].get('is_pymongo_docstring'):
         joined = '\n'.join(lines)
-        subbed = pymongo_ref_pat.sub(_sub_pymongo_ref, joined, re.MULTILINE)
+        subbed = pymongo_ref_pat.sub(_sub_pymongo_ref, joined)
         lines[:] = subbed.split('\n')
 
 
