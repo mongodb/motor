@@ -153,32 +153,6 @@ class MotorTest(PauseMixin, testing.AsyncTestCase):
             *args,
             **self.get_client_kwargs(**kwargs))
 
-    @gen.coroutine
-    def check_optional_callback(self, fn, *args, **kwargs):
-        """Take a function and verify that it accepts a 'callback' parameter
-        and properly type-checks it. If 'required', check that fn requires
-        a callback.
-
-        NOTE: This method can call fn several times, so it should be relatively
-        free of side-effects. Otherwise you should test fn without this method.
-
-        :Parameters:
-          - `fn`: A function that accepts a callback
-          - `required`: Whether `fn` should require a callback or not
-          - `callback`: To be called with ``(None, error)`` when done
-        """
-        partial_fn = functools.partial(fn, *args, **kwargs)
-        self.assertRaises(TypeError, partial_fn, callback='foo')
-        self.assertRaises(TypeError, partial_fn, callback=1)
-
-        # Should not raise
-        yield partial_fn(callback=None)
-
-        # Should not raise
-        (result, error), _ = yield gen.Task(partial_fn)
-        if error:
-            raise error
-
     def tearDown(self):
         env.sync_cx.motor_test.test_collection.delete_many({})
         self.cx.close()
