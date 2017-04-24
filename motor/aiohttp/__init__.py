@@ -14,6 +14,8 @@
 
 """Serve GridFS files with Motor and aiohttp.
 
+Requires Python 3.4 or later and aiohttp 2.0 or later.
+
 See the :doc:`/examples/aiohttp_gridfs_example`.
 """
 
@@ -22,7 +24,6 @@ import datetime
 import mimetypes
 
 import aiohttp.web
-from aiohttp.web_reqrep import StreamResponse
 import gridfs
 from motor.motor_asyncio import (AsyncIOMotorDatabase,
                                  AsyncIOMotorGridFSBucket)
@@ -190,7 +191,7 @@ class AIOHTTPGridFS:
         except gridfs.NoFile:
             raise aiohttp.web.HTTPNotFound(text=request.path)
 
-        resp = StreamResponse()
+        resp = aiohttp.web.StreamResponse()
         self._set_standard_headers(request.path, resp, gridout)
 
         # Overridable method set_extra_headers.

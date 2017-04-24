@@ -14,6 +14,8 @@ and read_concern arguments. This is rarely needed; you typically create a
 :class:`MotorCollection` from a :class:`MotorDatabase`, not by calling its
 constructor directly.
 
+Added support for `aiohttp`_ 2.0 and later, dropped older aiohttp versions.
+
 Motor 1.1
 ---------
 

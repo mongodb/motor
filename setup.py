@@ -114,7 +114,8 @@ class test(Command):
             loader.avoid('asyncio_tests', reason='no asyncio')
         
         if not testenv.HAVE_AIOHTTP:
-            loader.avoid('asyncio_tests.test_aiohttp_gridfs', reason='no aiohttp')
+            loader.avoid('asyncio_tests.test_aiohttp_gridfs',
+                         reason='no aiohttp')
 
         if sys.version_info[:2] < (3, 5):
             loader.avoid('asyncio_tests.test_asyncio_await',
