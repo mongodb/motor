@@ -25,6 +25,7 @@ from pymongo import ReadPreference, WriteConcern
 from pymongo.read_preferences import Secondary
 from pymongo.errors import OperationFailure, CollectionInvalid
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
+from tornado import gen
 from tornado.testing import gen_test
 
 import motor
@@ -75,7 +76,7 @@ class MotorDatabaseTest(MotorTest):
 
         # Wait for create_collection to complete
         for _ in range(10):
-            yield self.pause(0.5)
+            yield gen.sleep(0.1)
             if 'c' in (yield db.collection_names()):
                 break
 

@@ -111,10 +111,6 @@ class test(Command):
         test_motor_await = 'tornado_tests.test_motor_await'
         if not testenv.HAVE_TORNADO:
             loader.avoid(test_motor_await, reason='no tornado')
-        # We need Tornado after this patch to wrap "async def" with gen_test:
-        # https://github.com/tornadoweb/tornado/pull/1550
-        elif not testenv.TORNADO_VERSION[:2] > (4, 2):
-            loader.avoid(test_motor_await, reason='tornado < 4.3')
         elif sys.version_info[:2] < (3, 5):
             loader.avoid(test_motor_await, reason='python < 3.5')
 

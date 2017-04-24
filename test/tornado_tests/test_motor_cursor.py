@@ -16,7 +16,6 @@ from __future__ import unicode_literals
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-import gc
 import sys
 import traceback
 import unittest
@@ -28,7 +27,6 @@ from mockupdb import OpKillCursors
 from tornado import gen
 from tornado.concurrent import Future
 from tornado.testing import gen_test
-from tornado import version_info as tornado_version
 from pymongo import CursorType
 from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
@@ -109,8 +107,8 @@ class MotorCursorTest(MotorMockServerTest):
 
         # Decref'ing the cursor eventually closes it on the server.
         del cursor
-        # Clear Runner's reference. This is Tornado 3 substitute for gen.moment.
-        yield gen.Task(self.io_loop.add_callback)
+        # Clear Runner's reference.
+        yield gen.moment
         yield self.run_thread(server.receives,
                               OpKillCursors(cursor_ids=[123]))
 
@@ -383,9 +381,6 @@ class MotorCursorTest(MotorMockServerTest):
         if 'PyPy' in sys.version:
             raise SkipTest("PyPy")
 
-        if tornado_version < (4, 0, 0, 0):
-            raise SkipTest("Tornado 3")
-
         client, server = self.client_server(auto_ismaster=True)
         cursor = client.test.collection.find()
 
@@ -399,7 +394,7 @@ class MotorCursorTest(MotorMockServerTest):
 
         # Let the event loop iterate once more to clear its references to
         # callbacks, allowing the cursor to be freed.
-        yield self.pause(0)
+        yield gen.sleep(0.1)
         yield self.run_thread(server.receives, OpKillCursors)
 
     @gen_test
@@ -464,7 +459,7 @@ class MotorCursorTest(MotorMockServerTest):
 
         del cur
 
-        yield self.pause(0.1)
+        yield gen.sleep(0.1)
 
         # The exhaust cursor's socket was discarded, although another may
         # already have been opened to send OP_KILLCURSORS.

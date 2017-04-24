@@ -69,9 +69,7 @@ MotorGridOutCursor = create_motor_class(motor_gridfs.AgnosticGridOutCursor)
 def Op(fn, *args, **kwargs):
     """Obsolete; here for backwards compatibility with Motor 0.1.
 
-    Op had been necessary for ease-of-use with Tornado 2 and @gen.engine. But
-    Motor 0.2 is built for Tornado 3, @gen.coroutine, and Futures, so motor.Op
-    is deprecated.
+    Op had been necessary for ease-of-use with Tornado 2 and @gen.engine.
     """
     msg = "motor.Op is deprecated, simply call %s and yield its Future." % (
         fn.__name__)

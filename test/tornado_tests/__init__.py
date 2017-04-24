@@ -17,7 +17,6 @@ from __future__ import unicode_literals
 """Utilities for testing Motor with Tornado."""
 
 import concurrent.futures
-import datetime
 from unittest import SkipTest
 
 from mockupdb import MockupDB
@@ -85,14 +84,7 @@ def remove_all_users(db):
         yield db.system.users.delete_many({})
 
 
-class PauseMixin(object):
-    @gen.coroutine
-    def pause(self, seconds):
-        yield gen.Task(
-            self.io_loop.add_timeout, datetime.timedelta(seconds=seconds))
-
-
-class MotorTest(PauseMixin, testing.AsyncTestCase):
+class MotorTest(testing.AsyncTestCase):
     longMessage = True  # Used by unittest.TestCase
     ssl = False  # If True, connect with SSL, skip if mongod isn't SSL
 

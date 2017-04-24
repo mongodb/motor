@@ -27,7 +27,7 @@ from mockupdb import OpQuery
 from pymongo import ReadPreference, WriteConcern
 from pymongo.errors import ConfigurationError, OperationFailure
 from pymongo.errors import ConnectionFailure
-from tornado import gen, version_info as tornado_version
+from tornado import gen
 from tornado.concurrent import Future
 from tornado.testing import gen_test
 
@@ -132,9 +132,6 @@ class MotorClientTest(MotorTest):
 
     @gen_test(timeout=60)
     def test_high_concurrency(self):
-        if tornado_version < (4, 0, 0, 0):
-            raise SkipTest("MOTOR-73")
-
         yield self.make_test_data()
 
         concurrency = 25
@@ -227,9 +224,6 @@ class MotorClientTest(MotorTest):
 class MotorClientTimeoutTest(MotorMockServerTest):
     @gen_test
     def test_timeout(self):
-        if tornado_version < (4, 0, 0, 0):
-            raise SkipTest("MOTOR-73")
-
         server = self.server(auto_ismaster=True)
         client = motor.MotorClient(server.uri, socketTimeoutMS=100)
 

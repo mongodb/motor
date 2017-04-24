@@ -207,7 +207,7 @@ class MotorCollectionTest(MotorTest):
 
         # The insert is eventually executed.
         while not (yield coll.count()):
-            yield self.pause(0.1)
+            yield gen.sleep(0.1)
 
         # DuplicateKeyError not raised.
         future = coll.insert({'_id': 1})
@@ -225,7 +225,7 @@ class MotorCollectionTest(MotorTest):
         coll.save({'_id': 201}, w=0)
 
         while not (yield coll.find_one({'_id': 201})):
-            yield self.pause(0.1)
+            yield gen.sleep(0.1)
 
         # DuplicateKeyError not raised
         coll.save({'_id': 201})
@@ -242,7 +242,7 @@ class MotorCollectionTest(MotorTest):
         coll.update({'_id': 1}, {'$set': {'a': 1}}, w=0)
 
         while not (yield coll.find_one({'a': 1})):
-            yield self.pause(0.1)
+            yield gen.sleep(0.1)
 
         coll.database.client.close()
 

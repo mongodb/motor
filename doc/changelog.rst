@@ -8,6 +8,10 @@ Motor 1.2
 
 Dropped support for Python 2.6. Motor continues to support Python 2.7, and 3.3+.
 
+Dropped support for Tornado 3. A recent version of Tornado 4 is required.
+
+Added support for `aiohttp`_ 2.0 and later, and dropped older aiohttp versions.
+
 The maximum number of workers in the thread pool can be overridden with an
 environment variable, see :doc:`configuration`.
 
@@ -15,8 +19,6 @@ environment variable, see :doc:`configuration`.
 and read_concern arguments. This is rarely needed; you typically create a
 :class:`MotorCollection` from a :class:`MotorDatabase`, not by calling its
 constructor directly.
-
-Added support for `aiohttp`_ 2.0 and later, dropped older aiohttp versions.
 
 Motor 1.1
 ---------

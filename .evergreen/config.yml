@@ -716,10 +716,6 @@ axes:
     display_name: "Tox Env"
     values:
       # TODO: avoid repetition?
-      - id: "tornado3-py27"
-        variables:
-           TOX_ENV: "tornado3-py27"
-           PYTHON_BINARY: "/opt/python/2.7/bin/python"
       - id: "tornado4-py27"
         variables:
            TOX_ENV: "tornado4-py27"
@@ -797,10 +793,6 @@ axes:
   - id: tox-env-osx
     display_name: "Tox Env OSX"
     values:
-      - id: "tornado3-py27"
-        variables:
-           TOX_ENV: "tornado3-py27"
-           PYTHON_BINARY: "python2.7"
       - id: "tornado4-py27"
         variables:
            TOX_ENV: "tornado4-py27"

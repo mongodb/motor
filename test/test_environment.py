@@ -29,10 +29,8 @@ except ImportError:
     ssl = None
 
 HAVE_TORNADO = True
-TORNADO_VERSION = None
 try:
     import tornado
-    TORNADO_VERSION = tornado.version_info
 except ImportError:
     HAVE_TORNADO = False
     tornado = None

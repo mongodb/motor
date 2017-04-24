@@ -45,17 +45,8 @@ def check_event_loop(loop):
             "io_loop must be instance of IOLoop, not %r" % loop)
 
 
-# Beginning in Tornado 4, TracebackFuture is a deprecated alias for Future.
-# Future-proof Motor in case TracebackFuture is some day removed. Remove this
-# Future-proofing once we drop support for Tornado 3.
-try:
-    _TornadoFuture = concurrent.TracebackFuture
-except AttributeError:
-    _TornadoFuture = concurrent.Future
-
-
 def get_future(loop):
-    return _TornadoFuture()
+    return concurrent.Future()
 
 
 if 'MOTOR_MAX_WORKERS' in os.environ:
@@ -69,7 +60,7 @@ _EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
 def run_on_executor(loop, fn, self, *args, **kwargs):
     # Need a Tornado Future for "await" expressions. exec_fut is resolved on a
     # worker thread, loop.add_future ensures "future" is resolved on main.
-    future = _TornadoFuture()
+    future = concurrent.Future()
     exec_fut = _EXECUTOR.submit(fn, self, *args, **kwargs)
 
     def copy(_):
@@ -112,7 +103,7 @@ def future_or_callback(future, callback, io_loop, return_value=_DEFAULT):
         io_loop.add_future(future, done_callback)
 
     elif return_value is not _DEFAULT:
-        chained = _TornadoFuture()
+        chained = concurrent.Future()
 
         def done_callback(_future):
             try:
