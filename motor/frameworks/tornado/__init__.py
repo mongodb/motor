@@ -14,7 +14,10 @@
 
 from __future__ import absolute_import, unicode_literals
 
-"""Tornado compatibility layer for MongoDB, an asynchronous MongoDB driver."""
+"""Tornado compatibility layer for Motor, an asynchronous MongoDB driver.
+
+See "Frameworks" in the Developer Guide.
+"""
 
 import functools
 import os
