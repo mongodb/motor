@@ -49,10 +49,6 @@ class MotorCursorTest(MotorMockServerTest):
         self.assertFalse(cursor.started, "Cursor shouldn't start immediately")
 
     @gen_test
-    def test_count_callback(self):
-        yield self.check_optional_callback(self.collection.find().count)
-
-    @gen_test
     def test_count(self):
         yield self.make_test_data()
         coll = self.collection
@@ -195,8 +191,6 @@ class MotorCursorTest(MotorMockServerTest):
         # We need more than 10 documents so the cursor stays alive.
         yield self.make_test_data()
         coll = self.collection
-        cursor = coll.find()
-        yield self.check_optional_callback(cursor.to_list, 10)
         cursor = coll.find()
         with self.assertRaises(ValueError):
             yield cursor.to_list(-1)

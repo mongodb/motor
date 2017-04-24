@@ -67,8 +67,6 @@ class MotorDatabaseTest(MotorTest):
         db = self.db
         yield db.drop_collection('c')
 
-        # check_optional_callback would call create_collection twice, and the
-        # second call would raise "already exists", so test manually.
         self.assertRaises(TypeError, db.create_collection, 'c', callback='foo')
         self.assertRaises(TypeError, db.create_collection, 'c', callback=1)
 
@@ -80,8 +78,6 @@ class MotorDatabaseTest(MotorTest):
             yield self.pause(0.5)
             if 'c' in (yield db.collection_names()):
                 break
-
-        yield self.check_optional_callback(db.validate_collection, 'c')
 
     @gen_test
     def test_command(self):
@@ -126,11 +122,6 @@ class MotorDatabaseTest(MotorTest):
         yield db.drop_collection(collection)
         names = yield db.collection_names()
         self.assertFalse('test_drop_collection' in names)
-
-    @gen_test
-    def test_command_callback(self):
-        yield self.check_optional_callback(
-            self.cx.admin.command, 'buildinfo', check=False)
 
     @ignore_deprecations
     @gen_test

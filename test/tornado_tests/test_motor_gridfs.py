@@ -71,19 +71,6 @@ class MotorGridfsTest(MotorTest):
         self.assertEqual(2, gout.field)
 
     @gen_test
-    def test_gridfs_callback(self):
-        yield self.check_optional_callback(self.fs.new_file)
-        yield self.check_optional_callback(partial(self.fs.put, b'a'))
-
-        yield self.fs.put(b'foo', _id=1, filename='f')
-        yield self.check_optional_callback(self.fs.get, 1)
-        yield self.check_optional_callback(self.fs.get_version, 'f')
-        yield self.check_optional_callback(self.fs.get_last_version, 'f')
-        yield self.check_optional_callback(partial(self.fs.delete, 1))
-        yield self.check_optional_callback(self.fs.list)
-        yield self.check_optional_callback(self.fs.exists)
-
-    @gen_test
     def test_basic(self):
         oid = yield self.fs.put(b"hello world")
         out = yield self.fs.get(oid)

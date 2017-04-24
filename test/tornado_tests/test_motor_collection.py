@@ -113,12 +113,6 @@ class MotorCollectionTest(MotorTest):
         finally:
             yield coll.drop()
 
-    @ignore_deprecations
-    @gen_test
-    def test_update_callback(self):
-        yield self.check_optional_callback(
-            self.collection.update, {}, {})
-
     @gen_test
     def test_insert_one(self):
         collection = self.collection
@@ -201,11 +195,6 @@ class MotorCollectionTest(MotorTest):
         self.assertEqual(0, result.raw_result['n'])
         self.assertEqual(1, result.raw_result['ok'])
         self.assertEqual(None, result.raw_result.get('err'))
-
-    @ignore_deprecations
-    @gen_test
-    def test_remove_callback(self):
-        yield self.check_optional_callback(self.collection.remove)
 
     @ignore_deprecations
     @gen_test
