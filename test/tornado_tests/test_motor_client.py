@@ -35,7 +35,10 @@ import motor
 import test
 from test import SkipTest
 from test.test_environment import db_user, db_password, env
-from test.tornado_tests import remove_all_users, MotorTest, MotorMockServerTest
+from test.tornado_tests import (at_least,
+                                MotorMockServerTest,
+                                MotorTest,
+                                remove_all_users)
 from test.utils import one, get_primary_pool
 
 
@@ -132,6 +135,10 @@ class MotorClientTest(MotorTest):
 
     @gen_test(timeout=60)
     def test_high_concurrency(self):
+        if env.mongod_started_with_ssl:
+            if not (yield at_least(self.cx, (2, 6))):
+                raise SkipTest("Concurrent SSL is unreliable in 2.4")
+
         yield self.make_test_data()
 
         concurrency = 25
