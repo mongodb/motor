@@ -140,11 +140,13 @@ excluded_tests = [
     # Accesses PyMongo internals.
     'TestClient.test_kill_cursor_explicit_primary',
     'TestClient.test_kill_cursor_explicit_secondary',
+    'TestClient.test_close_kills_cursors',
     'TestClient.test_stale_getmore',
     'TestCollection.test_aggregation_cursor',
     'TestCommandAndReadPreference.*',
     'TestCommandMonitoring.test_get_more_failure',
     'TestCommandMonitoring.test_sensitive_commands',
+    'TestCursor.test_close_kills_cursor_synchronously',
     'TestGridFile.test_grid_out_cursor_options',
     'TestGridfsReplicaSet.test_gridfs_replica_set',
     'TestMaxStaleness.test_last_write_date_absent',
