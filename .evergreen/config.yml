@@ -817,7 +817,7 @@ axes:
            TOX_BINARY: "/opt/python/3.6/bin/tox"
       - id: "osx"
         display_name: "OSX 10.10"
-        run_on: "osx-1010"
+        run_on: "macos-1012"
         variables:
            TOX_BINARY: "tox"
 
