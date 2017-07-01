@@ -18,27 +18,6 @@ from docutils import nodes
 from sphinx import addnodes
 from sphinx.util.compat import Directive
 
-try:
-    from sphinx.util.compat import make_admonition
-except ImportError:
-    # Sphinx 1.6 removed make_admonition. This is a copy from 1.5.
-    def make_admonition(node_class, name, arguments, options, content, lineno,
-                        content_offset, block_text, state, state_machine):
-        text = '\n'.join(content)
-        admonition_node = node_class(text)
-        if arguments:
-            title_text = arguments[0]
-            textnodes, messages = state.inline_text(title_text, lineno)
-            admonition_node += nodes.title(title_text, '', *textnodes)
-            admonition_node += messages
-            if 'class' in options:
-                classes = options['class']
-            else:
-                classes = ['admonition-' + nodes.make_id(title_text)]
-            admonition_node['classes'] += classes
-        state.nested_parse(content, content_offset, admonition_node)
-        return [admonition_node]
-
 
 class mongodoc(nodes.Admonition, nodes.Element):
     pass
@@ -78,11 +57,11 @@ class MongodocDirective(Directive):
     option_spec = {}
 
     def run(self):
-        return make_admonition(mongodoc, self.name,
-                               ['See general MongoDB documentation'],
-                               self.options, self.content, self.lineno,
-                               self.content_offset, self.block_text,
-                               self.state, self.state_machine)
+        node = mongodoc()
+        title = 'See general MongoDB documentation'
+        node += nodes.title(title, title)
+        self.state.nested_parse(self.content, self.content_offset, node)
+        return [node]
 
 
 def process_mongodoc_nodes(app, doctree, fromdocname):
