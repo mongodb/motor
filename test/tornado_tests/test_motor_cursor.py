@@ -28,6 +28,7 @@ from tornado import gen
 from tornado.concurrent import Future
 from tornado.testing import gen_test
 from pymongo import CursorType
+from pymongo.collation import Collation
 from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
 
@@ -275,6 +276,19 @@ class MotorCursorTest(MotorMockServerTest):
         # Can't call to_list on tailable cursor.
         with self.assertRaises(InvalidOperation):
             yield cursor.to_list(10)
+
+    @gen_test
+    def test_to_list_with_chained_collation(self):
+        if not (yield at_least(self.cx, (3, 4))):
+            raise SkipTest("collation requires MongoDB >= 3.4")
+
+        yield self.make_test_data()
+        cursor = self.collection.find({}, {'_id': 1}) \
+            .sort([('_id', pymongo.ASCENDING)]) \
+            .collation(Collation("en"))
+        expected = [{'_id': i} for i in range(200)]
+        result = yield cursor.to_list(length=1000)
+        self.assertEqual(expected, result)
 
     @gen_test
     def test_cursor_explicit_close(self):
