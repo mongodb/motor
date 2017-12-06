@@ -44,7 +44,7 @@ from pymongo import (collation,
                      ssl_support,
                      write_concern)
 from pymongo.auth import _build_credentials_tuple
-from pymongo.helpers import _unpack_response, _check_command_response
+from pymongo.helpers import _check_command_response
 from pymongo.collation import *
 from pymongo.common import *
 from pymongo.common import _UUID_REPRESENTATIONS
