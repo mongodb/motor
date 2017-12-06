@@ -98,20 +98,23 @@ class MotorCursorTest(MotorMockServerTest):
         if 'PyPy' in sys.version:
             raise SkipTest('PyPy')
 
-        client, server = self.client_server(auto_ismaster={'ismaster': True})
-        cursor = client.test.collection.find()
+        client, server = self.client_server(auto_ismaster=True)
+        cursor = client.test.coll.find()
 
         # With Tornado, simply accessing fetch_next starts the fetch.
         cursor.fetch_next
-        request = yield self.run_thread(server.receives, OpQuery)
-        request.replies({'_id': 1}, cursor_id=123)
+        request = yield self.run_thread(server.receives, "find", "coll")
+        request.replies({"cursor": {
+            "id": 123,
+            "ns": "db.coll",
+            "firstBatch": [{"_id": 1}]}})
 
         # Decref'ing the cursor eventually closes it on the server.
         del cursor
         # Clear Runner's reference.
         yield gen.moment
-        yield self.run_thread(server.receives,
-                              OpKillCursors(cursor_ids=[123]))
+        request = yield self.run_thread(server.receives, "killCursors", "coll")
+        request.ok()
 
     @gen_test
     def test_fetch_next_without_results(self):
@@ -292,18 +295,23 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     def test_cursor_explicit_close(self):
-        client, server = self.client_server(auto_ismaster={'ismaster': True})
-        collection = client.test.collection
+        client, server = self.client_server(auto_ismaster=True)
+        collection = client.test.coll
         cursor = collection.find()
 
         # With Tornado, simply accessing fetch_next starts the fetch.
         fetch_next = cursor.fetch_next
-        request = yield self.run_thread(server.receives, OpQuery)
-        request.replies({'_id': 1}, cursor_id=123)
+        request = yield self.run_thread(server.receives, "find", "coll")
+        request.replies({"cursor": {
+            "id": 123,
+            "ns": "db.coll",
+            "firstBatch": [{"_id": 1}]}})
+
         self.assertTrue((yield fetch_next))
 
         close_future = cursor.close()
-        yield self.run_thread(server.receives, OpKillCursors(cursor_ids=[123]))
+        request = yield self.run_thread(server.receives, "killCursors", "coll")
+        request.ok()
         yield close_future
 
         # Cursor reports it's alive because it has buffered data, even though
@@ -396,11 +404,14 @@ class MotorCursorTest(MotorMockServerTest):
             raise SkipTest("PyPy")
 
         client, server = self.client_server(auto_ismaster=True)
-        cursor = client.test.collection.find()
+        cursor = client.test.coll.find()
 
         future = cursor.fetch_next
-        request = yield self.run_thread(server.receives, OpQuery)
-        request.replies({'_id': 1}, cursor_id=123)
+        request = yield self.run_thread(server.receives, "find", "coll")
+        request.replies({"cursor": {
+            "id": 123,
+            "ns": "db.coll",
+            "firstBatch": [{"_id": 1}]}})
         yield future  # Complete the first fetch.
 
         # Dereference the cursor.
@@ -409,7 +420,8 @@ class MotorCursorTest(MotorMockServerTest):
         # Let the event loop iterate once more to clear its references to
         # callbacks, allowing the cursor to be freed.
         yield gen.sleep(0.1)
-        yield self.run_thread(server.receives, OpKillCursors)
+        request = yield self.run_thread(server.receives, "killCursors", "coll")
+        request.ok()
 
     @gen_test
     def test_exhaust(self):

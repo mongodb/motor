@@ -246,7 +246,8 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         primary = self.server()
         hosts = [primary.address_string]
         primary.autoresponds(
-            'ismaster', ismaster=True, setName='rs', hosts=hosts)
+            'ismaster', ismaster=True, setName='rs', hosts=hosts,
+            maxWireVersion=6)
 
         return primary
 

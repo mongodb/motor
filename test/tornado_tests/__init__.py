@@ -167,6 +167,7 @@ class MotorMockServerTest(MotorTest):
         client = motor.motor_tornado.MotorClient(server.uri,
                                                  io_loop=self.io_loop)
 
+        self.addCleanup(client.close)
         return client, server
 
     def run_thread(self, fn, *args, **kwargs):

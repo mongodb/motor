@@ -153,6 +153,7 @@ class AsyncIOMockServerTestCase(AsyncIOTestCase):
     def client_server(self, *args, **kwargs):
         server = self.server(*args, **kwargs)
         client = motor_asyncio.AsyncIOMotorClient(server.uri, io_loop=self.loop)
+        self.addCleanup(client.close)
 
         return client, server
 

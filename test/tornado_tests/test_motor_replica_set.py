@@ -62,12 +62,12 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         # Connect.
         yield self.rsc.server_info()
         ka = get_primary_pool(self.rsc).opts.socket_keepalive
-        self.assertFalse(ka)
+        self.assertTrue(ka)
 
-        client = self.motor_rsc(socketKeepAlive=True)
+        client = self.motor_rsc(socketKeepAlive=False)
         yield client.server_info()
         ka = get_primary_pool(client).opts.socket_keepalive
-        self.assertTrue(ka)
+        self.assertFalse(ka)
 
     @gen_test
     def test_auth_network_error(self):

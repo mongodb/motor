@@ -15,7 +15,6 @@
 """Test AsyncIOMotorCursor."""
 
 import asyncio
-import gc
 import sys
 import traceback
 import unittest
@@ -25,7 +24,6 @@ from unittest import SkipTest
 from pymongo import CursorType
 from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
-from mockupdb import OpQuery, OpKillCursors
 
 from motor import motor_asyncio
 from test.utils import one, safe_get, get_primary_pool
@@ -84,18 +82,23 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     @unittest.skipIf('PyPy' in sys.version, "PyPy")
     @asyncio_test
     def test_fetch_next_delete(self):
-        client, server = self.client_server(auto_ismaster={'ismaster': True})
+        client, server = self.client_server(auto_ismaster=True)
 
-        cursor = client.test.collection.find()
+        cursor = client.test.coll.find()
         self.fetch_next(cursor)
-        request = yield from self.run_thread(server.receives, OpQuery)
-        request.replies({'_id': 1}, cursor_id=123)
+        request = yield from self.run_thread(server.receives, "find", "coll")
+        request.replies({"cursor": {
+            "id": 123,
+            "ns": "db.coll",
+            "firstBatch": [{"_id": 1}]}})
 
         # Decref the cursor and clear from the event loop.
         del cursor
         yield
-        yield from self.run_thread(server.receives,
-                                   OpKillCursors(cursor_ids=[123]))
+        request = yield from self.run_thread(
+            server.receives, "killCursors", "coll")
+
+        request.ok()
 
     @asyncio_test
     def test_fetch_next_without_results(self):
@@ -234,22 +237,28 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
     @asyncio_test
     def test_cursor_explicit_close(self):
-        client, server = self.client_server(auto_ismaster={'ismaster': True})
-        collection = client.test.collection
+        client, server = self.client_server(auto_ismaster=True)
+        collection = client.test.coll
         cursor = collection.find()
 
         future = self.fetch_next(cursor)
         self.assertTrue(cursor.alive)
-        request = yield from self.run_thread(server.receives, OpQuery)
-        request.replies({'_id': 1}, cursor_id=123)
+        request = yield from self.run_thread(server.receives, "find", "coll")
+        request.replies({"cursor": {
+            "id": 123,
+            "ns": "db.coll",
+            "firstBatch": [{"_id": 1}]}})
+
         self.assertTrue((yield from future))
         self.assertEqual(123, cursor.cursor_id)
 
         future = self.ensure_future(cursor.close())
 
         # No reply to OP_KILLCURSORS.
-        yield from self.run_thread(server.receives,
-                                   OpKillCursors(cursor_ids=[123]))
+        request = yield from self.run_thread(
+            server.receives, "killCursors", "coll")
+
+        request.ok()
         yield from future
 
         # Cursor reports it's alive because it has buffered data, even though
@@ -338,11 +347,14 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     @asyncio_test
     def test_cursor_del(self):
         client, server = self.client_server(auto_ismaster=True)
-        cursor = client.test.collection.find()
+        cursor = client.test.coll.find()
 
         future = self.fetch_next(cursor)
-        request = yield from self.run_thread(server.receives, OpQuery)
-        request.replies({'_id': 1}, cursor_id=123)
+        request = yield from self.run_thread(server.receives, "find", "coll")
+        request.replies({"cursor": {
+            "id": 123,
+            "ns": "db.coll",
+            "firstBatch": [{"_id": 1}]}})
         yield from future  # Complete the first fetch.
 
         # Dereference the cursor.
@@ -351,7 +363,10 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         # Let the event loop iterate once more to clear its references to
         # callbacks, allowing the cursor to be freed.
         yield from asyncio.sleep(0, loop=self.loop)
-        yield from self.run_thread(server.receives, OpKillCursors)
+        request = yield from self.run_thread(
+            server.receives, "killCursors", "coll")
+
+        request.ok()
 
     @unittest.skipUnless(sys.version_info >= (3, 4), "Python 3.4 required")
     @asyncio_test
