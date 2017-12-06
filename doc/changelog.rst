@@ -22,6 +22,8 @@ constructor directly.
 
 Deleted obsolete class ``motor.Op``.
 
+MongoDB 2.2 is no longer tested. Motor is compatible with MongoDB 2.4 and later.
+
 Motor 1.1
 ---------
 
