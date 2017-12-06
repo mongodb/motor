@@ -34,13 +34,27 @@ motor_only = set([
     'io_loop',
     'wrap'])
 
-pymongo_only = set(['next'])
+pymongo_only = set(['next', 'session'])
 
 motor_client_only = motor_only.union(['open'])
 
 pymongo_client_only = set([
     'is_locked',
-    'set_cursor_manager']).union(pymongo_only)
+    'retry_writes',
+    'set_cursor_manager',
+    'start_session',
+    'list_databases',
+    'list_database_names']).union(pymongo_only)
+
+pymongo_database_only = set([
+    'list_collections',
+    'list_collection_names',
+    'system_js']).union(pymongo_only)
+
+pymongo_collection_only = set([
+    'aggregate_raw_batches',
+    'find_raw_batches',
+    'watch']).union(pymongo_only)
 
 motor_cursor_only = set([
     'fetch_next',
@@ -60,16 +74,13 @@ class MotorCoreTest(MotorTest):
             attrs(self.cx) - motor_client_only)
 
     def test_database_attrs(self):
-        pymongo_database_only = set([
-            'system_js']).union(pymongo_only)
-
         self.assertEqual(
             attrs(env.sync_cx.test) - pymongo_database_only,
             attrs(self.cx.test) - motor_only)
 
     def test_collection_attrs(self):
         self.assertEqual(
-            attrs(env.sync_cx.test.test) - pymongo_only,
+            attrs(env.sync_cx.test.test) - pymongo_collection_only,
             attrs(self.cx.test.test) - motor_only)
 
     def test_cursor_attrs(self):
