@@ -1,4 +1,4 @@
-# Copyright 2011-2015 MongoDB, Inc.
+# Copyright 2011-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -98,6 +98,8 @@ class AgnosticClient(AgnosticBaseProperties):
     is_mongos                = ReadOnlyProperty()
     is_primary               = ReadOnlyProperty()
     kill_cursors             = AsyncCommand()
+    list_databases           = AsyncRead().wrap(CommandCursor)
+    list_database_names      = AsyncRead()
     local_threshold_ms       = ReadOnlyProperty()
     max_bson_size            = ReadOnlyProperty()
     max_idle_time_ms         = ReadOnlyProperty()
@@ -157,14 +159,21 @@ class AgnosticClient(AgnosticBaseProperties):
 
         return db_class(self, name)
 
-    def wrap(self, db):
-        # Replace pymongo.database.Database with MotorDatabase.
-        db_class = create_class_with_framework(
-            AgnosticDatabase,
-            self._framework,
-            self.__module__)
+    def wrap(self, obj):
+        if obj.__class__ == Database:
+            db_class = create_class_with_framework(
+                AgnosticDatabase,
+                self._framework,
+                self.__module__)
 
-        return db_class(self, db.name, _delegate=db)
+            return db_class(self, obj.name, _delegate=obj)
+        elif obj.__class__ == CommandCursor:
+            command_cursor_class = create_class_with_framework(
+                AgnosticCommandCursor,
+                self._framework,
+                self.__module__)
+
+            return command_cursor_class(obj, self)
 
 
 class AgnosticDatabase(AgnosticBaseProperties):

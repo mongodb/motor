@@ -227,6 +227,27 @@ class MotorClientTest(MotorTest):
         self.assertEqual(ReadPreference.SECONDARY, db.read_preference)
         self.assertEqual(write_concern, db.write_concern)
 
+    @gen_test
+    def test_list_databases(self):
+        yield self.collection.insert_one({})
+        cursor = yield self.cx.list_databases()
+        self.assertIsInstance(cursor, motor.motor_tornado.MotorCommandCursor)
+
+        # Make sure the cursor works, by searching for "local" database.
+        while (yield cursor.fetch_next):
+            info = cursor.next_object()
+            if info['name'] == self.collection.database.name:
+                break
+        else:
+            self.fail("'%s' database not found" % self.collection.database.name)
+
+    @gen_test
+    def test_list_database_names(self):
+        yield self.collection.insert_one({})
+        names = yield self.cx.list_database_names()
+        self.assertIsInstance(names, list)
+        self.assertIn(self.collection.database.name, names)
+
 
 class MotorClientTimeoutTest(MotorMockServerTest):
     @gen_test

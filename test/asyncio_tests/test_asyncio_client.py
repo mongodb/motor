@@ -252,6 +252,26 @@ class TestAsyncIOClient(AsyncIOTestCase):
         self.assertEqual(ReadPreference.SECONDARY, db.read_preference)
         self.assertEqual(write_concern, db.write_concern)
 
+    @asyncio_test
+    def test_list_databases(self):
+        yield from self.collection.insert_one({})
+        cursor = yield from self.cx.list_databases()
+        self.assertIsInstance(cursor, motor_asyncio.AsyncIOMotorCommandCursor)
+
+        while (yield from cursor.fetch_next):
+            info = cursor.next_object()
+            if info['name'] == self.collection.database.name:
+                break
+        else:
+            self.fail("'%s' database not found" % self.collection.database.name)
+
+    @asyncio_test
+    def test_list_database_names(self):
+        yield from self.collection.insert_one({})
+        names = yield from self.cx.list_database_names()
+        self.assertIsInstance(names, list)
+        self.assertIn(self.collection.database.name, names)
+
 
 class TestAsyncIOClientTimeout(AsyncIOMockServerTestCase):
     @asyncio_test

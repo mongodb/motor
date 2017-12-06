@@ -42,9 +42,7 @@ pymongo_client_only = set([
     'is_locked',
     'retry_writes',
     'set_cursor_manager',
-    'start_session',
-    'list_databases',
-    'list_database_names']).union(pymongo_only)
+    'start_session']).union(pymongo_only)
 
 pymongo_database_only = set([
     'list_collections',
