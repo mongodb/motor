@@ -514,6 +514,8 @@ This would print::
     if no document matches. If
     :attr:`ReturnDocument.AFTER`, returns the updated
     or inserted document.
+  - `array_filters` (optional): A list of filters specifying which
+    array elements an update should apply. Requires MongoDB 3.6+.
   - `**kwargs` (optional): additional command arguments can be passed
     as keyword arguments (for example maxTimeMS can be used with
     recent server versions).
@@ -749,6 +751,8 @@ This prints::
   - `collation` (optional): An instance of
     :class:`~pymongo.collation.Collation`. This option is only supported
     on MongoDB 3.4 and above.
+  - `array_filters` (optional): A list of filters specifying which
+    array elements an update should apply. Requires MongoDB 3.6+.
 
 :Returns:
   - An instance of :class:`~pymongo.results.UpdateResult`.
@@ -796,6 +800,8 @@ This prints::
   - `collation` (optional): An instance of
     :class:`~pymongo.collation.Collation`. This option is only supported
     on MongoDB 3.4 and above.
+  - `array_filters` (optional): A list of filters specifying which
+    array elements an update should apply. Requires MongoDB 3.6+.
 
 :Returns:
   - An instance of :class:`~pymongo.results.UpdateResult`.

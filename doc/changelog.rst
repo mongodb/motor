@@ -19,6 +19,11 @@ Highlights include:
 
 - New Session API to support causal consistency, see
   :meth:`MotorClient.start_session`.
+- Support for array_filters in
+  :meth:`~MotorCollection.update_one`,
+  :meth:`~MotorCollection.update_many`,
+  :meth:`~MotorCollection.find_one_and_update`,
+  :meth:`~MotorCollection.bulk_write`.
 - :meth:`MotorClient.list_databases` and :meth:`MotorClient.list_database_names`.
 - Support for mongodb+srv:// URIs. See
   :class:`~pymongo.mongo_client.MongoClient` for details.
