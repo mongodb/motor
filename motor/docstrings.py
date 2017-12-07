@@ -130,6 +130,8 @@ This prints::
 :Parameters:
   - `indexes`: A list of :class:`~pymongo.operations.IndexModel`
     instances.
+  - `**kwargs` (optional): optional arguments to the createIndexes
+    command (like maxTimeMS) can be passed as keyword arguments.
 
 The :attr:`~pymongo.collection.Collection.write_concern` of
 this collection is automatically applied to this operation when using
