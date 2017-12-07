@@ -400,6 +400,9 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         :Parameters:
           - `pipeline`: a single command or list of aggregation commands
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession`, created with
+            :meth:`~MotorClient.start_session`.
           - `**kwargs`: send arbitrary parameters to the aggregate command
 
         Returns a :class:`MotorCommandCursor` that can be iterated like a
@@ -497,6 +500,9 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         :Parameters:
           - `num_cursors`: the number of cursors to return
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession`, created with
+            :meth:`~MotorClient.start_session`.
 
         .. note:: Requires server version **>= 2.5.5**.
         """

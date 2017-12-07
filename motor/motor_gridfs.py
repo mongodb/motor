@@ -506,11 +506,21 @@ class AgnosticGridFS(_GFSBase):
           - `sort` (optional): a list of (key, direction) pairs
             specifying the sort order for this query. See
             :meth:`~pymongo.cursor.Cursor.sort` for details.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession`, created with
+            :meth:`~MotorClient.start_session`.
 
         Raises :class:`TypeError` if any of the arguments are of
         improper type. Returns an instance of
         :class:`~gridfs.grid_file.GridOutCursor`
         corresponding to this query.
+
+        If a :class:`~pymongo.client_session.ClientSession` is passed to
+        :meth:`find`, all returned :class:`~MotorGridOut` instances
+        are associated with that session.
+
+        .. versionchanged:: 1.2
+           Added session parameter.
 
         .. versionchanged:: 1.0
            Removed the read_preference, tag_sets, and
@@ -611,6 +621,16 @@ class AgnosticGridFSBucket(_GFSBase):
             returning.
           - `sort` (optional): The order by which to sort results. Defaults to
             None.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession`, created with
+            :meth:`~MotorClient.start_session`.
+
+        If a :class:`~pymongo.client_session.ClientSession` is passed to
+        :meth:`find`, all returned :class:`MotorGridOut` instances
+        are associated with that session.
+
+        .. versionchanged:: 1.2
+           Added session parameter.
         """
         cursor = self.delegate.find(*args, **kwargs)
         grid_out_cursor = create_class_with_framework(
