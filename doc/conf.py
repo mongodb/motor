@@ -95,6 +95,8 @@ from motor import MotorClient
 
 # -- Options for HTML output ---------------------------------------------------
 
+html_copy_source = False
+
 # Theme gratefully vendored from CPython source.
 html_theme = "pydoctheme"
 html_theme_path = ["."]
