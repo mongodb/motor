@@ -15,11 +15,13 @@ Dropped support for Tornado 3. A recent version of Tornado 4 is required.
 
 Added support for `aiohttp`_ 2.0 and later, and dropped older aiohttp versions.
 
-New methods:
+Highlights include:
 
 - New Session API to support causal consistency, see
   :meth:`MotorClient.start_session`.
 - :meth:`MotorClient.list_databases` and :meth:`MotorClient.list_database_names`.
+- Support for mongodb+srv:// URIs. See
+  :class:`~pymongo.mongo_client.MongoClient` for details.
 
 The maximum number of workers in the thread pool can be overridden with an
 environment variable, see :doc:`configuration`.
