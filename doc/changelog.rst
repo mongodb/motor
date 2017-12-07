@@ -22,6 +22,8 @@ Highlights include:
 - :meth:`MotorClient.list_databases` and :meth:`MotorClient.list_database_names`.
 - Support for mongodb+srv:// URIs. See
   :class:`~pymongo.mongo_client.MongoClient` for details.
+- Support for retryable writes and the ``retryWrites`` URI option.  See
+  :class:`~pymongo.mongo_client.MongoClient` for details.
 
 The maximum number of workers in the thread pool can be overridden with an
 environment variable, see :doc:`configuration`.
