@@ -1,0 +1,204 @@
+# Copyright 2017-present MongoDB, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from __future__ import unicode_literals
+
+"""Test ClientSession support with asyncio."""
+
+import asyncio
+import copy
+import sys
+import unittest
+
+from pymongo import InsertOne, IndexModel
+from pymongo.errors import InvalidOperation
+
+from test import SkipTest
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.test_environment import env
+from test.utils import SessionTestListener, session_ids
+
+
+class TestAsyncIOSession(AsyncIOTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestAsyncIOSession, cls).setUpClass()
+        if not env.sessions_enabled:
+            raise SkipTest("Sessions not supported")
+
+    @asyncio.coroutine
+    def _test_ops(self, client, *ops):
+        listener = client.event_listeners()[0][0]
+
+        for f, args, kw in ops:
+            with (yield from client.start_session()) as s:
+                listener.results.clear()
+                # In case "f" modifies its inputs.
+                args2 = copy.copy(args)
+                kw2 = copy.copy(kw)
+                kw2['session'] = s
+                yield from f(*args2, **kw2)
+                for event in listener.results['started']:
+                    self.assertTrue(
+                        'lsid' in event.command,
+                        "%s sent no lsid with %s" % (
+                            f.__name__, event.command_name))
+
+                    self.assertEqual(
+                        s.session_id,
+                        event.command['lsid'],
+                        "%s sent wrong lsid with %s" % (
+                            f.__name__, event.command_name))
+
+                self.assertFalse(s.has_ended)
+
+            with self.assertRaisesRegex(InvalidOperation, "ended session"):
+                yield from f(*args2, **kw2)
+
+        # No explicit session.
+        for f, args, kw in ops:
+            listener.results.clear()
+            yield from f(*args, **kw)
+            self.assertGreaterEqual(len(listener.results['started']), 1)
+            lsids = []
+            for event in listener.results['started']:
+                self.assertTrue(
+                    'lsid' in event.command,
+                    "%s sent no lsid with %s" % (
+                        f.__name__, event.command_name))
+
+                lsids.append(event.command['lsid'])
+
+            if 'PyPy' not in sys.version:
+                # Server session was returned to pool. Ignore interpreters with
+                # non-deterministic GC.
+                for lsid in lsids:
+                    self.assertIn(
+                        lsid, session_ids(client),
+                        "%s did not return implicit session to pool" % (
+                            f.__name__,))
+
+    @asyncio_test
+    def test_database(self):
+        listener = SessionTestListener()
+        client = self.asyncio_client(event_listeners=[listener])
+
+        db = client.pymongo_test
+        ops = [
+            (db.command, ['ping'], {}),
+            (db.drop_collection, ['collection'], {}),
+            (db.create_collection, ['collection'], {}),
+            (db.collection_names, [], {}),
+        ]
+
+        yield from self._test_ops(client, *ops)
+
+    @asyncio_test
+    def test_collection(self):
+        listener = SessionTestListener()
+        client = self.asyncio_client(event_listeners=[listener])
+        yield from client.drop_database('motor_test')
+
+        coll = client.motor_test.test_collection
+
+        @asyncio.coroutine
+        def list_indexes(session=None):
+            yield from coll.list_indexes(session=session).to_list(length=None)
+
+        @asyncio.coroutine
+        def aggregate(session=None):
+            yield from coll.aggregate([], session=session).to_list(length=None)
+
+        # Test some collection methods - the rest are in test_cursor.
+        yield from self._test_ops(
+            client,
+            (coll.drop, [], {}),
+            (coll.bulk_write, [[InsertOne({})]], {}),
+            (coll.insert_one, [{}], {}),
+            (coll.insert_many, [[{}, {}]], {}),
+            (coll.replace_one, [{}, {}], {}),
+            (coll.update_one, [{}, {'$set': {'a': 1}}], {}),
+            (coll.update_many, [{}, {'$set': {'a': 1}}], {}),
+            (coll.delete_one, [{}], {}),
+            (coll.delete_many, [{}], {}),
+            (coll.find_one_and_replace, [{}, {}], {}),
+            (coll.find_one_and_update, [{}, {'$set': {'a': 1}}], {}),
+            (coll.find_one_and_delete, [{}, {}], {}),
+            (coll.rename, ['collection2'], {}),
+            # Drop collection2 between tests of "rename", above.
+            (client.motor_test.drop_collection, ['collection2'], {}),
+            (coll.distinct, ['a'], {}),
+            (coll.find_one, [], {}),
+            (coll.count, [], {}),
+            (coll.create_indexes, [[IndexModel('a')]], {}),
+            (coll.create_index, ['a'], {}),
+            (coll.drop_index, ['a_1'], {}),
+            (coll.drop_indexes, [], {}),
+            (coll.reindex, [], {}),
+            (list_indexes, [], {}),
+            (coll.index_information, [], {}),
+            (coll.options, [], {}),
+            (aggregate, [], {}))
+
+    @asyncio_test
+    def test_cursor(self):
+        listener = SessionTestListener()
+        client = self.asyncio_client(event_listeners=[listener])
+        yield from self.make_test_data()
+
+        coll = client.motor_test.test_collection
+
+        with (yield from client.start_session()) as s:
+            listener.results.clear()
+            cursor = coll.find(session=s)
+            yield from cursor.to_list(length=None)
+            self.assertEqual(len(listener.results['started']), 2)
+            for event in listener.results['started']:
+                self.assertTrue(
+                    'lsid' in event.command,
+                    "find sent no lsid with %s" % (event.command_name,))
+
+                self.assertEqual(
+                    s.session_id,
+                    event.command['lsid'],
+                    "find sent wrong lsid with %s" % (event.command_name,))
+
+        with self.assertRaisesRegex(InvalidOperation, "ended session"):
+            yield from coll.find(session=s).to_list(length=None)
+
+        # No explicit session.
+        listener.results.clear()
+        cursor = coll.find()
+        yield from cursor.to_list(length=None)
+        self.assertEqual(len(listener.results['started']), 2)
+        event0 = listener.first_command_started()
+        self.assertTrue(
+            'lsid' in event0.command,
+            "find sent no lsid with %s" % (event0.command_name,))
+
+        lsid = event0.command['lsid']
+
+        for event in listener.results['started'][1:]:
+            self.assertTrue(
+                'lsid' in event.command,
+                "find sent no lsid with %s" % (event.command_name,))
+
+            self.assertEqual(
+                lsid,
+                event.command['lsid'],
+                "find sent wrong lsid with %s" % (event.command_name,))
+
+
+if __name__ == '__main__':
+    unittest.main()

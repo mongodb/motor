@@ -34,15 +34,14 @@ motor_only = set([
     'io_loop',
     'wrap'])
 
-pymongo_only = set(['next', 'session'])
+pymongo_only = set(['next'])
 
 motor_client_only = motor_only.union(['open'])
 
 pymongo_client_only = set([
     'is_locked',
     'retry_writes',
-    'set_cursor_manager',
-    'start_session']).union(pymongo_only)
+    'set_cursor_manager']).union(pymongo_only)
 
 pymongo_database_only = set([
     'list_collections',

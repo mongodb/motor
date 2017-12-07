@@ -885,3 +885,41 @@ cursor has any effect.
     key, if not given :data:`~pymongo.ASCENDING` is assumed
 """
 
+start_session_doc = """
+Start a logical session.
+
+This method takes the same parameters as PyMongo's
+:class:`~pymongo.client_session.SessionOptions`. See the
+:mod:`~pymongo.client_session` module for details.
+
+.. code-block:: python3
+
+  async def coro():
+      collection = client.db.collection
+  
+      with (await client.start_session()) as s:
+          doc = {'_id': ObjectId(), 'x': 1}
+          await collection.insert(doc)
+  
+          secondary = collection.with_options(
+              read_preference=ReadPreference.SECONDARY)
+  
+          # Sessions are causally consistent by default, we can read the doc
+          # we just inserted, even reading from a secondary. 
+          async for doc in secondary.find(session=s):
+              print(doc)
+
+Do **not** use the same session for multiple operations concurrently.
+
+Requires MongoDB 3.6. It is an error to call :meth:`start_session`
+if this client has been authenticated to multiple databases using the
+deprecated method :meth:`~pymongo.database.Database.authenticate`.
+
+A :class:`~pymongo.client_session.ClientSession` may only be used with
+the MongoClient that started it.
+  
+:Returns:
+  An instance of :class:`~pymongo.client_session.ClientSession`.
+
+.. versionadded:: 1.2
+"""

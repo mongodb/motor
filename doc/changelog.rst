@@ -17,6 +17,8 @@ Added support for `aiohttp`_ 2.0 and later, and dropped older aiohttp versions.
 
 New methods:
 
+- New Session API to support causal consistency, see
+  :meth:`MotorClient.start_session`.
 - :meth:`MotorClient.list_databases` and :meth:`MotorClient.list_database_names`.
 
 The maximum number of workers in the thread pool can be overridden with an

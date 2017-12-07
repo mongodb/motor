@@ -114,6 +114,7 @@ class AgnosticClient(AgnosticBaseProperties):
     secondaries              = ReadOnlyProperty()
     server_info              = AsyncRead()
     server_selection_timeout = ReadOnlyProperty()
+    start_session            = AsyncRead(doc=start_session_doc)
     unlock                   = AsyncCommand()
 
     def __init__(self, *args, **kwargs):
@@ -447,7 +448,7 @@ class AgnosticCollection(AgnosticBaseProperties):
             # Latent cursor that will send initial command on first "async for".
             return cursor_class(self, self._async_aggregate, pipeline, **kwargs)
 
-    def list_indexes(self):
+    def list_indexes(self, session=None):
         """Get a cursor over the index documents for this collection. ::
 
           async def print_indexes():
@@ -462,7 +463,7 @@ class AgnosticCollection(AgnosticBaseProperties):
             AgnosticLatentCommandCursor, self._framework, self.__module__)
 
         # Latent cursor that will send initial command on first "async for".
-        return cursor_class(self, self._async_list_indexes)
+        return cursor_class(self, self._async_list_indexes, session=session)
 
     def parallel_scan(self, num_cursors, **kwargs):
         """Scan this entire collection in parallel.
@@ -613,6 +614,7 @@ class AgnosticBaseCursor(AgnosticBase):
     cursor_id     = ReadOnlyProperty()
     alive         = ReadOnlyProperty()
     batch_size    = MotorCursorChainingMethod()
+    session       = ReadOnlyProperty()
 
     def __init__(self, cursor, collection):
         """Don't construct a cursor yourself, but acquire one from methods like

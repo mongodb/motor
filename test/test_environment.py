@@ -121,6 +121,7 @@ class TestEnvironment(object):
         self.user_provided = False
         self.uri = None
         self.rs_uri = None
+        self.sessions_enabled = False
 
     def setup(self):
         assert not self.initialized
@@ -172,6 +173,7 @@ class TestEnvironment(object):
                     serverSelectionTimeoutMS=serverSelectionTimeoutMS))
 
         response = client.admin.command('ismaster')
+        self.sessions_enabled = 'logicalSessionTimeoutMinutes' in response
         if 'setName' in response:
             self.is_replica_set = True
             self.rs_name = str(response['setName'])
