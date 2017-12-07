@@ -96,3 +96,4 @@ def setup(app):
     app.add_directive("mongodoc", MongodocDirective)
 
     app.connect("doctree-resolved", process_mongodoc_nodes)
+    return {'parallel_write_safe': True, 'parallel_read_safe': True}

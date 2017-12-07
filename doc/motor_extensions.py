@@ -321,3 +321,4 @@ def setup(app):
     app.connect('autodoc-process-signature', process_motor_signature)
     app.connect('doctree-read', process_motor_nodes)
     app.connect('build-finished', build_finished)
+    return {'parallel_write_safe': True, 'parallel_read_safe': False}
