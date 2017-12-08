@@ -24,19 +24,6 @@ from tornado import gen, testing
 
 import motor
 from test.test_environment import env, CA_PEM, CLIENT_PEM
-from test.version import padded, _parse_version_string
-
-
-@gen.coroutine
-def version(client):
-    info = yield client.server_info()
-    raise gen.Return(_parse_version_string(info["version"]))
-
-
-@gen.coroutine
-def at_least(client, min_version):
-    client_version = yield version(client)
-    raise gen.Return(client_version >= tuple(padded(min_version, 4)))
 
 
 @gen.coroutine

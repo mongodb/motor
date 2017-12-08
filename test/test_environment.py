@@ -17,9 +17,13 @@
 import os
 import socket
 import warnings
+from functools import wraps
 
 import pymongo.errors
+
+from test import SkipTest
 from test.utils import safe_get
+from test.version import Version
 
 HAVE_SSL = True
 try:
@@ -122,12 +126,14 @@ class TestEnvironment(object):
         self.user_provided = False
         self.uri = None
         self.rs_uri = None
+        self.version = None
         self.sessions_enabled = False
 
     def setup(self):
         assert not self.initialized
         self.setup_sync_cx()
         self.setup_auth()
+        self.setup_version()
         self.setup_v8()
         self.initialized = True
 
@@ -262,10 +268,43 @@ class TestEnvironment(object):
         if self.rs_name:
             self.rs_uri = self.uri + '?replicaSet=' + self.rs_name
 
+    def setup_version(self):
+        """Set self.version to the server's version."""
+        self.version = Version.from_client(self.sync_cx)
+
     def setup_v8(self):
         """Determine if server is running SpiderMonkey or V8."""
         if self.sync_cx.server_info().get('javascriptEngine') == 'V8':
             self.v8 = True
+
+    def _require(self, condition, msg, func=None):
+        def make_wrapper(f):
+            @wraps(f)
+            def wrap(*args, **kwargs):
+                if condition():
+                    return f(*args, **kwargs)
+                raise SkipTest(msg)
+            return wrap
+
+        if func is None:
+            def decorate(f):
+                return make_wrapper(f)
+            return decorate
+        return make_wrapper(func)
+
+    def require_version_min(self, *ver):
+        """Run a test only if the server version is at least ``version``."""
+        other_version = Version(*ver)
+        return self._require(lambda: self.version >= other_version,
+                             "Server version must be at least %s"
+                             % str(other_version))
+
+    def require_version_max(self, *ver):
+        """Run a test only if the server version is at most ``version``."""
+        other_version = Version(*ver)
+        return self._require(lambda: self.version <= other_version,
+                             "Server version must be at most %s"
+                             % str(other_version))
 
 
 env = TestEnvironment()

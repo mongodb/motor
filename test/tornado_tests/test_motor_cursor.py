@@ -32,9 +32,10 @@ from pymongo.errors import OperationFailure
 
 import motor
 import motor.motor_tornado
-from test import SkipTest
-from test.tornado_tests import (at_least, get_command_line,
-                                MotorTest, MotorMockServerTest,
+from test import SkipTest, env
+from test.tornado_tests import (get_command_line,
+                                MotorTest,
+                                MotorMockServerTest,
                                 server_is_mongos)
 from test.utils import one, safe_get, get_primary_pool
 
@@ -278,11 +279,9 @@ class MotorCursorTest(MotorMockServerTest):
         with self.assertRaises(InvalidOperation):
             yield cursor.to_list(10)
 
+    @env.require_version_min(3, 4)
     @gen_test
     def test_to_list_with_chained_collation(self):
-        if not (yield at_least(self.cx, (3, 4))):
-            raise SkipTest("collation requires MongoDB >= 3.4")
-
         yield self.make_test_data()
         cursor = self.collection.find({}, {'_id': 1}) \
             .sort([('_id', pymongo.ASCENDING)]) \

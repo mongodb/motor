@@ -31,7 +31,6 @@ from mockupdb import MockupDB
 
 from motor import motor_asyncio
 from test.assert_logs_backport import AssertLogsMixin
-from test.version import _parse_version_string, padded
 from test.test_environment import env, CA_PEM, CLIENT_PEM
 
 
@@ -266,18 +265,6 @@ def get_command_line(client):
 def server_is_mongos(client):
     ismaster_response = yield from client.admin.command('ismaster')
     return ismaster_response.get('msg') == 'isdbgrid'
-
-
-@asyncio.coroutine
-def version(client):
-    info = yield from client.server_info()
-    return _parse_version_string(info["version"])
-
-
-@asyncio.coroutine
-def at_least(client, min_version):
-    client_version = yield from version(client)
-    return client_version >= tuple(padded(min_version, 4))
 
 
 @asyncio.coroutine

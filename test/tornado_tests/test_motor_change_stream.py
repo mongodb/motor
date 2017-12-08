@@ -24,7 +24,7 @@ from pymongo.errors import InvalidOperation, OperationFailure
 from tornado.testing import gen_test
 
 from test import SkipTest, env
-from test.tornado_tests import at_least, MotorTest
+from test.tornado_tests import MotorTest
 
 
 class MotorChangeStreamTest(MotorTest):
@@ -58,11 +58,9 @@ class MotorChangeStreamTest(MotorTest):
         t.daemon = True
         t.start()
 
+    @env.require_version_min(3, 6)
     @gen_test
     async def test_async_for(self):
-        if not (await at_least(self.cx, (3, 6))):
-            raise SkipTest("change streams require MongoDB >= 3.6")
-
         change_stream = self.collection.watch()
         self.wait_and_insert(change_stream, 2)
         i = 0
@@ -73,11 +71,9 @@ class MotorChangeStreamTest(MotorTest):
 
         self.assertEqual(i, 2)
 
+    @env.require_version_min(3, 6)
     @gen_test
     async def test_watch(self):
-        if not (await at_least(self.cx, (3, 6))):
-            raise SkipTest("change streams require MongoDB >= 3.6")
-
         coll = self.collection
 
         with self.assertRaises(TypeError):
@@ -94,11 +90,9 @@ class MotorChangeStreamTest(MotorTest):
         change = await coll.watch(resume_after=change['_id']).next()
         self.assertEqual(change['fullDocument'], {'_id': 23})
 
+    @env.require_version_min(3, 6)
     @gen_test
     async def test_close(self):
-        if not (await at_least(self.cx, (3, 6))):
-            raise SkipTest("change streams require MongoDB >= 3.6")
-
         coll = self.collection
         change_stream = coll.watch()
         future = change_stream.next()
@@ -112,11 +106,9 @@ class MotorChangeStreamTest(MotorTest):
         async for _ in change_stream:
             pass
 
+    @env.require_version_min(3, 6)
     @gen_test
     async def test_missing_id(self):
-        if not (await at_least(self.cx, (3, 6))):
-            raise SkipTest("change streams require MongoDB >= 3.6")
-
         coll = self.collection
         change_stream = coll.watch([{'$project': {'_id': 0}}])
         future = change_stream.next()
@@ -128,11 +120,9 @@ class MotorChangeStreamTest(MotorTest):
         with self.assertRaises(StopAsyncIteration):
             await change_stream.next()
 
+    @env.require_version_min(3, 6)
     @gen_test
     async def test_unknown_full_document(self):
-        if not (await at_least(self.cx, (3, 6))):
-            raise SkipTest("change streams require MongoDB >= 3.6")
-
         coll = self.collection
         change_stream = coll.watch(full_document="unknownFullDocOption")
         future = change_stream.next()

@@ -20,7 +20,7 @@ from tornado.testing import gen_test
 from gridfs import GridFS, GridIn
 
 from motor import MotorGridFS, MotorGridIn, MotorGridOut
-from test import env, SkipTest
+from test import env
 from test.tornado_tests import MotorTest
 
 
