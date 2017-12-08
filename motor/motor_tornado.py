@@ -45,6 +45,9 @@ MotorCommandCursor = create_motor_class(core.AgnosticCommandCursor)
 MotorLatentCommandCursor = create_motor_class(core.AgnosticLatentCommandCursor)
 
 
+MotorChangeStream = create_motor_class(core.AgnosticChangeStream)
+
+
 MotorBulkOperationBuilder = create_motor_class(core.AgnosticBulkOperationBuilder)
 
 

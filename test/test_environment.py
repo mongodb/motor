@@ -108,6 +108,7 @@ class TestEnvironment(object):
         self.mongod_validates_client_cert = False
         self.server_is_resolvable = is_server_resolvable()
         self.sync_cx = None
+        self.is_standalone = False
         self.is_mongos = False
         self.is_replica_set = False
         self.rs_name = None
@@ -127,7 +128,6 @@ class TestEnvironment(object):
         assert not self.initialized
         self.setup_sync_cx()
         self.setup_auth()
-        self.setup_mongos()
         self.setup_v8()
         self.initialized = True
 
@@ -174,6 +174,7 @@ class TestEnvironment(object):
 
         response = client.admin.command('ismaster')
         self.sessions_enabled = 'logicalSessionTimeoutMinutes' in response
+        self.is_mongos = response.get('msg') == 'isdbgrid'
         if 'setName' in response:
             self.is_replica_set = True
             self.rs_name = str(response['setName'])
@@ -186,6 +187,8 @@ class TestEnvironment(object):
             self.secondaries = [
                 partition_node(m) for m in response['hosts']
                 if m != self.primary and m not in self.arbiters]
+        elif not self.is_mongos:
+            self.is_standalone = True
 
         # Reconnect to found primary, without short timeouts.
         if self.mongod_started_with_ssl:
@@ -258,11 +261,6 @@ class TestEnvironment(object):
 
         if self.rs_name:
             self.rs_uri = self.uri + '?replicaSet=' + self.rs_name
-
-    def setup_mongos(self):
-        """Set self.is_mongos."""
-        response = self.sync_cx.admin.command('ismaster')
-        self.is_mongos = response.get('msg') == 'isdbgrid'
 
     def setup_v8(self):
         """Determine if server is running SpiderMonkey or V8."""

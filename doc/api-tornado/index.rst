@@ -7,6 +7,7 @@ Motor Tornado API
     motor_database
     motor_collection
     motor_cursor
+    motor_change_stream
     gridfs
     web
 

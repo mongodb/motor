@@ -31,6 +31,7 @@ import pymongo.son_manipulator
 
 from pymongo.bulk import BulkOperationBuilder
 from pymongo.database import Database
+from pymongo.change_stream import ChangeStream
 from pymongo.collection import Collection
 from pymongo.cursor import Cursor, _QUERY_OPTIONS
 from pymongo.command_cursor import CommandCursor
@@ -452,6 +453,82 @@ class AgnosticCollection(AgnosticBaseProperties):
             # Latent cursor that will send initial command on first "async for".
             return cursor_class(self, self._async_aggregate, pipeline, **kwargs)
 
+    def watch(self, pipeline=None, full_document='default', resume_after=None,
+              max_await_time_ms=None, batch_size=None, collation=None,
+              session=None):
+        """Watch changes on this collection.
+
+        Returns a :class:`~MotorChangeStream` cursor which iterates over changes
+        on this collection. Introduced in MongoDB 3.6.
+
+        .. code-block:: python3
+
+           async for change in db.collection.watch():
+               print(change)
+
+        The :class:`~MotorChangeStream` async iterable blocks
+        until the next change document is returned or an error is raised. If
+        the :meth:`~MotorChangeStream.next` method encounters
+        a network error when retrieving a batch from the server, it will
+        automatically attempt to recreate the cursor such that no change
+        events are missed. Any error encountered during the resume attempt
+        indicates there may be an outage and will be raised.
+
+        .. code-block:: python3
+
+            try:
+                async for change in db.collection.watch(
+                        [{'$match': {'operationType': 'insert'}}]):
+                    print(change)
+            except pymongo.errors.PyMongoError:
+                # The ChangeStream encountered an unrecoverable error or the
+                # resume attempt failed to recreate the cursor.
+                log.error('...')
+
+        For a precise description of the resume process see the
+        `change streams specification`_.
+
+        :Parameters:
+          - `pipeline` (optional): A list of aggregation pipeline stages to
+            append to an initial ``$changeStream`` stage. Not all
+            pipeline stages are valid after a ``$changeStream`` stage, see the
+            MongoDB documentation on change streams for the supported stages.
+          - `full_document` (optional): The fullDocument option to pass
+            to the ``$changeStream`` stage. Allowed values: 'default',
+            'updateLookup'.  Defaults to 'default'.
+            When set to 'updateLookup', the change notification for partial
+            updates will include both a delta describing the changes to the
+            document, as well as a copy of the entire document that was
+            changed from some time after the change occurred.
+          - `resume_after` (optional): The logical starting point for this
+            change stream.
+          - `max_await_time_ms` (optional): The maximum time in milliseconds
+            for the server to wait for changes before responding to a getMore
+            operation.
+          - `batch_size` (optional): The maximum number of documents to return
+            per batch.
+          - `collation` (optional): The :class:`~pymongo.collation.Collation`
+            to use for the aggregation.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession`.
+
+        :Returns:
+          A :class:`~MotorChangeStream`.
+
+        .. versionadded:: 1.2
+
+        .. mongodoc:: changeStreams
+
+        .. _change streams specification:
+            https://github.com/mongodb/specifications/blob/master/source/change-streams.rst
+        """
+        cursor_class = create_class_with_framework(
+            AgnosticChangeStream, self._framework, self.__module__)
+
+        # Latent cursor that will send initial command on first "async for".
+        return cursor_class(self, pipeline, full_document, resume_after,
+                            max_await_time_ms, batch_size, collation, session)
+
     def list_indexes(self, session=None):
         """Get a cursor over the index documents for this collection. ::
 
@@ -607,6 +684,13 @@ class AgnosticCollection(AgnosticBaseProperties):
                 self.__module__)
 
             return command_cursor_class(obj, self)
+        elif obj.__class__ is ChangeStream:
+            change_stream_class = create_class_with_framework(
+                AgnosticChangeStream,
+                self._framework,
+                self.__module__)
+
+            return change_stream_class(obj, self)
         else:
             return obj
 
@@ -1140,3 +1224,88 @@ class AgnosticBulkOperationBuilder(AgnosticBase):
 
     def get_io_loop(self):
         return self.io_loop
+
+
+class AgnosticChangeStream(AgnosticBase):
+    """A change stream cursor.
+
+    Should not be called directly by application developers. See
+    :meth:`~MotorCollection.watch` for example usage.
+
+    .. versionadded: 1.2
+    .. mongodoc:: changeStreams
+    """
+    __delegate_class__ = ChangeStream
+    __motor_class_name__ = 'MotorChangeStream'
+
+    _close = AsyncCommand(attr_name='close')
+
+    def __init__(self, collection, pipeline, full_document, resume_after,
+                 max_await_time_ms, batch_size, collation, session):
+        super(self.__class__, self).__init__(delegate=None)
+        self._collection = collection
+        self._kwargs = {'pipeline': pipeline,
+                        'full_document': full_document,
+                        'resume_after': resume_after,
+                        'max_await_time_ms': max_await_time_ms,
+                        'batch_size': batch_size,
+                        'collation': collation,
+                        'session': session}
+
+    def _next(self, future):
+        # This method is run on a thread. asyncio prohibits future.set_exception
+        # with a StopIteration, so we must handle this operation differently
+        # from other async methods.
+        try:
+            if not self.delegate:
+                self.delegate = self._collection.delegate.watch(**self._kwargs)
+
+            change = self.delegate.next()
+            self._framework.call_soon(self.get_io_loop(),
+                                      future.set_result,
+                                      change)
+        except StopIteration:
+            future.set_exception(StopAsyncIteration())
+        except Exception as exc:
+            future.set_exception(exc)
+
+    @coroutine_annotation
+    def next(self):
+        """Advance the cursor.
+
+        This method blocks until the next change document is returned or an
+        unrecoverable error is raised.
+
+        Raises :exc:`StopAsyncIteration` if this ChangeStream is closed.
+
+        .. versionadded: 1.2
+        """
+        loop = self.get_io_loop()
+        future = self._framework.get_future(loop)
+        self._framework.run_on_executor(loop, self._next, future)
+        return future
+
+    @coroutine_annotation
+    def close(self):
+        """Close this change stream.
+
+        Stops any "async for" loops using this change stream.
+        """
+        if self.delegate:
+            return self._close()
+
+        # Never started.
+        future = self._framework.get_future(self.get_io_loop())
+        future.set_result(None)
+        return future
+
+    if PY35:
+        exec(textwrap.dedent("""
+        async def __aiter__(self):
+            return self
+
+        __anext__ = next
+        """), globals(), locals())
+
+    def get_io_loop(self):
+        return self._collection.get_io_loop()

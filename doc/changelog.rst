@@ -17,6 +17,8 @@ Added support for `aiohttp`_ 2.0 and later, and dropped older aiohttp versions.
 
 Highlights include:
 
+- New method :meth:`MotorCollection.watch` to acquire a Change Stream on a
+  collection.
 - New Session API to support causal consistency, see
   :meth:`MotorClient.start_session`.
 - Support for array_filters in

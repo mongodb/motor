@@ -49,8 +49,7 @@ pymongo_database_only = set([
 
 pymongo_collection_only = set([
     'aggregate_raw_batches',
-    'find_raw_batches',
-    'watch']).union(pymongo_only)
+    'find_raw_batches']).union(pymongo_only)
 
 motor_cursor_only = set([
     'fetch_next',
@@ -83,6 +82,13 @@ class MotorCoreTest(MotorTest):
         self.assertEqual(
             attrs(env.sync_cx.test.test.find()) - pymongo_cursor_only,
             attrs(self.cx.test.test.find()) - motor_cursor_only)
+
+    def test_change_stream_attrs(self):
+        # Ensure the database exists before creating a change stream.
+        env.sync_cx.test.test.insert_one({})
+        self.assertEqual(
+            attrs(env.sync_cx.test.test.watch()),
+            attrs(self.cx.test.test.watch()) - motor_only)
 
     @gen_test
     def test_command_cursor_attrs(self):
