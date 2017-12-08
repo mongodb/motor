@@ -81,6 +81,8 @@ class MotorCoreTest(MotorTest):
             attrs(env.sync_cx.test.test.find()) - pymongo_cursor_only,
             attrs(self.cx.test.test.find()) - motor_cursor_only)
 
+    @env.require_replica_set
+    @env.require_version_min(3, 6)
     def test_change_stream_attrs(self):
         # Ensure the database exists before creating a change stream.
         env.sync_cx.test.test.insert_one({})

@@ -306,5 +306,11 @@ class TestEnvironment(object):
                              "Server version must be at most %s"
                              % str(other_version))
 
+    def require_replica_set(self, func):
+        """Run a test only if the client is connected to a replica set."""
+        return self._require(lambda: self.is_replica_set,
+                             "Not connected to a replica set",
+                             func=func)
+
 
 env = TestEnvironment()
