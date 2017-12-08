@@ -22,8 +22,6 @@ import unittest
 import warnings
 
 import pymongo
-from mockupdb import OpQuery
-from mockupdb import OpKillCursors
 from tornado import gen
 from tornado.concurrent import Future
 from tornado.testing import gen_test
