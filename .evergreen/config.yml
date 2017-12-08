@@ -634,7 +634,7 @@ tasks:
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "latest"
+            VERSION: "3.6"
             TOPOLOGY: "server"
         - func: "run tox"
           vars:

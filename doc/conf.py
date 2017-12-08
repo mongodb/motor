@@ -85,7 +85,24 @@ from tornado.ioloop import IOLoop
 
 import pymongo
 from pymongo.mongo_client import MongoClient
+
 sync_client = MongoClient()
+ismaster = sync_client.admin.command('isMaster')
+server_info = sync_client.server_info()
+
+if 'setName' in ismaster:
+    raise Exception(
+        "Run doctests with standalone MongoDB 3.6 server, not a replica set")
+
+if ismaster.get('msg') == 'isdbgrid':
+    raise Exception(
+        "Run doctests with standalone MongoDB 3.6 server, not mongos")
+
+if server_info['versionArray'][:2] != [3, 6]:
+    raise Exception(
+        "Run doctests with standalone MongoDB 3.6 server, not %s" % (
+            server_info['version'], ))
+
 sync_client.drop_database("doctest_test")
 db = sync_client.doctest_test
 
