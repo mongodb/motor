@@ -31,7 +31,7 @@ from tornado.testing import gen_test
 import motor
 import test
 from test.test_environment import env
-from test.tornado_tests import MotorTest, remove_all_users, at_least
+from test.tornado_tests import MotorTest, remove_all_users
 from test.utils import ignore_deprecations
 
 
@@ -178,12 +178,8 @@ class MotorDatabaseTest(MotorTest):
             # Just make sure there are no exceptions here.
             yield db.remove_user("mike")
             yield db.logout()
-            if (yield at_least(self.cx, (2, 5, 4))):
-                info = yield self.db.command("usersInfo", "mike")
-                users = info.get('users', [])
-            else:
-                users = yield self.db.system.users.find().to_list(length=10)
-
+            info = yield self.db.command("usersInfo", "mike")
+            users = info.get('users', [])
             self.assertFalse("mike" in [u['user'] for u in users])
 
         finally:

@@ -20,7 +20,7 @@ import pymongo.son_manipulator
 from tornado.testing import gen_test
 
 from test import env, SkipTest
-from test.tornado_tests import at_least, MotorTest
+from test.tornado_tests import MotorTest
 from test.utils import ignore_deprecations
 
 
@@ -99,9 +99,6 @@ class SONManipulatorTest(MotorTest):
     @ignore_deprecations
     @gen_test
     def test_with_aggregate(self):
-        if not (yield at_least(self.cx, (2, 6))):
-            raise SkipTest("Requires MongoDB >= 2.6")
-
         coll = self.cx.motor_test.son_manipulator_test_collection
         _id = yield coll.insert({'foo': 'bar'})
         coll.database.add_son_manipulator(CustomSONManipulator())

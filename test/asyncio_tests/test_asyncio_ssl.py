@@ -28,7 +28,7 @@ from pymongo.errors import (ConfigurationError,
 
 from motor.motor_asyncio import AsyncIOMotorClient
 import test
-from test.asyncio_tests import asyncio_test, at_least, remove_all_users
+from test.asyncio_tests import asyncio_test, remove_all_users
 from test.test_environment import (CA_PEM,
                                    CLIENT_PEM,
                                    env,
@@ -207,9 +207,6 @@ class TestAsyncIOSSL(unittest.TestCase):
                                     ssl_certfile=CLIENT_PEM,
                                     ssl_ca_certs=CA_PEM,
                                     io_loop=self.loop)
-
-        if not (yield from at_least(authenticated_client, (2, 5, 3, -1))):
-            raise SkipTest("MONGODB-X509 tests require MongoDB 2.5.3 or newer")
 
         if not test.env.auth:
             raise SkipTest('Authentication is not enabled on server')

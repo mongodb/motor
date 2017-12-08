@@ -18,8 +18,7 @@ import warnings
 
 from motor.motor_asyncio import AsyncIOMotorGridFS
 import test
-from test import SkipTest
-from test.asyncio_tests import asyncio_test, AsyncIOTestCase, at_least
+from test.asyncio_tests import asyncio_test, AsyncIOTestCase
 
 
 class TestAsyncIOAwait(AsyncIOTestCase):
@@ -61,9 +60,6 @@ class TestAsyncIOAwait(AsyncIOTestCase):
 
     @asyncio_test
     async def test_iter_aggregate(self):
-        if not (await at_least(self.cx, (2, 5, 1))):
-            raise SkipTest("Aggregation cursor requires MongoDB >= 2.5.1")
-
         collection = self.collection
         await collection.delete_many({})
         pipeline = [{'$sort': {'_id': 1}}]

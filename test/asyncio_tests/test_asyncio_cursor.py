@@ -31,7 +31,6 @@ from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase,
                                 AsyncIOMockServerTestCase,
                                 server_is_mongos,
-                                at_least,
                                 get_command_line)
 
 
@@ -467,9 +466,6 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
     def maybe_skip(self):
         if (yield from server_is_mongos(self.cx)):
             raise SkipTest("mongos has no maxTimeAlwaysTimeOut fail point")
-
-        if not (yield from at_least(self.cx, (2, 5, 3, -1))):
-            raise SkipTest("maxTimeMS requires MongoDB >= 2.5.3")
 
         cmdline = yield from get_command_line(self.cx)
         if '1' != safe_get(cmdline, 'parsed.setParameter.enableTestCommands'):

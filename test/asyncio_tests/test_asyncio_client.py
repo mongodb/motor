@@ -30,7 +30,6 @@ import test
 from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase,
                                 AsyncIOMockServerTestCase,
-                                at_least,
                                 remove_all_users)
 from test.test_environment import db_user, db_password, env
 from test.utils import get_primary_pool
@@ -145,10 +144,6 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
     @asyncio_test(timeout=60)
     def test_high_concurrency(self):
-        if env.mongod_started_with_ssl:
-            if not (yield from at_least(self.cx, (2, 6))):
-                raise SkipTest("Concurrent SSL is unreliable in 2.4")
-
         yield from self.make_test_data()
 
         concurrency = 25

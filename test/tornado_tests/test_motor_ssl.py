@@ -38,7 +38,7 @@ from tornado.testing import gen_test
 import motor
 import test
 from test import SkipTest
-from test.tornado_tests import at_least, MotorTest, remove_all_users
+from test.tornado_tests import MotorTest, remove_all_users
 from test.test_environment import (CA_PEM,
                                    CLIENT_PEM,
                                    env,
@@ -198,9 +198,6 @@ class MotorSSLTest(MotorTest):
             ssl_certfile=CLIENT_PEM,
             ssl_ca_certs=CA_PEM,
             io_loop=self.io_loop)
-
-        if not (yield at_least(authenticated_client, (2, 5, 3, -1))):
-            raise SkipTest("MONGODB-X509 tests require MongoDB 2.5.3 or newer")
 
         if not test.env.auth:
             raise SkipTest('Authentication is not enabled on server')

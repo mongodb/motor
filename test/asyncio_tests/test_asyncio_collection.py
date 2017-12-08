@@ -18,7 +18,6 @@ import asyncio
 import sys
 import traceback
 import unittest
-from unittest import SkipTest
 
 import bson
 from bson import CodecOptions
@@ -34,8 +33,7 @@ from motor.motor_asyncio import (AsyncIOMotorCollection,
 import test
 from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase,
-                                skip_if_mongos,
-                                at_least)
+                                skip_if_mongos)
 from test.utils import ignore_deprecations
 
 
@@ -344,9 +342,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
     @asyncio_test
     def test_aggregation_cursor(self):
-        if not (yield from at_least(self.cx, (2, 6))):
-            raise SkipTest("Requires MongoDB >= 2.6")
-
         db = self.db
 
         # A small collection which returns only an initial batch,
@@ -360,9 +355,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
     @asyncio_test
     def test_aggregation_cursor_exc_info(self):
-        if not (yield from at_least(self.cx, (2, 6))):
-            raise SkipTest("Requires MongoDB >= 2.6")
-
         yield from self._make_test_data(200)
         cursor = self.db.test.aggregate(self.pipeline)
         yield from cursor.to_list(length=10)
@@ -379,9 +371,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
     @asyncio_test(timeout=30)
     def test_parallel_scan(self):
-        if not (yield from at_least(self.cx, (2, 5, 5))):
-            raise SkipTest("Requires MongoDB >= 2.5.5")
-
         yield from skip_if_mongos(self.cx)
 
         collection = self.collection.with_options(

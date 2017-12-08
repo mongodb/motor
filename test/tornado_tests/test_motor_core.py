@@ -21,7 +21,7 @@ from gridfs import GridFS, GridIn
 
 from motor import MotorGridFS, MotorGridIn, MotorGridOut
 from test import env, SkipTest
-from test.tornado_tests import at_least, MotorTest
+from test.tornado_tests import MotorTest
 
 
 def attrs(klass):
@@ -92,9 +92,6 @@ class MotorCoreTest(MotorTest):
 
     @gen_test
     def test_command_cursor_attrs(self):
-        if not (yield at_least(self.cx, (2, 6))):
-            raise SkipTest("Requires MongoDB >= 2.6")
-
         motor_agg_cursor_only = set([
             'collection',
             'start',

@@ -61,11 +61,7 @@ def skip_if_mongos(client):
 
 @gen.coroutine
 def remove_all_users(db):
-    version_check = yield at_least(db.client, (2, 5, 4))
-    if version_check:
-        yield db.command({"dropAllUsersFromDatabase": 1})
-    else:
-        yield db.system.users.delete_many({})
+    yield db.command({"dropAllUsersFromDatabase": 1})
 
 
 @gen.coroutine
@@ -77,11 +73,7 @@ def skip_if_mongos(client):
 
 @gen.coroutine
 def remove_all_users(db):
-    version_check = yield at_least(db.client, (2, 5, 4))
-    if version_check:
-        yield db.command({"dropAllUsersFromDatabase": 1})
-    else:
-        yield db.system.users.delete_many({})
+    yield db.command({"dropAllUsersFromDatabase": 1})
 
 
 class MotorTest(testing.AsyncTestCase):

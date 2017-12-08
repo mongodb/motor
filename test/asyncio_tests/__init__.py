@@ -289,8 +289,4 @@ def skip_if_mongos(client):
 
 @asyncio.coroutine
 def remove_all_users(db):
-    version_check = yield from at_least(db.client, (2, 5, 4))
-    if version_check:
-        yield from db.command({"dropAllUsersFromDatabase": 1})
-    else:
-        yield from db.system.users.delete_many({})
+    yield from db.command({"dropAllUsersFromDatabase": 1})

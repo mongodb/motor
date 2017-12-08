@@ -23,7 +23,7 @@ from tornado.testing import gen_test
 from motor import MotorGridFS
 import test
 from test import SkipTest
-from test.tornado_tests import at_least, MotorTest
+from test.tornado_tests import MotorTest
 
 
 class MotorTestAwait(MotorTest):
@@ -65,9 +65,6 @@ class MotorTestAwait(MotorTest):
 
     @gen_test
     async def test_iter_aggregate(self):
-        if not (await at_least(self.cx, (2, 5, 1))):
-            raise SkipTest("Aggregation cursor requires MongoDB >= 2.5.1")
-
         collection = self.collection
         await collection.delete_many({})
         pipeline = [{'$sort': {'_id': 1}}]

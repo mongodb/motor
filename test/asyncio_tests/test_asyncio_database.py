@@ -33,7 +33,6 @@ import test
 from test import env
 from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase,
-                                at_least,
                                 remove_all_users)
 from test.utils import ignore_deprecations
 
@@ -156,12 +155,8 @@ class TestAsyncIODatabase(AsyncIOTestCase):
             # Just make sure there are no exceptions here.
             yield from db.remove_user("jesse")
             yield from db.logout()
-            if (yield from at_least(self.cx, (2, 5, 4))):
-                info = yield from self.db.command("usersInfo", "jesse")
-                users = info.get('users', [])
-            else:
-                users = yield from self.db.system.users.find().to_list(10)
-
+            info = yield from self.db.command("usersInfo", "jesse")
+            users = info.get('users', [])
             self.assertFalse("jesse" in [u['user'] for u in users])
 
         finally:

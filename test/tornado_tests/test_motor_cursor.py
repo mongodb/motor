@@ -525,9 +525,6 @@ class MotorCursorMaxTimeMSTest(MotorTest):
         if (yield server_is_mongos(self.cx)):
             raise SkipTest("mongos has no maxTimeAlwaysTimeOut fail point")
 
-        if not (yield at_least(self.cx, (2, 5, 3, -1))):
-            raise SkipTest("maxTimeMS requires MongoDB >= 2.5.3")
-
         cmdline = yield get_command_line(self.cx)
         if '1' != safe_get(cmdline, 'parsed.setParameter.enableTestCommands'):
             if 'enableTestCommands=1' not in cmdline['argv']:
