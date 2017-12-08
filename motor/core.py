@@ -515,6 +515,8 @@ class AgnosticCollection(AgnosticBaseProperties):
         :Returns:
           A :class:`~MotorChangeStream`.
 
+        See the :ref:`tornado_change_stream_example`.
+
         .. versionadded:: 1.2
 
         .. mongodoc:: changeStreams
