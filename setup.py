@@ -33,7 +33,7 @@ long_description = open("README.rst").read()
 
 install_requires = ['pymongo>=3.4,<4']
 
-tests_require = ['mockupdb']
+tests_require = ['mockupdb>=1.2.1']
 
 if sys.version_info[0] < 3:
     # Need concurrent.futures backport in Python 2 for MotorMockServerTest.
