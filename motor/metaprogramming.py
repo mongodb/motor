@@ -80,12 +80,30 @@ def motor_coroutine(f):
     return f
 
 
-def coroutine_annotation(f):
+def coroutine_annotation(callback):
     """In docs, annotate a function that returns a Future with 'coroutine'.
 
     Unlike @motor_coroutine, this doesn't affect behavior.
     """
+    if isinstance(callback, bool):
+        # Like:
+        # @coroutine_annotation(callback=False)
+        # def method(self):
+        #
+        def decorator(f):
+            f.coroutine_annotation = True
+            f.coroutine_has_callback = callback
+            return f
+
+        return decorator
+
+    # Like:
+    # @coroutine_annotation
+    # def method(self):
+    #
+    f = callback
     f.coroutine_annotation = True
+    f.coroutine_has_callback = True
     return f
 
 

@@ -1271,23 +1271,30 @@ class AgnosticChangeStream(AgnosticBase):
         except Exception as exc:
             future.set_exception(exc)
 
-    @coroutine_annotation
+    @coroutine_annotation(callback=False)
     def next(self):
         """Advance the cursor.
 
         This method blocks until the next change document is returned or an
         unrecoverable error is raised.
 
-        Raises :exc:`StopAsyncIteration` if this ChangeStream is closed.
+        Raises :exc:`StopAsyncIteration` if this change stream is closed.
 
-        .. versionadded: 1.2
+        You can iterate the change stream by calling
+        ``await change_stream.next()`` repeatedly, or with an "async for" loop:
+
+        .. code-block:: python3
+
+          async for change in db.collection.watch():
+              print(change)
+
         """
         loop = self.get_io_loop()
         future = self._framework.get_future(loop)
         self._framework.run_on_executor(loop, self._next, future)
         return future
 
-    @coroutine_annotation
+    @coroutine_annotation(callback=False)
     def close(self):
         """Close this change stream.
 
