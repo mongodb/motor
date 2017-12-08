@@ -103,14 +103,13 @@ def insert_callback(parameters_node):
             literal('', 'callback'),
             Text(doc))
 
-        if parameters_node.children and isinstance(parameters_node.children[0], list_item):
+        if parameters_node.children and isinstance(parameters_node.children[0],
+                                                   list_item):
             # Insert "callback" before *args and **kwargs
-            parameters_node.insert(min(args_pos, kwargs_pos), list_item('', new_item))
+            parameters_node.insert(min(args_pos, kwargs_pos),
+                                   list_item('', new_item))
         else:
             parameters_node.append(new_item)
-
-        # Insert "callback" before *args and **kwargs
-        parameters_node.insert(min(args_pos, kwargs_pos), new_item)
 
 
 docstring_warnings = []
