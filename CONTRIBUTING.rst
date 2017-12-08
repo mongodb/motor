@@ -33,9 +33,9 @@ Install `tox`_ and run it from the command line in the repository directory.
 You will need a variety of Python interpreters installed. For a minimal test,
 ensure you have Python 2.7 and 3.5, and run::
 
-  > tox -e tornado4-py27,tornado4-py35
+  > tox -e tornado4-py27,tornado4-py36
 
-The doctests pass with Python 3.5 and a MongoDB 3.2 instance running on
+The doctests pass with Python 3.6 and a MongoDB 3.6 instance running on
 port 27017:
 
   > tox -e py3-sphinx-doctest
