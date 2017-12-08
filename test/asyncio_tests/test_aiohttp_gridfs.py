@@ -132,7 +132,7 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
         self.srv.close()
         yield from self.srv.wait_closed()
         yield from self.app.shutdown()
-        yield from self.app_handler.finish_connections(timeout=1)
+        yield from self.app_handler.shutdown(timeout=1)
         yield from self.app.cleanup()
 
 
