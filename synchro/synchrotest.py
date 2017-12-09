@@ -38,18 +38,19 @@ excluded_modules = [
     # Exclude some PyMongo tests that can't be applied to Synchro.
     'test.test_cursor_manager',
     'test.test_threads',
-    'test.test_threads_replica_set_client',
     'test.test_pooling',
+    'test.test_legacy_api',
 
     # Complex PyMongo-specific mocking.
     'test.test_replica_set_reconfig',
-    'test.test_mongos_ha',
+
+    # Accesses PyMongo internals. Tested directly in Motor.
+    'test.test_session',
 ]
 
 excluded_tests = [
     # Motor's reprs aren't the same as PyMongo's.
     '*.test_repr',
-    '*.test_repr_replica_set',
     'TestClient.test_unix_socket',
 
     # Lazy-connection tests require multithreading; we test concurrent
@@ -57,17 +58,11 @@ excluded_tests = [
     'TestClientLazyConnect.*',
 
     # Motor doesn't support forking or threading.
-    '*.test_fork',
     '*.test_interrupt_signal',
-    'TestCollection.test_ensure_unique_index_threaded',
     'TestGridfs.test_threaded_reads',
     'TestGridfs.test_threaded_writes',
-    'TestLegacy.test_ensure_index_threaded',
-    'TestLegacy.test_ensure_purge_index_threaded',
-    'TestLegacy.test_ensure_unique_index_threaded',
-    'TestThreadsAuth.*',
-    'TestThreadsAuthReplicaSet.*',
     'TestGSSAPI.test_gssapi_threaded',
+    'TestCursor.test_concurrent_close',
 
     # Relies on threads; tested directly.
     'TestCollection.test_parallel_scan',
@@ -87,15 +82,17 @@ excluded_tests = [
     'TestDatabase.test_system_js',
     'TestDatabase.test_system_js_list',
 
-    # Weird use-case.
-    'TestCursor.test_cursor_transfer',
-
     # Requires indexing / slicing cursors, which Motor doesn't do, see MOTOR-84.
     'TestCollection.test_min_query',
     'TestCursor.test_clone',
     'TestCursor.test_count_with_limit_and_skip',
     'TestCursor.test_getitem_numeric_index',
     'TestCursor.test_getitem_slice_index',
+    'TestCursor.test_tailable',
+
+    # Raw batches aren't implemented yet, MOTOR-172.
+    'TestRawBatchCursor.*',
+    'TestRawBatchCommandCursor.*',
 
     # No context-manager protocol for MotorCursor.
     'TestCursor.test_with_statement',
@@ -103,9 +100,6 @@ excluded_tests = [
     # Can't iterate a GridOut in Motor.
     'TestGridFile.test_iterator',
     'TestGridfs.test_missing_length_iter',
-
-    # Not worth simulating a user calling GridOutCursor(args).
-    'TestGridFileNoConnect.test_grid_out_cursor_options',
 
     # No context-manager protocol for MotorGridIn, and can't set attrs.
     'TestGridFile.test_context_manager',
@@ -119,13 +113,10 @@ excluded_tests = [
     # Complex PyMongo-specific mocking.
     '*.test_wire_version',
     'TestClient.test_heartbeat_frequency_ms',
-    'TestClient.test_max_wire_version',
-    'TestClient.test_wire_version_mongos_ha',
     'TestExhaustCursor.*',
     'TestHeartbeatMonitoring.*',
     'TestMongoClientFailover.*',
     'TestMongosLoadBalancing.*',
-    'TestReplicaSetClientExhaustCursor.*',
     'TestReplicaSetClientInternalIPs.*',
     'TestReplicaSetClientMaxWriteBatchSize.*',
     'TestSSL.test_system_certs_config_error',
@@ -134,8 +125,6 @@ excluded_tests = [
     'TestReplicaSetClient.test_timeout_does_not_mark_member_down',
 
     # Accesses PyMongo internals.
-    'TestClient.test_kill_cursor_explicit_primary',
-    'TestClient.test_kill_cursor_explicit_secondary',
     'TestClient.test_close_kills_cursors',
     'TestClient.test_stale_getmore',
     'TestCollection.test_aggregation_cursor',
