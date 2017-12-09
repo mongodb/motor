@@ -20,5 +20,9 @@ if [ "$SSL" != "nossl" ]; then
     export CA_PEM="$DRIVERS_TOOLS/.evergreen/x509gen/ca.pem"
 fi
 
+if [ "$TOX_ENV" = "synchro" ]; then
+    SETUP_ARGS="-- --check-exclude-patterns"
+fi
+
 # Run the tests, and store the results in Evergreen compatible XUnit XML
-${TOX_BINARY} -e ${TOX_ENV}
+${TOX_BINARY} -e ${TOX_ENV} ${SETUP_ARGS}

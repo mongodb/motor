@@ -35,10 +35,6 @@ import synchro
 from motor.motor_py3_compat import PY3
 
 excluded_modules = [
-    # Depending on PYTHONPATH, Motor's direct tests may be imported - don't
-    # run them now.
-    'test.test_motor_',
-
     # Exclude some PyMongo tests that can't be applied to Synchro.
     'test.test_cursor_manager',
     'test.test_threads',
@@ -176,6 +172,11 @@ class SynchroNosePlugin(Plugin):
         self.enabled = True
 
     def wantModule(self, module):
+        # Depending on PYTHONPATH, Motor's direct tests may be imported - don't
+        # run them now.
+        if module.__name__.startswith('test.test_motor_'):
+            return False
+
         for module_name in excluded_modules:
             if module_name.endswith('*'):
                 if module.__name__.startswith(module_name.rstrip('*')):
@@ -184,6 +185,7 @@ class SynchroNosePlugin(Plugin):
                     return False
 
             elif module.__name__ == module_name:
+                excluded_modules_matched.add(module_name)
                 return False
 
         return True
@@ -253,14 +255,22 @@ if __name__ == '__main__':
     # can run to completion while foreground pauses.
     sys.modules['time'] = synchro.TimeModule()
 
+    if '--check-exclude-patterns' in sys.argv:
+        check_exclude_patterns = True
+        sys.argv.remove('--check-exclude-patterns')
+    else:
+        check_exclude_patterns = False
+
     nose.main(
         config=Config(plugins=PluginManager()),
-        addplugins=[SynchroNosePlugin(), Skip(), Xunit()])
-    
-    unused_module_patterns = set(excluded_modules) - excluded_modules_matched
-    assert not unused_module_patterns, "Unused module patterns: %s" % (
-        unused_module_patterns, )
+        addplugins=[SynchroNosePlugin(), Skip(), Xunit()],
+        exit=False)
 
-    unused_test_patterns = set(excluded_tests) - excluded_tests_matched
-    assert not unused_test_patterns, "Unused test patterns: %s" % (
-        unused_test_patterns, )
+    if check_exclude_patterns:
+        unused_module_pats = set(excluded_modules) - excluded_modules_matched
+        assert not unused_module_pats, "Unused module patterns: %s" % (
+            unused_module_pats, )
+
+        unused_test_pats = set(excluded_tests) - excluded_tests_matched
+        assert not unused_test_pats, "Unused test patterns: %s" % (
+            unused_test_pats, )
