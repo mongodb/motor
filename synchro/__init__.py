@@ -35,7 +35,9 @@ from motor.metaprogramming import MotorAttributeFactory
 from gridfs.errors import *
 from pymongo import *
 from pymongo import (collation,
+                     change_stream,
                      errors,
+                     monotonic,
                      operations,
                      server_selectors,
                      server_type,
@@ -47,7 +49,7 @@ from pymongo.auth import _build_credentials_tuple
 from pymongo.helpers import _check_command_response
 from pymongo.collation import *
 from pymongo.common import *
-from pymongo.common import _UUID_REPRESENTATIONS
+from pymongo.common import _UUID_REPRESENTATIONS, _MAX_END_SESSIONS
 from pymongo.cursor import *
 from pymongo.cursor import _QUERY_OPTIONS
 from pymongo.errors import *
@@ -57,12 +59,14 @@ from pymongo.message import (_COMMAND_OVERHEAD,
                              _maybe_add_read_preference)
 from pymongo.monitor import *
 from pymongo.monitoring import *
-from pymongo.monitoring import _LISTENERS, _Listeners
+from pymongo.monitoring import _LISTENERS, _Listeners, _SENSITIVE_COMMANDS
+from pymongo.monotonic import time
 from pymongo.operations import *
 from pymongo.pool import *
 from pymongo.pool import _METADATA
 from pymongo.periodic_executor import *
 from pymongo.periodic_executor import _EXECUTORS
+from pymongo.read_concern import *
 from pymongo.read_preferences import *
 from pymongo.read_preferences import _ServerMode
 from pymongo.results import *
@@ -75,7 +79,7 @@ from pymongo.son_manipulator import *
 from pymongo.topology import *
 from pymongo.topology_description import *
 from pymongo.uri_parser import *
-from pymongo.uri_parser import _partition, _rpartition
+from pymongo.uri_parser import _partition, _rpartition, _HAVE_DNSPYTHON
 from pymongo.write_concern import *
 from pymongo import auth
 from pymongo.auth import *
