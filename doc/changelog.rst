@@ -6,12 +6,16 @@ Changelog
 Motor 1.2
 ---------
 
-Motor 1.2 drops support for MongoDB 2.4 and adds support for MongoDB 3.6 features.
-It depends on PyMongo 3.6 or later.
+Motor 1.2 drops support for MongoDB 2.4 and adds support for MongoDB 3.6
+features. It depends on PyMongo 3.6 or later. Motor continues to support MongoDB
+2.6 and later.
 
 Dropped support for Python 2.6. Motor continues to support Python 2.7, and 3.3+.
 
 Dropped support for Tornado 3. A recent version of Tornado 4 is required.
+
+See the :ref:`Compatibility Matrix <compatibility-matrix>` for the relationships
+among Motor, Python, Tornado, and MongoDB versions.
 
 Added support for `aiohttp`_ 2.0 and later, and dropped older aiohttp versions.
 
@@ -41,8 +45,6 @@ and read_concern arguments. This is rarely needed; you typically create a
 constructor directly.
 
 Deleted obsolete class ``motor.Op``.
-
-MongoDB 2.2 is no longer tested. Motor is compatible with MongoDB 2.4 and later.
 
 Motor 1.1
 ---------

@@ -28,6 +28,8 @@ Building the docs requires `sphinx`_.
 .. _sphinx: http://sphinx.pocoo.org/
 
 
+.. _compatibility-matrix:
+
 Compatibility Matrix
 --------------------
 
@@ -60,7 +62,7 @@ PyMongo version beginning with 3.4.0.
 +-------------------+-----------------+
 | 1.1               | 3.4+            |
 +-------------------+-----------------+
-| 1.2               | 3.4+            |
+| 1.2               | 3.6+            |
 +-------------------+-----------------+
 
 Motor and MongoDB
@@ -93,7 +95,7 @@ unsupported server features.
 +---------------+-----+-----+-----+-----+-----+-----+-----+
 |               | 1.1 |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |
 +---------------+-----+-----+-----+-----+-----+-----+-----+
-|               | 1.2 |**N**|  Y  |  Y  |  Y  |  Y  |  Y  |
+|               | 1.2 |**N**|**N**|  Y  |  Y  |  Y  |  Y  |
 +---------------+-----+-----+-----+-----+-----+-----+-----+
 
 There is no relationship between PyMongo and MongoDB version numbers, although

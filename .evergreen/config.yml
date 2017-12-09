@@ -447,33 +447,6 @@ tasks:
 
 # Standard test tasks {{{
 
-    - name: "test-2.4-standalone"
-      tags: ["2.4", "standalone"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "2.4"
-            TOPOLOGY: "server"
-        - func: "run tox"
-
-    - name: "test-2.4-replica_set"
-      tags: ["2.4", "replica_set"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "2.4"
-            TOPOLOGY: "replica_set"
-        - func: "run tox"
-
-    - name: "test-2.4-sharded_cluster"
-      tags: ["2.4", "sharded_cluster"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "2.4"
-            TOPOLOGY: "sharded_cluster"
-        - func: "run tox"
-
     - name: "test-2.6-standalone"
       tags: ["2.6", "standalone"]
       commands:
@@ -667,10 +640,6 @@ axes:
         display_name: "2.6"
         variables:
            VERSION: "2.6"
-      - id: "2.4"
-        display_name: "2.4"
-        variables:
-           VERSION: "2.4"
 
   - id: topology
     display_name: Topology
@@ -839,7 +808,6 @@ buildvariants:
      - ".3.2"
      - ".3.0"
      - ".2.6"
-     - ".2.4"
 
 - matrix_name: "enterprise-auth"
   matrix_spec: {"tox-env": ["synchro"], auth: "auth"}
@@ -896,4 +864,3 @@ buildvariants:
          add_tasks:
             - ".3.0"
             - ".2.6"
-            - ".2.4"
