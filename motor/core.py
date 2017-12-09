@@ -111,6 +111,7 @@ class AgnosticClient(AgnosticBaseProperties):
     PORT                     = ReadOnlyProperty()
     primary                  = ReadOnlyProperty()
     read_concern             = ReadOnlyProperty()
+    retry_writes             = ReadOnlyProperty()
     secondaries              = ReadOnlyProperty()
     server_info              = AsyncRead()
     server_selection_timeout = ReadOnlyProperty()

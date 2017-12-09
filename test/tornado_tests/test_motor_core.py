@@ -40,7 +40,6 @@ motor_client_only = motor_only.union(['open'])
 
 pymongo_client_only = set([
     'is_locked',
-    'retry_writes',
     'set_cursor_manager']).union(pymongo_only)
 
 pymongo_database_only = set([
