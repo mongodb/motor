@@ -14,6 +14,10 @@ Dropped support for Python 2.6. Motor continues to support Python 2.7, and 3.3+.
 
 Dropped support for Tornado 3. A recent version of Tornado 4 is required.
 
+Dropped support for the `Python 3.5.0 and Python 3.5.1 "async for" protocol
+<https://python.org/dev/peps/pep-0492/#api-design-and-implementation-revisions>`_.
+Motor allows "async for" with cursors in Python 3.5.2 and later.
+
 See the :ref:`Compatibility Matrix <compatibility-matrix>` for the relationships
 among Motor, Python, Tornado, and MongoDB versions.
 

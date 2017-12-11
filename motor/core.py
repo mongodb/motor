@@ -741,19 +741,6 @@ class AgnosticBaseCursor(AgnosticBase):
             raise StopAsyncIteration()
         """), globals(), locals())
 
-    elif PY35:
-        # In Python 3.5.0 and 3.5.1, __aiter__ is a coroutine.
-        exec(textwrap.dedent("""
-        async def __aiter__(self):
-            return self
-
-        async def __anext__(self):
-            # An optimization: skip the "await" if possible.
-            if self._buffer_size() or await self.fetch_next:
-                return self.next_object()
-            raise StopAsyncIteration()
-        """), globals(), locals())
-
     def _get_more(self):
         """Initial query or getMore. Returns a Future."""
         if not self.alive:
