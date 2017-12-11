@@ -16,13 +16,13 @@
 
 import os
 import socket
+import sys
 import warnings
 from functools import wraps
 
 import pymongo.errors
 
 from test import SkipTest
-from test.utils import safe_get
 from test.version import Version
 
 HAVE_SSL = True
@@ -78,8 +78,9 @@ def connected(client):
     return client
 
 
-db_user = os.environ.get("DB_USER", "motor-test-root")
-db_password = os.environ.get("DB_PASSWORD", "pass")
+# If these are set to the empty string, substitute None.
+db_user = os.environ.get("DB_USER") or None
+db_password = os.environ.get("DB_PASSWORD") or None
 
 CERT_PATH = os.environ.get(
     'CERT_DIR',
@@ -123,24 +124,19 @@ class TestEnvironment(object):
         self.secondaries = None
         self.v8 = False
         self.auth = False
-        self.user_provided = False
         self.uri = None
         self.rs_uri = None
         self.version = None
         self.sessions_enabled = False
+        self.fake_hostname_uri = None
 
     def setup(self):
         assert not self.initialized
         self.setup_sync_cx()
-        self.setup_auth()
+        self.setup_auth_and_uri()
         self.setup_version()
         self.setup_v8()
         self.initialized = True
-
-    def teardown(self):
-        if self.auth and not self.user_provided:
-            # We created this user in setup_auth().
-            self.sync_cx.admin.remove_user(db_user)
 
     def setup_sync_cx(self):
         """Get a synchronous PyMongo MongoClient and determine SSL config."""
@@ -152,6 +148,8 @@ class TestEnvironment(object):
         try:
             client = connected(pymongo.MongoClient(
                 host, port,
+                username=db_user,
+                password=db_password,
                 connectTimeoutMS=connectTimeoutMS,
                 socketTimeoutMS=socketTimeoutMS,
                 serverSelectionTimeoutMS=serverSelectionTimeoutMS,
@@ -163,6 +161,8 @@ class TestEnvironment(object):
             try:
                 client = connected(pymongo.MongoClient(
                     host, port,
+                    username=db_user,
+                    password=db_password,
                     connectTimeoutMS=connectTimeoutMS,
                     socketTimeoutMS=socketTimeoutMS,
                     serverSelectionTimeoutMS=serverSelectionTimeoutMS,
@@ -174,6 +174,8 @@ class TestEnvironment(object):
             except pymongo.errors.ServerSelectionTimeoutError:
                 client = connected(pymongo.MongoClient(
                     host, port,
+                    username=db_user,
+                    password=db_password,
                     connectTimeoutMS=connectTimeoutMS,
                     socketTimeoutMS=socketTimeoutMS,
                     serverSelectionTimeoutMS=serverSelectionTimeoutMS))
@@ -199,47 +201,29 @@ class TestEnvironment(object):
         # Reconnect to found primary, without short timeouts.
         if self.mongod_started_with_ssl:
             client = connected(pymongo.MongoClient(host, port,
+                                                   username=db_user,
+                                                   password=db_password,
                                                    ssl_ca_certs=CA_PEM,
                                                    ssl_certfile=CLIENT_PEM))
         else:
-            client = connected(pymongo.MongoClient(host, port, ssl=False))
+            client = connected(pymongo.MongoClient(host, port,
+                                                   username=db_user,
+                                                   password=db_password,
+                                                   ssl=False))
 
         self.sync_cx = client
         self.host = host
         self.port = port
 
-    def setup_auth(self):
-        """Set self.auth and self.uri, and maybe create an admin user."""
-        try:
-            cmd_line = self.sync_cx.admin.command('getCmdLineOpts')
-        except pymongo.errors.OperationFailure as e:
-            msg = e.details.get('errmsg', '')
-            if e.code == 13 or 'unauthorized' in msg or 'login' in msg:
-                # Unauthorized.
-                self.auth = True
-            else:
-                raise
-        else:
-            # Either we're on mongod < 2.7.1 and we can connect over localhost
-            # to check if --auth is in the command line. Or we're prohibited
-            # from seeing the command line so we should try blindly to create
-            # an admin user.
-            try:
-                authorization = safe_get(cmd_line,
-                                         'parsed.security.authorization')
-                if authorization:
-                    self.auth = (authorization == 'enabled')
-                else:
-                    argv = cmd_line['argv']
-                    self.auth = ('--auth' in argv or '--keyFile' in argv)
-            except pymongo.errors.OperationFailure as e:
-                if e.code == 13:
-                    # Auth failure getting command line.
-                    self.auth = True
-                else:
-                    raise
+    def setup_auth_and_uri(self):
+        """Set self.auth and self.uri."""
+        if db_user or db_password:
+            if not (db_user and db_password):
+                sys.stderr.write(
+                    "You msut set both DB_USER and DB_PASSWORD, or neither\n")
+                sys.exit(1)
 
-        if self.auth:
+            self.auth = True
             uri_template = 'mongodb://%s:%s@%s:%s/admin'
             self.uri = uri_template % (db_user, db_password,
                                        self.host, self.port)
@@ -248,15 +232,6 @@ class TestEnvironment(object):
             # to test SSL hostname validation with auth.
             self.fake_hostname_uri = uri_template % (
                 db_user, db_password, 'server', self.port)
-
-            try:
-                self.sync_cx.admin.add_user(db_user, db_password,
-                                            roles=['root'])
-            except pymongo.errors.OperationFailure:
-                # User was added before setup(), e.g. by Mongo Orchestration.
-                self.user_provided = True
-
-            self.sync_cx.admin.authenticate(db_user, db_password)
 
         else:
             self.uri = 'mongodb://%s:%s/admin' % (

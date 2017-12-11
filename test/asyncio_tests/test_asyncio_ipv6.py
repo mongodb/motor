@@ -33,7 +33,10 @@ class MotorIPv6Test(AsyncIOTestCase):
             "with host %s" % repr(env.host))
 
         try:
-            connected(MongoClient("[::1]", serverSelectionTimeoutMS=100))
+            connected(MongoClient("[::1]",
+                                  username=db_user,
+                                  password=db_password,
+                                  serverSelectionTimeoutMS=100))
         except ConnectionFailure:
             # Either mongod was started without --ipv6
             # or the OS doesn't support it (or both).

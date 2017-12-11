@@ -139,7 +139,6 @@ class test(Command):
             suppress_tornado_warnings()
 
         result = runner.run(suite)
-        env.teardown()
         sys.exit(not result.wasSuccessful())
 
 
