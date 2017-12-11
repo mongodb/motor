@@ -107,7 +107,7 @@ class MotorSessionTest(MotorTest):
 
         yield self._test_ops(client, *ops)
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_collection(self):
         listener = SessionTestListener()
         client = self.motor_client(event_listeners=[listener])

@@ -138,7 +138,7 @@ class MotorGridfsTest(MotorTest):
         self.assertEqual(set(["mike", "test", "hello world"]),
                          set((yield alt.list())))
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_put_filelike(self):
         oid = yield self.fs.put(StringIO(b"hello world"), chunk_size=1)
         self.assertEqual(11, (yield self.cx.motor_test.fs.chunks.count()))

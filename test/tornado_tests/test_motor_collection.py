@@ -351,7 +351,7 @@ class MotorCollectionTest(MotorTest):
     def assertAllDocs(self, expected_sum, docs):
         self.assertEqual(expected_sum, sum(doc['_id'] for doc in docs))
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_aggregation_cursor(self):
         db = self.db
 
@@ -382,7 +382,7 @@ class MotorCollectionTest(MotorTest):
             self.assertTrue('_unpack_response' in formatted
                             or '_check_command_response' in formatted)
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_aggregation_cursor_to_list_callback(self):
         db = self.db
 

@@ -340,7 +340,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
     pipeline = [{'$project': {'_id': '$_id'}}]
 
-    @asyncio_test
+    @asyncio_test(timeout=30)
     def test_aggregation_cursor(self):
         db = self.db
 

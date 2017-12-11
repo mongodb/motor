@@ -327,7 +327,7 @@ class TestAsyncIOGridFS(AsyncIOTestCase):
         self.assertEqual(set(["mike", "test", "hello world"]),
                          set((yield from self.fs.list())))
 
-    @asyncio_test
+    @asyncio_test(timeout=30)
     def test_put_filelike(self):
         oid = yield from self.fs.put(StringIO(b"hello world"), chunk_size=1)
         self.assertEqual(11, (yield from self.cx.motor_test.fs.chunks.count()))
