@@ -8,6 +8,10 @@ echo "Running enterprise authentication tests"
 export DB_USER="bob"
 export DB_PASSWORD="pwd123"
 
+# BUILD-3830
+touch ${PROJECT_DIRECTORY}/.evergreen/krb5.conf.empty
+export KRB5_CONFIG=${PROJECT_DIRECTORY}/.evergreen/krb5.conf.empty
+
 echo "Writing keytab"
 echo ${KEYTAB_BASE64} | base64 -d > ${PROJECT_DIRECTORY}/.evergreen/drivers.keytab
 echo "Running kinit"

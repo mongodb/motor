@@ -809,7 +809,7 @@ buildvariants:
   matrix_spec: {"tox-env": ["synchro"], auth: "auth"}
   display_name: "Enterprise Auth"
   run_on:
-     - ubuntu1604-test
+     - rhel62-small
   tasks:
      - name: "test-enterprise-auth"
 
