@@ -591,12 +591,6 @@ tasks:
             TOPOLOGY: "server"
         - func: "run enterprise auth tests"
 
-    - name: "synchro"
-      commands:
-        - func: "run tox"
-          vars:
-             TOX_ENV: py3-sphinx-docs
-
     - name: "docs"
       commands:
         - func: "run tox"
