@@ -153,7 +153,7 @@ if sys.version_info[0] >= 3:
     packages.append('motor.aiohttp')
 
 setup(name='motor',
-      version='1.2rc0',
+      version='1.2rc1.dev0',
       packages=packages,
       description=description,
       long_description=long_description,
