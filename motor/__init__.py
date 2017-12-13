@@ -1,4 +1,4 @@
-# Copyright 2011-2015 MongoDB, Inc.
+# Copyright 2011-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,13 +20,14 @@ import pymongo
 
 from motor.motor_py3_compat import text_type
 
-version_tuple = (1, 2, 'dev0')
+version_tuple = (1, 2, 'rc0')
 
 
 def get_version_string():
     if isinstance(version_tuple[-1], text_type):
         return '.'.join(map(str, version_tuple[:-1])) + version_tuple[-1]
     return '.'.join(map(str, version_tuple))
+
 
 version = get_version_string()
 """Current version of Motor."""
