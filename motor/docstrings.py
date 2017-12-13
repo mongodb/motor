@@ -1003,7 +1003,7 @@ This method takes the same parameters as PyMongo's
   
       with (await client.start_session()) as s:
           doc = {'_id': ObjectId(), 'x': 1}
-          await collection.insert(doc, session=s)
+          await collection.insert_one(doc, session=s)
 
           secondary = collection.with_options(
               read_preference=ReadPreference.SECONDARY)
