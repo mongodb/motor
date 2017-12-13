@@ -10,7 +10,8 @@ Motor 1.2 drops support for MongoDB 2.4 and adds support for MongoDB 3.6
 features. It depends on PyMongo 3.6 or later. Motor continues to support MongoDB
 2.6 and later.
 
-Dropped support for Python 2.6. Motor continues to support Python 2.7, and 3.3+.
+Dropped support for Python 2.6 and 3.3. Motor continues to support Python 2.7,
+and 3.4+.
 
 Dropped support for Tornado 3. A recent version of Tornado 4 is required.
 

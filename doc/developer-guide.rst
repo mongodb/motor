@@ -8,9 +8,9 @@ Compatibility
 -------------
 
 Motor supports the asyncio module in the standard library of Python 3.4 and
-later, as well as the asyncio package on PyPI for Python 3.3.
-Motor also works with Tornado 4 and later along with all the Python versions it
-supports.
+later.
+Motor also works with Tornado 4.5 and later along with all the Python versions
+it supports.
 
 Motor is single-source compatible with all supported Python versions, although
 there are some tricks for Python 3. There is some code for the ``async``

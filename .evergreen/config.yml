@@ -691,10 +691,6 @@ axes:
         variables:
            TOX_ENV: "tornado4-pypy3"
            PYTHON_BINARY: "/opt/python/pypy3.5/bin/pypy3"
-      - id: "tornado4-py33"
-        variables:
-           TOX_ENV: "tornado4-py33"
-           PYTHON_BINARY: "/opt/python/3.3/bin/python3"
       - id: "tornado4-py34"
         variables:
            TOX_ENV: "tornado4-py34"
@@ -723,10 +719,6 @@ axes:
         variables:
            TOX_ENV: "tornado_git-py36"
            PYTHON_BINARY: "/opt/python/3.6/bin/python3"
-      - id: "asyncio-py33"
-        variables:
-           TOX_ENV: "asyncio-py33"
-           PYTHON_BINARY: "/opt/python/3.3/bin/python3"
       - id: "asyncio-py34"
         variables:
            TOX_ENV: "asyncio-py34"
@@ -739,10 +731,6 @@ axes:
         variables:
            TOX_ENV: "asyncio-py36"
            PYTHON_BINARY: "/opt/python/3.6/bin/python3"
-      - id: "asyncio-tornado4-py33"
-        variables:
-           TOX_ENV: "asyncio-tornado4-py33"
-           PYTHON_BINARY: "/opt/python/3.3/bin/python3"
       - id: "py3-pymongo-master"
         variables:
            TOX_ENV: "py3-pymongo-master"

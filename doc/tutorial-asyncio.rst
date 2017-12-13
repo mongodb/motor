@@ -269,8 +269,8 @@ individually; it gets documents efficiently in `large batches`_.
 
 .. _`large batches`: https://docs.mongodb.com/manual/tutorial/iterate-a-cursor/#cursor-batches
 
-Iteration in Python 3.3 and 3.4
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Iteration in Python 3.4
+~~~~~~~~~~~~~~~~~~~~~~~
 
 In Python versions without ``async for``, handle one document at a time with
 :attr:`~motor.motor_asyncio.AsyncIOMotorCursor.fetch_next`
