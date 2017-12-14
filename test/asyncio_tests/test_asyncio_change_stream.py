@@ -26,6 +26,7 @@ from test.asyncio_tests import asyncio_test, AsyncIOTestCase
 
 class TestAsyncIOChangeStream(AsyncIOTestCase):
     @classmethod
+    @env.require_version_min(3, 6)
     def setUpClass(cls):
         super(TestAsyncIOChangeStream, cls).setUpClass()
         if env.is_standalone:
@@ -55,7 +56,6 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         t.daemon = True
         t.start()
 
-    @env.require_version_min(3, 6)
     @asyncio_test
     async def test_async_for(self):
         change_stream = self.collection.watch()
@@ -68,7 +68,6 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
 
         self.assertEqual(i, 2)
 
-    @env.require_version_min(3, 6)
     @asyncio_test
     async def test_watch(self):
         coll = self.collection
@@ -87,7 +86,6 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         change = await coll.watch(resume_after=change['_id']).next()
         self.assertEqual(change['fullDocument'], {'_id': 23})
 
-    @env.require_version_min(3, 6)
     @asyncio_test
     async def test_close(self):
         coll = self.collection
@@ -103,7 +101,6 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         async for _ in change_stream:
             pass
 
-    @env.require_version_min(3, 6)
     @asyncio_test
     async def test_missing_id(self):
         coll = self.collection
@@ -117,7 +114,6 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         with self.assertRaises(StopAsyncIteration):
             await change_stream.next()
 
-    @env.require_version_min(3, 6)
     @asyncio_test
     async def test_unknown_full_document(self):
         coll = self.collection

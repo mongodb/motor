@@ -29,6 +29,7 @@ from test.tornado_tests import MotorTest
 
 class MotorChangeStreamTest(MotorTest):
     @classmethod
+    @env.require_version_min(3, 6)
     def setUpClass(cls):
         super(MotorChangeStreamTest, cls).setUpClass()
         if env.is_standalone:
@@ -58,7 +59,6 @@ class MotorChangeStreamTest(MotorTest):
         t.daemon = True
         t.start()
 
-    @env.require_version_min(3, 6)
     @gen_test
     async def test_async_for(self):
         change_stream = self.collection.watch()
@@ -71,7 +71,6 @@ class MotorChangeStreamTest(MotorTest):
 
         self.assertEqual(i, 2)
 
-    @env.require_version_min(3, 6)
     @gen_test
     async def test_watch(self):
         coll = self.collection
@@ -90,7 +89,6 @@ class MotorChangeStreamTest(MotorTest):
         change = await coll.watch(resume_after=change['_id']).next()
         self.assertEqual(change['fullDocument'], {'_id': 23})
 
-    @env.require_version_min(3, 6)
     @gen_test
     async def test_close(self):
         coll = self.collection
@@ -106,7 +104,6 @@ class MotorChangeStreamTest(MotorTest):
         async for _ in change_stream:
             pass
 
-    @env.require_version_min(3, 6)
     @gen_test
     async def test_missing_id(self):
         coll = self.collection
@@ -120,7 +117,6 @@ class MotorChangeStreamTest(MotorTest):
         with self.assertRaises(StopAsyncIteration):
             await change_stream.next()
 
-    @env.require_version_min(3, 6)
     @gen_test
     async def test_unknown_full_document(self):
         coll = self.collection
