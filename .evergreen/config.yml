@@ -555,6 +555,33 @@ tasks:
             TOPOLOGY: "sharded_cluster"
         - func: "run tox"
 
+    - name: "test-3.6-standalone"
+      tags: ["3.6", "standalone"]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.6"
+            TOPOLOGY: "server"
+        - func: "run tox"
+
+    - name: "test-3.6-replica_set"
+      tags: ["3.6", "replica_set"]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.6"
+            TOPOLOGY: "replica_set"
+        - func: "run tox"
+
+    - name: "test-3.6-sharded_cluster"
+      tags: ["3.6", "sharded_cluster"]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.6"
+            TOPOLOGY: "sharded_cluster"
+        - func: "run tox"
+
     - name: "test-latest-standalone"
       tags: ["latest", "standalone"]
       commands:
@@ -618,6 +645,10 @@ axes:
         display_name: "latest"
         variables:
            VERSION: "latest"
+      - id: "3.6"
+        display_name: "3.6"
+        variables:
+           VERSION: "3.6"
       - id: "3.4"
         display_name: "3.4"
         variables:
@@ -788,6 +819,7 @@ buildvariants:
   display_name: "${os} ${tox-env} ${auth} ${ssl}"
   tasks:
      - ".latest"
+     - ".3.6"
      - ".3.4"
      - ".3.2"
      - ".3.0"
@@ -835,6 +867,7 @@ buildvariants:
   display_name: "${os} ${tox-env-osx} ${ssl} ${auth}"
   tasks:
      - ".latest"
+     - ".3.6"
      - ".3.4"
      - ".3.2"
   rules:
