@@ -122,3 +122,19 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         self.wait_and_insert(change_stream, 1)
         with self.assertRaises(OperationFailure):
             await future
+
+    @asyncio_test
+    async def test_async_with(self):
+        async with self.collection.watch() as change_stream:
+            self.wait_and_insert(change_stream, 1)
+            async for _ in change_stream:
+                self.assertTrue(change_stream.delegate._cursor.alive)
+                break
+
+        self.assertFalse(change_stream.delegate._cursor.alive)
+
+    @asyncio_test
+    async def test_with_statement(self):
+        with self.assertRaises(RuntimeError):
+            with self.collection.watch():
+                pass

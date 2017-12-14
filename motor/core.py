@@ -464,8 +464,13 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         .. code-block:: python3
 
-           async for change in db.collection.watch():
-               print(change)
+           async with db.collection.watch() as stream:
+               async for change in stream:
+                   print(change)
+
+        Using the change stream in an "async with" block as shown above ensures
+        it is canceled promptly if your code breaks from the loop or throws an
+        exception.
 
         The :class:`~MotorChangeStream` async iterable blocks
         until the next change document is returned or an error is raised. If
@@ -478,13 +483,14 @@ class AgnosticCollection(AgnosticBaseProperties):
         .. code-block:: python3
 
             try:
-                async for change in db.collection.watch(
-                        [{'$match': {'operationType': 'insert'}}]):
-                    print(change)
+                pipeline = [{'$match': {'operationType': 'insert'}}]
+                async with db.collection.watch(pipeline) as stream:
+                    async for change in stream:
+                        print(change)
             except pymongo.errors.PyMongoError:
                 # The ChangeStream encountered an unrecoverable error or the
                 # resume attempt failed to recreate the cursor.
-                log.error('...')
+                logging.error('...')
 
         For a precise description of the resume process see the
         `change streams specification`_.
@@ -1302,7 +1308,19 @@ class AgnosticChangeStream(AgnosticBase):
             return self
 
         __anext__ = next
+
+        async def __aenter__(self):
+            return self
+    
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            await self.close()
         """), globals(), locals())
 
     def get_io_loop(self):
         return self._collection.get_io_loop()
+
+    def __enter__(self):
+        raise RuntimeError('Use a change stream in "async with", not "with"')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
