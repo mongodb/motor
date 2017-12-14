@@ -26,8 +26,7 @@ from gridfs import grid_file
 from motor.core import (AgnosticBaseCursor,
                         AgnosticCollection,
                         AgnosticDatabase,
-                        PY35,
-                        PY352)
+                        PY35)
 from motor.docstrings import *
 from motor.metaprogramming import (AsyncCommand,
                                    AsyncRead,
@@ -185,22 +184,9 @@ class AgnosticGridOut(object):
         self.io_loop = root_collection.get_io_loop()
 
     # python.org/dev/peps/pep-0492/#api-design-and-implementation-revisions
-    if PY352:
+    if PY35:
         exec(textwrap.dedent("""
         def __aiter__(self):
-            return self
-
-        async def __anext__(self):
-            chunk = await self.readchunk()
-            if chunk:
-                return chunk
-            raise StopAsyncIteration()
-        """), globals(), locals())
-
-    elif PY35:
-        # In Python 3.5.0 and 3.5.1, __aiter__ is a coroutine.
-        exec(textwrap.dedent("""
-        async def __aiter__(self):
             return self
 
         async def __anext__(self):
