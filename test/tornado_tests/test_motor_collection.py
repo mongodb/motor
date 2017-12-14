@@ -246,7 +246,7 @@ class MotorCollectionTest(MotorTest):
 
         coll.database.client.close()
 
-    @gen_test
+    @gen_test(timeout=30)
     def test_nested_callbacks(self):
         results = [0]
         future = Future()

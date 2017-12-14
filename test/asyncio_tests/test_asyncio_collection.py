@@ -236,7 +236,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
         coll.database.client.close()
 
-    @asyncio_test
+    @asyncio_test(timeout=30)
     def test_nested_callbacks(self):
         results = [0]
         future = asyncio.Future(loop=self.loop)
