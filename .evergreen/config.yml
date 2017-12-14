@@ -73,6 +73,7 @@ functions:
               export TMPDIR="$MONGO_ORCHESTRATION_HOME/db"
               export PATH="$MONGODB_BINARIES:$PATH"
               export PROJECT="${project}"
+              export ASYNC_TEST_TIMEOUT=30
            EOT
            # See what we've done
            cat expansion.yml
