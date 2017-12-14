@@ -55,7 +55,6 @@ except ImportError:
     ssl = None
     HAS_SSL = False
 
-PY352 = sys.version_info >= (3, 5, 2)
 PY35 = sys.version_info >= (3, 5)
 
 
@@ -729,7 +728,7 @@ class AgnosticBaseCursor(AgnosticBase):
         self.closed = False
 
     # python.org/dev/peps/pep-0492/#api-design-and-implementation-revisions
-    if PY352:
+    if PY35:
         exec(textwrap.dedent("""
         def __aiter__(self):
             return self
