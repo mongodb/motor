@@ -683,18 +683,6 @@ axes:
         variables:
            TOPOLOGY: "sharded_cluster"
 
-  - id: auth
-    display_name: Authentication
-    values:
-      - id: auth
-        display_name: Auth
-        variables:
-           AUTH: "auth"
-      - id: noauth
-        display_name: NoAuth
-        variables:
-           AUTH: "noauth"
-
   - id: ssl
     display_name: SSL
     values:
@@ -702,10 +690,12 @@ axes:
         display_name: SSL
         variables:
            SSL: "ssl"
+           AUTH: "auth"
       - id: nossl
         display_name: NoSSL
         variables:
            SSL: "nossl"
+           AUTH: "noauth"
 
   - id: tox-env
     display_name: "Tox Env"
@@ -809,15 +799,14 @@ axes:
 buildvariants:
 
 - matrix_name: "test-mongodb-versions"
-  matrix_spec: {"os": "rhel", "tox-env": "*", auth: "*", ssl: "*"}
+  matrix_spec: {"os": "rhel", "tox-env": "*", ssl: "*"}
   exclude_spec:
    # TODO: synchro needs PyMongo master's updated SSL test certs,
    # which may require Motor test suite changes.
    - os: "*"
      tox-env: ["synchro"]
-     auth: "*"
      ssl: "ssl"
-  display_name: "${os} ${tox-env} ${auth} ${ssl}"
+  display_name: "${os} ${tox-env} ${ssl}"
   tasks:
      - ".latest"
      - ".3.6"
@@ -827,7 +816,7 @@ buildvariants:
      - ".2.6"
 
 - matrix_name: "enterprise-auth"
-  matrix_spec: {"tox-env": ["synchro"], auth: "auth"}
+  matrix_spec: {"tox-env": ["synchro"], ssl: "ssl"}
   display_name: "Enterprise Auth"
   run_on:
      - rhel62-small
@@ -857,15 +846,14 @@ buildvariants:
      - name: "doctest"
 
 - matrix_name: "test-mongodb-versions-macos"
-  matrix_spec: {"os": "osx", "tox-env-osx": "*", auth: "*", ssl: "*"}
+  matrix_spec: {"os": "osx", "tox-env-osx": "*", ssl: "*"}
 #  exclude_spec:
 #   # TODO: synchro needs PyMongo master's updated SSL test certs,
 #   # which may require Motor test suite changes.
 #   - os: "*"
 #     tox-env-osx: ["synchro"]
-#     auth: "*"
 #     ssl: "ssl"
-  display_name: "${os} ${tox-env-osx} ${ssl} ${auth}"
+  display_name: "${os} ${tox-env-osx} ${ssl}"
   tasks:
      - ".latest"
      - ".3.6"
@@ -876,7 +864,6 @@ buildvariants:
      - if:
          os: "*"
          tox-env-osx: "*"
-         auth: "*"
          ssl: "nossl"
        then:
          add_tasks:
