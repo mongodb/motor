@@ -1313,7 +1313,8 @@ class AgnosticChangeStream(AgnosticBase):
             return self
     
         async def __aexit__(self, exc_type, exc_val, exc_tb):
-            await self.close()
+            if self.delegate:
+                self.delegate.close() 
         """), globals(), locals())
 
     def get_io_loop(self):
