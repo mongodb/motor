@@ -83,9 +83,15 @@ class ChangesHandler(tornado.websocket.WebSocketHandler):
         ChangesHandler.update_cache(change)
 
 
+change_stream = None
+
+
 async def watch(collection):
-    async for change in collection.watch():
-        ChangesHandler.on_change(change)
+    global change_stream
+
+    async with collection.watch() as change_stream:
+        async for change in change_stream:
+            ChangesHandler.on_change(change)
 
 
 def main():
@@ -103,7 +109,13 @@ def main():
     loop = tornado.ioloop.IOLoop.current()
     # Start watching collection for changes.
     loop.add_callback(watch, collection)
-    loop.start()
+    try:
+        loop.start()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if change_stream is not None:
+            change_stream.close()
 
 
 if __name__ == "__main__":

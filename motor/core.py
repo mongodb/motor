@@ -462,15 +462,56 @@ class AgnosticCollection(AgnosticBaseProperties):
         Returns a :class:`~MotorChangeStream` cursor which iterates over changes
         on this collection. Introduced in MongoDB 3.6.
 
+        A change stream continues waiting indefinitely for matching change
+        events. Code like the following allows a program to cancel the change
+        stream and exit.
+
         .. code-block:: python3
 
-           async with db.collection.watch() as stream:
-               async for change in stream:
-                   print(change)
+          change_stream = None
 
-        Using the change stream in an "async with" block as shown above ensures
-        it is canceled promptly if your code breaks from the loop or throws an
-        exception.
+          async def watch_collection():
+              global change_stream
+
+              # Using the change stream in an "async with" block
+              # ensures it is canceled promptly if your code breaks
+              # from the loop or throws an exception.
+              async with db.collection.watch() as change_stream:
+                  async for change in stream:
+                      print(change)
+
+          # Tornado
+          from tornado.ioloop import IOLoop
+
+          def main():
+              loop = IOLoop.current()
+              # Start watching collection for changes.
+              loop.add_callback(watch_collection)
+              try:
+                  loop.start()
+              except KeyboardInterrupt:
+                  pass
+              finally:
+                  if change_stream is not None:
+                      change_stream.close()
+
+          # asyncio
+          from asyncio import get_event_loop
+
+          def main():
+              loop = get_event_loop()
+              task = loop.create_task(watch_collection)
+
+              try:
+                  loop.run_forever()
+              except KeyboardInterrupt:
+                  pass
+              finally:
+                  if change_stream is not None:
+                      change_stream.close()
+
+                  # Prevent "Task was destroyed but it is pending!"
+                  loop.run_until_complete(task)
 
         The :class:`~MotorChangeStream` async iterable blocks
         until the next change document is returned or an error is raised. If
