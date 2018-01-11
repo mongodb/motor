@@ -57,11 +57,11 @@ else:
 _EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
 
 
-def run_on_executor(loop, fn, self, *args, **kwargs):
+def run_on_executor(loop, fn, *args, **kwargs):
     # Need a Tornado Future for "await" expressions. exec_fut is resolved on a
     # worker thread, loop.add_future ensures "future" is resolved on main.
     future = concurrent.Future()
-    exec_fut = _EXECUTOR.submit(fn, self, *args, **kwargs)
+    exec_fut = _EXECUTOR.submit(fn, *args, **kwargs)
 
     def copy(_):
         if future.done():
@@ -74,6 +74,7 @@ def run_on_executor(loop, fn, self, *args, **kwargs):
     # Ensure copy runs on main thread.
     loop.add_future(exec_fut, copy)
     return future
+
 
 _DEFAULT = object()
 

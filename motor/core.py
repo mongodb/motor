@@ -1248,22 +1248,15 @@ class AgnosticChangeStream(AgnosticBase):
                         'collation': collation,
                         'session': session}
 
-    def _next(self, future):
-        # This method is run on a thread. asyncio prohibits future.set_exception
-        # with a StopIteration, so we must handle this operation differently
-        # from other async methods.
+    def _next(self):
+        # This method is run on a thread.
         try:
             if not self.delegate:
                 self.delegate = self._collection.delegate.watch(**self._kwargs)
 
-            change = self.delegate.next()
-            self._framework.call_soon(self.get_io_loop(),
-                                      future.set_result,
-                                      change)
+            return self.delegate.next()
         except StopIteration:
-            future.set_exception(StopAsyncIteration())
-        except Exception as exc:
-            future.set_exception(exc)
+            raise StopAsyncIteration()
 
     @coroutine_annotation(callback=False)
     def next(self):
@@ -1284,9 +1277,7 @@ class AgnosticChangeStream(AgnosticBase):
 
         """
         loop = self.get_io_loop()
-        future = self._framework.get_future(loop)
-        self._framework.run_on_executor(loop, self._next, future)
-        return future
+        return self._framework.run_on_executor(loop, self._next)
 
     @coroutine_annotation(callback=False)
     def close(self):

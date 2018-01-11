@@ -3,6 +3,14 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 1.2.1
+-----------
+
+An asyncio application that created a Change Stream with
+:meth:`MotorCollection.watch` and shut down while the Change Stream was open
+would print several errors. I have rewritten :meth:`MotorChangeStream.next`
+and some Motor internals to allow clean shutdown with asyncio.
+
 Motor 1.2
 ---------
 
