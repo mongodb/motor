@@ -89,7 +89,7 @@ class test(Command):
                           test_environment as testenv)
 
         loader = MotorTestLoader()
-        loader.avoid('high_availability', 'Runs separately')
+        loader.avoid('high_availability', reason='Runs separately')
 
         if not (testenv.HAVE_ASYNCIO or testenv.HAVE_TORNADO):
             raise ImportError("No tornado nor asyncio")
@@ -104,8 +104,8 @@ class test(Command):
 
         if sys.version_info[:2] < (3, 5):
             loader.avoid('asyncio_tests.test_asyncio_await',
-                         reason='python < 3.5')
-            loader.avoid('asyncio_tests.test_asyncio_change_stream',
+                         'asyncio_tests.test_asyncio_change_stream',
+                         'asyncio_tests.test_examples',
                          reason='python < 3.5')
 
         # Decide if we can run async / await tests with Tornado.

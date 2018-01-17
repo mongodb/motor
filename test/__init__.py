@@ -47,7 +47,7 @@ class MotorTestLoader(unittest.TestLoader):
         super(MotorTestLoader, self).__init__()
         self._avoid = []
 
-    def avoid(self, prefix, reason):
+    def avoid(self, *prefixes, **kwargs):
         """Skip a module.
 
         The usual "raise SkipTest" from a module doesn't work if the module
@@ -56,7 +56,8 @@ class MotorTestLoader(unittest.TestLoader):
 
         "prefix" is a path prefix like "asyncio_tests".
         """
-        self._avoid.append((prefix, reason))
+        for prefix in prefixes:
+            self._avoid.append((prefix, kwargs['reason']))
 
     def _get_module_from_name(self, name):
         for prefix, reason in self._avoid:
