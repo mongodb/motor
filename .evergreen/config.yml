@@ -774,11 +774,6 @@ axes:
         variables:
            TOX_ENV: "tornado_git-py27"
            PYTHON_BINARY: "python2.7"
-      - id: "synchro"
-        variables:
-           TOX_ENV: "synchro"
-           # The synchro tests are configured for py27 in tox.ini.
-           PYTHON_BINARY: "python2.7"
 
   - id: os
     display_name: "Operating System"
@@ -845,12 +840,6 @@ buildvariants:
 
 - matrix_name: "test-mongodb-versions-macos"
   matrix_spec: {"os": "osx", "tox-env-osx": "*", ssl: "*"}
-  exclude_spec:
-   # TODO: synchro needs PyMongo master's updated SSL test certs,
-   # which may require Motor test suite changes.
-   - os: "*"
-     tox-env-osx: ["synchro"]
-     ssl: "ssl"
   display_name: "${os} ${tox-env-osx} ${ssl}"
   tasks:
      - ".latest"
