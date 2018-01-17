@@ -31,7 +31,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Motor'
-copyright = u'2016 MongoDB, Inc.'
+copyright = u'2016-present MongoDB, Inc.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
