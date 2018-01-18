@@ -20,12 +20,10 @@ import pymongo
 
 from motor.motor_py3_compat import text_type
 
-version_tuple = (1, 2, 0)
+version_tuple = (1, 2, 1, 'dev0')
 
 
 def get_version_string():
-    if isinstance(version_tuple[-1], text_type):
-        return '.'.join(map(str, version_tuple[:-1])) + version_tuple[-1]
     return '.'.join(map(str, version_tuple))
 
 
