@@ -184,5 +184,4 @@ def pymongo_class_wrapper(f, pymongo_class):
 
 
 def yieldable(future):
-    # TODO: really explain.
     return future
