@@ -23,6 +23,7 @@ from functools import wraps
 import pymongo.errors
 
 from test import SkipTest
+from test.utils import create_user
 from test.version import Version
 
 HAVE_SSL = True
@@ -286,6 +287,14 @@ class TestEnvironment(object):
         return self._require(lambda: self.is_replica_set,
                              "Not connected to a replica set",
                              func=func)
+
+    def create_user(self, dbname, user, pwd=None, roles=None, **kwargs):
+        kwargs['writeConcern'] = {'w': self.w}
+        return create_user(self.sync_cx[dbname], user, pwd, roles, **kwargs)
+
+    def drop_user(self, dbname, user):
+        self.sync_cx[dbname].command(
+            'dropUser', user, writeConcern={'w': self.w})
 
 
 env = TestEnvironment()

@@ -143,7 +143,9 @@ class TestAsyncIODatabase(AsyncIOTestCase):
             raise SkipTest('Authentication is not enabled on server')
 
         # self.db is logged in as root.
-        yield from self.db.add_user("jesse", "password")
+        test.env.create_user(
+            self.db.name, "jesse", "password", roles=['userAdmin', 'readWrite'])
+
         db = AsyncIOMotorClient(env.host, env.port,
                                 **self.get_client_kwargs()).motor_test
         try:
@@ -153,7 +155,7 @@ class TestAsyncIODatabase(AsyncIOTestCase):
                 loop=self.loop)
 
             # Just make sure there are no exceptions here.
-            yield from db.remove_user("jesse")
+            test.env.drop_user(db.name, 'jesse')
             yield from db.logout()
             info = yield from self.db.command("usersInfo", "jesse")
             users = info.get('users', [])

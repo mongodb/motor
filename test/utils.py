@@ -16,6 +16,7 @@ from __future__ import unicode_literals
 
 from collections import defaultdict
 
+from bson import SON
 from pymongo import monitoring
 
 """Utilities for testing Motor with any framework."""
@@ -93,3 +94,17 @@ class SessionTestListener(monitoring.CommandListener):
 
 def session_ids(client):
     return [s.session_id for s in client.delegate._topology._session_pool]
+
+
+def create_user(authdb, user, pwd=None, roles=None, **kwargs):
+    """Create user.
+
+    Avoids PyMongo's add_user helper, which isn't yet compatible with MongoDB 4.
+    """
+    cmd = SON([('createUser', user)])
+    # X509 doesn't use a password
+    if pwd:
+        cmd['pwd'] = pwd
+    cmd['roles'] = roles or ['root']
+    cmd.update(**kwargs)
+    return authdb.command(cmd)

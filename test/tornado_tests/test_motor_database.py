@@ -165,8 +165,8 @@ class MotorDatabaseTest(MotorTest):
     @gen_test(timeout=30)
     def test_authenticate(self):
         # self.db is logged in as root.
-        with ignore_deprecations():
-            yield self.db.add_user("mike", "password")
+        test.env.create_user(
+            self.db.name, "mike", "password", roles=['userAdmin', 'readWrite'])
 
         client = motor.MotorClient(env.host, env.port,
                                    **self.get_client_kwargs())
@@ -176,7 +176,7 @@ class MotorDatabaseTest(MotorTest):
             yield [db.authenticate("mike", "password") for _ in range(10)]
 
             # Just make sure there are no exceptions here.
-            yield db.remove_user("mike")
+            test.env.drop_user(db.name, 'mike')
             yield db.logout()
             info = yield self.db.command("usersInfo", "mike")
             users = info.get('users', [])

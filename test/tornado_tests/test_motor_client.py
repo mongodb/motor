@@ -192,9 +192,8 @@ class MotorClientTest(MotorTest):
         yield remove_all_users(self.db)
         db = self.db
         try:
-            yield db.add_user(
-                'mike', 'password',
-                roles=['userAdmin', 'readWrite'])
+            test.env.create_user(db.name, 'mike', 'password',
+                                 roles=['userAdmin', 'readWrite'])
 
             client = self.motor_client(
                 'mongodb://u:pass@%s:%d' % (env.host, env.port))
@@ -208,7 +207,7 @@ class MotorClientTest(MotorTest):
 
             yield client[db.name].collection.find_one()
         finally:
-            yield db.remove_user('mike')
+            test.env.drop_user(db.name, 'mike')
 
     def test_get_database(self):
         codec_options = CodecOptions(tz_aware=True)

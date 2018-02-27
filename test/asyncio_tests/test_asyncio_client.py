@@ -205,9 +205,8 @@ class TestAsyncIOClient(AsyncIOTestCase):
         yield from remove_all_users(self.db)
         db = self.db
         try:
-            yield from db.add_user(
-                'mike', 'password',
-                roles=['userAdmin', 'readWrite'])
+            test.env.create_user(db.name, 'mike', 'password',
+                                 roles=['userAdmin', 'readWrite'])
 
             client = self.asyncio_client(
                 'mongodb://u:pass@%s:%d' % (env.host, env.port))
@@ -221,7 +220,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
             yield from client[db.name].collection.find_one()
         finally:
-            yield from db.remove_user('mike')
+            test.env.drop_user(db.name, 'mike')
 
     @asyncio_test
     def test_socketKeepAlive(self):
