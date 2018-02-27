@@ -1,4 +1,4 @@
-# Copyright 2009-2015 MongoDB, Inc.
+# Copyright 2009-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
 """MongoDB specific extensions to Sphinx."""
 
 from docutils import nodes
+from docutils.parsers import rst
 from sphinx import addnodes
-from sphinx.util.compat import Directive
 
 
 class mongodoc(nodes.Admonition, nodes.Element):
@@ -28,7 +28,7 @@ class mongoref(nodes.reference):
 
 
 def visit_mongodoc_node(self, node):
-    self.visit_admonition(node)
+    self.visit_admonition(node, "seealso")
 
 
 def depart_mongodoc_node(self, node):
@@ -48,7 +48,7 @@ def depart_mongoref_node(self, node):
         self.body.append('\n')
 
 
-class MongodocDirective(Directive):
+class MongodocDirective(rst.Directive):
 
     has_content = True
     required_arguments = 0
@@ -58,7 +58,7 @@ class MongodocDirective(Directive):
 
     def run(self):
         node = mongodoc()
-        title = 'See general MongoDB documentation'
+        title = 'The MongoDB documentation on'
         node += nodes.title(title, title)
         self.state.nested_parse(self.content, self.content_offset, node)
         return [node]
@@ -94,6 +94,4 @@ def setup(app):
                  html=(visit_mongoref_node, depart_mongoref_node))
 
     app.add_directive("mongodoc", MongodocDirective)
-
     app.connect("doctree-resolved", process_mongodoc_nodes)
-    return {'parallel_write_safe': True, 'parallel_read_safe': True}
