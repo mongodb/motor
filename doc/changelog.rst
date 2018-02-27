@@ -3,6 +3,13 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Next Version
+------------
+
+Documentation is updated to warn about obsolete TLS versions, see
+:doc:`configuration`. Motor is now tested on Travis in addition to MongoDB's
+`Evergreen <https://github.com/evergreen-ci/evergreen>`_ system.
+
 Motor 1.2.1
 -----------
 
