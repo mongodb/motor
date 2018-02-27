@@ -14,7 +14,7 @@
 
 """Serve GridFS files with Motor and aiohttp.
 
-Requires Python 3.4 or later and aiohttp 2.0 or later.
+Requires Python 3.5 or later and aiohttp 3.0 or later.
 
 See the :doc:`/examples/aiohttp_gridfs_example`.
 """
@@ -219,18 +219,12 @@ class AIOHTTPGridFS:
         yield from resp.prepare(request)
 
         if request.method == 'GET':
-            resp.set_tcp_cork(True)
-            try:
-                written = 0
-                while written < gridout.length:
-                    # Reading chunk_size at a time minimizes buffering.
-                    chunk = yield from gridout.read(gridout.chunk_size)
-                    resp.write(chunk)
-                    yield from resp.drain()
-                    written += len(chunk)
-            finally:
-                resp.set_tcp_nodelay(True)
-
+            written = 0
+            while written < gridout.length:
+                # Reading chunk_size at a time minimizes buffering.
+                chunk = yield from gridout.read(gridout.chunk_size)
+                yield from resp.write(chunk)
+                written += len(chunk)
         return resp
 
     def _set_standard_headers(self, path, resp, gridout):

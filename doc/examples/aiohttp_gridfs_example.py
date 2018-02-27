@@ -1,6 +1,6 @@
 """Serve pre-compressed static content from GridFS with aiohttp.
 
-Requires Python 3.4 or later and aiohttp 2.0 or later.
+Requires Python 3.5 or later and aiohttp 3.0 or later.
 
 Start a MongoDB server on its default port, run this script, and visit:
 

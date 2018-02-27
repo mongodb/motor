@@ -10,6 +10,9 @@ Documentation is updated to warn about obsolete TLS versions, see
 :doc:`configuration`. Motor is now tested on Travis in addition to MongoDB's
 `Evergreen <https://github.com/evergreen-ci/evergreen>`_ system.
 
+Added support for `aiohttp`_ 3.0 and later, and dropped older aiohttp versions.
+The aiohttp integration now requires Python 3.5+.
+
 Motor 1.2.1
 -----------
 

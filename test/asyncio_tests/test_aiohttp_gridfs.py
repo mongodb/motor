@@ -244,8 +244,7 @@ class AIOHTTPGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
     @asyncio_test
     def test_post(self):
         # Only allow GET and HEAD, even if a POST route is added.
-        handler = AIOHTTPGridFS(self.db)
-        yield from self.start_app(extra_routes={'/fs/{filename}': handler})
+        yield from self.start_app()
         result = yield from self.request('post', '/fs/foo')
         self.assertEqual(405, result.status)
 
