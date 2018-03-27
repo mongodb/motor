@@ -160,6 +160,10 @@ setup(name='motor',
       author_email='jesse@mongodb.com',
       url='https://github.com/mongodb/motor/',
       install_requires=install_requires,
+      extras_require={
+        key: 'pymongo[{}]'.format(key)
+        for key in ('tls', 'srv', 'gssapi')
+      },
       license='http://www.apache.org/licenses/LICENSE-2.0',
       classifiers=[c for c in classifiers.split('\n') if c],
       keywords=[
