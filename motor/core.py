@@ -423,6 +423,18 @@ class AgnosticCollection(AgnosticBaseProperties):
               async for doc in collection.aggregate(pipeline):
                   print(doc)
 
+        :class:`MotorCommandCursor` does allow the ``explain`` option. To
+        explain MongoDB's query plan for the aggregation, use
+        :meth:`MotorDatabase.command`::
+
+          async def f():
+              plan = await db.command(
+                  'aggregate', 'COLLECTION-NAME',
+                  pipeline=[{'$project': {'x': 1}}],
+                  explain=True)
+
+              print(plan)
+
         .. versionchanged:: 1.0
            :meth:`aggregate` now **always** returns a cursor.
 
