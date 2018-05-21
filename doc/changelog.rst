@@ -13,6 +13,12 @@ Documentation is updated to warn about obsolete TLS versions, see
 Added support for `aiohttp`_ 3.0 and later, and dropped older aiohttp versions.
 The aiohttp integration now requires Python 3.5+.
 
+Motor 1.2.3
+-----------
+
+Compatibility with latest Sphinx and document how to use the latest TLS
+protocols.
+
 Motor 1.2.2
 -----------
 
