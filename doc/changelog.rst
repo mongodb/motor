@@ -13,6 +13,13 @@ Documentation is updated to warn about obsolete TLS versions, see
 Added support for `aiohttp`_ 3.0 and later, and dropped older aiohttp versions.
 The aiohttp integration now requires Python 3.5+.
 
+Motor 1.2.2
+-----------
+
+Motor 1.2.0 requires PyMongo 3.6 or later. The dependency was properly
+documented, but not enforced in ``setup.py``. PyMongo 3.6 is now an install-time
+requirement; thanks to Shane Harvey for the fix.
+
 Motor 1.2.1
 -----------
 
