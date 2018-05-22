@@ -423,7 +423,7 @@ class AgnosticCollection(AgnosticBaseProperties):
               async for doc in collection.aggregate(pipeline):
                   print(doc)
 
-        :class:`MotorCommandCursor` does allow the ``explain`` option. To
+        :class:`MotorCommandCursor` does not allow the ``explain`` option. To
         explain MongoDB's query plan for the aggregation, use
         :meth:`MotorDatabase.command`::
 
