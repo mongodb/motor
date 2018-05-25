@@ -519,12 +519,13 @@ class BulkOperationBuilder(Synchro):
 class GridFS(Synchro):
     __delegate_class__ = motor.MotorGridFS
 
-    def __init__(self, database, collection='fs'):
+    def __init__(self, database, collection='fs', *args, **kwargs):
         if not isinstance(database, Database):
             raise TypeError(
                 "Expected Database, got %s" % repr(database))
 
-        self.delegate = motor.MotorGridFS(database.delegate, collection)
+        self.delegate = motor.MotorGridFS(
+            database.delegate, collection, *args, **kwargs)
 
     def put(self, *args, **kwargs):
         return self.synchronize(self.delegate.put)(*args, **kwargs)
@@ -538,12 +539,13 @@ class GridFS(Synchro):
 class GridFSBucket(Synchro):
     __delegate_class__ = motor.MotorGridFSBucket
 
-    def __init__(self, database, bucket_name='fs'):
+    def __init__(self, database, bucket_name='fs', disable_md5=False):
         if not isinstance(database, Database):
             raise TypeError(
                 "Expected Database, got %s" % repr(database))
 
-        self.delegate = motor.MotorGridFSBucket(database.delegate, bucket_name)
+        self.delegate = motor.MotorGridFSBucket(
+            database.delegate, bucket_name, disable_md5)
 
     def find(self, *args, **kwargs):
         motor_method = self.delegate.find

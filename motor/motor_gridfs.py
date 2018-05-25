@@ -373,7 +373,7 @@ Metadata set on the file appears as attributes on a
 class _GFSBase(object):
     __delegate_class__ = None
 
-    def __init__(self, database, collection="fs"):
+    def __init__(self, database, collection, disable_md5):
         db_class = create_class_with_framework(
             AgnosticDatabase, self._framework, self.__module__)
 
@@ -386,7 +386,8 @@ class _GFSBase(object):
         self.collection = database[collection]
         self.delegate = self.__delegate_class__(
             database.delegate,
-            collection)
+            collection,
+            disable_md5=disable_md5)
 
     def get_io_loop(self):
         return self.io_loop
@@ -431,7 +432,7 @@ class AgnosticGridFS(_GFSBase):
     delete           = AsyncCommand()
     put              = AsyncCommand()
 
-    def __init__(self, database, collection="fs"):
+    def __init__(self, database, collection="fs", disable_md5=False):
         """**DEPRECATED**: Use :class:`MotorGridFSBucket` or
         :class:`AsyncIOMotorGridFSBucket`.
 
@@ -441,13 +442,19 @@ class AgnosticGridFS(_GFSBase):
           - `database`: a :class:`~motor.MotorDatabase`
           - `collection` (optional): A string, name of root collection to use,
             such as "fs" or "my_files"
+          - `disable_md5` (optional): When True, MD5 checksums will not be
+            computed for uploaded files. Useful in environments where MD5
+            cannot be used for regulatory or other reasons. Defaults to False.
 
         .. mongodoc:: gridfs
+
+        .. versionchanged:: 1.3
+           Added ``disable_md5``.
 
         .. versionchanged:: 0.2
            ``open`` method removed; no longer needed.
         """
-        super(self.__class__, self).__init__(database, collection)
+        super(self.__class__, self).__init__(database, collection, disable_md5)
 
     def find(self, *args, **kwargs):
         """Query GridFS for files.
@@ -505,6 +512,9 @@ class AgnosticGridFS(_GFSBase):
         :meth:`find`, all returned :class:`~MotorGridOut` instances
         are associated with that session.
 
+        .. versionchanged:: 1.3
+           Added ``disable_md5``.
+
         .. versionchanged:: 1.2
            Added session parameter.
 
@@ -538,7 +548,7 @@ class AgnosticGridFSBucket(_GFSBase):
     upload_from_stream           = AsyncCommand()
     upload_from_stream_with_id   = AsyncCommand()
 
-    def __init__(self, database, collection="fs"):
+    def __init__(self, database, collection="fs", disable_md5=False):
         """Create a handle to a GridFS bucket.
 
         Raises :exc:`~pymongo.errors.ConfigurationError` if `write_concern`
@@ -558,12 +568,15 @@ class AgnosticGridFSBucket(_GFSBase):
             (the default) db.write_concern is used.
           - `read_preference` (optional): The read preference to use. If
             ``None`` (the default) db.read_preference is used.
+          - `disable_md5` (optional): When True, MD5 checksums will not be
+            computed for uploaded files. Useful in environments where MD5
+            cannot be used for regulatory or other reasons. Defaults to False.
 
         .. versionadded:: 1.0
 
         .. mongodoc:: gridfs
         """
-        super(self.__class__, self).__init__(database, collection)
+        super(self.__class__, self).__init__(database, collection, disable_md5)
 
     def find(self, *args, **kwargs):
         """Find and return the files collection documents that match ``filter``.
