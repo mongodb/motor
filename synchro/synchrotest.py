@@ -40,6 +40,8 @@ excluded_modules = [
     'test.test_threads',
     'test.test_pooling',
     'test.test_legacy_api',
+    'test.test_monotonic',
+    'test.test_saslprep',
 
     # Complex PyMongo-specific mocking.
     'test.test_replica_set_reconfig',
@@ -124,6 +126,9 @@ excluded_tests = [
     # Motor is correct here, it's just unreliable on slow CI servers.
     'TestReplicaSetClient.test_timeout_does_not_mark_member_down',
 
+    # We test Synchro in Python 2.7, but Motor's change streams need Python 3.
+    'TestSampleShellCommands.test_change_streams',
+
     # Accesses PyMongo internals.
     'TestClient.test_close_kills_cursors',
     'TestClient.test_stale_getmore',
@@ -134,12 +139,13 @@ excluded_tests = [
     'TestCursor.test_close_kills_cursor_synchronously',
     'TestGridFile.test_grid_out_cursor_options',
     'TestGridfsReplicaSet.test_gridfs_replica_set',
+    'TestMaxStaleness.test_last_write_date',
     'TestMaxStaleness.test_last_write_date_absent',
     'TestMonitor.test_atexit_hook',
     'TestReplicaSetClient.test_kill_cursor_explicit_primary',
     'TestReplicaSetClient.test_kill_cursor_explicit_secondary',
     'TestSelections.test_bool',
-    'TestMaxStaleness.test_last_write_date',
+    'TestTransactions.transaction_test_debug',
 ]
 
 
@@ -184,7 +190,10 @@ class SynchroNosePlugin(Plugin):
         # them as unittests.
         if fn.__name__ in ('test_cases',
                            'create_test',
-                           'create_selection_tests'):
+                           'create_connection_string_test',
+                           'create_document_test',
+                           'create_selection_tests',
+                           ):
             return False
 
     def wantMethod(self, method):

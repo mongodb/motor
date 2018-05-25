@@ -21,7 +21,6 @@ PyMongo.
 DO NOT USE THIS MODULE.
 """
 
-import functools
 import inspect
 from tornado.ioloop import IOLoop
 
@@ -35,6 +34,7 @@ from motor.metaprogramming import MotorAttributeFactory
 from gridfs.errors import *
 from pymongo import *
 from pymongo import (collation,
+                     compression_support,
                      change_stream,
                      errors,
                      monotonic,
@@ -42,14 +42,17 @@ from pymongo import (collation,
                      server_selectors,
                      server_type,
                      son_manipulator,
+                     saslprep,
                      ssl_match_hostname,
                      ssl_support,
                      write_concern)
 from pymongo.auth import _build_credentials_tuple
 from pymongo.helpers import _check_command_response
+from pymongo.client_session import *
 from pymongo.collation import *
 from pymongo.common import *
 from pymongo.common import _UUID_REPRESENTATIONS, _MAX_END_SESSIONS
+from pymongo.compression_support import _HAVE_SNAPPY, _HAVE_ZLIB
 from pymongo.cursor import *
 from pymongo.cursor import _QUERY_OPTIONS
 from pymongo.errors import *
@@ -74,6 +77,7 @@ from pymongo.results import _WriteResult
 from pymongo.server import *
 from pymongo.server_selectors import *
 from pymongo.settings import *
+from pymongo.saslprep import *
 from pymongo.ssl_support import *
 from pymongo.son_manipulator import *
 from pymongo.topology import *
@@ -325,6 +329,7 @@ class MongoClient(Synchro):
 
     _MongoClient__options  = SynchroProperty()
     _get_topology          = SynchroProperty()
+    _topology              = SynchroProperty()
     _kill_cursors_executor = SynchroProperty()
 
 
@@ -473,9 +478,9 @@ class Cursor(Synchro):
     _Cursor__max_time_ms       = SynchroProperty()
     _Cursor__query_flags       = SynchroProperty()
     _Cursor__query_spec        = SynchroProperty()
-    _Cursor__read_preference   = SynchroProperty()
     _Cursor__retrieved         = SynchroProperty()
     _Cursor__spec              = SynchroProperty()
+    _read_preference           = SynchroProperty()
 
 
 class CommandCursor(Cursor):

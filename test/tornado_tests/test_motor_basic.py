@@ -96,7 +96,7 @@ class MotorTestBasic(MotorTest):
         cursor = motor_cursor.delegate
 
         self.assertEqual(Nearest(tag_sets=[{'yay': 'jesse'}]),
-                         cursor._Cursor__read_preference)
+                         cursor._read_preference())
 
         cx.close()
 

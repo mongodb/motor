@@ -36,8 +36,6 @@ Install with::
 
 .. _asyncio: https://docs.python.org/3/library/asyncio.html
 
-.. _PyMongo: http://pypi.python.org/pypi/pymongo/
-
 How To Ask For Help
 -------------------
 

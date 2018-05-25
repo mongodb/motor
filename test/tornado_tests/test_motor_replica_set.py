@@ -82,9 +82,12 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
 
         # Simulate an authenticate() call on a different socket.
         credentials = pymongo.auth._build_credentials_tuple(
-            'DEFAULT', 'admin',
-            text_type(db_user), text_type(db_password),
-            {})
+            'DEFAULT',
+            'admin',
+            text_type(db_user),
+            text_type(db_password),
+            {},
+            'admin')
 
         c.delegate._cache_credentials('test', credentials, connect=False)
 
