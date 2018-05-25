@@ -332,7 +332,14 @@ functions:
         working_dir: "src"
         script: |
           ${PREPARE_SHELL}
-          PYTHON_BINARY=${PYTHON_BINARY} TOX_BINARY=${TOX_BINARY} TOX_ENV=${TOX_ENV} AUTH=${AUTH} SSL=${SSL} sh ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
+
+          PYTHON_BINARY="${PYTHON_BINARY}" \
+          TOX_BINARY="${TOX_BINARY}" \
+          TOX_ENV="${TOX_ENV}" \
+          INSTALL_TOX="${INSTALL_TOX}" \
+          AUTH="${AUTH}" \
+          SSL="${SSL}" \
+          sh ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
 
   "run enterprise auth tests":
     - command: shell.exec
@@ -789,12 +796,14 @@ axes:
     values:
       - id: "tornado5-py27"
         variables:
+           INSTALL_TOX: true
            TOX_ENV: "tornado5-py27"
-           PYTHON_BINARY: "python2.7"
+           PYTHON_BINARY: "/usr/local/bin/python"
       - id: "tornado_git-py27"
         variables:
+           INSTALL_TOX: true
            TOX_ENV: "tornado_git-py27"
-           PYTHON_BINARY: "python2.7"
+           PYTHON_BINARY: "/usr/local/bin/python"
 
   - id: os
     display_name: "Operating System"
@@ -808,7 +817,7 @@ axes:
         display_name: "OSX 10.10"
         run_on: "macos-1012"
         variables:
-           TOX_BINARY: "tox"
+           TOX_BINARY: "python -m tox"
 
 buildvariants:
 

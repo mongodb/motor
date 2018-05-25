@@ -6,6 +6,8 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       AUTH                    Set to enable authentication. Defaults to "noauth"
 #       SSL                     Set to enable SSL. Defaults to "nossl"
 #       TOX_ENV                 Tox environment name, e.g. "tornado4-py36"
+#       TOX_BINARY              Path to tox executable
+#       INSTALL_TOX             Whether to install tox in a virtualenv
 
 AUTH=${AUTH:-noauth}
 SSL=${SSL:-nossl}
@@ -22,6 +24,16 @@ fi
 
 if [ "$TOX_ENV" = "synchro" ]; then
     SETUP_ARGS="-- --check-exclude-patterns"
+fi
+
+if [ "${INSTALL_TOX}" = "true" ]; then
+    curl --retry 5 -LOsS https://pypi.python.org/packages/source/v/virtualenv/virtualenv-16.0.0.tar.gz
+    tar -xzf virtualenv-16.0.0.tar.gz
+    /usr/local/bin/python virtualenv-16.0.0/virtualenv.py motorenv
+    set +o xtrace
+    source motorenv/bin/activate
+    set -o xtrace
+    pip install tox
 fi
 
 # Run the tests, and store the results in Evergreen compatible XUnit XML
