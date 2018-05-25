@@ -48,6 +48,9 @@ excluded_modules = [
 
     # Accesses PyMongo internals. Tested directly in Motor.
     'test.test_session',
+
+    # We test Synchro in Python 2.7, but Motor's change streams need Python 3.
+    'test.test_change_stream',
 ]
 
 excluded_tests = [

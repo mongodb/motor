@@ -130,6 +130,8 @@ def wrap_synchro(fn):
         if isinstance(motor_obj, motor.MotorDatabase):
             client = MongoClient(delegate=motor_obj.client)
             return Database(client, motor_obj.name, delegate=motor_obj)
+        if isinstance(motor_obj, motor.motor_tornado.MotorChangeStream):
+            return ChangeStream(motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorLatentCommandCursor):
             return CommandCursor(motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorCommandCursor):
@@ -376,6 +378,7 @@ class Collection(Synchro):
     initialize_unordered_bulk_op    = WrapOutgoing()
     initialize_ordered_bulk_op      = WrapOutgoing()
     list_indexes                    = WrapOutgoing()
+    watch                           = WrapOutgoing()
 
     def __init__(self, database, name, **kwargs):
         if not isinstance(database, Database):
@@ -413,6 +416,22 @@ class Collection(Synchro):
         fullname = self.name + '.' + name
         return Collection(self.database, fullname,
                           delegate=self.delegate[name])
+
+
+class ChangeStream(Synchro):
+    __delegate_class__ = motor.motor_tornado.MotorChangeStream
+
+    next = Sync('next')
+    close = Sync('close')
+
+    def __init__(self, motor_change_stream):
+        self.delegate = motor_change_stream
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
 
 class Cursor(Synchro):
