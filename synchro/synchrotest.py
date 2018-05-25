@@ -259,10 +259,12 @@ if __name__ == '__main__':
     else:
         check_exclude_patterns = False
 
-    nose.main(
+    success = nose.run(
         config=Config(plugins=PluginManager()),
-        addplugins=[SynchroNosePlugin(), Skip(), Xunit()],
-        exit=False)
+        addplugins=[SynchroNosePlugin(), Skip(), Xunit()])
+
+    if not success:
+        sys.exit(1)
 
     if check_exclude_patterns:
         unused_module_pats = set(excluded_modules) - excluded_modules_matched
