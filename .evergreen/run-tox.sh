@@ -25,4 +25,4 @@ if [ "$TOX_ENV" = "synchro" ]; then
 fi
 
 # Run the tests, and store the results in Evergreen compatible XUnit XML
-${TOX_BINARY} -e ${TOX_ENV} ${SETUP_ARGS}
+${TOX_BINARY} -e ${TOX_ENV} ${SETUP_ARGS} "$@"
