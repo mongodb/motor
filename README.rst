@@ -97,6 +97,8 @@ Testing
 Run ``python setup.py test``.
 Tests are located in the ``test/`` directory.
 
+.. _PyMongo: http://pypi.python.org/pypi/pymongo/
+
 .. _MongoDB: http://mongodb.org/
 
 .. _Tornado: http://tornadoweb.org/
