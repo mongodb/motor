@@ -16,6 +16,8 @@
 
 import asyncio
 
+import pymongo
+
 from test import env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
@@ -686,3 +688,125 @@ class TestExamples(AsyncIOTestCase):
         finally:
             done = True
             await task
+
+    # $lookup was new in 3.2. The let and pipeline options were added in 3.6.
+    @env.require_version_min(3, 6)
+    @asyncio_test
+    async def test_aggregate_examples(self):
+        db = self.db
+
+        # Start Aggregation Example 1
+        cursor = db.sales.aggregate([
+            {"$match": {"items.fruit": "banana"}},
+            {"$sort": {"date": 1}}
+        ])
+
+        async for doc in cursor:
+            print(doc)
+        # End Aggregation Example 1
+
+        # Start Aggregation Example 2
+        cursor = db.sales.aggregate([
+            {"$unwind": "$items"},
+            {"$match": {"items.fruit": "banana"}},
+            {"$group": {
+                "_id": {"day": {"$dayOfWeek": "$date"}},
+                "count": {"$sum": "$items.quantity"}
+            }},
+            {"$project": {
+                "dayOfWeek": "$_id.day",
+                "numberSold": "$count",
+                "_id": 0
+            }},
+            {"$sort": {"numberSold": 1}}
+        ])
+
+        async for doc in cursor:
+            print(doc)
+        # End Aggregation Example 2
+
+        # Start Aggregation Example 3
+        cursor = db.sales.aggregate([
+            {"$unwind": "$items"},
+            {"$group": {
+                "_id": {"day": {"$dayOfWeek": "$date"}},
+                "items_sold": {"$sum": "$items.quantity"},
+                "revenue": {
+                    "$sum": {
+                        "$multiply": [
+                            "$items.quantity", "$items.price"]
+                    }
+                }
+            }},
+            {"$project": {
+                "day": "$_id.day",
+                "revenue": 1,
+                "items_sold": 1,
+                "discount": {
+                    "$cond": {
+                        "if": {"$lte": ["$revenue", 250]},
+                        "then": 25,
+                        "else": 0
+                    }
+                }
+            }}
+        ])
+
+        async for doc in cursor:
+            print(doc)
+        # End Aggregation Example 3
+
+        # Start Aggregation Example 4
+        cursor = db.air_alliances.aggregate([
+            {"$lookup": {
+                "from": "air_airlines",
+                "let": {"constituents": "$airlines"},
+                "pipeline": [
+                    {"$match": {
+                        "$expr": {"$in": ["$name", "$$constituents"]}}}
+                ],
+                "as": "airlines"
+            }},
+            {"$project": {
+                "_id": 0,
+                "name": 1,
+                "airlines": {
+                    "$filter": {
+                        "input": "$airlines",
+                        "as": "airline",
+                        "cond": {"$eq": ["$$airline.country", "Canada"]}
+                    }
+                }
+            }}
+        ])
+
+        async for doc in cursor:
+            print(doc)
+        # End Aggregation Example 4
+
+    @asyncio_test
+    async def test_commands(self):
+        db = self.db
+        await db.restaurants.insert_one({})
+
+        # Start runCommand Example 1
+        info = await db.command("buildInfo")
+        # End runCommand Example 1
+
+        # Start runCommand Example 2
+        stats = await db.command("collStats", "restaurants")
+        # End runCommand Example 2
+
+    @asyncio_test
+    async def test_index_management(self):
+        db = self.db
+
+        # Start Index Example 1
+        await db.records.create_index("score")
+        # End Index Example 1
+
+        # Start Index Example 1
+        await db.restaurants.create_index(
+            [("cuisine", pymongo.ASCENDING), ("name", pymongo.ASCENDING)],
+            partialFilterExpression={"rating": {"$gt": 5}})
+        # End Index Example 1
