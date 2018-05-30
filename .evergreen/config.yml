@@ -813,11 +813,12 @@ axes:
         run_on: "rhel62-small"
         variables:
            TOX_BINARY: "/opt/python/3.6/bin/tox"
-      - id: "osx"
-        display_name: "OSX 10.10"
-        run_on: "macos-1012"
-        variables:
-           TOX_BINARY: "python -m tox"
+# MOTOR-232: restore this
+#      - id: "osx"
+#        display_name: "OSX 10.10"
+#        run_on: "macos-1012"
+#        variables:
+#           TOX_BINARY: "python -m tox"
 
 buildvariants:
 
@@ -868,21 +869,23 @@ buildvariants:
   tasks:
      - name: "doctest"
 
-- matrix_name: "test-mongodb-versions-macos"
-  matrix_spec: {"os": "osx", "tox-env-osx": "*", ssl: "*"}
-  display_name: "${os} ${tox-env-osx} ${ssl}"
-  tasks:
-     - ".latest"
-     - ".3.6"
-     - ".3.4"
-     - ".3.2"
-  rules:
-     # There are no builds of MongoDB <= 3.0 with SSL for macOS
-     - if:
-         os: "*"
-         tox-env-osx: "*"
-         ssl: "nossl"
-       then:
-         add_tasks:
-            - ".3.0"
-            - ".2.6"
+# MOTOR-232: restore this
+#- matrix_name: "test-mongodb-versions-macos"
+#  matrix_spec: {"os": "osx", "tox-env-osx": "*", ssl: "*"}
+#  display_name: "${os} ${tox-env-osx} ${ssl}"
+#  tasks:
+#     - ".latest"
+#     - ".3.6"
+#     - ".3.4"
+#     - ".3.2"
+#  rules:
+#     # There are no builds of MongoDB <= 3.0 with SSL for macOS
+#     - if:
+#         os: "*"
+#         tox-env-osx: "*"
+#         ssl: "nossl"
+#       then:
+#         add_tasks:
+#            - ".3.0"
+#            - ".2.6"
+#
