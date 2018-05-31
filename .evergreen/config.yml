@@ -798,12 +798,12 @@ axes:
         variables:
            INSTALL_TOX: true
            TOX_ENV: "tornado5-py27"
-           PYTHON_BINARY: "/usr/local/bin/python"
+           PYTHON_BINARY: "python"
       - id: "tornado_git-py27"
         variables:
            INSTALL_TOX: true
            TOX_ENV: "tornado_git-py27"
-           PYTHON_BINARY: "/usr/local/bin/python"
+           PYTHON_BINARY: "python"
 
   - id: os
     display_name: "Operating System"
@@ -813,12 +813,11 @@ axes:
         run_on: "rhel62-small"
         variables:
            TOX_BINARY: "/opt/python/3.6/bin/tox"
-# MOTOR-232: restore this
-#      - id: "osx"
-#        display_name: "OSX 10.10"
-#        run_on: "macos-1012"
-#        variables:
-#           TOX_BINARY: "python -m tox"
+      - id: "osx"
+        display_name: "OSX 10.10"
+        run_on: "macos-1012"
+        variables:
+           TOX_BINARY: "python -m tox"
 
 buildvariants:
 
@@ -838,6 +837,25 @@ buildvariants:
      - ".3.2"
      - ".3.0"
      - ".2.6"
+
+- matrix_name: "test-mongodb-versions-macos"
+  matrix_spec: {"os": "osx", "tox-env-osx": "*", ssl: "*"}
+  display_name: "${os} ${tox-env-osx} ${ssl}"
+  tasks:
+     - ".latest"
+     - ".3.6"
+     - ".3.4"
+     - ".3.2"
+  rules:
+     # There are no builds of MongoDB <= 3.0 with SSL for macOS
+     - if:
+         os: "*"
+         tox-env-osx: "*"
+         ssl: "nossl"
+       then:
+         add_tasks:
+            - ".3.0"
+            - ".2.6"
 
 - matrix_name: "enterprise-auth"
   matrix_spec: {"tox-env": ["synchro"], ssl: "ssl"}
@@ -868,24 +886,3 @@ buildvariants:
      PYTHON_BINARY: "/opt/python/3.6/bin/python3"
   tasks:
      - name: "doctest"
-
-# MOTOR-232: restore this
-#- matrix_name: "test-mongodb-versions-macos"
-#  matrix_spec: {"os": "osx", "tox-env-osx": "*", ssl: "*"}
-#  display_name: "${os} ${tox-env-osx} ${ssl}"
-#  tasks:
-#     - ".latest"
-#     - ".3.6"
-#     - ".3.4"
-#     - ".3.2"
-#  rules:
-#     # There are no builds of MongoDB <= 3.0 with SSL for macOS
-#     - if:
-#         os: "*"
-#         tox-env-osx: "*"
-#         ssl: "nossl"
-#       then:
-#         add_tasks:
-#            - ".3.0"
-#            - ".2.6"
-#
