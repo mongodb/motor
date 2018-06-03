@@ -133,18 +133,14 @@ class AgnosticClient(AgnosticBaseProperties):
         """
         if 'io_loop' in kwargs:
             io_loop = kwargs.pop('io_loop')
+            self._framework.check_event_loop(io_loop)
         else:
             io_loop = self._framework.get_event_loop()
 
         kwargs.setdefault('connect', False)
         delegate = self.__delegate_class__(*args, **kwargs)
-
         super(AgnosticBaseProperties, self).__init__(delegate)
-        if io_loop:
-            self._framework.check_event_loop(io_loop)
-            self.io_loop = io_loop
-        else:
-            self.io_loop = self._framework.get_event_loop()
+        self.io_loop = io_loop
 
     def get_io_loop(self):
         return self.io_loop
