@@ -48,7 +48,7 @@ from pymongo import (collation,
                      write_concern)
 from pymongo.auth import _build_credentials_tuple
 from pymongo.helpers import _check_command_response
-from pymongo.client_session import *
+from pymongo.client_session import TransactionOptions
 from pymongo.collation import *
 from pymongo.common import *
 from pymongo.common import _UUID_REPRESENTATIONS, _MAX_END_SESSIONS
