@@ -21,12 +21,11 @@ import functools
 
 from pymongo.cursor import Cursor
 
-from . import motor_py3_compat
-
 _class_cache = {}
 
 
-def asynchronize(framework, sync_method, doc=None):
+def asynchronize(
+        framework, sync_method, doc=None, wrap_class=None, unwrap_class=None):
     """Decorate `sync_method` so it accepts a callback or returns a Future.
 
     The method runs on a thread and calls the callback or resolves
@@ -38,24 +37,50 @@ def asynchronize(framework, sync_method, doc=None):
      - `sync_method`:       Unbound method of pymongo Collection, Database,
                             MongoClient, etc.
      - `doc`:               Optionally override sync_method's docstring
+     - `wrap_class`:        Optional PyMongo class, wrap a returned object of
+                            this PyMongo class in the equivalent Motor class
+     - `unwrap_class`       Optional Motor class name, unwrap an argument with
+                            this Motor class name and pass the wrapped PyMongo
+                            object instead
     """
     @functools.wraps(sync_method)
     def method(self, *args, **kwargs):
+        if unwrap_class is not None:
+            # Don't call isinstance(), not checking subclasses.
+            unwrapped_args = [
+                obj.delegate
+                if obj.__class__.__name__.endswith(unwrap_class)
+                else obj
+                for obj in args]
+            unwrapped_kwargs = dict([
+                (key, obj.delegate
+                 if obj.__class__.__name__.endswith(unwrap_class)
+                 else obj)
+                for key, obj in kwargs.items()])
+        else:
+            unwrapped_args = args
+            unwrapped_kwargs = kwargs
+
         loop = self.get_io_loop()
         callback = kwargs.pop('callback', None)
         future = framework.run_on_executor(loop,
                                            sync_method,
                                            self.delegate,
-                                           *args,
-                                           **kwargs)
+                                           *unwrapped_args,
+                                           **unwrapped_kwargs)
 
         return framework.future_or_callback(future, callback, loop)
+
+    if wrap_class is not None:
+        method = framework.pymongo_class_wrapper(method, wrap_class)
+        method.is_wrap_method = True  # For Synchro.
 
     # This is for the benefit of motor_extensions.py, which needs this info to
     # generate documentation with Sphinx.
     method.is_async_method = True
     name = sync_method.__name__
     method.pymongo_method_name = name
+
     if doc is not None:
         method.__doc__ = doc
 
@@ -131,134 +156,25 @@ class Async(MotorAttributeFactory):
         """
         super(Async, self).__init__(doc)
         self.attr_name = attr_name
+        self.wrap_class = None
+        self.unwrap_class = None
 
     def create_attribute(self, cls, attr_name):
         name = self.attr_name or attr_name
         method = getattr(cls.__delegate_class__, name)
         return asynchronize(framework=cls._framework,
                             sync_method=method,
-                            doc=self.doc)
+                            doc=self.doc,
+                            wrap_class=self.wrap_class,
+                            unwrap_class=self.unwrap_class)
 
     def wrap(self, original_class):
-        return WrapAsync(self, original_class)
+        self.wrap_class = original_class
+        return self
 
     def unwrap(self, class_name):
-        return Unwrap(self, class_name)
-
-
-class WrapBase(MotorAttributeFactory):
-    def __init__(self, prop, doc=None):
-        super(WrapBase, self).__init__(doc)
-        self.property = prop
-
-
-class Wrap(WrapBase):
-    def __init__(self, prop, original_class, doc=None):
-        """Calls a synchronous method and wraps the PyMongo class instance it
-        returns in a Motor class instance.
-
-        :Parameters:
-        - `prop`: A DelegateMethod, the method to call before wrapping its
-          result in a Motor class.
-        - `original_class`: A PyMongo class to be wrapped.
-        """
-        super(Wrap, self).__init__(prop, doc=doc)
-        self.original_class = original_class
-
-    def create_attribute(self, cls, attr_name):
-        method = getattr(cls.__delegate_class__, attr_name)
-        original_class = self.original_class
-
-        @functools.wraps(method)
-        def wrapper(self_, *args, **kwargs):
-            result = method(self_.delegate, *args, **kwargs)
-
-            # Don't call isinstance(), not checking subclasses.
-            if result.__class__ == original_class:
-                # Delegate to the current object to wrap the result.
-                return self_.wrap(result)
-            else:
-                return result
-
-        if self.doc:
-            wrapper.__doc__ = self.doc
-
-        wrapper.is_wrap_method = True  # For Synchro.
-        return wrapper
-
-
-class WrapAsync(WrapBase):
-    def __init__(self, prop, original_class):
-        """Like Async, but before it executes the callback or resolves the
-        Future, checks if result is a PyMongo class and wraps it in a Motor
-        class. E.g., Motor's map_reduce should pass a MotorCollection instead
-        of a PyMongo Collection to the Future. Uses the wrap() method on the
-        owner object to do the actual wrapping. E.g.,
-        Database.create_collection returns a Collection, so MotorDatabase has:
-
-        create_collection = AsyncCommand().wrap(Collection)
-
-        Once Database.create_collection is done, Motor calls
-        MotorDatabase.wrap() on its result, transforming the result from
-        Collection to MotorCollection, which is passed to the callback or
-        Future.
-
-        :Parameters:
-        - `prop`: An Async, the async method to call before wrapping its result
-          in a Motor class.
-        - `original_class`: A PyMongo class to be wrapped.
-        """
-        super(WrapAsync, self).__init__(prop)
-        self.original_class = original_class
-
-    def create_attribute(self, cls, attr_name):
-        async_method = self.property.create_attribute(cls, attr_name)
-        original_class = self.original_class
-        wrapper = cls._framework.pymongo_class_wrapper(async_method,
-                                                       original_class)
-        if self.doc:
-            wrapper.__doc__ = self.doc
-
-        return wrapper
-
-
-class Unwrap(WrapBase):
-    def __init__(self, prop, motor_class_name, doc=None):
-        """A descriptor that checks if arguments are Motor classes and unwraps
-        them. E.g., Motor's drop_database takes a MotorDatabase, unwraps it,
-        and passes a PyMongo Database instead.
-
-        :Parameters:
-        - `prop`: An Async or DelegateMethod, the method to call with
-          unwrapped arguments.
-        - `motor_class_name`: Like 'MotorDatabase' or 'MotorCollection'.
-        """
-        super(Unwrap, self).__init__(prop, doc=doc)
-        assert isinstance(motor_class_name, motor_py3_compat.text_type)
-        self.motor_class_name = motor_class_name
-
-    def create_attribute(self, cls, attr_name):
-        f = self.property.create_attribute(cls, attr_name)
-        name = self.motor_class_name
-
-        @functools.wraps(f)
-        def _f(self, *args, **kwargs):
-            # Don't call isinstance(), not checking subclasses.
-            unwrapped_args = [
-                obj.delegate if obj.__class__.__name__.endswith(name) else obj
-                for obj in args]
-
-            unwrapped_kwargs = dict([
-                (key, obj.delegate if obj.__class__.__name__ == name else obj)
-                for key, obj in kwargs.items()])
-
-            return f(self, *unwrapped_args, **unwrapped_kwargs)
-
-        if self.doc:
-            _f.__doc__ = self.doc
-
-        _f.is_unwrap_method = True  # For Synchro.
-        return _f
+        self.unwrap_class = class_name
+        return self
 
 
 class AsyncRead(Async):
@@ -305,11 +221,38 @@ class ReadOnlyProperty(MotorAttributeFactory):
 class DelegateMethod(ReadOnlyProperty):
     """A method on the wrapped PyMongo object that does no I/O and can be called
     synchronously"""
-    def wrap(self, original_class):
-        return Wrap(self, original_class, doc=self.doc)
 
-    def unwrap(self, class_name):
-        return Unwrap(self, class_name, doc=self.doc)
+    def __init__(self, doc=None):
+        ReadOnlyProperty.__init__(self, doc)
+        self.wrap_class = None
+
+    def wrap(self, original_class):
+        self.wrap_class = original_class
+        return self
+
+    def create_attribute(self, cls, attr_name):
+        if self.wrap_class is None:
+            return ReadOnlyProperty.create_attribute(self, cls, attr_name)
+
+        method = getattr(cls.__delegate_class__, attr_name)
+        original_class = self.wrap_class
+
+        @functools.wraps(method)
+        def wrapper(self_, *args, **kwargs):
+            result = method(self_.delegate, *args, **kwargs)
+
+            # Don't call isinstance(), not checking subclasses.
+            if result.__class__ == original_class:
+                # Delegate to the current object to wrap the result.
+                return self_.wrap(result)
+            else:
+                return result
+
+        if self.doc:
+            wrapper.__doc__ = self.doc
+
+        wrapper.is_wrap_method = True  # For Synchro.
+        return wrapper
 
 
 class MotorCursorChainingMethod(MotorAttributeFactory):
