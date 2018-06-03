@@ -95,8 +95,7 @@ from pymongo.pool import SocketInfo, Pool
 
 
 def unwrap_synchro(fn):
-    """If first argument to decorated function is a Synchro object, pass the
-    wrapped Motor object into the function.
+    """Unwrap Synchro objects passed to a method and pass Motor objects instead.
     """
     @functools.wraps(fn)
     def _unwrap_synchro(*args, **kwargs):
@@ -242,7 +241,7 @@ class SynchroMeta(type):
                     # Re-synchronize the method.
                     setattr(new_class, attrname, Sync(attrname))
                 elif wrap_outgoing(delegate_attr):
-                    # Wrap MotorCursors in Synchro Cursors.
+                    # Wrap Motor objects in Synchro objects.
                     wrapper = WrapOutgoing()
                     wrapper.name = attrname
                     setattr(new_class, attrname, wrapper)
