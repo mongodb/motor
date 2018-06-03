@@ -4,6 +4,7 @@ Motor asyncio API
 .. toctree::
 
     asyncio_motor_client
+    asyncio_motor_client_session
     asyncio_motor_database
     asyncio_motor_collection
     asyncio_motor_cursor

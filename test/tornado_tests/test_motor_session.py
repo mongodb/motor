@@ -14,6 +14,8 @@
 
 from __future__ import unicode_literals
 
+import contextlib
+
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import copy
@@ -43,7 +45,9 @@ class MotorSessionTest(MotorTest):
         listener = client.event_listeners()[0][0]
 
         for f, args, kw in ops:
-            with (yield client.start_session()) as s:
+            # Simulate "async with" on all Pythons.
+            s = yield client.start_session()
+            try:
                 listener.results.clear()
                 # In case "f" modifies its inputs.
                 args2 = copy.copy(args)
@@ -63,6 +67,8 @@ class MotorSessionTest(MotorTest):
                             f.__name__, event.command_name))
 
                 self.assertFalse(s.has_ended)
+            finally:
+                yield s.end_session()
 
             with self.assertRaises(InvalidOperation) as ctx:
                 yield f(*args2, **kw2)
@@ -162,7 +168,9 @@ class MotorSessionTest(MotorTest):
 
         coll = client.motor_test.test_collection
 
-        with (yield client.start_session()) as s:
+        s = yield client.start_session()
+        # Simulate "async with" on all Pythons.
+        try:
             listener.results.clear()
             cursor = coll.find(session=s)
             yield cursor.to_list(length=None)
@@ -176,6 +184,8 @@ class MotorSessionTest(MotorTest):
                     s.session_id,
                     event.command['lsid'],
                     "find sent wrong lsid with %s" % (event.command_name,))
+        finally:
+            yield s.end_session()
 
         with self.assertRaises(InvalidOperation) as ctx:
             yield coll.find(session=s).to_list(length=None)

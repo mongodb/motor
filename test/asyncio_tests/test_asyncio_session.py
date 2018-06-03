@@ -42,7 +42,9 @@ class TestAsyncIOSession(AsyncIOTestCase):
         listener = client.event_listeners()[0][0]
 
         for f, args, kw in ops:
-            with (yield from client.start_session()) as s:
+            s = yield from client.start_session()
+            # Simulate "async with" on Python 3.4.
+            try:
                 listener.results.clear()
                 # In case "f" modifies its inputs.
                 args2 = copy.copy(args)
@@ -62,6 +64,8 @@ class TestAsyncIOSession(AsyncIOTestCase):
                             f.__name__, event.command_name))
 
                 self.assertFalse(s.has_ended)
+            finally:
+                yield from s.end_session()
 
             with self.assertRaisesRegex(InvalidOperation, "ended session"):
                 yield from f(*args2, **kw2)
@@ -159,7 +163,9 @@ class TestAsyncIOSession(AsyncIOTestCase):
 
         coll = client.motor_test.test_collection
 
-        with (yield from client.start_session()) as s:
+        s = yield from client.start_session()
+        # Simulate "async with" on Python 3.4.
+        try:
             listener.results.clear()
             cursor = coll.find(session=s)
             yield from cursor.to_list(length=None)
@@ -173,6 +179,8 @@ class TestAsyncIOSession(AsyncIOTestCase):
                     s.session_id,
                     event.command['lsid'],
                     "find sent wrong lsid with %s" % (event.command_name,))
+        finally:
+            yield from s.end_session()
 
         with self.assertRaisesRegex(InvalidOperation, "ended session"):
             yield from coll.find(session=s).to_list(length=None)

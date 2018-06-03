@@ -136,6 +136,10 @@ def is_future(f):
     return isinstance(f, asyncio.Future)
 
 
+def mark_coroutine(f):
+    pass
+
+
 def call_soon(loop, callback, *args, **kwargs):
     if kwargs:
         loop.call_soon(functools.partial(callback, *args, **kwargs))

@@ -1001,7 +1001,7 @@ This method takes the same parameters as PyMongo's
   async def coro():
       collection = client.db.collection
   
-      with (await client.start_session()) as s:
+      async with await client.start_session() as s:
           doc = {'_id': ObjectId(), 'x': 1}
           await collection.insert_one(doc, session=s)
 
@@ -1017,13 +1017,17 @@ Do **not** use the same session for multiple operations concurrently.
 
 Requires MongoDB 3.6. It is an error to call :meth:`start_session`
 if this client has been authenticated to multiple databases using the
-deprecated method :meth:`~pymongo.database.Database.authenticate`.
+deprecated method :meth:`~motor.motor_tornado.MotorDatabase.authenticate`.
 
-A :class:`~pymongo.client_session.ClientSession` may only be used with
-the MongoClient that started it.
+A :class:`~MotorClientSession` may only be used with the MotorClient that 
+started it.
   
 :Returns:
-  An instance of :class:`~pymongo.client_session.ClientSession`.
+  An instance of :class:`~MotorClientSession`.
+
+.. versionchanged:: 2.0
+  Returns a :class:`~MotorClientSession`. Before, this
+  method returned a PyMongo :class:`~pymongo.client_session.ClientSession`.
 
 .. versionadded:: 1.2
 """

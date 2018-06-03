@@ -30,6 +30,9 @@ def create_motor_class(cls):
 MotorClient = create_motor_class(core.AgnosticClient)
 
 
+MotorClientSession = create_motor_class(core.AgnosticClientSession)
+
+
 MotorDatabase = create_motor_class(core.AgnosticDatabase)
 
 

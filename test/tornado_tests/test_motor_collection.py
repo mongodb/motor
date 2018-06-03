@@ -140,6 +140,8 @@ class MotorCollectionTest(MotorTest):
     @ignore_deprecations
     @gen_test
     def test_save_callback(self):
+        # If you delete this test, be thoughtful: there are few remaining tests
+        # of the old "callback=" idiom.
         yield self.collection.save({}, callback=None)
 
         # Should not raise

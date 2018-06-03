@@ -32,6 +32,7 @@ import pymongo.son_manipulator
 from pymongo.bulk import BulkOperationBuilder
 from pymongo.database import Database
 from pymongo.change_stream import ChangeStream
+from pymongo.client_session import ClientSession
 from pymongo.collection import Collection
 from pymongo.cursor import Cursor, _QUERY_OPTIONS
 from pymongo.command_cursor import CommandCursor
@@ -44,7 +45,9 @@ from .metaprogramming import (AsyncCommand,
                               DelegateMethod,
                               motor_coroutine,
                               MotorCursorChainingMethod,
-                              ReadOnlyProperty)
+                              ReadOnlyProperty,
+                              unwrap_args_session,
+                              unwrap_kwargs_session)
 from .motor_common import callback_type_error
 from motor.docstrings import *
 
@@ -115,8 +118,8 @@ class AgnosticClient(AgnosticBaseProperties):
     secondaries              = ReadOnlyProperty()
     server_info              = AsyncRead()
     server_selection_timeout = ReadOnlyProperty()
-    start_session            = AsyncRead(doc=start_session_doc)
     unlock                   = AsyncCommand()
+    _start_session           = AsyncCommand(attr_name='start_session')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -161,6 +164,12 @@ class AgnosticClient(AgnosticBaseProperties):
 
         return db_class(self, name)
 
+    def start_session(self, *args, **kwargs):
+        session_class = create_class_with_framework(
+            AgnosticClientSession, self._framework, self.__module__)
+
+        return session_class(self, *args, **kwargs)
+
     def wrap(self, obj):
         if obj.__class__ == Database:
             db_class = create_class_with_framework(
@@ -176,6 +185,146 @@ class AgnosticClient(AgnosticBaseProperties):
                 self.__module__)
 
             return command_cursor_class(obj, self)
+        elif obj.__class__ == ClientSession:
+            session_class = create_class_with_framework(
+                AgnosticClientSession,
+                self._framework,
+                self.__module__)
+
+            return session_class(obj, self)
+
+
+class AgnosticClientSession(AgnosticBase):
+    """A session for ordering sequential operations.
+
+    See :meth:`MotorClient.start_session`.
+
+    .. versionadded:: 2.0
+    """
+
+    __motor_class_name__ = 'MotorClientSession'
+    __delegate_class__ = ClientSession
+
+
+    def __init__(self, motor_client, *args, **kwargs):
+        # We can't do I/O in the constructor; create the delegate in __iter__.
+        AgnosticBase.__init__(self, delegate=None)
+        self._client = motor_client
+        self.args = args
+        self.kwargs = kwargs
+
+    def get_io_loop(self):
+        return self._client.get_io_loop()
+
+    @property
+    def client(self):
+        """The :class:`~MotorClient` this session was created from. """
+        return self._client
+
+    @property
+    def cluster_time(self):
+        """The cluster time returned by the last operation in this session."""
+        self._check_started()
+        return self.delegate.cluster_time
+
+    @property
+    def has_ended(self):
+        """True if this session is finished."""
+        self._check_started()
+        return self.delegate.has_ended
+
+    @property
+    def options(self):
+        """The :class:`SessionOptions` this session was created with."""
+        self._check_started()
+        return self.delegate.options
+
+    @property
+    def operation_time(self):
+        """The operation time returned by the last operation in this session."""
+        self._check_started()
+        return self.delegate.operation_time
+
+    @property
+    def session_id(self):
+        """A BSON document, the opaque server session identifier."""
+        self._check_started()
+        return self.delegate.session_id
+
+    def advance_cluster_time(self, cluster_time):
+        """Update the cluster time for this session.
+
+        :Parameters:
+          - `cluster_time`: The :data:`~MotorClientSession.cluster_time` from
+            another :class:`MotorClientSession` instance.
+        """
+        self._check_started()
+        return self.delegate.advance_cluster_time(cluster_time)
+
+    def advance_operation_time(self, operation_time):
+        """Update the operation time for this session.
+
+        :Parameters:
+          - `operation_time`: The :data:`~MotorClientSession.operation_time`
+            from another :class:`MotorClientSession` instance.
+        """
+        self._check_started()
+        return self.delegate.advance_operation_time(operation_time)
+
+    @motor_coroutine
+    def end_session(self):
+        """Finish this session. If a transaction has started, abort it.
+
+        It is an error to use the session after the session has ended.
+        """
+        self._check_started()
+        return self._end_session()
+
+    def _internal_init(self):
+        if self.delegate:
+            raise pymongo.errors.InvalidOperation(
+                "Session already started, do not use it in an 'await'"
+                " expression or 'async with' statement again")
+
+        io_loop = self.get_io_loop()
+        original_future = self._framework.get_future(io_loop)
+        self._framework.add_future(
+            io_loop,
+            self._client._start_session(),
+            self._on_started,
+            original_future)
+
+        return original_future
+
+    # In Py 3.4 asyncio, "yield from client.start_session()" starts the session.
+    def __iter__(self):
+        return self._internal_init().__iter__()
+
+    def _on_started(self, original_future, future):
+        try:
+            self.delegate = future.result()
+            original_future.set_result(self)
+        except Exception as exc:
+            original_future.set_exception(exc)
+
+    def _check_started(self):
+        if not self.delegate:
+            raise pymongo.errors.InvalidOperation(
+                "Start this session like 's = await client.start_session()' or"
+                " 'async with client.start_session() as s'")
+
+    if PY35:
+        exec(textwrap.dedent("""
+        __await__ = __iter__
+
+        async def __aenter__(self):
+            if not self.delegate:
+                await self
+            return self
+    
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            self.delegate.__exit__(exc_type, exc_val, exc_tb)
+        """), globals(), locals())
 
 
 class AgnosticDatabase(AgnosticBaseProperties):
@@ -388,7 +537,8 @@ class AgnosticCollection(AgnosticBaseProperties):
             raise pymongo.errors.InvalidOperation(
                 "Pass a callback to each, to_list, or count, not to find.")
 
-        cursor = self.delegate.find(*args, **kwargs)
+        cursor = self.delegate.find(*unwrap_args_session(args),
+                                    **unwrap_kwargs_session(kwargs))
         cursor_class = create_class_with_framework(
             AgnosticCursor, self._framework, self.__module__)
 
@@ -453,7 +603,8 @@ class AgnosticCollection(AgnosticBaseProperties):
         if kwargs.get('cursor') is False:
             kwargs.pop('cursor')
             # One-shot aggregation, no cursor. Send command now, return Future.
-            return self._async_aggregate(pipeline, **kwargs)
+            return self._async_aggregate(
+                pipeline, **unwrap_kwargs_session(kwargs))
         else:
             if 'callback' in kwargs:
                 raise pymongo.errors.InvalidOperation(
@@ -464,7 +615,8 @@ class AgnosticCollection(AgnosticBaseProperties):
                 AgnosticLatentCommandCursor, self._framework, self.__module__)
 
             # Latent cursor that will send initial command on first "async for".
-            return cursor_class(self, self._async_aggregate, pipeline, **kwargs)
+            return cursor_class(self, self._async_aggregate, pipeline,
+                                **unwrap_kwargs_session(kwargs))
 
     def watch(self, pipeline=None, full_document='default', resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,

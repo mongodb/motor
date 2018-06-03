@@ -28,6 +28,9 @@ def create_asyncio_class(cls):
 AsyncIOMotorClient = create_asyncio_class(core.AgnosticClient)
 
 
+AsyncIOMotorClientSession = create_asyncio_class(core.AgnosticClientSession)
+
+
 AsyncIOMotorDatabase = create_asyncio_class(
     core.AgnosticDatabase)
 

@@ -16,13 +16,17 @@ from __future__ import unicode_literals, absolute_import
 
 import warnings
 
+from pymongo.errors import InvalidOperation
+
+from test import env
+
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 from tornado.testing import gen_test
 
-from motor import MotorGridFS
+from motor.motor_tornado import MotorClientSession, MotorGridFS
+
 import test
-from test import SkipTest
 from test.tornado_tests import MotorTest
 
 
@@ -150,3 +154,37 @@ class MotorTestAwait(MotorTest):
 
         if w:
             self.fail(w[0].message)
+
+    @env.require_version_min(3, 6)
+    @env.require_replica_set
+    @gen_test
+    async def test_session(self):
+        s = self.cx.start_session()
+        self.assertIsInstance(s, MotorClientSession)
+        self.assertIs(s.client, self.cx)
+        self.assertRaises(InvalidOperation, getattr, s, 'options')
+        self.assertRaises(InvalidOperation, getattr, s, 'session_id')
+        self.assertRaises(InvalidOperation, getattr, s, 'cluster_time')
+        self.assertRaises(InvalidOperation, getattr, s, 'operation_time')
+        self.assertRaises(InvalidOperation, getattr, s, 'has_ended')
+
+        # Test that "await" converts start_session() into a session.
+        retval = await s
+        self.assertIs(retval, s)
+
+        # We can access session properties now.
+        s.options
+        s.session_id
+        s.cluster_time
+        s.operation_time
+        self.assertFalse(s.has_ended)
+        await s.end_session()
+        self.assertTrue(s.has_ended)
+
+        async with self.cx.start_session() as s:
+            self.assertIsInstance(s, MotorClientSession)
+            self.assertFalse(s.has_ended)
+            await s.end_session()
+            self.assertTrue(s.has_ended)
+
+        self.assertTrue(s.has_ended)

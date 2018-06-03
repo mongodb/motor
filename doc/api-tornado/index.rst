@@ -4,6 +4,7 @@ Motor Tornado API
 .. toctree::
 
     motor_client
+    motor_client_session
     motor_database
     motor_collection
     motor_cursor

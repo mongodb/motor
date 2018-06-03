@@ -126,6 +126,8 @@ def wrap_synchro(fn):
             client = MongoClient(delegate=motor_obj.database.client)
             database = Database(client, motor_obj.database.name)
             return Collection(database, motor_obj.name, delegate=motor_obj)
+        if isinstance(motor_obj, motor.motor_tornado.MotorClientSession):
+            return ClientSession(delegate=motor_obj)
         if isinstance(motor_obj, motor.MotorDatabase):
             client = MongoClient(delegate=motor_obj.client)
             return Database(client, motor_obj.name, delegate=motor_obj)
@@ -169,7 +171,7 @@ class WrapOutgoing(object):
 
         def synchro_method(*args, **kwargs):
             motor_method = getattr(obj.delegate, name)
-            return wrap_synchro(motor_method)(*args, **kwargs)
+            return wrap_synchro(unwrap_synchro(motor_method))(*args, **kwargs)
 
         return synchro_method
 
@@ -335,6 +337,23 @@ class MongoClient(Synchro):
     _kill_cursors_executor        = SynchroProperty()
 
 
+class ClientSession(Synchro):
+    __delegate_class__ = motor.motor_tornado.MotorClientSession
+
+    def __init__(self, delegate):
+        self.delegate = delegate
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.synchronize(self.delegate.end_session)
+
+    _server_session      = SynchroProperty()
+    _transaction_id      = SynchroProperty()
+    _txn_read_preference = SynchroProperty()
+
+
 class Database(Synchro):
     __delegate_class__ = motor.MotorDatabase
     get_collection     = WrapOutgoing()
@@ -397,7 +416,8 @@ class Collection(Synchro):
 
     def aggregate(self, *args, **kwargs):
         # Motor does no I/O initially in aggregate() but PyMongo does.
-        cursor = wrap_synchro(self.delegate.aggregate)(*args, **kwargs)
+        func = wrap_synchro(unwrap_synchro(self.delegate.aggregate))
+        cursor = func(*args, **kwargs)
         self.synchronize(cursor.delegate._get_more)()
         return cursor
 

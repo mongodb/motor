@@ -49,20 +49,31 @@ def asynchronize(
             # Don't call isinstance(), not checking subclasses.
             unwrapped_args = [
                 obj.delegate
-                if obj.__class__.__name__.endswith(unwrap_class)
+                if obj.__class__.__name__.endswith(
+                    (unwrap_class, 'MotorClientSession'))
                 else obj
                 for obj in args]
-            unwrapped_kwargs = dict([
-                (key, obj.delegate
-                 if obj.__class__.__name__.endswith(unwrap_class)
-                 else obj)
-                for key, obj in kwargs.items()])
+            unwrapped_kwargs = {
+                key: (obj.delegate
+                      if obj.__class__.__name__.endswith(
+                        (unwrap_class, 'MotorClientSession'))
+                      else obj)
+                for key, obj in kwargs.items()}
         else:
-            unwrapped_args = args
-            unwrapped_kwargs = kwargs
+            # For speed, don't call unwrap_args_session/unwrap_kwargs_session.
+            unwrapped_args = [
+                obj.delegate
+                if obj.__class__.__name__.endswith('MotorClientSession')
+                else obj
+                for obj in args]
+            unwrapped_kwargs = {
+                key: (obj.delegate
+                      if obj.__class__.__name__.endswith('MotorClientSession')
+                      else obj)
+                for key, obj in kwargs.items()}
 
         loop = self.get_io_loop()
-        callback = kwargs.pop('callback', None)
+        callback = unwrapped_kwargs.pop('callback', None)
         future = framework.run_on_executor(loop,
                                            sync_method,
                                            self.delegate,
@@ -81,10 +92,28 @@ def asynchronize(
     name = sync_method.__name__
     method.pymongo_method_name = name
 
+    framework.mark_coroutine(method)
+
     if doc is not None:
         method.__doc__ = doc
 
     return method
+
+
+def unwrap_args_session(args):
+    return (
+        obj.delegate
+        if obj.__class__.__name__.endswith('MotorClientSession')
+        else obj
+        for obj in args)
+
+
+def unwrap_kwargs_session(kwargs):
+    return {
+        key: (obj.delegate
+              if obj.__class__.__name__.endswith('MotorClientSession')
+              else obj)
+        for key, obj in kwargs.items()}
 
 
 _coro_token = object()

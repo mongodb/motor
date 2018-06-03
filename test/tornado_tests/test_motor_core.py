@@ -66,6 +66,13 @@ class MotorCoreTest(MotorTest):
             attrs(env.sync_cx) - pymongo_client_only,
             attrs(self.cx) - motor_client_only)
 
+    @env.require_version_min(3, 6)
+    @env.require_replica_set
+    def test_client_session_attrs(self):
+        self.assertEqual(
+            attrs(env.sync_cx.start_session()),
+            attrs(self.cx.start_session()) - motor_only)
+
     def test_database_attrs(self):
         self.assertEqual(
             attrs(env.sync_cx.test) - pymongo_database_only,

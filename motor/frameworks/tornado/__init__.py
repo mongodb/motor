@@ -125,6 +125,10 @@ def is_future(f):
     return isinstance(f, concurrent.Future)
 
 
+def mark_coroutine(f):
+    f.__tornado_coroutine__ = True
+
+
 def call_soon(loop, callback, *args, **kwargs):
     if args or kwargs:
         loop.add_callback(functools.partial(callback, *args, **kwargs))
