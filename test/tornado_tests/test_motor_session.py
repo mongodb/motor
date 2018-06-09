@@ -214,6 +214,17 @@ class MotorSessionTest(MotorTest):
                 event.command['lsid'],
                 "find sent wrong lsid with %s" % (event.command_name,))
 
+    @gen_test
+    def test_options(self):
+        s = yield self.cx.start_session()
+        self.assertTrue(s.options.causal_consistency)
+        s = yield self.cx.start_session(False)
+        self.assertFalse(s.options.causal_consistency)
+        s = yield self.cx.start_session(causal_consistency=True)
+        self.assertTrue(s.options.causal_consistency)
+        s = yield self.cx.start_session(causal_consistency=False)
+        self.assertFalse(s.options.causal_consistency)
+
 
 if __name__ == '__main__':
     unittest.main()

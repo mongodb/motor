@@ -161,6 +161,57 @@ class AgnosticClient(AgnosticBaseProperties):
         return db_class(self, name)
 
     def start_session(self, *args, **kwargs):
+        """Start a logical session.
+
+        This method takes the same parameters as PyMongo's
+        :class:`~pymongo.client_session.SessionOptions`. See the
+        :mod:`~pymongo.client_session` module for details.
+
+        This session is created uninitialized, use it in an ``await`` expression
+        to initialize it, or an ``async with`` statement.
+
+        .. code-block:: python3
+
+          async def coro():
+              collection = client.db.collection
+
+              # End the session after using it.
+              s = await client.start_session()
+              await s.end_session()
+
+              # Or, use an "async with" statement to end the session
+              # automatically.
+              async with await client.start_session() as s:
+                  doc = {'_id': ObjectId(), 'x': 1}
+                  await collection.insert_one(doc, session=s)
+
+                  secondary = collection.with_options(
+                      read_preference=ReadPreference.SECONDARY)
+
+                  # Sessions are causally consistent by default, so we can read
+                  # the doc we just inserted, even reading from a secondary.
+                  async for doc in secondary.find(session=s):
+                      print(doc)
+
+        Do **not** use the same session for multiple operations concurrently.
+
+        Requires MongoDB 3.6. It is an error to call :meth:`start_session`
+        if this client has been authenticated to multiple databases using the
+        deprecated method :meth:`~motor.motor_tornado.MotorDatabase.authenticate`.
+
+        A :class:`~MotorClientSession` may only be used with the MotorClient that
+        started it.
+
+        :Returns:
+          An instance of :class:`~MotorClientSession`.
+
+        .. versionchanged:: 2.0
+          Returns a :class:`~MotorClientSession`. Before, this
+          method returned a PyMongo
+          :class:`~pymongo.client_session.ClientSession`.
+
+        .. versionadded:: 1.2
+        """
         session_class = create_class_with_framework(
             AgnosticClientSession, self._framework, self.__module__)
 
@@ -190,10 +241,31 @@ class AgnosticClient(AgnosticBaseProperties):
             return session_class(obj, self)
 
 
+class _MotorTransactionContext(object):
+    """Internal transaction context manager for start_transaction."""
+    def __init__(self, session):
+        self._session = session
+
+    if PY35:
+        exec(textwrap.dedent("""
+        async def __aenter__(self):
+            return self
+    
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            if self._session.delegate._in_transaction:
+                if exc_val is None:
+                    await self._session.commit_transaction()
+                else:
+                    await self._session.abort_transaction()
+        """), globals(), locals())
+
+
 class AgnosticClientSession(AgnosticBase):
     """A session for ordering sequential operations.
 
-    See :meth:`MotorClient.start_session`.
+    This object is created uninitialized, use it in an ``await`` expression to
+    initialize it, or an ``async with`` statement. See
+    :meth:`MotorClient.start_session`.
 
     .. versionadded:: 2.0
     """
@@ -201,13 +273,16 @@ class AgnosticClientSession(AgnosticBase):
     __motor_class_name__ = 'MotorClientSession'
     __delegate_class__ = ClientSession
 
+    _abort_transaction       = AsyncCommand('abort_transaction')
+    _commit_transaction      = AsyncCommand('commit_transaction')
+    _end_session             = AsyncCommand('end_session')
 
     def __init__(self, motor_client, *args, **kwargs):
         # We can't do I/O in the constructor; create the delegate in __iter__.
         AgnosticBase.__init__(self, delegate=None)
         self._client = motor_client
-        self.args = args
-        self.kwargs = kwargs
+        self._args = args
+        self._kwargs = kwargs
 
     def get_io_loop(self):
         return self._client.get_io_loop()
@@ -267,7 +342,32 @@ class AgnosticClientSession(AgnosticBase):
         self._check_started()
         return self.delegate.advance_operation_time(operation_time)
 
-    @motor_coroutine
+    def start_transaction(self, read_concern=None, write_concern=None,
+                          read_preference=None):
+        """Start a multi-statement transaction.
+
+        Takes the same arguments as
+        :class:`~pymongo.client_session.TransactionOptions`.
+        """
+        self._check_started()
+        self.delegate.start_transaction(read_concern=read_concern,
+                                        write_concern=write_concern,
+                                        read_preference=read_preference)
+        return _MotorTransactionContext(self)
+
+    @coroutine_annotation
+    def commit_transaction(self):
+        """Commit a multi-statement transaction."""
+        self._check_started()
+        return self._commit_transaction()
+
+    @coroutine_annotation
+    def abort_transaction(self):
+        """Abort a multi-statement transaction."""
+        self._check_started()
+        return self._abort_transaction()
+
+    @coroutine_annotation
     def end_session(self):
         """Finish this session. If a transaction has started, abort it.
 
@@ -286,7 +386,7 @@ class AgnosticClientSession(AgnosticBase):
         original_future = self._framework.get_future(io_loop)
         self._framework.add_future(
             io_loop,
-            self._client._start_session(),
+            self._client._start_session(*self._args, **self._kwargs),
             self._on_started,
             original_future)
 
@@ -295,6 +395,10 @@ class AgnosticClientSession(AgnosticBase):
     # In Py 3.4 asyncio, "yield from client.start_session()" starts the session.
     def __iter__(self):
         return self._internal_init().__iter__()
+
+    # In Python 3.5+, use "await client.start_session()".
+    def __await__(self):
+        return self._internal_init().__await__()
 
     def _on_started(self, original_future, future):
         try:
@@ -311,8 +415,6 @@ class AgnosticClientSession(AgnosticBase):
 
     if PY35:
         exec(textwrap.dedent("""
-        __await__ = __iter__
-
         async def __aenter__(self):
             if not self.delegate:
                 await self

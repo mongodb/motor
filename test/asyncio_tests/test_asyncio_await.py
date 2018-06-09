@@ -16,8 +16,11 @@ from __future__ import unicode_literals, absolute_import
 
 import warnings
 
-from motor.motor_asyncio import AsyncIOMotorGridFS
+from pymongo.errors import InvalidOperation
+
+from motor.motor_asyncio import AsyncIOMotorClientSession, AsyncIOMotorGridFS
 import test
+from test import env
 from test.asyncio_tests import asyncio_test, AsyncIOTestCase
 
 
@@ -157,3 +160,58 @@ class TestAsyncIOAwait(AsyncIOTestCase):
             keys.add(info['name'])
 
         self.assertEqual(keys, {'_id_', 'x_1', 'y_-1'})
+
+    @env.require_version_min(3, 6)
+    @env.require_replica_set
+    @asyncio_test
+    async def test_session(self):
+        s = self.cx.start_session()
+        self.assertIsInstance(s, AsyncIOMotorClientSession)
+        self.assertIs(s.client, self.cx)
+        self.assertRaises(InvalidOperation, getattr, s, 'options')
+        self.assertRaises(InvalidOperation, getattr, s, 'session_id')
+        self.assertRaises(InvalidOperation, getattr, s, 'cluster_time')
+        self.assertRaises(InvalidOperation, getattr, s, 'operation_time')
+        self.assertRaises(InvalidOperation, getattr, s, 'has_ended')
+
+        # Test that "await" converts start_session() into a session.
+        retval = await s
+        self.assertIs(retval, s)
+
+        # We can access session properties now.
+        s.options
+        s.session_id
+        s.cluster_time
+        s.operation_time
+        self.assertFalse(s.has_ended)
+        await s.end_session()
+        self.assertTrue(s.has_ended)
+
+        async with self.cx.start_session() as s:
+            self.assertIsInstance(s, AsyncIOMotorClientSession)
+            self.assertFalse(s.has_ended)
+            await s.end_session()
+            self.assertTrue(s.has_ended)
+
+        self.assertTrue(s.has_ended)
+
+    @env.require_version_min(3, 7)
+    @env.require_replica_set
+    @asyncio_test
+    async def test_transaction(self):
+        async with self.cx.start_session() as s:
+            s.start_transaction()
+            self.assertTrue(s.delegate._in_transaction)
+            self.assertFalse(s.has_ended)
+            await s.end_session()
+            self.assertFalse(s.delegate._in_transaction)
+            self.assertTrue(s.has_ended)
+
+        async with self.cx.start_session() as s:
+            async with s.start_transaction():
+                self.assertTrue(s.delegate._in_transaction)
+                self.assertFalse(s.has_ended)
+            self.assertFalse(s.delegate._in_transaction)
+            self.assertFalse(s.has_ended)
+
+        self.assertTrue(s.has_ended)

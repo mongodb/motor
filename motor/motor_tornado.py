@@ -16,6 +16,8 @@
 
 from __future__ import unicode_literals, absolute_import
 
+from tornado.gen import convert_yielded
+
 from . import core, motor_gridfs
 from .frameworks import tornado as tornado_framework
 from .metaprogramming import create_class_with_framework
@@ -31,6 +33,11 @@ MotorClient = create_motor_class(core.AgnosticClient)
 
 
 MotorClientSession = create_motor_class(core.AgnosticClientSession)
+
+
+@convert_yielded.register(MotorClientSession)  # Requires 'singledispatch' pkg.
+def _(session):
+    return session._internal_init()
 
 
 MotorDatabase = create_motor_class(core.AgnosticDatabase)

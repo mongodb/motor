@@ -188,3 +188,24 @@ class MotorTestAwait(MotorTest):
             self.assertTrue(s.has_ended)
 
         self.assertTrue(s.has_ended)
+
+    @env.require_version_min(3, 7)
+    @env.require_replica_set
+    @gen_test
+    async def test_transaction(self):
+        async with self.cx.start_session() as s:
+            s.start_transaction()
+            self.assertTrue(s.delegate._in_transaction)
+            self.assertFalse(s.has_ended)
+            await s.end_session()
+            self.assertFalse(s.delegate._in_transaction)
+            self.assertTrue(s.has_ended)
+
+        async with self.cx.start_session() as s:
+            async with s.start_transaction():
+                self.assertTrue(s.delegate._in_transaction)
+                self.assertFalse(s.has_ended)
+            self.assertFalse(s.delegate._in_transaction)
+            self.assertFalse(s.has_ended)
+
+        self.assertTrue(s.has_ended)

@@ -35,9 +35,7 @@ install_requires = ['pymongo>=3.6,<4']
 tests_require = ['mockupdb>=1.2.1']
 
 if sys.version_info[0] < 3:
-    # Need concurrent.futures backport in Python 2 for MotorMockServerTest.
-    tests_require.append('futures')
-    install_requires.append('futures')
+    install_requires.extend(['futures', 'singledispatch'])
 
 
 class test(Command):

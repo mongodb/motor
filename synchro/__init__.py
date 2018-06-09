@@ -27,6 +27,7 @@ from tornado.ioloop import IOLoop
 import motor
 import motor.frameworks.tornado
 import motor.motor_tornado
+from motor.core import _MotorTransactionContext
 from motor.metaprogramming import MotorAttributeFactory
 
 # Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
@@ -128,6 +129,8 @@ def wrap_synchro(fn):
             return Collection(database, motor_obj.name, delegate=motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorClientSession):
             return ClientSession(delegate=motor_obj)
+        if isinstance(motor_obj, _MotorTransactionContext):
+            return _SynchroTransactionContext(motor_obj)
         if isinstance(motor_obj, motor.MotorDatabase):
             client = MongoClient(delegate=motor_obj.client)
             return Database(client, motor_obj.name, delegate=motor_obj)
@@ -155,16 +158,19 @@ def wrap_synchro(fn):
     return _wrap_synchro
 
 
-class Sync(object):
-    def __init__(self, name):
+class SynchroAttr(object):
+    # Name can be set by SynchroMeta if Sync() is used directly in class defn.
+    def __init__(self, name=None):
         self.name = name
 
+
+class Sync(SynchroAttr):
     def __get__(self, obj, objtype):
         async_method = getattr(obj.delegate, self.name)
         return wrap_synchro(unwrap_synchro(obj.synchronize(async_method)))
 
 
-class WrapOutgoing(object):
+class WrapOutgoing(SynchroAttr):
     def __get__(self, obj, objtype):
         # self.name is set by SynchroMeta.
         name = self.name
@@ -176,14 +182,11 @@ class WrapOutgoing(object):
         return synchro_method
 
 
-class SynchroProperty(object):
+class SynchroProperty(SynchroAttr):
     """Used to fake private properties like MongoClient.__member - don't use
     for real properties like write_concern or you'll mask missing features in
     Motor!
     """
-    def __init__(self):
-        self.name = None
-
     def __get__(self, obj, objtype):
         # self.name is set by SynchroMeta.
         return getattr(obj.delegate.delegate, self.name)
@@ -253,10 +256,9 @@ class SynchroMeta(type):
 
         # Set DelegateProperties' and SynchroProperties' names.
         for name, attr in attrs.items():
-            if isinstance(attr, (MotorAttributeFactory,
-                                 SynchroProperty,
-                                 WrapOutgoing)):
-                attr.name = name
+            if isinstance(attr, (MotorAttributeFactory, SynchroAttr)):
+                if attr.name is None:
+                    attr.name = name
 
         return new_class
 
@@ -298,6 +300,7 @@ class MongoClient(Synchro):
     get_default_database = WrapOutgoing()
     max_pool_size = SynchroProperty()
     max_write_batch_size = SynchroProperty()
+    start_session = Sync()
 
     def __init__(self, host=None, port=None, *args, **kwargs):
         # So that TestClient.test_constants and test_types work.
@@ -337,8 +340,24 @@ class MongoClient(Synchro):
     _kill_cursors_executor        = SynchroProperty()
 
 
+class _SynchroTransactionContext(Synchro):
+    def __init__(self, delegate):
+        self.delegate = delegate
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.synchronize(self.delegate._session.end_session)()
+
+
 class ClientSession(Synchro):
     __delegate_class__ = motor.motor_tornado.MotorClientSession
+
+    start_transaction   = WrapOutgoing()
+    commit_transaction  = Sync()
+    abort_transaction   = Sync()
+    end_session         = Sync()
 
     def __init__(self, delegate):
         self.delegate = delegate
@@ -352,6 +371,36 @@ class ClientSession(Synchro):
     _server_session      = SynchroProperty()
     _transaction_id      = SynchroProperty()
     _txn_read_preference = SynchroProperty()
+
+    @property
+    def client(self):
+        return self.delegate.client
+
+    @property
+    def cluster_time(self):
+        return self.delegate.cluster_time
+
+    @property
+    def has_ended(self):
+        return self.delegate.has_ended
+
+    @property
+    def options(self):
+        return self.delegate.options
+
+    @property
+    def operation_time(self):
+        return self.delegate.operation_time
+
+    @property
+    def session_id(self):
+        return self.delegate.session_id
+
+    def advance_cluster_time(self, cluster_time):
+        return self.delegate.advance_cluster_time(cluster_time)
+
+    def advance_operation_time(self, operation_time):
+        return self.delegate.advance_operation_time(operation_time)
 
 
 class Database(Synchro):
