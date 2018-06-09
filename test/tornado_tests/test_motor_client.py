@@ -53,7 +53,7 @@ class MotorClientTest(MotorTest):
         future1 = collection.insert_one({'foo': 'bar'})
         yield [future0, future1]
 
-        self.assertEqual(2, (yield collection.find({'foo': 'bar'}).count()))
+        self.assertEqual(2, (yield collection.count_documents({'foo': 'bar'})))
 
         cx.close()
 
@@ -169,7 +169,8 @@ class MotorClientTest(MotorTest):
         yield [find() for _ in range(concurrency)]
         yield insert_future
         self.assertEqual(expected_finds, ndocs[0])
-        self.assertEqual(n_inserts, (yield insert_collection.count()))
+        self.assertEqual(n_inserts,
+                         (yield insert_collection.count_documents({})))
         yield collection.delete_many({})
 
     @gen_test(timeout=30)

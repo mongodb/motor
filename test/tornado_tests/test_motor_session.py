@@ -149,7 +149,7 @@ class MotorSessionTest(MotorTest):
             (client.motor_test.drop_collection, ['collection2'], {}),
             (coll.distinct, ['a'], {}),
             (coll.find_one, [], {}),
-            (coll.count, [], {}),
+            (coll.count_documents, [{}], {}),
             (coll.create_indexes, [[IndexModel('a')]], {}),
             (coll.create_index, ['a'], {}),
             (coll.drop_index, ['a_1'], {}),

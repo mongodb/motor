@@ -295,26 +295,22 @@ and :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.next_object`:
 
 Counting Documents
 ------------------
-Use :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.count` to determine the number of documents in
-a collection, or the number of documents that match a query:
+Use :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.count_documents` to
+determine the number of documents in a collection, or the number of documents
+that match a query:
 
 .. doctest:: after-inserting-2000-docs
 
   >>> async def do_count():
-  ...     n = await db.test_collection.find().count()
+  ...     n = await db.test_collection.count_documents({})
   ...     print('%s documents in collection' % n)
-  ...     n = await db.test_collection.find({'i': {'$gt': 1000}}).count()
+  ...     n = await db.test_collection.count_documents({'i': {'$gt': 1000}})
   ...     print('%s documents where i > 1000' % n)
   ...
   >>> loop = asyncio.get_event_loop()
   >>> loop.run_until_complete(do_count())
   2000 documents in collection
   999 documents where i > 1000
-
-:meth:`~motor.motor_asyncio.AsyncIOMotorCursor.count` uses the *count command* internally; we'll
-cover commands_ below.
-
-.. seealso:: `Count command <http://docs.mongodb.org/manual/reference/command/count/>`_
 
 Updating Documents
 ------------------
@@ -385,10 +381,10 @@ Deleting Documents
 
   >>> async def do_delete_many():
   ...     coll = db.test_collection
-  ...     n = await coll.count()
+  ...     n = await coll.count_documents({})
   ...     print('%s documents before calling delete_many()' % n)
   ...     result = await db.test_collection.delete_many({'i': {'$gte': 1000}})
-  ...     print('%s documents after' % (await coll.count()))
+  ...     print('%s documents after' % (await coll.count_documents({})))
   ...
   >>> loop = asyncio.get_event_loop()
   >>> loop.run_until_complete(do_delete_many())
@@ -399,26 +395,23 @@ Deleting Documents
 
 Commands
 --------
-Besides the "CRUD" operations--insert, update, delete, and find--all other
-operations on MongoDB are commands. Run them using
-the :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.command` method on :class:`~motor.motor_asyncio.AsyncIOMotorDatabase`:
+All operations on MongoDB are implemented internally as commands. Run them using
+the :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.command` method on
+:class:`~motor.motor_asyncio.AsyncIOMotorDatabase`::
 
 .. doctest:: after-inserting-2000-docs
 
   >>> from bson import SON
-  >>> async def use_count_command():
-  ...     response = await db.command(SON([("count", "test_collection")]))
-  ...     print('response: %s' % pprint.pformat(response))
+  >>> async def use_distinct_command():
+  ...     response = await db.command(SON([("distinct", "test_collection"),
+  ...                                      ("key", "i")]))
   ...
   >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(use_count_command())
-  response: {'n': 1000, 'ok': 1.0...}
+  >>> loop.run_until_complete(use_distinct_command())
 
 Since the order of command parameters matters, don't use a Python dict to pass
 the command's parameters. Instead, make a habit of using :class:`bson.SON`,
-from the ``bson`` module included with PyMongo::
-
-    await db.command(SON([("distinct", "test_collection"), ("key", "my_key"]))
+from the ``bson`` module included with PyMongo.
 
 Many commands have special helper methods, such as
 :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.create_collection` or

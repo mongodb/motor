@@ -22,6 +22,14 @@ from test import env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 
+async def count(cursor):
+    i = 0
+    async for _ in cursor:
+        i += 1
+
+    return i
+
+
 class TestExamples(AsyncIOTestCase):
 
     @classmethod
@@ -43,13 +51,13 @@ class TestExamples(AsyncIOTestCase):
              "size": {"h": 28, "w": 35.5, "uom": "cm"}})
         # End Example 1
 
-        self.assertEqual(await db.inventory.count(), 1)
+        self.assertEqual(await db.inventory.count_documents({}), 1)
 
         # Start Example 2
         cursor = db.inventory.find({"item": "canvas"})
         # End Example 2
 
-        self.assertEqual(await cursor.count(), 1)
+        self.assertEqual(await count(cursor), 1)
 
         # Start Example 3
         await db.inventory.insert_many([
@@ -67,7 +75,7 @@ class TestExamples(AsyncIOTestCase):
              "size": {"h": 19, "w": 22.85, "uom": "cm"}}])
         # End Example 3
 
-        self.assertEqual(await db.inventory.count(), 4)
+        self.assertEqual(await db.inventory.count_documents({}), 4)
 
     @asyncio_test
     async def test_query_top_level_fields(self):
@@ -96,38 +104,38 @@ class TestExamples(AsyncIOTestCase):
              "status": "A"}])
         # End Example 6
 
-        self.assertEqual(await db.inventory.count(), 5)
+        self.assertEqual(await db.inventory.count_documents({}), 5)
 
         # Start Example 7
         cursor = db.inventory.find({})
         # End Example 7
 
-        self.assertEqual(await cursor.count(), 5)
+        self.assertEqual(await count(cursor), 5)
 
         # Start Example 9
         cursor = db.inventory.find({"status": "D"})
         # End Example 9
 
-        self.assertEqual(await cursor.count(), 2)
+        self.assertEqual(await count(cursor), 2)
 
         # Start Example 10
         cursor = db.inventory.find({"status": {"$in": ["A", "D"]}})
         # End Example 10
 
-        self.assertEqual(await cursor.count(), 5)
+        self.assertEqual(await count(cursor), 5)
 
         # Start Example 11
         cursor = db.inventory.find({"status": "A", "qty": {"$lt": 30}})
         # End Example 11
 
-        self.assertEqual(await cursor.count(), 1)
+        self.assertEqual(await count(cursor), 1)
 
         # Start Example 12
         cursor = db.inventory.find(
             {"$or": [{"status": "A"}, {"qty": {"$lt": 30}}]})
         # End Example 12
 
-        self.assertEqual(await cursor.count(), 3)
+        self.assertEqual(await count(cursor), 3)
 
         # Start Example 13
         cursor = db.inventory.find({
@@ -135,7 +143,7 @@ class TestExamples(AsyncIOTestCase):
             "$or": [{"qty": {"$lt": 30}}, {"item": {"$regex": "^p"}}]})
         # End Example 13
 
-        self.assertEqual(await cursor.count(), 2)
+        self.assertEqual(await count(cursor), 2)
 
     @asyncio_test
     async def test_query_embedded_documents(self):
@@ -173,33 +181,33 @@ class TestExamples(AsyncIOTestCase):
             {"size": SON([("h", 14), ("w", 21), ("uom", "cm")])})
         # End Example 15
 
-        self.assertEqual(await cursor.count(), 1)
+        self.assertEqual(await count(cursor), 1)
 
         # Start Example 16
         cursor = db.inventory.find(
             {"size": SON([("w", 21), ("h", 14), ("uom", "cm")])})
         # End Example 16
 
-        self.assertEqual(await cursor.count(), 0)
+        self.assertEqual(await count(cursor), 0)
 
         # Start Example 17
         cursor = db.inventory.find({"size.uom": "in"})
         # End Example 17
 
-        self.assertEqual(await cursor.count(), 2)
+        self.assertEqual(await count(cursor), 2)
 
         # Start Example 18
         cursor = db.inventory.find({"size.h": {"$lt": 15}})
         # End Example 18
 
-        self.assertEqual(await cursor.count(), 4)
+        self.assertEqual(await count(cursor), 4)
 
         # Start Example 19
         cursor = db.inventory.find(
             {"size.h": {"$lt": 15}, "size.uom": "in", "status": "D"})
         # End Example 19
 
-        self.assertEqual(await cursor.count(), 1)
+        self.assertEqual(await count(cursor), 1)
 
     @asyncio_test
     async def test_query_arrays(self):
@@ -233,50 +241,50 @@ class TestExamples(AsyncIOTestCase):
         cursor = db.inventory.find({"tags": ["red", "blank"]})
         # End Example 21
 
-        self.assertEqual(await cursor.count(), 1)
+        self.assertEqual(await count(cursor), 1)
 
         # Start Example 22
         cursor = db.inventory.find({"tags": {"$all": ["red", "blank"]}})
         # End Example 22
 
-        self.assertEqual(await cursor.count(), 4)
+        self.assertEqual(await count(cursor), 4)
 
         # Start Example 23
         cursor = db.inventory.find({"tags": "red"})
         # End Example 23
 
-        self.assertEqual(await cursor.count(), 4)
+        self.assertEqual(await count(cursor), 4)
 
         # Start Example 24
         cursor = db.inventory.find({"dim_cm": {"$gt": 25}})
         # End Example 24
 
-        self.assertEqual(await cursor.count(), 1)
+        self.assertEqual(await count(cursor), 1)
 
         # Start Example 25
         cursor = db.inventory.find({"dim_cm": {"$gt": 15, "$lt": 20}})
         # End Example 25
 
-        self.assertEqual(await cursor.count(), 4)
+        self.assertEqual(await count(cursor), 4)
 
         # Start Example 26
         cursor = db.inventory.find(
             {"dim_cm": {"$elemMatch": {"$gt": 22, "$lt": 30}}})
         # End Example 26
 
-        self.assertEqual(await cursor.count(), 1)
+        self.assertEqual(await count(cursor), 1)
 
         # Start Example 27
         cursor = db.inventory.find({"dim_cm.1": {"$gt": 25}})
         # End Example 27
 
-        self.assertEqual(await cursor.count(), 1)
+        self.assertEqual(await count(cursor), 1)
 
         # Start Example 28
         cursor = db.inventory.find({"tags": {"$size": 3}})
         # End Example 28
 
-        self.assertEqual(await cursor.count(), 1)
+        self.assertEqual(await count(cursor), 1)
 
     @asyncio_test
     async def test_query_array_of_documents(self):
@@ -313,53 +321,53 @@ class TestExamples(AsyncIOTestCase):
             {"instock": SON([("warehouse", "A"), ("qty", 5)])})
         # End Example 30
 
-        self.assertEqual(await cursor.count(), 1)
+        self.assertEqual(await count(cursor), 1)
 
         # Start Example 31
         cursor = db.inventory.find(
             {"instock": SON([("qty", 5), ("warehouse", "A")])})
         # End Example 31
 
-        self.assertEqual(await cursor.count(), 0)
+        self.assertEqual(await count(cursor), 0)
 
         # Start Example 32
         cursor = db.inventory.find({'instock.0.qty': {"$lte": 20}})
         # End Example 32
 
-        self.assertEqual(await cursor.count(), 3)
+        self.assertEqual(await count(cursor), 3)
 
         # Start Example 33
         cursor = db.inventory.find({'instock.qty': {"$lte": 20}})
         # End Example 33
 
-        self.assertEqual(await cursor.count(), 5)
+        self.assertEqual(await count(cursor), 5)
 
         # Start Example 34
         cursor = db.inventory.find(
             {"instock": {"$elemMatch": {"qty": 5, "warehouse": "A"}}})
         # End Example 34
 
-        self.assertEqual(await cursor.count(), 1)
+        self.assertEqual(await count(cursor), 1)
 
         # Start Example 35
         cursor = db.inventory.find(
             {"instock": {"$elemMatch": {"qty": {"$gt": 10, "$lte": 20}}}})
         # End Example 35
 
-        self.assertEqual(await cursor.count(), 3)
+        self.assertEqual(await count(cursor), 3)
 
         # Start Example 36
         cursor = db.inventory.find({"instock.qty": {"$gt": 10, "$lte": 20}})
         # End Example 36
 
-        self.assertEqual(await cursor.count(), 4)
+        self.assertEqual(await count(cursor), 4)
 
         # Start Example 37
         cursor = db.inventory.find(
             {"instock.qty": 5, "instock.warehouse": "A"})
         # End Example 37
 
-        self.assertEqual(await cursor.count(), 2)
+        self.assertEqual(await count(cursor), 2)
 
     @asyncio_test
     async def test_query_null(self):
@@ -373,19 +381,19 @@ class TestExamples(AsyncIOTestCase):
         cursor = db.inventory.find({"item": None})
         # End Example 39
 
-        self.assertEqual(await cursor.count(), 2)
+        self.assertEqual(await count(cursor), 2)
 
         # Start Example 40
         cursor = db.inventory.find({"item": {"$type": 10}})
         # End Example 40
 
-        self.assertEqual(await cursor.count(), 1)
+        self.assertEqual(await count(cursor), 1)
 
         # Start Example 41
         cursor = db.inventory.find({"item": {"$exists": False}})
         # End Example 41
 
-        self.assertEqual(await cursor.count(), 1)
+        self.assertEqual(await count(cursor), 1)
 
     @asyncio_test
     async def test_projection(self):
@@ -421,7 +429,7 @@ class TestExamples(AsyncIOTestCase):
         cursor = db.inventory.find({"status": "A"})
         # End Example 43
 
-        self.assertEqual(await cursor.count(), 3)
+        self.assertEqual(await count(cursor), 3)
 
         # Start Example 44
         cursor = db.inventory.find(
@@ -634,25 +642,25 @@ class TestExamples(AsyncIOTestCase):
              "status": "A"}])
         # End Example 55
 
-        self.assertEqual(await db.inventory.count(), 5)
+        self.assertEqual(await db.inventory.count_documents({}), 5)
 
         # Start Example 57
         await db.inventory.delete_many({"status": "A"})
         # End Example 57
 
-        self.assertEqual(await db.inventory.count(), 3)
+        self.assertEqual(await db.inventory.count_documents({}), 3)
 
         # Start Example 58
         await db.inventory.delete_one({"status": "D"})
         # End Example 58
 
-        self.assertEqual(await db.inventory.count(), 2)
+        self.assertEqual(await db.inventory.count_documents({}), 2)
 
         # Start Example 56
         await db.inventory.delete_many({})
         # End Example 56
 
-        self.assertEqual(await db.inventory.count(), 0)
+        self.assertEqual(await db.inventory.count_documents({}), 0)
 
     @env.require_version_min(3, 6)
     @env.require_replica_set

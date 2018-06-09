@@ -468,26 +468,21 @@ This version of the code is dramatically faster.
 
 Counting Documents
 ------------------
-Use :meth:`~MotorCursor.count` to determine the number of documents in
-a collection, or the number of documents that match a query:
+Use :meth:`~MotorCollection.count_documents` to determine the number of
+documents in a collection, or the number of documents that match a query:
 
 .. doctest:: after-inserting-2000-docs
 
   >>> @gen.coroutine
   ... def do_count():
-  ...     n = yield db.test_collection.find().count()
+  ...     n = yield db.test_collection.count_documents({})
   ...     print('%s documents in collection' % n)
-  ...     n = yield db.test_collection.find({'i': {'$gt': 1000}}).count()
+  ...     n = yield db.test_collection.count_documents({'i': {'$gt': 1000}})
   ...     print('%s documents where i > 1000' % n)
   ...
   >>> IOLoop.current().run_sync(do_count)
   2000 documents in collection
   999 documents where i > 1000
-
-:meth:`~MotorCursor.count` uses the *count command* internally; we'll
-cover commands_ below.
-
-.. seealso:: `Count command <http://docs.mongodb.org/manual/reference/command/count/>`_
 
 Updating Documents
 ------------------
@@ -559,10 +554,10 @@ Removing Documents
   >>> @gen.coroutine
   ... def do_delete_many():
   ...     coll = db.test_collection
-  ...     n = yield coll.count()
+  ...     n = yield coll.count_documents({})
   ...     print('%s documents before calling delete_many()' % n)
   ...     result = yield db.test_collection.delete_many({'i': {'$gte': 1000}})
-  ...     print('%s documents after' % (yield coll.count()))
+  ...     print('%s documents after' % (yield coll.count_documents({})))
   ...
   >>> IOLoop.current().run_sync(do_delete_many)
   2000 documents before calling delete_many()
@@ -572,26 +567,23 @@ Removing Documents
 
 Commands
 --------
-Besides the "CRUD" operations--insert, update, delete, and find--all other
-operations on MongoDB are commands. Run them using
-the :meth:`~MotorDatabase.command` method on :class:`MotorDatabase`:
+All operations on MongoDB are implemented internally as commands. Run them using
+the :meth:`~motor.motor_tornado.MotorDatabase.command` method on
+:class:`~motor.motor_tornado.MotorDatabase`::
 
 .. doctest:: after-inserting-2000-docs
 
   >>> from bson import SON
   >>> @gen.coroutine
-  ... def use_count_command():
-  ...     response = yield db.command(SON([("count", "test_collection")]))
-  ...     print('response: %s' % pprint.pformat(response))
+  ... def use_distinct_command():
+  ...     response = yield db.command(SON([("distinct", "test_collection"),
+  ...                                      ("key", "i")]))
   ...
-  >>> IOLoop.current().run_sync(use_count_command)
-  response: {'n': 1000, 'ok': 1.0...}
+  >>> IOLoop.current().run_sync(use_distinct_command)
 
 Since the order of command parameters matters, don't use a Python dict to pass
 the command's parameters. Instead, make a habit of using :class:`bson.SON`,
-from the ``bson`` module included with PyMongo::
-
-    yield db.command(SON([("distinct", "test_collection"), ("key", "my_key")]))
+from the ``bson`` module included with PyMongo.
 
 Many commands have special helper methods, such as
 :meth:`~MotorDatabase.create_collection` or

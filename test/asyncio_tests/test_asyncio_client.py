@@ -46,7 +46,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
         future0 = collection.insert_one({'foo': 'bar'})
         future1 = collection.insert_one({'foo': 'bar'})
         yield from asyncio.gather(future0, future1, loop=self.loop)
-        resp = yield from collection.find({'foo': 'bar'}).count()
+        resp = yield from collection.count_documents({'foo': 'bar'})
         self.assertEqual(2, resp)
         cx.close()
 
@@ -181,7 +181,8 @@ class TestAsyncIOClient(AsyncIOTestCase):
                                   loop=self.loop)
         yield from insert_future
         self.assertEqual(expected_finds, ndocs)
-        self.assertEqual(n_inserts, (yield from insert_collection.count()))
+        self.assertEqual(n_inserts,
+                         (yield from insert_collection.count_documents({})))
         yield from collection.delete_many({})
 
     @asyncio_test(timeout=30)

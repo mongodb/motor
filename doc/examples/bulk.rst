@@ -31,7 +31,7 @@ bulk insert operations.
   >>> @gen.coroutine
   ... def f():
   ...     yield db.test.insert_many(({'i': i} for i in range(10000)))
-  ...     count = yield db.test.count()
+  ...     count = yield db.test.count_documents({})
   ...     print("Final count: %d" % count)
   >>>
   >>> IOLoop.current().run_sync(f)

@@ -208,7 +208,7 @@ class MotorCollectionTest(MotorTest):
         coll.with_options(write_concern=WriteConcern(0)).insert_one({'_id': 1})
 
         # The insert is eventually executed.
-        while not (yield coll.count()):
+        while not (yield coll.count_documents({})):
             yield gen.sleep(0.1)
 
         # DuplicateKeyError not raised.
@@ -432,7 +432,7 @@ class MotorCollectionTest(MotorTest):
 
         cursors = yield collection.parallel_scan(3)
         yield [f(cursor) for cursor in cursors]
-        self.assertEqual(len(docs), (yield collection.count()))
+        self.assertEqual(len(docs), (yield collection.count_documents({})))
 
     def test_with_options(self):
         coll = self.db.test

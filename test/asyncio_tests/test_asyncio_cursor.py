@@ -44,13 +44,12 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     def test_count(self):
         yield from self.make_test_data()
         coll = self.collection
+        # Deprecated methods.
+        self.assertEqual(200, (yield from coll.count()))
         self.assertEqual(200, (yield from coll.find().count()))
         self.assertEqual(
             100,
-            (yield from coll.find({'_id': {'$gt': 99}}).count()))
-
-        where = 'this._id % 2 == 0 && this._id >= 50'
-        self.assertEqual(75, (yield from coll.find().where(where).count()))
+            (yield from coll.count_documents({'_id': {'$gt': 99}})))
 
     @asyncio_test
     def test_fetch_next(self):
@@ -222,7 +221,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         collection = self.collection
         cursor = collection.find()
         docs = yield from cursor.to_list(None)  # Unlimited.
-        count = yield from collection.count()
+        count = yield from collection.count_documents({})
         self.assertEqual(count, len(docs))
 
     @asyncio_test
@@ -307,7 +306,8 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         cursor = collection.find()
         cursor.each(cancel)
         yield from future
-        self.assertEqual((yield from collection.count()), len(results))
+        self.assertEqual((yield from collection.count_documents({})),
+                         len(results))
 
     @asyncio_test
     def test_rewind(self):
@@ -413,7 +413,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             None)
         self.assertEqual(1, len(socks))
         self.assertEqual(
-            (yield from self.db.test.count()),
+            (yield from self.db.test.count_documents({})),
             len(docs))
 
         # If the Cursor instance is discarded before being

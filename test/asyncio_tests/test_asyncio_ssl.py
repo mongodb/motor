@@ -225,7 +225,7 @@ class TestAsyncIOSSL(unittest.TestCase):
 
         collection = client.motor_test.test
         with self.assertRaises(OperationFailure):
-            yield from collection.count()
+            yield from collection.count_documents({})
 
         yield from client.admin.authenticate(
             MONGODB_X509_USERNAME, mechanism='MONGODB-X509')

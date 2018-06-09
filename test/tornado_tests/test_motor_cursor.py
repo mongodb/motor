@@ -50,18 +50,11 @@ class MotorCursorTest(MotorMockServerTest):
     def test_count(self):
         yield self.make_test_data()
         coll = self.collection
+        # Deprecated methods.
+        self.assertEqual(200, (yield coll.count()))
         self.assertEqual(200, (yield coll.find().count()))
-        self.assertEqual(100, (yield coll.find({'_id': {'$gt': 99}}).count()))
-        where = 'this._id % 2 == 0 && this._id >= 50'
-        self.assertEqual(75, (yield coll.find({'$where': where}).count()))
-        self.assertEqual(75, (yield coll.find().where(where).count()))
-        self.assertEqual(
-            25,
-            (yield coll.find({'_id': {'$lt': 100}}).where(where).count()))
-
-        self.assertEqual(
-            25,
-            (yield coll.find({'_id': {'$lt': 100}, '$where': where}).count()))
+        self.assertEqual(100,
+                         (yield coll.count_documents({'_id': {'$gt': 99}})))
 
     @gen_test
     def test_fetch_next(self):
@@ -267,7 +260,7 @@ class MotorCursorTest(MotorMockServerTest):
         collection = self.collection
         cursor = collection.find()
         docs = yield cursor.to_list(None)  # Unlimited.
-        count = yield collection.count()
+        count = yield collection.count_documents({})
         self.assertEqual(count, len(docs))
 
     @gen_test
@@ -358,7 +351,7 @@ class MotorCursorTest(MotorMockServerTest):
         cursor = collection.find()
         cursor.each(cancel)
         yield future
-        self.assertEqual((yield collection.count()), len(results))
+        self.assertEqual((yield collection.count_documents({})), len(results))
 
     @gen_test
     def test_rewind(self):
@@ -464,7 +457,7 @@ class MotorCursorTest(MotorMockServerTest):
             cursor_type=CursorType.EXHAUST).to_list(None)
         self.assertEqual(1, len(socks))
         self.assertEqual(
-            (yield self.db.test.count()),
+            (yield self.db.test.count_documents({})),
             len(docs))
 
         # If the Cursor instance is discarded before being

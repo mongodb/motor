@@ -46,8 +46,8 @@ class TestAsyncIOGridFSBucket(AsyncIOTestCase):
                                                         b"hello world")
         gout = yield from self.bucket.open_download_stream(oid)
         self.assertEqual(b"hello world", (yield from gout.read()))
-        self.assertEqual(1, (yield from self.db.fs.files.count()))
-        self.assertEqual(1, (yield from self.db.fs.chunks.count()))
+        self.assertEqual(1, (yield from self.db.fs.files.count_documents({})))
+        self.assertEqual(1, (yield from self.db.fs.chunks.count_documents({})))
 
         dst = BytesIO()
         yield from self.bucket.download_to_stream(gout._id, dst)
@@ -56,5 +56,5 @@ class TestAsyncIOGridFSBucket(AsyncIOTestCase):
         yield from self.bucket.delete(oid)
         with self.assertRaises(NoFile):
             yield from self.bucket.open_download_stream(oid)
-        self.assertEqual(0, (yield from self.db.fs.files.count()))
-        self.assertEqual(0, (yield from self.db.fs.chunks.count()))
+        self.assertEqual(0, (yield from self.db.fs.files.count_documents({})))
+        self.assertEqual(0, (yield from self.db.fs.chunks.count_documents({})))

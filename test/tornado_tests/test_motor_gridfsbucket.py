@@ -50,14 +50,14 @@ class MotorGridFSBucketTest(MotorTest):
                                                    b"hello world")
         gout = yield self.bucket.open_download_stream(oid)
         self.assertEqual(b"hello world", (yield gout.read()))
-        self.assertEqual(1, (yield self.db.fs.files.count()))
-        self.assertEqual(1, (yield self.db.fs.chunks.count()))
+        self.assertEqual(1, (yield self.db.fs.files.count_documents({})))
+        self.assertEqual(1, (yield self.db.fs.chunks.count_documents({})))
 
         yield self.bucket.delete(oid)
         with self.assertRaises(NoFile):
             yield self.bucket.open_download_stream(oid)
-        self.assertEqual(0, (yield self.db.fs.files.count()))
-        self.assertEqual(0, (yield self.db.fs.chunks.count()))
+        self.assertEqual(0, (yield self.db.fs.files.count_documents({})))
+        self.assertEqual(0, (yield self.db.fs.chunks.count_documents({})))
 
         gin = self.bucket.open_upload_stream("test_filename")
         yield gin.write(b"hello world")

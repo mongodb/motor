@@ -193,7 +193,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         coll.with_options(write_concern=WriteConcern(0)).insert_one({'_id': 1})
 
         # The insert is eventually executed.
-        while not (yield from coll.count()):
+        while not (yield from coll.count_documents({})):
             yield from asyncio.sleep(0.1, loop=self.loop)
 
         # DuplicateKeyError not raised.
@@ -399,7 +399,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             [f(cursor) for cursor in cursors],
             loop=self.loop)
 
-        self.assertEqual(len(docs), (yield from collection.count()))
+        self.assertEqual(len(docs), (yield from collection.count_documents({})))
 
     def test_with_options(self):
         coll = self.db.test

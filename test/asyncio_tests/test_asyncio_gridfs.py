@@ -95,8 +95,8 @@ class TestAsyncIOGridFile(AsyncIOTestCase):
         yield from f.write(b"hello world")
         yield from f.close()
 
-        self.assertEqual(1, (yield from self.db.alt.files.find().count()))
-        self.assertEqual(1, (yield from self.db.alt.chunks.find().count()))
+        self.assertEqual(1, (yield from self.db.alt.files.count_documents({})))
+        self.assertEqual(1, (yield from self.db.alt.chunks.count_documents({})))
 
         g = AsyncIOMotorGridOut(self.db.alt, f._id)
         self.assertEqual(b"hello world", (yield from g.read()))
@@ -295,15 +295,15 @@ class TestAsyncIOGridFS(AsyncIOTestCase):
         oid = yield from self.fs.put(b"hello world")
         out = yield from self.fs.get(oid)
         self.assertEqual(b"hello world", (yield from out.read()))
-        self.assertEqual(1, (yield from self.db.fs.files.count()))
-        self.assertEqual(1, (yield from self.db.fs.chunks.count()))
+        self.assertEqual(1, (yield from self.db.fs.files.count_documents({})))
+        self.assertEqual(1, (yield from self.db.fs.chunks.count_documents({})))
 
         yield from self.fs.delete(oid)
         with self.assertRaises(NoFile):
             yield from self.fs.get(oid)
 
-        self.assertEqual(0, (yield from self.db.fs.files.count()))
-        self.assertEqual(0, (yield from self.db.fs.chunks.count()))
+        self.assertEqual(0, (yield from self.db.fs.files.count_documents({})))
+        self.assertEqual(0, (yield from self.db.fs.chunks.count_documents({})))
 
         with self.assertRaises(NoFile):
             yield from self.fs.get("foo")
@@ -330,7 +330,9 @@ class TestAsyncIOGridFS(AsyncIOTestCase):
     @asyncio_test(timeout=30)
     def test_put_filelike(self):
         oid = yield from self.fs.put(StringIO(b"hello world"), chunk_size=1)
-        self.assertEqual(11, (yield from self.cx.motor_test.fs.chunks.count()))
+        self.assertEqual(
+            11,
+            (yield from self.cx.motor_test.fs.chunks.count_documents({})))
         gridout = yield from self.fs.get(oid)
         self.assertEqual(b"hello world", (yield from gridout.read()))
 

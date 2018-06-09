@@ -90,16 +90,16 @@ class MotorGridFileTest(MotorTest):
         f = motor.MotorGridIn(self.db.fs, filename="test")
         yield f.write(b"hello world")
         yield f.close()
-        self.assertEqual(1, (yield self.db.fs.files.find().count()))
-        self.assertEqual(1, (yield self.db.fs.chunks.find().count()))
+        self.assertEqual(1, (yield self.db.fs.files.count_documents({})))
+        self.assertEqual(1, (yield self.db.fs.chunks.count_documents({})))
 
         g = motor.MotorGridOut(self.db.fs, f._id)
         self.assertEqual(b"hello world", (yield g.read()))
 
         f = motor.MotorGridIn(self.db.fs, filename="test")
         yield f.close()
-        self.assertEqual(2, (yield self.db.fs.files.find().count()))
-        self.assertEqual(1, (yield self.db.fs.chunks.find().count()))
+        self.assertEqual(2, (yield self.db.fs.files.count_documents({})))
+        self.assertEqual(1, (yield self.db.fs.chunks.count_documents({})))
 
         g = motor.MotorGridOut(self.db.fs, f._id)
         self.assertEqual(b"", (yield g.read()))
@@ -149,8 +149,8 @@ class MotorGridFileTest(MotorTest):
         yield f.write(b"hello world")
         yield f.close()
 
-        self.assertEqual(1, (yield self.db.alt.files.find().count()))
-        self.assertEqual(1, (yield self.db.alt.chunks.find().count()))
+        self.assertEqual(1, (yield self.db.alt.files.count_documents({})))
+        self.assertEqual(1, (yield self.db.alt.chunks.count_documents({})))
 
         g = motor.MotorGridOut(self.db.alt, f._id)
         self.assertEqual(b"hello world", (yield g.read()))

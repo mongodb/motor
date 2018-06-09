@@ -343,10 +343,10 @@ If we have a collection with 2 documents like ``{'x': 1}``, then this code
 retrieves and deletes one of them::
 
   async def delete_one_document():
-      print(await db.test.count({'x': 1}))
+      print(await db.test.count_documents({'x': 1}))
       doc = await db.test.find_one_and_delete({'x': 1})
       print(doc)
-      print(await db.test.count({'x': 1}))
+      print(await db.test.count_documents({'x': 1}))
 
 This outputs something like::
 

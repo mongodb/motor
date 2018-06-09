@@ -75,15 +75,15 @@ class MotorGridfsTest(MotorTest):
         oid = yield self.fs.put(b"hello world")
         out = yield self.fs.get(oid)
         self.assertEqual(b"hello world", (yield out.read()))
-        self.assertEqual(1, (yield self.db.fs.files.count()))
-        self.assertEqual(1, (yield self.db.fs.chunks.count()))
+        self.assertEqual(1, (yield self.db.fs.files.count_documents({})))
+        self.assertEqual(1, (yield self.db.fs.chunks.count_documents({})))
 
         yield self.fs.delete(oid)
         with self.assertRaises(NoFile):
             yield self.fs.get(oid)
 
-        self.assertEqual(0, (yield self.db.fs.files.count()))
-        self.assertEqual(0, (yield self.db.fs.chunks.count()))
+        self.assertEqual(0, (yield self.db.fs.files.count_documents({})))
+        self.assertEqual(0, (yield self.db.fs.chunks.count_documents({})))
 
         with self.assertRaises(NoFile):
             yield self.fs.get("foo")
@@ -114,15 +114,15 @@ class MotorGridfsTest(MotorTest):
         oid = yield alt.put(b"hello world")
         gridout = yield alt.get(oid)
         self.assertEqual(b"hello world", (yield gridout.read()))
-        self.assertEqual(1, (yield self.db.alt.files.count()))
-        self.assertEqual(1, (yield self.db.alt.chunks.count()))
+        self.assertEqual(1, (yield self.db.alt.files.count_documents({})))
+        self.assertEqual(1, (yield self.db.alt.chunks.count_documents({})))
 
         yield alt.delete(oid)
         with self.assertRaises(NoFile):
             yield alt.get(oid)
 
-        self.assertEqual(0, (yield self.db.alt.files.count()))
-        self.assertEqual(0, (yield self.db.alt.chunks.count()))
+        self.assertEqual(0, (yield self.db.alt.files.count_documents({})))
+        self.assertEqual(0, (yield self.db.alt.chunks.count_documents({})))
 
         with self.assertRaises(NoFile):
             yield alt.get("foo")
@@ -141,7 +141,9 @@ class MotorGridfsTest(MotorTest):
     @gen_test(timeout=30)
     def test_put_filelike(self):
         oid = yield self.fs.put(StringIO(b"hello world"), chunk_size=1)
-        self.assertEqual(11, (yield self.cx.motor_test.fs.chunks.count()))
+        self.assertEqual(
+            11,
+            (yield self.cx.motor_test.fs.chunks.count_documents({})))
         gridout = yield self.fs.get(oid)
         self.assertEqual(b"hello world", (yield gridout.read()))
 

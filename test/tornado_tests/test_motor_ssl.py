@@ -216,7 +216,7 @@ class MotorSSLTest(MotorTest):
             io_loop=self.io_loop)
 
         with self.assertRaises(OperationFailure):
-            yield client.motor_test.test.count()
+            yield client.motor_test.test.count_documents({})
 
         uri = ('mongodb://%s@%s:%d/?authMechanism='
                'MONGODB-X509' % (
