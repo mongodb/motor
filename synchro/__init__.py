@@ -329,10 +329,11 @@ class MongoClient(Synchro):
     def __getitem__(self, name):
         return Database(self, name, delegate=self.delegate[name])
 
-    _MongoClient__options  = SynchroProperty()
-    _get_topology          = SynchroProperty()
-    _topology              = SynchroProperty()
-    _kill_cursors_executor = SynchroProperty()
+    _MongoClient__all_credentials = SynchroProperty()
+    _MongoClient__options         = SynchroProperty()
+    _get_topology                 = SynchroProperty()
+    _topology                     = SynchroProperty()
+    _kill_cursors_executor        = SynchroProperty()
 
 
 class Database(Synchro):

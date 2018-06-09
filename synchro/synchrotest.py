@@ -64,6 +64,7 @@ excluded_tests = [
 
     # Motor doesn't support forking or threading.
     '*.test_interrupt_signal',
+    'TestSCRAM.test_scram_threaded',
     'TestGridfs.test_threaded_reads',
     'TestGridfs.test_threaded_writes',
     'TestGSSAPI.test_gssapi_threaded',
