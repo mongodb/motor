@@ -43,6 +43,8 @@ pymongo_client_only = set([
     'set_cursor_manager']).union(pymongo_only)
 
 pymongo_database_only = set([
+    'add_user',
+    'remove_user',
     'system_js']).union(pymongo_only)
 
 pymongo_collection_only = set([
