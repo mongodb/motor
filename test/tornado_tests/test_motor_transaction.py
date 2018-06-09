@@ -402,23 +402,24 @@ def create_test(scenario_def, test):
                                        msg=op.get('name')) as context:
                     yield self.run_operation(sessions, collection, op.copy())
 
+                err = context.exception
                 if expected_result['errorContains']:
                     self.assertIn(expected_result['errorContains'].lower(),
-                                  str(context.exception).lower())
+                                  str(err).lower())
 
                 if expected_result['errorCodeName']:
                     self.assertEqual(expected_result['errorCodeName'],
-                                     context.exception.details.get('codeName'))
+                                     err.details.get('codeName'))
 
-                if expected_result['errorLabelsContain']:
-                    self.assertIn(
-                        context.exception.details.get('errorLabelsContain'), 
-                        expected_result['errorLabelsContain'])
+                for label in expected_result.get('errorLabelsContain', []):
+                    self.assertTrue(
+                        err.has_error_label(label),
+                        "%r should have errorLabel %s" % (err, label))
 
                 for label in expected_result.get('errorLabelsOmit', []):
-                    self.assertNotIn(
-                        label,
-                        context.exception.details.get('errorLabelsOmit', []))
+                    self.assertFalse(
+                        err.has_error_label(label),
+                        "%r should NOT have errorLabel %s" % (err, label))
             else:
                 result = yield self.run_operation(
                     sessions, collection, op.copy())
