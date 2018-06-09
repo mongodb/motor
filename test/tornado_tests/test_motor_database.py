@@ -161,31 +161,6 @@ class MotorDatabaseTest(MotorTest):
         self.assertEqual(b, result_c["another test"])
         self.assertEqual(c, result_c)
 
-    # SCRAM-SHA-1 is slow, install backports.pbkdf2 for speed.
-    @gen_test(timeout=30)
-    def test_authenticate(self):
-        # self.db is logged in as root.
-        test.env.create_user(
-            self.db.name, "mike", "password", roles=['userAdmin', 'readWrite'])
-
-        client = motor.MotorClient(env.host, env.port,
-                                   **self.get_client_kwargs())
-        db = client.motor_test
-        try:
-            # Authenticate many times at once to test concurrency.
-            yield [db.authenticate("mike", "password") for _ in range(10)]
-
-            # Just make sure there are no exceptions here.
-            test.env.drop_user(db.name, 'mike')
-            yield db.logout()
-            info = yield self.db.command("usersInfo", "mike")
-            users = info.get('users', [])
-            self.assertFalse("mike" in [u['user'] for u in users])
-
-        finally:
-            yield remove_all_users(self.db)
-            test.env.sync_cx.close()
-
     @gen_test
     def test_validate_collection(self):
         db = self.db

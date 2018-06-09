@@ -138,34 +138,6 @@ class TestAsyncIODatabase(AsyncIOTestCase):
         self.assertEqual(c, result_c)
 
     @asyncio_test
-    def test_authenticate(self):
-        if not test.env.auth:
-            raise SkipTest('Authentication is not enabled on server')
-
-        # self.db is logged in as root.
-        test.env.create_user(
-            self.db.name, "jesse", "password", roles=['userAdmin', 'readWrite'])
-
-        db = AsyncIOMotorClient(env.host, env.port,
-                                **self.get_client_kwargs()).motor_test
-        try:
-            # Authenticate many times at once to test concurrency.
-            yield from asyncio.wait(
-                [db.authenticate("jesse", "password") for _ in range(10)],
-                loop=self.loop)
-
-            # Just make sure there are no exceptions here.
-            test.env.drop_user(db.name, 'jesse')
-            yield from db.logout()
-            info = yield from self.db.command("usersInfo", "jesse")
-            users = info.get('users', [])
-            self.assertFalse("jesse" in [u['user'] for u in users])
-
-        finally:
-            yield from remove_all_users(self.db)
-            test.env.sync_cx.close()
-
-    @asyncio_test
     def test_validate_collection(self):
         db = self.db
 
