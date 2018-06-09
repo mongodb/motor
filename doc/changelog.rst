@@ -3,13 +3,12 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
-Next Version
-------------
+Motor 2.0
+---------
 
-Motor 1.3.0 supports MongoDB 4.0 features including multi-document transactions,
+Motor 2.0 supports MongoDB 4.0 features including multi-document transactions,
 and change stream notifications on entire databases or entire MongoDB servers.
-
-Motor 3.6 requires PyMongo 3.7 or later.
+It requires PyMongo 3.7 or later.
 
 Documentation is updated to warn about obsolete TLS versions, see
 :doc:`configuration`. Motor is now tested on Travis in addition to MongoDB's

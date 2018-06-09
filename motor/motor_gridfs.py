@@ -448,7 +448,7 @@ class AgnosticGridFS(_GFSBase):
 
         .. mongodoc:: gridfs
 
-        .. versionchanged:: 1.3
+        .. versionchanged:: 2.0
            Added ``disable_md5``.
 
         .. versionchanged:: 0.2
@@ -512,7 +512,7 @@ class AgnosticGridFS(_GFSBase):
         :meth:`find`, all returned :class:`~MotorGridOut` instances
         are associated with that session.
 
-        .. versionchanged:: 1.3
+        .. versionchanged:: 2.0
            Added ``disable_md5``.
 
         .. versionchanged:: 1.2
