@@ -429,7 +429,6 @@ class AgnosticDatabase(AgnosticBaseProperties):
     __motor_class_name__ = 'MotorDatabase'
     __delegate_class__ = Database
 
-    add_user              = AsyncCommand()
     authenticate          = AsyncCommand()
     collection_names      = AsyncRead()
     command               = AsyncCommand(doc=cmd_doc)
@@ -448,7 +447,6 @@ class AgnosticDatabase(AgnosticBaseProperties):
     previous_error        = AsyncRead(doc="OBSOLETE")
     profiling_info        = AsyncRead()
     profiling_level       = AsyncRead()
-    remove_user           = AsyncCommand()
     reset_error_history   = AsyncCommand(doc="OBSOLETE")
     set_profiling_level   = AsyncCommand()
     validate_collection   = AsyncRead().unwrap('MotorCollection')

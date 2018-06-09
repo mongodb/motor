@@ -16,8 +16,6 @@ from __future__ import unicode_literals
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-import os
-
 try:
     import ssl
 except ImportError:
@@ -30,19 +28,14 @@ except ImportError:
     # Python 3.
     from urllib.parse import quote_plus
 
-from pymongo.errors import (ConfigurationError,
-                            ConnectionFailure,
-                            OperationFailure)
+from pymongo.errors import ConfigurationError, ConnectionFailure
 from tornado.testing import gen_test
 
 import motor
 import test
 from test import SkipTest
-from test.tornado_tests import MotorTest, remove_all_users
-from test.test_environment import (CA_PEM,
-                                   CLIENT_PEM,
-                                   env,
-                                   MONGODB_X509_USERNAME)
+from test.tornado_tests import MotorTest
+from test.test_environment import CA_PEM, CLIENT_PEM, env
 
 # Start a mongod instance like:
 #
@@ -181,56 +174,3 @@ class MotorSSLTest(MotorTest):
                     io_loop=self.io_loop)
 
                 yield client.db.collection.find_one()
-
-    @gen_test
-    def test_mongodb_x509_auth(self):
-        if 'EVERGREEN' in os.environ:
-            raise SkipTest("TODO: fix on Evergreen")
-
-        # Expects the server to be running with SSL config described above,
-        # and with "--auth".
-        if not test.env.mongod_validates_client_cert:
-            raise SkipTest("No mongod available over SSL with certs")
-
-        # self.env.uri includes username and password.
-        authenticated_client = motor.MotorClient(
-            test.env.uri,
-            ssl_certfile=CLIENT_PEM,
-            ssl_ca_certs=CA_PEM,
-            io_loop=self.io_loop)
-
-        if not test.env.auth:
-            raise SkipTest('Authentication is not enabled on server')
-
-        # Give admin all necessary privileges.
-        yield authenticated_client['$external'].add_user(
-            MONGODB_X509_USERNAME, roles=[
-                {'role': 'readWriteAnyDatabase', 'db': 'admin'},
-                {'role': 'userAdminAnyDatabase', 'db': 'admin'}])
-
-        # Not authenticated.
-        client = motor.MotorClient(
-            "server", test.env.port,
-            ssl_certfile=CLIENT_PEM,
-            ssl_ca_certs=CA_PEM,
-            io_loop=self.io_loop)
-
-        with self.assertRaises(OperationFailure):
-            yield client.motor_test.test.count_documents({})
-
-        uri = ('mongodb://%s@%s:%d/?authMechanism='
-               'MONGODB-X509' % (
-                   quote_plus(MONGODB_X509_USERNAME), "server", test.env.port))
-
-        # SSL options aren't supported in the URI....
-        auth_uri_client = motor.MotorClient(
-            uri,
-            ssl_certfile=CLIENT_PEM,
-            ssl_ca_certs=CA_PEM,
-            io_loop=self.io_loop)
-
-        yield auth_uri_client.db.collection.find_one()
-
-        # Cleanup.
-        yield remove_all_users(authenticated_client['$external'])
-        yield authenticated_client['$external'].logout()

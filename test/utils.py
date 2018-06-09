@@ -97,10 +97,6 @@ def session_ids(client):
 
 
 def create_user(authdb, user, pwd=None, roles=None, **kwargs):
-    """Create user.
-
-    Avoids PyMongo's add_user helper, which isn't yet compatible with MongoDB 4.
-    """
     cmd = SON([('createUser', user)])
     # X509 doesn't use a password
     if pwd:

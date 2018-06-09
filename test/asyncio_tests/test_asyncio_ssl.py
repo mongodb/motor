@@ -16,23 +16,17 @@
 
 import asyncio
 import gc
-import os
 import ssl
 import unittest
 from unittest import SkipTest
-from urllib.parse import quote_plus  # The 'parse' submodule is Python 3.
 
-from pymongo.errors import (ConfigurationError,
-                            ConnectionFailure,
-                            OperationFailure)
+from pymongo.errors import ConfigurationError, ConnectionFailure
 
-from motor.motor_asyncio import AsyncIOMotorClient
 import test
-from test.asyncio_tests import asyncio_test, remove_all_users
-from test.test_environment import (CA_PEM,
-                                   CLIENT_PEM,
-                                   env,
-                                   MONGODB_X509_USERNAME)
+from motor.motor_asyncio import AsyncIOMotorClient
+from test.asyncio_tests import asyncio_test
+from test.test_environment import CA_PEM, CLIENT_PEM, env
+
 
 # Start a mongod instance like:
 #
@@ -193,56 +187,3 @@ class TestAsyncIOSSL(unittest.TestCase):
                     io_loop=self.loop)
 
                 yield from client.db.collection.find_one()
-
-    @asyncio_test
-    @unittest.skipIf('EVERGREEN' in os.environ, "TODO: fix on Evergreen")
-    def test_mongodb_x509_auth(self):
-        # Expects the server to be running with SSL config described above,
-        # and with "--auth".
-        if not test.env.mongod_validates_client_cert:
-            raise SkipTest("No mongod available over SSL with certs")
-
-        # self.env.uri includes username and password.
-        authenticated_client = AsyncIOMotorClient(test.env.uri,
-                                    ssl_certfile=CLIENT_PEM,
-                                    ssl_ca_certs=CA_PEM,
-                                    io_loop=self.loop)
-
-        if not test.env.auth:
-            raise SkipTest('Authentication is not enabled on server')
-
-        # Give admin all necessary privileges.
-        yield from authenticated_client['$external'].add_user(
-            MONGODB_X509_USERNAME, roles=[
-                {'role': 'readWriteAnyDatabase', 'db': 'admin'},
-                {'role': 'userAdminAnyDatabase', 'db': 'admin'}])
-
-        # Not authenticated.
-        client = AsyncIOMotorClient(env.host, env.port,
-                                    ssl_certfile=CLIENT_PEM,
-                                    ssl_ca_certs=CA_PEM,
-                                    io_loop=self.loop)
-
-        collection = client.motor_test.test
-        with self.assertRaises(OperationFailure):
-            yield from collection.count_documents({})
-
-        yield from client.admin.authenticate(
-            MONGODB_X509_USERNAME, mechanism='MONGODB-X509')
-
-        yield from collection.delete_many({})
-        uri = ('mongodb://%s@%s:%d/?authMechanism='
-               'MONGODB-X509' % (
-                   quote_plus(MONGODB_X509_USERNAME), env.host, env.port))
-
-        # SSL options aren't supported in the URI....
-        auth_uri_client = AsyncIOMotorClient(uri,
-                                             ssl_certfile=CLIENT_PEM,
-                                             ssl_ca_certs=CA_PEM,
-                                             io_loop=self.loop)
-
-        yield from auth_uri_client.db.collection.find_one()
-
-        # Cleanup.
-        yield from remove_all_users(authenticated_client['$external'])
-        yield from authenticated_client['$external'].logout()
