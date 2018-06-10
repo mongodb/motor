@@ -17,10 +17,10 @@ Documentation is updated to warn about obsolete TLS versions, see
 Added support for `aiohttp`_ 3.0 and later, and dropped older aiohttp versions.
 The aiohttp integration now requires Python 3.5+.
 
-The following ``MotorDatabase.add_user`` and ``MotorDatabase.remove_user``
-methods are deleted. Manage user accounts with four database commands:
-createUser_, usersInfo_, updateUser_, and dropUser_. You can run any database
-command with the :meth:`MotorDatabase.command` method.
+The ``MotorDatabase.add_user`` and ``MotorDatabase.remove_user`` methods are
+deleted. Manage user accounts with four database commands: createUser_,
+usersInfo_, updateUser_, and dropUser_. You can run any database command with
+the :meth:`MotorDatabase.command` method.
 
 .. _createUser: https://docs.mongodb.com/manual/reference/command/createUser/
 .. _usersInfo: https://docs.mongodb.com/manual/reference/command/usersInfo/
