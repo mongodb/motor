@@ -17,9 +17,9 @@ from __future__ import unicode_literals
 """Validate list of PyMongo attributes wrapped by Motor."""
 
 from tornado.testing import gen_test
-from gridfs import GridFS, GridIn
+from gridfs import GridFSBucket, GridIn
 
-from motor import MotorGridFS, MotorGridIn, MotorGridOut
+from motor import MotorGridFSBucket, MotorGridIn, MotorGridOut
 from test import env
 from test.tornado_tests import MotorTest
 
@@ -119,25 +119,19 @@ class MotorCoreTest(MotorTest):
 class MotorCoreTestGridFS(MotorTest):
     def setUp(self):
         super(MotorCoreTestGridFS, self).setUp()
-        self.sync_fs = GridFS(env.sync_cx.test)
-        self.sync_fs.delete(file_id=1)
-        self.sync_fs.put(b'', _id=1)
+        self.sync_fs = GridFSBucket(env.sync_cx.test)
+        self.sync_fs.upload_from_stream_with_id(1, 'filename', source=b'')
 
     def tearDown(self):
         self.sync_fs.delete(file_id=1)
         super(MotorCoreTestGridFS, self).tearDown()
 
     def test_gridfs_attrs(self):
-        pymongo_gridfs_only = set([
-            # Obsolete PyMongo methods.
-            'open',
-            'remove'])
-
         motor_gridfs_only = set(['collection']).union(motor_only)
 
         self.assertEqual(
-            attrs(GridFS(env.sync_cx.test)) - pymongo_gridfs_only,
-            attrs(MotorGridFS(self.cx.test)) - motor_gridfs_only)
+            attrs(GridFSBucket(env.sync_cx.test)),
+            attrs(MotorGridFSBucket(self.cx.test)) - motor_gridfs_only)
 
     def test_gridin_attrs(self):
         motor_gridin_only = set(['set']).union(motor_only)
@@ -153,12 +147,13 @@ class MotorCoreTestGridFS(MotorTest):
             'stream_to_handler'
         ]).union(motor_only)
 
-        motor_gridout = yield MotorGridOut(self.cx.test.fs, file_id=1).open()
+        fs = MotorGridFSBucket(self.cx.test)
+        motor_gridout = yield fs.open_download_stream(1)
         self.assertEqual(
-            attrs(self.sync_fs.get(1)),
+            attrs(self.sync_fs.open_download_stream(1)),
             attrs(motor_gridout) - motor_gridout_only)
 
     def test_gridout_cursor_attrs(self):
         self.assertEqual(
             attrs(self.sync_fs.find()) - pymongo_cursor_only,
-            attrs(MotorGridFS(self.cx.test).find()) - motor_cursor_only)
+            attrs(MotorGridFSBucket(self.cx.test).find()) - motor_cursor_only)

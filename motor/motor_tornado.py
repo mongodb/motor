@@ -61,9 +61,6 @@ MotorChangeStream = create_motor_class(core.AgnosticChangeStream)
 MotorBulkOperationBuilder = create_motor_class(core.AgnosticBulkOperationBuilder)
 
 
-MotorGridFS = create_motor_class(motor_gridfs.AgnosticGridFS)
-
-
 MotorGridFSBucket = create_motor_class(motor_gridfs.AgnosticGridFSBucket)
 
 

@@ -78,8 +78,8 @@ class MotorGridFileTest(MotorTest):
 
     @gen_test
     def test_iteration(self):
-        fs = motor.MotorGridFS(self.db)
-        _id = yield fs.put(b'foo')
+        fs = motor.MotorGridFSBucket(self.db)
+        _id = yield fs.upload_from_stream('filename', b'foo')
         g = motor.MotorGridOut(self.db.fs, _id)
 
         # Iteration is prohibited.
@@ -367,11 +367,11 @@ class MotorGridFileTest(MotorTest):
 
     @gen_test
     def test_stream_to_handler(self):
-        fs = motor.MotorGridFS(self.db)
+        fs = motor.MotorGridFSBucket(self.db)
 
         for content_length in (0, 1, 100, 100 * 1000):
-            _id = yield fs.put(b'a' * content_length)
-            gridout = yield fs.get(_id)
+            _id = yield fs.upload_from_stream('filename', b'a' * content_length)
+            gridout = yield fs.open_download_stream(_id)
             handler = MockRequestHandler()
             yield gridout.stream_to_handler(handler)
             self.assertEqual(content_length, handler.n_written)

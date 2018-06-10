@@ -18,7 +18,8 @@ import warnings
 
 from pymongo.errors import InvalidOperation
 
-from motor.motor_asyncio import AsyncIOMotorClientSession, AsyncIOMotorGridFS
+from motor.motor_asyncio import (AsyncIOMotorClientSession,
+                                 AsyncIOMotorGridFSBucket)
 import test
 from test import env
 from test.asyncio_tests import asyncio_test, AsyncIOTestCase
@@ -89,7 +90,7 @@ class TestAsyncIOAwait(AsyncIOTestCase):
 
     @asyncio_test
     async def test_iter_gridfs(self):
-        gfs = AsyncIOMotorGridFS(self.db)
+        gfs = AsyncIOMotorGridFSBucket(self.db)
 
         async def cleanup():
             await self.db.fs.files.delete_many({})
@@ -105,7 +106,8 @@ class TestAsyncIOAwait(AsyncIOTestCase):
 
         for n_files in 1, 2, 10:
             for i in range(n_files):
-                await gfs.put(data, filename='filename')
+                async with gfs.open_upload_stream(filename='filename') as f:
+                    await f.write(data)
 
             # Force extra batches to test iteration.
             j = 0
@@ -115,10 +117,11 @@ class TestAsyncIOAwait(AsyncIOTestCase):
             self.assertEqual(j, n_files)
             await cleanup()
 
-        async with await gfs.new_file(_id=1, chunk_size=1) as f:
-            await f.write(data)
-
-        gout = await gfs.find_one({'_id': 1})
+        await gfs.upload_from_stream_with_id(
+            1, 'filename', source=data, chunk_size_bytes=1)
+        cursor = gfs.find({'_id': 1})
+        await cursor.fetch_next
+        gout = cursor.next_object()
         chunks = []
         async for chunk in gout:
             chunks.append(chunk)
@@ -129,11 +132,12 @@ class TestAsyncIOAwait(AsyncIOTestCase):
     @asyncio_test
     async def test_stream_to_handler(self):
         # Sort of Tornado-specific, but it does work with asyncio.
-        fs = AsyncIOMotorGridFS(self.db)
+        fs = AsyncIOMotorGridFSBucket(self.db)
         content_length = 1000
         await fs.delete(1)
-        self.assertEqual(1, await fs.put(b'a' * content_length, _id=1))
-        gridout = await fs.get(1)
+        await fs.upload_from_stream_with_id(
+            1, 'filename', source=b'a' * content_length)
+        gridout = await fs.open_download_stream(1)
         handler = test.MockRequestHandler()
         await gridout.stream_to_handler(handler)
         self.assertEqual(content_length, handler.n_written)

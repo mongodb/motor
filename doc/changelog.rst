@@ -27,6 +27,11 @@ the :meth:`MotorDatabase.command` method.
 .. _updateUser: https://docs.mongodb.com/manual/reference/command/updateUser/
 .. _dropUser: https://docs.mongodb.com/manual/reference/command/createUser/
 
+The deprecated GridFS classes ``MotorGridFS`` and ``AsyncIOMotorGridFS`` are
+deleted in favor of :class:`~motor.motor_tornado.MotorGridFSBucket` and
+:class:`~motor.motor_asyncio.AsyncIOMotorGridFSBucket`, which conform to driver
+specs for GridFS.
+
 Motor 1.2.3
 -----------
 
@@ -181,8 +186,7 @@ New features
 New classes :class:`~motor.motor_tornado.MotorGridFSBucket` and :class:`~motor.motor_asyncio.AsyncIOMotorGridFSBucket`
 conform to the `GridFS API Spec <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_
 for MongoDB drivers. These classes supersede the old
-:class:`~motor.motor_tornado.MotorGridFS` and
-:class:`~motor.motor_asyncio.AsyncIOMotorGridFS`. See `GridFS`_ changes below,
+``MotorGridFS`` and ``AsyncIOMotorGridFS``. See `GridFS`_ changes below,
 especially note the **breaking change** in
 :class:`~motor.motor_web.GridFSHandler`.
 
@@ -294,9 +298,10 @@ Removed:
 GridFS
 ~~~~~~
 
-The old GridFS classes :class:`~motor.motor_tornado.MotorGridFS` and
-:class:`~motor.motor_asyncio.AsyncIOMotorGridFS` are deprecated in favor of
-:class:`~motor.motor_tornado.MotorGridFSBucket` and :class:`~motor.motor_asyncio.AsyncIOMotorGridFSBucket`,
+The old GridFS classes ``MotorGridFS`` and
+``AsyncIOMotorGridFS`` are deprecated in favor of
+:class:`~motor.motor_tornado.MotorGridFSBucket` and
+:class:`~motor.motor_asyncio.AsyncIOMotorGridFSBucket`,
 which comply with MongoDB's cross-language driver spec for GridFS.
 
 The old classes are still supported, but will be removed in Motor 2.0.

@@ -357,7 +357,7 @@ Metadata set on the file appears as attributes on a
                 **kwargs)
 
     if PY35:
-        # Support "async with fs.new_file() as f:"
+        # Support "async with bucket.open_upload_stream() as f:"
         exec(textwrap.dedent("""
         async def __aenter__(self):
             return self
@@ -370,10 +370,49 @@ Metadata set on the file appears as attributes on a
         return self.io_loop
 
 
-class _GFSBase(object):
-    __delegate_class__ = None
+class AgnosticGridFSBucket(object):
+    __motor_class_name__ = 'MotorGridFSBucket'
+    __delegate_class__ = gridfs.GridFSBucket
 
-    def __init__(self, database, collection, disable_md5):
+    delete                       = AsyncCommand()
+    download_to_stream           = AsyncCommand()
+    download_to_stream_by_name   = AsyncCommand()
+    open_download_stream         = AsyncCommand().wrap(gridfs.GridOut)
+    open_download_stream_by_name = AsyncCommand().wrap(gridfs.GridOut)
+    open_upload_stream           = DelegateMethod().wrap(gridfs.GridIn)
+    open_upload_stream_with_id   = DelegateMethod().wrap(gridfs.GridIn)
+    rename                       = AsyncCommand()
+    upload_from_stream           = AsyncCommand()
+    upload_from_stream_with_id   = AsyncCommand()
+
+    def __init__(self, database, collection="fs", disable_md5=False):
+        """Create a handle to a GridFS bucket.
+
+        Raises :exc:`~pymongo.errors.ConfigurationError` if `write_concern`
+        is not acknowledged.
+
+        This class conforms to the `GridFS API Spec
+        <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_
+        for MongoDB drivers.
+
+        :Parameters:
+          - `database`: database to use.
+          - `bucket_name` (optional): The name of the bucket. Defaults to 'fs'.
+          - `chunk_size_bytes` (optional): The chunk size in bytes. Defaults
+            to 255KB.
+          - `write_concern` (optional): The
+            :class:`~pymongo.write_concern.WriteConcern` to use. If ``None``
+            (the default) db.write_concern is used.
+          - `read_preference` (optional): The read preference to use. If
+            ``None`` (the default) db.read_preference is used.
+          - `disable_md5` (optional): When True, MD5 checksums will not be
+            computed for uploaded files. Useful in environments where MD5
+            cannot be used for regulatory or other reasons. Defaults to False.
+
+        .. versionadded:: 1.0
+
+        .. mongodoc:: gridfs
+        """
         db_class = create_class_with_framework(
             AgnosticDatabase, self._framework, self.__module__)
 
@@ -416,167 +455,6 @@ class _GFSBase(object):
             return grid_out_class(
                 cursor=obj,
                 collection=self.collection)
-
-
-class AgnosticGridFS(_GFSBase):
-    __motor_class_name__ = 'MotorGridFS'
-    __delegate_class__ = gridfs.GridFS
-
-    find_one         = AsyncRead().wrap(grid_file.GridOut)
-    new_file         = AsyncRead().wrap(grid_file.GridIn)
-    get              = AsyncRead().wrap(grid_file.GridOut)
-    get_version      = AsyncRead().wrap(grid_file.GridOut)
-    get_last_version = AsyncRead().wrap(grid_file.GridOut)
-    list             = AsyncRead()
-    exists           = AsyncRead(doc=exists_doc)
-    delete           = AsyncCommand()
-    put              = AsyncCommand()
-
-    def __init__(self, database, collection="fs", disable_md5=False):
-        """**DEPRECATED**: Use :class:`MotorGridFSBucket` or
-        :class:`AsyncIOMotorGridFSBucket`.
-
-        An instance of GridFS on top of a single Database.
-
-        :Parameters:
-          - `database`: a :class:`~motor.MotorDatabase`
-          - `collection` (optional): A string, name of root collection to use,
-            such as "fs" or "my_files"
-          - `disable_md5` (optional): When True, MD5 checksums will not be
-            computed for uploaded files. Useful in environments where MD5
-            cannot be used for regulatory or other reasons. Defaults to False.
-
-        .. mongodoc:: gridfs
-
-        .. versionchanged:: 2.0
-           Added ``disable_md5``.
-
-        .. versionchanged:: 0.2
-           ``open`` method removed; no longer needed.
-        """
-        super(self.__class__, self).__init__(database, collection, disable_md5)
-
-    def find(self, *args, **kwargs):
-        """Query GridFS for files.
-
-        Returns a cursor that iterates across files matching
-        arbitrary queries on the files collection. Can be combined
-        with other modifiers for additional control. For example::
-
-          cursor = fs.find({"filename": "lisa.txt"}, no_cursor_timeout=True)
-          while (yield cursor.fetch_next):
-              grid_out = cursor.next_object()
-              data = yield grid_out.read()
-
-        This iterates through all versions of "lisa.txt" stored in GridFS.
-        Note that setting no_cursor_timeout may be important to prevent
-        the cursor from timing out during long multi-file processing work.
-
-        As another example, the call::
-
-          most_recent_three = fs.find().sort("uploadDate", -1).limit(3)
-
-        would return a cursor to the three most recently uploaded files
-        in GridFS.
-
-        :meth:`~motor.MotorGridFS.find` follows a similar
-        interface to :meth:`~motor.MotorCollection.find`
-        in :class:`~motor.MotorCollection`.
-
-        :Parameters:
-          - `filter` (optional): a SON object specifying elements which
-            must be present for a document to be included in the
-            result set
-          - `skip` (optional): the number of files to omit (from
-            the start of the result set) when returning the results
-          - `limit` (optional): the maximum number of results to
-            return
-          - `no_cursor_timeout` (optional): if False (the default), any
-            returned cursor is closed by the server after 10 minutes of
-            inactivity. If set to True, the returned cursor will never
-            time out on the server. Care should be taken to ensure that
-            cursors with no_cursor_timeout turned on are properly closed.
-          - `sort` (optional): a list of (key, direction) pairs
-            specifying the sort order for this query. See
-            :meth:`~pymongo.cursor.Cursor.sort` for details.
-          - `session` (optional): a
-            :class:`~pymongo.client_session.ClientSession`, created with
-            :meth:`~MotorClient.start_session`.
-
-        Raises :class:`TypeError` if any of the arguments are of
-        improper type. Returns an instance of
-        :class:`~gridfs.grid_file.GridOutCursor`
-        corresponding to this query.
-
-        If a :class:`~pymongo.client_session.ClientSession` is passed to
-        :meth:`find`, all returned :class:`~MotorGridOut` instances
-        are associated with that session.
-
-        .. versionchanged:: 2.0
-           Added ``disable_md5``.
-
-        .. versionchanged:: 1.2
-           Added session parameter.
-
-        .. versionchanged:: 1.0
-           Removed the read_preference, tag_sets, and
-           secondary_acceptable_latency_ms options.
-
-        .. versionadded:: 0.2
-
-        .. mongodoc:: find
-        """
-        cursor = self.delegate.find(*args, **kwargs)
-        grid_out_cursor = create_class_with_framework(
-            AgnosticGridOutCursor, self._framework, self.__module__)
-
-        return grid_out_cursor(cursor, self.collection)
-
-
-class AgnosticGridFSBucket(_GFSBase):
-    __motor_class_name__ = 'MotorGridFSBucket'
-    __delegate_class__ = gridfs.GridFSBucket
-
-    delete                       = AsyncCommand()
-    download_to_stream           = AsyncCommand()
-    download_to_stream_by_name   = AsyncCommand()
-    open_download_stream         = AsyncCommand().wrap(gridfs.GridOut)
-    open_download_stream_by_name = AsyncCommand().wrap(gridfs.GridOut)
-    open_upload_stream           = DelegateMethod().wrap(gridfs.GridIn)
-    open_upload_stream_with_id   = DelegateMethod().wrap(gridfs.GridIn)
-    rename                       = AsyncCommand()
-    upload_from_stream           = AsyncCommand()
-    upload_from_stream_with_id   = AsyncCommand()
-
-    def __init__(self, database, collection="fs", disable_md5=False):
-        """Create a handle to a GridFS bucket.
-
-        Raises :exc:`~pymongo.errors.ConfigurationError` if `write_concern`
-        is not acknowledged.
-
-        This class is a replacement for :class:`.MotorGridFS`; it conforms to the
-        `GridFS API Spec <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_
-        for MongoDB drivers.
-
-        :Parameters:
-          - `database`: database to use.
-          - `bucket_name` (optional): The name of the bucket. Defaults to 'fs'.
-          - `chunk_size_bytes` (optional): The chunk size in bytes. Defaults
-            to 255KB.
-          - `write_concern` (optional): The
-            :class:`~pymongo.write_concern.WriteConcern` to use. If ``None``
-            (the default) db.write_concern is used.
-          - `read_preference` (optional): The read preference to use. If
-            ``None`` (the default) db.read_preference is used.
-          - `disable_md5` (optional): When True, MD5 checksums will not be
-            computed for uploaded files. Useful in environments where MD5
-            cannot be used for regulatory or other reasons. Defaults to False.
-
-        .. versionadded:: 1.0
-
-        .. mongodoc:: gridfs
-        """
-        super(self.__class__, self).__init__(database, collection, disable_md5)
 
     def find(self, *args, **kwargs):
         """Find and return the files collection documents that match ``filter``.

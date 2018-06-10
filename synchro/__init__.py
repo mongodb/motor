@@ -144,8 +144,6 @@ def wrap_synchro(fn):
             return Cursor(motor_obj)
         if isinstance(motor_obj, motor.MotorBulkOperationBuilder):
             return BulkOperationBuilder(motor_obj)
-        if isinstance(motor_obj, motor.MotorGridFS):
-            return GridFS(motor_obj)
         if isinstance(motor_obj, motor.MotorGridIn):
             return GridIn(None, delegate=motor_obj)
         if isinstance(motor_obj, motor.MotorGridOut):
@@ -607,26 +605,6 @@ class BulkOperationBuilder(Synchro):
                 "Expected MotorBulkOperationBuilder, got %r" % motor_bob)
 
         self.delegate = motor_bob
-
-
-class GridFS(Synchro):
-    __delegate_class__ = motor.MotorGridFS
-
-    def __init__(self, database, collection='fs', *args, **kwargs):
-        if not isinstance(database, Database):
-            raise TypeError(
-                "Expected Database, got %s" % repr(database))
-
-        self.delegate = motor.MotorGridFS(
-            database.delegate, collection, *args, **kwargs)
-
-    def put(self, *args, **kwargs):
-        return self.synchronize(self.delegate.put)(*args, **kwargs)
-
-    def find(self, *args, **kwargs):
-        motor_method = self.delegate.find
-        unwrapping_method = wrap_synchro(unwrap_synchro(motor_method))
-        return unwrapping_method(*args, **kwargs)
 
 
 class GridFSBucket(Synchro):

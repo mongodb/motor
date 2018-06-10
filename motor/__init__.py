@@ -56,7 +56,6 @@ else:
     # Now some classes that aren't in __all__ but might be expected.
     from .motor_tornado import (MotorCollection,
                                 MotorDatabase,
-                                MotorGridFS,
                                 MotorGridFSBucket,
                                 MotorGridIn,
                                 MotorGridOut,

@@ -14,7 +14,7 @@ import tempfile
 import aiohttp.web
 
 from motor.aiohttp import AIOHTTPGridFS
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorGridFS
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorGridFSBucket
 
 client = AsyncIOMotorClient()
 
@@ -26,12 +26,12 @@ async def put_gridfile():
             for _ in range(10):
                 gzfile.write(b'Nonesuch nonsense\n')
 
-        gfs = AsyncIOMotorGridFS(client.my_database)
+        gfs = AsyncIOMotorGridFSBucket(client.my_database)
         tmp.seek(0)
-        await gfs.put(tmp,
-                      filename='my_file',
-                      content_type='text',
-                      metadata={'compressed': True})
+        await gfs.upload_from_stream(filename='my_file',
+                                     source=tmp,
+                                     metadata={'contentType': 'text',
+                                               'compressed': True})
 
 asyncio.get_event_loop().run_until_complete(put_gridfile())
 

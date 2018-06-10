@@ -51,6 +51,9 @@ excluded_modules = [
 
     # We test Synchro in Python 2.7, but Motor's change streams need Python 3.
     'test.test_change_stream',
+
+    # Deprecated in PyMongo, removed in Motor 2.0.
+    'test.test_gridfs',
 ]
 
 excluded_tests = [
@@ -65,10 +68,11 @@ excluded_tests = [
     # Motor doesn't support forking or threading.
     '*.test_interrupt_signal',
     'TestSCRAM.test_scram_threaded',
-    'TestGridfs.test_threaded_reads',
-    'TestGridfs.test_threaded_writes',
     'TestGSSAPI.test_gssapi_threaded',
     'TestCursor.test_concurrent_close',
+    # These are in test_gridfs_bucket.
+    'TestGridfs.test_threaded_reads',
+    'TestGridfs.test_threaded_writes',
 
     # Relies on threads; tested directly.
     'TestCollection.test_parallel_scan',
@@ -112,9 +116,9 @@ excluded_tests = [
     'TestGridFile.test_grid_in_default_opts',
     'TestGridFile.test_set_after_close',
 
-    # GridFS always connects lazily in Motor.
+    # GridOut always connects lazily in Motor.
     'TestGridFile.test_grid_out_lazy_connect',
-    'TestGridfs.test_gridfs_lazy_connect',
+    'TestGridfs.test_gridfs_lazy_connect',  # In test_gridfs_bucket.
 
     # Complex PyMongo-specific mocking.
     '*.test_wire_version',
@@ -142,7 +146,6 @@ excluded_tests = [
     'TestCommandMonitoring.test_sensitive_commands',
     'TestCursor.test_close_kills_cursor_synchronously',
     'TestGridFile.test_grid_out_cursor_options',
-    'TestGridfsReplicaSet.test_gridfs_replica_set',
     'TestMaxStaleness.test_last_write_date',
     'TestMaxStaleness.test_last_write_date_absent',
     'TestMonitor.test_atexit_hook',

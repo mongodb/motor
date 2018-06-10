@@ -59,10 +59,6 @@ AsyncIOMotorBulkOperationBuilder = create_asyncio_class(
     core.AgnosticBulkOperationBuilder)
 
 
-AsyncIOMotorGridFS = create_asyncio_class(
-    motor_gridfs.AgnosticGridFS)
-
-
 AsyncIOMotorGridFSBucket = create_asyncio_class(
     motor_gridfs.AgnosticGridFSBucket)
 

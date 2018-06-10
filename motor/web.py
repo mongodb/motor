@@ -84,7 +84,7 @@ class GridFSHandler(tornado.web.RequestHandler):
         .. versionchanged:: 1.0
           **BREAKING CHANGE**: Now takes a
           :class:`~motor.motor_tornado.MotorGridFSBucket`, not a
-          :class:`~motor.motor_tornado.MotorGridFS`.
+          ``MotorGridFS``.
           Also takes an additional ``request`` parameter.
 
         .. versionchanged:: 0.2
