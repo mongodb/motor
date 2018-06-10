@@ -25,6 +25,7 @@ from bson import CodecOptions
 from bson.binary import JAVA_LEGACY
 from bson.objectid import ObjectId
 from pymongo import ReadPreference, WriteConcern
+from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import Secondary
 from pymongo.errors import DuplicateKeyError, OperationFailure
 from tornado import gen
@@ -453,6 +454,31 @@ class MotorCollectionTest(MotorTest):
         self.assertEqual(pref, coll2.read_preference)
         self.assertEqual(coll.codec_options, coll2.codec_options)
         self.assertEqual(coll.write_concern, coll2.write_concern)
+
+    def test_sub_collection(self):
+        # Verify that a collection with a dotted name inherits options from its
+        # parent collection.
+        write_concern = WriteConcern(w=2, j=True)
+        read_concern = ReadConcern("majority")
+        read_preference = Secondary([{"dc": "sf"}])
+        codec_options = CodecOptions(
+            tz_aware=True, uuid_representation=JAVA_LEGACY)
+
+        coll1 = self.db.get_collection(
+            'test',
+            write_concern=write_concern,
+            read_concern=read_concern,
+            read_preference=read_preference,
+            codec_options=codec_options)
+
+        coll2 = coll1.subcollection
+        coll3 = coll1['subcollection']
+
+        for c in [coll1, coll2, coll3]:
+            self.assertEqual(write_concern, c.write_concern)
+            self.assertEqual(read_concern, c.read_concern)
+            self.assertEqual(read_preference, c.read_preference)
+            self.assertEqual(codec_options, c.codec_options)
 
 
 if __name__ == '__main__':

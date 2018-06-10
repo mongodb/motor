@@ -150,9 +150,6 @@ excluded_tests = [
     'TestReplicaSetClient.test_kill_cursor_explicit_secondary',
     'TestSelections.test_bool',
     'TestTransactions.transaction_test_debug',
-
-    # MOTOR-243.
-    'TestCollectionNoConnect.test_getattr',
 ]
 
 

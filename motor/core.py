@@ -612,7 +612,8 @@ class AgnosticCollection(AgnosticBaseProperties):
         collection_class = create_class_with_framework(
             AgnosticCollection, self._framework, self.__module__)
 
-        return collection_class(self.database, self.name + '.' + name)
+        return collection_class(self.database, self.name + '.' + name,
+                                _delegate=self.delegate[name])
 
     def __call__(self, *args, **kwargs):
         raise TypeError(
