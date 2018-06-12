@@ -28,14 +28,11 @@ if [ "$TOX_ENV" = "synchro" ]; then
 fi
 
 if [ "${INSTALL_TOX}" = "true" ]; then
-    pip download virtualenv
-    unzip virtualenv*
-    "${PYTHON_BINARY}" virtualenv.py motorenv
+    /opt/mongodbtoolchain/v2/bin/virtualenv motorenv
     set +o xtrace
     source motorenv/bin/activate
     set -o xtrace
     pip install tox
-    export PYTHON_BINARY=python
     TOX_BINARY=tox
 fi
 

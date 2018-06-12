@@ -794,16 +794,16 @@ axes:
   - id: tox-env-osx
     display_name: "Tox Env OSX"
     values:
-      - id: "tornado5-py27"
+      - id: "tornado5-py36"
         variables:
            INSTALL_TOX: true
-           TOX_ENV: "tornado5-py27"
-           PYTHON_BINARY: "python"
-      - id: "tornado_git-py27"
+           TOX_ENV: "tornado5-py36"
+           PYTHON_BINARY: "/opt/mongodbtoolchain/v2/bin/python3.6"
+      - id: "tornado_git-py36"
         variables:
            INSTALL_TOX: true
-           TOX_ENV: "tornado_git-py27"
-           PYTHON_BINARY: "python"
+           TOX_ENV: "tornado_git-py36"
+           PYTHON_BINARY: "/opt/mongodbtoolchain/v2/bin/python3.6"
 
   - id: os
     display_name: "Operating System"
@@ -817,7 +817,7 @@ axes:
         display_name: "OSX 10.10"
         run_on: "macos-1012"
         variables:
-           TOX_BINARY: "python -m tox"
+           TOX_BINARY: "/opt/mongodbtoolchain/v2/bin/python3.6 -m tox"
 
 buildvariants:
 
