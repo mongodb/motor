@@ -15,8 +15,13 @@
 """MongoDB documentation examples with Motor and asyncio."""
 
 import asyncio
+from io import StringIO
+from unittest.mock import patch
 
 import pymongo
+from pymongo import WriteConcern
+from pymongo.errors import ConnectionFailure, OperationFailure
+from pymongo.read_concern import ReadConcern
 
 from test import env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
@@ -818,3 +823,60 @@ class TestExamples(AsyncIOTestCase):
             [("cuisine", pymongo.ASCENDING), ("name", pymongo.ASCENDING)],
             partialFilterExpression={"rating": {"$gt": 5}})
         # End Index Example 1
+
+    @asyncio_test
+    async def test_transactions(self):
+        # Transaction examples
+        self.addCleanup(env.sync_cx.drop_database, "hr")
+        self.addCleanup(env.sync_cx.drop_database, "reporting")
+
+        employees = self.cx.hr.employees
+        events = self.cx.reporting.events
+        await employees.insert_one({"employee": 3, "status": "Active"})
+        await events.insert_one(
+            {"employee": 3, "status": {"new": "Active", "old": None}})
+
+        # Start Transactions Intro Example 1
+
+        async def update_employee_info(session):
+            employees_coll = session.client.hr.employees
+            events_coll = session.client.reporting.events
+
+            async with session.start_transaction(
+                    read_concern=ReadConcern("snapshot"),
+                    write_concern=WriteConcern(w="majority")):
+                await employees_coll.update_one(
+                    {"employee": 3}, {"$set": {"status": "Inactive"}},
+                    session=session)
+                await events_coll.insert_one(
+                    {"employee": 3, "status": {
+                        "new": "Inactive", "old": "Active"}},
+                    session=session)
+
+                while True:
+                    try:
+                        # Commit uses write concern set at transaction start.
+                        await session.commit_transaction()
+                        print("Transaction committed.")
+                        break
+                    except (ConnectionFailure, OperationFailure) as exc:
+                        # Can retry commit
+                        if exc.has_error_label(
+                                "UnknownTransactionCommitResult"):
+                            print("UnknownTransactionCommitResult, retrying "
+                                  "commit operation ...")
+                            continue
+                        else:
+                            print("Error during commit ...")
+                            raise
+        # End Transactions Intro Example 1
+
+        # Test the example.
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            async with await self.cx.start_session() as s:
+                await update_employee_info(s)
+
+        employee = await employees.find_one({"employee": 3})
+        self.assertIsNotNone(employee)
+        self.assertEqual(employee['status'], 'Inactive')
+        self.assertIn("Transaction committed", mock_stdout.getvalue())
