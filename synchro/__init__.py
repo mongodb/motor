@@ -352,10 +352,8 @@ class _SynchroTransactionContext(Synchro):
 class ClientSession(Synchro):
     __delegate_class__ = motor.motor_tornado.MotorClientSession
 
-    start_transaction   = WrapOutgoing()
-    commit_transaction  = Sync()
-    abort_transaction   = Sync()
-    end_session         = Sync()
+    start_transaction = WrapOutgoing()
+    client            = SynchroProperty()
 
     def __init__(self, delegate):
         self.delegate = delegate
@@ -369,36 +367,6 @@ class ClientSession(Synchro):
     _server_session      = SynchroProperty()
     _transaction_id      = SynchroProperty()
     _txn_read_preference = SynchroProperty()
-
-    @property
-    def client(self):
-        return self.delegate.client
-
-    @property
-    def cluster_time(self):
-        return self.delegate.cluster_time
-
-    @property
-    def has_ended(self):
-        return self.delegate.has_ended
-
-    @property
-    def options(self):
-        return self.delegate.options
-
-    @property
-    def operation_time(self):
-        return self.delegate.operation_time
-
-    @property
-    def session_id(self):
-        return self.delegate.session_id
-
-    def advance_cluster_time(self, cluster_time):
-        return self.delegate.advance_cluster_time(cluster_time)
-
-    def advance_operation_time(self, operation_time):
-        return self.delegate.advance_operation_time(operation_time)
 
 
 class Database(Synchro):

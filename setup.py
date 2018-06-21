@@ -35,7 +35,7 @@ install_requires = ['pymongo>=3.6,<4']
 tests_require = ['mockupdb>=1.2.1']
 
 if sys.version_info[0] < 3:
-    install_requires.extend(['futures', 'singledispatch'])
+    install_requires.append('futures')
 
 
 class test(Command):

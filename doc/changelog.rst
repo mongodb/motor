@@ -14,7 +14,9 @@ Breaking changes in 2.0:
 
 - :meth:`MotorClient.start_session` is now a coroutine, not a regular method. It
   must be used like ``await client.start_session()`` or ``async with await
-  client.start_session()``.
+  client.start_session()``. The coroutine now returns a new class
+  :class:`~motor.motor_tornado.MotorClientSession`, not PyMongo's
+  :class:`~pymongo.client_session.ClientSession`.
 
 Documentation is updated to warn about obsolete TLS versions, see
 :doc:`configuration`. Motor is now tested on Travis in addition to MongoDB's

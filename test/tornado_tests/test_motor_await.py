@@ -208,13 +208,10 @@ class MotorTestAwait(MotorTest):
             self.assertTrue(s.has_ended)
 
         async with await self.cx.start_session() as s:
-            # Helpful error if used with "await".
-            with self.assertRaises(Exception) as ctx:
+            # Use start_transaction in "async with", not "async with await".
+            with self.assertRaises(TypeError):
                 async with await s.start_transaction():
                     pass
-
-            self.assertIn("async with session.start_transaction",
-                          str(ctx.exception))
 
             await s.abort_transaction()
 

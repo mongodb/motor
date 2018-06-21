@@ -92,8 +92,6 @@ def asynchronize(
     name = sync_method.__name__
     method.pymongo_method_name = name
 
-    framework.mark_coroutine(method)
-
     if doc is not None:
         method.__doc__ = doc
 

@@ -120,7 +120,6 @@ class AgnosticClient(AgnosticBaseProperties):
     server_selection_timeout = ReadOnlyProperty()
     start_session            = AsyncCommand(doc=start_session_doc).wrap(ClientSession)
     unlock                   = AsyncCommand()
-    _start_session           = AsyncCommand(attr_name='start_session')
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -203,14 +202,21 @@ class _MotorTransactionContext(object):
                     await self._session.abort_transaction()
         """), globals(), locals())
 
-    def __await__(self):
-        raise TypeError(
-            "Start a transaction like 'async with session.start_transaction',"
-            " do not use 'await'")
-
 
 class AgnosticClientSession(AgnosticBase):
     """A session for ordering sequential operations.
+
+    Do not create an instance of :class:`MotorClientSession` directly; use
+    :meth:`MotorClient.start_session`:
+
+    .. code-block:: python3
+
+      collection = client.db.collection
+
+      async with await client.start_session() as s:
+          async with s.start_transaction():
+              await collection.delete_one({'x': 1}, session=s)
+              await collection.insert_one({'x': 2}, session=s)
 
     .. versionadded:: 2.0
     """

@@ -824,6 +824,8 @@ class TestExamples(AsyncIOTestCase):
             partialFilterExpression={"rating": {"$gt": 5}})
         # End Index Example 1
 
+    @env.require_version_min(3, 7)
+    @env.require_replica_set
     @asyncio_test
     async def test_transactions(self):
         # Transaction examples

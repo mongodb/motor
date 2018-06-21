@@ -8,7 +8,7 @@ The current version of Motor requires:
 
 Motor can integrate with either Tornado or asyncio.
 
-Requires the `futures`_ and `singledispatch`_ packages from PyPI on Python 2.
+Requires the `futures`_ package from PyPI on Python 2.
 
 The default authentication mechanism for MongoDB 3.0+ is SCRAM-SHA-1.
 Install `backports.pbkdf2`_ for faster authentication with MongoDB 3.0+,
@@ -22,8 +22,6 @@ Building the docs requires `sphinx`_.
 .. _PyMongo: https://pypi.python.org/pypi/pymongo/
 
 .. _futures: https://pypi.python.org/pypi/futures
-
-.. _singledispatch: https://pypi.python.org/pypi/singledispatch
 
 .. _backports.pbkdf2: https://pypi.python.org/pypi/backports.pbkdf2/
 

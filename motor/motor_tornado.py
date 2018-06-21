@@ -35,11 +35,6 @@ MotorClient = create_motor_class(core.AgnosticClient)
 MotorClientSession = create_motor_class(core.AgnosticClientSession)
 
 
-@convert_yielded.register(MotorClientSession)  # Requires 'singledispatch' pkg.
-def _(session):
-    return session._internal_init()
-
-
 MotorDatabase = create_motor_class(core.AgnosticDatabase)
 
 
