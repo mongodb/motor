@@ -10,6 +10,12 @@ Motor 2.0 supports MongoDB 4.0 features including multi-document transactions,
 and change stream notifications on entire databases or entire MongoDB servers.
 It requires PyMongo 3.7 or later.
 
+Breaking changes in 2.0:
+
+- :meth:`MotorClient.start_session` is now a coroutine, not a regular method. It
+  must be used like ``await client.start_session()`` or ``async with await
+  client.start_session()``.
+
 Documentation is updated to warn about obsolete TLS versions, see
 :doc:`configuration`. Motor is now tested on Travis in addition to MongoDB's
 `Evergreen <https://github.com/evergreen-ci/evergreen>`_ system.

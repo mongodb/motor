@@ -118,6 +118,7 @@ class AgnosticClient(AgnosticBaseProperties):
     secondaries              = ReadOnlyProperty()
     server_info              = AsyncRead()
     server_selection_timeout = ReadOnlyProperty()
+    start_session            = AsyncCommand(doc=start_session_doc).wrap(ClientSession)
     unlock                   = AsyncCommand()
     _start_session           = AsyncCommand(attr_name='start_session')
 
@@ -159,63 +160,6 @@ class AgnosticClient(AgnosticBaseProperties):
             AgnosticDatabase, self._framework, self.__module__)
 
         return db_class(self, name)
-
-    def start_session(self, *args, **kwargs):
-        """Start a logical session.
-
-        This method takes the same parameters as PyMongo's
-        :class:`~pymongo.client_session.SessionOptions`. See the
-        :mod:`~pymongo.client_session` module for details.
-
-        This session is created uninitialized, use it in an ``await`` expression
-        to initialize it, or an ``async with`` statement.
-
-        .. code-block:: python3
-
-          async def coro():
-              collection = client.db.collection
-
-              # End the session after using it.
-              s = await client.start_session()
-              await s.end_session()
-
-              # Or, use an "async with" statement to end the session
-              # automatically.
-              async with await client.start_session() as s:
-                  doc = {'_id': ObjectId(), 'x': 1}
-                  await collection.insert_one(doc, session=s)
-
-                  secondary = collection.with_options(
-                      read_preference=ReadPreference.SECONDARY)
-
-                  # Sessions are causally consistent by default, so we can read
-                  # the doc we just inserted, even reading from a secondary.
-                  async for doc in secondary.find(session=s):
-                      print(doc)
-
-        Do **not** use the same session for multiple operations concurrently.
-
-        Requires MongoDB 3.6. It is an error to call :meth:`start_session`
-        if this client has been authenticated to multiple databases using the
-        deprecated method :meth:`~motor.motor_tornado.MotorDatabase.authenticate`.
-
-        A :class:`~MotorClientSession` may only be used with the MotorClient that
-        started it.
-
-        :Returns:
-          An instance of :class:`~MotorClientSession`.
-
-        .. versionchanged:: 2.0
-          Returns a :class:`~MotorClientSession`. Before, this
-          method returned a PyMongo
-          :class:`~pymongo.client_session.ClientSession`.
-
-        .. versionadded:: 1.2
-        """
-        session_class = create_class_with_framework(
-            AgnosticClientSession, self._framework, self.__module__)
-
-        return session_class(self, *args, **kwargs)
 
     def wrap(self, obj):
         if obj.__class__ == Database:
@@ -259,13 +203,14 @@ class _MotorTransactionContext(object):
                     await self._session.abort_transaction()
         """), globals(), locals())
 
+    def __await__(self):
+        raise TypeError(
+            "Start a transaction like 'async with session.start_transaction',"
+            " do not use 'await'")
+
 
 class AgnosticClientSession(AgnosticBase):
     """A session for ordering sequential operations.
-
-    This object is created uninitialized, use it in an ``await`` expression to
-    initialize it, or an ``async with`` statement. See
-    :meth:`MotorClient.start_session`.
 
     .. versionadded:: 2.0
     """
@@ -273,74 +218,23 @@ class AgnosticClientSession(AgnosticBase):
     __motor_class_name__ = 'MotorClientSession'
     __delegate_class__ = ClientSession
 
-    _abort_transaction       = AsyncCommand('abort_transaction')
-    _commit_transaction      = AsyncCommand('commit_transaction')
-    _end_session             = AsyncCommand('end_session')
+    commit_transaction     = AsyncCommand()
+    abort_transaction      = AsyncCommand()
+    end_session            = AsyncCommand()
+    cluster_time           = ReadOnlyProperty()
+    has_ended              = ReadOnlyProperty()
+    options                = ReadOnlyProperty()
+    operation_time         = ReadOnlyProperty()
+    session_id             = ReadOnlyProperty()
+    advance_cluster_time   = DelegateMethod()
+    advance_operation_time = DelegateMethod()
 
-    def __init__(self, motor_client, *args, **kwargs):
-        # We can't do I/O in the constructor; create the delegate in __iter__.
-        AgnosticBase.__init__(self, delegate=None)
+    def __init__(self, delegate, motor_client):
+        AgnosticBase.__init__(self, delegate=delegate)
         self._client = motor_client
-        self._args = args
-        self._kwargs = kwargs
 
     def get_io_loop(self):
         return self._client.get_io_loop()
-
-    @property
-    def client(self):
-        """The :class:`~MotorClient` this session was created from. """
-        return self._client
-
-    @property
-    def cluster_time(self):
-        """The cluster time returned by the last operation in this session."""
-        self._check_started()
-        return self.delegate.cluster_time
-
-    @property
-    def has_ended(self):
-        """True if this session is finished."""
-        self._check_started()
-        return self.delegate.has_ended
-
-    @property
-    def options(self):
-        """The :class:`SessionOptions` this session was created with."""
-        self._check_started()
-        return self.delegate.options
-
-    @property
-    def operation_time(self):
-        """The operation time returned by the last operation in this session."""
-        self._check_started()
-        return self.delegate.operation_time
-
-    @property
-    def session_id(self):
-        """A BSON document, the opaque server session identifier."""
-        self._check_started()
-        return self.delegate.session_id
-
-    def advance_cluster_time(self, cluster_time):
-        """Update the cluster time for this session.
-
-        :Parameters:
-          - `cluster_time`: The :data:`~MotorClientSession.cluster_time` from
-            another :class:`MotorClientSession` instance.
-        """
-        self._check_started()
-        return self.delegate.advance_cluster_time(cluster_time)
-
-    def advance_operation_time(self, operation_time):
-        """Update the operation time for this session.
-
-        :Parameters:
-          - `operation_time`: The :data:`~MotorClientSession.operation_time`
-            from another :class:`MotorClientSession` instance.
-        """
-        self._check_started()
-        return self.delegate.advance_operation_time(operation_time)
 
     def start_transaction(self, read_concern=None, write_concern=None,
                           read_preference=None):
@@ -348,81 +242,43 @@ class AgnosticClientSession(AgnosticBase):
 
         Takes the same arguments as
         :class:`~pymongo.client_session.TransactionOptions`.
+
+        Best used in a context manager block:
+
+        .. code-block:: python3
+
+          # Use "await" for start_session, but not for start_transaction.
+          async with await client.start_session() as s:
+              async with s.start_transaction():
+                  await collection.delete_one({'x': 1}, session=s)
+                  await collection.insert_one({'x': 2}, session=s)
+
         """
-        self._check_started()
         self.delegate.start_transaction(read_concern=read_concern,
                                         write_concern=write_concern,
                                         read_preference=read_preference)
         return _MotorTransactionContext(self)
 
-    @coroutine_annotation
-    def commit_transaction(self):
-        """Commit a multi-statement transaction."""
-        self._check_started()
-        return self._commit_transaction()
-
-    @coroutine_annotation
-    def abort_transaction(self):
-        """Abort a multi-statement transaction."""
-        self._check_started()
-        return self._abort_transaction()
-
-    @coroutine_annotation
-    def end_session(self):
-        """Finish this session. If a transaction has started, abort it.
-
-        It is an error to use the session after the session has ended.
-        """
-        self._check_started()
-        return self._end_session()
-
-    def _internal_init(self):
-        if self.delegate:
-            raise pymongo.errors.InvalidOperation(
-                "Session already started, do not use it in an 'await'"
-                " expression or 'async with' statement again")
-
-        io_loop = self.get_io_loop()
-        original_future = self._framework.get_future(io_loop)
-        self._framework.add_future(
-            io_loop,
-            self._client._start_session(*self._args, **self._kwargs),
-            self._on_started,
-            original_future)
-
-        return original_future
-
-    # In Py 3.4 asyncio, "yield from client.start_session()" starts the session.
-    def __iter__(self):
-        return self._internal_init().__iter__()
-
-    # In Python 3.5+, use "await client.start_session()".
-    def __await__(self):
-        return self._internal_init().__await__()
-
-    def _on_started(self, original_future, future):
-        try:
-            self.delegate = future.result()
-            original_future.set_result(self)
-        except Exception as exc:
-            original_future.set_exception(exc)
-
-    def _check_started(self):
-        if not self.delegate:
-            raise pymongo.errors.InvalidOperation(
-                "Start this session like 's = await client.start_session()' or"
-                " 'async with client.start_session() as s'")
+    @property
+    def client(self):
+        """The :class:`~MotorClient` this session was created from. """
+        return self._client
 
     if PY35:
         exec(textwrap.dedent("""
         async def __aenter__(self):
-            if not self.delegate:
-                await self
             return self
     
         async def __aexit__(self, exc_type, exc_val, exc_tb):
             self.delegate.__exit__(exc_type, exc_val, exc_tb)
         """), globals(), locals())
+
+    def __enter__(self):
+        raise AttributeError("Use Motor sessions like 'async with await"
+                             " client.start_session()', not 'with'")
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
 
 
 class AgnosticDatabase(AgnosticBaseProperties):

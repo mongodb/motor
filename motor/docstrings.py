@@ -988,3 +988,76 @@ cursor has any effect.
   - `direction` (optional): only used if `key_or_list` is a single
     key, if not given :data:`~pymongo.ASCENDING` is assumed
 """
+
+
+start_session_doc = """Start a logical session.
+
+This method takes the same parameters as PyMongo's
+:class:`~pymongo.client_session.SessionOptions`. See the
+:mod:`~pymongo.client_session` module for details.
+
+This session is created uninitialized, use it in an ``await`` expression
+to initialize it, or an ``async with`` statement.
+
+.. code-block:: python3
+
+  async def coro():
+      collection = client.db.collection
+
+      # End the session after using it.
+      s = await client.start_session()
+      await s.end_session()
+
+      # Or, use an "async with" statement to end the session
+      # automatically.
+      async with await client.start_session() as s:
+          doc = {'_id': ObjectId(), 'x': 1}
+          await collection.insert_one(doc, session=s)
+
+          secondary = collection.with_options(
+              read_preference=ReadPreference.SECONDARY)
+
+          # Sessions are causally consistent by default, so we can read
+          # the doc we just inserted, even reading from a secondary.
+          async for doc in secondary.find(session=s):
+              print(doc)
+              
+      # Run a multi-document transaction:
+      async with await client.start_session() as s:
+          # Note, start_transaction doesn't require "await".
+          async with s.start_transaction():
+              await collection.delete_one({'x': 1}, session=s)
+              await collection.insert_one({'x': 2}, session=s)
+          
+          # Exiting the "with s.start_transaction()" block while throwing an
+          # exception automatically aborts the transaction, exiting the block
+          # normally automatically commits it.
+
+          # You can run additional transactions in the same session, so long as 
+          # you run them one at a time.
+          async with s.start_transaction():
+              await collection.insert_one({'x': 3}, session=s)
+              await collection.insert_many({'x': {'$gte': 2}},
+                                           {'$inc': {'x': 1}}, 
+                                           session=s)
+
+
+Do **not** use the same session for multiple operations concurrently.
+
+Requires MongoDB 3.6. It is an error to call :meth:`start_session`
+if this client has been authenticated to multiple databases using the
+deprecated method :meth:`~motor.motor_tornado.MotorDatabase.authenticate`.
+
+A :class:`~MotorClientSession` may only be used with the MotorClient that
+started it.
+
+:Returns:
+  An instance of :class:`~MotorClientSession`.
+
+.. versionchanged:: 2.0
+  Returns a :class:`~MotorClientSession`. Before, this
+  method returned a PyMongo
+  :class:`~pymongo.client_session.ClientSession`.
+
+.. versionadded:: 1.2
+"""

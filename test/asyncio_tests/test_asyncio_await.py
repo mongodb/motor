@@ -169,29 +169,21 @@ class TestAsyncIOAwait(AsyncIOTestCase):
     @env.require_replica_set
     @asyncio_test
     async def test_session(self):
-        s = self.cx.start_session()
+        s = await self.cx.start_session()
         self.assertIsInstance(s, AsyncIOMotorClientSession)
         self.assertIs(s.client, self.cx)
-        self.assertRaises(InvalidOperation, getattr, s, 'options')
-        self.assertRaises(InvalidOperation, getattr, s, 'session_id')
-        self.assertRaises(InvalidOperation, getattr, s, 'cluster_time')
-        self.assertRaises(InvalidOperation, getattr, s, 'operation_time')
-        self.assertRaises(InvalidOperation, getattr, s, 'has_ended')
-
-        # Test that "await" converts start_session() into a session.
-        retval = await s
-        self.assertIs(retval, s)
-
-        # We can access session properties now.
-        s.options
-        s.session_id
-        s.cluster_time
-        s.operation_time
         self.assertFalse(s.has_ended)
         await s.end_session()
         self.assertTrue(s.has_ended)
 
-        async with self.cx.start_session() as s:
+        # Raises a helpful error if used in a regular with-statement.
+        with self.assertRaises(AttributeError) as ctx:
+            with await self.cx.start_session():
+                pass
+
+        self.assertIn("async with await", str(ctx.exception))
+
+        async with await self.cx.start_session() as s:
             self.assertIsInstance(s, AsyncIOMotorClientSession)
             self.assertFalse(s.has_ended)
             await s.end_session()
@@ -203,7 +195,7 @@ class TestAsyncIOAwait(AsyncIOTestCase):
     @env.require_replica_set
     @asyncio_test
     async def test_transaction(self):
-        async with self.cx.start_session() as s:
+        async with await self.cx.start_session() as s:
             s.start_transaction()
             self.assertTrue(s.delegate._in_transaction)
             self.assertFalse(s.has_ended)
@@ -211,7 +203,17 @@ class TestAsyncIOAwait(AsyncIOTestCase):
             self.assertFalse(s.delegate._in_transaction)
             self.assertTrue(s.has_ended)
 
-        async with self.cx.start_session() as s:
+        async with await self.cx.start_session() as s:
+            # Helpful error if used with "await".
+            with self.assertRaises(Exception) as ctx:
+                async with await s.start_transaction():
+                    pass
+
+            self.assertIn("async with session.start_transaction",
+                          str(ctx.exception))
+
+            await s.abort_transaction()
+
             async with s.start_transaction():
                 self.assertTrue(s.delegate._in_transaction)
                 self.assertFalse(s.has_ended)

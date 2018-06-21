@@ -70,10 +70,11 @@ class MotorCoreTest(MotorTest):
 
     @env.require_version_min(3, 6)
     @env.require_replica_set
+    @gen_test
     def test_client_session_attrs(self):
         self.assertEqual(
             attrs(env.sync_cx.start_session()),
-            attrs(self.cx.start_session()) - motor_only)
+            attrs((yield self.cx.start_session())) - motor_only)
 
     def test_database_attrs(self):
         self.assertEqual(
