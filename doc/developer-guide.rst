@@ -37,6 +37,7 @@ is a module implementing these properties and functions:
 - ``get_future``
 - ``is_event_loop``
 - ``is_future``
+- ``platform_info``
 - ``pymongo_class_wrapper``
 - ``run_on_executor``
 - ``yieldable``

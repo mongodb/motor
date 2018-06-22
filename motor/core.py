@@ -30,13 +30,15 @@ import pymongo.mongo_replica_set_client
 import pymongo.son_manipulator
 
 from pymongo.bulk import BulkOperationBuilder
-from pymongo.database import Database
 from pymongo.change_stream import ChangeStream
 from pymongo.client_session import ClientSession
 from pymongo.collection import Collection
-from pymongo.cursor import Cursor, _QUERY_OPTIONS
 from pymongo.command_cursor import CommandCursor
+from pymongo.cursor import Cursor, _QUERY_OPTIONS
+from pymongo.database import Database
+from pymongo.driver_info import DriverInfo
 
+from . import version as motor_version
 from .metaprogramming import (AsyncCommand,
                               AsyncRead,
                               AsyncWrite,
@@ -138,6 +140,10 @@ class AgnosticClient(AgnosticBaseProperties):
             io_loop = self._framework.get_event_loop()
 
         kwargs.setdefault('connect', False)
+        kwargs.setdefault(
+            'driver',
+            DriverInfo('Motor', motor_version, self._framework.platform_info()))
+
         delegate = self.__delegate_class__(*args, **kwargs)
         super(AgnosticBaseProperties, self).__init__(delegate)
         self.io_loop = io_loop

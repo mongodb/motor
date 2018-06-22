@@ -24,7 +24,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 import tornado.process
-from tornado import concurrent, gen, ioloop
+from tornado import concurrent, gen, ioloop, version as tornado_version
 
 from motor.motor_common import callback_type_error
 
@@ -185,3 +185,7 @@ def pymongo_class_wrapper(f, pymongo_class):
 
 def yieldable(future):
     return future
+
+
+def platform_info():
+    return 'Tornado %s' % (tornado_version,)

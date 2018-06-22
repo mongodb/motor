@@ -338,5 +338,33 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         yield self._test_exhaust_query_network_error(rs=True)
 
 
+class MotorClientHandshakeTest(MotorMockServerTest):
+    @gen_test
+    def test_handshake(self):
+        server = self.server()
+        client = motor.MotorClient(server.uri,
+                                   connectTimeoutMS=100,
+                                   serverSelectionTimeoutMS=100)
+
+        # Trigger connection.
+        future = client.db.command('ping')
+        ismaster = yield self.run_thread(server.receives, "ismaster")
+        meta = ismaster.doc['client']
+        self.assertEqual('PyMongo|Motor', meta['driver']['name'])
+        self.assertIn('Tornado', meta['platform'])
+        self.assertTrue(
+            meta['driver']['version'].endswith(motor.version),
+            "Version in handshake [%s] doesn't end with Motor version [%s]" % (
+                meta['driver']['version'], motor.version))
+
+        ismaster.hangs_up()
+        server.stop()
+        client.close()
+        try:
+            yield future
+        except Exception:
+            pass
+
+
 if __name__ == '__main__':
     unittest.main()

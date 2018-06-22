@@ -173,3 +173,7 @@ def pymongo_class_wrapper(f, pymongo_class):
 
 def yieldable(future):
     return next(iter(future))
+
+
+def platform_info():
+    return None

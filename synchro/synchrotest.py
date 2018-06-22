@@ -61,6 +61,9 @@ excluded_tests = [
     '*.test_repr',
     'TestClient.test_unix_socket',
 
+    # Motor extends the handshake metadata.
+    'ClientUnitTest.test_metadata',
+
     # Lazy-connection tests require multithreading; we test concurrent
     # lazy connection directly.
     'TestClientLazyConnect.*',

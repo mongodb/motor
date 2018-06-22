@@ -24,6 +24,7 @@ from bson import CodecOptions
 from pymongo import ReadPreference, WriteConcern
 from pymongo.errors import ConnectionFailure, OperationFailure
 
+import motor
 from motor import motor_asyncio
 
 import test
@@ -281,6 +282,35 @@ class TestAsyncIOClientTimeout(AsyncIOMockServerTestCase):
 
         self.assertIn('timed out', str(context.exception))
         client.close()
+
+
+class TestAsyncIOClientHandshake(AsyncIOMockServerTestCase):
+    @asyncio_test
+    def test_handshake(self):
+        server = self.server()
+        client = motor_asyncio.AsyncIOMotorClient(server.uri,
+                                                  connectTimeoutMS=100,
+                                                  serverSelectionTimeoutMS=100)
+
+        # Trigger connection.
+        future = client.db.command('ping')
+        ismaster = yield from self.run_thread(server.receives, "ismaster")
+        meta = ismaster.doc['client']
+        self.assertEqual('PyMongo|Motor', meta['driver']['name'])
+        # AsyncIOMotorClient adds nothing to platform.
+        self.assertNotIn('Tornado', meta['platform'])
+        self.assertTrue(
+            meta['driver']['version'].endswith(motor.version),
+            "Version in handshake [%s] doesn't end with Motor version [%s]" % (
+                meta['driver']['version'], motor.version))
+
+        ismaster.hangs_up()
+        server.stop()
+        client.close()
+        try:
+            yield from future
+        except Exception:
+            pass
 
 
 if __name__ == '__main__':

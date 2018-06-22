@@ -40,6 +40,12 @@ deleted in favor of :class:`~motor.motor_tornado.MotorGridFSBucket` and
 :class:`~motor.motor_asyncio.AsyncIOMotorGridFSBucket`, which conform to driver
 specs for GridFS.
 
+Additional features:
+
+- Motor adds its name, version, and Tornado's version (if appropriate) to the
+  client data logged by the MongoDB server when Motor connects, in addition to
+  the data added by PyMongo.
+
 Motor 1.2.3
 -----------
 
