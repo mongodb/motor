@@ -171,7 +171,7 @@ class MotorCollectionTest(MotorTest):
     @gen_test
     def test_save_bad(self):
         coll = self.db.unique_collection
-        yield coll.ensure_index('s', unique=True)
+        yield coll.create_index('s', unique=True)
         yield coll.save({'s': 1})
 
         try:
@@ -327,18 +327,6 @@ class MotorCollectionTest(MotorTest):
         idx_name = yield test_collection.create_index([('foo', 1)])
         index_info = yield test_collection.index_information()
         self.assertEqual([('foo', 1)], index_info[idx_name]['key'])
-
-        # Ensure the same index, test that callback is executed
-        result = yield test_collection.ensure_index([('foo', 1)])
-        self.assertEqual('foo_1', result)
-        result2 = yield test_collection.ensure_index([('foo', 1)])
-        self.assertEqual(None, result2)
-
-        # Ensure an index that doesn't exist, test it's created
-        yield test_collection.ensure_index([('bar', 1)])
-        index_info = yield test_collection.index_information()
-        self.assertTrue(any([
-            info['key'] == [('bar', 1)] for info in index_info.values()]))
 
         # Don't test drop_index or drop_indexes -- Synchro tests them
 

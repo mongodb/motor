@@ -382,7 +382,6 @@ class AgnosticCollection(AgnosticBaseProperties):
     drop                     = AsyncCommand(doc=drop_doc)
     drop_index               = AsyncCommand()
     drop_indexes             = AsyncCommand()
-    ensure_index             = AsyncCommand()
     estimated_document_count = AsyncCommand()
     find_and_modify          = AsyncCommand()
     find_one                 = AsyncRead(doc=find_one_doc)

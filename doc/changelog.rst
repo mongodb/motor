@@ -34,6 +34,9 @@ Breaking changes in 2.0:
     ``initialize_unordered_bulk_op``, and ``MotorBulkOperationBuilder``, use
     :meth:`MotorCollection.bulk_write``, see :ref:`Bulk Writes Tutorial
     <bulk-write-tutorial>`.
+  - ``MotorCollection.ensure_index``, use
+    :meth:`MotorCollection.create_indexes`.
+
 
 Documentation is updated to warn about obsolete TLS versions, see
 :doc:`configuration`. Motor is now tested on Travis in addition to MongoDB's

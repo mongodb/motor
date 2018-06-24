@@ -596,7 +596,7 @@ metadata about the indexes, except for the ``"ns"`` and
 ``"name"`` keys, which are cleaned. For example::
 
   async def create_x_index():
-      print(await db.test.ensure_index("x", unique=True))
+      print(await db.test.create_index("x", unique=True))
       print(await db.test.index_information())
 
 This prints::

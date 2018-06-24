@@ -164,6 +164,7 @@ excluded_tests = [
     'TestDatabase.test_eval',
     'TestCollation.test_bulk',
     'TestCollation.test_bulk_write',
+    'TestCollation.test_ensure_index',
     'TestCollation.test_unacknowledged_write',
 ]
 

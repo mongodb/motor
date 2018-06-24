@@ -159,7 +159,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
     @asyncio_test
     def test_save_bad(self):
         coll = self.db.unique_collection
-        yield from coll.ensure_index('s', unique=True)
+        yield from coll.create_index('s', unique=True)
         yield from coll.save({'s': 1})
 
         try:
@@ -317,18 +317,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         idx_name = yield from test_collection.create_index([('foo', 1)])
         index_info = yield from test_collection.index_information()
         self.assertEqual([('foo', 1)], index_info[idx_name]['key'])
-
-        # Ensure the same index, test that callback is executed
-        result = yield from test_collection.ensure_index([('foo', 1)])
-        self.assertEqual('foo_1', result)
-        result2 = yield from test_collection.ensure_index([('foo', 1)])
-        self.assertEqual(None, result2)
-
-        # Ensure an index that doesn't exist, test it's created
-        yield from test_collection.ensure_index([('bar', 1)])
-        index_info = yield from test_collection.index_information()
-        self.assertTrue(any([
-            info['key'] == [('bar', 1)] for info in index_info.values()]))
 
         # Don't test drop_index or drop_indexes -- Synchro tests them
 
