@@ -49,6 +49,7 @@ from pymongo import (collation,
                      write_concern)
 from pymongo.auth import _build_credentials_tuple
 from pymongo.helpers import _check_command_response
+from pymongo.change_stream import _NON_RESUMABLE_GETMORE_ERRORS
 from pymongo.client_session import TransactionOptions
 from pymongo.collation import *
 from pymongo.common import *
@@ -361,6 +362,8 @@ class ClientSession(Synchro):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.synchronize(self.delegate.end_session)
 
+    _client              = SynchroProperty()
+    _in_transaction      = SynchroProperty()
     _server_session      = SynchroProperty()
     _transaction_id      = SynchroProperty()
     _txn_read_preference = SynchroProperty()

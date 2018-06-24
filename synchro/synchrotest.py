@@ -37,6 +37,7 @@ from motor.motor_py3_compat import PY3
 excluded_modules = [
     # Exclude some PyMongo tests that can't be applied to Synchro.
     'test.test_cursor_manager',
+    'test.test_examples',
     'test.test_threads',
     'test.test_pooling',
     'test.test_legacy_api',
@@ -45,6 +46,9 @@ excluded_modules = [
 
     # Complex PyMongo-specific mocking.
     'test.test_replica_set_reconfig',
+
+    # Accesses PyMongo internals.
+    'test.test_retryable_writes',
 
     # Accesses PyMongo internals. Tested directly in Motor.
     'test.test_session',
@@ -137,9 +141,6 @@ excluded_tests = [
 
     # Motor is correct here, it's just unreliable on slow CI servers.
     'TestReplicaSetClient.test_timeout_does_not_mark_member_down',
-
-    # We test Synchro in Python 2.7, but Motor's change streams need Python 3.
-    'TestSampleShellCommands.test_change_streams',
 
     # Accesses PyMongo internals.
     'TestClient.test_close_kills_cursors',
