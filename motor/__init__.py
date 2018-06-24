@@ -58,8 +58,7 @@ else:
                                 MotorDatabase,
                                 MotorGridFSBucket,
                                 MotorGridIn,
-                                MotorGridOut,
-                                MotorBulkOperationBuilder)
+                                MotorGridOut)
 
     # Make "from motor import *" the same as "from motor.motor_tornado import *"
     from .motor_tornado import __all__

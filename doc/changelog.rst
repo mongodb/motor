@@ -17,6 +17,23 @@ Breaking changes in 2.0:
   client.start_session()``. The coroutine now returns a new class
   :class:`~motor.motor_tornado.MotorClientSession`, not PyMongo's
   :class:`~pymongo.client_session.ClientSession`.
+- Removed methods and classes:
+
+  - ``MotorClient.kill_cursors``
+  - ``MotorClient.get_default_database``
+  - ``MotorDatabase.add_son_manipulator``
+  - ``MotorDatabase.last_status``
+  - ``MotorDatabase.error``
+  - ``MotorDatabase.previous_error``
+  - ``MotorDatabase.reset_error_history``
+  - ``MotorDatabase.authenticate``
+  - ``MotorDatabase.eval``, deprecated by the MongoDB server, use
+    ``MotorDatabase.command("eval", ...)`` or stop depending on ``eval``
+  - ``MotorDatabase.logout``, add credentials to URI or ``MotorClient`` options
+  - ``MotorCollection.initialize_unordered_bulk_op``,
+    ``initialize_unordered_bulk_op``, and ``MotorBulkOperationBuilder``, use
+    :meth:`MotorCollection.bulk_write``, see :ref:`Bulk Writes Tutorial
+    <bulk-write-tutorial>`.
 
 Documentation is updated to warn about obsolete TLS versions, see
 :doc:`configuration`. Motor is now tested on Travis in addition to MongoDB's

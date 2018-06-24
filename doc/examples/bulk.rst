@@ -1,5 +1,7 @@
 .. currentmodule:: motor.motor_tornado
 
+.. _bulk-write-tutorial:
+
 Bulk Write Operations
 =====================
 
@@ -40,11 +42,9 @@ bulk insert operations.
 Mixed Bulk Write Operations
 ---------------------------
 
-.. versionadded:: 0.2
-
 Motor also supports executing mixed bulk write operations. A batch
-of insert, update, and delete operations can be executed together using
-the Bulk API.
+of insert, update, and remove operations can be executed together using
+the bulk write operations API.
 
 .. _ordered_bulk:
 
@@ -52,26 +52,26 @@ Ordered Bulk Write Operations
 .............................
 
 Ordered bulk write operations are batched and sent to the server in the
-order provided for serial execution. The return value is a document
-describing the type and count of operations performed.
+order provided for serial execution. The return value is an instance of
+:class:`~pymongo.results.BulkWriteResult` describing the type and count
+of operations performed.
 
 .. doctest::
+  :options: +NORMALIZE_WHITESPACE
 
   >>> from pprint import pprint
-  >>>
+  >>> from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
   >>> @gen.coroutine
   ... def f():
-  ...    bulk = db.test.initialize_ordered_bulk_op()
-  ...    # Remove all documents from the previous example.
-  ...    bulk.find({}).remove()
-  ...    bulk.insert({'_id': 1})
-  ...    bulk.insert({'_id': 2})
-  ...    bulk.insert({'_id': 3})
-  ...    bulk.find({'_id': 1}).update({'$set': {'foo': 'bar'}})
-  ...    bulk.find({'_id': 4}).upsert().update({'$inc': {'j': 1}})
-  ...    bulk.find({'j': 1}).replace_one({'j': 2})
-  ...    result = yield bulk.execute()
-  ...    pprint(result)
+  ...     result = yield db.test.bulk_write([
+  ...     DeleteMany({}),  # Remove all documents from the previous example.
+  ...     InsertOne({'_id': 1}),
+  ...     InsertOne({'_id': 2}),
+  ...     InsertOne({'_id': 3}),
+  ...     UpdateOne({'_id': 1}, {'$set': {'foo': 'bar'}}),
+  ...     UpdateOne({'_id': 4}, {'$inc': {'j': 1}}, upsert=True),
+  ...     ReplaceOne({'j': 1}, {'j': 2})])
+  ...     pprint(result.bulk_api_result)
   ...
   >>> IOLoop.current().run_sync(f)
   {'nInserted': 3,
@@ -84,28 +84,28 @@ describing the type and count of operations performed.
    'writeErrors': []}
 
 The first write failure that occurs (e.g. duplicate key error) aborts the
-remaining operations, and Motor raises :class:`~pymongo.errors.BulkWriteError`.
-The :attr:`details` attibute of the exception instance provides the execution
-results up until the failure occurred and details about the failure - including
-the operation that caused the failure.
+remaining operations, and Motor raises
+:class:`~pymongo.errors.BulkWriteError`. The :attr:`details` attribute of
+the exception instance provides the execution results up until the failure
+occurred and details about the failure - including the operation that caused
+the failure.
 
 .. doctest::
+  :options: +NORMALIZE_WHITESPACE
 
+  >>> from pymongo import InsertOne, DeleteOne, ReplaceOne
   >>> from pymongo.errors import BulkWriteError
-  >>>
   >>> @gen.coroutine
   ... def f():
-  ...     bulk = db.test.initialize_ordered_bulk_op()
-  ...     bulk.find({'j': 2}).replace_one({'i': 5})
-  ...     # Violates the unique key constraint on _id.
-  ...
-  ...     bulk.insert({'_id': 4})
-  ...     bulk.find({'i': 5}).remove_one()
+  ...     requests = [
+  ...         ReplaceOne({'j': 2}, {'i': 5}),
+  ...         InsertOne({'_id': 4}),  # Violates the unique key constraint on _id.
+  ...         DeleteOne({'i': 5})]
   ...     try:
-  ...         yield bulk.execute()
-  ...     except BulkWriteError as err:
-  ...         pprint(err.details)
-  ... 
+  ...         yield db.test.bulk_write(requests)
+  ...     except BulkWriteError as bwe:
+  ...         pprint(bwe.details)
+  ...
   >>> IOLoop.current().run_sync(f)
   {'nInserted': 0,
    'nMatched': 1,
@@ -133,19 +133,20 @@ constraint on _id. Since we are doing unordered execution the second
 and fourth operations succeed.
 
 .. doctest::
+  :options: +NORMALIZE_WHITESPACE
 
   >>> @gen.coroutine
   ... def f():
-  ...     bulk = db.test.initialize_unordered_bulk_op()
-  ...     bulk.insert({'_id': 1})
-  ...     bulk.find({'_id': 2}).remove_one()
-  ...     bulk.insert({'_id': 3})
-  ...     bulk.find({'_id': 4}).replace_one({'i': 1})
+  ...     requests = [
+  ...         InsertOne({'_id': 1}),
+  ...         DeleteOne({'_id': 2}),
+  ...         InsertOne({'_id': 3}),
+  ...         ReplaceOne({'_id': 4}, {'i': 1})]
   ...     try:
-  ...         yield bulk.execute()
-  ...     except BulkWriteError as err:
-  ...         pprint(err.details)
-  ... 
+  ...         yield db.test.bulk_write(requests, ordered=False)
+  ...     except BulkWriteError as bwe:
+  ...         pprint(bwe.details)
+  ...
   >>> IOLoop.current().run_sync(f)
   {'nInserted': 0,
    'nMatched': 1,
@@ -166,32 +167,26 @@ and fourth operations succeed.
 Write Concern
 .............
 
-By default bulk operations are executed with the
-:meth:`~MotorCollection.write_concern` of the collection they are
-executed against, typically the default write concern ``{w: 1}``. A custom
-write concern can be passed to the
-:meth:`~MotorBulkOperationBuilder.execute` method. Write concern
-errors (e.g. wtimeout) will be reported after all operations are attempted,
-regardless of execution order.
+Bulk operations are executed with the
+:attr:`~pymongo.collection.Collection.write_concern` of the collection they
+are executed against. Write concern errors (e.g. wtimeout) will be reported
+after all operations are attempted, regardless of execution order.
 
 .. doctest::
   :options: +SKIP
 
   .. Standalone MongoDB raises "can't use w>1" with this example, so skip it.
 
+  >>> from pymongo import WriteConcern
   >>> @gen.coroutine
   ... def f():
-  ...     bulk = db.test.initialize_ordered_bulk_op()
-  ...     bulk.insert({'a': 0})
-  ...     bulk.insert({'a': 1})
-  ...     bulk.insert({'a': 2})
-  ...     bulk.insert({'a': 3})
+  ...     coll = db.get_collection(
+  ...         'test', write_concern=WriteConcern(w=4, wtimeout=1))
   ...     try:
-  ...         # Times out if the replica set has fewer than four members.
-  ...         yield bulk.execute({'w': 4, 'wtimeout': 1})
-  ...     except BulkWriteError as err:
-  ...         pprint(err.details)
-  ... 
+  ...         yield coll.bulk_write([InsertOne({'a': i}) for i in range(4)])
+  ...     except BulkWriteError as bwe:
+  ...         pprint(bwe.details)
+  ...
   >>> IOLoop.current().run_sync(f)
   {'nInserted': 4,
    'nMatched': 0,

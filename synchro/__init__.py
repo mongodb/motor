@@ -142,8 +142,6 @@ def wrap_synchro(fn):
             return CommandCursor(motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorCursor):
             return Cursor(motor_obj)
-        if isinstance(motor_obj, motor.MotorBulkOperationBuilder):
-            return BulkOperationBuilder(motor_obj)
         if isinstance(motor_obj, motor.MotorGridIn):
             return GridIn(None, delegate=motor_obj)
         if isinstance(motor_obj, motor.MotorGridOut):
@@ -235,7 +233,7 @@ class SynchroMeta(type):
 
             for attrname, delegate_attr in delegated_attrs.items():
                 # If attrname is in attrs, it means Synchro has overridden
-                # this attribute, e.g. Database.add_son_manipulator which is
+                # this attribute, e.g. Collection.aggregate which is
                 # special-cased. Ignore such attrs.
                 if attrname in attrs:
                     continue
@@ -295,7 +293,6 @@ class MongoClient(Synchro):
 
     _cache_credentials = SynchroProperty()
     get_database = WrapOutgoing()
-    get_default_database = WrapOutgoing()
     max_pool_size = SynchroProperty()
     max_write_batch_size = SynchroProperty()
     start_session = Sync()
@@ -386,14 +383,6 @@ class Database(Synchro):
             "synchro.Database delegate must be MotorDatabase, not "
             " %s" % repr(self.delegate))
 
-    def add_son_manipulator(self, manipulator):
-        if isinstance(manipulator, son_manipulator.AutoReference):
-            db = manipulator.database
-            if isinstance(db, Database):
-                manipulator.database = db.delegate.delegate
-
-        self.delegate.add_son_manipulator(manipulator)
-
     @property
     def client(self):
         return self._client
@@ -409,8 +398,6 @@ class Collection(Synchro):
     __delegate_class__ = motor.MotorCollection
 
     find                            = WrapOutgoing()
-    initialize_unordered_bulk_op    = WrapOutgoing()
-    initialize_ordered_bulk_op      = WrapOutgoing()
     list_indexes                    = WrapOutgoing()
     watch                           = WrapOutgoing()
 
@@ -564,15 +551,8 @@ class CursorManager(object):
     pass
 
 
-class BulkOperationBuilder(Synchro):
-    __delegate_class__ = motor.MotorBulkOperationBuilder
-
-    def __init__(self, motor_bob):
-        if not isinstance(motor_bob, motor.MotorBulkOperationBuilder):
-            raise TypeError(
-                "Expected MotorBulkOperationBuilder, got %r" % motor_bob)
-
-        self.delegate = motor_bob
+class BulkOperationBuilder(object):
+    pass
 
 
 class GridFSBucket(Synchro):

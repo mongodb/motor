@@ -19,7 +19,7 @@ from __future__ import unicode_literals
 from tornado.testing import gen_test
 from gridfs import GridFSBucket, GridIn
 
-from motor import MotorGridFSBucket, MotorGridIn, MotorGridOut
+from motor import MotorGridFSBucket, MotorGridIn
 from test import env
 from test.tornado_tests import MotorTest
 
@@ -40,16 +40,29 @@ motor_client_only = motor_only.union(['open'])
 
 pymongo_client_only = set([
     'is_locked',
-    'set_cursor_manager']).union(pymongo_only)
+    'set_cursor_manager',
+    'get_default_database',
+    'kill_cursors']).union(pymongo_only)
 
 pymongo_database_only = set([
     'add_user',
     'remove_user',
-    'system_js']).union(pymongo_only)
+    'system_js',
+    'last_status',
+    'reset_error_history',
+    'eval',
+    'add_son_manipulator',
+    'logout',
+    'error',
+    'authenticate',
+    'previous_error']).union(pymongo_only)
 
 pymongo_collection_only = set([
     'aggregate_raw_batches',
-    'find_raw_batches']).union(pymongo_only)
+    'ensure_index',
+    'find_raw_batches',
+    'initialize_ordered_bulk_op',
+    'initialize_unordered_bulk_op']).union(pymongo_only)
 
 motor_cursor_only = set([
     'fetch_next',

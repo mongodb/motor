@@ -53,9 +53,6 @@ MotorLatentCommandCursor = create_motor_class(core.AgnosticLatentCommandCursor)
 MotorChangeStream = create_motor_class(core.AgnosticChangeStream)
 
 
-MotorBulkOperationBuilder = create_motor_class(core.AgnosticBulkOperationBuilder)
-
-
 MotorGridFSBucket = create_motor_class(motor_gridfs.AgnosticGridFSBucket)
 
 

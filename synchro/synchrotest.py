@@ -54,6 +54,7 @@ excluded_modules = [
 
     # Deprecated in PyMongo, removed in Motor 2.0.
     'test.test_gridfs',
+    'test.test_son_manipulator',
 ]
 
 excluded_tests = [
@@ -156,6 +157,13 @@ excluded_tests = [
     'TestReplicaSetClient.test_kill_cursor_explicit_secondary',
     'TestSelections.test_bool',
     'TestTransactions.transaction_test_debug',
+
+    # Deprecated in PyMongo, removed in Motor 2.0.
+    'TestDatabase.test_errors',
+    'TestDatabase.test_eval',
+    'TestCollation.test_bulk',
+    'TestCollation.test_bulk_write',
+    'TestCollation.test_unacknowledged_write',
 ]
 
 

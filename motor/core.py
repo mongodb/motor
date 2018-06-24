@@ -27,9 +27,7 @@ import pymongo.database
 import pymongo.errors
 import pymongo.mongo_client
 import pymongo.mongo_replica_set_client
-import pymongo.son_manipulator
 
-from pymongo.bulk import BulkOperationBuilder
 from pymongo.change_stream import ChangeStream
 from pymongo.client_session import ClientSession
 from pymongo.collection import Collection
@@ -98,11 +96,9 @@ class AgnosticClient(AgnosticBaseProperties):
     event_listeners          = ReadOnlyProperty()
     fsync                    = AsyncCommand()
     get_database             = DelegateMethod(doc=get_database_doc).wrap(Database)
-    get_default_database     = DelegateMethod().wrap(Database)
     HOST                     = ReadOnlyProperty()
     is_mongos                = ReadOnlyProperty()
     is_primary               = ReadOnlyProperty()
-    kill_cursors             = AsyncCommand()
     list_databases           = AsyncRead().wrap(CommandCursor)
     list_database_names      = AsyncRead()
     local_threshold_ms       = ReadOnlyProperty()
@@ -297,25 +293,18 @@ class AgnosticDatabase(AgnosticBaseProperties):
     __motor_class_name__ = 'MotorDatabase'
     __delegate_class__ = Database
 
-    authenticate          = AsyncCommand()
     collection_names      = AsyncRead()
     command               = AsyncCommand(doc=cmd_doc)
     create_collection     = AsyncCommand().wrap(Collection)
     current_op            = AsyncRead()
     dereference           = AsyncRead()
     drop_collection       = AsyncCommand().unwrap('MotorCollection')
-    error                 = AsyncRead(doc="OBSOLETE")
-    eval                  = AsyncCommand()
     get_collection        = DelegateMethod().wrap(Collection)
-    last_status           = AsyncRead(doc="OBSOLETE")
     list_collection_names = AsyncRead()
     list_collections      = AsyncRead()
-    logout                = AsyncCommand()
     name                  = ReadOnlyProperty()
-    previous_error        = AsyncRead(doc="OBSOLETE")
     profiling_info        = AsyncRead()
     profiling_level       = AsyncRead()
-    reset_error_history   = AsyncCommand(doc="OBSOLETE")
     set_profiling_level   = AsyncCommand()
     validate_collection   = AsyncRead().unwrap('MotorCollection')
 
@@ -373,29 +362,6 @@ class AgnosticDatabase(AgnosticBaseProperties):
             self.__module__)
 
         return klass(self, collection.name, _delegate=collection)
-
-    def add_son_manipulator(self, manipulator):
-        """Add a new son manipulator to this database.
-
-        Newly added manipulators will be applied before existing ones.
-
-        :Parameters:
-          - `manipulator`: the manipulator to add
-        """
-        # We override add_son_manipulator to unwrap the AutoReference's
-        # database attribute.
-        if isinstance(manipulator, pymongo.son_manipulator.AutoReference):
-            db = manipulator.database
-            db_class = create_class_with_framework(
-                AgnosticDatabase,
-                self._framework,
-                self.__module__)
-
-            if isinstance(db, db_class):
-                # db is a MotorDatabase; get the PyMongo Database instance.
-                manipulator.database = db.delegate
-
-        self.delegate.add_son_manipulator(manipulator)
 
     def get_io_loop(self):
         return self._client.get_io_loop()
@@ -796,61 +762,6 @@ class AgnosticCollection(AgnosticBaseProperties):
                 for cursor in command_cursors]
 
             original_future.set_result(motor_command_cursors)
-
-    def initialize_unordered_bulk_op(self, bypass_document_validation=False):
-        """Initialize an unordered batch of write operations.
-
-        Operations will be performed on the server in arbitrary order,
-        possibly in parallel. All operations will be attempted.
-
-        :Parameters:
-          - `bypass_document_validation`: (optional) If ``True``, allows the
-            write to opt-out of document level validation. Default is ``False``.
-
-        Returns a :class:`~motor.MotorBulkOperationBuilder` instance.
-
-        See :ref:`unordered_bulk` for examples.
-
-        .. versionchanged:: 1.0
-          Added bypass_document_validation support
-
-        .. versionadded:: 0.2
-        """
-        bob_class = create_class_with_framework(
-            AgnosticBulkOperationBuilder, self._framework, self.__module__)
-
-        return bob_class(self,
-                         ordered=False,
-                         bypass_document_validation=bypass_document_validation)
-
-    def initialize_ordered_bulk_op(self, bypass_document_validation=False):
-        """Initialize an ordered batch of write operations.
-
-        Operations will be performed on the server serially, in the
-        order provided. If an error occurs all remaining operations
-        are aborted.
-
-        :Parameters:
-          - `bypass_document_validation`: (optional) If ``True``, allows the
-            write to opt-out of document level validation. Default is ``False``.
-
-        Returns a :class:`~motor.MotorBulkOperationBuilder` instance.
-
-        See :ref:`ordered_bulk` for examples.
-
-        .. versionchanged:: 1.0
-          Added bypass_document_validation support
-
-        .. versionadded:: 0.2
-        """
-        bob_class = create_class_with_framework(
-            AgnosticBulkOperationBuilder,
-            self._framework,
-            self.__module__)
-
-        return bob_class(self,
-                         ordered=True,
-                         bypass_document_validation=bypass_document_validation)
 
     def wrap(self, obj):
         if obj.__class__ is Collection:
@@ -1373,25 +1284,6 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
         else:
             # _get_more is complete.
             original_future.set_result(len(self.delegate._CommandCursor__data))
-
-
-class AgnosticBulkOperationBuilder(AgnosticBase):
-    __motor_class_name__ = 'MotorBulkOperationBuilder'
-    __delegate_class__ = BulkOperationBuilder
-
-    find        = DelegateMethod()
-    insert      = DelegateMethod()
-    execute     = AsyncCommand()
-
-    def __init__(self, collection, ordered, bypass_document_validation):
-        self.io_loop = collection.get_io_loop()
-        delegate = BulkOperationBuilder(collection.delegate,
-                                        ordered,
-                                        bypass_document_validation)
-        super(self.__class__, self).__init__(delegate)
-
-    def get_io_loop(self):
-        return self.io_loop
 
 
 class AgnosticChangeStream(AgnosticBase):

@@ -24,14 +24,11 @@ from bson.binary import JAVA_LEGACY
 from pymongo import ReadPreference, WriteConcern
 from pymongo.read_preferences import Secondary
 from pymongo.errors import OperationFailure, CollectionInvalid
-from pymongo.son_manipulator import AutoReference, NamespaceInjector
 from tornado import gen
 from tornado.testing import gen_test
 
 import motor
-import test
-from test.test_environment import env
-from test.tornado_tests import MotorTest, remove_all_users
+from test.tornado_tests import MotorTest
 from test.utils import ignore_deprecations
 
 
@@ -123,43 +120,6 @@ class MotorDatabaseTest(MotorTest):
         yield db.drop_collection(collection)
         names = yield db.collection_names()
         self.assertFalse('test_drop_collection' in names)
-
-    @ignore_deprecations
-    @gen_test
-    def test_auto_ref_and_deref(self):
-        # Test same functionality as in PyMongo's test_database.py; the
-        # implementation for Motor for async is a little complex so we test
-        # that it works here, and we don't just rely on synchrotest
-        # to cover it.
-        db = self.db
-
-        # We test a special hack where add_son_manipulator corrects our mistake
-        # if we pass a MotorDatabase, instead of Database, to AutoReference.
-        db.add_son_manipulator(AutoReference(db))
-        db.add_son_manipulator(NamespaceInjector())
-
-        a = {"hello": "world"}
-        b = {"test": a}
-        c = {"another test": b}
-
-        yield db.a.delete_many({})
-        yield db.b.delete_many({})
-        yield db.c.delete_many({})
-        yield db.a.save(a)
-        yield db.b.save(b)
-        yield db.c.save(c)
-        a["hello"] = "mike"
-        yield db.a.save(a)
-        result_a = yield db.a.find_one()
-        result_b = yield db.b.find_one()
-        result_c = yield db.c.find_one()
-
-        self.assertEqual(a, result_a)
-        self.assertEqual(a, result_b["test"])
-        self.assertEqual(a, result_c["another test"]["test"])
-        self.assertEqual(b, result_b)
-        self.assertEqual(b, result_c["another test"])
-        self.assertEqual(c, result_c)
 
     @gen_test
     def test_validate_collection(self):

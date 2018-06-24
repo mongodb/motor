@@ -55,10 +55,6 @@ AsyncIOMotorChangeStream = create_asyncio_class(
     core.AgnosticChangeStream)
 
 
-AsyncIOMotorBulkOperationBuilder = create_asyncio_class(
-    core.AgnosticBulkOperationBuilder)
-
-
 AsyncIOMotorGridFSBucket = create_asyncio_class(
     motor_gridfs.AgnosticGridFSBucket)
 

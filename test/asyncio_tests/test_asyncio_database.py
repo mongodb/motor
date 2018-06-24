@@ -14,9 +14,7 @@
 
 """Test AsyncIOMotorDatabase."""
 
-import asyncio
 import unittest
-from unittest import SkipTest
 
 import pymongo.database
 from bson import CodecOptions
@@ -24,16 +22,9 @@ from bson.binary import JAVA_LEGACY
 from pymongo import ReadPreference, WriteConcern
 from pymongo.errors import CollectionInvalid, OperationFailure
 from pymongo.read_preferences import Secondary
-from pymongo.son_manipulator import NamespaceInjector, AutoReference
 
-from motor.motor_asyncio import (AsyncIOMotorDatabase,
-                                 AsyncIOMotorClient,
-                                 AsyncIOMotorCollection)
-import test
-from test import env
-from test.asyncio_tests import (asyncio_test,
-                                AsyncIOTestCase,
-                                remove_all_users)
+from motor.motor_asyncio import (AsyncIOMotorCollection, AsyncIOMotorDatabase)
+from test.asyncio_tests import (AsyncIOTestCase, asyncio_test)
 from test.utils import ignore_deprecations
 
 
@@ -98,44 +89,6 @@ class TestAsyncIODatabase(AsyncIOTestCase):
         yield from db.drop_collection(collection)
         names = yield from db.collection_names()
         self.assertFalse('test_drop_collection' in names)
-
-    @ignore_deprecations
-    @asyncio_test
-    def test_auto_ref_and_deref(self):
-        # Test same functionality as in PyMongo's test_database.py; the
-        # implementation for Motor for async is a little complex so we test
-        # that it works here, and we don't just rely on synchrotest
-        # to cover it.
-        db = self.db
-
-        # We test a special hack where add_son_manipulator corrects our mistake
-        # if we pass an AsyncIOMotorDatabase, instead of Database, to
-        # AutoReference.
-        db.add_son_manipulator(AutoReference(db))
-        db.add_son_manipulator(NamespaceInjector())
-
-        a = {"hello": "world"}
-        b = {"test": a}
-        c = {"another test": b}
-
-        yield from db.a.delete_many({})
-        yield from db.b.delete_many({})
-        yield from db.c.delete_many({})
-        yield from db.a.save(a)
-        yield from db.b.save(b)
-        yield from db.c.save(c)
-        a["hello"] = "jesse"
-        yield from db.a.save(a)
-        result_a = yield from db.a.find_one()
-        result_b = yield from db.b.find_one()
-        result_c = yield from db.c.find_one()
-
-        self.assertEqual(a, result_a)
-        self.assertEqual(a, result_b["test"])
-        self.assertEqual(a, result_c["another test"]["test"])
-        self.assertEqual(b, result_b)
-        self.assertEqual(b, result_c["another test"])
-        self.assertEqual(c, result_c)
 
     @asyncio_test
     def test_validate_collection(self):
