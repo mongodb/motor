@@ -42,7 +42,8 @@ pymongo_client_only = set([
     'is_locked',
     'set_cursor_manager',
     'get_default_database',
-    'kill_cursors']).union(pymongo_only)
+    'kill_cursors',
+    'watch']).union(pymongo_only)
 
 pymongo_database_only = set([
     'add_user',
@@ -55,7 +56,8 @@ pymongo_database_only = set([
     'logout',
     'error',
     'authenticate',
-    'previous_error']).union(pymongo_only)
+    'previous_error',
+    'watch']).union(pymongo_only)
 
 pymongo_collection_only = set([
     'aggregate_raw_batches',
