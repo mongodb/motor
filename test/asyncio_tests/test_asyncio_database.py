@@ -25,7 +25,6 @@ from pymongo.read_preferences import Secondary
 
 from motor.motor_asyncio import (AsyncIOMotorCollection, AsyncIOMotorDatabase)
 from test.asyncio_tests import (AsyncIOTestCase, asyncio_test)
-from test.utils import ignore_deprecations
 
 
 class TestAsyncIODatabase(AsyncIOTestCase):

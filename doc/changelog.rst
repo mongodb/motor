@@ -36,7 +36,18 @@ Breaking changes in 2.0:
     <bulk-write-tutorial>`.
   - ``MotorCollection.ensure_index``, use
     :meth:`MotorCollection.create_indexes`.
+  - Deprecated write methods have been deleted from :class:`MotorCollection`.
 
+    - ``save`` and ``insert``:  Use :meth:`~MotorCollection.insert_one` or
+      :meth:`~MotorCollection.insert_many`.
+    - ``update``:  Use :meth:`~MotorCollection.update_one`,
+      :meth:`~MotorCollection.update_many`, or
+      :meth:`~MotorCollection.replace_one`.
+    - ``remove``:  Use :meth:`~MotorCollection.delete_one` or
+      :meth:`~MotorCollection.delete_many`.
+    - ``find_and_modify``: Use :meth:`~MotorCollection.find_one_and_update`,
+      :meth:`~MotorCollection.find_one_and_replace`, or
+      :meth:`~MotorCollection.find_one_and_delete`.
 
 Documentation is updated to warn about obsolete TLS versions, see
 :doc:`configuration`. Motor is now tested on Travis in addition to MongoDB's

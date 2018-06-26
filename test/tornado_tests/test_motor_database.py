@@ -29,7 +29,6 @@ from tornado.testing import gen_test
 
 import motor
 from test.tornado_tests import MotorTest
-from test.utils import ignore_deprecations
 
 
 class MotorDatabaseTest(MotorTest):

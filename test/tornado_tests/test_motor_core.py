@@ -64,7 +64,12 @@ pymongo_collection_only = set([
     'ensure_index',
     'find_raw_batches',
     'initialize_ordered_bulk_op',
-    'initialize_unordered_bulk_op']).union(pymongo_only)
+    'initialize_unordered_bulk_op',
+    'save',
+    'remove',
+    'insert',
+    'update',
+    'find_and_modify']).union(pymongo_only)
 
 motor_cursor_only = set([
     'fetch_next',

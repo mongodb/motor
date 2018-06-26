@@ -173,7 +173,7 @@ class MotorAttributeFactory(object):
 
 class Async(MotorAttributeFactory):
     def __init__(self, attr_name, doc=None):
-        """A descriptor that wraps a PyMongo method, such as insert or remove,
+        """A descriptor that wraps a PyMongo method, such as insert_one,
         and returns an asynchronous version of the method, which accepts a
         callback or returns a Future.
 

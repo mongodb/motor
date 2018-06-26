@@ -23,11 +23,10 @@ import unittest
 import bson
 from bson import CodecOptions
 from bson.binary import JAVA_LEGACY
-from bson.objectid import ObjectId
 from pymongo import ReadPreference, WriteConcern
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import Secondary
-from pymongo.errors import DuplicateKeyError, OperationFailure
+from pymongo.errors import BulkWriteError, DuplicateKeyError, OperationFailure
 from tornado import gen
 from tornado.concurrent import Future
 from tornado.testing import gen_test
@@ -91,13 +90,11 @@ class MotorCollectionTest(MotorTest):
     @gen_test
     def test_update(self):
         yield self.collection.insert_one({'_id': 1})
-        result = yield self.collection.update(
+        result = yield self.collection.update_one(
             {'_id': 1}, {'$set': {'foo': 'bar'}})
 
-        self.assertEqual(1, result['ok'])
-        self.assertEqual(True, result['updatedExisting'])
-        self.assertEqual(1, result['n'])
-        self.assertEqual(None, result.get('err'))
+        self.assertIsNone(result.upserted_id)
+        self.assertEqual(1, result.modified_count)
 
     @ignore_deprecations
     @gen_test
@@ -109,7 +106,7 @@ class MotorCollectionTest(MotorTest):
         try:
             yield coll.insert_many([{'s': 1}, {'s': 2}])
             with self.assertRaises(DuplicateKeyError):
-                yield coll.update({'s': 2}, {'$set': {'s': 1}})
+                yield coll.update_one({'s': 2}, {'$set': {'s': 1}})
 
         finally:
             yield coll.drop()
@@ -127,8 +124,8 @@ class MotorCollectionTest(MotorTest):
         yield collection.insert_one({'_id': 2})
 
         # Violate a unique index in one of many updates, handle error.
-        with self.assertRaises(DuplicateKeyError):
-            yield collection.insert([
+        with self.assertRaises(BulkWriteError):
+            yield collection.insert_many([
                 {'_id': 1},
                 {'_id': 2},  # Already exists
                 {'_id': 3}])
@@ -137,48 +134,6 @@ class MotorCollectionTest(MotorTest):
         self.assertEqual(
             set([1, 2]),
             set((yield collection.distinct('_id'))))
-
-    @ignore_deprecations
-    @gen_test
-    def test_save_callback(self):
-        # If you delete this test, be thoughtful: there are few remaining tests
-        # of the old "callback=" idiom.
-        yield self.collection.save({}, callback=None)
-
-        # Should not raise
-        (result, error), _ = yield gen.Task(self.collection.save, {})
-        if error:
-            raise error
-
-    @ignore_deprecations
-    @gen_test
-    def test_save_with_id(self):
-        # save() returns the _id, in this case 5.
-        self.assertEqual(
-            5,
-            (yield self.collection.save({'_id': 5})))
-
-    @ignore_deprecations
-    @gen_test
-    def test_save_without_id(self):
-        collection = self.collection
-        result = yield collection.save({'fiddle': 'faddle'})
-
-        # save() returns the new _id
-        self.assertTrue(isinstance(result, ObjectId))
-
-    @ignore_deprecations
-    @gen_test
-    def test_save_bad(self):
-        coll = self.db.unique_collection
-        yield coll.create_index('s', unique=True)
-        yield coll.save({'s': 1})
-
-        try:
-            with self.assertRaises(DuplicateKeyError):
-                yield coll.save({'s': 1})
-        finally:
-            yield coll.drop()
 
     @gen_test
     def test_delete_one(self):
@@ -199,7 +154,6 @@ class MotorCollectionTest(MotorTest):
         self.assertEqual(1, result.raw_result['ok'])
         self.assertEqual(None, result.raw_result.get('err'))
 
-    @ignore_deprecations
     @gen_test
     def test_unacknowledged_insert(self):
         # Test that unsafe inserts with no callback still work
@@ -212,42 +166,17 @@ class MotorCollectionTest(MotorTest):
         while not (yield coll.count_documents({})):
             yield gen.sleep(0.1)
 
-        # DuplicateKeyError not raised.
-        future = coll.insert({'_id': 1})
-        yield coll.insert({'_id': 1}, w=0)
-
-        with self.assertRaises(DuplicateKeyError):
-            yield future
-
-    @ignore_deprecations
-    @gen_test
-    def test_unacknowledged_save(self):
-        # Test that unsafe saves with no callback still work
-        collection_name = 'test_unacknowledged_save'
-        coll = self.db[collection_name]
-        coll.save({'_id': 201}, w=0)
-
-        while not (yield coll.find_one({'_id': 201})):
-            yield gen.sleep(0.1)
-
-        # DuplicateKeyError not raised
-        coll.save({'_id': 201})
-        yield coll.save({'_id': 201}, w=0)
-        coll.database.client.close()
-
-    @ignore_deprecations
     @gen_test
     def test_unacknowledged_update(self):
         # Test that unsafe updates with no callback still work
         coll = self.collection
 
         yield coll.insert_one({'_id': 1})
-        coll.update({'_id': 1}, {'$set': {'a': 1}}, w=0)
+        coll.with_options(write_concern=WriteConcern(0)).update_one(
+            {'_id': 1}, {'$set': {'a': 1}})
 
         while not (yield coll.find_one({'a': 1})):
             yield gen.sleep(0.1)
-
-        coll.database.client.close()
 
     @gen_test(timeout=30)
     def test_nested_callbacks(self):

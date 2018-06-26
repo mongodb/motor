@@ -22,9 +22,8 @@ import unittest
 import bson
 from bson import CodecOptions
 from bson.binary import JAVA_LEGACY
-from bson.objectid import ObjectId
 from pymongo import ReadPreference, WriteConcern
-from pymongo.errors import DuplicateKeyError, OperationFailure
+from pymongo.errors import BulkWriteError, DuplicateKeyError, OperationFailure
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import Secondary
 
@@ -91,13 +90,11 @@ class TestAsyncIOCollection(AsyncIOTestCase):
     @asyncio_test
     def test_update(self):
         yield from self.collection.insert_one({'_id': 1})
-        result = yield from self.collection.update(
+        result = yield from self.collection.update_one(
             {'_id': 1}, {'$set': {'foo': 'bar'}})
 
-        self.assertEqual(1, result['ok'])
-        self.assertEqual(True, result['updatedExisting'])
-        self.assertEqual(1, result['n'])
-        self.assertEqual(None, result.get('err'))
+        self.assertIsNone(result.upserted_id)
+        self.assertEqual(1, result.modified_count)
 
     @ignore_deprecations
     @asyncio_test
@@ -109,7 +106,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         try:
             yield from coll.insert_many([{'s': 1}, {'s': 2}])
             with self.assertRaises(DuplicateKeyError):
-                yield from coll.update({'s': 2}, {'$set': {'s': 1}})
+                yield from coll.update_one({'s': 2}, {'$set': {'s': 1}})
 
         finally:
             yield from coll.drop()
@@ -127,8 +124,8 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         yield from collection.insert_one({'_id': 2})
 
         # Violate a unique index in one of many updates, handle error.
-        with self.assertRaises(DuplicateKeyError):
-            yield from collection.insert([
+        with self.assertRaises(BulkWriteError):
+            yield from collection.insert_many([
                 {'_id': 1},
                 {'_id': 2},  # Already exists
                 {'_id': 3}])
@@ -137,36 +134,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         self.assertEqual(
             set([1, 2]),
             set((yield from collection.distinct('_id'))))
-
-    @ignore_deprecations
-    @asyncio_test
-    def test_save_with_id(self):
-        # save() returns the _id, in this case 5.
-        self.assertEqual(
-            5,
-            (yield from self.collection.save({'_id': 5})))
-
-    @ignore_deprecations
-    @asyncio_test
-    def test_save_without_id(self):
-        collection = self.collection
-        result = yield from collection.save({'fiddle': 'faddle'})
-
-        # save() returns the new _id
-        self.assertTrue(isinstance(result, ObjectId))
-
-    @ignore_deprecations
-    @asyncio_test
-    def test_save_bad(self):
-        coll = self.db.unique_collection
-        yield from coll.create_index('s', unique=True)
-        yield from coll.save({'s': 1})
-
-        try:
-            with self.assertRaises(DuplicateKeyError):
-                yield from coll.save({'s': 1})
-        finally:
-            yield from coll.drop()
 
     @asyncio_test
     def test_delete_one(self):
@@ -197,32 +164,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         while not (yield from coll.count_documents({})):
             yield from asyncio.sleep(0.1, loop=self.loop)
 
-        # DuplicateKeyError not raised.
-        future = coll.insert({'_id': 1})
-        yield from coll.insert({'_id': 1}, w=0)
-
-        with self.assertRaises(DuplicateKeyError):
-            yield from future
-
-    @ignore_deprecations
-    @asyncio_test
-    def test_unacknowledged_save(self):
-        # Test that unsafe saves with no callback still work
-        collection_name = 'test_unacknowledged_save'
-        coll = self.db[collection_name]
-        future = coll.save({'_id': 201}, w=0)
-
-        while not (yield from coll.find_one({'_id': 201})):
-            yield from asyncio.sleep(0.1, loop=self.loop)
-
-        # DuplicateKeyError not raised
-        coll.save({'_id': 201})
-        yield from coll.save({'_id': 201}, w=0)
-
-        # Clean up.
-        yield from future
-        coll.database.client.close()
-
     @ignore_deprecations
     @asyncio_test
     def test_unacknowledged_update(self):
@@ -230,12 +171,11 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         coll = self.collection
 
         yield from coll.insert_one({'_id': 1})
-        coll.update({'_id': 1}, {'$set': {'a': 1}}, w=0)
+        coll.with_options(write_concern=WriteConcern(0)).update_one(
+            {'_id': 1}, {'$set': {'a': 1}})
 
         while not (yield from coll.find_one({'a': 1})):
             yield from asyncio.sleep(0.1, loop=self.loop)
-
-        coll.database.client.close()
 
     @asyncio_test(timeout=30)
     def test_nested_callbacks(self):

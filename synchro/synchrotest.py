@@ -162,10 +162,11 @@ excluded_tests = [
     # Deprecated in PyMongo, removed in Motor 2.0.
     'TestDatabase.test_errors',
     'TestDatabase.test_eval',
-    'TestCollation.test_bulk',
-    'TestCollation.test_bulk_write',
-    'TestCollation.test_ensure_index',
-    'TestCollation.test_unacknowledged_write',
+    'TestCollation.*',
+    'TestCollection.test_find_one_and_write_concern',
+    'TestCollection.test_write_error_text_handling',
+    'TestCommandMonitoring.test_legacy_insert_many',
+    'TestCommandMonitoring.test_legacy_writes',
 ]
 
 

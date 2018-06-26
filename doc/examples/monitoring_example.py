@@ -55,7 +55,7 @@ client = MotorClient()
 
 
 async def do_insert():
-    await client.test.collection.insert({'message': 'hi!'})
+    await client.test.collection.insert_one({'message': 'hi!'})
 
     # For this example, wait 10 seconds for more monitoring events to fire.
     await gen.sleep(10)
