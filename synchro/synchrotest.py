@@ -32,7 +32,7 @@ from nose.plugins.xunit import Xunit
 from nose.selector import Selector
 
 import synchro
-from motor.motor_py3_compat import PY3
+from motor.motor_py2_compat import PY3
 
 excluded_modules = [
     # Exclude some PyMongo tests that can't be applied to Synchro.

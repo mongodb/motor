@@ -18,7 +18,7 @@ from __future__ import unicode_literals, absolute_import
 
 import pymongo
 
-from motor.motor_py3_compat import text_type
+from motor.motor_py2_compat import text_type
 
 version_tuple = (1, 3, 'dev0')
 

@@ -33,7 +33,7 @@ from test.test_environment import db_user, db_password, env
 from test.tornado_tests import MotorReplicaSetTestBase, MotorTest
 from test.utils import one, get_primary_pool
 
-from motor.motor_py3_compat import text_type
+from motor.motor_py2_compat import text_type
 
 
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
