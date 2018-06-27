@@ -26,10 +26,14 @@ Breaking changes in 2.0:
   - ``MotorDatabase.error``
   - ``MotorDatabase.previous_error``
   - ``MotorDatabase.reset_error_history``
-  - ``MotorDatabase.authenticate``
   - ``MotorDatabase.eval``, deprecated by the MongoDB server, use
     ``MotorDatabase.command("eval", ...)`` or stop depending on ``eval``
-  - ``MotorDatabase.logout``, add credentials to URI or ``MotorClient`` options
+  - ``MotorDatabase.group``, deprecated by the MongoDB server, use
+    ``MotorDatabase.command("group", ...)`` or stop depending on ``group``
+  - ``MotorDatabase.authenticate`` and ``MotorDatabase.logout``. Add credentials
+    to URI or ``MotorClient`` options instead of calling ``authenticate``. To
+    authenticate as multiple users on the same database, instead of using
+    ``authenticate`` and ``logout`` use a separate client for each user.
   - ``MotorCollection.initialize_unordered_bulk_op``,
     ``initialize_unordered_bulk_op``, and ``MotorBulkOperationBuilder``, use
     :meth:`MotorCollection.bulk_write``, see :ref:`Bulk Writes Tutorial

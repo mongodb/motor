@@ -388,7 +388,6 @@ class AgnosticCollection(AgnosticBaseProperties):
     find_one_and_replace     = AsyncCommand(doc=find_one_and_replace_doc)
     find_one_and_update      = AsyncCommand(doc=find_one_and_update_doc)
     full_name                = ReadOnlyProperty()
-    group                    = AsyncRead()
     index_information        = AsyncRead(doc=index_information_doc)
     inline_map_reduce        = AsyncRead()
     insert_many              = AsyncWrite(doc=insert_many_doc)
