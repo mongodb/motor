@@ -522,23 +522,16 @@ class AgnosticCollection(AgnosticBaseProperties):
             http://docs.mongodb.org/manual/applications/aggregation
 
         """
-        if kwargs.get('cursor') is False:
-            kwargs.pop('cursor')
-            # One-shot aggregation, no cursor. Send command now, return Future.
-            return self._async_aggregate(
-                pipeline, **unwrap_kwargs_session(kwargs))
-        else:
-            if 'callback' in kwargs:
-                raise pymongo.errors.InvalidOperation(
-                    "Pass a callback to to_list or each, not to aggregate.")
+        if 'callback' in kwargs:
+            raise pymongo.errors.InvalidOperation(
+                "Pass a callback to to_list or each, not to aggregate.")
 
-            kwargs.setdefault('cursor', {})
-            cursor_class = create_class_with_framework(
-                AgnosticLatentCommandCursor, self._framework, self.__module__)
+        cursor_class = create_class_with_framework(
+            AgnosticLatentCommandCursor, self._framework, self.__module__)
 
-            # Latent cursor that will send initial command on first "async for".
-            return cursor_class(self, self._async_aggregate, pipeline,
-                                **unwrap_kwargs_session(kwargs))
+        # Latent cursor that will send initial command on first "async for".
+        return cursor_class(self, self._async_aggregate, pipeline,
+                            **unwrap_kwargs_session(kwargs))
 
     def watch(self, pipeline=None, full_document='default', resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,
