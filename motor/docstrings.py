@@ -947,8 +947,7 @@ To sort by multiple fields, pass a list of (key, direction) pairs:
   >>> IOLoop.current().run_sync(f)
   [(0, 4), (0, 2), (0, 0), (1, 3), (1, 1)]
 
-Beginning with MongoDB version 2.6, text search results can be
-sorted by relevance:
+Text search results can be sorted by relevance:
 
 .. testsetup:: sort_text
 

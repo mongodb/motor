@@ -469,33 +469,6 @@ tasks:
 
 # Standard test tasks {{{
 
-    - name: "test-2.6-standalone"
-      tags: ["2.6", "standalone"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "2.6"
-            TOPOLOGY: "server"
-        - func: "run tox"
-
-    - name: "test-2.6-replica_set"
-      tags: ["2.6", "replica_set"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "2.6"
-            TOPOLOGY: "replica_set"
-        - func: "run tox"
-
-    - name: "test-2.6-sharded_cluster"
-      tags: ["2.6", "sharded_cluster"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "2.6"
-            TOPOLOGY: "sharded_cluster"
-        - func: "run tox"
-
     - name: "test-3.0-standalone"
       tags: ["3.0", "standalone"]
       commands:
@@ -683,10 +656,6 @@ axes:
         display_name: "3.0"
         variables:
            VERSION: "3.0"
-      - id: "2.6"
-        display_name: "2.6"
-        variables:
-           VERSION: "2.6"
 
   - id: topology
     display_name: Topology
@@ -836,7 +805,6 @@ buildvariants:
      - ".3.4"
      - ".3.2"
      - ".3.0"
-     - ".2.6"
 
 - matrix_name: "test-mongodb-versions-macos"
   matrix_spec: {"os": "osx", "tox-env-osx": "*", ssl: "*"}
@@ -855,7 +823,6 @@ buildvariants:
        then:
          add_tasks:
             - ".3.0"
-            - ".2.6"
 
 - matrix_name: "enterprise-auth"
   matrix_spec: {"tox-env": ["synchro"], ssl: "ssl"}

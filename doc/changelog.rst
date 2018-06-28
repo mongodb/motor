@@ -6,9 +6,11 @@ Changelog
 Motor 2.0
 ---------
 
-Motor 2.0 supports MongoDB 4.0 features including multi-document transactions,
-and change stream notifications on entire databases or entire MongoDB servers.
-It requires PyMongo 3.7 or later.
+Motor 2.0 drops support for MongoDB 2.6 and adds supports MongoDB 4.0 features,
+including multi-document transactions, and change stream notifications on entire
+databases or entire MongoDB servers. It requires PyMongo 3.7 or later.
+
+This is a major release that removes previously deprecated APIs.
 
 Breaking changes in 2.0:
 
