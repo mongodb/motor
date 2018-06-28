@@ -298,38 +298,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             self.assertTrue('_unpack_response' in formatted
                             or '_check_command_response' in formatted)
 
-    @asyncio_test(timeout=30)
-    def test_parallel_scan(self):
-        yield from skip_if_mongos(self.cx)
-
-        collection = self.collection.with_options(
-            write_concern=WriteConcern(test.env.w))
-
-        # Enough documents that each cursor requires multiple batches.
-        yield from collection.delete_many({})
-        yield from collection.insert_many(({'_id': i} for i in range(8000)))
-
-        if test.env.is_replica_set:
-            # Test that getMore messages are sent to the right server.
-            client = self.asyncio_rsc(read_preference=Secondary())
-            collection = client.motor_test.test_collection
-
-        docs = []
-
-        @asyncio.coroutine
-        def f(cursor):
-            self.assertTrue(isinstance(cursor, AsyncIOMotorCommandCursor))
-
-            while (yield from cursor.fetch_next):
-                docs.append(cursor.next_object())
-
-        cursors = yield from collection.parallel_scan(3)
-        yield from asyncio.wait(
-            [f(cursor) for cursor in cursors],
-            loop=self.loop)
-
-        self.assertEqual(len(docs), (yield from collection.count_documents({})))
-
     def test_with_options(self):
         coll = self.db.test
         codec_options = CodecOptions(

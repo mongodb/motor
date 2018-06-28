@@ -39,6 +39,8 @@ pymongo_only = set(['next'])
 motor_client_only = motor_only.union(['open'])
 
 pymongo_client_only = set([
+    'close_cursor',
+    'database_names',
     'is_locked',
     'set_cursor_manager',
     'get_default_database',
@@ -47,6 +49,7 @@ pymongo_client_only = set([
 
 pymongo_database_only = set([
     'add_user',
+    'collection_names',
     'remove_user',
     'system_js',
     'last_status',
@@ -63,13 +66,15 @@ pymongo_collection_only = set([
     'aggregate_raw_batches',
     'ensure_index',
     'find_raw_batches',
+    'group',
     'initialize_ordered_bulk_op',
     'initialize_unordered_bulk_op',
     'save',
     'remove',
     'insert',
     'update',
-    'find_and_modify']).union(pymongo_only)
+    'find_and_modify',
+    'parallel_scan']).union(pymongo_only)
 
 motor_cursor_only = set([
     'fetch_next',

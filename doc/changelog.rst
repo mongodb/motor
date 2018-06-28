@@ -19,9 +19,13 @@ Breaking changes in 2.0:
   :class:`~pymongo.client_session.ClientSession`.
 - Removed methods and classes:
 
-  - ``MotorClient.kill_cursors``
-  - ``MotorClient.get_default_database``
+  - ``MotorClient.kill_cursors`` and ``close_cursor``.
+  - ``MotorClient.get_default_database``.
+  - ``MotorClient.database_names``, use
+    :meth:`~MotorClient.list_database_names`.
   - ``MotorDatabase.add_son_manipulator``
+  - ``MotorDatabase.collection_names``, use
+    :meth:`~MotorDatabase.list_collection_names`.
   - ``MotorDatabase.last_status``
   - ``MotorDatabase.error``
   - ``MotorDatabase.previous_error``
@@ -52,6 +56,8 @@ Breaking changes in 2.0:
     - ``find_and_modify``: Use :meth:`~MotorCollection.find_one_and_update`,
       :meth:`~MotorCollection.find_one_and_replace`, or
       :meth:`~MotorCollection.find_one_and_delete`.
+
+  - ``MotorCollection.parallel_scan``, deprecated by the MongoDB server.
 
 Documentation is updated to warn about obsolete TLS versions, see
 :doc:`configuration`. Motor is now tested on Travis in addition to MongoDB's

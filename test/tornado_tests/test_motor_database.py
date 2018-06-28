@@ -73,7 +73,7 @@ class MotorDatabaseTest(MotorTest):
         # Wait for create_collection to complete
         for _ in range(10):
             yield gen.sleep(0.1)
-            if 'c' in (yield db.collection_names()):
+            if 'c' in (yield db.list_collection_names()):
                 break
 
     @gen_test
@@ -91,7 +91,7 @@ class MotorDatabaseTest(MotorTest):
         collection = yield db.create_collection('test_collection2')
         self.assertTrue(isinstance(collection, motor.MotorCollection))
         self.assertTrue(
-            'test_collection2' in (yield db.collection_names()))
+            'test_collection2' in (yield db.list_collection_names()))
 
         with self.assertRaises(CollectionInvalid):
             yield db.create_collection('test_collection2')
@@ -114,10 +114,10 @@ class MotorDatabaseTest(MotorTest):
         db = self.db
         collection = db.test_drop_collection
         yield collection.insert_one({})
-        names = yield db.collection_names()
+        names = yield db.list_collection_names()
         self.assertTrue('test_drop_collection' in names)
         yield db.drop_collection(collection)
-        names = yield db.collection_names()
+        names = yield db.list_collection_names()
         self.assertFalse('test_drop_collection' in names)
 
     @gen_test

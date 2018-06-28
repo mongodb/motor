@@ -160,13 +160,16 @@ excluded_tests = [
     'TestTransactions.transaction_test_debug',
 
     # Deprecated in PyMongo, removed in Motor 2.0.
+    'TestDatabase.test_collection_names',
     'TestDatabase.test_errors',
     'TestDatabase.test_eval',
     'TestCollation.*',
     'TestCollection.test_find_one_and_write_concern',
+    'TestCollection.test_parallel_scan_max_time_ms',
     'TestCollection.test_write_error_text_handling',
     'TestCommandMonitoring.test_legacy_insert_many',
     'TestCommandMonitoring.test_legacy_writes',
+    'TestClient.test_database_names',
 ]
 
 

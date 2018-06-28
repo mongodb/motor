@@ -178,10 +178,10 @@ class MotorClientTest(MotorTest):
         # Make sure we can pass a MotorDatabase instance to drop_database
         db = self.cx.test_drop_database
         yield db.test_collection.insert_one({})
-        names = yield self.cx.database_names()
+        names = yield self.cx.list_database_names()
         self.assertTrue('test_drop_database' in names)
         yield self.cx.drop_database(db)
-        names = yield self.cx.database_names()
+        names = yield self.cx.list_database_names()
         self.assertFalse('test_drop_database' in names)
 
     @gen_test

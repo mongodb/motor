@@ -323,35 +323,6 @@ class MotorCollectionTest(MotorTest):
             docs = yield future
             self.assertAllDocs(expected_sum, docs)
 
-    @gen_test(timeout=30)
-    def test_parallel_scan(self):
-        yield skip_if_mongos(self.cx)
-
-        collection = self.collection.with_options(
-            write_concern=WriteConcern(test.env.w))
-
-        # Enough documents that each cursor requires multiple batches.
-        yield collection.delete_many({})
-        yield collection.insert_many(({'_id': i} for i in range(8000)))
-        if test.env.is_replica_set:
-            # Test that getMore messages are sent to the right server.
-            client = self.motor_rsc(read_preference=Secondary())
-            collection = client.motor_test.test_collection
-
-        docs = []
-
-        @gen.coroutine
-        def f(cursor):
-            self.assertTrue(isinstance(cursor,
-                                       motor.motor_tornado.MotorCommandCursor))
-
-            while (yield cursor.fetch_next):
-                docs.append(cursor.next_object())
-
-        cursors = yield collection.parallel_scan(3)
-        yield [f(cursor) for cursor in cursors]
-        self.assertEqual(len(docs), (yield collection.count_documents({})))
-
     def test_with_options(self):
         coll = self.db.test
         codec_options = CodecOptions(

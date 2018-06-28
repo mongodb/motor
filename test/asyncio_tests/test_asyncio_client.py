@@ -192,10 +192,10 @@ class TestAsyncIOClient(AsyncIOTestCase):
         # to drop_database
         db = self.cx.test_drop_database
         yield from db.test_collection.insert_one({})
-        names = yield from self.cx.database_names()
+        names = yield from self.cx.list_database_names()
         self.assertTrue('test_drop_database' in names)
         yield from self.cx.drop_database(db)
-        names = yield from self.cx.database_names()
+        names = yield from self.cx.list_database_names()
         self.assertFalse('test_drop_database' in names)
 
     @asyncio_test

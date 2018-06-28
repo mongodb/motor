@@ -106,7 +106,7 @@ class MotorSessionTest(MotorTest):
             (db.command, ['ping'], {}),
             (db.drop_collection, ['collection'], {}),
             (db.create_collection, ['collection'], {}),
-            (db.collection_names, [], {}),
+            (db.list_collection_names, [], {}),
         ]
 
         yield self._test_ops(client, *ops)

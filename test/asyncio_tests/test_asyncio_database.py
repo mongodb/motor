@@ -71,7 +71,7 @@ class TestAsyncIODatabase(AsyncIOTestCase):
         collection = yield from db.create_collection('test_collection2')
         self.assertTrue(isinstance(collection, AsyncIOMotorCollection))
         self.assertTrue(
-            'test_collection2' in (yield from db.collection_names()))
+            'test_collection2' in (yield from db.list_collection_names()))
 
         with self.assertRaises(CollectionInvalid):
             yield from db.create_collection('test_collection2')
@@ -83,10 +83,10 @@ class TestAsyncIODatabase(AsyncIOTestCase):
         db = self.db
         collection = db.test_drop_collection
         yield from collection.insert_one({})
-        names = yield from db.collection_names()
+        names = yield from db.list_collection_names()
         self.assertTrue('test_drop_collection' in names)
         yield from db.drop_collection(collection)
-        names = yield from db.collection_names()
+        names = yield from db.list_collection_names()
         self.assertFalse('test_drop_collection' in names)
 
     @asyncio_test

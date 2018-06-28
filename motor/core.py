@@ -90,8 +90,6 @@ class AgnosticClient(AgnosticBaseProperties):
     address                  = ReadOnlyProperty()
     arbiters                 = ReadOnlyProperty()
     close                    = DelegateMethod()
-    close_cursor             = AsyncCommand()
-    database_names           = AsyncRead()
     drop_database            = AsyncCommand().unwrap('MotorDatabase')
     event_listeners          = ReadOnlyProperty()
     fsync                    = AsyncCommand()
@@ -293,7 +291,6 @@ class AgnosticDatabase(AgnosticBaseProperties):
     __motor_class_name__ = 'MotorDatabase'
     __delegate_class__ = Database
 
-    collection_names      = AsyncRead()
     command               = AsyncCommand(doc=cmd_doc)
     create_collection     = AsyncCommand().wrap(Collection)
     current_op            = AsyncRead()
@@ -404,7 +401,6 @@ class AgnosticCollection(AgnosticBaseProperties):
 
     _async_aggregate    = AsyncRead(attr_name='aggregate')
     _async_list_indexes = AsyncRead(attr_name='list_indexes')
-    __parallel_scan     = AsyncRead(attr_name='parallel_scan')
 
     def __init__(self, database, name, codec_options=None,
                  read_preference=None, write_concern=None, read_concern=None,
@@ -685,76 +681,6 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, self._async_list_indexes, session=session)
-
-    def parallel_scan(self, num_cursors, **kwargs):
-        """Scan this entire collection in parallel.
-
-        Returns a list of up to ``num_cursors`` cursors that can be iterated
-        concurrently. As long as the collection is not modified during
-        scanning, each document appears once in one of the cursors' result
-        sets.
-
-        For example, to process each document in a collection using some
-        function ``process_document()``::
-
-            @gen.coroutine
-            def process_cursor(cursor):
-                while (yield cursor.fetch_next):
-                    process_document(cursor.next_object())
-
-            # Get up to 4 cursors.
-            cursors = yield collection.parallel_scan(4)
-            yield [process_cursor(cursor) for cursor in cursors]
-
-            # All documents have now been processed.
-
-        If ``process_document()`` is a coroutine, do
-        ``yield process_document(document)``.
-
-        With a replica set, pass `read_preference` of
-        :attr:`~pymongo.read_preference.ReadPreference.SECONDARY_PREFERRED`
-        to scan a secondary.
-
-        :Parameters:
-          - `num_cursors`: the number of cursors to return
-          - `session` (optional): a
-            :class:`~pymongo.client_session.ClientSession`, created with
-            :meth:`~MotorClient.start_session`.
-
-        .. note:: Requires server version **>= 2.5.5**.
-        """
-        io_loop = self.get_io_loop()
-        original_future = self._framework.get_future(io_loop)
-
-        # Return a future, or if user passed a callback chain it to the future.
-        callback = kwargs.pop('callback', None)
-        retval = self._framework.future_or_callback(original_future,
-                                                    callback,
-                                                    io_loop)
-
-        # Once we have PyMongo Cursors, wrap in MotorCursors and resolve the
-        # future with them, or pass them to the callback.
-        self._framework.add_future(
-            io_loop,
-            self.__parallel_scan(num_cursors, **kwargs),
-            self._scan_callback, original_future)
-
-        return retval
-
-    def _scan_callback(self, original_future, future):
-        try:
-            command_cursors = future.result()
-        except Exception as exc:
-            original_future.set_exception(exc)
-        else:
-            command_cursor_class = create_class_with_framework(
-                AgnosticCommandCursor, self._framework, self.__module__)
-
-            motor_command_cursors = [
-                command_cursor_class(cursor, self)
-                for cursor in command_cursors]
-
-            original_future.set_result(motor_command_cursors)
 
     def wrap(self, obj):
         if obj.__class__ is Collection:

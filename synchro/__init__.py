@@ -426,10 +426,6 @@ class Collection(Synchro):
         self.synchronize(cursor.delegate._get_more)()
         return cursor
 
-    def parallel_scan(self, *args, **kwargs):
-        # Motor does no I/O initially in parallel_scan() but PyMongo does.
-        return self.synchronize(self.delegate.parallel_scan)(*args, **kwargs)
-
     def __getattr__(self, name):
         # Access to collections with dotted names, like db.test.mike
         fullname = self.name + '.' + name
