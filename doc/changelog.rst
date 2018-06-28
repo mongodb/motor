@@ -8,7 +8,8 @@ Motor 2.0
 
 Motor 2.0 drops support for MongoDB 2.6 and adds supports MongoDB 4.0 features,
 including multi-document transactions, and change stream notifications on entire
-databases or entire MongoDB servers. It requires PyMongo 3.7 or later.
+databases or entire MongoDB servers. It adds support for Python 3.7. This
+version of Motor requires PyMongo 3.7 or later.
 
 This is a major release that removes previously deprecated APIs.
 

@@ -694,10 +694,10 @@ axes:
         variables:
            TOX_ENV: "tornado4-py27"
            PYTHON_BINARY: "/opt/python/2.7/bin/python"
-      - id: "tornado4-py36"
+      - id: "tornado4-py37"
         variables:
-           TOX_ENV: "tornado4-py36"
-           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+           TOX_ENV: "tornado4-py37"
+           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
       - id: "tornado5-py27"
         variables:
            TOX_ENV: "tornado5-py27"
@@ -722,6 +722,10 @@ axes:
         variables:
            TOX_ENV: "tornado5-py36"
            PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+      - id: "tornado5-py37"
+        variables:
+           TOX_ENV: "tornado5-py37"
+           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
       - id: "tornado_git-py27"
         variables:
            TOX_ENV: "tornado_git-py27"
@@ -738,21 +742,18 @@ axes:
         variables:
            TOX_ENV: "tornado_git-py36"
            PYTHON_BINARY: "/opt/python/3.6/bin/python3"
-      - id: "asyncio-py34"
+      - id: "tornado_git-py37"
         variables:
-           TOX_ENV: "asyncio-py34"
-           PYTHON_BINARY: "/opt/python/3.4/bin/python3"
-      - id: "asyncio-py35"
+           TOX_ENV: "tornado_git-py37"
+           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+      - id: "asyncio-py37"
         variables:
-           TOX_ENV: "asyncio-py35"
-           PYTHON_BINARY: "/opt/python/3.5/bin/python3"
-      - id: "asyncio-py36"
-        variables:
-           TOX_ENV: "asyncio-py36"
-           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+           TOX_ENV: "asyncio-py37"
+           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
       - id: "py3-pymongo-master"
         variables:
            TOX_ENV: "py3-pymongo-master"
+           # Use 3.6 for now until 3.7 is on all Evergreen distros.
            PYTHON_BINARY: "/opt/python/3.6/bin/python3"
       - id: "synchro"
         variables:
@@ -760,6 +761,7 @@ axes:
            # The synchro tests are configured for py27 in tox.ini.
            PYTHON_BINARY: "/opt/python/2.7/bin/python"
 
+  # Test Python only up to 3.6 on Mac, until our toolchain is updated.
   - id: tox-env-osx
     display_name: "Tox Env OSX"
     values:
@@ -795,6 +797,7 @@ axes:
 
 buildvariants:
 
+# Test Python only up to 3.6 on RHEL.
 - matrix_name: "test-mongodb-versions-rhel"
   matrix_spec: {"os": "rhel", "tox-env": ["tornado4-py27", "tornado5-py36", "py3-pymongo-master"], ssl: "*"}
   display_name: "${os} ${tox-env} ${ssl}"
