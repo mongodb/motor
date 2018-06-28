@@ -26,11 +26,6 @@ import functools
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 
-try:
-    from asyncio import ensure_future
-except ImportError:
-    from asyncio import async as ensure_future
-
 CLASS_PREFIX = 'AsyncIO'
 
 

@@ -20,12 +20,8 @@ import gc
 import inspect
 import os
 import unittest
+from asyncio import ensure_future
 from unittest import SkipTest
-
-try:
-    from asyncio import ensure_future
-except ImportError:
-    from asyncio import async as ensure_future
 
 from mockupdb import MockupDB
 
