@@ -132,47 +132,6 @@ class MotorClientTest(MotorTest):
         self.assertEqual(cx.max_pool_size, 100)
         cx.close()
 
-    @gen_test(timeout=60)
-    def test_high_concurrency(self):
-        yield self.make_test_data()
-
-        concurrency = 25
-        cx = self.motor_client(maxPoolSize=concurrency)
-        expected_finds = 200 * concurrency
-        n_inserts = 25
-
-        collection = cx.motor_test.test_collection
-        insert_collection = cx.motor_test.insert_collection
-        yield insert_collection.delete_many({})
-
-        ndocs = [0]
-        insert_future = Future()
-
-        @gen.coroutine
-        def find():
-            cursor = collection.find()
-            while (yield cursor.fetch_next):
-                cursor.next_object()
-                ndocs[0] += 1
-
-                # Half-way through, start an insert loop
-                if ndocs[0] == expected_finds / 2:
-                    insert()
-
-        @gen.coroutine
-        def insert():
-            for i in range(n_inserts):
-                yield insert_collection.insert_one({'s': hex(i)})
-
-            insert_future.set_result(None)  # Finished
-
-        yield [find() for _ in range(concurrency)]
-        yield insert_future
-        self.assertEqual(expected_finds, ndocs[0])
-        self.assertEqual(n_inserts,
-                         (yield insert_collection.count_documents({})))
-        yield collection.delete_many({})
-
     @gen_test(timeout=30)
     def test_drop_database(self):
         # Make sure we can pass a MotorDatabase instance to drop_database

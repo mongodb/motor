@@ -143,49 +143,6 @@ class TestAsyncIOClient(AsyncIOTestCase):
         self.assertEqual(cx.max_pool_size, 100)
         cx.close()
 
-    @asyncio_test(timeout=60)
-    def test_high_concurrency(self):
-        yield from self.make_test_data()
-
-        concurrency = 25
-        cx = self.asyncio_client(maxPoolSize=concurrency)
-        expected_finds = 200 * concurrency
-        n_inserts = 25
-
-        collection = cx.motor_test.test_collection
-        insert_collection = cx.motor_test.insert_collection
-        yield from insert_collection.delete_many({})
-
-        ndocs = 0
-        insert_future = asyncio.Future(loop=self.loop)
-
-        @asyncio.coroutine
-        def find():
-            nonlocal ndocs
-            cursor = collection.find()
-            while (yield from cursor.fetch_next):
-                cursor.next_object()
-                ndocs += 1
-
-                # Half-way through, start an insert loop
-                if ndocs == expected_finds / 2:
-                    asyncio.Task(insert(), loop=self.loop)
-
-        @asyncio.coroutine
-        def insert():
-            for i in range(n_inserts):
-                yield from insert_collection.insert_one({'s': hex(i)})
-
-            insert_future.set_result(None)  # Finished
-
-        yield from asyncio.gather(*[find() for _ in range(concurrency)],
-                                  loop=self.loop)
-        yield from insert_future
-        self.assertEqual(expected_finds, ndocs)
-        self.assertEqual(n_inserts,
-                         (yield from insert_collection.count_documents({})))
-        yield from collection.delete_many({})
-
     @asyncio_test(timeout=30)
     def test_drop_database(self):
         # Make sure we can pass an AsyncIOMotorDatabase instance

@@ -177,28 +177,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         while not (yield from coll.find_one({'a': 1})):
             yield from asyncio.sleep(0.1, loop=self.loop)
 
-    @asyncio_test(timeout=30)
-    def test_nested_callbacks(self):
-        results = [0]
-        future = asyncio.Future(loop=self.loop)
-        yield from self.collection.delete_many({})
-        yield from self.collection.insert_one({'_id': 1})
-
-        def callback(result, error):
-            if error:
-                future.set_exception(error)
-            elif result:
-                results[0] += 1
-                if results[0] < 1000:
-                    self.collection.find({'_id': 1}).each(callback)
-                else:
-                    future.set_result(None)
-
-        self.collection.find({'_id': 1}).each(callback)
-
-        yield from future
-        self.assertEqual(1000, results[0])
-
     @asyncio_test
     def test_map_reduce(self):
         # Count number of documents with even and odd _id

@@ -178,28 +178,6 @@ class MotorCollectionTest(MotorTest):
         while not (yield coll.find_one({'a': 1})):
             yield gen.sleep(0.1)
 
-    @gen_test(timeout=30)
-    def test_nested_callbacks(self):
-        results = [0]
-        future = Future()
-        yield self.collection.delete_many({})
-        yield self.collection.insert_one({'_id': 1})
-
-        def callback(result, error):
-            if error:
-                future.set_exception(error)
-            elif result:
-                results[0] += 1
-                if results[0] < 1000:
-                    self.collection.find({'_id': 1}).each(callback)
-                else:
-                    future.set_result(None)
-
-        self.collection.find({'_id': 1}).each(callback)
-
-        yield future
-        self.assertEqual(1000, results[0])
-
     @gen_test
     def test_map_reduce(self):
         # Count number of documents with even and odd _id
