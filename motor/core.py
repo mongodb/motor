@@ -1271,7 +1271,7 @@ class AgnosticChangeStream(AgnosticBase):
 
     if PY35:
         exec(textwrap.dedent("""
-        async def __aiter__(self):
+        def __aiter__(self):
             return self
 
         __anext__ = next
