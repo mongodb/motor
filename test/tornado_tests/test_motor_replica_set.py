@@ -58,18 +58,6 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         self.assertTrue(isinstance(error, pymongo.errors.ConnectionFailure))
 
     @gen_test
-    def test_socketKeepAlive(self):
-        # Connect.
-        yield self.rsc.server_info()
-        ka = get_primary_pool(self.rsc).opts.socket_keepalive
-        self.assertTrue(ka)
-
-        client = self.motor_rsc(socketKeepAlive=False)
-        yield client.server_info()
-        ka = get_primary_pool(client).opts.socket_keepalive
-        self.assertFalse(ka)
-
-    @gen_test
     def test_auth_network_error(self):
         if not test.env.auth:
             raise SkipTest('Authentication is not enabled on server')

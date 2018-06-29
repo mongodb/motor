@@ -181,18 +181,6 @@ class TestAsyncIOClient(AsyncIOTestCase):
         finally:
             test.env.drop_user(db.name, 'mike')
 
-    @asyncio_test
-    def test_socketKeepAlive(self):
-        # Connect.
-        yield from self.cx.server_info()
-        ka = get_primary_pool(self.cx).opts.socket_keepalive
-        self.assertTrue(ka)
-
-        client = self.asyncio_client(socketKeepAlive=False)
-        yield from client.server_info()
-        ka = get_primary_pool(client).opts.socket_keepalive
-        self.assertFalse(ka)
-
     def test_get_database(self):
         codec_options = CodecOptions(tz_aware=True)
         write_concern = WriteConcern(w=2, j=True)
