@@ -698,29 +698,29 @@ axes:
         variables:
            TOX_ENV: "tornado4-py36"
            PYTHON_BINARY: "/opt/python/3.6/bin/python3"
-      - id: "tornado4-py27"
+      - id: "tornado5-py27"
         variables:
-           TOX_ENV: "tornado4-py27"
+           TOX_ENV: "tornado5-py27"
            PYTHON_BINARY: "/opt/python/2.7/bin/python"
-      - id: "tornado4-pypy"
+      - id: "tornado5-pypy"
         variables:
-           TOX_ENV: "tornado4-pypy"
+           TOX_ENV: "tornado5-pypy"
            PYTHON_BINARY: "/opt/python/pypy/bin/pypy"
-      - id: "tornado4-pypy3"
+      - id: "tornado5-pypy3"
         variables:
-           TOX_ENV: "tornado4-pypy3"
+           TOX_ENV: "tornado5-pypy3"
            PYTHON_BINARY: "/opt/python/pypy3.5/bin/pypy3"
-      - id: "tornado4-py34"
+      - id: "tornado5-py34"
         variables:
-           TOX_ENV: "tornado4-py34"
+           TOX_ENV: "tornado5-py34"
            PYTHON_BINARY: "/opt/python/3.4/bin/python3"
-      - id: "tornado4-py35"
+      - id: "tornado5-py35"
         variables:
-           TOX_ENV: "tornado4-py35"
+           TOX_ENV: "tornado5-py35"
            PYTHON_BINARY: "/opt/python/3.5/bin/python3"
-      - id: "tornado4-py36"
+      - id: "tornado5-py36"
         variables:
-           TOX_ENV: "tornado4-py36"
+           TOX_ENV: "tornado5-py36"
            PYTHON_BINARY: "/opt/python/3.6/bin/python3"
       - id: "tornado_git-py27"
         variables:
