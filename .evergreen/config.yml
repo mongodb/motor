@@ -782,6 +782,11 @@ axes:
         run_on: "rhel62-small"
         variables:
            TOX_BINARY: "/opt/python/3.6/bin/tox"
+      - id: "ubuntu"
+        display_name: "Ubuntu 16.04"
+        run_on: "ubuntu1604-test"
+        variables:
+           TOX_BINARY: "/opt/python/3.6/bin/tox"
       - id: "osx"
         display_name: "OSX 10.10"
         run_on: "macos-1012"
@@ -790,8 +795,14 @@ axes:
 
 buildvariants:
 
-- matrix_name: "test-mongodb-versions"
-  matrix_spec: {"os": "rhel", "tox-env": "*", ssl: "*"}
+- matrix_name: "test-mongodb-versions-rhel"
+  matrix_spec: {"os": "rhel", "tox-env": ["tornado4-py27", "tornado5-py36", "py3-pymongo-master"], ssl: "*"}
+  display_name: "${os} ${tox-env} ${ssl}"
+  tasks:
+     - ".3.0"
+
+- matrix_name: "test-mongodb-versions-ubuntu"
+  matrix_spec: {"os": "ubuntu", "tox-env": "*", ssl: "*"}
   exclude_spec:
    # TODO: synchro needs PyMongo master's updated SSL test certs,
    # which may require Motor test suite changes.
@@ -804,7 +815,6 @@ buildvariants:
      - ".3.6"
      - ".3.4"
      - ".3.2"
-     - ".3.0"
 
 - matrix_name: "test-mongodb-versions-macos"
   matrix_spec: {"os": "osx", "tox-env-osx": "*", ssl: "*"}
@@ -828,14 +838,14 @@ buildvariants:
   matrix_spec: {"tox-env": ["synchro"], ssl: "ssl"}
   display_name: "Enterprise Auth"
   run_on:
-     - rhel62-small
+     - ubuntu1604-test
   tasks:
      - name: "test-enterprise-auth"
 
 - name: "docs"
   display_name: "Docs - Build"
   run_on:
-     - rhel62-small
+     - ubuntu1604-test
   expansions:
      TOX_ENV: "py3-sphinx-docs"
      TOX_BINARY: "/opt/python/3.6/bin/tox"
@@ -846,7 +856,7 @@ buildvariants:
 - name: "doctests"
   display_name: "Docs - Test"
   run_on:
-     - rhel62-small
+     - ubuntu1604-test
   expansions:
      TOX_ENV: "py3-sphinx-doctest"
      TOX_BINARY: "/opt/python/3.6/bin/tox"
