@@ -44,9 +44,6 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     def test_count(self):
         yield from self.make_test_data()
         coll = self.collection
-        # Deprecated methods.
-        self.assertEqual(200, (yield from coll.count()))
-        self.assertEqual(200, (yield from coll.find().count()))
         self.assertEqual(
             100,
             (yield from coll.count_documents({'_id': {'$gt': 99}})))

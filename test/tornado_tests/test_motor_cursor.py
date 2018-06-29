@@ -50,9 +50,6 @@ class MotorCursorTest(MotorMockServerTest):
     def test_count(self):
         yield self.make_test_data()
         coll = self.collection
-        # Deprecated methods.
-        self.assertEqual(200, (yield coll.count()))
-        self.assertEqual(200, (yield coll.find().count()))
         self.assertEqual(100,
                          (yield coll.count_documents({'_id': {'$gt': 99}})))
 

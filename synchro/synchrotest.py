@@ -170,6 +170,23 @@ excluded_tests = [
     'TestCommandMonitoring.test_legacy_insert_many',
     'TestCommandMonitoring.test_legacy_writes',
     'TestClient.test_database_names',
+
+    # Tests that use "count", deprecated in PyMongo, removed in Motor 2.0.
+    "*.test_command_monitoring_command_A_failed_command_event",
+    "*.test_command_monitoring_command_A_successful_command",
+    "*.test_command_monitoring_command_A_successful_command_with_a_non-primary_read_preference",
+    "*.test_read_count-collation_Deprecated_count_with_collation",
+    "*.test_read_count_Deprecated_count_with_a_filter",
+    "*.test_read_count_Deprecated_count_without_a_filter",
+    "TestBinary.test_uuid_queries",
+    "TestCollection.test_count",
+    "TestCursor.test_comment",
+    "TestCursor.test_count",
+    "TestCursor.test_count_with_fields",
+    "TestCursor.test_count_with_hint",
+    "TestCursor.test_where",
+    "TestGridfs.test_gridfs_find",
+    "TestTransactions.test_transactions_reads_count",
 ]
 
 

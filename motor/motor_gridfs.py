@@ -46,7 +46,6 @@ class AgnosticGridOutCursor(AgnosticBaseCursor):
     address           = ReadOnlyProperty()
     collation         = ReadOnlyProperty()
     comment           = MotorCursorChainingMethod()
-    count             = AsyncRead()
     distinct          = AsyncRead()
     explain           = AsyncRead()
     hint              = MotorCursorChainingMethod()

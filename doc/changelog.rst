@@ -45,6 +45,8 @@ Breaking changes in 2.0:
     ``initialize_unordered_bulk_op``, and ``MotorBulkOperationBuilder``, use
     :meth:`MotorCollection.bulk_write``, see :ref:`Bulk Writes Tutorial
     <bulk-write-tutorial>`.
+  - ``MotorCollection.count``, use :meth:`~MotorCollection.count_documents` or
+    :meth:`~MotorCollection.estimated_document_count`.
   - ``MotorCollection.ensure_index``, use
     :meth:`MotorCollection.create_indexes`.
   - Deprecated write methods have been deleted from :class:`MotorCollection`.
@@ -61,6 +63,9 @@ Breaking changes in 2.0:
       :meth:`~MotorCollection.find_one_and_delete`.
 
   - ``MotorCollection.parallel_scan``, deprecated by the MongoDB server.
+  - ``MotorCursor.count`` and ``MotorGridOutCursor.count``, use
+    :meth:`MotorCollection.count_documents` or
+    :meth:`MotorCollection.estimated_document_count`.
 
 Documentation is updated to warn about obsolete TLS versions, see
 :doc:`configuration`. Motor is now tested on Travis in addition to MongoDB's

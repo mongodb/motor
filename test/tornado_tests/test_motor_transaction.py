@@ -485,6 +485,12 @@ def create_tests():
                     test.get('skipReason'),
                     new_test)
 
+                if test_type == 'reads' and test['description'] == 'count':
+                    new_test = env.require(
+                        lambda: False,
+                        "Motor has removed the 'count' helper",
+                        new_test)
+
                 if 'secondary' in test_name:
                     new_test = env.require(
                         lambda: env.secondaries,

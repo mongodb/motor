@@ -64,6 +64,7 @@ pymongo_database_only = set([
 
 pymongo_collection_only = set([
     'aggregate_raw_batches',
+    'count',
     'ensure_index',
     'find_raw_batches',
     'group',
@@ -84,7 +85,9 @@ motor_cursor_only = set([
     'next_object',
     'closed']).union(motor_only)
 
-pymongo_cursor_only = set(['retrieved']).union(pymongo_only)
+pymongo_cursor_only = set([
+    'count',
+    'retrieved']).union(pymongo_only)
 
 
 class MotorCoreTest(MotorTest):

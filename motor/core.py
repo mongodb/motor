@@ -369,7 +369,6 @@ class AgnosticCollection(AgnosticBaseProperties):
     __delegate_class__ = Collection
 
     bulk_write               = AsyncCommand(doc=bulk_write_doc)
-    count                    = AsyncRead()
     count_documents          = AsyncRead()
     create_index             = AsyncCommand()
     create_indexes           = AsyncCommand(doc=create_indexes_doc)
@@ -1045,7 +1044,6 @@ class AgnosticCursor(AgnosticBaseCursor):
     __motor_class_name__ = 'MotorCursor'
     __delegate_class__ = Cursor
     address           = ReadOnlyProperty()
-    count             = AsyncRead()
     collation         = MotorCursorChainingMethod()
     distinct          = AsyncRead()
     explain           = AsyncRead()
