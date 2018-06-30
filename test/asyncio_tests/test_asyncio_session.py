@@ -149,7 +149,6 @@ class TestAsyncIOSession(AsyncIOTestCase):
             (coll.create_index, ['a'], {}),
             (coll.drop_index, ['a_1'], {}),
             (coll.drop_indexes, [], {}),
-            (coll.reindex, [], {}),
             (list_indexes, [], {}),
             (coll.index_information, [], {}),
             (coll.options, [], {}),
