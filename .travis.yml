@@ -10,7 +10,6 @@ services: mongodb
 
 install:
   - pip install tornado
-  - pip install git+https://github.com/mongodb/mongo-python-driver.git
 
 script: "python setup.py test"
 
