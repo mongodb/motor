@@ -221,7 +221,7 @@ class TestEnvironment(object):
         if db_user or db_password:
             if not (db_user and db_password):
                 sys.stderr.write(
-                    "You msut set both DB_USER and DB_PASSWORD, or neither\n")
+                    "You must set both DB_USER and DB_PASSWORD, or neither\n")
                 sys.exit(1)
 
             self.auth = True
