@@ -68,12 +68,13 @@ class TestAsyncIOClient(AsyncIOTestCase):
             raise SkipTest("Socket file is not accessible")
 
         encoded_socket = '%2Ftmp%2Fmongodb-' + str(env.port) + '.sock'
-        uri = 'mongodb://%s' % encoded_socket
+        if test.env.auth:
+            uri = 'mongodb://%s:%s@%s' % (db_user, db_password, encoded_socket)
+        else:
+            uri = 'mongodb://%s' % (encoded_socket,)
+
         client = self.asyncio_client(uri)
         collection = client.motor_test.test
-
-        if test.env.auth:
-            yield from client.admin.authenticate(db_user, db_password)
         yield from collection.insert_one({"dummy": "object"})
 
         # Confirm it fails with a missing socket.

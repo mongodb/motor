@@ -1041,12 +1041,8 @@ to initialize it, or an ``async with`` statement.
                                            session=s)
 
 
+Requires MongoDB 3.6.
 Do **not** use the same session for multiple operations concurrently.
-
-Requires MongoDB 3.6. It is an error to call :meth:`start_session`
-if this client has been authenticated to multiple databases using the
-deprecated method :meth:`~motor.motor_tornado.MotorDatabase.authenticate`.
-
 A :class:`~MotorClientSession` may only be used with the MotorClient that
 started it.
 

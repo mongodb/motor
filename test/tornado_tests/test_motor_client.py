@@ -67,12 +67,12 @@ class MotorClientTest(MotorTest):
             raise SkipTest("Socket file is not accessible")
 
         encoded_socket = '%2Ftmp%2Fmongodb-' + str(env.port) + '.sock'
-        uri = 'mongodb://%s' % encoded_socket
-        client = self.motor_client(uri)
-
         if test.env.auth:
-            yield client.admin.authenticate(db_user, db_password)
+            uri = 'mongodb://%s:%s@%s' % (db_user, db_password, encoded_socket)
+        else:
+            uri = 'mongodb://%s' % (encoded_socket,)
 
+        client = self.motor_client(uri)
         yield client.motor_test.test.insert_one({"dummy": "object"})
 
         # Confirm it fails with a missing socket.
