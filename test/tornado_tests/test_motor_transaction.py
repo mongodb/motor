@@ -19,7 +19,7 @@ import os
 import re
 
 from bson import json_util
-from bson.json_util import DEFAULT_JSON_OPTIONS, JSONOptions
+from bson.json_util import JSONOptions
 from pymongo.read_concern import ReadConcern
 from pymongo.results import (BulkWriteResult,
                              InsertManyResult,
