@@ -187,6 +187,11 @@ excluded_tests = [
     'TestCursor.test_where',
     'TestGridfs.test_gridfs_find',
     'TestTransactions.test_transactions_reads_count',
+
+    # Tests that use "authenticate" or "logoout", removed in Motor 2.0.
+    'TestSASLPlain.test_sasl_plain_bad_credentials',
+    'TestSCRAM.test_scram',
+    'TestSCRAMSHA1.test_scram_sha1',
 ]
 
 
