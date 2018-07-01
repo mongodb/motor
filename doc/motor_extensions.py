@@ -1,4 +1,4 @@
-# Copyright 2012-2014 MongoDB, Inc.
+# Copyright 2012-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,28 +14,22 @@
 
 """Motor specific extensions to Sphinx."""
 
-import inspect
 import re
-from itertools import chain
 
-from docutils.nodes import field, list_item, paragraph, title_reference, literal
-from docutils.nodes import field_list, field_body, bullet_list, Text, field_name
-from docutils.nodes import literal_block, doctest_block
+from docutils.nodes import doctest_block, literal_block
 from sphinx import addnodes
-from sphinx.addnodes import (desc, desc_content, versionmodified,
-                             desc_signature, seealso, pending_xref)
+from sphinx.addnodes import (desc,
+                             desc_content,
+                             desc_signature,
+                             seealso,
+                             versionmodified)
 from sphinx.util.inspect import safe_getattr
 
 import motor
 import motor.core
 
-
 # This is a place to store info while parsing, to be used before generating.
 motor_info = {}
-
-
-def is_asyncio_api(name):
-    return 'motor_asyncio.' in name
 
 
 def has_node_of_type(root, klass):
@@ -62,56 +56,6 @@ def find_by_path(root, classes):
     return rv
 
 
-def get_parameter_names(parameters_node):
-    parameter_names = []
-
-    # Most PyMongo methods have bullet lists.
-    for list_item_node in find_by_path(parameters_node, [list_item]):
-        title_ref_nodes = find_by_path(
-            list_item_node, [paragraph, (title_reference, pending_xref)])
-
-        parameter_names.append(title_ref_nodes[0].astext())
-
-    # Some are just paragraphs.
-    for title_ref_node in find_by_path(parameters_node, [title_reference]):
-        parameter_names.append(title_ref_node.astext())
-
-    return parameter_names
-
-
-def insert_callback(parameters_node):
-    # We need to know what params are here already
-    parameter_names = get_parameter_names(parameters_node)
-
-    if 'callback' not in parameter_names:
-        if '*args' in parameter_names:
-            args_pos = parameter_names.index('*args')
-        else:
-            args_pos = len(parameter_names)
-
-        if '**kwargs' in parameter_names:
-            kwargs_pos = parameter_names.index('**kwargs')
-        else:
-            kwargs_pos = len(parameter_names)
-
-        doc = (
-            " (optional): function taking (result, error), executed when"
-            " operation completes")
-
-        new_item = paragraph(
-            '', '',
-            literal('', 'callback'),
-            Text(doc))
-
-        if parameters_node.children and isinstance(parameters_node.children[0],
-                                                   list_item):
-            # Insert "callback" before *args and **kwargs
-            parameters_node.insert(min(args_pos, kwargs_pos),
-                                   list_item('', new_item))
-        else:
-            parameters_node.append(new_item)
-
-
 docstring_warnings = []
 
 
@@ -130,10 +74,7 @@ def has_coro_annotation(signature_node):
 def process_motor_nodes(app, doctree):
     # Search doctree for Motor's methods and attributes whose docstrings were
     # copied from PyMongo, and fix them up for Motor:
-    #   1. Add a 'callback' param (sometimes optional, sometimes required) to
-    #      all Motor Tornado methods. If the PyMongo method took no params, we
-    #      create a parameter-list from scratch, otherwise we edit PyMongo's
-    #      list.
+    #   1. Add a 'coroutine' annotation to the beginning of the declaration.
     #   2. Remove all version annotations like "New in version 2.0" since
     #      PyMongo's version numbers are meaningless in Motor's docs.
     #   3. Remove "seealso" directives that reference PyMongo's docs.
@@ -163,39 +104,6 @@ def process_motor_nodes(app, doctree):
                             classes=['coro-annotation'])
 
                         signature_node.insert(0, coro_annotation)
-
-                    if (not is_asyncio_api(name)
-                            and obj_motor_info['coroutine_has_callback']):
-                        retval = ("If a callback is passed, returns None, else"
-                                  " returns a Future.")
-
-                        callback_p = paragraph('', Text(retval))
-
-                        # Find the parameter list.
-                        parameters_nodes = find_by_path(
-                            desc_content_node, [
-                                field_list,
-                                field,
-                                field_body,
-                                (bullet_list, paragraph)])
-
-                        if parameters_nodes:
-                            parameters_node = parameters_nodes[0]
-                        else:
-                            # PyMongo method has no parameters, create an empty
-                            # params list
-                            parameters_node = bullet_list()
-                            parameters_field_list_node = field_list(
-                                '',
-                                field(
-                                    '',
-                                    field_name('', 'Parameters '),
-                                    field_body('', parameters_node)))
-                            desc_content_node.append(parameters_field_list_node)
-
-                        insert_callback(parameters_node)
-                        if retval not in str(desc_content_node):
-                            desc_content_node.append(callback_p)
 
                 if obj_motor_info['is_pymongo_docstring']:
                     # Remove all "versionadded", "versionchanged" and
@@ -233,9 +141,6 @@ def get_motor_attr(motor_class, name, *defargs):
     # These sub-attributes are set in motor.asynchronize()
     has_coroutine_annotation = getattr(attr, 'coroutine_annotation', False)
     is_async_method = getattr(attr, 'is_async_method', False)
-    coroutine_has_callback = has_coroutine_annotation or is_async_method
-    if has_coroutine_annotation:
-        coroutine_has_callback = getattr(attr, 'coroutine_has_callback', True)
     is_cursor_method = getattr(attr, 'is_motorcursor_chaining_method', False)
     if is_async_method or is_cursor_method:
         pymongo_method = getattr(
@@ -248,49 +153,11 @@ def get_motor_attr(motor_class, name, *defargs):
 
     motor_info[full_name] = motor_info[full_name_legacy] = {
         'is_async_method': is_async_method or has_coroutine_annotation,
-        'coroutine_has_callback': coroutine_has_callback,
         'is_pymongo_docstring': is_pymongo_doc,
         'pymongo_method': pymongo_method,
     }
 
     return attr
-
-
-def get_motor_argspec(name, method):
-    args, varargs, kwargs, defaults = inspect.getargspec(method)
-
-    # This part is copied from Sphinx's autodoc.py
-    if args and args[0] in ('cls', 'self'):
-        del args[0]
-
-    defaults = list(defaults) if defaults else []
-    add_callback = True
-    if 'callback' in chain(args or [], kwargs or []):
-        add_callback = False
-    elif is_asyncio_api(name):
-        add_callback = False
-    elif (getattr(method, 'coroutine_annotation', False)
-          and not getattr(method, 'coroutine_has_callback', True)):
-        add_callback = False
-
-    if add_callback:
-        # Add 'callback=None' argument
-        args.append('callback')
-        defaults.append(None)
-
-    return args, varargs, kwargs, defaults
-
-
-# Adapted from MethodDocumenter.format_args
-def format_motor_args(name, motor_method, pymongo_method):
-    if pymongo_method:
-        argspec = get_motor_argspec(name, pymongo_method)
-    else:
-        argspec = get_motor_argspec(name, motor_method)
-
-    formatted_argspec = inspect.formatargspec(*argspec)
-    # escape backslashes for reST
-    return formatted_argspec.replace('\\', '\\\\')
 
 
 pymongo_ref_pat = re.compile(r':doc:`(.*?)`', re.MULTILINE)
@@ -308,17 +175,6 @@ def process_motor_docstring(app, what, name, obj, options, lines):
         lines[:] = subbed.split('\n')
 
 
-def process_motor_signature(
-        app, what, name, obj, options, signature, return_annotation):
-    info = motor_info.get(name)
-    if info:
-        # Real sig obscured by decorator, reconstruct it
-        pymongo_method = info['pymongo_method']
-        if info['is_async_method']:
-            args = format_motor_args(name, obj, pymongo_method)
-            return args, return_annotation
-
-
 def build_finished(app, exception):
     if not exception and docstring_warnings:
         print("PyMongo docstrings with code blocks that need update:")
@@ -329,7 +185,6 @@ def build_finished(app, exception):
 def setup(app):
     app.add_autodoc_attrgetter(type(motor.core.AgnosticBase), get_motor_attr)
     app.connect('autodoc-process-docstring', process_motor_docstring)
-    app.connect('autodoc-process-signature', process_motor_signature)
     app.connect('doctree-read', process_motor_nodes)
     app.connect('build-finished', build_finished)
     return {'parallel_write_safe': True, 'parallel_read_safe': False}
