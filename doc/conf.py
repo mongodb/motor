@@ -92,15 +92,15 @@ server_info = sync_client.server_info()
 
 if 'setName' in ismaster:
     raise Exception(
-        "Run doctests with standalone MongoDB 3.6 server, not a replica set")
+        "Run doctests with standalone MongoDB 4.0 server, not a replica set")
 
 if ismaster.get('msg') == 'isdbgrid':
     raise Exception(
-        "Run doctests with standalone MongoDB 3.6 server, not mongos")
+        "Run doctests with standalone MongoDB 4.0 server, not mongos")
 
-if server_info['versionArray'][:2] != [3, 6]:
+if server_info['versionArray'][:2] != [4, 0]:
     raise Exception(
-        "Run doctests with standalone MongoDB 3.6 server, not %s" % (
+        "Run doctests with standalone MongoDB 4.0 server, not %s" % (
             server_info['version'], ))
 
 sync_client.drop_database("doctest_test")
