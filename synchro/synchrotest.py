@@ -82,9 +82,6 @@ excluded_tests = [
     'TestGridfs.test_threaded_reads',
     'TestGridfs.test_threaded_writes',
 
-    # Relies on threads; tested directly.
-    'TestCollection.test_parallel_scan',
-
     # Motor's aggregate API is different, always sends "cursor={}" by default.
     'TestCollection.test_aggregate',
     'TestCollection.test_aggregate_raw_bson',
@@ -165,6 +162,7 @@ excluded_tests = [
     'TestDatabase.test_eval',
     'TestCollation.*',
     'TestCollection.test_find_one_and_write_concern',
+    'TestCollection.test_parallel_scan',
     'TestCollection.test_parallel_scan_max_time_ms',
     'TestCollection.test_write_error_text_handling',
     'TestCommandMonitoring.test_legacy_insert_many',
