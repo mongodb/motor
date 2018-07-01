@@ -60,23 +60,6 @@ class MotorDatabaseTest(MotorTest):
             self.fail('Expected TypeError')
 
     @gen_test
-    def test_database_callbacks(self):
-        db = self.db
-        yield db.drop_collection('c')
-
-        self.assertRaises(TypeError, db.create_collection, 'c', callback='foo')
-        self.assertRaises(TypeError, db.create_collection, 'c', callback=1)
-
-        # No error without callback
-        db.create_collection('c', callback=None)
-
-        # Wait for create_collection to complete
-        for _ in range(10):
-            yield gen.sleep(0.1)
-            if 'c' in (yield db.list_collection_names()):
-                break
-
-    @gen_test
     def test_command(self):
         result = yield self.cx.admin.command("buildinfo")
         # Make sure we got some sane result or other.

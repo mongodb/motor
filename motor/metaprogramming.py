@@ -26,10 +26,9 @@ _class_cache = {}
 
 def asynchronize(
         framework, sync_method, doc=None, wrap_class=None, unwrap_class=None):
-    """Decorate `sync_method` so it accepts a callback or returns a Future.
+    """Decorate `sync_method` so it returns a Future.
 
-    The method runs on a thread and calls the callback or resolves
-    the Future when the thread completes.
+    The method runs on a thread and resolves the Future when it completes.
 
     :Parameters:
      - `motor_class`:       Motor class being created, e.g. MotorClient.
@@ -73,14 +72,11 @@ def asynchronize(
                 for key, obj in kwargs.items()}
 
         loop = self.get_io_loop()
-        callback = unwrapped_kwargs.pop('callback', None)
-        future = framework.run_on_executor(loop,
-                                           sync_method,
-                                           self.delegate,
-                                           *unwrapped_args,
-                                           **unwrapped_kwargs)
-
-        return framework.future_or_callback(future, callback, loop)
+        return framework.run_on_executor(loop,
+                                         sync_method,
+                                         self.delegate,
+                                         *unwrapped_args,
+                                         **unwrapped_kwargs)
 
     if wrap_class is not None:
         method = framework.pymongo_class_wrapper(method, wrap_class)
@@ -132,30 +128,16 @@ def motor_coroutine(f):
     return f
 
 
-def coroutine_annotation(callback):
+def coroutine_annotation(f):
     """In docs, annotate a function that returns a Future with 'coroutine'.
 
     Unlike @motor_coroutine, this doesn't affect behavior.
     """
-    if isinstance(callback, bool):
-        # Like:
-        # @coroutine_annotation(callback=False)
-        # def method(self):
-        #
-        def decorator(f):
-            f.coroutine_annotation = True
-            f.coroutine_has_callback = callback
-            return f
-
-        return decorator
-
     # Like:
     # @coroutine_annotation
     # def method(self):
     #
-    f = callback
     f.coroutine_annotation = True
-    f.coroutine_has_callback = True
     return f
 
 
@@ -174,8 +156,7 @@ class MotorAttributeFactory(object):
 class Async(MotorAttributeFactory):
     def __init__(self, attr_name, doc=None):
         """A descriptor that wraps a PyMongo method, such as insert_one,
-        and returns an asynchronous version of the method, which accepts a
-        callback or returns a Future.
+        and returns an asynchronous version of the method that returns a Future.
 
         :Parameters:
          - `attr_name`: The name of the attribute on the PyMongo class, if

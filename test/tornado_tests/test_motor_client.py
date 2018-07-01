@@ -99,14 +99,8 @@ class MotorClientTest(MotorTest):
         client = motor.MotorClient('localhost', 8765, io_loop=self.io_loop,
                                    serverSelectionTimeoutMS=10)
 
-        # Test the Future interface.
         with self.assertRaises(ConnectionFailure):
             yield client.admin.command('ismaster')
-
-        # Test with a callback.
-        (result, error), _ = yield gen.Task(client.admin.command, 'ismaster')
-        self.assertEqual(None, result)
-        self.assertTrue(isinstance(error, ConnectionFailure))
 
     @gen_test(timeout=30)
     def test_connection_timeout(self):

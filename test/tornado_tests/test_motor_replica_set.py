@@ -52,11 +52,6 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         with self.assertRaises(pymongo.errors.ConnectionFailure):
             yield client.admin.command('ismaster')
 
-        # Test with a callback.
-        (result, error), _ = yield gen.Task(client.admin.command, 'ismaster')
-        self.assertEqual(None, result)
-        self.assertTrue(isinstance(error, pymongo.errors.ConnectionFailure))
-
     @gen_test
     def test_auth_network_error(self):
         if not test.env.auth:

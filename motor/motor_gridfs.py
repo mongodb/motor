@@ -204,20 +204,19 @@ class AgnosticGridOut(object):
         return getattr(self.delegate, item)
 
     @coroutine_annotation
-    def open(self, callback=None):
+    def open(self):
         """Retrieve this file's attributes from the server.
 
-        Takes an optional callback, or returns a Future.
+        Returns a Future.
 
-        :Parameters:
-         - `callback`: Optional function taking parameters (self, error)
+        .. versionchanged:: 2.0
+           No longer accepts a callback argument.
 
         .. versionchanged:: 0.2
            :class:`~motor.MotorGridOut` now opens itself on demand, calling
            ``open`` explicitly is rarely needed.
         """
-        return self._framework.future_or_callback(self._ensure_file(),
-                                                  callback,
+        return self._framework.chain_return_value(self._ensure_file(),
                                                   self.get_io_loop(),
                                                   self)
 

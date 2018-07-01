@@ -454,10 +454,6 @@ class AgnosticCollection(AgnosticBaseProperties):
         ``MotorCursor`` methods such as :meth:`~MotorCursor.to_list`
         perform actual operations.
         """
-        if 'callback' in kwargs:
-            raise pymongo.errors.InvalidOperation(
-                "Pass a callback to each or to_list, not to find.")
-
         cursor = self.delegate.find(*unwrap_args_session(args),
                                     **unwrap_kwargs_session(kwargs))
         cursor_class = create_class_with_framework(
@@ -521,10 +517,6 @@ class AgnosticCollection(AgnosticBaseProperties):
             http://docs.mongodb.org/manual/applications/aggregation
 
         """
-        if 'callback' in kwargs:
-            raise pymongo.errors.InvalidOperation(
-                "Pass a callback to to_list or each, not to aggregate.")
-
         cursor_class = create_class_with_framework(
             AgnosticLatentCommandCursor, self._framework, self.__module__)
 
@@ -901,7 +893,7 @@ class AgnosticBaseCursor(AgnosticBase):
                 functools.partial(callback, None, None))
 
     @coroutine_annotation
-    def to_list(self, length, callback=None):
+    def to_list(self, length):
         """Get a list of documents.
 
         .. testsetup:: to_list
@@ -933,9 +925,11 @@ class AgnosticBaseCursor(AgnosticBase):
         :Parameters:
          - `length`: maximum number of documents to return for this call, or
            None
-         - `callback` (optional): function taking (documents, error)
 
-        If a callback is passed, returns None, else returns a Future.
+         Returns a Future.
+
+        .. versionchanged:: 2.0
+           No longer accepts a callback argument.
 
         .. versionchanged:: 0.2
            `callback` must be passed as a keyword argument, like
@@ -952,25 +946,20 @@ class AgnosticBaseCursor(AgnosticBase):
             raise pymongo.errors.InvalidOperation(
                 "Can't call to_list on tailable cursor")
 
-        to_list_future = self._framework.get_future(self.get_io_loop())
-
-        # Run future_or_callback's type checking before we change anything.
-        retval = self._framework.future_or_callback(to_list_future,
-                                                    callback,
-                                                    self.get_io_loop())
+        future = self._framework.get_future(self.get_io_loop())
 
         if not self.alive:
-            to_list_future.set_result([])
+            future.set_result([])
         else:
             the_list = []
             self._framework.add_future(
                 self.get_io_loop(),
                 self._get_more(),
-                self._to_list, length, the_list, to_list_future)
+                self._to_list, length, the_list, future)
 
-        return retval
+        return future
 
-    def _to_list(self, length, the_list, to_list_future, get_more_result):
+    def _to_list(self, length, the_list, future, get_more_result):
         # get_more_result is the result of self._get_more().
         # to_list_future will be the result of the user's to_list() call.
         try:
@@ -989,14 +978,14 @@ class AgnosticBaseCursor(AgnosticBase):
 
             reached_length = (length is not None and len(the_list) >= length)
             if reached_length or not self.alive:
-                to_list_future.set_result(the_list)
+                future.set_result(the_list)
             else:
                 self._framework.add_future(
                     self.get_io_loop(),
                     self._get_more(),
-                    self._to_list, length, the_list, to_list_future)
+                    self._to_list, length, the_list, future)
         except Exception as exc:
-            to_list_future.set_exception(exc)
+            future.set_exception(exc)
 
     def get_io_loop(self):
         return self.collection.get_io_loop()
@@ -1229,7 +1218,7 @@ class AgnosticChangeStream(AgnosticBase):
         except StopIteration:
             raise StopAsyncIteration()
 
-    @coroutine_annotation(callback=False)
+    @coroutine_annotation
     def next(self):
         """Advance the cursor.
 
@@ -1250,7 +1239,7 @@ class AgnosticChangeStream(AgnosticBase):
         loop = self.get_io_loop()
         return self._framework.run_on_executor(loop, self._next)
 
-    @coroutine_annotation(callback=False)
+    @coroutine_annotation
     def close(self):
         """Close this change stream.
 

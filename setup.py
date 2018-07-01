@@ -32,7 +32,7 @@ long_description = open("README.rst").read()
 
 install_requires = ['pymongo>=3.6,<4']
 
-tests_require = ['mockupdb>=1.2.1']
+tests_require = ['mockupdb>=1.4.0']
 
 if sys.version_info[0] < 3:
     install_requires.append('futures')

@@ -25,8 +25,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import tornado.process
 from tornado import concurrent, gen, ioloop, version as tornado_version
-
-from motor.motor_common import callback_type_error
+from tornado.gen import coroutine  # For framework interface.
 
 CLASS_PREFIX = ''
 
@@ -76,49 +75,26 @@ def run_on_executor(loop, fn, *args, **kwargs):
     return future
 
 
-_DEFAULT = object()
-
-
-def future_or_callback(future, callback, io_loop, return_value=_DEFAULT):
+def chain_return_value(future, loop, return_value):
     """Compatible way to return a value in all Pythons.
 
     PEP 479, raise StopIteration(value) from a coroutine won't work forever,
     but "return value" doesn't work in Python 2. Instead, Motor methods that
-    return values either execute a callback with the value or resolve a Future
-    with it, and are implemented with callbacks rather than a coroutine
-    internally.
+    return values resolve a Future with it, and are implemented with callbacks
+    rather than a coroutine internally.
     """
-    if callback:
-        if not callable(callback):
-            raise callback_type_error
+    chained = concurrent.Future()
 
-        # Motor's callback convention is "callback(result, error)".
-        def done_callback(_future):
-            try:
-                result = _future.result()
-                callback(result if return_value is _DEFAULT else return_value,
-                         None)
-            except Exception as exc:
-                callback(None, exc)
+    def done_callback(_future):
+        try:
+            _future.result()
+            chained.set_result(return_value)
+        except Exception as exc:
+            chained.set_exception(exc)
 
-        io_loop.add_future(future, done_callback)
-
-    elif return_value is not _DEFAULT:
-        chained = concurrent.Future()
-
-        def done_callback(_future):
-            try:
-                _future.result()
-            except Exception as exc:
-                chained.set_exception(exc)
-            else:
-                chained.set_result(return_value)
-
-        io_loop.add_future(future, done_callback)
-        return chained
-
-    else:
-        return future
+    future.add_done_callback(functools.partial(loop.add_callback,
+                                               done_callback))
+    return chained
 
 
 def is_future(f):
@@ -134,33 +110,6 @@ def call_soon(loop, callback, *args, **kwargs):
 
 def add_future(loop, future, callback, *args):
     loop.add_future(future, functools.partial(callback, *args))
-
-
-def coroutine(f):
-    """A coroutine that accepts an optional callback.
-
-    Given a callback, the function returns None, and the callback is run
-    with (result, error). Without a callback the function returns a Future.
-    """
-    coro = gen.coroutine(f)
-
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        callback = kwargs.pop('callback', None)
-        if callback and not callable(callback):
-            raise callback_type_error
-        future = coro(*args, **kwargs)
-        if callback:
-            def _callback(_future):
-                try:
-                    result = _future.result()
-                    callback(result, None)
-                except Exception as e:
-                    callback(None, e)
-            future.add_done_callback(_callback)
-        else:
-            return future
-    return wrapper
 
 
 def pymongo_class_wrapper(f, pymongo_class):

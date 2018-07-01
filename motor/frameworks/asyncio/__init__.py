@@ -20,10 +20,10 @@ See "Frameworks" in the Developer Guide.
 
 import asyncio
 import asyncio.tasks
-import os
-
 import functools
 import multiprocessing
+import os
+from asyncio import coroutine  # For framework interface.
 from concurrent.futures import ThreadPoolExecutor
 
 CLASS_PREFIX = 'AsyncIO'
@@ -94,31 +94,20 @@ def run_on_executor(loop, fn, *args, **kwargs):
     return dest
 
 
-_DEFAULT = object()
-
-
-def future_or_callback(future, callback, loop, return_value=_DEFAULT):
+def chain_return_value(future, loop, return_value):
     """Compatible way to return a value in all Pythons.
 
     PEP 479, raise StopIteration(value) from a coroutine won't work forever,
     but "return value" doesn't work in Python 2. Instead, Motor methods that
-    return values either execute a callback with the value or resolve a Future
-    with it, and are implemented with callbacks rather than a coroutine
-    internally.
+    return values resolve a Future with it, and are implemented with callbacks
+    rather than a coroutine internally.
     """
-    if callback:
-        raise NotImplementedError("Motor with asyncio prohibits callbacks")
-
-    if return_value is _DEFAULT:
-        return future
-
     chained = asyncio.Future(loop=loop)
 
     def done_callback(_future):
         try:
-            result = _future.result()
-            chained.set_result(result if return_value is _DEFAULT
-                               else return_value)
+            _future.result()
+            chained.set_result(return_value)
         except Exception as exc:
             chained.set_exception(exc)
 
@@ -141,9 +130,6 @@ def call_soon(loop, callback, *args, **kwargs):
 def add_future(loop, future, callback, *args):
     future.add_done_callback(
         functools.partial(loop.call_soon_threadsafe, callback, *args))
-
-
-coroutine = asyncio.coroutine
 
 
 def pymongo_class_wrapper(f, pymongo_class):

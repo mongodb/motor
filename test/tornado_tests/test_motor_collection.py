@@ -156,11 +156,11 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     def test_unacknowledged_insert(self):
-        # Test that unsafe inserts with no callback still work
+        # Test that unacknowledged inserts complete eventually.
 
-        # Insert id 1 without a callback or w=1.
         coll = self.db.test_unacknowledged_insert
-        coll.with_options(write_concern=WriteConcern(0)).insert_one({'_id': 1})
+        yield coll.with_options(
+            write_concern=WriteConcern(0)).insert_one({'_id': 1})
 
         # The insert is eventually executed.
         while not (yield coll.count_documents({})):
@@ -168,11 +168,11 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     def test_unacknowledged_update(self):
-        # Test that unsafe updates with no callback still work
+        # Test that unacknowledged updates complete eventually.
         coll = self.collection
 
         yield coll.insert_one({'_id': 1})
-        coll.with_options(write_concern=WriteConcern(0)).update_one(
+        yield coll.with_options(write_concern=WriteConcern(0)).update_one(
             {'_id': 1}, {'$set': {'a': 1}})
 
         while not (yield coll.find_one({'a': 1})):
@@ -279,27 +279,6 @@ class MotorCollectionTest(MotorTest):
             formatted = '\n'.join(traceback.format_tb(tb))
             self.assertTrue('_unpack_response' in formatted
                             or '_check_command_response' in formatted)
-
-    @gen_test(timeout=30)
-    def test_aggregation_cursor_to_list_callback(self):
-        db = self.db
-
-        # A small collection which returns only an initial batch,
-        # and a larger one that requires a getMore.
-        for collection_size in (10, 1000):
-            expected_sum = yield self._make_test_data(collection_size)
-            cursor = db.test.aggregate(self.pipeline)
-            future = Future()
-
-            def cb(result, error):
-                if error:
-                    future.set_exception(error)
-                else:
-                    future.set_result(result)
-
-            cursor.to_list(collection_size, callback=cb)
-            docs = yield future
-            self.assertAllDocs(expected_sum, docs)
 
     def test_with_options(self):
         coll = self.db.test

@@ -190,20 +190,6 @@ class MotorCursorTest(MotorMockServerTest):
             yield cursor.to_list('foo')
 
     @gen_test
-    def test_to_list_callback(self):
-        yield self.make_test_data()
-        cursor = self.collection.find({}, {'_id': 1})
-        cursor.sort([('_id', pymongo.ASCENDING)])
-        expected = [{'_id': i} for i in range(200)]
-        (result, error), _ = yield gen.Task(cursor.to_list, length=1000)
-        self.assertEqual(expected, result)
-
-        cursor = self.collection.find().where('return foo')
-        (result, error), _ = yield gen.Task(cursor.to_list, length=1000)
-        self.assertEqual(None, result)
-        self.assertTrue(isinstance(error, OperationFailure))
-
-    @gen_test
     def test_to_list_with_length(self):
         yield self.make_test_data()
         coll = self.collection

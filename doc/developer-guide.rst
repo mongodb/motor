@@ -30,6 +30,7 @@ is a module implementing these properties and functions:
 - ``CLASS_PREFIX``
 - ``add_future``
 - ``call_soon``
+- ``chain_return_value``
 - ``check_event_loop``
 - ``coroutine``
 - ``get_event_loop``

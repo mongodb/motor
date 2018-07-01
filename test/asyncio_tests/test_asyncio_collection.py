@@ -158,7 +158,8 @@ class TestAsyncIOCollection(AsyncIOTestCase):
     @asyncio_test
     def test_unacknowledged_insert(self):
         coll = self.db.test_unacknowledged_insert
-        coll.with_options(write_concern=WriteConcern(0)).insert_one({'_id': 1})
+        yield from coll.with_options(write_concern=WriteConcern(0)).insert_one(
+            {'_id': 1})
 
         # The insert is eventually executed.
         while not (yield from coll.count_documents({})):
@@ -167,11 +168,10 @@ class TestAsyncIOCollection(AsyncIOTestCase):
     @ignore_deprecations
     @asyncio_test
     def test_unacknowledged_update(self):
-        # Test that unsafe updates with no callback still work
         coll = self.collection
 
         yield from coll.insert_one({'_id': 1})
-        coll.with_options(write_concern=WriteConcern(0)).update_one(
+        yield from coll.with_options(write_concern=WriteConcern(0)).update_one(
             {'_id': 1}, {'$set': {'a': 1}})
 
         while not (yield from coll.find_one({'a': 1})):
