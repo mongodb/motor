@@ -145,6 +145,55 @@ class AgnosticClient(AgnosticBaseProperties):
     def get_io_loop(self):
         return self.io_loop
 
+    def watch(self, pipeline=None, full_document='default', resume_after=None,
+              max_await_time_ms=None, batch_size=None, collation=None,
+              session=None):
+        """Watch changes on this cluster.
+
+        Returns a :class:`~MotorChangeStream` cursor which iterates over changes
+        on all databases in this cluster. Introduced in MongoDB 4.0.
+
+        See the documentation for :meth:`MotorCollection.watch` for more
+        details and examples.
+
+        :Parameters:
+          - `pipeline` (optional): A list of aggregation pipeline stages to
+            append to an initial ``$changeStream`` stage. Not all
+            pipeline stages are valid after a ``$changeStream`` stage, see the
+            MongoDB documentation on change streams for the supported stages.
+          - `full_document` (optional): The fullDocument option to pass
+            to the ``$changeStream`` stage. Allowed values: 'default',
+            'updateLookup'.  Defaults to 'default'.
+            When set to 'updateLookup', the change notification for partial
+            updates will include both a delta describing the changes to the
+            document, as well as a copy of the entire document that was
+            changed from some time after the change occurred.
+          - `resume_after` (optional): The logical starting point for this
+            change stream.
+          - `max_await_time_ms` (optional): The maximum time in milliseconds
+            for the server to wait for changes before responding to a getMore
+            operation.
+          - `batch_size` (optional): The maximum number of documents to return
+            per batch.
+          - `collation` (optional): The :class:`~pymongo.collation.Collation`
+            to use for the aggregation.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession`.
+
+        :Returns:
+          A :class:`~MotorChangeStream`.
+
+        .. versionadded:: 2.0
+
+        .. mongodoc:: changeStreams
+        """
+        cursor_class = create_class_with_framework(
+            AgnosticChangeStream, self._framework, self.__module__)
+
+        # Latent cursor that will send initial command on first "async for".
+        return cursor_class(self, pipeline, full_document, resume_after,
+                            max_await_time_ms, batch_size, collation, session)
+
     def __getattr__(self, name):
         if name.startswith('_'):
             raise AttributeError(
@@ -316,6 +365,55 @@ class AgnosticDatabase(AgnosticBaseProperties):
             client.delegate, name, **kwargs)
 
         super(self.__class__, self).__init__(delegate)
+
+    def watch(self, pipeline=None, full_document='default', resume_after=None,
+              max_await_time_ms=None, batch_size=None, collation=None,
+              session=None):
+        """Watch changes on this database.
+
+        Returns a :class:`~MotorChangeStream` cursor which iterates over changes
+        on this database. Introduced in MongoDB 4.0.
+
+        See the documentation for :meth:`MotorCollection.watch` for more
+        details and examples.
+
+        :Parameters:
+          - `pipeline` (optional): A list of aggregation pipeline stages to
+            append to an initial ``$changeStream`` stage. Not all
+            pipeline stages are valid after a ``$changeStream`` stage, see the
+            MongoDB documentation on change streams for the supported stages.
+          - `full_document` (optional): The fullDocument option to pass
+            to the ``$changeStream`` stage. Allowed values: 'default',
+            'updateLookup'.  Defaults to 'default'.
+            When set to 'updateLookup', the change notification for partial
+            updates will include both a delta describing the changes to the
+            document, as well as a copy of the entire document that was
+            changed from some time after the change occurred.
+          - `resume_after` (optional): The logical starting point for this
+            change stream.
+          - `max_await_time_ms` (optional): The maximum time in milliseconds
+            for the server to wait for changes before responding to a getMore
+            operation.
+          - `batch_size` (optional): The maximum number of documents to return
+            per batch.
+          - `collation` (optional): The :class:`~pymongo.collation.Collation`
+            to use for the aggregation.
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession`.
+
+        :Returns:
+          A :class:`~MotorChangeStream`.
+
+        .. versionadded:: 2.0
+
+        .. mongodoc:: changeStreams
+        """
+        cursor_class = create_class_with_framework(
+            AgnosticChangeStream, self._framework, self.__module__)
+
+        # Latent cursor that will send initial command on first "async for".
+        return cursor_class(self, pipeline, full_document, resume_after,
+                            max_await_time_ms, batch_size, collation, session)
 
     @property
     def client(self):
@@ -1196,10 +1294,11 @@ class AgnosticChangeStream(AgnosticBase):
 
     _close = AsyncCommand(attr_name='close')
 
-    def __init__(self, collection, pipeline, full_document, resume_after,
+    def __init__(self, parent, pipeline, full_document, resume_after,
                  max_await_time_ms, batch_size, collation, session):
         super(self.__class__, self).__init__(delegate=None)
-        self._collection = collection
+        # The "parent" object is a client, database, or collection.
+        self._parent = parent
         self._kwargs = {'pipeline': pipeline,
                         'full_document': full_document,
                         'resume_after': resume_after,
@@ -1212,7 +1311,7 @@ class AgnosticChangeStream(AgnosticBase):
         # This method is run on a thread.
         try:
             if not self.delegate:
-                self.delegate = self._collection.delegate.watch(**self._kwargs)
+                self.delegate = self._parent.delegate.watch(**self._kwargs)
 
             return self.delegate.next()
         except StopIteration:
@@ -1269,7 +1368,7 @@ class AgnosticChangeStream(AgnosticBase):
         """), globals(), locals())
 
     def get_io_loop(self):
-        return self._collection.get_io_loop()
+        return self._parent.get_io_loop()
 
     def __enter__(self):
         raise RuntimeError('Use a change stream in "async with", not "with"')

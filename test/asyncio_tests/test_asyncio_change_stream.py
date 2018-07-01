@@ -138,3 +138,37 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         with self.assertRaises(RuntimeError):
             with self.collection.watch():
                 pass
+
+    @env.require_version_min(4, 0)
+    @asyncio_test
+    async def test_client(self):
+        change_stream = self.cx.watch()
+        self.wait_and_insert(change_stream, 2)
+        i = 0
+        async for _ in change_stream:
+            i += 1
+            if i == 2:
+                break
+
+        await self.cx.other_db.other_collection.insert_one({})
+        async for _ in change_stream:
+            i += 1
+            if i == 3:
+                break
+
+    @env.require_version_min(4, 0)
+    @asyncio_test
+    async def test_database(self):
+        change_stream = self.db.watch()
+        self.wait_and_insert(change_stream, 2)
+        i = 0
+        async for _ in change_stream:
+            i += 1
+            if i == 2:
+                break
+
+        await self.db.other_collection.insert_one({})
+        async for _ in change_stream:
+            i += 1
+            if i == 3:
+                break
