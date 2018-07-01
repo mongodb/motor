@@ -124,7 +124,7 @@ class AgnosticClient(AgnosticBaseProperties):
         :class:`~pymongo.mongo_client.MongoClient`, as well as:
 
         :Parameters:
-          - `io_loop` (optional): Special :class:`tornado.ioloop.IOLoop`
+          - `io_loop` (optional): Special event loop
             instance to use instead of default
         """
         if 'io_loop' in kwargs:
