@@ -634,7 +634,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
     def watch(self, pipeline=None, full_document='default', resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,
-              session=None):
+              start_at_operation_time=None, session=None):
         """Watch changes on this collection.
 
         Returns a :class:`~MotorChangeStream` cursor which iterates over changes
@@ -755,7 +755,8 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, pipeline, full_document, resume_after,
-                            max_await_time_ms, batch_size, collation, session)
+                            max_await_time_ms, batch_size, collation,
+                            start_at_operation_time, session)
 
     def list_indexes(self, session=None):
         """Get a cursor over the index documents for this collection. ::
@@ -1304,24 +1305,26 @@ class AgnosticChangeStream(AgnosticBase):
 
     _close = AsyncCommand(attr_name='close')
 
-    def __init__(self, parent, pipeline, full_document, resume_after,
-                 max_await_time_ms, batch_size, collation, session):
+    def __init__(self, target, pipeline, full_document, resume_after,
+                 max_await_time_ms, batch_size, collation,
+                 start_at_operation_time, session):
         super(self.__class__, self).__init__(delegate=None)
-        # The "parent" object is a client, database, or collection.
-        self._parent = parent
+        # The "target" object is a client, database, or collection.
+        self._target = target
         self._kwargs = {'pipeline': pipeline,
                         'full_document': full_document,
                         'resume_after': resume_after,
                         'max_await_time_ms': max_await_time_ms,
                         'batch_size': batch_size,
                         'collation': collation,
+                        'start_at_operation_time': start_at_operation_time,
                         'session': session}
 
     def _next(self):
         # This method is run on a thread.
         try:
             if not self.delegate:
-                self.delegate = self._parent.delegate.watch(**self._kwargs)
+                self.delegate = self._target.delegate.watch(**self._kwargs)
 
             return self.delegate.next()
         except StopIteration:
@@ -1378,7 +1381,7 @@ class AgnosticChangeStream(AgnosticBase):
         """), globals(), locals())
 
     def get_io_loop(self):
-        return self._parent.get_io_loop()
+        return self._target.get_io_loop()
 
     def __enter__(self):
         raise RuntimeError('Use a change stream in "async with", not "with"')

@@ -81,8 +81,9 @@ class MotorChangeStreamTest(MotorTest):
                 pass
 
         change_stream = coll.watch()
+        future = change_stream.next()
         self.wait_and_insert(change_stream, 1)
-        change = await change_stream.next()
+        change = await future
 
         # New change stream with resume token.
         await coll.insert_one({'_id': 23})
