@@ -7,7 +7,7 @@ Motor: Asynchronous Python driver for MongoDB
 About
 -----
 
-Motor presents a callback- or Future-based API for non-blocking access to
+Motor presents a coroutine-based API for non-blocking access to
 MongoDB from Tornado_ or asyncio_.
 
 The `source is on GitHub <https://github.com/mongodb/motor>`_ and
@@ -60,7 +60,7 @@ Contents
    tutorial-asyncio
    examples/index
    changelog
-   migrate-to-motor-1
+   migrate-to-motor-2
    developer-guide
    contributors
 

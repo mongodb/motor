@@ -13,59 +13,12 @@ version of Motor requires PyMongo 3.7 or later.
 
 This is a major release that removes previously deprecated APIs.
 
-Breaking changes in 2.0:
-
-- :meth:`MotorClient.start_session` is now a coroutine, not a regular method. It
-  must be used like ``await client.start_session()`` or ``async with await
-  client.start_session()``. The coroutine now returns a new class
-  :class:`~motor.motor_tornado.MotorClientSession`, not PyMongo's
-  :class:`~pymongo.client_session.ClientSession`.
-- Removed methods and classes:
-
-  - ``MotorClient.kill_cursors`` and ``close_cursor``.
-  - ``MotorClient.get_default_database``.
-  - ``MotorClient.database_names``, use
-    :meth:`~MotorClient.list_database_names`.
-  - ``MotorDatabase.add_son_manipulator``
-  - ``MotorDatabase.collection_names``, use
-    :meth:`~MotorDatabase.list_collection_names`.
-  - ``MotorDatabase.last_status``
-  - ``MotorDatabase.error``
-  - ``MotorDatabase.previous_error``
-  - ``MotorDatabase.reset_error_history``
-  - ``MotorDatabase.eval``, deprecated by the MongoDB server, use
-    ``MotorDatabase.command("eval", ...)`` or stop depending on ``eval``
-  - ``MotorDatabase.group``, deprecated by the MongoDB server, use
-    ``MotorDatabase.command("group", ...)`` or stop depending on ``group``
-  - ``MotorDatabase.authenticate`` and ``MotorDatabase.logout``. Add credentials
-    to URI or ``MotorClient`` options instead of calling ``authenticate``. To
-    authenticate as multiple users on the same database, instead of using
-    ``authenticate`` and ``logout`` use a separate client for each user.
-  - ``MotorCollection.initialize_unordered_bulk_op``,
-    ``initialize_unordered_bulk_op``, and ``MotorBulkOperationBuilder``, use
-    :meth:`MotorCollection.bulk_write``, see :ref:`Bulk Writes Tutorial
-    <bulk-write-tutorial>`.
-  - ``MotorCollection.count``, use :meth:`~MotorCollection.count_documents` or
-    :meth:`~MotorCollection.estimated_document_count`.
-  - ``MotorCollection.ensure_index``, use
-    :meth:`MotorCollection.create_indexes`.
-  - Deprecated write methods have been deleted from :class:`MotorCollection`.
-
-    - ``save`` and ``insert``:  Use :meth:`~MotorCollection.insert_one` or
-      :meth:`~MotorCollection.insert_many`.
-    - ``update``:  Use :meth:`~MotorCollection.update_one`,
-      :meth:`~MotorCollection.update_many`, or
-      :meth:`~MotorCollection.replace_one`.
-    - ``remove``:  Use :meth:`~MotorCollection.delete_one` or
-      :meth:`~MotorCollection.delete_many`.
-    - ``find_and_modify``: Use :meth:`~MotorCollection.find_one_and_update`,
-      :meth:`~MotorCollection.find_one_and_replace`, or
-      :meth:`~MotorCollection.find_one_and_delete`.
-
-  - ``MotorCollection.parallel_scan``, deprecated by the MongoDB server.
-  - ``MotorCursor.count`` and ``MotorGridOutCursor.count``, use
-    :meth:`MotorCollection.count_documents` or
-    :meth:`MotorCollection.estimated_document_count`.
+To support multi-document transactions, Motor had to make breaking changes to
+the session API and release a major version bump. Since this is a major release
+it also deletes many helper methods and APIs that had been deprecated over the
+time since Motor 1.0, most notably the old CRUD methods ``insert``, ``update``,
+``remove``, and ``save``, and the original callback-based API. Read the
+:doc:`migrate-to-motor-2` carefully to upgrade your existing Motor application.
 
 Documentation is updated to warn about obsolete TLS versions, see
 :doc:`configuration`. Motor is now tested on Travis in addition to MongoDB's
@@ -229,8 +182,7 @@ Motor 1.0
 ---------
 
 Motor now depends on PyMongo 3.3 and later. The move from PyMongo 2 to 3 brings
-a large number of API changes, read :doc:`migrate-to-motor-1` and
-`the PyMongo 3 changelog`_ carefully.
+a large number of API changes, read the `the PyMongo 3 changelog`_ carefully.
 
 .. _the PyMongo 3 changelog: http://api.mongodb.com/python/current/changelog.html#changes-in-version-3-0
 
@@ -440,8 +392,7 @@ This version updates the PyMongo dependency from 2.8.0 to 2.9.x, and wraps
 PyMongo 2.9's new APIs.
 
 Most of Motor 1.0's API is now implemented, and APIs that will be removed in
-Motor 1.0 are now deprecated and raise warnings. See the
-:doc:`/migrate-to-motor-1` to prepare your code for Motor 1.0.
+Motor 1.0 are now deprecated and raise warnings.
 
 :class:`MotorClient` changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
