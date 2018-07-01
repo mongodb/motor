@@ -18,73 +18,11 @@ Motor provides a single client class, :class:`MotorClient`. Unlike PyMongo's
 not begin connecting in the background when it is instantiated. Instead it
 connects on demand, when you first attempt an operation.
 
-Callbacks and Futures
----------------------
+Coroutines
+----------
 
 Motor supports nearly every method PyMongo does, but Motor methods that
-do network I/O take an optional callback function. The callback must accept two
-parameters:
-
-.. code-block:: python
-
-    def callback(result, error):
-        pass
-
-Motor's asynchronous methods return immediately, and execute the
-callback, with either a result or an error, when the operation has completed.
-For example, :meth:`~pymongo.collection.Collection.find_one` is used in PyMongo
-like:
-
-.. code-block:: python
-
-    db = MongoClient().test
-    user = db.users.find_one({'name': 'Jesse'})
-    print user
-
-But Motor's :meth:`~MotorCollection.find_one` method is asynchronous:
-
-.. code-block:: python
-
-    db = MotorClient().test
-
-    def got_user(user, error):
-        if error:
-            print 'error getting user!', error
-        else:
-            print user
-
-    db.users.find_one({'name': 'Jesse'}, callback=got_user)
-
-The callback must be passed as a keyword argument, not a positional argument.
-
-To find multiple documents, Motor provides :meth:`~MotorCursor.to_list`:
-
-.. code-block:: python
-
-    def got_users(users, error):
-        if error:
-            print 'error getting users!', error
-        else:
-            for user in users:
-                print user
-
-    db.users.find().to_list(length=10, callback=got_users)
-
-.. seealso:: :meth:`~MotorCursor.fetch_next`
-
-If you pass no callback to an asynchronous method, it returns a Future for use
-in a :func:`coroutine <tornado.gen.coroutine>`:
-
-.. code-block:: python
-
-    from tornado import gen
-
-    @gen.coroutine
-    def f():
-        result = yield motor_db.collection.insert_one({'name': 'Randall'})
-        doc = yield motor_db.collection.find_one()
-
-See :ref:`the coroutine example <coroutine-example>`.
+do network I/O are *coroutines*. See :doc:`tutorial-tornado`.
 
 Threading and forking
 ---------------------

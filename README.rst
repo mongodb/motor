@@ -11,7 +11,7 @@ Motor
 About
 =====
 
-Motor presents a callback- or Future-based API for non-blocking access
+Motor presents a coroutine-based API for non-blocking access
 to MongoDB. The source is `on GitHub <https://github.com/mongodb/motor>`_
 and the docs are on ReadTheDocs_.
 

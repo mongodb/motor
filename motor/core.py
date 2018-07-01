@@ -448,8 +448,8 @@ class AgnosticCollection(AgnosticBaseProperties):
         """Create a :class:`MotorCursor`. Same parameters as for
         PyMongo's :meth:`~pymongo.collection.Collection.find`.
 
-        Note that ``find`` does not take a `callback` parameter, nor does
-        it return a Future, because ``find`` merely creates a
+        Note that ``find`` does not require an ``await`` expression, because
+        ``find`` merely creates a
         :class:`MotorCursor` without performing any operations on the server.
         ``MotorCursor`` methods such as :meth:`~MotorCursor.to_list`
         perform actual operations.
@@ -834,16 +834,13 @@ class AgnosticBaseCursor(AgnosticBase):
 
           from tornado.ioloop import IOLoop
           MongoClient().test.test_collection.delete_many({})
+          MongoClient().test.test_collection.insert_many(
+              [{'_id': i} for i in range(5)])
+
           collection = MotorClient().test.test_collection
 
         .. doctest:: each
 
-          >>> def inserted(result, error):
-          ...     if error:
-          ...         raise error
-          ...     cursor = collection.find().sort([('_id', 1)])
-          ...     cursor.each(callback=each)
-          ...
           >>> def each(result, error):
           ...     if error:
           ...         raise error
@@ -854,8 +851,8 @@ class AgnosticBaseCursor(AgnosticBase):
           ...         IOLoop.current().stop()
           ...         print('done')
           ...
-          >>> collection.insert_many(
-          ...     [{'_id': i} for i in range(5)], callback=inserted)
+          >>> cursor = collection.find().sort([('_id', 1)])
+          >>> cursor.each(callback=each)
           >>> IOLoop.current().start()
           0, 1, 2, 3, 4, done
 

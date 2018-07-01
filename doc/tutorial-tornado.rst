@@ -122,8 +122,8 @@ dot-notation or bracket-notation:
   >>> db = client.test_database
   >>> db = client['test_database']
 
-Creating a reference to a database does no I/O and does not accept a callback
-or return a Future.
+Creating a reference to a database does no I/O and does not require an
+``await`` expression.
 
 Tornado Application Startup Sequence
 ------------------------------------
@@ -190,70 +190,33 @@ collection in Motor works the same as getting a database:
   >>> collection = db['test_collection']
 
 Just like getting a reference to a database, getting a reference to a
-collection does no I/O and doesn't accept a callback or return a Future.
+collection does no I/O and doesn't require an ``await`` expression.
 
 Inserting a Document
 --------------------
 As in PyMongo, Motor represents MongoDB documents with Python dictionaries. To
-store a document in MongoDB, call :meth:`~MotorCollection.insert_one` with a
-document and a callback:
+store a document in MongoDB, call :meth:`~MotorCollection.insert_one` in an
+``await`` expression:
 
 .. doctest:: before-inserting-2000-docs
 
-  >>> from tornado.ioloop import IOLoop
-  >>> def my_callback(result, error):
+  >>> async def do_insert():
+  ...     document = {'key': 'value'}
+  ...     result = await db.test_collection.insert_one(document)
   ...     print('result %s' % repr(result.inserted_id))
-  ...     IOLoop.current().stop()
   ...
-  >>> document = {'key': 'value'}
-  >>> db.test_collection.insert_one(document, callback=my_callback)
-  >>> IOLoop.current().start()
+  >>>
+  >>> IOLoop.current().run_sync(do_insert)
   result ObjectId('...')
 
-There are several differences to note between Motor and PyMongo. One is that,
-unlike PyMongo's :meth:`~pymongo.collection.Collection.insert_one`, Motor's has no
-return value. Another is that ``insert_one`` accepts an optional callback function.
-The function must take two arguments and it must be passed to ``insert_one`` as a
-keyword argument, like::
-
-  db.test_collection.insert_one(document, callback=some_function)
-
-.. warning:: Passing the callback function using the ``callback=`` syntax is
-  required. (This requirement is a side-effect of the technique Motor uses to
-  wrap PyMongo.) If you pass the callback as a positional argument instead,
-  you may see an exception like ``TypeError: method takes exactly 1 argument (2
-  given)``, or ``TypeError: callable is required``, or some silent misbehavior.
-
-:meth:`insert_one` is *asynchronous*. This means it returns immediately, and
-the actual work of inserting the document into the collection is performed in
-the background. When it completes, the callback is executed. If the insert
-succeeded, the ``result`` parameter is a
-:class:`~pymongo.results.InsertOneResult` with the new document's unique id and
-the ``error`` parameter is ``None``. If there was an error, ``result`` is
-``None`` and ``error`` is an ``Exception`` object. For example, we can trigger
-a duplicate-key error by trying to insert two documents with the same unique
-id:
+.. mongodoc:: insert
 
 .. doctest:: before-inserting-2000-docs
+  :hide:
 
-  >>> loop = IOLoop.current()
-  >>> def my_callback(result, error):
-  ...     print('result %s error %s' % (repr(result), repr(error)))
-  ...     IOLoop.current().stop()
-  ...
-  >>> def insert_two_documents():
-  ...     db.test_collection.insert_one({'_id': 1}, callback=my_callback)
-  ...
-  >>> IOLoop.current().add_callback(insert_two_documents)
-  >>> IOLoop.current().start()
-  result <pymongo.results.InsertOneResult ...> error None
-  >>> IOLoop.current().add_callback(insert_two_documents)
-  >>> IOLoop.current().start()
-  result None error DuplicateKeyError(...)
-
-The first insert results in ``my_callback`` being called with result 1 and
-error ``None``. The second insert triggers ``my_callback`` with result None and
-a :class:`~pymongo.errors.DuplicateKeyError`.
+  >>> # Clean up from previous insert
+  >>> pymongo.MongoClient().test_database.test_collection.delete_many({})
+  <pymongo.results.DeleteResult ...>
 
 A typical beginner's mistake with Motor is to insert documents in a loop,
 not waiting for each insert to complete before beginning the next::
@@ -266,61 +229,18 @@ not waiting for each insert to complete before beginning the next::
 In PyMongo this would insert each document in turn using a single socket, but
 Motor attempts to run all the :meth:`insert_one` operations at once. This requires
 up to ``max_pool_size`` open sockets connected to MongoDB,
-which taxes the client and server. To ensure instead that all inserts use a
-single connection, wait for acknowledgment of each. This is a bit complex using
-callbacks:
+which taxes the client and server. To ensure instead that all inserts run in
+sequence, use ``await``:
 
 .. doctest:: before-inserting-2000-docs
 
-  >>> i = 0
-  >>> def do_insert(result, error):
-  ...     global i
-  ...     if error:
-  ...         raise error
-  ...     i += 1
-  ...     if i < 2000:
-  ...         db.test_collection.insert_one({'i': i}, callback=do_insert)
-  ...     else:
-  ...         IOLoop.current().stop()
-  ...
-  >>> # Start
-  >>> db.test_collection.insert_one({'i': i}, callback=do_insert)
-  >>> IOLoop.current().start()
-
-You can simplify this code with ``gen.coroutine``.
-
-Using Motor with `gen.coroutine`
---------------------------------
-The :mod:`tornado.gen` module lets you use generators to simplify asynchronous
-code. There are two parts to coding with generators:
-:func:`coroutine <tornado.gen.coroutine>` and
-:class:`~tornado.concurrent.Future`.
-
-First, decorate your generator function with ``@gen.coroutine``:
-
-  >>> @gen.coroutine
-  ... def do_insert():
-  ...     pass
-
-If you pass no callback to one of Motor's asynchronous methods, it returns a
-``Future``. Yield the ``Future`` instance to wait for an operation to complete
-and obtain its result:
-
-.. doctest:: before-inserting-2000-docs
-
-  >>> @gen.coroutine
-  ... def do_insert():
+  >>> async def do_insert():
   ...     for i in range(2000):
-  ...         future = db.test_collection.insert_one({'i': i})
-  ...         result = yield future
+  ...         await db.test_collection.insert_one({'i': i})
   ...
   >>> IOLoop.current().run_sync(do_insert)
 
-In the code above, ``result`` is the ``_id`` of each inserted document.
-
 .. seealso:: :doc:`examples/bulk`.
-
-.. seealso:: :ref:`Detailed example of Motor and gen.coroutine <coroutine-example>`
 
 .. mongodoc:: insert
 
@@ -331,25 +251,18 @@ In the code above, ``result`` is the ``_id`` of each inserted document.
   >>> pymongo.MongoClient().test_database.test_collection.delete_many({})
   <pymongo.results.DeleteResult ...>
 
-Using native coroutines
------------------------
-
-Starting in Python 3.5, you can define a `native coroutine`_ with `async def`
-instead of the `gen.coroutine` decorator. Within a native coroutine, wait
-for an async operation with `await` instead of `yield`:
+For better performance, insert documents in large batches with
+:meth:`~MotorCollection.insert_many`:
 
 .. doctest:: before-inserting-2000-docs
 
   >>> async def do_insert():
-  ...     for i in range(2000):
-  ...         result = await db.test_collection.insert_one({'i': i})
+  ...     result = await db.test_collection.insert_many(
+  ...         [{'i': i} for i in range(2000)])
+  ...     print('inserted %d docs' % (len(result.inserted_ids),))
   ...
   >>> IOLoop.current().run_sync(do_insert)
-
-Within a native coroutine, the syntax to use Motor with Tornado or asyncio
-is often identical.
-
-.. _native coroutine: https://www.python.org/dev/peps/pep-0492/
+  inserted 2000 docs
 
 Getting a Single Document With :meth:`~MotorCollection.find_one`
 ----------------------------------------------------------------
@@ -359,9 +272,8 @@ less than 1:
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.coroutine
-  ... def do_find_one():
-  ...     document = yield db.test_collection.find_one({'i': {'$lt': 1}})
+  >>> async def do_find_one():
+  ...     document = await db.test_collection.find_one({'i': {'$lt': 1}})
   ...     pprint.pprint(document)
   ...
   >>> IOLoop.current().run_sync(do_find_one)
@@ -380,19 +292,18 @@ are sorted the same in your output as ours.)
 Querying for More Than One Document
 -----------------------------------
 Use :meth:`~MotorCollection.find` to query for a set of documents.
-:meth:`~MotorCollection.find` does no I/O and does not take a callback,
-it merely creates a :class:`MotorCursor` instance. The query is actually
-executed on the server when you call :meth:`~MotorCursor.to_list` or
-:meth:`~MotorCursor.each`, or yield :attr:`~motor.motor_tornado.MotorCursor.fetch_next`.
+:meth:`~MotorCollection.find` does no I/O and does not require an ``await``
+expression. It merely creates an :class:`~MotorCursor` instance. The query is
+actually executed on the server when you call :meth:`~MotorCursor.to_list`
+or execute an ``async for`` loop.
 
 To find all documents with "i" less than 5:
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.coroutine
-  ... def do_find():
+  >>> async def do_find():
   ...     cursor = db.test_collection.find({'i': {'$lt': 5}}).sort('i')
-  ...     for document in (yield cursor.to_list(length=100)):
+  ...     for document in await cursor.to_list(length=100):
   ...         pprint.pprint(document)
   ...
   >>> IOLoop.current().run_sync(do_find)
@@ -402,11 +313,50 @@ To find all documents with "i" less than 5:
   {'_id': ObjectId('...'), 'i': 3}
   {'_id': ObjectId('...'), 'i': 4}
 
-A ``length`` argument is required when you call to_list to prevent Motor from
-buffering an unlimited number of documents.
+A ``length`` argument is required when you call ``to_list`` to prevent Motor
+from buffering an unlimited number of documents.
 
-To get one document at a time with :attr:`~motor.motor_tornado.MotorCursor.fetch_next`
-and :meth:`~MotorCursor.next_object`:
+``async for``
+~~~~~~~~~~~~~
+
+You can handle one document at a time in an ``async for`` loop:
+
+.. doctest:: after-inserting-2000-docs
+
+  >>> async def do_find():
+  ...     c = db.test_collection
+  ...     async for document in c.find({'i': {'$lt': 2}}):
+  ...         pprint.pprint(document)
+  ...
+  >>> IOLoop.current().run_sync(do_find)
+  {'_id': ObjectId('...'), 'i': 0}
+  {'_id': ObjectId('...'), 'i': 1}
+
+You can apply a sort, limit, or skip to a query before you begin iterating:
+
+.. doctest:: after-inserting-2000-docs
+
+  >>> async def do_find():
+  ...     cursor = db.test_collection.find({'i': {'$lt': 4}})
+  ...     # Modify the query before iterating
+  ...     cursor.sort('i', -1).skip(1).limit(2)
+  ...     async for document in cursor:
+  ...         pprint.pprint(document)
+  ...
+  >>> IOLoop.current().run_sync(do_find)
+  {'_id': ObjectId('...'), 'i': 2}
+  {'_id': ObjectId('...'), 'i': 1}
+
+The cursor does not actually retrieve each document from the server
+individually; it gets documents efficiently in `large batches`_.
+
+.. _`large batches`: https://docs.mongodb.com/manual/tutorial/iterate-a-cursor/#cursor-batches
+
+Iteration in Python 3.4
+~~~~~~~~~~~~~~~~~~~~~~~
+
+In Python versions without ``async for``, handle one document at a time with
+:attr:`~MotorCursor.fetch_next` and :meth:`~MotorCursor.next_object`:
 
 .. doctest:: after-inserting-2000-docs
 
@@ -424,48 +374,6 @@ and :meth:`~MotorCursor.next_object`:
   {'_id': ObjectId('...'), 'i': 3}
   {'_id': ObjectId('...'), 'i': 4}
 
-You can apply a sort, limit, or skip to a query before you begin iterating:
-
-.. doctest:: after-inserting-2000-docs
-
-  >>> @gen.coroutine
-  ... def do_find():
-  ...     c = db.test_collection
-  ...     cursor = c.find({'i': {'$lt': 5}})
-  ...     # Modify the query before iterating
-  ...     cursor.sort('i', -1).limit(2).skip(2)
-  ...     while (yield cursor.fetch_next):
-  ...         document = cursor.next_object()
-  ...         pprint.pprint(document)
-  ...
-  >>> IOLoop.current().run_sync(do_find)
-  {'_id': ObjectId('...'), 'i': 2}
-  {'_id': ObjectId('...'), 'i': 1}
-
-``fetch_next`` does not actually retrieve each document from the server
-individually; it gets documents efficiently in `large batches`_.
-
-.. _`large batches`: https://docs.mongodb.com/manual/tutorial/iterate-a-cursor/#cursor-batches
-
-`async for`
------------
-
-In a native coroutine defined with `async def`, replace the while-loop with
-`async for`:
-
-.. doctest:: after-inserting-2000-docs
-
-  >>> async def do_find():
-  ...     c = db.test_collection
-  ...     async for document in c.find({'i': {'$lt': 2}}):
-  ...         pprint.pprint(document)
-  ...
-  >>> IOLoop.current().run_sync(do_find)
-  {'_id': ObjectId('...'), 'i': 0}
-  {'_id': ObjectId('...'), 'i': 1}
-
-This version of the code is dramatically faster.
-
 Counting Documents
 ------------------
 Use :meth:`~MotorCollection.count_documents` to determine the number of
@@ -473,11 +381,10 @@ documents in a collection, or the number of documents that match a query:
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.coroutine
-  ... def do_count():
-  ...     n = yield db.test_collection.count_documents({})
+  >>> async def do_count():
+  ...     n = await db.test_collection.count_documents({})
   ...     print('%s documents in collection' % n)
-  ...     n = yield db.test_collection.count_documents({'i': {'$gt': 1000}})
+  ...     n = await db.test_collection.count_documents({'i': {'$gt': 1000}})
   ...     print('%s documents where i > 1000' % n)
   ...
   >>> IOLoop.current().run_sync(do_count)
@@ -494,15 +401,14 @@ replacement document. The query follows the same syntax as for :meth:`find` or
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.coroutine
-  ... def do_replace():
+  >>> async def do_replace():
   ...     coll = db.test_collection
-  ...     old_document = yield coll.find_one({'i': 50})
+  ...     old_document = await coll.find_one({'i': 50})
   ...     print('found document: %s' % pprint.pformat(old_document))
   ...     _id = old_document['_id']
-  ...     result = yield coll.replace_one({'_id': _id}, {'key': 'value'})
+  ...     result = await coll.replace_one({'_id': _id}, {'key': 'value'})
   ...     print('replaced %s document' % result.modified_count)
-  ...     new_document = yield coll.find_one({'_id': _id})
+  ...     new_document = await coll.find_one({'_id': _id})
   ...     print('document is now %s' % pprint.pformat(new_document))
   ...
   >>> IOLoop.current().run_sync(do_replace)
@@ -520,12 +426,11 @@ operator to set "key" to "value":
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.coroutine
-  ... def do_update():
+  >>> async def do_update():
   ...     coll = db.test_collection
-  ...     result = yield coll.update_one({'i': 51}, {'$set': {'key': 'value'}})
+  ...     result = await coll.update_one({'i': 51}, {'$set': {'key': 'value'}})
   ...     print('updated %s document' % result.modified_count)
-  ...     new_document = yield coll.find_one({'i': 51})
+  ...     new_document = await coll.find_one({'i': 51})
   ...     print('document is now %s' % pprint.pformat(new_document))
   ...
   >>> IOLoop.current().run_sync(do_update)
@@ -537,7 +442,7 @@ operator to set "key" to "value":
 :meth:`update_one` only affects the first document it finds, you can
 update all of them with :meth:`update_many`::
 
-    yield coll.update_many({'i': {'$gt': 100}},
+    await coll.update_many({'i': {'$gt': 100}},
                            {'$set': {'key': 'value'}})
 
 .. mongodoc:: update
@@ -551,13 +456,12 @@ Removing Documents
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @gen.coroutine
-  ... def do_delete_many():
+  >>> async def do_delete_many():
   ...     coll = db.test_collection
-  ...     n = yield coll.count_documents({})
+  ...     n = await coll.count_documents({})
   ...     print('%s documents before calling delete_many()' % n)
-  ...     result = yield db.test_collection.delete_many({'i': {'$gte': 1000}})
-  ...     print('%s documents after' % (yield coll.count_documents({})))
+  ...     result = await db.test_collection.delete_many({'i': {'$gte': 1000}})
+  ...     print('%s documents after' % (await coll.count_documents({})))
   ...
   >>> IOLoop.current().run_sync(do_delete_many)
   2000 documents before calling delete_many()
@@ -574,9 +478,8 @@ the :meth:`~motor.motor_tornado.MotorDatabase.command` method on
 .. doctest:: after-inserting-2000-docs
 
   >>> from bson import SON
-  >>> @gen.coroutine
-  ... def use_distinct_command():
-  ...     response = yield db.command(SON([("distinct", "test_collection"),
+  >>> async def use_distinct_command():
+  ...     response = await db.command(SON([("distinct", "test_collection"),
   ...                                      ("key", "i")]))
   ...
   >>> IOLoop.current().run_sync(use_distinct_command)

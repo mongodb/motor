@@ -33,7 +33,7 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
 
   .. mongodoc:: gridfs
 
-  .. coroutinemethod:: delete(self, file_id, callback=None)
+  .. coroutinemethod:: delete(self, file_id))
 
       Delete a file's metadata and data chunks from a GridFS bucket::
 
@@ -50,12 +50,10 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
 
       :Parameters:
         - `file_id`: The _id of the file to be deleted.
-        - `callback`: (optional): function taking (result, error), executed
-          when operation completes
 
-      If a callback is passed, returns None, else returns a Future.
+      Returns a Future.
 
-  .. coroutinemethod:: download_to_stream(self, file_id, destination, callback=None)
+  .. coroutinemethod:: download_to_stream(self, file_id, destination))
 
       Downloads the contents of the stored file specified by file_id and
       writes the contents to `destination`::
@@ -78,12 +76,10 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
       :Parameters:
         - `file_id`: The _id of the file to be downloaded.
         - `destination`: a file-like object implementing :meth:`write`.
-        - `callback`: (optional): function taking (result, error), executed
-          when operation completes
 
-      If a callback is passed, returns None, else returns a Future.
+      Returns a Future.
 
-  .. coroutinemethod:: download_to_stream_by_name(self, filename, destination, revision=-1, callback=None)
+  .. coroutinemethod:: download_to_stream_by_name(self, filename, destination, revision=-1)
 
       Write the contents of `filename` (with optional `revision`) to
       `destination`.
@@ -164,12 +160,10 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
           returning.
         - `sort` (optional): The order by which to sort results. Defaults to
           None.
-        - `callback`: (optional): function taking (result, error), executed
-          when operation completes
 
-      If a callback is passed, returns None, else returns a Future.
+      Returns a Future.
 
-  .. coroutinemethod:: open_download_stream(self, file_id, callback=None)
+  .. coroutinemethod:: open_download_stream(self, file_id)
 
       Opens a stream to read the contents of the stored file specified by file_id::
 
@@ -187,13 +181,10 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
 
       :Parameters:
         - `file_id`: The _id of the file to be downloaded.
-        - `callback`: (optional): function taking (result, error), executed
-          when operation completes
 
-      If a callback is passed, returns None, else returns a Future that resolves
-      to a :class:`MotorGridOut`.
+      Returns a Future that resolves to a :class:`MotorGridOut`.
 
-  .. coroutinemethod:: open_download_stream_by_name(self, filename, revision=-1, callback=None)
+  .. coroutinemethod:: open_download_stream_by_name(self, filename, revision=-1)
 
       Opens a stream to read the contents of `filename` and optional `revision`::
 
@@ -217,11 +208,8 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
         - `revision` (optional): Which revision (documents with the same
           filename and different uploadDate) of the file to retrieve.
           Defaults to -1 (the most recent revision).
-        - `callback`: (optional): function taking (result, error), executed
-          when operation completes
 
-      If a callback is passed, returns None, else returns a Future that resolves
-      to a :class:`MotorGridOut`.
+      Returns a Future that resolves to a :class:`MotorGridOut`.
 
       :Note: Revision numbers are defined as follows:
 
@@ -312,7 +300,7 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
           files collection document. If not provided the metadata field will
           be omitted from the files collection document.
 
-  .. coroutinemethod:: rename(self, file_id, new_filename, callback=None)
+  .. coroutinemethod:: rename(self, file_id, new_filename))
 
       Renames the stored file with the specified file_id.
 
@@ -334,12 +322,10 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
       :Parameters:
         - `file_id`: The _id of the file to be renamed.
         - `new_filename`: The new name of the file.
-        - `callback`: (optional): function taking (result, error), executed
-          when operation completes
 
-      If a callback is passed, returns None, else returns a Future.
+      Returns a Future.
 
-  .. coroutinemethod:: upload_from_stream(self, filename, source, chunk_size_bytes=None, metadata=None, callback=None)
+  .. coroutinemethod:: upload_from_stream(self, filename, source, chunk_size_bytes=None, metadata=None))
 
       Uploads a user file to a GridFS bucket.
 
@@ -370,13 +356,10 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
         - `metadata` (optional): User data for the 'metadata' field of the
           files collection document. If not provided the metadata field will
           be omitted from the files collection document.
-        - `callback`: (optional): function taking (result, error), executed
-          when operation completes
 
-      If a callback is passed, returns None, else returns a Future that resolves
-      to the _id of the uploaded file.
+      Returns a Future that resolves to the _id of the uploaded file.
 
-  .. coroutinemethod:: upload_from_stream_with_id(self, file_id, filename, source, chunk_size_bytes=None, metadata=None, callback=None)
+  .. coroutinemethod:: upload_from_stream_with_id(self, file_id, filename, source, chunk_size_bytes=None, metadata=None))
 
       Uploads a user file to a GridFS bucket with a custom file id.
 
@@ -410,10 +393,8 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
         - `metadata` (optional): User data for the 'metadata' field of the
           files collection document. If not provided the metadata field will
           be omitted from the files collection document.
-        - `callback`: (optional): function taking (result, error), executed
-          when operation completes
 
-      If a callback is passed, returns None, else returns a Future.
+      Returns a Future.
 
 .. autoclass:: MotorGridIn
   :members:

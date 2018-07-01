@@ -19,7 +19,7 @@
   The :class:`MotorDatabase` that this
   :class:`MotorCollection` is a part of.
 
-  .. coroutinemethod:: create_index(self, keys, callback=None, **kwargs)
+  .. coroutinemethod:: create_index(self, keys, **kwargs)
 
       Creates an index on this collection.
 
@@ -90,17 +90,15 @@
       :Parameters:
         - `keys`: a single key or a list of (key, direction)
           pairs specifying the index to create
-        - `callback`: (optional): function taking (result, error), executed
-          when operation completes
         - `**kwargs` (optional): any additional index creation
           options (see the above list) should be passed as keyword
           arguments
 
-      If a callback is passed, returns None, else returns a Future.
+      Returns a Future.
 
       .. mongodoc:: indexes
 
-  .. coroutinemethod:: inline_map_reduce(self, map, reduce, full_response=False, callback=None, **kwargs)
+  .. coroutinemethod:: inline_map_reduce(self, map, reduce, full_response=False, **kwargs)
 
       Perform an inline map/reduce operation on this collection.
 
@@ -120,15 +118,13 @@
         - `reduce`: reduce function (as a JavaScript string)
         - `full_response` (optional): if ``True``, return full response to
           this command - otherwise just return the result collection
-        - `callback`: (optional): function taking (result, error), executed
-          when operation completes
         - `**kwargs` (optional): additional arguments to the
           `map reduce command`_ may be passed as keyword arguments to this
           helper method, e.g.::
 
             yield db.test.inline_map_reduce(map, reduce, limit=2)
 
-      If a callback is passed, returns None, else returns a Future.
+      Returns a Future.
 
       .. _map reduce command: http://docs.mongodb.org/manual/reference/command/mapReduce/
 

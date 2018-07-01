@@ -145,6 +145,7 @@ store a document in MongoDB, call :meth:`~AsyncIOMotorCollection.insert_one` in 
   ...     print('result %s' % repr(result.inserted_id))
   ...
   >>>
+  >>> import asyncio
   >>> loop = asyncio.get_event_loop()
   >>> loop.run_until_complete(do_insert())
   result ObjectId('...')
@@ -158,26 +159,18 @@ store a document in MongoDB, call :meth:`~AsyncIOMotorCollection.insert_one` in 
   >>> pymongo.MongoClient().test_database.test_collection.delete_many({})
   <pymongo.results.DeleteResult ...>
 
-Using native coroutines
------------------------
-
-Starting in Python 3.5, you can define a `native coroutine`_ with `async def`
-instead of the ``coroutine`` decorator. Within a native coroutine, wait
-for an async operation with `await` instead of `yield`:
+Insert documents in large batches with :meth:`~AsyncIOMotorCollection.insert_many`:
 
 .. doctest:: before-inserting-2000-docs
 
   >>> async def do_insert():
-  ...     for i in range(2000):
-  ...         result = await db.test_collection.insert_one({'i': i})
+  ...     result = await db.test_collection.insert_many(
+  ...         [{'i': i} for i in range(2000)])
+  ...     print('inserted %d docs' % (len(result.inserted_ids),))
   ...
   >>> loop = asyncio.get_event_loop()
   >>> loop.run_until_complete(do_insert())
-
-Within a native coroutine, the syntax to use Motor with Tornado or asyncio
-is often identical.
-
-.. _native coroutine: https://www.python.org/dev/peps/pep-0492/
+  inserted 2000 docs
 
 Getting a Single Document With `find_one`
 -----------------------------------------
@@ -253,9 +246,9 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
 .. doctest:: after-inserting-2000-docs
 
   >>> async def do_find():
-  ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
+  ...     cursor = db.test_collection.find({'i': {'$lt': 4}})
   ...     # Modify the query before iterating
-  ...     cursor.sort('i', -1).limit(2).skip(2)
+  ...     cursor.sort('i', -1).skip(1).limit(2)
   ...     async for document in cursor:
   ...         pprint.pprint(document)
   ...

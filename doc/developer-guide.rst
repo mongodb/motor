@@ -32,7 +32,6 @@ is a module implementing these properties and functions:
 - ``call_soon``
 - ``check_event_loop``
 - ``coroutine``
-- ``future_or_callback``
 - ``get_event_loop``
 - ``get_future``
 - ``is_event_loop``

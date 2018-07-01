@@ -24,7 +24,6 @@ Convenient With `tornado.gen`
 =============================
 The :mod:`tornado.gen` module lets you use coroutines to simplify asynchronous
 code. Motor methods return Futures that are convenient to use with coroutines.
-See :ref:`the coroutine example <coroutine-example>`.
 
 Configurable IOLoops
 ====================

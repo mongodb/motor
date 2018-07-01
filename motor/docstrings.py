@@ -700,15 +700,13 @@ response from the server to the `map reduce command`_.
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
-  - `callback` (optional): function taking (result, error), executed when
-    operation completes.
   - `**kwargs` (optional): additional arguments to the
     `map reduce command`_ may be passed as keyword arguments to this
     helper method, e.g.::
 
        result = yield db.test.map_reduce(map, reduce, "myresults", limit=2)
 
-If a callback is passed, returns None, else returns a Future.
+Returns a Future.
 
 .. note:: The :meth:`map_reduce` method does **not** obey the
    :attr:`read_preference` of this :class:`MotorCollection`. To run

@@ -5,7 +5,6 @@ Motor Examples
 
 .. toctree::
 
-   callbacks-and-coroutines
    bulk
    monitoring
    tailable-cursors
