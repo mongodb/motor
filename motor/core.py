@@ -147,7 +147,7 @@ class AgnosticClient(AgnosticBaseProperties):
 
     def watch(self, pipeline=None, full_document='default', resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,
-              session=None):
+              start_at_operation_time=None, session=None):
         """Watch changes on this cluster.
 
         Returns a :class:`~MotorChangeStream` cursor which iterates over changes
@@ -177,6 +177,10 @@ class AgnosticClient(AgnosticBaseProperties):
             per batch.
           - `collation` (optional): The :class:`~pymongo.collation.Collation`
             to use for the aggregation.
+          - `start_at_operation_time` (optional): If provided, the resulting
+            change stream will only return changes that occurred at or after
+            the specified :class:`~bson.timestamp.Timestamp`. Requires
+            MongoDB >= 4.0.
           - `session` (optional): a
             :class:`~pymongo.client_session.ClientSession`.
 
@@ -192,7 +196,8 @@ class AgnosticClient(AgnosticBaseProperties):
 
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, pipeline, full_document, resume_after,
-                            max_await_time_ms, batch_size, collation, session)
+                            max_await_time_ms, batch_size, collation,
+                            start_at_operation_time, session)
 
     def __getattr__(self, name):
         if name.startswith('_'):
@@ -368,7 +373,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
     def watch(self, pipeline=None, full_document='default', resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,
-              session=None):
+              start_at_operation_time=None, session=None):
         """Watch changes on this database.
 
         Returns a :class:`~MotorChangeStream` cursor which iterates over changes
@@ -398,6 +403,10 @@ class AgnosticDatabase(AgnosticBaseProperties):
             per batch.
           - `collation` (optional): The :class:`~pymongo.collation.Collation`
             to use for the aggregation.
+          - `start_at_operation_time` (optional): If provided, the resulting
+            change stream will only return changes that occurred at or after
+            the specified :class:`~bson.timestamp.Timestamp`. Requires
+            MongoDB >= 4.0.
           - `session` (optional): a
             :class:`~pymongo.client_session.ClientSession`.
 
@@ -413,7 +422,8 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, pipeline, full_document, resume_after,
-                            max_await_time_ms, batch_size, collation, session)
+                            max_await_time_ms, batch_size, collation,
+                            start_at_operation_time, session)
 
     @property
     def client(self):
