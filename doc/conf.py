@@ -202,10 +202,7 @@ latex_documents = [
 autodoc_default_flags = ['inherited-members']
 autodoc_member_order = 'groupwise'
 
-sys.stderr.write('Warning: update PyMongo inventory to 3.7\n')
-# pymongo_inventory = ('http://api.mongodb.com/python/%s/' % pymongo_version,
-#                      None)
-pymongo_inventory = ('http://api.mongodb.com/python/3.6.1',
+pymongo_inventory = ('http://api.mongodb.com/python/%s/' % pymongo_version,
                      None)
 
 intersphinx_mapping = {
