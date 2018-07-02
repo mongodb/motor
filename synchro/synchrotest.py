@@ -82,12 +82,7 @@ excluded_tests = [
     'TestGridfs.test_threaded_reads',
     'TestGridfs.test_threaded_writes',
 
-    # Motor's aggregate API is different, always sends "cursor={}" by default.
-    'TestCollection.test_aggregate',
     'TestCollection.test_aggregate_raw_bson',
-    'TestAllScenarios.test_read_aggregate_Aggregate_with_multiple_stages',
-    'TestSingleSlaveOk.test_reads_from_secondary',
-
     # Can't do MotorCollection(name, create=True), Motor constructors do no I/O.
     'TestCollection.test_create',
     'TestCollection.test_reindex',
