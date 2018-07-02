@@ -118,15 +118,13 @@ def chain_return_value(future, loop, return_value):
     """
     chained = asyncio.Future(loop=loop)
 
-    def done_callback(_future):
-        try:
-            _future.result()
+    def copy(_future):
+        if _future.exception() is not None:
+            chained.set_exception(_future.exception())
+        else:
             chained.set_result(return_value)
-        except Exception as exc:
-            chained.set_exception(exc)
 
-    future.add_done_callback(functools.partial(loop.call_soon_threadsafe,
-                                               done_callback))
+    future._future.add_done_callback(functools.partial(loop.add_callback, copy))
     return chained
 
 
