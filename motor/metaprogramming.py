@@ -265,7 +265,7 @@ class DelegateMethod(ReadOnlyProperty):
 
 class MotorCursorChainingMethod(MotorAttributeFactory):
     def create_attribute(self, cls, attr_name):
-        cursor_method = getattr(Cursor, attr_name)
+        cursor_method = getattr(cls.__delegate_class__, attr_name)
 
         @functools.wraps(cursor_method)
         def return_clone(self, *args, **kwargs):

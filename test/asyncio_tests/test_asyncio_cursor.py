@@ -449,6 +449,20 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
         self.assertEqual(0, len(w))
 
+    @asyncio_test
+    def test_aggregate_batch_size(self):
+        c = self.collection
+        yield from c.insert_many({'_id': i} for i in range(4))
+
+        cursor = c.aggregate([{'$sort': {'_id': 1}}]).batch_size(2)
+        self.assertEqual(cursor.delegate._CommandCursor__batch_size, 2)
+        lst = []
+        while (yield from cursor.fetch_next):
+            lst.append(cursor.next_object())
+
+        self.assertEqual(cursor.delegate._CommandCursor__batch_size, 2)
+        self.assertEqual(lst, [{'_id': 0}, {'_id': 1}, {'_id': 2}, {'_id': 3}])
+
 
 class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
     def setUp(self):

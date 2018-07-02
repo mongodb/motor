@@ -42,11 +42,13 @@ deleted in favor of :class:`~motor.motor_tornado.MotorGridFSBucket` and
 :class:`~motor.motor_asyncio.AsyncIOMotorGridFSBucket`, which conform to driver
 specs for GridFS.
 
-Additional features:
+Additional changes:
 
 - Motor adds its name, version, and Tornado's version (if appropriate) to the
   client data logged by the MongoDB server when Motor connects, in addition to
   the data added by PyMongo.
+- Calling :meth:`~MotorCommandCursor.batch_size` on a cursor returned from
+  :meth:`~MotorCollection.aggregate` no longer raises ``AttributeError``.
 
 Motor 1.2.3
 -----------
