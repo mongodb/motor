@@ -9,6 +9,8 @@ Motor 1.3.0
 Deprecate Motor's old callback-based async API in preparation for removing it in
 Motor 2.0. Raise ``DeprecationWarning`` whenever a callback is passed.
 
+See the :doc:`migrate-to-motor-2`.
+
 Motor 1.2.3
 -----------
 
@@ -143,7 +145,7 @@ Motor 1.0
 ---------
 
 Motor now depends on PyMongo 3.3 and later. The move from PyMongo 2 to 3 brings
-a large number of API changes, read :doc:`migrate-to-motor-1` and
+a large number of API changes, read
 `the PyMongo 3 changelog`_ carefully.
 
 .. _the PyMongo 3 changelog: http://api.mongodb.com/python/current/changelog.html#changes-in-version-3-0
@@ -354,8 +356,7 @@ This version updates the PyMongo dependency from 2.8.0 to 2.9.x, and wraps
 PyMongo 2.9's new APIs.
 
 Most of Motor 1.0's API is now implemented, and APIs that will be removed in
-Motor 1.0 are now deprecated and raise warnings. See the
-:doc:`/migrate-to-motor-1` to prepare your code for Motor 1.0.
+Motor 1.0 are now deprecated and raise warnings.
 
 :class:`MotorClient` changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

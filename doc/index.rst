@@ -62,7 +62,7 @@ Contents
    tutorial-asyncio
    examples/index
    changelog
-   migrate-to-motor-1
+   migrate-to-motor-2
    developer-guide
    contributors
 
