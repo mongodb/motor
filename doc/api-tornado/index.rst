@@ -7,9 +7,8 @@ Motor Tornado API
     motor_client_session
     motor_database
     motor_collection
-    motor_cursor
-    motor_command_cursor
     motor_change_stream
+    cursors
     gridfs
     web
 

@@ -862,10 +862,11 @@ class AgnosticBaseCursor(AgnosticBase):
 
         .. _`gen.coroutine`: http://tornadoweb.org/en/stable/gen.html
 
-        .. testsetup:: fetch_next
+        .. doctest:: fetch_next
+          :hide:
 
-          MongoClient().test.test_collection.delete_many({})
-          collection = MotorClient().test.test_collection
+          >>> _ = MongoClient().test.test_collection.delete_many({})
+          >>> collection = MotorClient().test.test_collection
 
         .. doctest:: fetch_next
 
@@ -1008,6 +1009,8 @@ class AgnosticBaseCursor(AgnosticBase):
         .. testsetup:: to_list
 
           MongoClient().test.test_collection.delete_many({})
+          MongoClient().test.test_collection.insert_many([{'_id': i} for i in range(4)])
+
           from tornado import ioloop
 
         .. doctest:: to_list
@@ -1017,7 +1020,6 @@ class AgnosticBaseCursor(AgnosticBase):
           >>>
           >>> @gen.coroutine
           ... def f():
-          ...     yield collection.insert_many([{'_id': i} for i in range(4)])
           ...     cursor = collection.find().sort([('_id', 1)])
           ...     docs = yield cursor.to_list(length=2)
           ...     while docs:

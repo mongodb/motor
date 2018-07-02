@@ -7,9 +7,8 @@ Motor asyncio API
     asyncio_motor_client_session
     asyncio_motor_database
     asyncio_motor_collection
-    asyncio_motor_cursor
-    asyncio_motor_command_cursor
     asyncio_motor_change_stream
+    cursors
     asyncio_gridfs
     aiohttp
 
