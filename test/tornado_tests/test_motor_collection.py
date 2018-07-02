@@ -325,6 +325,5 @@ class MotorCollectionTest(MotorTest):
             self.assertEqual(read_preference, c.read_preference)
             self.assertEqual(codec_options, c.codec_options)
 
-
 if __name__ == '__main__':
     unittest.main()
