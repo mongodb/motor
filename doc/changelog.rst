@@ -3,6 +3,19 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 1.2.3
+-----------
+
+Compatibility with latest Sphinx and document how to use the latest TLS
+protocols.
+
+Motor 1.2.2
+-----------
+
+Motor 1.2.x requires PyMongo 3.6 or later. The dependency was properly
+documented, but not enforced in ``setup.py``. PyMongo 3.6 is now an install-time
+requirement; thanks to Shane Harvey for the fix.
+
 Motor 1.2.1
 -----------
 
