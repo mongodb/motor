@@ -153,7 +153,11 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
                 # Done iterating.
                 future.set_result(True)
 
-        cursor.each(callback)
+        with warnings.catch_warnings():
+            # Should not raise, and not deprecated.
+            warnings.filterwarnings('error')
+            cursor.each(callback)
+
         yield from future
         expected = [{'_id': i} for i in range(200)]
         self.assertEqual(expected, results)

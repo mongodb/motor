@@ -16,8 +16,10 @@ from __future__ import unicode_literals
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+import contextlib
 import logging
 import unittest
+import warnings
 from unittest import SkipTest
 
 from test.test_environment import env, db_user, CLIENT_PEM
@@ -77,3 +79,13 @@ class MockRequestHandler(object):
 
     def flush(self):
         pass
+
+
+@contextlib.contextmanager
+def assert_deprecation_warnings(n=1):
+    with warnings.catch_warnings(record=True) as records:
+        warnings.filterwarnings('always', category=DeprecationWarning)
+        yield
+
+    assert len(records) == n, \
+        "Expected %d DeprecationWarning, not %r" % (n, records,)

@@ -32,7 +32,7 @@ from pymongo.errors import OperationFailure
 
 import motor
 import motor.motor_tornado
-from test import SkipTest, env
+from test import SkipTest, env, assert_deprecation_warnings
 from test.tornado_tests import (get_command_line,
                                 MotorTest,
                                 MotorMockServerTest,
@@ -182,7 +182,11 @@ class MotorCursorTest(MotorMockServerTest):
                 # Done iterating.
                 future.set_result(True)
 
-        cursor.each(callback)
+        with warnings.catch_warnings():
+            # Should not raise, and not deprecated.
+            warnings.filterwarnings('error')
+            cursor.each(callback)
+
         yield future
         expected = [{'_id': i} for i in range(200)]
         self.assertEqual(expected, results)
@@ -205,11 +209,15 @@ class MotorCursorTest(MotorMockServerTest):
         cursor = self.collection.find({}, {'_id': 1})
         cursor.sort([('_id', pymongo.ASCENDING)])
         expected = [{'_id': i} for i in range(200)]
-        (result, error), _ = yield gen.Task(cursor.to_list, length=1000)
+        with assert_deprecation_warnings():
+            (result, error), _ = yield gen.Task(cursor.to_list, length=1000)
+
         self.assertEqual(expected, result)
 
         cursor = self.collection.find().where('return foo')
-        (result, error), _ = yield gen.Task(cursor.to_list, length=1000)
+        with assert_deprecation_warnings():
+            (result, error), _ = yield gen.Task(cursor.to_list, length=1000)
+
         self.assertEqual(None, result)
         self.assertTrue(isinstance(error, OperationFailure))
 

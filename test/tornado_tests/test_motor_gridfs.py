@@ -28,6 +28,7 @@ from tornado.testing import gen_test
 
 import motor
 from motor.motor_py3_compat import StringIO
+from test import assert_deprecation_warnings
 from test.tornado_tests import MotorTest
 
 
@@ -147,13 +148,15 @@ class MotorGridfsTest(MotorTest):
 
     @gen_test
     def test_put_callback(self):
-        (oid, error), _ = yield gen.Task(self.fs.put, b"hello")
-        self.assertTrue(isinstance(oid, ObjectId))
-        self.assertEqual(None, error)
+        with assert_deprecation_warnings():
+            (oid, error), _ = yield gen.Task(self.fs.put, b"hello")
+            self.assertTrue(isinstance(oid, ObjectId))
+            self.assertEqual(None, error)
 
-        (result, error), _ = yield gen.Task(self.fs.put, b"hello", _id=oid)
-        self.assertEqual(None, result)
-        self.assertTrue(isinstance(error, FileExists))
+        with assert_deprecation_warnings():
+            (result, error), _ = yield gen.Task(self.fs.put, b"hello", _id=oid)
+            self.assertEqual(None, result)
+            self.assertTrue(isinstance(error, FileExists))
 
     @gen_test
     def test_put_duplicate(self):

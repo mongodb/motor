@@ -3,6 +3,12 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 1.3.0
+-----------
+
+Deprecate Motor's old callback-based async API in preparation for removing it in
+Motor 2.0. Raise ``DeprecationWarning`` whenever a callback is passed.
+
 Motor 1.2.3
 -----------
 

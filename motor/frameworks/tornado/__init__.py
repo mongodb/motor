@@ -21,6 +21,7 @@ See "Frameworks" in the Developer Guide.
 
 import functools
 import os
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 
 import tornado.process
@@ -89,6 +90,10 @@ def future_or_callback(future, callback, io_loop, return_value=_DEFAULT):
     internally.
     """
     if callback:
+        warnings.warn(
+            'Motor\'s callback interface is deprecated, see the "Migrating'
+            ' to Motor 2.0" guide', DeprecationWarning, stacklevel=2)
+
         if not callable(callback):
             raise callback_type_error
 

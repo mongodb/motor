@@ -142,8 +142,10 @@ class MotorCollectionTest(MotorTest):
     def test_save_callback(self):
         yield self.collection.save({}, callback=None)
 
-        # Should not raise
-        (result, error), _ = yield gen.Task(self.collection.save, {})
+        # PyMongo deprecated "save", Motor deprecated the callback API used by
+        # gen.Task.
+        with test.assert_deprecation_warnings(2):
+            (result, error), _ = yield gen.Task(self.collection.save, {})
         if error:
             raise error
 
@@ -399,7 +401,9 @@ class MotorCollectionTest(MotorTest):
                 else:
                     future.set_result(result)
 
-            cursor.to_list(collection_size, callback=cb)
+            with test.assert_deprecation_warnings():
+                cursor.to_list(collection_size, callback=cb)
+
             docs = yield future
             self.assertAllDocs(expected_sum, docs)
 
