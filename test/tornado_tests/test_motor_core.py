@@ -61,10 +61,8 @@ pymongo_database_only = set([
     'previous_error']).union(pymongo_only)
 
 pymongo_collection_only = set([
-    'aggregate_raw_batches',
     'count',
     'ensure_index',
-    'find_raw_batches',
     'group',
     'initialize_ordered_bulk_op',
     'initialize_unordered_bulk_op',

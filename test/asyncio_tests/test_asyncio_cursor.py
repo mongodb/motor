@@ -19,8 +19,10 @@ import sys
 import traceback
 import unittest
 import warnings
+from functools import partial
 from unittest import SkipTest
 
+import bson
 from pymongo import CursorType
 from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
@@ -462,6 +464,24 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
         self.assertEqual(cursor.delegate._CommandCursor__batch_size, 2)
         self.assertEqual(lst, [{'_id': 0}, {'_id': 1}, {'_id': 2}, {'_id': 3}])
+
+    @asyncio_test
+    def test_raw_batches(self):
+        c = self.collection
+        yield from c.delete_many({})
+        yield from c.insert_many({'_id': i} for i in range(4))
+
+        find = partial(c.find_raw_batches, {})
+        agg = partial(c.aggregate_raw_batches, [{'$sort': {'_id': 1}}])
+
+        for method in find, agg:
+            cursor = method().batch_size(2)
+            yield from cursor.fetch_next
+            batch = cursor.next_object()
+            self.assertEqual([{'_id': 0}, {'_id': 1}], bson.decode_all(batch))
+
+            lst = yield from method().batch_size(2).to_list(length=1)
+            self.assertEqual([{'_id': 0}, {'_id': 1}], bson.decode_all(lst[0]))
 
 
 class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):

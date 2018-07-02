@@ -31,8 +31,8 @@ import pymongo.mongo_replica_set_client
 from pymongo.change_stream import ChangeStream
 from pymongo.client_session import ClientSession
 from pymongo.collection import Collection
-from pymongo.command_cursor import CommandCursor
-from pymongo.cursor import Cursor, _QUERY_OPTIONS
+from pymongo.command_cursor import CommandCursor, RawBatchCommandCursor
+from pymongo.cursor import Cursor, RawBatchCursor, _QUERY_OPTIONS
 from pymongo.database import Database
 from pymongo.driver_info import DriverInfo
 
@@ -506,8 +506,9 @@ class AgnosticCollection(AgnosticBaseProperties):
     update_one               = AsyncCommand(doc=update_one_doc)
     with_options             = DelegateMethod().wrap(Collection)
 
-    _async_aggregate    = AsyncRead(attr_name='aggregate')
-    _async_list_indexes = AsyncRead(attr_name='list_indexes')
+    _async_aggregate             = AsyncRead(attr_name='aggregate')
+    _async_aggregate_raw_batches = AsyncRead(attr_name='aggregate_raw_batches')
+    _async_list_indexes          = AsyncRead(attr_name='list_indexes')
 
     def __init__(self, database, name, codec_options=None,
                  read_preference=None, write_concern=None, read_concern=None,
@@ -566,6 +567,34 @@ class AgnosticCollection(AgnosticBaseProperties):
                                     **unwrap_kwargs_session(kwargs))
         cursor_class = create_class_with_framework(
             AgnosticCursor, self._framework, self.__module__)
+
+        return cursor_class(cursor, self)
+
+    def find_raw_batches(self, *args, **kwargs):
+        """Query the database and retrieve batches of raw BSON.
+
+        Similar to the :meth:`find` method but returns each batch as bytes.
+
+        This example demonstrates how to work with raw batches, but in practice
+        raw batches should be passed to an external library that can decode
+        BSON into another data type, rather than used with PyMongo's
+        :mod:`bson` module.
+
+        .. code-block:: python3
+
+          async def get_raw():
+              cursor = db.test.find_raw_batches()
+              async for batch in cursor:
+                  print(bson.decode_all(batch))
+
+        Note that ``find_raw_batches`` does not support sessions.
+
+        .. versionadded:: 2.0
+        """
+        cursor = self.delegate.find_raw_batches(*unwrap_args_session(args),
+                                                **unwrap_kwargs_session(kwargs))
+        cursor_class = create_class_with_framework(
+            AgnosticRawBatchCursor, self._framework, self.__module__)
 
         return cursor_class(cursor, self)
 
@@ -630,6 +659,34 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, self._async_aggregate, pipeline,
+                            **unwrap_kwargs_session(kwargs))
+
+    def aggregate_raw_batches(self, pipeline, **kwargs):
+        """Perform an aggregation and retrieve batches of raw BSON.
+
+        Similar to the :meth:`aggregate` method but returns each batch as bytes.
+
+        This example demonstrates how to work with raw batches, but in practice
+        raw batches should be passed to an external library that can decode
+        BSON into another data type, rather than used with PyMongo's
+        :mod:`bson` module.
+
+        .. code-block:: python3
+
+          async def get_raw():
+              cursor = db.test.aggregate_raw_batches()
+              async for batch in cursor:
+                  print(bson.decode_all(batch))
+
+        Note that ``aggregate_raw_batches`` does not support sessions.
+
+        .. versionadded:: 2.0
+        """
+        cursor_class = create_class_with_framework(
+            AgnosticLatentCommandCursor, self._framework, self.__module__)
+
+        # Latent cursor that will send initial command on first "async for".
+        return cursor_class(self, self._async_aggregate_raw_batches, pipeline,
                             **unwrap_kwargs_session(kwargs))
 
     def watch(self, pipeline=None, full_document='default', resume_after=None,
@@ -1204,6 +1261,11 @@ class AgnosticCursor(AgnosticBaseCursor):
         yield self._framework.yieldable(self._Cursor__die())
 
 
+class AgnosticRawBatchCursor(AgnosticCursor):
+    __motor_class_name__ = 'MotorRawBatchCursor'
+    __delegate_class__ = RawBatchCursor
+
+
 class AgnosticCommandCursor(AgnosticBaseCursor):
     __motor_class_name__ = 'MotorCommandCursor'
     __delegate_class__ = CommandCursor
@@ -1231,9 +1293,15 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
         yield self._framework.yieldable(self._CommandCursor__die())
 
 
+class AgnosticRawBatchCommandCursor(AgnosticCommandCursor):
+    __motor_class_name__ = 'MotorRawBatchCommandCursor'
+    __delegate_class__ = RawBatchCommandCursor
+
+
 class _LatentCursor(object):
     """Take the place of a PyMongo CommandCursor until aggregate() begins."""
     alive = True
+    _CommandCursor__batch_size = 0
     _CommandCursor__data = []
     _CommandCursor__id = None
     _CommandCursor__killed = False
@@ -1276,21 +1344,30 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
             self._framework.add_future(
                 self.get_io_loop(),
                 future,
-                self._on_get_more, original_future)
+                self._on_started, original_future)
 
             return original_future
 
         return super(self.__class__, self)._get_more()
 
-    def _on_get_more(self, original_future, future):
+    def _on_started(self, original_future, future):
         try:
-            # "result" is a CommandCursor from PyMongo's aggregate().
-            self.delegate = future.result()
+            # "result" is a PyMongo command cursor from PyMongo's aggregate() or
+            # aggregate_raw_batches(). Set its batch size from our latent
+            # cursor's batch size.
+            self.delegate = future.result().batch_size(
+                self.delegate._CommandCursor__batch_size)
         except Exception as exc:
             original_future.set_exception(exc)
         else:
-            # _get_more is complete.
-            original_future.set_result(len(self.delegate._CommandCursor__data))
+            if self.delegate._CommandCursor__data or not self.delegate.alive:
+                # _get_more is complete.
+                original_future.set_result(
+                    len(self.delegate._CommandCursor__data))
+            else:
+                # Send a getMore.
+                future = super(self.__class__, self)._get_more()
+                self._framework.chain_future(future, original_future)
 
 
 class AgnosticChangeStream(AgnosticBase):

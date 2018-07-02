@@ -20,7 +20,9 @@ import sys
 import traceback
 import unittest
 import warnings
+from functools import partial
 
+import bson
 import pymongo
 from tornado import gen
 from tornado.concurrent import Future
@@ -498,6 +500,25 @@ class MotorCursorTest(MotorMockServerTest):
 
         self.assertEqual(cursor.delegate._CommandCursor__batch_size, 2)
         self.assertEqual(lst, [{'_id': 0}, {'_id': 1}, {'_id': 2}, {'_id': 3}])
+
+    @gen_test
+    def test_raw_batches(self):
+        c = self.collection
+        yield c.delete_many({})
+        yield c.insert_many({'_id': i} for i in range(4))
+
+        find = partial(c.find_raw_batches, {})
+        agg = partial(c.aggregate_raw_batches, [{'$sort': {'_id': 1}}])
+
+        for method in find, agg:
+            cursor = method().batch_size(2)
+            yield cursor.fetch_next
+            batch = cursor.next_object()
+            self.assertEqual([{'_id': 0}, {'_id': 1}], bson.decode_all(batch))
+
+            lst = yield method().batch_size(2).to_list(length=1)
+            self.assertEqual([{'_id': 0}, {'_id': 1}], bson.decode_all(lst[0]))
+
 
 class MotorCursorMaxTimeMSTest(MotorTest):
     def setUp(self):

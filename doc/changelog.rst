@@ -44,6 +44,11 @@ specs for GridFS.
 
 Additional changes:
 
+- New methods for retrieving batches of raw BSON:
+
+  - :meth:`MotorCollection.find_raw_batches`
+  - :meth:`MotorCollection.aggregate_raw_batches`
+
 - Motor adds its name, version, and Tornado's version (if appropriate) to the
   client data logged by the MongoDB server when Motor connects, in addition to
   the data added by PyMongo.

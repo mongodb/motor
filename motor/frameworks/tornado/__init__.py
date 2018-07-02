@@ -25,7 +25,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import tornado.process
 from tornado import concurrent, gen, ioloop, version as tornado_version
-from tornado.gen import coroutine  # For framework interface.
+from tornado.gen import chain_future, coroutine  # For framework interface.
 
 CLASS_PREFIX = ''
 

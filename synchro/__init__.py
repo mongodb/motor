@@ -96,22 +96,16 @@ from pymongo import GEOSPHERE, HASHED
 from pymongo.pool import SocketInfo, Pool
 
 
-def unwrap_synchro(fn):
-    """Unwrap Synchro objects passed to a method and pass Motor objects instead.
-    """
-    @functools.wraps(fn)
-    def _unwrap_synchro(*args, **kwargs):
-        def _unwrap_obj(obj):
-            if isinstance(obj, Synchro):
-                return obj.delegate
-            else:
-                return obj
+# Internal classes not declared in motor_tornado.py: retrieve from class cache.
+from motor.core import (
+    AgnosticRawBatchCursor as _AgnosticRawBatchCursor,
+    AgnosticRawBatchCommandCursor as _AgnosticRawBatchCommandCursor)
+from motor.motor_tornado import create_motor_class
 
-        args = [_unwrap_obj(arg) for arg in args]
-        kwargs = dict([
-            (key, _unwrap_obj(value)) for key, value in kwargs.items()])
-        return fn(*args, **kwargs)
-    return _unwrap_synchro
+_MotorRawBatchCursor = create_motor_class(
+    _AgnosticRawBatchCursor)
+_MotorRawBatchCommandCursor = create_motor_class(
+    _AgnosticRawBatchCommandCursor)
 
 
 def wrap_synchro(fn):
@@ -141,7 +135,11 @@ def wrap_synchro(fn):
             return CommandCursor(motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorCommandCursor):
             return CommandCursor(motor_obj)
+        if isinstance(motor_obj, _MotorRawBatchCommandCursor):
+            return CommandCursor(motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorCursor):
+            return Cursor(motor_obj)
+        if isinstance(motor_obj, _MotorRawBatchCursor):
             return Cursor(motor_obj)
         if isinstance(motor_obj, motor.MotorGridIn):
             return GridIn(None, delegate=motor_obj)
@@ -153,6 +151,24 @@ def wrap_synchro(fn):
             return motor_obj
 
     return _wrap_synchro
+
+
+def unwrap_synchro(fn):
+    """Unwrap Synchro objects passed to a method and pass Motor objects instead.
+    """
+    @functools.wraps(fn)
+    def _unwrap_synchro(*args, **kwargs):
+        def _unwrap_obj(obj):
+            if isinstance(obj, Synchro):
+                return obj.delegate
+            else:
+                return obj
+
+        args = [_unwrap_obj(arg) for arg in args]
+        kwargs = dict([
+            (key, _unwrap_obj(value)) for key, value in kwargs.items()])
+        return fn(*args, **kwargs)
+    return _unwrap_synchro
 
 
 class SynchroAttr(object):
@@ -401,6 +417,7 @@ class Collection(Synchro):
     __delegate_class__ = motor.MotorCollection
 
     find                            = WrapOutgoing()
+    find_raw_batches                = WrapOutgoing()
     list_indexes                    = WrapOutgoing()
     watch                           = WrapOutgoing()
 
@@ -422,6 +439,13 @@ class Collection(Synchro):
     def aggregate(self, *args, **kwargs):
         # Motor does no I/O initially in aggregate() but PyMongo does.
         func = wrap_synchro(unwrap_synchro(self.delegate.aggregate))
+        cursor = func(*args, **kwargs)
+        self.synchronize(cursor.delegate._get_more)()
+        return cursor
+
+    def aggregate_raw_batches(self, *args, **kwargs):
+        # Motor does no I/O initially in aggregate() but PyMongo does.
+        func = wrap_synchro(unwrap_synchro(self.delegate.aggregate_raw_batches))
         cursor = func(*args, **kwargs)
         self.synchronize(cursor.delegate._get_more)()
         return cursor
@@ -458,9 +482,10 @@ class ChangeStream(Synchro):
 class Cursor(Synchro):
     __delegate_class__ = motor.motor_tornado.MotorCursor
 
-    rewind = WrapOutgoing()
-    clone  = WrapOutgoing()
-    close  = Sync('close')
+    batch_size = WrapOutgoing()
+    rewind     = WrapOutgoing()
+    clone      = WrapOutgoing()
+    close      = Sync('close')
 
     def __init__(self, motor_cursor):
         self.delegate = motor_cursor

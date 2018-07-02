@@ -82,7 +82,6 @@ excluded_tests = [
     'TestGridfs.test_threaded_reads',
     'TestGridfs.test_threaded_writes',
 
-    'TestCollection.test_aggregate_raw_bson',
     # Can't do MotorCollection(name, create=True), Motor constructors do no I/O.
     'TestCollection.test_create',
     'TestCollection.test_reindex',
@@ -99,13 +98,14 @@ excluded_tests = [
     'TestCursor.test_getitem_numeric_index',
     'TestCursor.test_getitem_slice_index',
     'TestCursor.test_tailable',
-
-    # Raw batches aren't implemented yet, MOTOR-172.
-    'TestRawBatchCursor.*',
-    'TestRawBatchCommandCursor.*',
+    'TestRawBatchCursor.test_get_item',
+    'TestRawBatchCommandCursor.test_get_item',
 
     # No context-manager protocol for MotorCursor.
     'TestCursor.test_with_statement',
+
+    # Motor's cursors initialize lazily.
+    'TestRawBatchCommandCursor.test_monitoring',
 
     # Can't iterate a GridOut in Motor.
     'TestGridFile.test_iterator',
@@ -185,6 +185,13 @@ excluded_tests = [
     'TestSASLPlain.test_sasl_plain_bad_credentials',
     'TestSCRAM.test_scram',
     'TestSCRAMSHA1.test_scram_sha1',
+
+    # Uses "collection_names", deprecated in PyMongo, removed in Motor 2.0.
+    'TestSingleSlaveOk.test_reads_from_secondary',
+
+    # Slow.
+    'TestDatabase.test_collection_names_single_socket',
+    'TestDatabase.test_list_collection_names',
 ]
 
 

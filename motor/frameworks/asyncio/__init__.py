@@ -94,6 +94,20 @@ def run_on_executor(loop, fn, *args, **kwargs):
     return dest
 
 
+# Adapted from tornado.gen.
+def chain_future(a, b):
+    def copy(future):
+        assert future is a
+        if b.done():
+            return
+        if a.exception() is not None:
+            b.set_exception(a.exception())
+        else:
+            b.set_result(a.result())
+
+    a.add_done_callback(copy)
+
+
 def chain_return_value(future, loop, return_value):
     """Compatible way to return a value in all Pythons.
 

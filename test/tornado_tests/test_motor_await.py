@@ -16,7 +16,7 @@ from __future__ import unicode_literals, absolute_import
 
 import warnings
 
-from pymongo.errors import InvalidOperation
+import bson
 
 from test import env
 
@@ -65,6 +65,12 @@ class MotorTestAwait(MotorTest):
 
             self.assertEqual(j, n_docs)
 
+            j = 0
+            raw_cursor = collection.find_raw_batches().sort('_id').batch_size(3)
+            async for batch in raw_cursor:
+                j += len(bson.decode_all(batch))
+
+            self.assertEqual(j, n_docs)
             await collection.delete_many({})
 
     @gen_test
@@ -84,13 +90,19 @@ class MotorTestAwait(MotorTest):
 
             # Force extra batches to test iteration.
             j = 0
-            async for doc in collection.aggregate(pipeline,
-                                                  cursor={'batchSize': 3}):
+            cursor = collection.aggregate(pipeline).batch_size(3)
+            async for doc in cursor:
                 self.assertEqual(j, doc['_id'])
                 j += 1
 
             self.assertEqual(j, n_docs)
 
+            j = 0
+            raw = collection.aggregate_raw_batches(pipeline).batch_size(3)
+            async for batch in raw:
+                j += len(bson.decode_all(batch))
+
+            self.assertEqual(j, n_docs)
             await collection.delete_many({})
 
     @gen_test
