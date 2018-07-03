@@ -69,7 +69,7 @@ def get_primary_pool(client):
 
 
 # Ignore auth commands like saslStart, so we can assert lsid is in all commands.
-class SessionTestListener(monitoring.CommandListener):
+class TestListener(monitoring.CommandListener):
     def __init__(self):
         self.results = defaultdict(list)
 
@@ -85,11 +85,16 @@ class SessionTestListener(monitoring.CommandListener):
         if not event.command_name.startswith('sasl'):
             self.results['failed'].append(event)
 
-    def first_command_started(self):
+    def first_command_started(self, name=None):
         assert len(self.results['started']) >= 1, (
             "No command-started events")
 
-        return self.results['started'][0]
+        if name:
+            for result in self.results['started']:
+                if result.command_name == name:
+                    return result
+        else:
+            return self.results['started'][0]
 
 
 def session_ids(client):

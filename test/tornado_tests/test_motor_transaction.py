@@ -29,6 +29,7 @@ from pymongo.results import (BulkWriteResult,
 from motor.motor_tornado import (MotorCommandCursor,
                                  MotorCursor,
                                  MotorLatentCommandCursor)
+from test.utils import TestListener
 
 from test.version import Version
 
@@ -36,8 +37,11 @@ from test.version import Version
 
 import unittest
 
-from pymongo import read_preferences, WriteConcern, \
-    operations, ReadPreference, client_session, monitoring
+from pymongo import (client_session,
+                     operations,
+                     read_preferences,
+                     ReadPreference,
+                     WriteConcern)
 from tornado import gen
 from pymongo.errors import OperationFailure, PyMongoError
 from tornado.testing import gen_test
@@ -104,29 +108,6 @@ def parse_args(args, sessions):
         parsed['session'] = sessions[args.pop('session')]
 
     return parsed
-
-
-# TODO: needed?
-class OvertCommandListener(monitoring.CommandListener):
-    """A CommandListener that ignores sensitive commands."""
-    def __init__(self):
-        self.results = collections.defaultdict(list)
-
-    SENSITIVE = set(
-        ["authenticate", "saslstart", "saslcontinue", "getnonce", "createuser",
-         "updateuser", "copydbgetnonce", "copydbsaslstart", "copydb"])
-
-    def started(self, event):
-        if event.command_name.lower() not in self.SENSITIVE:
-            self.results['started'].append(event)
-
-    def succeeded(self, event):
-        if event.command_name.lower() not in self.SENSITIVE:
-            self.results['succeeded'].append(event)
-
-    def failed(self, event):
-        if event.command_name.lower() not in self.SENSITIVE:
-            self.results['failed'].append(event)
 
 
 class MotorTransactionTest(MotorTest):
@@ -331,7 +312,7 @@ def end_sessions(sessions):
 def create_test(scenario_def, test):
     @gen_test
     def run_scenario(self):
-        listener = OvertCommandListener()
+        listener = TestListener()
         # New client, to avoid interference from pooled sessions.
         client = self.motor_rsc(event_listeners=[listener],
                                 **test['clientOptions'])

@@ -27,7 +27,7 @@ from pymongo.errors import InvalidOperation
 from test import SkipTest
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.test_environment import env
-from test.utils import SessionTestListener, session_ids
+from test.utils import TestListener, session_ids
 
 
 class TestAsyncIOSession(AsyncIOTestCase):
@@ -95,7 +95,7 @@ class TestAsyncIOSession(AsyncIOTestCase):
 
     @asyncio_test
     def test_database(self):
-        listener = SessionTestListener()
+        listener = TestListener()
         client = self.asyncio_client(event_listeners=[listener])
 
         db = client.pymongo_test
@@ -110,7 +110,7 @@ class TestAsyncIOSession(AsyncIOTestCase):
 
     @asyncio_test(timeout=30)
     def test_collection(self):
-        listener = SessionTestListener()
+        listener = TestListener()
         client = self.asyncio_client(event_listeners=[listener])
         yield from client.drop_database('motor_test')
 
@@ -156,7 +156,7 @@ class TestAsyncIOSession(AsyncIOTestCase):
 
     @asyncio_test
     def test_cursor(self):
-        listener = SessionTestListener()
+        listener = TestListener()
         client = self.asyncio_client(event_listeners=[listener])
         yield from self.make_test_data()
 

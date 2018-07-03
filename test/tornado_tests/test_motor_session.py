@@ -28,7 +28,7 @@ from tornado.testing import gen_test
 from test import SkipTest
 from test.test_environment import env
 from test.tornado_tests import MotorTest
-from test.utils import SessionTestListener, session_ids
+from test.utils import TestListener, session_ids
 
 
 class MotorSessionTest(MotorTest):
@@ -98,7 +98,7 @@ class MotorSessionTest(MotorTest):
 
     @gen_test
     def test_database(self):
-        listener = SessionTestListener()
+        listener = TestListener()
         client = self.motor_client(event_listeners=[listener])
 
         db = client.pymongo_test
@@ -113,7 +113,7 @@ class MotorSessionTest(MotorTest):
 
     @gen_test(timeout=30)
     def test_collection(self):
-        listener = SessionTestListener()
+        listener = TestListener()
         client = self.motor_client(event_listeners=[listener])
         yield client.drop_database('motor_test')
 
@@ -159,7 +159,7 @@ class MotorSessionTest(MotorTest):
 
     @gen_test
     def test_cursor(self):
-        listener = SessionTestListener()
+        listener = TestListener()
         client = self.motor_client(event_listeners=[listener])
         yield self.make_test_data()
 
