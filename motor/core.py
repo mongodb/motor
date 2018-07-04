@@ -865,7 +865,6 @@ class AgnosticBaseCursor(AgnosticBase):
     address       = ReadOnlyProperty()
     cursor_id     = ReadOnlyProperty()
     alive         = ReadOnlyProperty()
-    batch_size    = MotorCursorChainingMethod()
     session       = ReadOnlyProperty()
 
     def __init__(self, cursor, collection):
@@ -1170,6 +1169,10 @@ class AgnosticBaseCursor(AgnosticBase):
             self.closed = True
             yield self._framework.yieldable(self._close())
 
+    def batch_size(self, batch_size):
+        self.delegate.batch_size(batch_size)
+        return self
+
     def _buffer_size(self):
         return len(self._data())
 
@@ -1301,7 +1304,6 @@ class AgnosticRawBatchCommandCursor(AgnosticCommandCursor):
 class _LatentCursor(object):
     """Take the place of a PyMongo CommandCursor until aggregate() begins."""
     alive = True
-    _CommandCursor__batch_size = 0
     _CommandCursor__data = []
     _CommandCursor__id = None
     _CommandCursor__killed = False
@@ -1331,6 +1333,10 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
         self.args = args
         self.kwargs = kwargs
 
+    def batch_size(self, batch_size):
+        self.kwargs['batchSize'] = batch_size
+        return self
+
     def _get_more(self):
         if not self.started:
             self.started = True
@@ -1355,8 +1361,8 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
             # "result" is a PyMongo command cursor from PyMongo's aggregate() or
             # aggregate_raw_batches(). Set its batch size from our latent
             # cursor's batch size.
-            self.delegate = future.result().batch_size(
-                self.delegate._CommandCursor__batch_size)
+            pymongo_cursor = future.result()
+            self.delegate = pymongo_cursor
         except Exception as exc:
             original_future.set_exception(exc)
         else:

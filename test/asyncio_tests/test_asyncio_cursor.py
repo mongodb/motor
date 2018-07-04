@@ -28,7 +28,7 @@ from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
 
 from motor import motor_asyncio
-from test.utils import one, safe_get, get_primary_pool
+from test.utils import one, safe_get, get_primary_pool, TestListener
 from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase,
                                 AsyncIOMockServerTestCase,
@@ -453,17 +453,25 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
     @asyncio_test
     def test_aggregate_batch_size(self):
-        c = self.collection
-        yield from c.insert_many({'_id': i} for i in range(4))
+        listener = TestListener()
+        cx = self.asyncio_client(event_listeners=[listener])
+        c = cx.motor_test.collection
+        yield from c.delete_many({})
+        yield from c.insert_many({'_id': i} for i in range(3))
 
-        cursor = c.aggregate([{'$sort': {'_id': 1}}]).batch_size(2)
-        self.assertEqual(cursor.delegate._CommandCursor__batch_size, 2)
-        lst = []
-        while (yield from cursor.fetch_next):
-            lst.append(cursor.next_object())
+        # Two ways of setting batchSize.
+        cursor0 = c.aggregate([{'$sort': {'_id': 1}}]).batch_size(2)
+        cursor1 = c.aggregate([{'$sort': {'_id': 1}}], batchSize=2)
+        for cursor in cursor0, cursor1:
+            lst = []
+            while (yield from cursor.fetch_next):
+                lst.append(cursor.next_object())
 
-        self.assertEqual(cursor.delegate._CommandCursor__batch_size, 2)
-        self.assertEqual(lst, [{'_id': 0}, {'_id': 1}, {'_id': 2}, {'_id': 3}])
+            self.assertEqual(lst, [{'_id': 0}, {'_id': 1}, {'_id': 2}])
+            aggregate = listener.first_command_started('aggregate')
+            self.assertEqual(aggregate.command['cursor']['batchSize'], 2)
+            getMore = listener.first_command_started('getMore')
+            self.assertEqual(getMore.command['batchSize'], 2)
 
     @asyncio_test
     def test_raw_batches(self):

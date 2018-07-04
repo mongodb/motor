@@ -39,7 +39,7 @@ from test.tornado_tests import (get_command_line,
                                 MotorTest,
                                 MotorMockServerTest,
                                 server_is_mongos)
-from test.utils import one, safe_get, get_primary_pool
+from test.utils import one, safe_get, get_primary_pool, TestListener
 
 
 class MotorCursorTest(MotorMockServerTest):
@@ -489,17 +489,25 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     def test_aggregate_batch_size(self):
-        c = self.collection
-        yield c.insert_many({'_id': i} for i in range(4))
+        listener = TestListener()
+        cx = self.motor_client(event_listeners=[listener])
+        c = cx.motor_test.collection
+        yield c.delete_many({})
+        yield c.insert_many({'_id': i} for i in range(3))
 
-        cursor = c.aggregate([{'$sort': {'_id': 1}}]).batch_size(2)
-        self.assertEqual(cursor.delegate._CommandCursor__batch_size, 2)
-        lst = []
-        while (yield cursor.fetch_next):
-            lst.append(cursor.next_object())
+        # Two ways of setting batchSize.
+        cursor0 = c.aggregate([{'$sort': {'_id': 1}}]).batch_size(2)
+        cursor1 = c.aggregate([{'$sort': {'_id': 1}}], batchSize=2)
+        for cursor in cursor0, cursor1:
+            lst = []
+            while (yield cursor.fetch_next):
+                lst.append(cursor.next_object())
 
-        self.assertEqual(cursor.delegate._CommandCursor__batch_size, 2)
-        self.assertEqual(lst, [{'_id': 0}, {'_id': 1}, {'_id': 2}, {'_id': 3}])
+            self.assertEqual(lst, [{'_id': 0}, {'_id': 1}, {'_id': 2}])
+            aggregate = listener.first_command_started('aggregate')
+            self.assertEqual(aggregate.command['cursor']['batchSize'], 2)
+            getMore = listener.first_command_started('getMore')
+            self.assertEqual(getMore.command['batchSize'], 2)
 
     @gen_test
     def test_raw_batches(self):
