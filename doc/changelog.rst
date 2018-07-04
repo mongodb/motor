@@ -55,6 +55,14 @@ Additional changes:
 - Calling :meth:`~MotorCommandCursor.batch_size` on a cursor returned from
   :meth:`~MotorCollection.aggregate` no longer raises ``AttributeError``.
 
+Motor 1.3.0
+-----------
+
+Deprecate Motor's old callback-based async API in preparation for removing it in
+Motor 2.0. Raise ``DeprecationWarning`` whenever a callback is passed.
+
+See the :doc:`migrate-to-motor-2`.
+
 Motor 1.2.3
 -----------
 
