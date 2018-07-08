@@ -3,6 +3,13 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 1.2.4
+-----------
+
+Fix a Python 3.7 compatibility bug in the :class:`MotorChangeStream` class
+returned by :meth:`MotorCollection.watch`. It is now possible to use change
+streams in ``async for`` loops in Python 3.7.
+
 Motor 1.2.3
 -----------
 
