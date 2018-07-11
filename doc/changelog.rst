@@ -55,6 +55,12 @@ Additional changes:
 - Calling :meth:`~MotorCommandCursor.batch_size` on a cursor returned from
   :meth:`~MotorCollection.aggregate` no longer raises ``AttributeError``.
 
+Motor 1.3.1
+-----------
+
+Fix a Python 3.7 compatibility bug caused by importing "async", which is a
+keyword in Python 3.7. Drop support for Python 3.4.3 and older.
+
 Motor 1.3.0
 -----------
 
@@ -62,6 +68,12 @@ Deprecate Motor's old callback-based async API in preparation for removing it in
 Motor 2.0. Raise ``DeprecationWarning`` whenever a callback is passed.
 
 See the :doc:`migrate-to-motor-2`.
+
+Motor 1.2.5
+-----------
+
+Fix a Python 3.7 compatibility bug caused by importing "async", which is a
+keyword in Python 3.7. Drop support for Python 3.4.3 and older.
 
 Motor 1.2.4
 -----------
