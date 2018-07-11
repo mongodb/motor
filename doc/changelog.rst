@@ -3,6 +3,12 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 1.2.5
+-----------
+
+Fix a Python 3.7 compatibility bug caused by importing "async", which is a
+keyword in Python 3.7. Drop support for Python 3.4.3 and older.
+
 Motor 1.2.4
 -----------
 
