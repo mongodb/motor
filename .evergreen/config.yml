@@ -467,7 +467,7 @@ tasks:
                genhtml --version || true
                valgrind --version || true
 
-# Standard test tasks {{{
+# Test tasks {{{
 
     - name: "test-3.0-standalone"
       tags: ["3.0", "standalone"]
@@ -632,7 +632,6 @@ tasks:
         - func: "run tox"
 
     - name: "test-enterprise-auth"
-      tags: ["enterprise-auth"]
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
@@ -658,52 +657,7 @@ tasks:
 
 # }}}
 
-
 axes:
-  - id: versions
-    display_name: MongoDB Version
-    values:
-      - id: "latest"
-        display_name: "latest"
-        variables:
-           VERSION: "latest"
-      - id: "4.0"
-        display_name: "4.0"
-        variables:
-           VERSION: "4.0"
-      - id: "3.6"
-        display_name: "3.6"
-        variables:
-           VERSION: "3.6"
-      - id: "3.4"
-        display_name: "3.4"
-        variables:
-           VERSION: "3.4"
-      - id: "3.2"
-        display_name: "3.2"
-        variables:
-           VERSION: "3.2"
-      - id: "3.0"
-        display_name: "3.0"
-        variables:
-           VERSION: "3.0"
-
-  - id: topology
-    display_name: Topology
-    values:
-      - id: standalone
-        display_name: Standalone
-        variables:
-           TOPOLOGY: "server"
-      - id: replicaset
-        display_name: Replica Set
-        variables:
-           TOPOLOGY: "replica_set"
-      - id: sharded-cluster
-        display_name: Sharded Cluster
-        variables:
-           TOPOLOGY: "sharded_cluster"
-
   - id: ssl
     display_name: SSL
     values:
@@ -828,22 +782,29 @@ axes:
 
 buildvariants:
 
-# Test Python only up to 3.6 on RHEL.
-- matrix_name: "test-mongodb-versions-rhel"
-  matrix_spec: {"os": "rhel", "tox-env": ["tornado4-py27", "tornado5-py36", "py3-pymongo-master"], ssl: "*"}
-  display_name: "${os} ${tox-env} ${ssl}"
+# Test MongoDB 3.0 and Python only up to 3.6 on RHEL.
+- matrix_name: "test-mongodb-3.0-rhel"
+  display_name: "${os}-${tox-env}-${ssl}"
+  matrix_spec:
+    os: "rhel"
+    tox-env: ["tornado4-py27", "tornado5-py36", "py3-pymongo-master"]
+    ssl: "*"
   tasks:
      - ".3.0"
 
-- matrix_name: "test-mongodb-versions-ubuntu"
-  matrix_spec: {"os": "ubuntu", "tox-env": "*", ssl: "*"}
+# Main test matrix.
+- matrix_name: "main"
+  display_name: "${os}-${tox-env}-${ssl}"
+  matrix_spec:
+    os: "ubuntu"
+    tox-env: "*"
+    ssl: "*"
   exclude_spec:
-   # TODO: synchro needs PyMongo master's updated SSL test certs,
-   # which may require Motor test suite changes.
-   - os: "*"
-     tox-env: ["synchro"]
-     ssl: "ssl"
-  display_name: "${os} ${tox-env} ${ssl}"
+    # TODO: synchro needs PyMongo master's updated SSL test certs,
+    # which may require Motor test suite changes.
+    - os: "*"
+      tox-env: ["synchro"]
+      ssl: "ssl"
   tasks:
      - ".latest"
      - ".4.0"
@@ -851,28 +812,18 @@ buildvariants:
      - ".3.4"
      - ".3.2"
 
-- matrix_name: "test-mongodb-versions-macos"
-  matrix_spec: {"os": "osx", "tox-env-osx": "*", ssl: "*"}
-  display_name: "${os} ${tox-env-osx} ${ssl}"
+- matrix_name: "test-macos"
+  display_name: "${os}-${tox-env-osx}-${ssl}"
+  matrix_spec:
+    os: "osx"
+    tox-env-osx: "*"
+    ssl: "*"
   tasks:
      - ".latest"
-     - ".4.0"
-     - ".3.6"
-     - ".3.4"
-     - ".3.2"
-  rules:
-     # There are no builds of MongoDB <= 3.0 with SSL for macOS
-     - if:
-         os: "*"
-         tox-env-osx: "*"
-         ssl: "nossl"
-       then:
-         add_tasks:
-            - ".3.0"
 
 - matrix_name: "enterprise-auth"
-  matrix_spec: {"tox-env": ["synchro"], ssl: "ssl"}
   display_name: "Enterprise Auth"
+  matrix_spec: {"tox-env": ["synchro"], ssl: "ssl"}
   run_on:
      - ubuntu1604-test
   tasks:
