@@ -9,6 +9,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       TOX_BINARY              Path to tox executable
 #       INSTALL_TOX             Whether to install tox in a virtualenv
 #       PYTHON_BINARY           Path to python
+#       VIRTUALENV              Path to virtualenv script
 
 AUTH=${AUTH:-noauth}
 SSL=${SSL:-nossl}
@@ -28,9 +29,15 @@ if [ "$TOX_ENV" = "synchro" ]; then
 fi
 
 if [ "${INSTALL_TOX}" = "true" ]; then
-    /opt/mongodbtoolchain/v2/bin/virtualenv motorenv
+    $VIRTUALENV motorenv
     set +o xtrace
-    source motorenv/bin/activate
+    if [ -f motorenv/bin/activate ]; then
+        source motorenv/bin/activate
+    else
+        # Windows.
+        ls -l motorenv
+        source motorenv/Scripts/activate
+    fi
     set -o xtrace
     pip install tox
     TOX_BINARY=tox

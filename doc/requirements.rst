@@ -27,6 +27,11 @@ Building the docs requires `sphinx`_.
 
 .. _sphinx: http://sphinx.pocoo.org/
 
+Starting in version 2.1, Motor offers experimental support for Windows when it
+is using the asyncio event loop. This means it supports Windows exclusively
+with Python 3, either integrating with asyncio directly or with Tornado 5 or
+later: starting in version 5, Tornado uses the asyncio event loop on Python 3
+by default.
 
 .. _compatibility-matrix:
 
@@ -126,18 +131,7 @@ Motor versions.
 |               | 2.0 |**N**|**N**|  Y  |**N**|  Y  |**N**  |  Y    |  Y  |  Y  |
 +---------------+-----+-----+-----+-----+-----+-----+-------+-------+-----+-----+
 
-.. _asyncio package from PyPI: https://pypi.python.org/pypi/asyncio
-
 Not Supported
 -------------
 
-Motor does not support Windows:
-
-* The author does not test Motor on Windows to ensure it is correct or fast.
-* Tornado `is not officially supported on Windows
-  <http://www.tornadoweb.org/en/stable/index.html#installation>`_,
-  so Motor's Tornado integration on Windows is doubly-unsupported.
-* Since asyncio *does* officially support Windows, Motor's asyncio integration
-  is more likely to work there, but it is untested.
-
-Motor also does not support Jython.
+Motor does not support Jython or IronPython.

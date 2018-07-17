@@ -337,6 +337,7 @@ functions:
           TOX_BINARY="${TOX_BINARY}" \
           TOX_ENV="${TOX_ENV}" \
           INSTALL_TOX="${INSTALL_TOX}" \
+          VIRTUALENV="${VIRTUALENV}" \
           AUTH="${AUTH}" \
           SSL="${SSL}" \
           sh ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
@@ -754,12 +755,26 @@ axes:
         variables:
            INSTALL_TOX: true
            TOX_ENV: "tornado5-py36"
+           VIRTUALENV: "/opt/mongodbtoolchain/v2/bin/virtualenv"
            PYTHON_BINARY: "/opt/mongodbtoolchain/v2/bin/python3.6"
       - id: "tornado_git-py36"
         variables:
            INSTALL_TOX: true
            TOX_ENV: "tornado_git-py36"
+           VIRTUALENV: "/opt/mongodbtoolchain/v2/bin/virtualenv"
            PYTHON_BINARY: "/opt/mongodbtoolchain/v2/bin/python3.6"
+
+  - id: tox-env-win
+    display_name: "Tox Env Windows"
+    values:
+      - id: "tornado5-py36"
+        variables:
+           TOX_ENV: "tornado5-py36"
+           PYTHON_BINARY: "c:/python/Python36/python.exe"
+      - id: "tornado_git-py36"
+        variables:
+           TOX_ENV: "tornado_git-py36"
+           PYTHON_BINARY: "c:/python/Python36/python.exe"
 
   - id: os
     display_name: "Operating System"
@@ -774,6 +789,12 @@ axes:
         run_on: "ubuntu1604-test"
         variables:
            TOX_BINARY: "/opt/python/3.6/bin/tox"
+      - id: "win"
+        display_name: "Windows"
+        run_on: "windows-64-vs2015-compile"
+        variables:
+           INSTALL_TOX: true
+           VIRTUALENV: "/cygdrive/c/python/Python36/python.exe -m virtualenv"
       - id: "osx"
         display_name: "OSX 10.10"
         run_on: "macos-1012"
@@ -811,6 +832,15 @@ buildvariants:
      - ".3.6"
      - ".3.4"
      - ".3.2"
+
+- matrix_name: "test-win"
+  display_name: "${os}-${tox-env-win}-${ssl}"
+  matrix_spec:
+    os: "win"
+    tox-env-win: "*"
+    ssl: "*"
+  tasks:
+     - ".latest"
 
 - matrix_name: "test-macos"
   display_name: "${os}-${tox-env-osx}-${ssl}"
