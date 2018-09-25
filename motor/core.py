@@ -819,7 +819,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         """Get a cursor over the index documents for this collection. ::
 
           async def print_indexes():
-              for index in await db.test.list_indexes():
+              async for index in db.test.list_indexes():
                   print(index)
 
         If the only index is the default index on ``_id``, this might print::
