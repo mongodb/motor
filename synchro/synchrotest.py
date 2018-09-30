@@ -185,6 +185,7 @@ excluded_tests = [
     'TestSASLPlain.test_sasl_plain_bad_credentials',
     'TestSCRAM.test_scram',
     'TestSCRAMSHA1.test_scram_sha1',
+    'TestThreadedAuth.*',
 
     # Uses "collection_names", deprecated in PyMongo, removed in Motor 2.0.
     'TestSingleSlaveOk.test_reads_from_secondary',
