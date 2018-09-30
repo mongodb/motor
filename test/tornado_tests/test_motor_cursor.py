@@ -151,11 +151,6 @@ class MotorCursorTest(MotorMockServerTest):
         self.assertRaises(TypeError, cursor.each, callback=None)
         self.assertRaises(TypeError, cursor.each)  # No callback.
 
-        # Should not raise
-        (result, error), _ = yield gen.Task(cursor.each)
-        if error:
-            raise error
-
     @gen_test(timeout=30)
     def test_each(self):
         yield self.make_test_data()
