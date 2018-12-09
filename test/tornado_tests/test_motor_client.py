@@ -87,6 +87,13 @@ class MotorClientTest(MotorTest):
         with self.assertRaises(TypeError):
             motor.MotorClient(test.env.uri, io_loop='foo')
 
+    def test_mongo_client(self):
+        cx = self.motor_client()
+
+        client = motor.MotorClient(mongo_client=cx.delegate)
+
+        self.assertIs(client.delegate, cx.delegate)
+
     def test_database_named_delegate(self):
         self.assertTrue(
             isinstance(self.cx.delegate, pymongo.mongo_client.MongoClient))

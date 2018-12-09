@@ -86,6 +86,13 @@ class TestAsyncIOClient(AsyncIOTestCase):
             yield from client.admin.command('ismaster')
         client.close()
 
+    def test_mongo_client(self):
+        cx = self.asyncio_client()
+
+        client = motor_asyncio.AsyncIOMotorClient(mongo_client=cx.delegate)
+
+        self.assertIs(client.delegate, cx.delegate)
+
     def test_database_named_delegate(self):
         self.assertTrue(
             isinstance(self.cx.delegate, pymongo.mongo_client.MongoClient))

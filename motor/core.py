@@ -138,7 +138,11 @@ class AgnosticClient(AgnosticBaseProperties):
             'driver',
             DriverInfo('Motor', motor_version, self._framework.platform_info()))
 
-        delegate = self.__delegate_class__(*args, **kwargs)
+        if 'mongo_client' in kwargs:
+            delegate = kwargs.pop('mongo_client')
+        else:
+            delegate = self.__delegate_class__(*args, **kwargs)
+
         super(AgnosticBaseProperties, self).__init__(delegate)
         self.io_loop = io_loop
 
