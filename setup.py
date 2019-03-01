@@ -37,6 +37,13 @@ tests_require = ['mockupdb>=1.4.0']
 if sys.version_info[0] < 3:
     install_requires.append('futures')
 
+# Optional dependency with a minimum version
+try:
+    import tornado
+    install_requires = ['tornado>=4.0']
+except ImportError:
+    pass
+
 
 class test(Command):
     description = "run the tests"
