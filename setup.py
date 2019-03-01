@@ -30,7 +30,7 @@ description = 'Non-blocking MongoDB driver for Tornado or asyncio'
 
 long_description = open("README.rst").read()
 
-install_requires = ['pymongo>=3.6,<4']
+install_requires = ['pymongo>=3.7']
 
 tests_require = ['mockupdb>=1.4.0']
 
@@ -157,6 +157,8 @@ setup(name='motor',
       author='A. Jesse Jiryu Davis',
       author_email='jesse@mongodb.com',
       url='https://github.com/mongodb/motor/',
+      python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, != 3.3.*, '
+                      '!=3.5.0, !=3.5.1',
       install_requires=install_requires,
       license='http://www.apache.org/licenses/LICENSE-2.0',
       classifiers=[c for c in classifiers.split('\n') if c],

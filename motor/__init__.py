@@ -16,6 +16,7 @@
 
 from __future__ import unicode_literals, absolute_import
 
+import sys
 import pymongo
 
 from motor.motor_py2_compat import text_type
@@ -30,13 +31,20 @@ def get_version_string():
 version = get_version_string()
 """Current version of Motor."""
 
-pymongo_required = 3, 4
+
+if (sys.version_info[:2] not in ((2, 7), (3, 4))
+        and sys.version_info[:3] < (3, 5, 2)):
+    raise EnvironmentError('Motor supports Python 2.7, 3.4, and >=3.5.2. '
+                           'You have %s' % sys.version)
+
+
+pymongo_required = 3, 7
 if pymongo.version_tuple[:2] < pymongo_required:
     major, minor = pymongo_required
     msg = (
         "Motor %s requires PyMongo %s.%s or later. "
         "You have PyMongo %s. "
-        "Do python -m pip install \"pymongo>=%s.%s,<4\""
+        "Do python -m pip install \"pymongo>=%s.%s\""
     ) % (version,
          major, minor,
          pymongo.version,
@@ -49,8 +57,22 @@ try:
 except ImportError:
     tornado = None
 else:
-    # For backwards compatibility with Motor 0.4, export Motor's Tornado classes
-    # at module root. This may change in Motor 1.0. First get __all__.
+    tornado_required = 4, 0
+    if tornado.version_info < pymongo_required:
+        major, minor = tornado_required
+        msg = (
+                  "Motor %s requires tornado %s.%s or later. "
+                  "You have tornado %s. "
+                  "Do python -m pip install \"tornado>=%s.%s\""
+              ) % (version,
+                   major, minor,
+                   tornado.version,
+                   major, minor)
+
+        raise ImportError(msg)
+
+    # For backwards compatibility with Motor 0.4, export Motor's Tornado
+    # classes at module root. This may change in the future. First get __all__.
     from .motor_tornado import *
 
     # Now some classes that aren't in __all__ but might be expected.
@@ -60,5 +82,6 @@ else:
                                 MotorGridIn,
                                 MotorGridOut)
 
-    # Make "from motor import *" the same as "from motor.motor_tornado import *"
+    # Make "from motor import *" the same as
+    # "from motor.motor_tornado import # *"
     from .motor_tornado import __all__
