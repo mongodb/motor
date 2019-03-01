@@ -40,7 +40,7 @@ if sys.version_info[0] < 3:
 # Optional dependency with a minimum version
 try:
     import tornado
-    install_requires = ['tornado>=4.0']
+    install_requires.append('tornado>=4.0')
 except ImportError:
     pass
 
