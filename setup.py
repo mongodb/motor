@@ -30,19 +30,12 @@ description = 'Non-blocking MongoDB driver for Tornado or asyncio'
 
 long_description = open("README.rst").read()
 
-install_requires = ['pymongo>=3.7']
+install_requires = ['pymongo>=3.7,<4']
 
 tests_require = ['mockupdb>=1.4.0']
 
 if sys.version_info[0] < 3:
     install_requires.append('futures')
-
-# Optional dependency with a minimum version
-try:
-    import tornado
-    install_requires.append('tornado>=4.0')
-except ImportError:
-    pass
 
 
 class test(Command):
