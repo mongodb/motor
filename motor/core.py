@@ -247,7 +247,7 @@ class _MotorTransactionContext(object):
         exec(textwrap.dedent("""
         async def __aenter__(self):
             return self
-    
+
         async def __aexit__(self, exc_type, exc_val, exc_tb):
             if self._session.delegate._in_transaction:
                 if exc_val is None:
@@ -712,7 +712,7 @@ class AgnosticCollection(AgnosticBaseProperties):
               # ensures it is canceled promptly if your code breaks
               # from the loop or throws an exception.
               async with db.collection.watch() as change_stream:
-                  async for change in stream:
+                  async for change in change_stream:
                       print(change)
 
           # Tornado
