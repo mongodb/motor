@@ -328,7 +328,7 @@ class AgnosticClientSession(AgnosticBase):
         exec(textwrap.dedent("""
         async def __aenter__(self):
             return self
-    
+
         async def __aexit__(self, exc_type, exc_val, exc_tb):
             self.delegate.__exit__(exc_type, exc_val, exc_tb)
         """), globals(), locals())
@@ -502,6 +502,7 @@ class AgnosticCollection(AgnosticBaseProperties):
     reindex                  = AsyncCommand()
     rename                   = AsyncCommand()
     replace_one              = AsyncCommand(doc=replace_one_doc)
+    save                     = AsyncCommand()
     update_many              = AsyncCommand(doc=update_many_doc)
     update_one               = AsyncCommand(doc=update_one_doc)
     with_options             = DelegateMethod().wrap(Collection)
@@ -1459,10 +1460,10 @@ class AgnosticChangeStream(AgnosticBase):
 
         async def __aenter__(self):
             return self
-    
+
         async def __aexit__(self, exc_type, exc_val, exc_tb):
             if self.delegate:
-                self.delegate.close() 
+                self.delegate.close()
         """), globals(), locals())
 
     def get_io_loop(self):
