@@ -48,7 +48,7 @@ from tornado.testing import gen_test
 
 from test import SkipTest
 from test.test_environment import env
-from test.tornado_tests import MotorTest
+from test.tornado_tests import AsyncVersion, MotorTest
 
 # Location of JSON test specifications.
 _TEST_PATH = os.path.join(
@@ -119,9 +119,6 @@ class MotorTransactionTest(MotorTest):
 
         if not env.is_replica_set:
             raise SkipTest("Requires a replica set")
-
-        if env.version < Version(3, 7):
-            raise SkipTest("Requires MongoDB 3.7+")
 
     def transaction_test_debug(self, msg):
         if _TXN_TESTS_DEBUG:
@@ -210,6 +207,9 @@ class MotorTransactionTest(MotorTest):
             # Aggregate uses "batchSize", while find uses batch_size.
             elif arg_name == "batchSize" and name == "aggregate":
                 kwargs["batchSize"] = arg_value
+            # Only find accepts snake case max_time_ms argument.
+            elif name != "find" and arg_name == "maxTimeMS":
+                kwargs["maxTimeMS"] = arg_value
             # Requires boolean returnDocument.
             elif arg_name == "returnDocument":
                 kwargs[c2s] = (arg_value == "After")
@@ -309,6 +309,56 @@ def end_sessions(sessions):
         s.end_session()
 
 
+@gen.coroutine
+def should_run_on(scenario_def, client):
+    run_on = scenario_def.get('runOn', [])
+    if not run_on:
+        # Always run this test.
+        raise gen.Return(True)
+
+    @gen.coroutine
+    def validate_topology(run_on_req, client):
+        topologies = run_on_req.get('topology')
+        if not topologies:
+            raise gen.Return(True)
+        ismaster = yield client.admin.command('isMaster')
+        is_mongos = (ismaster.get('msg') == 'isdbgrid')
+        is_rs = (ismaster.get('setName') is not None)
+        if 'single' in topologies and not (is_mongos or is_rs):
+            raise gen.Return(True)
+        if 'replicaset' in topologies and is_rs:
+            raise gen.Return(True)
+        if 'sharded' in topologies and is_mongos:
+            raise gen.Return(True)
+        raise gen.Return(False)
+
+    @gen.coroutine
+    def validate_min_version(run_on_req, client):
+        version = run_on_req.get('minServerVersion')
+        if not version:
+            raise gen.Return(True)
+        version_tuple = tuple(int(elt) for elt in version.split('.'))
+        actual_version = yield AsyncVersion.from_client(client)
+        raise gen.Return(actual_version >= version_tuple)
+
+    @gen.coroutine
+    def validate_max_version(run_on_req, client):
+        version = run_on_req.get('maxServerVersion')
+        if not version:
+            raise gen.Return(True)
+        version_tuple = tuple(int(elt) for elt in version.split('.'))
+        actual_version = yield AsyncVersion.from_client(client)
+        raise gen.Return(actual_version <= version_tuple)
+
+    for req in run_on:
+        should_run = yield [validate_topology(req, client),
+                            validate_min_version(req, client),
+                            validate_max_version(req, client)]
+        if all(should_run):
+            raise gen.Return(True)
+    raise gen.Return(False)
+
+
 def create_test(scenario_def, test):
     @gen_test
     def run_scenario(self):
@@ -316,6 +366,12 @@ def create_test(scenario_def, test):
         # New client, to avoid interference from pooled sessions.
         client = self.motor_rsc(event_listeners=[listener],
                                 **test['clientOptions'])
+
+        # Topology and server information.
+        should_run = yield should_run_on(scenario_def, client)
+        if not should_run:
+            self.skipTest("runOn not satisfied")
+
         try:
             yield client.admin.command('killAllSessions', [])
         except OperationFailure:
@@ -327,13 +383,15 @@ def create_test(scenario_def, test):
 
         database_name = scenario_def['database_name']
         collection_name = scenario_def['collection_name']
-        write_concern_db = client.get_database(
+
+        # For reliable txnNumber telemetry.
+        tmp_client = self.motor_rsc()
+        write_concern_db = tmp_client.get_database(
             database_name, write_concern=WriteConcern(w='majority'))
         write_concern_coll = write_concern_db[collection_name]
         yield write_concern_coll.drop()
         yield write_concern_db.create_collection(collection_name)
         if scenario_def['data']:
-            # Load data.
             yield write_concern_coll.insert_many(scenario_def['data'])
 
         # Create session0 and session1.
