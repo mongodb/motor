@@ -107,7 +107,7 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         change_stream = coll.watch([{'$project': {'_id': 0}}])
         future = change_stream.next()
         self.wait_and_insert(change_stream)
-        with self.assertRaises(InvalidOperation):
+        with self.assertRaises((InvalidOperation, OperationFailure)):
             await future
 
         # The cursor should now be closed.
