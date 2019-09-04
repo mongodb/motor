@@ -120,9 +120,6 @@ class MotorTransactionTest(MotorTest):
         if not env.is_replica_set:
             raise SkipTest("Requires a replica set")
 
-        if env.version < Version(3, 7):
-            raise SkipTest("Requires MongoDB 3.7+")
-
     def transaction_test_debug(self, msg):
         if _TXN_TESTS_DEBUG:
             print(msg)
@@ -309,13 +306,149 @@ def end_sessions(sessions):
         s.end_session()
 
 
+class Version(tuple):
+    """Copied from PyMongo's test.version submodule."""
+
+    def __new__(cls, *version):
+        padded_version = cls._padded(version, 4)
+        return super(Version, cls).__new__(cls, tuple(padded_version))
+
+    @classmethod
+    def _padded(cls, iter, length, padding=0):
+        l = list(iter)
+        if len(l) < length:
+            for _ in range(length - len(l)):
+                l.append(padding)
+        return l
+
+    @classmethod
+    def from_string(cls, version_string):
+        mod = 0
+        bump_patch_level = False
+        if version_string.endswith("+"):
+            version_string = version_string[0:-1]
+            mod = 1
+        elif version_string.endswith("-pre-"):
+            version_string = version_string[0:-5]
+            mod = -1
+        elif version_string.endswith("-"):
+            version_string = version_string[0:-1]
+            mod = -1
+        # Deal with '-rcX' substrings
+        if '-rc' in version_string:
+            version_string = version_string[0:version_string.find('-rc')]
+            mod = -1
+        # Deal with git describe generated substrings
+        elif '-' in version_string:
+            version_string = version_string[0:version_string.find('-')]
+            mod = -1
+            bump_patch_level = True
+
+        version = [int(part) for part in version_string.split(".")]
+        version = cls._padded(version, 3)
+        # Make from_string and from_version_array agree. For example:
+        # MongoDB Enterprise > db.runCommand('buildInfo').versionArray
+        # [ 3, 2, 1, -100 ]
+        # MongoDB Enterprise > db.runCommand('buildInfo').version
+        # 3.2.0-97-g1ef94fe
+        if bump_patch_level:
+            version[-1] += 1
+        version.append(mod)
+
+        return Version(*version)
+
+    @classmethod
+    def from_version_array(cls, version_array):
+        version = list(version_array)
+        if version[-1] < 0:
+            version[-1] = -1
+        version = cls._padded(version, 3)
+        return Version(*version)
+
+    @classmethod
+    @gen.coroutine
+    def from_client(cls, client):
+        info = yield client.server_info()
+        if 'versionArray' in info:
+            return cls.from_version_array(info['versionArray'])
+        return cls.from_string(info['version'])
+
+    def at_least(self, *other_version):
+        return self >= Version(*other_version)
+
+    def __str__(self):
+        return ".".join(map(str, self))
+
+
+@gen.coroutine
+def should_run_on(scenario_def, client):
+    # import ipdb; ipdb.set_trace()
+    run_on = scenario_def.get('runOn', [])
+    if not run_on:
+        # Always run this test.
+        return
+
+    @gen.coroutine
+    def validate_topology(run_on_req, client):
+        topologies = run_on_req.get('topology')
+        if not topologies:
+            return True
+        ismaster = yield client.admin.command('isMaster')
+        is_mongos = (ismaster.get('msg') == 'isdbgrid')
+        is_rs = (ismaster.get('setName') is not None)
+        if 'single' in topologies and not (is_mongos or is_rs):
+            return True
+        if 'replicaset' in topologies and is_rs:
+            return True
+        if 'sharded' in topologies and is_mongos:
+            return True
+        return False
+
+    @gen.coroutine
+    def validate_min_version(run_on_req, client):
+        version = run_on_req.get('minServerVersion')
+        if not version:
+            return True
+        version_tuple = tuple(int(elt) for elt in version.split('.'))
+        actual_version = yield Version.from_client(client)
+        return actual_version >= version_tuple
+
+    @gen.coroutine
+    def validate_max_version(run_on_req, client):
+        version = run_on_req.get('maxServerVersion')
+        if not version:
+            return True
+        version_tuple = tuple(int(elt) for elt in version.split('.'))
+        actual_version = yield Version.from_client(client)
+        return actual_version <= version_tuple
+
+    for req in run_on:
+        should_run = yield [validate_topology(req, client),
+                            validate_min_version(req, client),
+                            validate_max_version(req, client)]
+        if all(should_run):
+            return True
+    return False
+
+
 def create_test(scenario_def, test):
     @gen_test
     def run_scenario(self):
+        if self.id().startswith(
+                'test.tornado_tests.test_motor_transaction'
+                '.MotorTransactionTest.test_transactions_update'):
+            # import ipdb; ipdb.set_trace()
+            pass
         listener = TestListener()
         # New client, to avoid interference from pooled sessions.
         client = self.motor_rsc(event_listeners=[listener],
                                 **test['clientOptions'])
+
+        # Topology and server information.
+        should_run = yield should_run_on(scenario_def, client)
+        if not should_run:
+            self.skipTest("runOn not satisfied")
+
         try:
             yield client.admin.command('killAllSessions', [])
         except OperationFailure:
