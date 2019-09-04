@@ -848,6 +848,7 @@ buildvariants:
       ssl: "ssl"
   tasks:
      - ".latest"
+     - ".4.2"
      - ".4.0"
      - ".3.6"
      - ".3.4"
