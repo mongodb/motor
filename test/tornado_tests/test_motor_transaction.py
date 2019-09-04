@@ -207,6 +207,9 @@ class MotorTransactionTest(MotorTest):
             # Aggregate uses "batchSize", while find uses batch_size.
             elif arg_name == "batchSize" and name == "aggregate":
                 kwargs["batchSize"] = arg_value
+            # Only find accepts snake case max_time_ms argument.
+            elif name != "find" and arg_name == "maxTimeMS":
+                kwargs["maxTimeMS"] = arg_value
             # Requires boolean returnDocument.
             elif arg_name == "returnDocument":
                 kwargs[c2s] = (arg_value == "After")
@@ -386,7 +389,7 @@ def should_run_on(scenario_def, client):
     run_on = scenario_def.get('runOn', [])
     if not run_on:
         # Always run this test.
-        return
+        return True
 
     @gen.coroutine
     def validate_topology(run_on_req, client):
@@ -434,11 +437,6 @@ def should_run_on(scenario_def, client):
 def create_test(scenario_def, test):
     @gen_test
     def run_scenario(self):
-        if self.id().startswith(
-                'test.tornado_tests.test_motor_transaction'
-                '.MotorTransactionTest.test_transactions_update'):
-            # import ipdb; ipdb.set_trace()
-            pass
         listener = TestListener()
         # New client, to avoid interference from pooled sessions.
         client = self.motor_rsc(event_listeners=[listener],
@@ -460,13 +458,15 @@ def create_test(scenario_def, test):
 
         database_name = scenario_def['database_name']
         collection_name = scenario_def['collection_name']
-        write_concern_db = client.get_database(
+
+        # For reliable txnNumber telemetry.
+        tmp_client = self.motor_rsc()
+        write_concern_db = tmp_client.get_database(
             database_name, write_concern=WriteConcern(w='majority'))
         write_concern_coll = write_concern_db[collection_name]
         yield write_concern_coll.drop()
         yield write_concern_db.create_collection(collection_name)
         if scenario_def['data']:
-            # Load data.
             yield write_concern_coll.insert_many(scenario_def['data'])
 
         # Create session0 and session1.

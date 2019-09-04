@@ -297,7 +297,7 @@ class AgnosticClientSession(AgnosticBase):
         return self._client.get_io_loop()
 
     def start_transaction(self, read_concern=None, write_concern=None,
-                          read_preference=None):
+                          read_preference=None, max_commit_time_ms=None):
         """Start a multi-statement transaction.
 
         Takes the same arguments as
@@ -316,7 +316,8 @@ class AgnosticClientSession(AgnosticBase):
         """
         self.delegate.start_transaction(read_concern=read_concern,
                                         write_concern=write_concern,
-                                        read_preference=read_preference)
+                                        read_preference=read_preference,
+                                        max_commit_time_ms=max_commit_time_ms)
         return _MotorTransactionContext(self)
 
     @property
