@@ -92,6 +92,8 @@ class TestAsyncIOClient(AsyncIOTestCase):
         self.assertTrue(isinstance(self.cx['delegate'],
                                    motor_asyncio.AsyncIOMotorDatabase))
 
+    @unittest.skipIf(test.PYMONGO39,
+                     "cannot imitate connection loss in PyMongo 3.9")
     @asyncio_test
     def test_reconnect_in_case_connection_closed_by_mongo(self):
         cx = self.asyncio_client(maxPoolSize=1)

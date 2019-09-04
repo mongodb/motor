@@ -20,7 +20,12 @@ import logging
 import unittest
 from unittest import SkipTest
 
+from pymongo import version_tuple as pymongo_version_tuple
+
 from test.test_environment import env, db_user, CLIENT_PEM
+
+
+PYMONGO39 = pymongo_version_tuple >= (3, 9)
 
 
 def suppress_tornado_warnings():
