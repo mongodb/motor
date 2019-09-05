@@ -373,8 +373,8 @@ class Version(tuple):
     def from_client(cls, client):
         info = yield client.server_info()
         if 'versionArray' in info:
-            return cls.from_version_array(info['versionArray'])
-        return cls.from_string(info['version'])
+            raise gen.Return(cls.from_version_array(info['versionArray']))
+        raise gen.Return(cls.from_string(info['version']))
 
     def at_least(self, *other_version):
         return self >= Version(*other_version)
@@ -385,53 +385,52 @@ class Version(tuple):
 
 @gen.coroutine
 def should_run_on(scenario_def, client):
-    # import ipdb; ipdb.set_trace()
     run_on = scenario_def.get('runOn', [])
     if not run_on:
         # Always run this test.
-        return True
+        raise gen.Return(True)
 
     @gen.coroutine
     def validate_topology(run_on_req, client):
         topologies = run_on_req.get('topology')
         if not topologies:
-            return True
+            raise gen.Return(True)
         ismaster = yield client.admin.command('isMaster')
         is_mongos = (ismaster.get('msg') == 'isdbgrid')
         is_rs = (ismaster.get('setName') is not None)
         if 'single' in topologies and not (is_mongos or is_rs):
-            return True
+            raise gen.Return(True)
         if 'replicaset' in topologies and is_rs:
-            return True
+            raise gen.Return(True)
         if 'sharded' in topologies and is_mongos:
-            return True
-        return False
+            raise gen.Return(True)
+        raise gen.Return(False)
 
     @gen.coroutine
     def validate_min_version(run_on_req, client):
         version = run_on_req.get('minServerVersion')
         if not version:
-            return True
+            raise gen.Return(True)
         version_tuple = tuple(int(elt) for elt in version.split('.'))
         actual_version = yield Version.from_client(client)
-        return actual_version >= version_tuple
+        raise gen.Return(actual_version >= version_tuple)
 
     @gen.coroutine
     def validate_max_version(run_on_req, client):
         version = run_on_req.get('maxServerVersion')
         if not version:
-            return True
+            raise gen.Return(True)
         version_tuple = tuple(int(elt) for elt in version.split('.'))
         actual_version = yield Version.from_client(client)
-        return actual_version <= version_tuple
+        raise gen.Return(actual_version <= version_tuple)
 
     for req in run_on:
         should_run = yield [validate_topology(req, client),
                             validate_min_version(req, client),
                             validate_max_version(req, client)]
         if all(should_run):
-            return True
-    return False
+            raise gen.Return(True)
+    raise gen.Return(False)
 
 
 def create_test(scenario_def, test):
