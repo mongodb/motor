@@ -10,7 +10,7 @@ Motor now offers experimental support for Windows when it is using the asyncio
 event loop. This means it supports Windows exclusively with Python 3, either
 integrating with asyncio directly or with Tornado 5 or later: starting in
 version 5, Tornado uses the asyncio event loop on Python 3 by default. This
-version of MOTOR requires PyMongo 3.9 or later.
+version of Motor requires PyMongo 3.9 or later.
 
 Motor 2.0
 ---------
