@@ -16,6 +16,7 @@
 
 
 class Version(tuple):
+    """Copied from PyMongo's test.version submodule."""
 
     def __new__(cls, *version):
         padded_version = cls._padded(version, 4)
@@ -51,7 +52,6 @@ class Version(tuple):
             version_string = version_string[0:version_string.find('-')]
             mod = -1
             bump_patch_level = True
-
 
         version = [int(part) for part in version_string.split(".")]
         version = cls._padded(version, 3)
