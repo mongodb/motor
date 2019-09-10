@@ -1391,6 +1391,9 @@ class AgnosticChangeStream(AgnosticBase):
 
     _close = AsyncCommand(attr_name='close')
 
+    alive = ReadOnlyProperty()
+    resume_token = ReadOnlyProperty()
+
     def __init__(self, target, pipeline, full_document, resume_after,
                  max_await_time_ms, batch_size, collation,
                  start_at_operation_time, session):
@@ -1416,6 +1419,13 @@ class AgnosticChangeStream(AgnosticBase):
         except StopIteration:
             raise StopAsyncIteration()
 
+    def _try_next(self):
+        # This method is run on a thread.
+        if not self.delegate:
+            self.delegate = self._target.delegate.watch(**self._kwargs)
+
+        return self.delegate.try_next()
+
     @coroutine_annotation
     def next(self):
         """Advance the cursor.
@@ -1436,6 +1446,35 @@ class AgnosticChangeStream(AgnosticBase):
         """
         loop = self.get_io_loop()
         return self._framework.run_on_executor(loop, self._next)
+
+    @coroutine_annotation
+    def try_next(self):
+        """Advance the cursor without blocking indefinitely.
+
+        This method returns the next change document without waiting
+        indefinitely for the next change. If no changes are available,
+        it returns None. For example:
+
+        .. code-block:: python3
+
+          while change_stream.alive:
+              change = await change_stream.try_next()
+              # Note that the ChangeStream's resume token may be updated
+              # even when no changes are returned.
+              print("Current resume token: %r" % (change_stream.resume_token,))
+              if change is not None:
+                  print("Change document: %r" % (change,))
+                  continue
+              # We end up here when there are no recent changes.
+              # Sleep for a while before trying again to avoid flooding
+              # the server with getMore requests when no changes are
+              # available.
+              await asyncio.sleep(10)
+
+        .. versionaddedd:: 2.1
+        """
+        loop = self.get_io_loop()
+        return self._framework.run_on_executor(loop, self._try_next)
 
     @coroutine_annotation
     def close(self):
