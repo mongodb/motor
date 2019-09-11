@@ -368,11 +368,14 @@ class AgnosticDatabase(AgnosticBaseProperties):
     profiling_level       = AsyncRead()
     set_profiling_level   = AsyncCommand()
     validate_collection   = AsyncRead().unwrap('MotorCollection')
+    with_options          = DelegateMethod().wrap(Database)
 
     incoming_manipulators         = ReadOnlyProperty()
     incoming_copying_manipulators = ReadOnlyProperty()
     outgoing_manipulators         = ReadOnlyProperty()
     outgoing_copying_manipulators = ReadOnlyProperty()
+
+    _async_aggregate = AsyncRead(attr_name='aggregate')
 
     def __init__(self, client, name, **kwargs):
         self._client = client
@@ -380,6 +383,67 @@ class AgnosticDatabase(AgnosticBaseProperties):
             client.delegate, name, **kwargs)
 
         super(self.__class__, self).__init__(delegate)
+
+    def aggregate(self, pipeline, **kwargs):
+        """Execute an aggregation pipeline on this database.
+
+        Introduced in MongoDB 3.6.
+
+        The aggregation can be run on a secondary if the client is connected
+        to a replica set and its ``read_preference`` is not :attr:`PRIMARY`.
+        The :meth:`aggregate` method obeys the :attr:`read_preference` of this
+        :class:`MotorDatabase`, except when ``$out`` or ``$merge`` are used, in
+        which case  :attr:`PRIMARY` is used.
+
+        All optional `aggregate command`_ parameters should be passed as
+        keyword arguments to this method. Valid options include, but are not
+        limited to:
+
+          - `allowDiskUse` (bool): Enables writing to temporary files. When set
+            to True, aggregation stages can write data to the _tmp subdirectory
+            of the --dbpath directory. The default is False.
+          - `maxTimeMS` (int): The maximum amount of time to allow the operation
+            to run in milliseconds.
+          - `batchSize` (int): The maximum number of documents to return per
+            batch. Ignored if the connected mongod or mongos does not support
+            returning aggregate results using a cursor.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`.
+
+        Returns a :class:`MotorCommandCursor` that can be iterated like a
+        cursor from :meth:`find`::
+
+           # Lists all operations currently running on the server.
+           pipeline = [{"$currentOp": {}}]
+           cursor = client.admin.aggregate(pipeline)
+           while (yield cursor.fetch_next):
+               operation = cursor.next_object()
+               print(operation)
+
+        In Python 3.5 and newer, aggregation cursors can be iterated elegantly
+        in native coroutines with `async for`::
+
+           async def f():
+               async for operation in client.admin.aggregate(pipeline):
+                   print(operation)
+
+        .. note:: This method does not support the 'explain' option. Please
+           use :meth:`MotorDatabase.command` instead.
+
+        .. note:: The :attr:`MotorDatabase.write_concern` of this database is
+           automatically applied to this operation.
+
+        .. versionadded:: 2.1
+
+        .. _aggregate command:
+            https://docs.mongodb.com/manual/reference/command/aggregate
+        """
+        cursor_class = create_class_with_framework(
+            AgnosticLatentCommandCursor, self._framework, self.__module__)
+
+        # Latent cursor that will send initial command on first "async for".
+        return cursor_class(self["$cmd.aggregate"], self._async_aggregate,
+                            pipeline, **unwrap_kwargs_session(kwargs))
 
     def watch(self, pipeline=None, full_document='default', resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,
@@ -477,14 +541,18 @@ class AgnosticDatabase(AgnosticBaseProperties):
             "failing because no such method exists." % (
             database_name, client_class_name))
 
-    def wrap(self, collection):
-        # Replace pymongo.collection.Collection with MotorCollection.
-        klass = create_class_with_framework(
-            AgnosticCollection,
-            self._framework,
-            self.__module__)
-
-        return klass(self, collection.name, _delegate=collection)
+    def wrap(self, obj):
+        if obj.__class__ is Collection:
+            # Replace pymongo.collection.Collection with MotorCollection.
+            klass = create_class_with_framework(
+                AgnosticCollection,
+                self._framework,
+                self.__module__)
+            return klass(self, obj.name, _delegate=obj)
+        elif obj.__class__ is Database:
+            return self.__class__(self._client, obj.name, _delegate=obj)
+        else:
+            return obj
 
     def get_io_loop(self):
         return self._client.get_io_loop()
