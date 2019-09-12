@@ -148,7 +148,7 @@ class AgnosticClient(AgnosticBaseProperties):
 
     def watch(self, pipeline=None, full_document='default', resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,
-              start_at_operation_time=None, session=None):
+              start_at_operation_time=None, session=None, start_after=None):
         """Watch changes on this cluster.
 
         Returns a :class:`~MotorChangeStream` cursor which iterates over changes
@@ -169,8 +169,10 @@ class AgnosticClient(AgnosticBaseProperties):
             updates will include both a delta describing the changes to the
             document, as well as a copy of the entire document that was
             changed from some time after the change occurred.
-          - `resume_after` (optional): The logical starting point for this
-            change stream.
+          - `resume_after` (optional): A resume token. If provided, the
+            change stream will start returning changes that occur directly
+            after the operation specified in the resume token. A resume token
+            is the _id value of a change document.
           - `max_await_time_ms` (optional): The maximum time in milliseconds
             for the server to wait for changes before responding to a getMore
             operation.
@@ -184,9 +186,15 @@ class AgnosticClient(AgnosticBaseProperties):
             MongoDB >= 4.0.
           - `session` (optional): a
             :class:`~pymongo.client_session.ClientSession`.
+          - `start_after` (optional): The same as `resume_after` except that
+            `start_after` can resume notifications after an invalidate event.
+            This option and `resume_after` are mutually exclusive.
 
         :Returns:
           A :class:`~MotorChangeStream`.
+
+        .. versionchanged:: 2.1
+           Added the ``start_after`` parameter.
 
         .. versionadded:: 2.0
 
@@ -198,7 +206,7 @@ class AgnosticClient(AgnosticBaseProperties):
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, pipeline, full_document, resume_after,
                             max_await_time_ms, batch_size, collation,
-                            start_at_operation_time, session)
+                            start_at_operation_time, session, start_after)
 
     def __getattr__(self, name):
         if name.startswith('_'):
@@ -375,7 +383,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
     def watch(self, pipeline=None, full_document='default', resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,
-              start_at_operation_time=None, session=None):
+              start_at_operation_time=None, session=None, start_after=None):
         """Watch changes on this database.
 
         Returns a :class:`~MotorChangeStream` cursor which iterates over changes
@@ -396,8 +404,10 @@ class AgnosticDatabase(AgnosticBaseProperties):
             updates will include both a delta describing the changes to the
             document, as well as a copy of the entire document that was
             changed from some time after the change occurred.
-          - `resume_after` (optional): The logical starting point for this
-            change stream.
+          - `resume_after` (optional): A resume token. If provided, the
+            change stream will start returning changes that occur directly
+            after the operation specified in the resume token. A resume token
+            is the _id value of a change document.
           - `max_await_time_ms` (optional): The maximum time in milliseconds
             for the server to wait for changes before responding to a getMore
             operation.
@@ -411,9 +421,15 @@ class AgnosticDatabase(AgnosticBaseProperties):
             MongoDB >= 4.0.
           - `session` (optional): a
             :class:`~pymongo.client_session.ClientSession`.
+          - `start_after` (optional): The same as `resume_after` except that
+            `start_after` can resume notifications after an invalidate event.
+            This option and `resume_after` are mutually exclusive.
 
         :Returns:
           A :class:`~MotorChangeStream`.
+
+        .. versionchanged:: 2.1
+           Added the ``start_after`` parameter.
 
         .. versionadded:: 2.0
 
@@ -425,7 +441,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, pipeline, full_document, resume_after,
                             max_await_time_ms, batch_size, collation,
-                            start_at_operation_time, session)
+                            start_at_operation_time, session, start_after)
 
     @property
     def client(self):
@@ -693,7 +709,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
     def watch(self, pipeline=None, full_document='default', resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,
-              start_at_operation_time=None, session=None):
+              start_at_operation_time=None, session=None, start_after=None):
         """Watch changes on this collection.
 
         Returns a :class:`~MotorChangeStream` cursor which iterates over changes
@@ -785,8 +801,10 @@ class AgnosticCollection(AgnosticBaseProperties):
             updates will include both a delta describing the changes to the
             document, as well as a copy of the entire document that was
             changed from some time after the change occurred.
-          - `resume_after` (optional): The logical starting point for this
-            change stream.
+          - `resume_after` (optional): A resume token. If provided, the
+            change stream will start returning changes that occur directly
+            after the operation specified in the resume token. A resume token
+            is the _id value of a change document.
           - `max_await_time_ms` (optional): The maximum time in milliseconds
             for the server to wait for changes before responding to a getMore
             operation.
@@ -796,11 +814,17 @@ class AgnosticCollection(AgnosticBaseProperties):
             to use for the aggregation.
           - `session` (optional): a
             :class:`~pymongo.client_session.ClientSession`.
+          - `start_after` (optional): The same as `resume_after` except that
+            `start_after` can resume notifications after an invalidate event.
+            This option and `resume_after` are mutually exclusive.
 
         :Returns:
           A :class:`~MotorChangeStream`.
 
         See the :ref:`tornado_change_stream_example`.
+
+        .. versionchanged:: 2.1
+           Added the ``start_after`` parameter.
 
         .. versionadded:: 1.2
 
@@ -815,7 +839,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, pipeline, full_document, resume_after,
                             max_await_time_ms, batch_size, collation,
-                            start_at_operation_time, session)
+                            start_at_operation_time, session, start_after)
 
     def list_indexes(self, session=None):
         """Get a cursor over the index documents for this collection. ::
@@ -1397,7 +1421,7 @@ class AgnosticChangeStream(AgnosticBase):
 
     def __init__(self, target, pipeline, full_document, resume_after,
                  max_await_time_ms, batch_size, collation,
-                 start_at_operation_time, session):
+                 start_at_operation_time, session, start_after):
         super(self.__class__, self).__init__(delegate=None)
         # The "target" object is a client, database, or collection.
         self._target = target
@@ -1408,7 +1432,8 @@ class AgnosticChangeStream(AgnosticBase):
                         'batch_size': batch_size,
                         'collation': collation,
                         'start_at_operation_time': start_at_operation_time,
-                        'session': session}
+                        'session': session,
+                        'start_after': start_after}
 
     def _next(self):
         # This method is run on a thread.
