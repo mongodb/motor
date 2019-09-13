@@ -725,6 +725,10 @@ class AgnosticCollection(AgnosticBaseProperties):
 
               print(plan)
 
+        .. versionchanged:: 2.1
+           This collection's read concern is now applied to pipelines
+           containing the `$out` stage when connected to MongoDB >= 4.2.
+
         .. versionchanged:: 1.0
            :meth:`aggregate` now **always** returns a cursor.
 
