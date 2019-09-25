@@ -22,7 +22,8 @@ __all__ = ['AsyncIOMotorClient']
 
 
 def create_asyncio_class(cls):
-    return create_class_with_framework(cls, asyncio_framework, 'motor_asyncio')
+    return create_class_with_framework(cls, asyncio_framework,
+                                       'motor.motor_asyncio')
 
 
 AsyncIOMotorClient = create_asyncio_class(core.AgnosticClient)
