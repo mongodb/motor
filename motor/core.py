@@ -1569,7 +1569,7 @@ class AgnosticChangeStream(AgnosticBase):
               # available.
               await asyncio.sleep(10)
 
-        .. versionaddedd:: 2.1
+        .. versionadded:: 2.1
         """
         loop = self.get_io_loop()
         return self._framework.run_on_executor(loop, self._try_next)
