@@ -130,6 +130,7 @@ class TestEnvironment(object):
         self.version = None
         self.sessions_enabled = False
         self.fake_hostname_uri = None
+        self.server_status = None
 
     def setup(self):
         assert not self.initialized
@@ -137,6 +138,7 @@ class TestEnvironment(object):
         self.setup_auth_and_uri()
         self.setup_version()
         self.setup_v8()
+        self.server_status = self.sync_cx.admin.command('serverStatus')
         self.initialized = True
 
     def setup_sync_cx(self):
@@ -253,6 +255,26 @@ class TestEnvironment(object):
         if self.sync_cx.server_info().get('javascriptEngine') == 'V8':
             self.v8 = True
 
+    @property
+    def storage_engine(self):
+        try:
+            return self.server_status.get("storageEngine", {}).get("name")
+        except AttributeError:
+            # Raised if self.server_status is None.
+            return None
+
+    def supports_transactions(self):
+        if self.storage_engine == 'mmapv1':
+            return False
+
+        if self.version.at_least(4, 1, 8):
+            return self.is_mongos or self.is_replica_set
+
+        if self.version.at_least(4, 0):
+            return self.is_replica_set
+
+        return False
+
     def require(self, condition, msg, func=None):
         def make_wrapper(f):
             @wraps(f)
@@ -293,6 +315,15 @@ class TestEnvironment(object):
         """Run a test only if the client is connected to a replica set."""
         return self.require(lambda: self.is_replica_set,
                             "Not connected to a replica set",
+                            func=func)
+
+    def require_transactions(self, func):
+        """Run a test only if the deployment might support transactions.
+
+        *Might* because this does not test the FCV.
+        """
+        return self.require(self.supports_transactions,
+                            "Transactions are not supported",
                             func=func)
 
     def create_user(self, dbname, user, pwd=None, roles=None, **kwargs):

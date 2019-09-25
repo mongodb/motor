@@ -46,8 +46,7 @@ pymongo_client_only = set([
     'get_default_database',
     'kill_cursors']).union(pymongo_only)
 
-# TODO: MOTOR-280: Add with_transaction
-pymongo_client_session_only = set(['with_transaction'])
+pymongo_client_session_only = set([])
 
 pymongo_database_only = set([
     'add_user',

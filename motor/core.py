@@ -289,6 +289,7 @@ class AgnosticClientSession(AgnosticBase):
 
     commit_transaction     = AsyncCommand()
     abort_transaction      = AsyncCommand()
+    with_transaction       = AsyncCommand()
     end_session            = AsyncCommand()
     cluster_time           = ReadOnlyProperty()
     has_ended              = ReadOnlyProperty()
