@@ -151,11 +151,14 @@ class AgnosticGridOut(object):
     metadata     = MotorGridOutProperty()
     name         = MotorGridOutProperty()
     read         = AsyncRead()
+    readable     = DelegateMethod()
     readchunk    = AsyncRead()
     readline     = AsyncRead()
     seek         = DelegateMethod()
+    seekable     = DelegateMethod()
     tell         = DelegateMethod()
     upload_date  = MotorGridOutProperty()
+    write        = DelegateMethod()
 
     def __init__(
         self,
@@ -271,19 +274,23 @@ class AgnosticGridIn(object):
     __delegate_class__ = gridfs.GridIn
 
     __getattr__  = DelegateMethod()
+    _id          = ReadOnlyProperty()
     abort        = AsyncCommand()
+    chunk_size   = ReadOnlyProperty()
     closed       = ReadOnlyProperty()
     close        = AsyncCommand()
-    write        = AsyncCommand().unwrap('MotorGridOut')
-    writelines   = AsyncCommand().unwrap('MotorGridOut')
-    _id          = ReadOnlyProperty()
-    md5          = ReadOnlyProperty()
-    filename     = ReadOnlyProperty()
-    name         = ReadOnlyProperty()
     content_type = ReadOnlyProperty()
+    filename     = ReadOnlyProperty()
     length       = ReadOnlyProperty()
-    chunk_size   = ReadOnlyProperty()
+    md5          = ReadOnlyProperty()
+    name         = ReadOnlyProperty()
+    read         = DelegateMethod()
+    readable     = DelegateMethod()
+    seekable     = DelegateMethod()
     upload_date  = ReadOnlyProperty()
+    write        = AsyncCommand().unwrap('MotorGridOut')
+    writeable    = DelegateMethod()
+    writelines   = AsyncCommand().unwrap('MotorGridOut')
     set          = AsyncCommand(attr_name='__setattr__', doc="""
 Set an arbitrary metadata attribute on the file. Stores value on the server
 as a key-value pair within the file document once the file is closed. If
