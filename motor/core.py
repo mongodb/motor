@@ -784,8 +784,11 @@ class AgnosticCollection(AgnosticBaseProperties):
               start_at_operation_time=None, session=None, start_after=None):
         """Watch changes on this collection.
 
-        Returns a :class:`~MotorChangeStream` cursor which iterates over changes
-        on this collection. Introduced in MongoDB 3.6.
+        Performs an aggregation with an implicit initial ``$changeStream``
+        stage and returns a :class:`~MotorChangeStream` cursor which
+        iterates over changes on this collection.
+
+        Introduced in MongoDB 3.6.
 
         A change stream continues waiting indefinitely for matching change
         events. Code like the following allows a program to cancel the change
@@ -1529,18 +1532,39 @@ class AgnosticChangeStream(AgnosticBase):
         """Advance the cursor.
 
         This method blocks until the next change document is returned or an
-        unrecoverable error is raised.
+        unrecoverable error is raised. This method is used when iterating over
+        all changes in the cursor. For example::
+
+            async def watch_collection():
+                resume_token = None
+                pipeline = [{'$match': {'operationType': 'insert'}}]
+                try:
+                    async with db.collection.watch(pipeline) as stream:
+                        async for insert_change in stream:
+                            print(insert_change)
+                            resume_token = stream.resume_token
+                except pymongo.errors.PyMongoError:
+                    # The ChangeStream encountered an unrecoverable error or the
+                    # resume attempt failed to recreate the cursor.
+                    if resume_token is None:
+                        # There is no usable resume token because there was a
+                        # failure during ChangeStream initialization.
+                        logging.error('...')
+                    else:
+                        # Use the interrupted ChangeStream's resume token to
+                        # create a new ChangeStream. The new stream will
+                        # continue from the last seen insert change without
+                        # missing any events.
+                        async with db.collection.watch(
+                                pipeline, resume_after=resume_token) as stream:
+                            async for insert_change in stream:
+                                print(insert_change)
 
         Raises :exc:`StopAsyncIteration` if this change stream is closed.
 
-        You can iterate the change stream by calling
-        ``await change_stream.next()`` repeatedly, or with an "async for" loop:
-
-        .. code-block:: python3
-
-          async for change in db.collection.watch():
-              print(change)
-
+        In addition to using an "async for" loop as shown in the code
+        example above, you can also iterate the change stream by calling
+        ``await change_stream.next()`` repeatedly.
         """
         loop = self.get_io_loop()
         return self._framework.run_on_executor(loop, self._next)
@@ -1569,7 +1593,16 @@ class AgnosticChangeStream(AgnosticBase):
               # available.
               await asyncio.sleep(10)
 
-        .. versionadded:: 2.1
+        If no change document is cached locally then this method runs a single
+        getMore command. If the getMore yields any documents, the next
+        document is returned, otherwise, if the getMore returns no documents
+        (because there have been no changes) then ``None`` is returned.
+
+        :Returns:
+          The next change document or ``None`` when no document is available
+          after running a single getMore or when the cursor is closed.
+
+        .. versionaddedd:: 2.1
         """
         loop = self.get_io_loop()
         return self._framework.run_on_executor(loop, self._try_next)
