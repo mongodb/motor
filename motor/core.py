@@ -1602,7 +1602,7 @@ class AgnosticChangeStream(AgnosticBase):
           The next change document or ``None`` when no document is available
           after running a single getMore or when the cursor is closed.
 
-        .. versionaddedd:: 2.1
+        .. versionadded:: 2.1
         """
         loop = self.get_io_loop()
         return self._framework.run_on_executor(loop, self._try_next)
