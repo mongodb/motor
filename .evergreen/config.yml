@@ -802,11 +802,11 @@ axes:
       - id: "tornado5-py36"
         variables:
            TOX_ENV: "tornado5-py36"
-           PYTHON_BINARY: "c:/python/Python36/python.exe"
+           PYTHON_BINARY: "c:\\python\\Python36\\python.exe"
       - id: "tornado_git-py36"
         variables:
            TOX_ENV: "tornado_git-py36"
-           PYTHON_BINARY: "c:/python/Python36/python.exe"
+           PYTHON_BINARY: "c:\\python\\Python36\\python.exe"
 
   - id: os
     display_name: "Operating System"
