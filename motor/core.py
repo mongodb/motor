@@ -146,7 +146,7 @@ class AgnosticClient(AgnosticBaseProperties):
     def get_io_loop(self):
         return self.io_loop
 
-    def watch(self, pipeline=None, full_document='default', resume_after=None,
+    def watch(self, pipeline=None, full_document=None, resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,
               start_at_operation_time=None, session=None, start_after=None):
         """Watch changes on this cluster.
@@ -163,8 +163,7 @@ class AgnosticClient(AgnosticBaseProperties):
             pipeline stages are valid after a ``$changeStream`` stage, see the
             MongoDB documentation on change streams for the supported stages.
           - `full_document` (optional): The fullDocument option to pass
-            to the ``$changeStream`` stage. Allowed values: 'default',
-            'updateLookup'.  Defaults to 'default'.
+            to the ``$changeStream`` stage. Allowed values: 'updateLookup'.
             When set to 'updateLookup', the change notification for partial
             updates will include both a delta describing the changes to the
             document, as well as a copy of the entire document that was
@@ -446,7 +445,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         return cursor_class(self["$cmd.aggregate"], self._async_aggregate,
                             pipeline, **unwrap_kwargs_session(kwargs))
 
-    def watch(self, pipeline=None, full_document='default', resume_after=None,
+    def watch(self, pipeline=None, full_document=None, resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,
               start_at_operation_time=None, session=None, start_after=None):
         """Watch changes on this database.
@@ -463,8 +462,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             pipeline stages are valid after a ``$changeStream`` stage, see the
             MongoDB documentation on change streams for the supported stages.
           - `full_document` (optional): The fullDocument option to pass
-            to the ``$changeStream`` stage. Allowed values: 'default',
-            'updateLookup'.  Defaults to 'default'.
+            to the ``$changeStream`` stage. Allowed values: 'updateLookup'.
             When set to 'updateLookup', the change notification for partial
             updates will include both a delta describing the changes to the
             document, as well as a copy of the entire document that was
@@ -780,7 +778,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         return cursor_class(self, self._async_aggregate_raw_batches, pipeline,
                             **unwrap_kwargs_session(kwargs))
 
-    def watch(self, pipeline=None, full_document='default', resume_after=None,
+    def watch(self, pipeline=None, full_document=None, resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,
               start_at_operation_time=None, session=None, start_after=None):
         """Watch changes on this collection.
@@ -871,8 +869,7 @@ class AgnosticCollection(AgnosticBaseProperties):
             pipeline stages are valid after a ``$changeStream`` stage, see the
             MongoDB documentation on change streams for the supported stages.
           - `full_document` (optional): The fullDocument option to pass
-            to the ``$changeStream`` stage. Allowed values: 'default',
-            'updateLookup'.  Defaults to 'default'.
+            to the ``$changeStream`` stage. Allowed values: 'updateLookup'.
             When set to 'updateLookup', the change notification for partial
             updates will include both a delta describing the changes to the
             document, as well as a copy of the entire document that was
@@ -1411,6 +1408,9 @@ class _LatentCursor(object):
     _CommandCursor__killed = False
     cursor_id = None
 
+    def _CommandCursor__die(self, *args, **kwargs):
+        pass
+
     def clone(self):
         return _LatentCursor()
 
@@ -1511,21 +1511,21 @@ class AgnosticChangeStream(AgnosticBase):
                         'session': session,
                         'start_after': start_after}
 
+    def _lazy_init(self):
+        if not self.delegate:
+            self.delegate = self._target.delegate.watch(**self._kwargs)
+
     def _next(self):
         # This method is run on a thread.
         try:
-            if not self.delegate:
-                self.delegate = self._target.delegate.watch(**self._kwargs)
-
+            self._lazy_init()
             return self.delegate.next()
         except StopIteration:
             raise StopAsyncIteration()
 
     def _try_next(self):
         # This method is run on a thread.
-        if not self.delegate:
-            self.delegate = self._target.delegate.watch(**self._kwargs)
-
+        self._lazy_init()
         return self.delegate.try_next()
 
     @coroutine_annotation

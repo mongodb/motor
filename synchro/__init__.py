@@ -22,6 +22,7 @@ DO NOT USE THIS MODULE.
 """
 
 import inspect
+import unittest
 from tornado.ioloop import IOLoop
 
 import motor
@@ -133,6 +134,8 @@ def wrap_synchro(fn):
             client = MongoClient(delegate=motor_obj.client)
             return Database(client, motor_obj.name, delegate=motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorChangeStream):
+            # Send the initial aggregate as PyMongo expects.
+            motor_obj._lazy_init()
             return ChangeStream(motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorLatentCommandCursor):
             return CommandCursor(motor_obj)
@@ -316,6 +319,7 @@ class MongoClient(Synchro):
     max_pool_size = SynchroProperty()
     max_write_batch_size = SynchroProperty()
     start_session = Sync()
+    watch = WrapOutgoing()
 
     def __init__(self, host=None, port=None, *args, **kwargs):
         # So that TestClient.test_constants and test_types work.
@@ -363,7 +367,12 @@ class _SynchroTransactionContext(Synchro):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.synchronize(self.delegate._session.end_session)()
+        motor_session = self.delegate._session
+        if motor_session.delegate._in_transaction:
+            if exc_val is None:
+                self.synchronize(motor_session.commit_transaction)()
+            else:
+                self.synchronize(motor_session.abort_transaction)()
 
 
 class ClientSession(Synchro):
@@ -383,14 +392,18 @@ class ClientSession(Synchro):
 
     _client              = SynchroProperty()
     _in_transaction      = SynchroProperty()
+    _pinned_address      = SynchroProperty()
     _server_session      = SynchroProperty()
+    _transaction         = SynchroProperty()
     _transaction_id      = SynchroProperty()
     _txn_read_preference = SynchroProperty()
 
 
 class Database(Synchro):
     __delegate_class__ = motor.MotorDatabase
+
     get_collection     = WrapOutgoing()
+    watch              = WrapOutgoing()
 
     def __init__(self, client, name, **kwargs):
         assert isinstance(client, MongoClient), (
@@ -404,6 +417,13 @@ class Database(Synchro):
         assert isinstance(self.delegate, motor.MotorDatabase), (
             "synchro.Database delegate must be MotorDatabase, not "
             " %s" % repr(self.delegate))
+
+    def aggregate(self, *args, **kwargs):
+        # Motor does no I/O initially in aggregate() but PyMongo does.
+        func = wrap_synchro(unwrap_synchro(self.delegate.aggregate))
+        cursor = func(*args, **kwargs)
+        self.synchronize(cursor.delegate._get_more)()
+        return cursor
 
     @property
     def client(self):
@@ -465,12 +485,19 @@ class Collection(Synchro):
         return Collection(self.database, fullname,
                           delegate=self.delegate[name])
 
+    def count(self, *args, **kwargs):
+        raise unittest.SkipTest('count() is not supported in Motor')
+
+    def group(self, *args, **kwargs):
+        raise unittest.SkipTest('group() is not supported in Motor')
+
 
 class ChangeStream(Synchro):
     __delegate_class__ = motor.motor_tornado.MotorChangeStream
 
-    next = Sync('next')
-    close = Sync('close')
+    next     = Sync('next')
+    try_next = Sync('try_next')
+    close    = Sync('close')
 
     def __init__(self, motor_change_stream):
         self.delegate = motor_change_stream
@@ -517,6 +544,8 @@ class Cursor(Synchro):
                 return cursor.next_object()
 
         raise StopIteration
+
+    __next__ = next
 
     def __getitem__(self, index):
         if isinstance(index, slice):
@@ -585,6 +614,8 @@ class BulkOperationBuilder(object):
 class GridFSBucket(Synchro):
     __delegate_class__ = motor.MotorGridFSBucket
 
+    find = WrapOutgoing()
+
     def __init__(self, database, bucket_name='fs', disable_md5=False):
         if not isinstance(database, Database):
             raise TypeError(
@@ -592,11 +623,6 @@ class GridFSBucket(Synchro):
 
         self.delegate = motor.MotorGridFSBucket(
             database.delegate, bucket_name, disable_md5)
-
-    def find(self, *args, **kwargs):
-        motor_method = self.delegate.find
-        unwrapping_method = wrap_synchro(unwrap_synchro(motor_method))
-        return unwrapping_method(*args, **kwargs)
 
 
 class GridIn(Synchro):
@@ -618,6 +644,12 @@ class GridIn(Synchro):
 
     def __getattr__(self, item):
         return getattr(self.delegate, item)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
 
 class SynchroGridOutProperty(object):
@@ -674,3 +706,8 @@ class GridOut(Synchro):
 
         super(GridOut, self).__setattr__(key, value)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()

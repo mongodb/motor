@@ -133,6 +133,7 @@ excluded_tests = [
 
     # Motor is correct here, it's just unreliable on slow CI servers.
     'TestReplicaSetClient.test_timeout_does_not_mark_member_down',
+    'TestCMAP.test_cmap_wait_queue_timeout_must_aggressively_timeout_threads_enqueued_longer_than_waitQueueTimeoutMS',
 
     # Accesses PyMongo internals.
     'TestClient.test_close_kills_cursors',
@@ -142,14 +143,14 @@ excluded_tests = [
     'TestCommandMonitoring.test_get_more_failure',
     'TestCommandMonitoring.test_sensitive_commands',
     'TestCursor.test_close_kills_cursor_synchronously',
+    'TestCursor.test_delete_not_initialized',
     'TestGridFile.test_grid_out_cursor_options',
+    'TestGridFile.test_survive_cursor_not_found',
     'TestMaxStaleness.test_last_write_date',
     'TestMaxStaleness.test_last_write_date_absent',
-    'TestMonitor.test_atexit_hook',
     'TestReplicaSetClient.test_kill_cursor_explicit_primary',
     'TestReplicaSetClient.test_kill_cursor_explicit_secondary',
     'TestSelections.test_bool',
-    'TestTransactions.transaction_test_debug',
 
     # Deprecated in PyMongo, removed in Motor 2.0.
     'TestDatabase.test_collection_names',
@@ -163,12 +164,13 @@ excluded_tests = [
     'TestCommandMonitoring.test_legacy_insert_many',
     'TestCommandMonitoring.test_legacy_writes',
     'TestClient.test_database_names',
+    'TestClient.test_is_locked_does_not_raise_warning',
+    'TestCollectionWCustomType.test_find_and_modify_w_custom_type_decoder',
 
     # Tests that use "count", deprecated in PyMongo, removed in Motor 2.0.
     '*.test_command_monitoring_command_A_failed_command_event',
     '*.test_command_monitoring_command_A_successful_command',
     '*.test_command_monitoring_command_A_successful_command_with_a_non-primary_read_preference',
-    '*.test_read_count-collation_Deprecated_count_with_collation',
     '*.test_read_count_Deprecated_count_with_a_filter',
     '*.test_read_count_Deprecated_count_without_a_filter',
     'TestBinary.test_uuid_queries',
@@ -179,7 +181,6 @@ excluded_tests = [
     'TestCursor.test_count_with_hint',
     'TestCursor.test_where',
     'TestGridfs.test_gridfs_find',
-    'TestTransactions.test_transactions_reads_count',
 
     # Tests that use "authenticate" or "logoout", removed in Motor 2.0.
     'TestSASLPlain.test_sasl_plain_bad_credentials',
@@ -193,6 +194,22 @@ excluded_tests = [
     # Slow.
     'TestDatabase.test_collection_names_single_socket',
     'TestDatabase.test_list_collection_names',
+
+    # We test Synchro in Python 2.7, but Motor's change streams need Python 3.
+    'TestClusterChangeStreamsWCustomTypes.*',
+    'TestCollectionChangeStreamsWCustomTypes.*',
+    'TestDatabaseChangeStreamsWCustomTypes.*',
+
+    # Tests that use warnings.catch_warnings which don't show up in Motor
+    'TestCursor.test_min_max_without_hint',
+
+    # TODO: MOTOR-280
+    'TestTransactionsConvenientAPI.*',
+
+    # TODO: MOTOR-401
+    'ClientUnitTest.test_get_default_database',
+    'ClientUnitTest.test_get_default_database_error',
+    'ClientUnitTest.test_get_default_database_with_authsource',
 ]
 
 
@@ -302,6 +319,19 @@ class SynchroModuleLoader(object):
 
 
 if __name__ == '__main__':
+    try:
+        # Enable the fault handler to dump the traceback of each running
+        # thread
+        # after a segfault.
+        import faulthandler
+
+        faulthandler.enable()
+        # Dump the tracebacks of all threads after 25 minutes.
+        if hasattr(faulthandler, 'dump_traceback_later'):
+            faulthandler.dump_traceback_later(25 * 60)
+    except ImportError:
+        pass
+
     # Monkey-patch all pymongo's unittests so they think Synchro is the
     # real PyMongo.
     sys.meta_path[0:0] = [SynchroModuleFinder()]

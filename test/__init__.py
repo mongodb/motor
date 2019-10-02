@@ -22,6 +22,19 @@ from unittest import SkipTest
 
 from test.test_environment import env, db_user, CLIENT_PEM
 
+try:
+    # Enable the fault handler to dump the traceback of each running
+    # thread
+    # after a segfault.
+    import faulthandler
+
+    faulthandler.enable()
+    # Dump the tracebacks of all threads after 25 minutes.
+    if hasattr(faulthandler, 'dump_traceback_later'):
+        faulthandler.dump_traceback_later(25 * 60)
+except ImportError:
+    pass
+
 
 def suppress_tornado_warnings():
     for name in [
