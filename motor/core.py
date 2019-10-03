@@ -94,6 +94,7 @@ class AgnosticClient(AgnosticBaseProperties):
     event_listeners          = ReadOnlyProperty()
     fsync                    = AsyncCommand()
     get_database             = DelegateMethod(doc=get_database_doc).wrap(Database)
+    get_default_database     = DelegateMethod(doc=get_default_database_doc).wrap(Database)
     HOST                     = ReadOnlyProperty()
     is_mongos                = ReadOnlyProperty()
     is_primary               = ReadOnlyProperty()

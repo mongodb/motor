@@ -43,7 +43,6 @@ pymongo_client_only = set([
     'database_names',
     'is_locked',
     'set_cursor_manager',
-    'get_default_database',
     'kill_cursors']).union(pymongo_only)
 
 pymongo_client_session_only = set([])

@@ -208,11 +208,6 @@ excluded_tests = [
 
     # TODO: MOTOR-280
     'TestTransactionsConvenientAPI.*',
-
-    # TODO: MOTOR-401
-    'ClientUnitTest.test_get_default_database',
-    'ClientUnitTest.test_get_default_database_error',
-    'ClientUnitTest.test_get_default_database_with_authsource',
 ]
 
 

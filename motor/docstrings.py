@@ -36,16 +36,62 @@ read preference, and/or write concern from this :class:`MotorClient`.
   - `name`: The name of the database - a string.
   - `codec_options` (optional): An instance of
     :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
-    default) the :attr:`codec_options` of this :class:`MongoClient` is
+    default) the :attr:`codec_options` of this :class:`MotorClient` is
     used.
   - `read_preference` (optional): The read preference to use. If
     ``None`` (the default) the :attr:`read_preference` of this
-    :class:`MongoClient` is used. See :mod:`~pymongo.read_preferences`
+    :class:`MotorClient` is used. See :mod:`~pymongo.read_preferences`
     for options.
   - `write_concern` (optional): An instance of
     :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
-    default) the :attr:`write_concern` of this :class:`MongoClient` is
+    default) the :attr:`write_concern` of this :class:`MotorClient` is
     used.
+"""
+
+get_default_database_doc = """
+Get the database named in the MongoDB connection URI.
+
+>>> uri = 'mongodb://host/my_database'
+>>> client = MotorClient(uri)
+>>> db = client.get_default_database()
+>>> assert db.name == 'my_database'
+>>> db = client.get_default_database('fallback_db_name')
+>>> assert db.name == 'my_database'
+>>> uri_without_database = 'mongodb://host/'
+>>> client = MotorClient(uri_without_database)
+>>> db = client.get_default_database('fallback_db_name')
+>>> assert db.name == 'fallback_db_name'
+
+
+Useful in scripts where you want to choose which database to use
+based only on the URI in a configuration file.
+
+:Parameters:
+  - `default` (optional): the database name to use if no database name
+    was provided in the URI.
+  - `codec_options` (optional): An instance of
+    :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+    default) the :attr:`codec_options` of this :class:`MotorClient` is
+    used.
+  - `read_preference` (optional): The read preference to use. If
+    ``None`` (the default) the :attr:`read_preference` of this
+    :class:`MotorClient` is used. See :mod:`~pymongo.read_preferences`
+    for options.
+  - `write_concern` (optional): An instance of
+    :class:`~pymongo.write_concern.WriteConcern`. If ``None`` (the
+    default) the :attr:`write_concern` of this :class:`MotorClient` is
+    used.
+  - `read_concern` (optional): An instance of
+    :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
+    default) the :attr:`read_concern` of this :class:`MotorClient` is
+    used.
+
+.. versionadded:: 2.1
+   Revived this method. Added the ``default``, ``codec_options``,
+   ``read_preference``, ``write_concern`` and ``read_concern`` parameters.
+
+.. versionchanged:: 2.0
+   Removed this method.
 """
 
 bulk_write_doc = """Send a batch of write operations to the server.
