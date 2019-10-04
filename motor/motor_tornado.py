@@ -24,7 +24,8 @@ __all__ = ['MotorClient']
 
 
 def create_motor_class(cls):
-    return create_class_with_framework(cls, tornado_framework, 'motor_tornado')
+    return create_class_with_framework(cls, tornado_framework,
+                                       'motor.motor_tornado')
 
 
 MotorClient = create_motor_class(core.AgnosticClient)

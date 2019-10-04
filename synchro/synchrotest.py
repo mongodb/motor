@@ -237,15 +237,25 @@ class SynchroNosePlugin(Plugin):
         # them as unittests.
         if fn.__name__ in ('test_cases',
                            'create_test',
+                           'create_tests',
                            'create_connection_string_test',
                            'create_document_test',
                            'create_selection_tests',
                            ):
             return False
 
+    def wantClass(self, cls):
+        # PyMongo's test generator classes run at import time; tell Nose not
+        # to run them as unittests.
+        if cls.__name__ in ('TestCreator',):
+            return False
+
     def wantMethod(self, method):
         # Run standard Nose checks on name, like "does it start with test_"?
         if not self.selector.matches(method.__name__):
+            return False
+
+        if method.__name__ in ('run_test_ops',):
             return False
 
         for excluded_name in excluded_tests:

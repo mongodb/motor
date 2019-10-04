@@ -606,6 +606,33 @@ tasks:
             TOPOLOGY: "sharded_cluster"
         - func: "run tox"
 
+    - name: "test-4.2-standalone"
+      tags: ["4.2", "standalone"]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.2"
+            TOPOLOGY: "server"
+        - func: "run tox"
+
+    - name: "test-4.2-replica_set"
+      tags: ["4.2", "replica_set"]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.2"
+            TOPOLOGY: "replica_set"
+        - func: "run tox"
+
+    - name: "test-4.2-sharded_cluster"
+      tags: ["4.2", "sharded_cluster"]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.2"
+            TOPOLOGY: "sharded_cluster"
+        - func: "run tox"
+
     - name: "test-latest-standalone"
       tags: ["latest", "standalone"]
       commands:
@@ -713,6 +740,18 @@ axes:
         variables:
            TOX_ENV: "tornado5-py37"
            PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+      - id: "tornado6-py35"
+        variables:
+           TOX_ENV: "tornado6-py35"
+           PYTHON_BINARY: "/opt/python/3.5/bin/python3"
+      - id: "tornado6-py36"
+        variables:
+           TOX_ENV: "tornado6-py36"
+           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+      - id: "tornado6-py37"
+        variables:
+           TOX_ENV: "tornado6-py37"
+           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
       - id: "tornado_git-py35"
         variables:
            TOX_ENV: "tornado_git-py35"
@@ -746,15 +785,11 @@ axes:
     values:
       - id: "tornado5-py36"
         variables:
-           INSTALL_TOX: true
            TOX_ENV: "tornado5-py36"
-           VIRTUALENV: "/opt/mongodbtoolchain/v2/bin/virtualenv"
            PYTHON_BINARY: "/opt/mongodbtoolchain/v2/bin/python3.6"
       - id: "tornado_git-py36"
         variables:
-           INSTALL_TOX: true
            TOX_ENV: "tornado_git-py36"
-           VIRTUALENV: "/opt/mongodbtoolchain/v2/bin/virtualenv"
            PYTHON_BINARY: "/opt/mongodbtoolchain/v2/bin/python3.6"
 
   - id: tox-env-win
@@ -763,11 +798,11 @@ axes:
       - id: "tornado5-py36"
         variables:
            TOX_ENV: "tornado5-py36"
-           PYTHON_BINARY: "c:/python/Python36/python.exe"
+           PYTHON_BINARY: "c:\\python\\Python36\\python.exe"
       - id: "tornado_git-py36"
         variables:
            TOX_ENV: "tornado_git-py36"
-           PYTHON_BINARY: "c:/python/Python36/python.exe"
+           PYTHON_BINARY: "c:\\python\\Python36\\python.exe"
 
   - id: os
     display_name: "Operating System"
@@ -784,15 +819,16 @@ axes:
            TOX_BINARY: "/opt/python/3.6/bin/tox"
       - id: "win"
         display_name: "Windows"
-        run_on: "windows-64-vs2015-compile"
+        run_on: "windows-64-vs2015-test"
         variables:
            INSTALL_TOX: true
            VIRTUALENV: "/cygdrive/c/python/Python36/python.exe -m virtualenv"
-      - id: "osx"
-        display_name: "OSX 10.10"
+      - id: "macos-1012"
+        display_name: "macOS 10.12"
         run_on: "macos-1012"
         variables:
-           TOX_BINARY: "/opt/mongodbtoolchain/v2/bin/python3.6 -m tox"
+           INSTALL_TOX: true
+           VIRTUALENV: "/opt/mongodbtoolchain/v2/bin/python3.6 -m virtualenv"
 
 buildvariants:
 
@@ -821,6 +857,7 @@ buildvariants:
       ssl: "ssl"
   tasks:
      - ".latest"
+     - ".4.2"
      - ".4.0"
      - ".3.6"
      - ".3.4"
@@ -838,7 +875,7 @@ buildvariants:
 - matrix_name: "test-macos"
   display_name: "${os}-${tox-env-osx}-${ssl}"
   matrix_spec:
-    os: "osx"
+    os: "macos-1012"
     tox-env-osx: "*"
     ssl: "*"
   tasks:

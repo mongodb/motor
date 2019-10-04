@@ -60,7 +60,8 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         # Make sure there's no semaphore leak if we get a network error
         # when authenticating a new socket with cached credentials.
         # Get a client with one socket so we detect if it's leaked.
-        c = self.motor_rsc(maxPoolSize=1, waitQueueTimeoutMS=1)
+        c = self.motor_rsc(maxPoolSize=1, waitQueueTimeoutMS=1,
+                           retryReads=False)
         yield c.admin.command('ismaster')
 
         # Simulate an authenticate() call on a different socket.

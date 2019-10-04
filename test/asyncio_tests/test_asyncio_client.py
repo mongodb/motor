@@ -94,7 +94,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
     @asyncio_test
     def test_reconnect_in_case_connection_closed_by_mongo(self):
-        cx = self.asyncio_client(maxPoolSize=1)
+        cx = self.asyncio_client(maxPoolSize=1, retryReads=False)
         yield from cx.admin.command('ping')
 
         # close motor_socket, we imitate that connection to mongo server
@@ -103,7 +103,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
         pool = get_primary_pool(cx)
         socket = pool.sockets.pop()
         socket.sock.close()
-        pool.sockets.add(socket)
+        pool.sockets.appendleft(socket)
 
         with self.assertRaises(pymongo.errors.AutoReconnect):
             yield from cx.motor_test.test_collection.find_one()

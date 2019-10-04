@@ -10,3 +10,4 @@ The following is a list of people who have contributed to
 - Rémi Jolin
 - Andrew Svetlov
 - Nikolay Novik
+- Prashant Mital

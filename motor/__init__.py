@@ -16,8 +16,6 @@
 
 from __future__ import unicode_literals, absolute_import
 
-import pymongo
-
 from motor.motor_py2_compat import text_type
 
 version_tuple = (2, 1, 0, 'dev0')
@@ -30,19 +28,6 @@ def get_version_string():
 version = get_version_string()
 """Current version of Motor."""
 
-pymongo_required = 3, 7
-if pymongo.version_tuple[:2] < pymongo_required:
-    major, minor = pymongo_required
-    msg = (
-        "Motor %s requires PyMongo %s.%s or later. "
-        "You have PyMongo %s. "
-        "Do python -m pip install \"pymongo>=%s.%s,<4\""
-    ) % (version,
-         major, minor,
-         pymongo.version,
-         major, minor)
-
-    raise ImportError(msg)
 
 try:
     import tornado

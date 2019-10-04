@@ -14,6 +14,7 @@
 
 """Test AsyncIOMotorChangeStream."""
 
+import copy
 import os
 import threading
 import time
@@ -22,6 +23,7 @@ from pymongo.errors import InvalidOperation, OperationFailure
 
 from test import SkipTest, env
 from test.asyncio_tests import asyncio_test, AsyncIOTestCase
+from test.py35utils import wait_until
 
 
 class TestAsyncIOChangeStream(AsyncIOTestCase):
@@ -49,8 +51,8 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
                     return
                 time.sleep(0.1)
 
-            self.loop.call_soon_threadsafe(self.collection.insert_many,
-                                           [{} for _ in range(n)])
+            doclist = [{} for _ in range(n)] if isinstance(n, int) else n
+            self.loop.call_soon_threadsafe(self.collection.insert_many, doclist)
 
         t = threading.Thread(target=target)
         t.daemon = True
@@ -69,6 +71,57 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         self.assertEqual(i, 2)
 
     @asyncio_test
+    async def test_async_for(self):
+        change_stream = self.collection.watch()
+        self.wait_and_insert(change_stream, 2)
+        i = 0
+        async for _ in change_stream:
+            i += 1
+            if i == 2:
+                break
+
+        self.assertEqual(i, 2)
+
+    @asyncio_test
+    async def test_async_try_next(self):
+        change_stream = self.collection.watch()
+
+        # No changes.
+        doc = await change_stream.try_next()
+        self.assertIsNone(doc)
+
+        # Insert a change and ensure we see it via try_next.
+        idoc = {'_id': 1, 'data': 'abc'}
+        self.wait_and_insert(change_stream, [idoc])
+        while change_stream.alive:
+            change_doc = await change_stream.try_next()
+            if change_doc is not None:
+                break
+        self.assertEqual(change_doc['fullDocument'], idoc)
+
+    @env.require_version_min(4, 0, 7)
+    @asyncio_test
+    async def test_async_try_next_updates_resume_token(self):
+        change_stream = self.collection.watch(
+            [{"$match": {"fullDocument.a": 10}}])
+
+        # Get empty change, check non-empty resume token.
+        _ = await change_stream.try_next()
+        self.assertIsNotNone(change_stream.resume_token)
+
+        # Insert some record that don't match the change stream filter.
+        self.wait_and_insert(change_stream, [{'a': 19}, {'a': 20}])
+
+        # Ensure we see a new resume token even though we see no changes.
+        initial_resume_token = copy.copy(change_stream.resume_token)
+        async def token_change():
+            _ = await change_stream.try_next()
+            return change_stream.resume_token != initial_resume_token
+
+        await wait_until(token_change, "see a new resume token",
+                         timeout=os.environ.get('ASYNC_TEST_TIMEOUT', 5))
+
+    @asyncio_test
     async def test_watch(self):
         coll = self.collection
 
@@ -85,6 +138,30 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         await coll.insert_one({'_id': 23})
         change = await coll.watch(resume_after=change['_id']).next()
         self.assertEqual(change['fullDocument'], {'_id': 23})
+
+    @env.require_version_min(4, 2)
+    @asyncio_test
+    async def test_watch_with_start_after(self):
+        # Ensure collection exists before starting.
+        await self.collection.insert_one({})
+
+        # Create change stream before invalidate event.
+        change_stream = self.collection.watch(
+            [{'$match': {'operationType': 'invalidate'}}])
+        _ = await change_stream.try_next()
+
+        # Generate invalidate event and store corresponding resume token.
+        await self.collection.drop()
+        _ = await change_stream.next()
+        self.assertFalse(change_stream.alive)
+        resume_token = change_stream.resume_token
+
+        # Recreate change stream and observe from invalidate event.
+        doc = {'_id': 'startAfterTest'}
+        await self.collection.insert_one(doc)
+        change_stream = self.collection.watch(start_after=resume_token)
+        change = await change_stream.next()
+        self.assertEqual(doc, change['fullDocument'])
 
     @asyncio_test
     async def test_close(self):
@@ -107,7 +184,7 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         change_stream = coll.watch([{'$project': {'_id': 0}}])
         future = change_stream.next()
         self.wait_and_insert(change_stream)
-        with self.assertRaises(InvalidOperation):
+        with self.assertRaises((InvalidOperation, OperationFailure)):
             await future
 
         # The cursor should now be closed.

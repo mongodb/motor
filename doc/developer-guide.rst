@@ -12,6 +12,11 @@ later.
 Motor also works with Tornado 4.5 and later along with all the Python versions
 it supports.
 
+Each new Motor feature release depends on the latest PyMongo minor version release
+or newer, up to the next PyMongo major version release. For example, if 3.9.0
+is the latest available PyMongo version when Motor 2.1 is being released, Motor 2.1
+will require 3.9<=PyMongo<4.
+
 Motor is single-source compatible with all supported Python versions, although
 there are some tricks for Python 3. There is some code for the ``async``
 and ``await`` features of Python 3.5+ that is conditionally compiled with ``eval``

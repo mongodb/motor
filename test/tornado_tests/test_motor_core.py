@@ -46,6 +46,9 @@ pymongo_client_only = set([
     'get_default_database',
     'kill_cursors']).union(pymongo_only)
 
+# TODO: MOTOR-280: Add with_transaction
+pymongo_client_session_only = set(['with_transaction'])
+
 pymongo_database_only = set([
     'add_user',
     'collection_names',
@@ -97,7 +100,7 @@ class MotorCoreTest(MotorTest):
     @gen_test
     def test_client_session_attrs(self):
         self.assertEqual(
-            attrs(env.sync_cx.start_session()),
+            attrs(env.sync_cx.start_session()) - pymongo_client_session_only,
             attrs((yield self.cx.start_session())) - motor_only)
 
     def test_database_attrs(self):

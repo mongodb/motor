@@ -54,9 +54,12 @@ from pymongo.client_session import TransactionOptions
 from pymongo.collation import *
 from pymongo.common import *
 from pymongo.common import _UUID_REPRESENTATIONS, _MAX_END_SESSIONS
-from pymongo.compression_support import _HAVE_SNAPPY, _HAVE_ZLIB
+from pymongo.compression_support import _HAVE_SNAPPY, _HAVE_ZLIB, _HAVE_ZSTD
 from pymongo.cursor import *
 from pymongo.cursor import _QUERY_OPTIONS
+from pymongo.encryption import *
+from pymongo.encryption_options import *
+from pymongo.encryption_options import _HAVE_PYMONGOCRYPT
 from pymongo.errors import *
 from pymongo.message import (_COMMAND_OVERHEAD,
                              _CursorAddress,
@@ -68,7 +71,7 @@ from pymongo.monitoring import _LISTENERS, _Listeners, _SENSITIVE_COMMANDS
 from pymongo.monotonic import time
 from pymongo.operations import *
 from pymongo.pool import *
-from pymongo.pool import _METADATA
+from pymongo.pool import _METADATA, _PoolClosedError
 from pymongo.periodic_executor import *
 from pymongo.periodic_executor import _EXECUTORS
 from pymongo.read_concern import *
@@ -85,7 +88,7 @@ from pymongo.son_manipulator import *
 from pymongo.topology import *
 from pymongo.topology_description import *
 from pymongo.uri_parser import *
-from pymongo.uri_parser import _partition, _rpartition, _HAVE_DNSPYTHON
+from pymongo.uri_parser import _HAVE_DNSPYTHON
 from pymongo.write_concern import *
 from pymongo import auth
 from pymongo.auth import *

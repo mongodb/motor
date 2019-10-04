@@ -110,6 +110,7 @@ class AgnosticClient(AgnosticBaseProperties):
     PORT                     = ReadOnlyProperty()
     primary                  = ReadOnlyProperty()
     read_concern             = ReadOnlyProperty()
+    retry_reads              = ReadOnlyProperty()
     retry_writes             = ReadOnlyProperty()
     secondaries              = ReadOnlyProperty()
     server_info              = AsyncRead()
@@ -147,7 +148,7 @@ class AgnosticClient(AgnosticBaseProperties):
 
     def watch(self, pipeline=None, full_document='default', resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,
-              start_at_operation_time=None, session=None):
+              start_at_operation_time=None, session=None, start_after=None):
         """Watch changes on this cluster.
 
         Returns a :class:`~MotorChangeStream` cursor which iterates over changes
@@ -168,8 +169,10 @@ class AgnosticClient(AgnosticBaseProperties):
             updates will include both a delta describing the changes to the
             document, as well as a copy of the entire document that was
             changed from some time after the change occurred.
-          - `resume_after` (optional): The logical starting point for this
-            change stream.
+          - `resume_after` (optional): A resume token. If provided, the
+            change stream will start returning changes that occur directly
+            after the operation specified in the resume token. A resume token
+            is the _id value of a change document.
           - `max_await_time_ms` (optional): The maximum time in milliseconds
             for the server to wait for changes before responding to a getMore
             operation.
@@ -183,9 +186,15 @@ class AgnosticClient(AgnosticBaseProperties):
             MongoDB >= 4.0.
           - `session` (optional): a
             :class:`~pymongo.client_session.ClientSession`.
+          - `start_after` (optional): The same as `resume_after` except that
+            `start_after` can resume notifications after an invalidate event.
+            This option and `resume_after` are mutually exclusive.
 
         :Returns:
           A :class:`~MotorChangeStream`.
+
+        .. versionchanged:: 2.1
+           Added the ``start_after`` parameter.
 
         .. versionadded:: 2.0
 
@@ -197,7 +206,7 @@ class AgnosticClient(AgnosticBaseProperties):
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, pipeline, full_document, resume_after,
                             max_await_time_ms, batch_size, collation,
-                            start_at_operation_time, session)
+                            start_at_operation_time, session, start_after)
 
     def __getattr__(self, name):
         if name.startswith('_'):
@@ -247,7 +256,7 @@ class _MotorTransactionContext(object):
         exec(textwrap.dedent("""
         async def __aenter__(self):
             return self
-    
+
         async def __aexit__(self, exc_type, exc_val, exc_tb):
             if self._session.delegate._in_transaction:
                 if exc_val is None:
@@ -297,7 +306,7 @@ class AgnosticClientSession(AgnosticBase):
         return self._client.get_io_loop()
 
     def start_transaction(self, read_concern=None, write_concern=None,
-                          read_preference=None):
+                          read_preference=None, max_commit_time_ms=None):
         """Start a multi-statement transaction.
 
         Takes the same arguments as
@@ -316,7 +325,8 @@ class AgnosticClientSession(AgnosticBase):
         """
         self.delegate.start_transaction(read_concern=read_concern,
                                         write_concern=write_concern,
-                                        read_preference=read_preference)
+                                        read_preference=read_preference,
+                                        max_commit_time_ms=max_commit_time_ms)
         return _MotorTransactionContext(self)
 
     @property
@@ -358,11 +368,14 @@ class AgnosticDatabase(AgnosticBaseProperties):
     profiling_level       = AsyncRead()
     set_profiling_level   = AsyncCommand()
     validate_collection   = AsyncRead().unwrap('MotorCollection')
+    with_options          = DelegateMethod().wrap(Database)
 
     incoming_manipulators         = ReadOnlyProperty()
     incoming_copying_manipulators = ReadOnlyProperty()
     outgoing_manipulators         = ReadOnlyProperty()
     outgoing_copying_manipulators = ReadOnlyProperty()
+
+    _async_aggregate = AsyncRead(attr_name='aggregate')
 
     def __init__(self, client, name, **kwargs):
         self._client = client
@@ -371,9 +384,70 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
         super(self.__class__, self).__init__(delegate)
 
+    def aggregate(self, pipeline, **kwargs):
+        """Execute an aggregation pipeline on this database.
+
+        Introduced in MongoDB 3.6.
+
+        The aggregation can be run on a secondary if the client is connected
+        to a replica set and its ``read_preference`` is not :attr:`PRIMARY`.
+        The :meth:`aggregate` method obeys the :attr:`read_preference` of this
+        :class:`MotorDatabase`, except when ``$out`` or ``$merge`` are used, in
+        which case  :attr:`PRIMARY` is used.
+
+        All optional `aggregate command`_ parameters should be passed as
+        keyword arguments to this method. Valid options include, but are not
+        limited to:
+
+          - `allowDiskUse` (bool): Enables writing to temporary files. When set
+            to True, aggregation stages can write data to the _tmp subdirectory
+            of the --dbpath directory. The default is False.
+          - `maxTimeMS` (int): The maximum amount of time to allow the operation
+            to run in milliseconds.
+          - `batchSize` (int): The maximum number of documents to return per
+            batch. Ignored if the connected mongod or mongos does not support
+            returning aggregate results using a cursor.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`.
+
+        Returns a :class:`MotorCommandCursor` that can be iterated like a
+        cursor from :meth:`find`::
+
+           # Lists all operations currently running on the server.
+           pipeline = [{"$currentOp": {}}]
+           cursor = client.admin.aggregate(pipeline)
+           while (yield cursor.fetch_next):
+               operation = cursor.next_object()
+               print(operation)
+
+        In Python 3.5 and newer, aggregation cursors can be iterated elegantly
+        in native coroutines with `async for`::
+
+           async def f():
+               async for operation in client.admin.aggregate(pipeline):
+                   print(operation)
+
+        .. note:: This method does not support the 'explain' option. Please
+           use :meth:`MotorDatabase.command` instead.
+
+        .. note:: The :attr:`MotorDatabase.write_concern` of this database is
+           automatically applied to this operation.
+
+        .. versionadded:: 2.1
+
+        .. _aggregate command:
+            https://docs.mongodb.com/manual/reference/command/aggregate
+        """
+        cursor_class = create_class_with_framework(
+            AgnosticLatentCommandCursor, self._framework, self.__module__)
+
+        # Latent cursor that will send initial command on first "async for".
+        return cursor_class(self["$cmd.aggregate"], self._async_aggregate,
+                            pipeline, **unwrap_kwargs_session(kwargs))
+
     def watch(self, pipeline=None, full_document='default', resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,
-              start_at_operation_time=None, session=None):
+              start_at_operation_time=None, session=None, start_after=None):
         """Watch changes on this database.
 
         Returns a :class:`~MotorChangeStream` cursor which iterates over changes
@@ -394,8 +468,10 @@ class AgnosticDatabase(AgnosticBaseProperties):
             updates will include both a delta describing the changes to the
             document, as well as a copy of the entire document that was
             changed from some time after the change occurred.
-          - `resume_after` (optional): The logical starting point for this
-            change stream.
+          - `resume_after` (optional): A resume token. If provided, the
+            change stream will start returning changes that occur directly
+            after the operation specified in the resume token. A resume token
+            is the _id value of a change document.
           - `max_await_time_ms` (optional): The maximum time in milliseconds
             for the server to wait for changes before responding to a getMore
             operation.
@@ -409,9 +485,15 @@ class AgnosticDatabase(AgnosticBaseProperties):
             MongoDB >= 4.0.
           - `session` (optional): a
             :class:`~pymongo.client_session.ClientSession`.
+          - `start_after` (optional): The same as `resume_after` except that
+            `start_after` can resume notifications after an invalidate event.
+            This option and `resume_after` are mutually exclusive.
 
         :Returns:
           A :class:`~MotorChangeStream`.
+
+        .. versionchanged:: 2.1
+           Added the ``start_after`` parameter.
 
         .. versionadded:: 2.0
 
@@ -423,7 +505,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, pipeline, full_document, resume_after,
                             max_await_time_ms, batch_size, collation,
-                            start_at_operation_time, session)
+                            start_at_operation_time, session, start_after)
 
     @property
     def client(self):
@@ -459,14 +541,18 @@ class AgnosticDatabase(AgnosticBaseProperties):
             "failing because no such method exists." % (
             database_name, client_class_name))
 
-    def wrap(self, collection):
-        # Replace pymongo.collection.Collection with MotorCollection.
-        klass = create_class_with_framework(
-            AgnosticCollection,
-            self._framework,
-            self.__module__)
-
-        return klass(self, collection.name, _delegate=collection)
+    def wrap(self, obj):
+        if obj.__class__ is Collection:
+            # Replace pymongo.collection.Collection with MotorCollection.
+            klass = create_class_with_framework(
+                AgnosticCollection,
+                self._framework,
+                self.__module__)
+            return klass(self, obj.name, _delegate=obj)
+        elif obj.__class__ is Database:
+            return self.__class__(self._client, obj.name, _delegate=obj)
+        else:
+            return obj
 
     def get_io_loop(self):
         return self._client.get_io_loop()
@@ -639,6 +725,10 @@ class AgnosticCollection(AgnosticBaseProperties):
 
               print(plan)
 
+        .. versionchanged:: 2.1
+           This collection's read concern is now applied to pipelines
+           containing the `$out` stage when connected to MongoDB >= 4.2.
+
         .. versionchanged:: 1.0
            :meth:`aggregate` now **always** returns a cursor.
 
@@ -691,11 +781,14 @@ class AgnosticCollection(AgnosticBaseProperties):
 
     def watch(self, pipeline=None, full_document='default', resume_after=None,
               max_await_time_ms=None, batch_size=None, collation=None,
-              start_at_operation_time=None, session=None):
+              start_at_operation_time=None, session=None, start_after=None):
         """Watch changes on this collection.
 
-        Returns a :class:`~MotorChangeStream` cursor which iterates over changes
-        on this collection. Introduced in MongoDB 3.6.
+        Performs an aggregation with an implicit initial ``$changeStream``
+        stage and returns a :class:`~MotorChangeStream` cursor which
+        iterates over changes on this collection.
+
+        Introduced in MongoDB 3.6.
 
         A change stream continues waiting indefinitely for matching change
         events. Code like the following allows a program to cancel the change
@@ -712,7 +805,7 @@ class AgnosticCollection(AgnosticBaseProperties):
               # ensures it is canceled promptly if your code breaks
               # from the loop or throws an exception.
               async with db.collection.watch() as change_stream:
-                  async for change in stream:
+                  async for change in change_stream:
                       print(change)
 
           # Tornado
@@ -783,8 +876,10 @@ class AgnosticCollection(AgnosticBaseProperties):
             updates will include both a delta describing the changes to the
             document, as well as a copy of the entire document that was
             changed from some time after the change occurred.
-          - `resume_after` (optional): The logical starting point for this
-            change stream.
+          - `resume_after` (optional): A resume token. If provided, the
+            change stream will start returning changes that occur directly
+            after the operation specified in the resume token. A resume token
+            is the _id value of a change document.
           - `max_await_time_ms` (optional): The maximum time in milliseconds
             for the server to wait for changes before responding to a getMore
             operation.
@@ -794,11 +889,17 @@ class AgnosticCollection(AgnosticBaseProperties):
             to use for the aggregation.
           - `session` (optional): a
             :class:`~pymongo.client_session.ClientSession`.
+          - `start_after` (optional): The same as `resume_after` except that
+            `start_after` can resume notifications after an invalidate event.
+            This option and `resume_after` are mutually exclusive.
 
         :Returns:
           A :class:`~MotorChangeStream`.
 
         See the :ref:`tornado_change_stream_example`.
+
+        .. versionchanged:: 2.1
+           Added the ``start_after`` parameter.
 
         .. versionadded:: 1.2
 
@@ -813,7 +914,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, pipeline, full_document, resume_after,
                             max_await_time_ms, batch_size, collation,
-                            start_at_operation_time, session)
+                            start_at_operation_time, session, start_after)
 
     def list_indexes(self, session=None):
         """Get a cursor over the index documents for this collection. ::
@@ -1390,9 +1491,12 @@ class AgnosticChangeStream(AgnosticBase):
 
     _close = AsyncCommand(attr_name='close')
 
+    alive = ReadOnlyProperty()
+    resume_token = ReadOnlyProperty()
+
     def __init__(self, target, pipeline, full_document, resume_after,
                  max_await_time_ms, batch_size, collation,
-                 start_at_operation_time, session):
+                 start_at_operation_time, session, start_after):
         super(self.__class__, self).__init__(delegate=None)
         # The "target" object is a client, database, or collection.
         self._target = target
@@ -1403,7 +1507,8 @@ class AgnosticChangeStream(AgnosticBase):
                         'batch_size': batch_size,
                         'collation': collation,
                         'start_at_operation_time': start_at_operation_time,
-                        'session': session}
+                        'session': session,
+                        'start_after': start_after}
 
     def _next(self):
         # This method is run on a thread.
@@ -1415,26 +1520,92 @@ class AgnosticChangeStream(AgnosticBase):
         except StopIteration:
             raise StopAsyncIteration()
 
+    def _try_next(self):
+        # This method is run on a thread.
+        if not self.delegate:
+            self.delegate = self._target.delegate.watch(**self._kwargs)
+
+        return self.delegate.try_next()
+
     @coroutine_annotation
     def next(self):
         """Advance the cursor.
 
         This method blocks until the next change document is returned or an
-        unrecoverable error is raised.
+        unrecoverable error is raised. This method is used when iterating over
+        all changes in the cursor. For example::
+
+            async def watch_collection():
+                resume_token = None
+                pipeline = [{'$match': {'operationType': 'insert'}}]
+                try:
+                    async with db.collection.watch(pipeline) as stream:
+                        async for insert_change in stream:
+                            print(insert_change)
+                            resume_token = stream.resume_token
+                except pymongo.errors.PyMongoError:
+                    # The ChangeStream encountered an unrecoverable error or the
+                    # resume attempt failed to recreate the cursor.
+                    if resume_token is None:
+                        # There is no usable resume token because there was a
+                        # failure during ChangeStream initialization.
+                        logging.error('...')
+                    else:
+                        # Use the interrupted ChangeStream's resume token to
+                        # create a new ChangeStream. The new stream will
+                        # continue from the last seen insert change without
+                        # missing any events.
+                        async with db.collection.watch(
+                                pipeline, resume_after=resume_token) as stream:
+                            async for insert_change in stream:
+                                print(insert_change)
 
         Raises :exc:`StopAsyncIteration` if this change stream is closed.
 
-        You can iterate the change stream by calling
-        ``await change_stream.next()`` repeatedly, or with an "async for" loop:
-
-        .. code-block:: python3
-
-          async for change in db.collection.watch():
-              print(change)
-
+        In addition to using an "async for" loop as shown in the code
+        example above, you can also iterate the change stream by calling
+        ``await change_stream.next()`` repeatedly.
         """
         loop = self.get_io_loop()
         return self._framework.run_on_executor(loop, self._next)
+
+    @coroutine_annotation
+    def try_next(self):
+        """Advance the cursor without blocking indefinitely.
+
+        This method returns the next change document without waiting
+        indefinitely for the next change. If no changes are available,
+        it returns None. For example:
+
+        .. code-block:: python3
+
+          while change_stream.alive:
+              change = await change_stream.try_next()
+              # Note that the ChangeStream's resume token may be updated
+              # even when no changes are returned.
+              print("Current resume token: %r" % (change_stream.resume_token,))
+              if change is not None:
+                  print("Change document: %r" % (change,))
+                  continue
+              # We end up here when there are no recent changes.
+              # Sleep for a while before trying again to avoid flooding
+              # the server with getMore requests when no changes are
+              # available.
+              await asyncio.sleep(10)
+
+        If no change document is cached locally then this method runs a single
+        getMore command. If the getMore yields any documents, the next
+        document is returned, otherwise, if the getMore returns no documents
+        (because there have been no changes) then ``None`` is returned.
+
+        :Returns:
+          The next change document or ``None`` when no document is available
+          after running a single getMore or when the cursor is closed.
+
+        .. versionadded:: 2.1
+        """
+        loop = self.get_io_loop()
+        return self._framework.run_on_executor(loop, self._try_next)
 
     @coroutine_annotation
     def close(self):

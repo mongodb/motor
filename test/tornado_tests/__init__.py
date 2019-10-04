@@ -24,6 +24,7 @@ from tornado import gen, testing
 
 import motor
 from test.test_environment import env, CA_PEM, CLIENT_PEM
+from test.version import Version
 
 
 @gen.coroutine
@@ -151,3 +152,15 @@ class MotorMockServerTest(MotorTest):
 
     def run_thread(self, fn, *args, **kwargs):
         return self.executor.submit(fn, *args, **kwargs)
+
+
+class AsyncVersion(Version):
+    """Version class that can be instantiated with an async client from
+    within a coroutine."""
+    @classmethod
+    @gen.coroutine
+    def from_client(cls, client):
+        info = yield client.server_info()
+        if 'versionArray' in info:
+            raise gen.Return(cls.from_version_array(info['versionArray']))
+        raise gen.Return(cls.from_string(info['version']))

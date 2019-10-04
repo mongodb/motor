@@ -261,7 +261,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         # When doing an exhaust query, the socket stays checked out on success
         # but must be checked in on error to avoid counter leak.
         server = self.primary_or_standalone(rs=rs)
-        client = motor.MotorClient(server.uri, maxPoolSize=1)
+        client = motor.MotorClient(server.uri, maxPoolSize=1, retryReads=False)
 
         yield client.admin.command('ismaster')
         pool = get_primary_pool(client)
