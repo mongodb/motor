@@ -35,7 +35,7 @@ except ImportError:
     tornado = None
 else:
     # For backwards compatibility with Motor 0.4, export Motor's Tornado classes
-    # at module root. This may change in Motor 1.0. First get __all__.
+    # at module root. This may change in the future. First get __all__.
     from .motor_tornado import *
 
     # Now some classes that aren't in __all__ but might be expected.
