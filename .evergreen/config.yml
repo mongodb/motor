@@ -773,11 +773,14 @@ axes:
            TOX_ENV: "py3-pymongo-master"
            # Use 3.6 for now until 3.7 is on all Evergreen distros.
            PYTHON_BINARY: "/opt/python/3.6/bin/python3"
-      - id: "synchro"
+      - id: "synchro27"
         variables:
-           TOX_ENV: "synchro"
-           # The synchro tests are configured for py27 in tox.ini.
+           TOX_ENV: "synchro27"
            PYTHON_BINARY: "/opt/python/2.7/bin/python"
+      - id: "synchro37"
+        variables:
+          TOX_ENV: "synchro37"
+          PYTHON_BINARY: "/opt/python/3.7/bin/python3"
 
   # Test Python only up to 3.6 on Mac, until our toolchain is updated.
   - id: tox-env-osx
@@ -853,7 +856,7 @@ buildvariants:
     # TODO: synchro needs PyMongo master's updated SSL test certs,
     # which may require Motor test suite changes.
     - os: "*"
-      tox-env: ["synchro"]
+      tox-env: ["synchro27", "synchro37"]
       ssl: "ssl"
   tasks:
      - ".latest"
@@ -883,7 +886,7 @@ buildvariants:
 
 - matrix_name: "enterprise-auth"
   display_name: "Enterprise Auth"
-  matrix_spec: {"tox-env": ["synchro"], ssl: "ssl"}
+  matrix_spec: {"tox-env": ["synchro27"], ssl: "ssl"}
   run_on:
      - ubuntu1604-test
   tasks:

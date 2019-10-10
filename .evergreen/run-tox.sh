@@ -24,7 +24,7 @@ if [ "$SSL" != "nossl" ]; then
     export CA_PEM="$DRIVERS_TOOLS/.evergreen/x509gen/ca.pem"
 fi
 
-if [ "$TOX_ENV" = "synchro" ]; then
+if [ "$TOX_ENV" = "synchro27" -o "$TOX_ENV" = "synchro37" ]; then
     SETUP_ARGS="-- --check-exclude-patterns"
 fi
 

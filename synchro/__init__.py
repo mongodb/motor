@@ -674,19 +674,3 @@ class GridOut(Synchro):
 
         super(GridOut, self).__setattr__(key, value)
 
-
-class TimeModule(object):
-    """Fake time module so time.sleep() lets other tasks run on the IOLoop.
-
-    See e.g. test_schedule_refresh() in test_replica_set_client.py.
-    """
-    def __getattr__(self, item):
-        def sleep(seconds):
-            loop = IOLoop.current()
-            loop.add_timeout(time.time() + seconds, loop.stop)
-            loop.start()
-
-        if item == 'sleep':
-            return sleep
-        else:
-            return getattr(time, item)

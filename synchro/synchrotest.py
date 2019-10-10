@@ -306,10 +306,6 @@ if __name__ == '__main__':
     # real PyMongo.
     sys.meta_path[0:0] = [SynchroModuleFinder()]
 
-    # Ensure time.sleep() acts as PyMongo's tests expect: background tasks
-    # can run to completion while foreground pauses.
-    sys.modules['time'] = synchro.TimeModule()
-
     if '--check-exclude-patterns' in sys.argv:
         check_exclude_patterns = True
         sys.argv.remove('--check-exclude-patterns')
