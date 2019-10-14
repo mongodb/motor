@@ -53,13 +53,16 @@ excluded_modules = [
     # Accesses PyMongo internals. Tested directly in Motor.
     'test.test_session',
 
-    # We test Synchro in Python 2.7, but Motor's change streams need Python 3.
-    'test.test_change_stream',
-
     # Deprecated in PyMongo, removed in Motor 2.0.
     'test.test_gridfs',
     'test.test_son_manipulator',
 ]
+
+if sys.version_info[:2] < (3, 5):
+    excluded_modules.extend([
+        # Motor's change streams need Python 3.5.
+        'test.test_change_stream',
+    ])
 
 excluded_tests = [
     # Motor's reprs aren't the same as PyMongo's.
@@ -195,7 +198,7 @@ excluded_tests = [
     'TestDatabase.test_collection_names_single_socket',
     'TestDatabase.test_list_collection_names',
 
-    # We test Synchro in Python 2.7, but Motor's change streams need Python 3.
+    # Blocked on MOTOR-425.
     'TestClusterChangeStreamsWCustomTypes.*',
     'TestCollectionChangeStreamsWCustomTypes.*',
     'TestDatabaseChangeStreamsWCustomTypes.*',
