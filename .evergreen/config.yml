@@ -885,8 +885,8 @@ buildvariants:
      - ".latest"
 
 - matrix_name: "enterprise-auth"
-  display_name: "Enterprise Auth"
-  matrix_spec: {"tox-env": ["synchro27"], ssl: "ssl"}
+  display_name: "Enterprise Auth-${tox-env}"
+  matrix_spec: {"tox-env": ["synchro27", "synchro37"], ssl: "ssl"}
   run_on:
      - ubuntu1604-test
   tasks:
