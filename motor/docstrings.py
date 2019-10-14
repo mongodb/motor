@@ -94,6 +94,96 @@ based only on the URI in a configuration file.
    Removed this method.
 """
 
+fsync_doc = """Flush all pending writes to datafiles.
+
+Optional parameters can be passed as keyword arguments:
+  - `lock`: If True lock the server to disallow writes.
+  - `async`: If True don't block while synchronizing.
+  - `session` (optional): a
+    :class:`~pymongo.client_session.ClientSession`, created with
+    :meth:`~MotorClient.start_session`.
+
+.. note:: Starting with Python 3.7 `async` is a reserved keyword.
+  The async option to the fsync command can be passed using a
+  dictionary instead::
+
+    options = {'async': True}
+    await client.fsync(**options)
+
+.. versionchanged:: 1.2
+   Added session parameter.
+
+.. warning:: `async` and `lock` can not be used together.
+
+.. warning:: MongoDB does not support the `async` option
+             on Windows and will raise an exception on that
+             platform.
+"""
+
+current_op_doc = """
+**DEPRECATED**: Get information on operations currently running.
+
+Starting with MongoDB 3.6 this helper is obsolete. The functionality
+provided by this helper is available in MongoDB 3.6+ using the
+`$currentOp aggregation pipeline stage`_, which can be used with
+:meth:`aggregate`. Note that, while this helper can only return
+a single document limited to a 16MB result, :meth:`aggregate`
+returns a cursor avoiding that limitation.
+
+Users of MongoDB versions older than 3.6 can use the `currentOp command`_
+directly::
+
+  # MongoDB 3.2 and 3.4
+  await client.admin.command("currentOp")
+
+Or query the "inprog" virtual collection::
+
+  # MongoDB 2.6 and 3.0
+  await client.admin["$cmd.sys.inprog"].find_one()
+
+:Parameters:
+  - `include_all` (optional): if ``True`` also list currently
+    idle operations in the result
+  - `session` (optional): a
+    :class:`~pymongo.client_session.ClientSession`, created with
+    :meth:`~MotorClient.start_session`.
+
+.. versionchanged:: 2.1
+   Deprecated, use :meth:`aggregate` instead.
+
+.. versionchanged:: 1.2
+   Added session parameter.
+
+.. _$currentOp aggregation pipeline stage: https://docs.mongodb.com/manual/reference/operator/aggregation/currentOp/
+.. _currentOp command: https://docs.mongodb.com/manual/reference/command/currentOp/
+"""
+
+list_collection_names_doc = """
+Get a list of all the collection names in this database.
+
+For example, to list all non-system collections::
+
+    filter = {"name": {"$regex": r"^(?!system\\.)"}}
+    names = await db.list_collection_names(filter=filter)
+
+:Parameters:
+  - `session` (optional): a
+    :class:`~pymongo.client_session.ClientSession`, created with
+    :meth:`~MotorClient.start_session`.
+  - `filter` (optional):  A query document to filter the list of
+    collections returned from the listCollections command.
+  - `**kwargs` (optional): Optional parameters of the
+    `listCollections command
+    <https://docs.mongodb.com/manual/reference/command/listCollections/>`_
+    can be passed as keyword arguments to this method. The supported
+    options differ by server version.
+
+.. versionchanged:: 2.1
+   Added the ``filter`` and ``**kwargs`` parameters.
+
+.. versionadded:: 1.2
+"""
+
 bulk_write_doc = """Send a batch of write operations to the server.
 
 Requests are passed as a list of write operation instances imported
