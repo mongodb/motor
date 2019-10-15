@@ -15,6 +15,7 @@
 """MongoDB documentation examples with Motor and asyncio."""
 
 import asyncio
+import datetime
 from io import StringIO
 from unittest.mock import patch
 
@@ -22,6 +23,7 @@ import pymongo
 from pymongo import WriteConcern
 from pymongo.errors import ConnectionFailure, OperationFailure
 from pymongo.read_concern import ReadConcern
+from pymongo.read_preferences import ReadPreference
 
 from test import env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
@@ -890,3 +892,42 @@ class TestExamples(AsyncIOTestCase):
         self.assertIsNotNone(employee)
         self.assertEqual(employee['status'], 'Inactive')
         self.assertIn("Transaction committed", mock_stdout.getvalue())
+
+    @env.require_version_min(3, 6)
+    @env.require_replica_set
+    @asyncio_test
+    async def test_causal_consistency(self):
+        # Causal consistency examples
+        client = self.cx
+        self.addCleanup(env.sync_cx.drop_database, 'test')
+        await client.test.drop_collection('items')
+        await client.test.items.insert_one({
+            'sku': "111", 'name': 'Peanuts',
+            'start': datetime.datetime.today()})
+
+        # Start Causal Consistency Example 1
+        async with await client.start_session(causal_consistency=True) as s1:
+            current_date = datetime.datetime.today()
+            items = client.get_database(
+                'test', read_concern=ReadConcern('majority'),
+                write_concern=WriteConcern('majority', wtimeout=1000)).items
+            await items.update_one(
+                {'sku': "111", 'end': None},
+                {'$set': {'end': current_date}}, session=s1)
+            await items.insert_one(
+                {'sku': "nuts-111", 'name': "Pecans",
+                 'start': current_date}, session=s1)
+        # End Causal Consistency Example 1
+
+        # Start Causal Consistency Example 2
+        async with await client.start_session(causal_consistency=True) as s2:
+            s2.advance_cluster_time(s1.cluster_time)
+            s2.advance_operation_time(s1.operation_time)
+
+            items = client.get_database(
+                'test', read_preference=ReadPreference.SECONDARY,
+                read_concern=ReadConcern('majority'),
+                write_concern=WriteConcern('majority', wtimeout=1000)).items
+            async for item in items.find({'end': None}, session=s2):
+                print(item)
+        # End Causal Consistency Example 2
