@@ -676,8 +676,8 @@ class TestExamples(AsyncIOTestCase):
 
         async def insert_docs():
             while not done:
-                await db.inventory.insert_one({})
-                await asyncio.sleep(0.1)
+                await db.inventory.insert_one({"username": "alice"})
+                await db.inventory.delete_one({"username": "alice"})
 
         task = asyncio.ensure_future(insert_docs())
 
@@ -693,11 +693,19 @@ class TestExamples(AsyncIOTestCase):
             # End Changestream Example 2
 
             # Start Changestream Example 3
-            resume_token = document.get("_id")
+            resume_token = cursor.resume_token
             cursor = db.inventory.watch(resume_after=resume_token)
             document = await cursor.next()
-
             # End Changestream Example 3
+
+            # Start Changestream Example 4
+            pipeline = [
+                {'$match': {'fullDocument.username': 'alice'}},
+                {'$addFields': {'newField': 'this is an added field!'}}
+            ]
+            cursor = db.inventory.watch(pipeline=pipeline)
+            document = await cursor.next()
+            # End Changestream Example 4
         finally:
             done = True
             await task
