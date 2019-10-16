@@ -842,6 +842,7 @@ class TestExamples(AsyncIOTestCase):
         self.addCleanup(env.sync_cx.drop_database, "hr")
         self.addCleanup(env.sync_cx.drop_database, "reporting")
 
+        client = self.cx
         employees = self.cx.hr.employees
         events = self.cx.reporting.events
         await employees.insert_one({"employee": 3, "status": "Active"})
@@ -885,13 +886,150 @@ class TestExamples(AsyncIOTestCase):
 
         # Test the example.
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            async with await self.cx.start_session() as s:
+            async with await client.start_session() as s:
                 await update_employee_info(s)
 
         employee = await employees.find_one({"employee": 3})
         self.assertIsNotNone(employee)
         self.assertEqual(employee['status'], 'Inactive')
         self.assertIn("Transaction committed", mock_stdout.getvalue())
+
+        # Start Transactions Retry Example 1
+        async def run_transaction_with_retry(txn_coro, session):
+            while True:
+                try:
+                    await txn_coro(session)  # performs transaction
+                    break
+                except (ConnectionFailure, OperationFailure) as exc:
+                    print("Transaction aborted. Caught exception during "
+                          "transaction.")
+
+                    # If transient error, retry the whole transaction
+                    if exc.has_error_label("TransientTransactionError"):
+                        print("TransientTransactionError, retrying"
+                              "transaction ...")
+                        continue
+                    else:
+                        raise
+        # End Transactions Retry Example 1
+
+        # Test the example.
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            async with await client.start_session() as s:
+                await run_transaction_with_retry(update_employee_info, s)
+
+        employee = await employees.find_one({"employee": 3})
+        self.assertIsNotNone(employee)
+        self.assertEqual(employee['status'], 'Inactive')
+        self.assertIn("Transaction committed", mock_stdout.getvalue())
+
+        # Start Transactions Retry Example 2
+        async def commit_with_retry(session):
+            while True:
+                try:
+                    # Commit uses write concern set at transaction start.
+                    await session.commit_transaction()
+                    print("Transaction committed.")
+                    break
+                except (ConnectionFailure, OperationFailure) as exc:
+                    # Can retry commit
+                    if exc.has_error_label("UnknownTransactionCommitResult"):
+                        print("UnknownTransactionCommitResult, retrying "
+                              "commit operation ...")
+                        continue
+                    else:
+                        print("Error during commit ...")
+                        raise
+        # End Transactions Retry Example 2
+
+        # Test commit_with_retry from the previous examples
+        async def _insert_employee_retry_commit(session):
+            async with session.start_transaction():
+                await employees.insert_one(
+                    {"employee": 4, "status": "Active"},
+                    session=session)
+                await events.insert_one(
+                    {"employee": 4, "status": {"new": "Active", "old": None}},
+                    session=session)
+
+                await commit_with_retry(session)
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            async with await client.start_session() as s:
+                await run_transaction_with_retry(
+                    _insert_employee_retry_commit, s)
+
+        employee = await employees.find_one({"employee": 4})
+        self.assertIsNotNone(employee)
+        self.assertEqual(employee['status'], 'Active')
+        self.assertIn("Transaction committed", mock_stdout.getvalue())
+
+        # Start Transactions Retry Example 3
+
+        async def run_transaction_with_retry(txn_coro, session):
+            while True:
+                try:
+                    await txn_coro(session)  # performs transaction
+                    break
+                except (ConnectionFailure, OperationFailure) as exc:
+                    # If transient error, retry the whole transaction
+                    if exc.has_error_label("TransientTransactionError"):
+                        print("TransientTransactionError, retrying "
+                              "transaction ...")
+                        continue
+                    else:
+                        raise
+
+        async def commit_with_retry(session):
+            while True:
+                try:
+                    # Commit uses write concern set at transaction start.
+                    await session.commit_transaction()
+                    print("Transaction committed.")
+                    break
+                except (ConnectionFailure, OperationFailure) as exc:
+                    # Can retry commit
+                    if exc.has_error_label("UnknownTransactionCommitResult"):
+                        print("UnknownTransactionCommitResult, retrying "
+                              "commit operation ...")
+                        continue
+                    else:
+                        print("Error during commit ...")
+                        raise
+
+        # Updates two collections in a transactions
+
+        async def update_employee_info(session):
+            employees_coll = session.client.hr.employees
+            events_coll = session.client.reporting.events
+
+            async with session.start_transaction(
+                    read_concern=ReadConcern("snapshot"),
+                    write_concern=WriteConcern(w="majority"),
+                    read_preference=ReadPreference.PRIMARY):
+                await employees_coll.update_one(
+                    {"employee": 3}, {"$set": {"status": "Inactive"}},
+                    session=session)
+                await events_coll.insert_one(
+                    {"employee": 3, "status": {
+                        "new": "Inactive", "old": "Active"}},
+                    session=session)
+
+                await commit_with_retry(session)
+
+        # Start a session.
+        async with await client.start_session() as session:
+            try:
+                await run_transaction_with_retry(update_employee_info, session)
+            except Exception as exc:
+                # Do something with error.
+                raise
+
+        # End Transactions Retry Example 3
+
+        employee = await employees.find_one({"employee": 3})
+        self.assertIsNotNone(employee)
+        self.assertEqual(employee['status'], 'Inactive')
 
     @env.require_version_min(3, 6)
     @env.require_replica_set
