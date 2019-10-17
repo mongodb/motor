@@ -198,7 +198,7 @@ excluded_tests = [
     'TestDatabase.test_collection_names_single_socket',
     'TestDatabase.test_list_collection_names',
 
-    # Blocked on MOTOR-425.
+    # MOTOR-425 these tests fail with duplicate key errors.
     'TestClusterChangeStreamsWCustomTypes.*',
     'TestCollectionChangeStreamsWCustomTypes.*',
     'TestDatabaseChangeStreamsWCustomTypes.*',
