@@ -33,7 +33,12 @@ from motor.metaprogramming import MotorAttributeFactory
 
 # Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
 # importing * won't pick up underscore-prefixed attrs.
+from gridfs import *
 from gridfs.errors import *
+from gridfs.grid_file import (DEFAULT_CHUNK_SIZE,
+                              _SEEK_CUR,
+                              _SEEK_END,
+                              _clear_entity_type_registry)
 from pymongo import *
 from pymongo import (collation,
                      compression_support,
@@ -94,7 +99,6 @@ from pymongo.write_concern import *
 from pymongo import auth
 from pymongo.auth import *
 from pymongo.auth import _password_digest
-from gridfs.grid_file import DEFAULT_CHUNK_SIZE, _SEEK_CUR, _SEEK_END
 
 from pymongo import GEOSPHERE, HASHED
 from pymongo.pool import SocketInfo, Pool
@@ -282,7 +286,15 @@ class SynchroMeta(type):
         return new_class
 
 
-class Synchro(object):
+def with_metaclass(metaclass, *bases):
+    """Python 2/3 compatible metaclass helper."""
+    class _metaclass(metaclass):
+        def __new__(mcls, name, _bases, attrs):
+            return metaclass(name, bases, attrs)
+    return type.__new__(_metaclass, str('dummy'), (), {})
+
+
+class Synchro(with_metaclass(SynchroMeta)):
     """
     Wraps a MotorClient, MotorDatabase, MotorCollection, etc. and
     makes it act like the synchronous pymongo equivalent
@@ -291,7 +303,16 @@ class Synchro(object):
     __delegate_class__ = None
 
     def __cmp__(self, other):
+        """Implements == and != on Python 2."""
         return cmp(self.delegate, other.delegate)
+
+    def __eq__(self, other):
+        """Implements == and != on Python 3."""
+        if (isinstance(other, self.__class__)
+                and hasattr(self, 'delegate')
+                and hasattr(other, 'delegate')):
+            return self.delegate == other.delegate
+        return NotImplemented
 
     def synchronize(self, async_method):
         """
@@ -314,7 +335,6 @@ class MongoClient(Synchro):
     HOST = 'localhost'
     PORT = 27017
 
-    _cache_credentials = SynchroProperty()
     get_database = WrapOutgoing()
     max_pool_size = SynchroProperty()
     max_write_batch_size = SynchroProperty()
@@ -352,8 +372,11 @@ class MongoClient(Synchro):
     def __getitem__(self, name):
         return Database(self, name, delegate=self.delegate[name])
 
+    # For PyMongo tests that access client internals.
     _MongoClient__all_credentials = SynchroProperty()
     _MongoClient__options         = SynchroProperty()
+    _cache_credentials            = SynchroProperty()
+    _close_cursor_now             = SynchroProperty()
     _get_topology                 = SynchroProperty()
     _topology                     = SynchroProperty()
     _kill_cursors_executor        = SynchroProperty()
@@ -390,6 +413,7 @@ class ClientSession(Synchro):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.synchronize(self.delegate.end_session)
 
+    # For PyMongo tests that access session internals.
     _client              = SynchroProperty()
     _in_transaction      = SynchroProperty()
     _pinned_address      = SynchroProperty()
@@ -495,9 +519,15 @@ class Collection(Synchro):
 class ChangeStream(Synchro):
     __delegate_class__ = motor.motor_tornado.MotorChangeStream
 
-    next     = Sync('next')
+    _next    = Sync('next')
     try_next = Sync('try_next')
     close    = Sync('close')
+
+    def next(self):
+        try:
+            return self._next()
+        except StopAsyncIteration:
+            raise StopIteration()
 
     def __init__(self, motor_change_stream):
         self.delegate = motor_change_stream
@@ -507,6 +537,24 @@ class ChangeStream(Synchro):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
+    def __iter__(self):
+        return self
+
+    __next__ = next
+
+    # For PyMongo tests that access change stream internals.
+
+    @property
+    def _cursor(self):
+        raise unittest.SkipTest('test accesses internal _cursor field')
+
+    _batch_size        = SynchroProperty()
+    _client            = SynchroProperty()
+    _full_document     = SynchroProperty()
+    _max_await_time_ms = SynchroProperty()
+    _pipeline          = SynchroProperty()
+    _target            = SynchroProperty()
 
 
 class Cursor(Synchro):
@@ -592,7 +640,7 @@ class GridOutCursor(Cursor):
             raise TypeError(
                 "Expected MotorGridOutCursor, got %r" % delegate)
 
-        self.delegate = delegate
+        super(GridOutCursor, self).__init__(delegate)
 
     def next(self):
         motor_grid_out = super(GridOutCursor, self).next()
@@ -712,3 +760,18 @@ class GridOut(Synchro):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
+    def __next__(self):
+        if sys.version_info >= (3, 5):
+            try:
+                return self.synchronize(self.delegate.__anext__)()
+            except StopAsyncIteration:
+                raise StopIteration()
+        else:
+            chunk = self.readchunk()
+            if chunk:
+                return chunk
+            raise StopIteration()
+
+    def __iter__(self):
+        return self
