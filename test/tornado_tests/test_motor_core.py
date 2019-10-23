@@ -20,6 +20,7 @@ from tornado.testing import gen_test
 from gridfs import GridFSBucket, GridIn
 
 from motor import MotorGridFSBucket, MotorGridIn
+from motor.core import PY35
 from test import env
 from test.tornado_tests import MotorTest
 
@@ -45,7 +46,10 @@ pymongo_client_only = set([
     'set_cursor_manager',
     'kill_cursors']).union(pymongo_only)
 
-pymongo_client_session_only = set([])
+if PY35:
+    pymongo_client_session_only = set([])
+else:
+    pymongo_client_session_only = set(['with_transaction'])
 
 pymongo_database_only = set([
     'add_user',

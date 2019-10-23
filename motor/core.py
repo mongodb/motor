@@ -27,6 +27,7 @@ import pymongo.database
 import pymongo.errors
 import pymongo.mongo_client
 import pymongo.mongo_replica_set_client
+import pymongo.monotonic
 
 from pymongo.change_stream import ChangeStream
 from pymongo.client_session import ClientSession
@@ -59,6 +60,23 @@ except ImportError:
     HAS_SSL = False
 
 PY35 = sys.version_info >= (3, 5)
+
+# From the Convenient API for Transactions spec, with_transaction must
+# halt retries after 120 seconds.
+# This limit is non-configurable and was chosen to be twice the 60 second
+# default value of MongoDB's `transactionLifetimeLimitSeconds` parameter.
+_WITH_TRANSACTION_RETRY_TIME_LIMIT = 120
+
+
+def _within_time_limit(start_time):
+    """Are we within the with_transaction retry limit?"""
+    return (pymongo.monotonic.time() - start_time <
+            _WITH_TRANSACTION_RETRY_TIME_LIMIT)
+
+
+def _max_time_expired_error(exc):
+    """Return true if exc is a MaxTimeMSExpired error."""
+    return isinstance(exc, pymongo.errors.OperationFailure) and exc.code == 50
 
 
 class AgnosticBase(object):
@@ -289,7 +307,6 @@ class AgnosticClientSession(AgnosticBase):
 
     commit_transaction     = AsyncCommand()
     abort_transaction      = AsyncCommand()
-    with_transaction       = AsyncCommand()
     end_session            = AsyncCommand()
     cluster_time           = ReadOnlyProperty()
     has_ended              = ReadOnlyProperty()
@@ -305,6 +322,53 @@ class AgnosticClientSession(AgnosticBase):
 
     def get_io_loop(self):
         return self._client.get_io_loop()
+
+    if PY35:
+        exec(textwrap.dedent("""
+    async def with_transaction(self, coro, read_concern=None,
+                               write_concern=None, read_preference=None,
+                               max_commit_time_ms=None):
+        start_time = pymongo.monotonic.time()
+        while True:
+            async with self.start_transaction(
+                    read_concern, write_concern, read_preference,
+                    max_commit_time_ms):
+                try:
+                    ret = await coro(self)
+                except Exception as exc:
+                    if self.delegate._in_transaction:
+                        await self.abort_transaction()
+                    if (isinstance(exc, pymongo.errors.PyMongoError) and
+                            exc.has_error_label("TransientTransactionError")
+                            and _within_time_limit(start_time)):
+                        # Retry the entire transaction.
+                        continue
+                    raise
+
+            if not self.delegate._in_transaction:
+                # Assume callback intentionally ended the transaction.
+                return ret
+
+            while True:
+                try:
+                    await self.commit_transaction()
+                except pymongo.errors.PyMongoError as exc:
+                    if (exc.has_error_label("UnknownTransactionCommitResult")
+                            and _within_time_limit(start_time)
+                            and not _max_time_expired_error(exc)):
+                        # Retry the commit.
+                        continue
+
+                    if (exc.has_error_label("TransientTransactionError") and
+                            _within_time_limit(start_time)):
+                        # Retry the entire transaction.
+                        break
+                    raise
+
+                # Commit succeeded.
+                return ret
+
+    with_transaction.__doc__ = with_transaction_doc"""), globals(), locals())
 
     def start_transaction(self, read_concern=None, write_concern=None,
                           read_preference=None, max_commit_time_ms=None):

@@ -47,27 +47,23 @@ from test.tornado_tests import MotorTest
 
 class TestTransactionsConvenientAPI(MotorTest):
 
-    @gen_test
     @env.require_transactions
-    def test_basic(self):
+    @gen_test
+    async def test_basic(self):
         # Create the collection.
-        yield self.collection.insert_one({})
+        await self.collection.insert_one({})
 
-        def callback(session):
-            self.cx.delegate.motor_test.test_collection.insert_one(
-                {'_id': 1}, session=session)
+        async def coro(session):
+            await self.collection.insert_one({'_id': 1}, session=session)
 
-        s = yield self.cx.start_session()
-        try:
-            yield s.with_transaction(callback,
+        async with await self.cx.start_session() as s:
+            await s.with_transaction(coro,
                                      read_concern=ReadConcern('local'),
                                      write_concern=WriteConcern('majority'),
                                      read_preference=ReadPreference.PRIMARY,
                                      max_commit_time_ms=30000)
-        finally:
-            yield s.end_session()
 
-        doc = yield self.collection.find_one({'_id': 1})
+        doc = await self.collection.find_one({'_id': 1})
         self.assertEqual(doc, {'_id': 1})
 
 

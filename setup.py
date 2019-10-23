@@ -104,6 +104,7 @@ class test(Command):
             loader.avoid('asyncio_tests.test_asyncio_await',
                          'asyncio_tests.test_asyncio_change_stream',
                          'asyncio_tests.test_examples',
+                         'tornado_tests.test_motor_transaction',
                          reason='python < 3.5')
 
         # Decide if we can run async / await tests with Tornado.
