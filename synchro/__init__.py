@@ -678,7 +678,7 @@ class GridOut(Synchro):
 
     def __init__(
             self, root_collection, file_id=None, file_document=None,
-            delegate=None):
+            session=None, delegate=None):
         """Can be created with collection and kwargs like a PyMongo GridOut,
         or with a 'delegate' keyword arg, where delegate is a MotorGridOut.
         """
@@ -690,7 +690,8 @@ class GridOut(Synchro):
                     "Expected Collection, got %s" % repr(root_collection))
 
             self.delegate = motor.MotorGridOut(
-                root_collection.delegate, file_id, file_document)
+                root_collection.delegate, file_id, file_document,
+                session=session)
 
     def __getattr__(self, item):
         self.synchronize(self.delegate.open)()

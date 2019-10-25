@@ -160,13 +160,8 @@ class AgnosticGridOut(object):
     upload_date  = MotorGridOutProperty()
     write        = DelegateMethod()
 
-    def __init__(
-        self,
-        root_collection,
-        file_id=None,
-        file_document=None,
-        delegate=None,
-    ):
+    def __init__(self, root_collection, file_id=None, file_document=None,
+                 delegate=None, session=None):
         collection_class = create_class_with_framework(
             AgnosticCollection, self._framework, self.__module__)
 
@@ -181,7 +176,8 @@ class AgnosticGridOut(object):
             self.delegate = self.__delegate_class__(
                 root_collection.delegate,
                 file_id,
-                file_document)
+                file_document,
+                session=session)
 
         self.io_loop = root_collection.get_io_loop()
 
@@ -306,7 +302,8 @@ Metadata set on the file appears as attributes on a
   - `value`: Value of the attribute
 """)
 
-    def __init__(self, root_collection, delegate=None, **kwargs):
+    def __init__(self, root_collection, delegate=None, session=None,
+                 disable_md5=False, **kwargs):
         """
         Class to write data to GridFS. Application developers should not
         generally need to instantiate this class - see
@@ -337,8 +334,14 @@ Metadata set on the file appears as attributes on a
             :class:`bytes`.
 
         :Parameters:
-          - `root_collection`: A :class:`~motor.MotorCollection`, the root
-             collection to write to
+          - `root_collection`: root collection to write to
+          - `session` (optional): a
+            :class:`~pymongo.client_session.ClientSession` to use for all
+            commands
+          - `disable_md5` (optional): When True, an MD5 checksum will not be
+            computed for the uploaded file. Useful in environments where
+            MD5 cannot be used for regulatory or other reasons. Defaults to
+            False.
           - `**kwargs` (optional): file level options (see above)
 
         .. versionchanged:: 0.2
@@ -359,6 +362,8 @@ Metadata set on the file appears as attributes on a
         else:
             self.delegate = self.__delegate_class__(
                 root_collection.delegate,
+                session=session,
+                disable_md5=disable_md5,
                 **kwargs)
 
     if PY35:
