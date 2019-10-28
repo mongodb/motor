@@ -18,7 +18,6 @@ import asyncio
 import functools
 import gc
 import inspect
-import os
 import unittest
 from asyncio import ensure_future
 from unittest import SkipTest
@@ -28,6 +27,7 @@ from mockupdb import MockupDB
 from motor import motor_asyncio
 from test.assert_logs_backport import AssertLogsMixin
 from test.test_environment import env, CA_PEM, CLIENT_PEM
+from test.utils import get_async_test_timeout
 
 
 class _TestMethodWrapper(object):
@@ -165,18 +165,6 @@ class AsyncIOMockServerTestCase(AsyncIOTestCase):
             return (yield from cursor.fetch_next)
 
         return self.ensure_future(fetch_next())
-
-
-def get_async_test_timeout(default=5):
-    """Get the global timeout setting for async tests.
-
-    Returns a float, the timeout in seconds.
-    """
-    try:
-        timeout = float(os.environ.get('ASYNC_TEST_TIMEOUT'))
-        return max(timeout, default)
-    except (ValueError, TypeError):
-        return default
 
 
 # TODO: Spin off to a PyPI package.

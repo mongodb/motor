@@ -23,6 +23,7 @@ from pymongo import monitoring
 
 import contextlib
 import functools
+import os
 import warnings
 
 
@@ -109,3 +110,15 @@ def create_user(authdb, user, pwd=None, roles=None, **kwargs):
     cmd['roles'] = roles or ['root']
     cmd.update(**kwargs)
     return authdb.command(cmd)
+
+
+def get_async_test_timeout(default=5):
+    """Get the global timeout setting for async tests.
+
+    Returns a float, the timeout in seconds.
+    """
+    try:
+        timeout = float(os.environ.get('ASYNC_TEST_TIMEOUT'))
+        return max(timeout, default)
+    except (ValueError, TypeError):
+        return default

@@ -27,6 +27,7 @@ from tornado.testing import gen_test
 from test import SkipTest, env
 from test.tornado_tests import MotorTest
 from test.py35utils import wait_until
+from test.utils import get_async_test_timeout
 
 
 class MotorChangeStreamTest(MotorTest):
@@ -47,7 +48,7 @@ class MotorChangeStreamTest(MotorTest):
 
         def target():
             start = time.time()
-            timeout = float(os.environ.get('ASYNC_TEST_TIMEOUT', 5))
+            timeout = get_async_test_timeout()
             while not change_stream.delegate:
                 if time.time() - start > timeout:
                     print("MotorChangeStream never created ChangeStream")
@@ -110,7 +111,7 @@ class MotorChangeStreamTest(MotorTest):
             return change_stream.resume_token != initial_resume_token
 
         await wait_until(token_change, "see a new resume token",
-                         timeout=os.environ.get('ASYNC_TEST_TIMEOUT', 5))
+                         timeout=get_async_test_timeout())
 
     @gen_test
     async def test_watch(self):
