@@ -17,11 +17,13 @@ from __future__ import unicode_literals, absolute_import
 """GridFS implementation for Motor, an asynchronous driver for MongoDB."""
 
 import textwrap
+import warnings
 
 import gridfs
 import pymongo
 import pymongo.errors
-from gridfs import grid_file
+from gridfs import (DEFAULT_CHUNK_SIZE,
+                    grid_file)
 
 from motor.core import (AgnosticBaseCursor,
                         AgnosticCollection,
@@ -395,7 +397,9 @@ class AgnosticGridFSBucket(object):
     upload_from_stream           = AsyncCommand()
     upload_from_stream_with_id   = AsyncCommand()
 
-    def __init__(self, database, collection="fs", disable_md5=False):
+    def __init__(self, database, bucket_name="fs", disable_md5=False,
+                 chunk_size_bytes=DEFAULT_CHUNK_SIZE, write_concern=None,
+                 read_preference=None, collection=None):
         """Create a handle to a GridFS bucket.
 
         Raises :exc:`~pymongo.errors.ConfigurationError` if `write_concern`
@@ -418,11 +422,25 @@ class AgnosticGridFSBucket(object):
           - `disable_md5` (optional): When True, MD5 checksums will not be
             computed for uploaded files. Useful in environments where MD5
             cannot be used for regulatory or other reasons. Defaults to False.
+          - `collection` (optional): Deprecated, an alias for `bucket_name`
+            that exists solely to provide backwards compatibility.
 
+        .. versionchanged:: 2.1
+           Added support for the `bucket_name`, `chunk_size_bytes`,
+           `write_concern`, and `read_preference` parameters.
+           Deprecated the `collection` parameter which is now an alias to
+           `bucket_name` (to match the GridFSBucket class in PyMongo).
         .. versionadded:: 1.0
 
         .. mongodoc:: gridfs
         """
+        # Preserve backwards compatibility of "collection" parameter
+        if collection is not None:
+            warnings.warn('the "collection" parameter is deprecated, use '
+                          '"bucket_name" instead', DeprecationWarning,
+                          stacklevel=2)
+            bucket_name = collection
+
         db_class = create_class_with_framework(
             AgnosticDatabase, self._framework, self.__module__)
 
@@ -432,10 +450,16 @@ class AgnosticGridFSBucket(object):
                     self.__class__, database))
 
         self.io_loop = database.get_io_loop()
-        self.collection = database[collection]
+        self.collection = database.get_collection(
+            bucket_name,
+            write_concern=write_concern,
+            read_preference=read_preference)
         self.delegate = self.__delegate_class__(
             database.delegate,
-            collection,
+            bucket_name,
+            chunk_size_bytes=chunk_size_bytes,
+            write_concern=write_concern,
+            read_preference=read_preference,
             disable_md5=disable_md5)
 
     def get_io_loop(self):

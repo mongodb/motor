@@ -664,13 +664,13 @@ class GridFSBucket(Synchro):
 
     find = WrapOutgoing()
 
-    def __init__(self, database, bucket_name='fs', disable_md5=False):
+    def __init__(self, database, *args, **kwargs):
         if not isinstance(database, Database):
             raise TypeError(
                 "Expected Database, got %s" % repr(database))
 
         self.delegate = motor.MotorGridFSBucket(
-            database.delegate, bucket_name, disable_md5)
+            database.delegate, *args, **kwargs)
 
 
 class GridIn(Synchro):

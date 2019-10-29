@@ -19,8 +19,11 @@ import asyncio
 from io import BytesIO
 
 from gridfs.errors import NoFile
+from pymongo.write_concern import WriteConcern
+from pymongo.read_preferences import ReadPreference
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.utils import ignore_deprecations
 
 
 class TestAsyncIOGridFSBucket(AsyncIOTestCase):
@@ -58,3 +61,23 @@ class TestAsyncIOGridFSBucket(AsyncIOTestCase):
             yield from self.bucket.open_download_stream(oid)
         self.assertEqual(0, (yield from self.db.fs.files.count_documents({})))
         self.assertEqual(0, (yield from self.db.fs.chunks.count_documents({})))
+
+    def test_init(self):
+        name = 'bucket'
+        wc = WriteConcern(w='majority', wtimeout=1000)
+        rp = ReadPreference.SECONDARY
+        size = 8
+        bucket = AsyncIOMotorGridFSBucket(
+            self.db, name, disable_md5=True, chunk_size_bytes=size,
+            write_concern=wc, read_preference=rp)
+        self.assertEqual(name, bucket.collection.name)
+        self.assertEqual(wc, bucket.collection.write_concern)
+        self.assertEqual(rp, bucket.collection.read_preference)
+        self.assertEqual(wc, bucket.delegate._chunks.write_concern)
+        self.assertEqual(rp, bucket.delegate._chunks.read_preference)
+        self.assertEqual(size, bucket.delegate._chunk_size_bytes)
+
+    @ignore_deprecations
+    def test_collection_param(self):
+        bucket = AsyncIOMotorGridFSBucket(self.db, collection='collection')
+        self.assertEqual('collection', bucket.collection.name)
