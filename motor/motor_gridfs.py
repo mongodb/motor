@@ -407,14 +407,7 @@ class AgnosticGridFSBucket(object):
 
         :Parameters:
           - `database`: database to use.
-          - `bucket_name` (optional): The name of the bucket. Defaults to 'fs'.
-          - `chunk_size_bytes` (optional): The chunk size in bytes. Defaults
-            to 255KB.
-          - `write_concern` (optional): The
-            :class:`~pymongo.write_concern.WriteConcern` to use. If ``None``
-            (the default) db.write_concern is used.
-          - `read_preference` (optional): The read preference to use. If
-            ``None`` (the default) db.read_preference is used.
+          - `collection` (optional): The name of the bucket. Defaults to 'fs'.
           - `disable_md5` (optional): When True, MD5 checksums will not be
             computed for uploaded files. Useful in environments where MD5
             cannot be used for regulatory or other reasons. Defaults to False.
