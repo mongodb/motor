@@ -97,6 +97,10 @@ class TestListener(monitoring.CommandListener):
         else:
             return self.results['started'][0]
 
+    def started_command_names(self):
+        """Return list of command names started."""
+        return [event.command_name for event in self.results['started']]
+
 
 def session_ids(client):
     return [s.session_id for s in client.delegate._topology._session_pool]

@@ -20,6 +20,7 @@ import concurrent.futures
 from unittest import SkipTest
 
 from mockupdb import MockupDB
+from bson import SON
 from tornado import gen, testing
 
 import motor
@@ -84,6 +85,12 @@ class MotorTest(testing.AsyncTestCase):
         yield self.collection.insert_many([{'_id': i} for i in range(200)])
 
     make_test_data.__test__ = False
+
+    @gen.coroutine
+    def set_fail_point(self, client, command_args):
+        cmd = SON([('configureFailPoint', 'failCommand')])
+        cmd.update(command_args)
+        yield client.admin.command(cmd)
 
     def get_client_kwargs(self, **kwargs):
         if env.mongod_started_with_ssl:
