@@ -134,8 +134,12 @@ class TestAsyncIOTests(unittest.TestCase):
             default_timeout(self)
 
         with set_environ('ASYNC_TEST_TIMEOUT', '0'):
-            with self.assertRaises(concurrent.futures.TimeoutError):
-                custom_timeout(self)
+            if hasattr(asyncio, 'exceptions'):
+                with self.assertRaises(asyncio.exceptions.TimeoutError):
+                    custom_timeout(self)
+            else:
+                with self.assertRaises(concurrent.futures.TimeoutError):
+                    custom_timeout(self)
 
         with set_environ('ASYNC_TEST_TIMEOUT', '1'):
             # No error, 1-second timeout from environment overrides custom
