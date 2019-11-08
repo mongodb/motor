@@ -25,6 +25,8 @@ from pymongo.errors import ConnectionFailure, OperationFailure
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
 
+from motor.motor_asyncio import AsyncIOMotorClient
+
 from test import env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
@@ -1030,6 +1032,43 @@ class TestExamples(AsyncIOTestCase):
         employee = await employees.find_one({"employee": 3})
         self.assertIsNotNone(employee)
         self.assertEqual(employee['status'], 'Inactive')
+
+        uriString = env.uri
+
+        # Start Transactions withTxn API Example 1
+
+        # For a replica set, include the replica set name and a seedlist of the members in the URI string; e.g.
+        # uriString = 'mongodb://mongodb0.example.com:27017,mongodb1.example.com:27017/?replicaSet=myRepl'
+        # For a sharded cluster, connect to the mongos instances; e.g.
+        # uriString = 'mongodb://mongos0.example.com:27017,mongos1.example.com:27017/'
+
+        client = AsyncIOMotorClient(uriString)
+        wc_majority = WriteConcern("majority", wtimeout=1000)
+
+        # Prereq: Create collections. CRUD operations in transactions must be on existing collections.
+        await client.get_database(
+            "mydb1", write_concern=wc_majority).foo.insert_one({'abc': 0})
+        await client.get_database(
+            "mydb2", write_concern=wc_majority).bar.insert_one({'xyz': 0})
+
+        # Step 1: Define the callback that specifies the sequence of operations to perform inside the transactions.
+        async def callback(my_session):
+            collection_one = my_session.client.mydb1.foo
+            collection_two = my_session.client.mydb2.bar
+
+            # Important:: You must pass the session to the operations.
+            await collection_one.insert_one({'abc': 1}, session=my_session)
+            await collection_two.insert_one({'xyz': 999}, session=my_session)
+
+        # Step 2: Start a client session.
+        async with await client.start_session() as session:
+            # Step 3: Use with_transaction to start a transaction, execute the callback, and commit (or abort on error).
+            await session.with_transaction(
+                callback, read_concern=ReadConcern('local'),
+                write_concern=wc_majority,
+                read_preference=ReadPreference.PRIMARY)
+
+        # End Transactions withTxn API Example 1
 
     @env.require_version_min(3, 6)
     @env.require_replica_set
