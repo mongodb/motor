@@ -305,7 +305,9 @@ functions:
         file_location: "${DRIVERS_TOOLS}/results.json"
     - command: attach.xunit_results
       params:
-        file: "src/xunit-results/TEST-*.xml"
+        files:
+          - "src/xunit-results/TEST-*.xml"
+          - "src/xunit-synchro-results"
 
   "bootstrap mongo-orchestration":
     - command: shell.exec
