@@ -391,7 +391,7 @@ class _SynchroTransactionContext(Synchro):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         motor_session = self.delegate._session
-        if motor_session.delegate._in_transaction:
+        if motor_session.delegate.in_transaction:
             if exc_val is None:
                 self.synchronize(motor_session.commit_transaction)()
             else:
@@ -403,6 +403,7 @@ class ClientSession(Synchro):
 
     start_transaction = WrapOutgoing()
     client            = SynchroProperty()
+    in_transaction    = SynchroProperty()
 
     def __init__(self, delegate):
         self.delegate = delegate
@@ -415,7 +416,6 @@ class ClientSession(Synchro):
 
     # For PyMongo tests that access session internals.
     _client              = SynchroProperty()
-    _in_transaction      = SynchroProperty()
     _pinned_address      = SynchroProperty()
     _server_session      = SynchroProperty()
     _transaction         = SynchroProperty()

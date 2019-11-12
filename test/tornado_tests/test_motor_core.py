@@ -16,7 +16,7 @@ from __future__ import unicode_literals
 
 """Validate list of PyMongo attributes wrapped by Motor."""
 
-from tornado.testing import gen_test
+from tornado.testing import gen_test, unittest
 from gridfs import GridFSBucket, GridIn
 
 from motor import MotorGridFSBucket, MotorGridIn
@@ -97,6 +97,7 @@ class MotorCoreTest(MotorTest):
             attrs(env.sync_cx) - pymongo_client_only,
             attrs(self.cx) - motor_client_only)
 
+    @unittest.skip("Skip until MOTOR-444 is complete")
     @env.require_version_min(3, 6)
     @env.require_replica_set
     @gen_test

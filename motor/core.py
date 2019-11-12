@@ -276,7 +276,7 @@ class _MotorTransactionContext(object):
             return self
 
         async def __aexit__(self, exc_type, exc_val, exc_tb):
-            if self._session.delegate._in_transaction:
+            if self._session.in_transaction:
                 if exc_val is None:
                     await self._session.commit_transaction()
                 else:
@@ -336,7 +336,7 @@ class AgnosticClientSession(AgnosticBase):
                 try:
                     ret = await coro(self)
                 except Exception as exc:
-                    if self.delegate._in_transaction:
+                    if self.in_transaction:
                         await self.abort_transaction()
                     if (isinstance(exc, pymongo.errors.PyMongoError) and
                             exc.has_error_label("TransientTransactionError")
@@ -345,7 +345,7 @@ class AgnosticClientSession(AgnosticBase):
                         continue
                     raise
 
-            if not self.delegate._in_transaction:
+            if not self.in_transaction:
                 # Assume callback intentionally ended the transaction.
                 return ret
 
@@ -398,6 +398,18 @@ class AgnosticClientSession(AgnosticBase):
     def client(self):
         """The :class:`~MotorClient` this session was created from. """
         return self._client
+
+    @property
+    def in_transaction(self):
+        """True if this session has an active multi-statement transaction.
+
+        .. versionadded:: 2.1
+        """
+        try:
+            return self.delegate.in_transaction
+        except AttributeError:
+            # PyMongo<=3.9
+            return self.delegate._in_transaction
 
     if PY35:
         exec(textwrap.dedent("""

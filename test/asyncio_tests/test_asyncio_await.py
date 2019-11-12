@@ -208,10 +208,10 @@ class TestAsyncIOAwait(AsyncIOTestCase):
     async def test_transaction(self):
         async with await self.cx.start_session() as s:
             s.start_transaction()
-            self.assertTrue(s.delegate._in_transaction)
+            self.assertTrue(s.in_transaction)
             self.assertFalse(s.has_ended)
             await s.end_session()
-            self.assertFalse(s.delegate._in_transaction)
+            self.assertFalse(s.in_transaction)
             self.assertTrue(s.has_ended)
 
         async with await self.cx.start_session() as s:
@@ -223,9 +223,9 @@ class TestAsyncIOAwait(AsyncIOTestCase):
             await s.abort_transaction()
 
             async with s.start_transaction():
-                self.assertTrue(s.delegate._in_transaction)
+                self.assertTrue(s.in_transaction)
                 self.assertFalse(s.has_ended)
-            self.assertFalse(s.delegate._in_transaction)
+            self.assertFalse(s.in_transaction)
             self.assertFalse(s.has_ended)
 
         self.assertTrue(s.has_ended)
