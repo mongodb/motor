@@ -25,8 +25,6 @@ from pymongo.errors import ConnectionFailure, OperationFailure
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
 
-from motor.motor_asyncio import AsyncIOMotorClient
-
 from test import env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
@@ -1033,7 +1031,8 @@ class TestExamples(AsyncIOTestCase):
         self.assertIsNotNone(employee)
         self.assertEqual(employee['status'], 'Inactive')
 
-        uriString = env.uri
+        AsyncIOMotorClient = lambda _: self.cx
+        uriString = None
 
         # Start Transactions withTxn API Example 1
 
