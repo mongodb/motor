@@ -1328,7 +1328,8 @@ class AgnosticBaseCursor(AgnosticBase):
                     self._get_more(),
                     self._to_list, length, the_list, future)
         except Exception as exc:
-            future.set_exception(exc)
+            if not future.done():
+                future.set_exception(exc)
 
     def get_io_loop(self):
         return self.collection.get_io_loop()
@@ -1543,7 +1544,8 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
             pymongo_cursor = future.result()
             self.delegate = pymongo_cursor
         except Exception as exc:
-            original_future.set_exception(exc)
+            if not original_future.done():
+                original_future.set_exception(exc)
         else:
             if self.delegate._CommandCursor__data or not self.delegate.alive:
                 # _get_more is complete.

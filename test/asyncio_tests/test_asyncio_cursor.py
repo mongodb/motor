@@ -34,6 +34,7 @@ from test.asyncio_tests import (asyncio_test,
                                 AsyncIOMockServerTestCase,
                                 server_is_mongos,
                                 get_command_line)
+from test.test_environment import env
 
 
 class TestAsyncIOCursor(AsyncIOMockServerTestCase):
@@ -213,6 +214,30 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             formatted = '\n'.join(traceback.format_tb(tb))
             self.assertTrue('_unpack_response' in formatted
                             or '_check_command_response' in formatted)
+
+    @env.require_version_min(4, 2)  # failCommand
+    @asyncio_test
+    def test_to_list_cancelled_error(self):
+        yield from self.make_test_data()
+
+        # Cause an error on a getMore after the cursor.to_list task is
+        # cancelled.
+        yield from self.cx.admin.command(
+            'configureFailPoint', 'failCommand', mode={'times': 1},
+            data={'failCommands': ['getMore'], 'errorCode': 96})
+
+        try:
+            cursor = self.collection.find(batch_size=2)
+            task = cursor.to_list(None)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                task.result()
+            yield from cursor.close()
+            # Yield for some time to allow pending Cursor callbacks to run.
+            yield from asyncio.sleep(1)
+        finally:
+            yield from self.cx.admin.command(
+                'configureFailPoint', 'failCommand', mode='off')
 
     @asyncio_test
     def test_to_list_with_length_of_none(self):
