@@ -3,8 +3,12 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
-Next Release
-------------
+Motor 2.1
+---------
+
+Motor 2.1 adds support for MongoDB 4.2 features. It depends on PyMongo 3.10 or
+later. Motor continues to support MongoDB 3.0 and later. Motor 2.1 also adds
+support for Python 3.8.
 
 Motor now offers experimental support for Windows when it is using the asyncio
 event loop. This means it supports Windows exclusively with Python 3, either
