@@ -26,6 +26,7 @@ Operating System :: MacOS :: MacOS X
 Operating System :: Unix
 Programming Language :: Python
 Programming Language :: Python :: Implementation :: CPython
+Programming Language :: Python :: Implementation :: PyPy
 """
 
 description = 'Non-blocking MongoDB driver for Tornado or asyncio'
