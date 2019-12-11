@@ -310,6 +310,7 @@ class AgnosticClientSession(AgnosticBase):
     end_session            = AsyncCommand()
     cluster_time           = ReadOnlyProperty()
     has_ended              = ReadOnlyProperty()
+    in_transaction         = ReadOnlyProperty()
     options                = ReadOnlyProperty()
     operation_time         = ReadOnlyProperty()
     session_id             = ReadOnlyProperty()
@@ -398,18 +399,6 @@ class AgnosticClientSession(AgnosticBase):
     def client(self):
         """The :class:`~MotorClient` this session was created from. """
         return self._client
-
-    @property
-    def in_transaction(self):
-        """True if this session has an active multi-statement transaction.
-
-        .. versionadded:: 2.1
-        """
-        try:
-            return self.delegate.in_transaction
-        except AttributeError:
-            # PyMongo<=3.9
-            return self.delegate._in_transaction
 
     if PY35:
         exec(textwrap.dedent("""

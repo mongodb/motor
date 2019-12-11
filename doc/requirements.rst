@@ -4,7 +4,7 @@ Requirements
 The current version of Motor requires:
 
 * CPython 2.7, or 3.4 and later.
-* PyMongo_ 3.9 and later.
+* PyMongo_ 3.10 and later.
 
 Motor can integrate with either Tornado or asyncio.
 
@@ -54,7 +54,7 @@ Motor and PyMongo
 +-------------------+-----------------+
 | 2.0               | 3.7+            |
 +-------------------+-----------------+
-| 2.1               | 3.9+            |
+| 2.1               | 3.10+           |
 +-------------------+-----------------+
 
 Motor and MongoDB
