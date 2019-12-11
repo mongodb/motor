@@ -202,7 +202,7 @@ latex_documents = [
 autodoc_default_flags = ['inherited-members']
 autodoc_member_order = 'groupwise'
 
-pymongo_inventory = ('http://api.mongodb.com/python/%s/' % pymongo_version,
+pymongo_inventory = ('https://pymongo.readthedocs.io/en/%s/' % pymongo_version,
                      None)
 
 intersphinx_mapping = {

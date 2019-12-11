@@ -15,6 +15,53 @@ event loop. This means it supports Windows exclusively with Python 3, either
 integrating with asyncio directly or with Tornado 5 or later: starting in
 version 5, Tornado uses the asyncio event loop on Python 3 by default.
 
+Additional changes:
+
+- Support for MongoDB 4.2 sharded transactions. Sharded transactions have
+  the same API as replica set transactions.
+- New method :meth:`~motor.motor_asyncio.AsyncIOMotorClientSession.with_transaction`
+  to support conveniently running a transaction in a session with automatic
+  retries and at-most-once semantics.
+- Added the ``max_commit_time_ms`` parameter to
+  :meth:`~motor.motor_asyncio.AsyncIOMotorClientSession.start_transaction`.
+- The ``retryWrites`` URI option now defaults to ``True``. Supported write
+  operations that fail with a retryable error will automatically be retried one
+  time, with at-most-once semantics.
+- Support for retryable reads and the ``retryReads`` URI option which is
+  enabled by default. See the :class:`~pymongo.mongo_client.MongoClient`
+  documentation for details. Now that supported operations are retried
+  automatically and transparently, users should consider adjusting any custom
+  retry logic to prevent an application from inadvertently retrying for too
+  long.
+- Support zstandard for wire protocol compression.
+- Support for periodically polling DNS SRV records to update the mongos proxy
+  list without having to change client configuration.
+- New method :meth:`motor.motor_asyncio.AsyncIOMotorDatabase.aggregate` to
+  support running database level aggregations.
+- Change stream enhancements for MongoDB 4.2:
+
+  - Resume tokens can now be accessed from a ``AsyncIOMotorChangeStream`` cursor
+    using the :attr:`~motor.motor_asyncio.AsyncIOMotorChangeStream.resume_token`
+    attribute.
+  - New ``AsyncIOMotorChangeStream`` method
+    :meth:`~motor.motor_asyncio.AsyncIOMotorChangeStream.try_next` and
+    attribute :attr:`~motor.motor_asyncio.AsyncIOMotorChangeStream.alive`.
+  - New parameter ``start_after`` for change stream
+    :meth:`motor.motor_asyncio.AsyncIOMotorCollection.watch`,
+    :meth:`motor.motor_asyncio.AsyncIOMotorDatabase.watch`, and
+    :meth:`motor.motor_asyncio.AsyncIOMotorClient.watch` methods.
+
+- New parameters ``bucket_name``, ``chunk_size_bytes``, ``write_concern``, and
+  ``read_preference`` for :class:`motor.motor_asyncio.AsyncIOMotorGridFSBucket`.
+
+Issues Resolved
+~~~~~~~~~~~~~~~
+
+See the `Motor 2.1 release notes in JIRA`_ for the complete list of resolved
+issues in this release.
+
+.. _Motor 2.1 release notes in JIRA: https://jira.mongodb.org/secure/ReleaseNote.jspa?projectId=11182&version=20187
+
 Motor 2.0
 ---------
 
@@ -233,7 +280,7 @@ a large number of API changes, read the `the PyMongo 3 changelog`_ carefully.
 .. _the PyMongo 3 changelog: http://api.mongodb.com/python/current/changelog.html#changes-in-version-3-0
 
 :class:`MotorReplicaSetClient` is removed
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In Motor 1.0, :class:`MotorClient` is the only class. Connect to a replica set with
 a "replicaSet" URI option or parameter::
