@@ -18,7 +18,7 @@ from __future__ import unicode_literals, absolute_import
 
 from motor.motor_py2_compat import text_type
 
-version_tuple = (2, 1, 0)
+version_tuple = (2, 2, 0, 'dev0')
 
 
 def get_version_string():
