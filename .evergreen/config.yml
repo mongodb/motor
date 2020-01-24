@@ -836,9 +836,9 @@ axes:
         variables:
            INSTALL_TOX: true
            VIRTUALENV: "/cygdrive/c/python/Python36/python.exe -m virtualenv"
-      - id: "macos-1012"
-        display_name: "macOS 10.12"
-        run_on: "macos-1012"
+      - id: "macos-1014"
+        display_name: "macOS 10.14"
+        run_on: "macos-1014"
         variables:
            INSTALL_TOX: true
            VIRTUALENV: "/opt/mongodbtoolchain/v2/bin/python3.6 -m virtualenv"
@@ -888,7 +888,7 @@ buildvariants:
 - matrix_name: "test-macos"
   display_name: "${os}-${tox-env-osx}-${ssl}"
   matrix_spec:
-    os: "macos-1012"
+    os: "macos-1014"
     tox-env-osx: "*"
     ssl: "*"
   tasks:
