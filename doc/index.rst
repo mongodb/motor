@@ -40,8 +40,8 @@ How To Ask For Help
 -------------------
 
 Post questions about Motor to the
-`mongodb-user list on Google Groups
-<https://groups.google.com/forum/?fromgroups#!forum/mongodb-user>`_.
+`MongoDB Community Forums
+<https://community.mongodb.com/tags/c/drivers-odms-connectors/7/motor-driver>`_.
 For confirmed issues or feature requests, open a case in
 `Jira <http://jira.mongodb.org>`_ in the "MOTOR" project.
 

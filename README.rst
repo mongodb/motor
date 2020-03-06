@@ -55,7 +55,7 @@ How To Ask For Help
 ===================
 
 Issues with, questions about, or feedback for Motor should be sent to the
-`mongodb-user list on Google Groups`_.
+`MongoDB Community Forums`_.
 
 For confirmed issues or feature requests,
 open a case in `Jira <http://jira.mongodb.org>`_ in the "MOTOR" project.
@@ -111,7 +111,7 @@ Tests are located in the ``test/`` directory.
 
 .. _ReadTheDocs: https://motor.readthedocs.io/
 
-.. _mongodb-user list on Google Groups:
-   https://groups.google.com/forum/?fromgroups#!forum/mongodb-user
+.. _MongoDB Community Forums:
+   https://community.mongodb.com/tags/c/drivers-odms-connectors/7/motor-driver
 
 .. _sphinx: http://sphinx.pocoo.org/
