@@ -1044,7 +1044,7 @@ class TestExamples(AsyncIOTestCase):
         client = AsyncIOMotorClient(uriString)
         wc_majority = WriteConcern("majority", wtimeout=1000)
 
-        # Prereq: Create collections. CRUD operations in transactions must be on existing collections.
+        # Prereq: Create collections.
         await client.get_database(
             "mydb1", write_concern=wc_majority).foo.insert_one({'abc': 0})
         await client.get_database(
