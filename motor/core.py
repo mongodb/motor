@@ -448,7 +448,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         delegate = kwargs.get('_delegate') or Database(
             client.delegate, name, **kwargs)
 
-        super(self.__class__, self).__init__(delegate)
+        super(AgnosticBaseProperties, self).__init__(delegate)
 
     def aggregate(self, pipeline, **kwargs):
         """Execute an aggregation pipeline on this database.
@@ -676,7 +676,7 @@ class AgnosticCollection(AgnosticBaseProperties):
             read_preference=read_preference, write_concern=write_concern,
             read_concern=read_concern)
 
-        super(self.__class__, self).__init__(delegate)
+        super(AgnosticBaseProperties, self).__init__(delegate)
         self.database = database
 
     def __getattr__(self, name):
