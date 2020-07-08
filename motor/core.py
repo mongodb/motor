@@ -448,7 +448,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         delegate = kwargs.get('_delegate') or Database(
             client.delegate, name, **kwargs)
 
-        super(AgnosticBaseProperties, self).__init__(delegate)
+        super(AgnosticDatabase, self).__init__(delegate)
 
     def aggregate(self, pipeline, **kwargs):
         """Execute an aggregation pipeline on this database.
@@ -676,7 +676,7 @@ class AgnosticCollection(AgnosticBaseProperties):
             read_preference=read_preference, write_concern=write_concern,
             read_concern=read_concern)
 
-        super(AgnosticBaseProperties, self).__init__(delegate)
+        super(AgnosticCollection, self).__init__(delegate)
         self.database = database
 
     def __getattr__(self, name):
@@ -1497,7 +1497,7 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
         # a PyMongo CommandCursor back yet. Set self.delegate to a latent
         # cursor until the first yield or await triggers _get_more(), which
         # will execute the callback "start", which gets a PyMongo CommandCursor.
-        super(self.__class__, self).__init__(_LatentCursor(), collection)
+        super(AgnosticLatentCommandCursor, self).__init__(_LatentCursor(), collection)
         self.start = start
         self.args = args
         self.kwargs = kwargs
@@ -1523,7 +1523,7 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
 
             return original_future
 
-        return super(self.__class__, self)._get_more()
+        return super(AgnosticLatentCommandCursor, self)._get_more()
 
     def _on_started(self, original_future, future):
         try:
@@ -1542,7 +1542,7 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
                     len(self.delegate._CommandCursor__data))
             else:
                 # Send a getMore.
-                future = super(self.__class__, self)._get_more()
+                future = super(AgnosticLatentCommandCursor, self)._get_more()
                 self._framework.chain_future(future, original_future)
 
 
@@ -1566,7 +1566,7 @@ class AgnosticChangeStream(AgnosticBase):
     def __init__(self, target, pipeline, full_document, resume_after,
                  max_await_time_ms, batch_size, collation,
                  start_at_operation_time, session, start_after):
-        super(self.__class__, self).__init__(delegate=None)
+        super(AgnosticChangeStream, self).__init__(delegate=None)
         # The "target" object is a client, database, or collection.
         self._target = target
         self._kwargs = {'pipeline': pipeline,
