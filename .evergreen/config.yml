@@ -706,30 +706,10 @@ axes:
   - id: tox-env
     display_name: "Tox Env"
     values:
-      - id: "tornado4-py27"
-        variables:
-           TOX_ENV: "tornado4-py27"
-           PYTHON_BINARY: "/opt/python/2.7/bin/python"
-      - id: "tornado4-py37"
-        variables:
-           TOX_ENV: "tornado4-py37"
-           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
-      - id: "tornado5-py27"
-        variables:
-           TOX_ENV: "tornado5-py27"
-           PYTHON_BINARY: "/opt/python/2.7/bin/python"
-      - id: "tornado5-pypy"
-        variables:
-           TOX_ENV: "tornado5-pypy"
-           PYTHON_BINARY: "/opt/python/pypy/bin/pypy"
       - id: "tornado5-pypy3"
         variables:
            TOX_ENV: "tornado5-pypy3"
            PYTHON_BINARY: "/opt/python/pypy3.5/bin/pypy3"
-      - id: "tornado5-py34"
-        variables:
-           TOX_ENV: "tornado5-py34"
-           PYTHON_BINARY: "/opt/python/3.4/bin/python3"
       - id: "tornado5-py35"
         variables:
            TOX_ENV: "tornado5-py35"
@@ -783,10 +763,6 @@ axes:
            TOX_ENV: "py3-pymongo-master"
            # Use 3.6 for now until 3.7 is on all Evergreen distros.
            PYTHON_BINARY: "/opt/python/3.6/bin/python3"
-      - id: "synchro27"
-        variables:
-           TOX_ENV: "synchro27"
-           PYTHON_BINARY: "/opt/python/2.7/bin/python"
       - id: "synchro37"
         variables:
           TOX_ENV: "synchro37"
@@ -850,7 +826,7 @@ buildvariants:
   display_name: "${os}-${tox-env}-${ssl}"
   matrix_spec:
     os: "rhel"
-    tox-env: ["tornado4-py27", "tornado5-py36", "py3-pymongo-master"]
+    tox-env: ["tornado5-py36", "py3-pymongo-master"]
     ssl: "*"
   tasks:
      - ".3.0"
@@ -866,7 +842,7 @@ buildvariants:
     # TODO: synchro needs PyMongo master's updated SSL test certs,
     # which may require Motor test suite changes.
     - os: "*"
-      tox-env: ["synchro27", "synchro37"]
+      tox-env: ["synchro37"]
       ssl: "ssl"
   tasks:
      - ".latest"
@@ -896,7 +872,7 @@ buildvariants:
 
 - matrix_name: "enterprise-auth"
   display_name: "Enterprise Auth-${tox-env}"
-  matrix_spec: {"tox-env": ["synchro27", "synchro37"], ssl: "ssl"}
+  matrix_spec: {"tox-env": ["synchro37"], ssl: "ssl"}
   run_on:
      - ubuntu1604-test
   tasks:
