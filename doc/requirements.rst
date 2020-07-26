@@ -113,7 +113,8 @@ the "async for" protocol implemented in Python 3.5.0 and 3.5.1. Motor continues
 to work with "async for" loops in Python 3.5.2 and later.
 
 Motor 1.2.5 and 1.3.1 add compatibility with Python 3.7, but at the cost of
-dropping Python 3.4.3 and older.
+dropping Python 3.4.3 and older. Motor 2.2 dropped support for Pythons older
+than 3.5.2.
 
 +-------------------------------------------------------------------------------------+
 |                   Python Version                                                    |

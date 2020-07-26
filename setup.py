@@ -1,9 +1,10 @@
 import sys
 from distutils.cmd import Command
 from distutils.errors import DistutilsOptionError
-
-
 from setuptools import setup
+
+if sys.version_info[:2] < (3, 5):
+    raise Exception("This version of Motor requires Python>=3.5")
 
 classifiers = """\
 Intended Audience :: Developers
