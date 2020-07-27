@@ -41,12 +41,9 @@ Dependencies
 Motor works in all the environments officially supported by Tornado or by
 asyncio. It requires:
 
-* Unix, including Mac OS X. Windows is not supported.
+* Unix, including macOS. Windows is not supported.
 * PyMongo_ 3.10 or later.
-* Python 2.7 or later.
-* `futures`_ on Python 2.7.
-* `backports.pbkdf2`_ for faster authentication with MongoDB 3.0+,
-  especially on Python older than 2.7.8, or on Python 3 before Python 3.4.
+* Python 3.5 or later.
 
 See `requirements <https://motor.readthedocs.io/en/stable/requirements.html>`_
 for details about compatibility.
@@ -104,10 +101,6 @@ Tests are located in the ``test/`` directory.
 .. _Tornado: http://tornadoweb.org/
 
 .. _asyncio: https://docs.python.org/3/library/asyncio.html
-
-.. _futures: https://pypi.python.org/pypi/futures
-
-.. _backports.pbkdf2: https://pypi.python.org/pypi/backports.pbkdf2/
 
 .. _ReadTheDocs: https://motor.readthedocs.io/
 

@@ -1,23 +1,16 @@
 import sys
 from distutils.cmd import Command
 from distutils.errors import DistutilsOptionError
+from setuptools import setup
 
-try:
-    from setuptools import setup
-except ImportError:
-    from ez_setup import use_setuptools
-    use_setuptools('28.0')
-    from setuptools import setup
+if sys.version_info[:2] < (3, 5):
+    raise Exception("This version of Motor requires Python>=3.5")
 
 classifiers = """\
 Intended Audience :: Developers
 License :: OSI Approved :: Apache Software License
 Development Status :: 5 - Production/Stable
 Natural Language :: English
-Programming Language :: Python :: 2
-Programming Language :: Python :: 2.7
-Programming Language :: Python :: 3
-Programming Language :: Python :: 3.4
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
 Programming Language :: Python :: 3.7
@@ -33,13 +26,9 @@ description = 'Non-blocking MongoDB driver for Tornado or asyncio'
 
 long_description = open("README.rst").read()
 
-install_requires = ['pymongo>=3.10,<4']
+install_requires = ['pymongo>3.10,<4']
 
 tests_require = ['mockupdb>=1.4.0']
-
-if sys.version_info[0] < 3:
-    install_requires.append('futures')
-
 
 class test(Command):
     description = "run the tests"
@@ -103,21 +92,10 @@ class test(Command):
             loader.avoid('asyncio_tests.test_aiohttp_gridfs',
                          reason='no aiohttp')
 
-        if sys.version_info[:2] < (3, 5):
-            loader.avoid('asyncio_tests.test_asyncio_await',
-                         'asyncio_tests.test_asyncio_change_stream',
-                         'asyncio_tests.test_examples',
-                         'tornado_tests.test_motor_transaction',
-                         reason='python < 3.5')
-
         # Decide if we can run async / await tests with Tornado.
         test_motor_await = 'tornado_tests.test_motor_await'
         if not testenv.HAVE_TORNADO:
             loader.avoid(test_motor_await, reason='no tornado')
-        elif sys.version_info[:2] < (3, 5):
-            loader.avoid(test_motor_await, reason='python < 3.5')
-            loader.avoid('tornado_tests.test_motor_change_stream',
-                         reason='python < 3.5')
 
         if self.test_suite is None:
             suite = loader.discover(self.test_module)
@@ -143,15 +121,9 @@ class test(Command):
         sys.exit(not result.wasSuccessful())
 
 
-packages = ['motor', 'motor.frameworks', 'motor.frameworks.tornado']
+packages = ['motor', 'motor.frameworks', 'motor.frameworks.tornado',
+            'motor.frameworks.asyncio', 'motor.aiohttp']
 
-if sys.version_info[0] >= 3:
-    # Trying to install and byte-compile motor/frameworks/asyncio/__init__.py
-    # causes SyntaxError in Python 2.
-    packages.append('motor.frameworks.asyncio')
-
-    # Install aiohttp integration - aiohttp itself need not be installed.
-    packages.append('motor.aiohttp')
 
 setup(name='motor',
       version='2.2.0.dev0',
@@ -161,15 +133,7 @@ setup(name='motor',
       author='A. Jesse Jiryu Davis',
       author_email='jesse@mongodb.com',
       url='https://github.com/mongodb/motor/',
-      python_requires=', '.join((
-          '>=2.7',
-          '!=3.0.*',
-          '!=3.1.*',
-          '!=3.2.*',
-          '!=3.3.*',
-          '!=3.5.0',
-          '!=3.5.1',
-      )),
+      python_requires='>=3.5.2',
       install_requires=install_requires,
       license='http://www.apache.org/licenses/LICENSE-2.0',
       classifiers=[c for c in classifiers.split('\n') if c],
