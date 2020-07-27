@@ -43,7 +43,6 @@ from .metaprogramming import (AsyncCommand,
                               coroutine_annotation,
                               create_class_with_framework,
                               DelegateMethod,
-                              motor_coroutine,
                               MotorCursorChainingMethod,
                               ReadOnlyProperty,
                               unwrap_args_session,
@@ -1392,17 +1391,16 @@ class AgnosticBaseCursor(AgnosticBase):
     def get_io_loop(self):
         return self.collection.get_io_loop()
 
-    @motor_coroutine
-    def close(self):
+    async def close(self):
         """Explicitly kill this cursor on the server. Call like (in Tornado):
 
         .. code-block:: python
 
-            yield cursor.close()
+            await cursor.close()
         """
         if not self.closed:
             self.closed = True
-            yield self._framework.yieldable(self._close())
+            return self._close()
 
     def batch_size(self, batch_size):
         self.delegate.batch_size(batch_size)
@@ -1427,8 +1425,7 @@ class AgnosticBaseCursor(AgnosticBase):
     def _killed(self):
         raise NotImplementedError
 
-    @motor_coroutine
-    def _close(self):
+    async def _close(self):
         raise NotImplementedError()
 
 
@@ -1494,9 +1491,8 @@ class AgnosticCursor(AgnosticBaseCursor):
     def _killed(self):
         return self.delegate._Cursor__killed
 
-    @motor_coroutine
     def _close(self):
-        yield self._framework.yieldable(self._Cursor__die())
+        return self._Cursor__die()
 
 
 class AgnosticRawBatchCursor(AgnosticCursor):
@@ -1526,9 +1522,8 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
     def _killed(self):
         return self.delegate._CommandCursor__killed
 
-    @motor_coroutine
     def _close(self):
-        yield self._framework.yieldable(self._CommandCursor__die())
+        return self._CommandCursor__die()
 
 
 class AgnosticRawBatchCommandCursor(AgnosticCommandCursor):

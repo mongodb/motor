@@ -46,7 +46,6 @@ is a module implementing these properties and functions:
 - ``platform_info``
 - ``pymongo_class_wrapper``
 - ``run_on_executor``
-- ``yieldable``
 
 See the ``frameworks/tornado`` and ``frameworks/asyncio`` modules.
 

@@ -116,22 +116,17 @@ def pymongo_class_wrapper(f, pymongo_class):
     See WrapAsync.
     """
     @functools.wraps(f)
-    @coroutine
-    def _wrapper(self, *args, **kwargs):
-        result = yield f(self, *args, **kwargs)
+    async def _wrapper(self, *args, **kwargs):
+        result = await f(self, *args, **kwargs)
 
         # Don't call isinstance(), not checking subclasses.
         if result.__class__ == pymongo_class:
             # Delegate to the current object to wrap the result.
-            raise gen.Return(self.wrap(result))
+            return self.wrap(result)
         else:
-            raise gen.Return(result)
+            return result
 
     return _wrapper
-
-
-def yieldable(future):
-    return future
 
 
 def platform_info():

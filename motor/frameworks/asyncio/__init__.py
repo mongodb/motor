@@ -150,9 +150,8 @@ def pymongo_class_wrapper(f, pymongo_class):
     See WrapAsync.
     """
     @functools.wraps(f)
-    @asyncio.coroutine
-    def _wrapper(self, *args, **kwargs):
-        result = yield from f(self, *args, **kwargs)
+    async def _wrapper(self, *args, **kwargs):
+        result = await f(self, *args, **kwargs)
 
         # Don't call isinstance(), not checking subclasses.
         if result.__class__ == pymongo_class:
@@ -162,10 +161,6 @@ def pymongo_class_wrapper(f, pymongo_class):
             return result
 
     return _wrapper
-
-
-def yieldable(future):
-    return next(iter(future))
 
 
 def platform_info():

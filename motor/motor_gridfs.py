@@ -34,7 +34,6 @@ from motor.metaprogramming import (AsyncCommand,
                                    coroutine_annotation,
                                    create_class_with_framework,
                                    DelegateMethod,
-                                   motor_coroutine,
                                    MotorCursorChainingMethod,
                                    ReadOnlyProperty)
 
@@ -105,9 +104,8 @@ class AgnosticGridOutCursor(AgnosticBaseCursor):
     def _killed(self):
         return self.delegate._Cursor__killed
 
-    @motor_coroutine
     def _close(self):
-        yield self._framework.yieldable(self._Cursor__die())
+        return self._Cursor__die()
 
 
 class MotorGridOutProperty(ReadOnlyProperty):
@@ -219,8 +217,7 @@ class AgnosticGridOut(object):
     def get_io_loop(self):
         return self.io_loop
 
-    @motor_coroutine
-    def stream_to_handler(self, request_handler):
+    async def stream_to_handler(self, request_handler):
         """Write the contents of this file to a
         :class:`tornado.web.RequestHandler`. This method calls
         :meth:`~tornado.web.RequestHandler.flush` on
@@ -251,9 +248,7 @@ class AgnosticGridOut(object):
         written = 0
         while written < self.length:
             # Reading chunk_size at a time minimizes buffering.
-            f = self._framework.yieldable(self.read(self.chunk_size))
-            yield f
-            chunk = f.result()
+            chunk = await self.read(self.chunk_size)
 
             # write() simply appends the output to a list; flush() sends it
             # over the network and minimizes buffering in the handler.
