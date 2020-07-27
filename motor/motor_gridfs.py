@@ -363,6 +363,7 @@ Metadata set on the file appears as attributes on a
                 disable_md5=disable_md5,
                 **kwargs)
 
+    # Support "async with bucket.open_upload_stream() as f:"
     async def __aenter__(self):
         return self
 
