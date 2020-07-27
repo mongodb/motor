@@ -169,4 +169,4 @@ def yieldable(future):
 
 
 def platform_info():
-    return None
+    return 'asyncio'
