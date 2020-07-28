@@ -22,6 +22,7 @@ import pymongo
 import pymongo.auth
 import pymongo.errors
 import pymongo.mongo_replica_set_client
+from tornado import gen
 from tornado.testing import gen_test
 
 import motor
@@ -89,11 +90,12 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         await c.test.collection.find_one()
 
     @gen_test
-    def test_open_concurrent(self):
+    async def test_open_concurrent(self):
         # MOTOR-66: don't block on PyMongo's __monitor_lock, but also don't
         # spawn multiple monitors.
         c = self.motor_rsc()
-        yield [c.db.collection.find_one(), c.db.collection.find_one()]
+        await gen.multi(
+            [c.db.collection.find_one(), c.db.collection.find_one()])
 
 
 class TestReplicaSetClientAgainstStandalone(MotorTest):

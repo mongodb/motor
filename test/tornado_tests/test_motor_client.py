@@ -51,7 +51,7 @@ class MotorClientTest(MotorTest):
         collection = cx.motor_test.test_client_lazy_connect
         future0 = collection.insert_one({'foo': 'bar'})
         future1 = collection.insert_one({'foo': 'bar'})
-        await [future0, future1]
+        await gen.multi([future0, future1])
 
         self.assertEqual(2, (await collection.count_documents({'foo': 'bar'})))
 

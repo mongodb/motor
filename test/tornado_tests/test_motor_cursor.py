@@ -260,10 +260,6 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     async def test_cursor_explicit_close(self):
-        import tracemalloc
-
-        tracemalloc.start()
-
         client, server = self.client_server(auto_ismaster=True)
         collection = client.test.coll
         cursor = collection.find()
