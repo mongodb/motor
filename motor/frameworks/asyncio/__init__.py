@@ -24,8 +24,22 @@ import functools
 import multiprocessing
 import os
 import warnings
+
 from asyncio import coroutine  # For framework interface.
 from concurrent.futures import ThreadPoolExecutor
+
+
+def _get_executor():
+    if 'MOTOR_MAX_WORKERS' in os.environ:
+        max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
+    else:
+        max_workers = multiprocessing.cpu_count() * 5
+
+    return ThreadPoolExecutor(max_workers=max_workers)
+
+
+_EXECUTOR = _get_executor()
+
 
 CLASS_PREFIX = 'AsyncIO'
 
@@ -47,18 +61,6 @@ def check_event_loop(loop):
 
 def get_future(loop):
     return asyncio.Future(loop=loop)
-
-
-def get_executor():
-    if 'MOTOR_MAX_WORKERS' in os.environ:
-        max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
-    else:
-        max_workers = multiprocessing.cpu_count() * 5
-
-    return ThreadPoolExecutor(max_workers=max_workers)
-
-
-_EXECUTOR = get_executor()
 
 
 def run_on_executor(loop, fn, *args, **kwargs):

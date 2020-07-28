@@ -1738,20 +1738,13 @@ class AgnosticChangeStream(AgnosticBase):
         loop = self.get_io_loop()
         return await self._framework.run_in_executor(loop, self._try_next)
 
-
-    @coroutine_annotation
-    def close(self):
+    async def close(self):
         """Close this change stream.
 
         Stops any "async for" loops using this change stream.
         """
         if self.delegate:
-            return self._close()
-
-        # Never started.
-        future = self._framework.get_future(self.get_io_loop())
-        future.set_result(None)
-        return future
+            await self._close()
 
     def __aiter__(self):
         return self

@@ -21,12 +21,25 @@ See "Frameworks" in the Developer Guide.
 
 import functools
 import os
-import warnings
-from concurrent.futures import ThreadPoolExecutor
-
 import tornado.process
+import warnings
+
+from concurrent.futures import ThreadPoolExecutor
 from tornado import concurrent, gen, ioloop, version as tornado_version
 from tornado.gen import chain_future, coroutine  # For framework interface.
+
+
+def _get_executor():
+    if 'MOTOR_MAX_WORKERS' in os.environ:
+        max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
+    else:
+        max_workers = tornado.process.cpu_count() * 5
+
+    return ThreadPoolExecutor(max_workers=max_workers)
+
+
+_EXECUTOR = _get_executor()
+
 
 CLASS_PREFIX = ''
 
@@ -47,18 +60,6 @@ def check_event_loop(loop):
 
 def get_future(loop):
     return concurrent.Future()
-
-
-def get_executor():
-    if 'MOTOR_MAX_WORKERS' in os.environ:
-        max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
-    else:
-        max_workers = tornado.process.cpu_count() * 5
-
-    return ThreadPoolExecutor(max_workers=max_workers)
-
-
-_EXECUTOR = get_executor()
 
 
 def run_on_executor(loop, fn, *args, **kwargs):
