@@ -116,7 +116,7 @@ _coro_token = object()
 def coroutine_annotation(f):
     """In docs, annotate a function that returns a Future with 'coroutine'.
 
-    Unlike @motor_coroutine, this doesn't affect behavior.
+    This doesn't affect behavior.
     """
     # Like:
     # @coroutine_annotation
