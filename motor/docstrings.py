@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import unicode_literals
-
 
 get_database_doc = """
 Get a :class:`MotorDatabase` with the given name and options.
@@ -401,47 +399,6 @@ The following two calls are equivalent::
   await db.drop_collection("foo")
 """
 
-
-exists_doc = """Check if a file exists.
-
-The file to check for can be specified by the value of its
-``_id`` key, or by passing in a query document. A query
-document can be passed in as dictionary, or by using keyword
-arguments. Thus, the following three calls are equivalent::
-
-  await fs.exists(file_id)
-  await fs.exists({"_id": file_id})
-  await fs.exists(_id=file_id)
-
-As are the following two calls::
-
-  await fs.exists({"filename": "mike.txt"})
-  await fs.exists(filename="mike.txt")
-
-And the following two::
-
-  await fs.exists({"foo": {"$gt": 12}})
-  await fs.exists(foo={"$gt": 12})
-
-Returns ``True`` if a matching file exists, ``False``
-otherwise. Calls to :meth:`exists` will not automatically
-create appropriate indexes; application developers should be
-sure to create indexes if needed and as appropriate.
-
-:Parameters:
-  - `document_or_id` (optional): query document, or _id of the
-    document to check for
-  - `session` (optional): a
-    :class:`~pymongo.client_session.ClientSession`, created with
-    :meth:`~MotorClient.start_session`.
-  - `**kwargs` (optional): keyword arguments are used as a
-    query document, if they're present.
-
-.. versionchanged:: 1.2
-   Added session parameter.
-"""
-
-
 find_one_doc = """Get a single document from the database.
 
 All arguments to :meth:`find` are also valid arguments for
@@ -606,7 +563,6 @@ to using the default write concern.
 .. versionchanged:: 1.2
    Added session parameter.
 """
-
 
 find_one_and_update_doc = """Finds a single document and updates it, returning
 either the original or the updated document. By default
@@ -781,7 +737,6 @@ This prints something like::
    Added session parameter.
 """
 
-
 insert_one_doc = """Insert a single document. ::
 
   async def insert_x():
@@ -814,7 +769,6 @@ This code outputs the new document's ``_id``::
 .. versionchanged:: 1.2
    Added session parameter.
 """
-
 
 mr_doc = """Perform a map/reduce operation on this collection.
 
@@ -856,7 +810,6 @@ Returns a Future.
 .. versionchanged:: 1.2
    Added session parameter.
 """
-
 
 replace_one_doc = """Replace a single document matching the filter.
 
@@ -924,13 +877,6 @@ This prints::
    Added session parameter.
 """
 
-
-update_doc = """Update a document(s) in this collection.
-
-**DEPRECATED** - Use :meth:`replace_one`, :meth:`update_one`, or
-:meth:`update_many` instead."""
-
-
 update_many_doc = """Update one or more documents that match the filter.
 
 Say our collection has 3 documents::
@@ -985,7 +931,6 @@ This prints::
    Added array_filters and session parameters.
 """
 
-
 update_one_doc = """Update a single document matching the filter.
 
 Say our collection has 3 documents::
@@ -1039,7 +984,6 @@ This prints::
 .. versionchanged:: 1.2
    Added array_filters and session parameters.
 """
-
 
 cursor_sort_doc = """Sorts this cursor's results.
 
@@ -1122,7 +1066,6 @@ cursor has any effect.
     key, if not given :data:`~pymongo.ASCENDING` is assumed
 """
 
-
 start_session_doc = """Start a logical session.
 
 This method takes the same parameters as PyMongo's
@@ -1189,89 +1132,4 @@ started it.
   :class:`~pymongo.client_session.ClientSession`.
 
 .. versionadded:: 1.2
-"""
-
-
-with_transaction_doc = """Executes an awaitable in a transaction.
-
-This method starts a transaction on this session, awaits ``coro``
-once, and then commits the transaction. For example::
-
-  async def coro(session):
-      orders = session.client.db.orders
-      inventory = session.client.db.inventory
-      inserted_id = await orders.insert_one(
-          {"sku": "abc123", "qty": 100}, session=session)
-      await inventory.update_one(
-          {"sku": "abc123", "qty": {"$gte": 100}},
-          {"$inc": {"qty": -100}}, session=session)
-      return inserted_id
-
-  async with await client.start_session() as session:
-      inserted_id = await session.with_transaction(coro)
-
-To pass arbitrary arguments to the ``coro``, wrap it with a
-``lambda`` like this::
-
-  async def coro(session, custom_arg, custom_kwarg=None):
-      # Transaction operations...
-
-  async with await client.start_session() as session:
-      await session.with_transaction(
-          lambda s: coro(s, "custom_arg", custom_kwarg=1))
-
-In the event of an exception, ``with_transaction`` may retry the commit
-or the entire transaction, therefore ``coro`` may be awaited
-multiple times by a single call to ``with_transaction``. Developers
-should be mindful of this possiblity when writing a ``coro`` that
-modifies application state or has any other side-effects.
-Note that even when the ``coro`` is invoked multiple times,
-``with_transaction`` ensures that the transaction will be committed
-at-most-once on the server.
-
-The ``coro`` should not attempt to start new transactions, but
-should simply run operations meant to be contained within a
-transaction. The ``coro`` should also not commit the transaction;
-this is handled automatically by ``with_transaction``. If the
-``coro`` does commit or abort the transaction without error,
-however, ``with_transaction`` will return without taking further
-action.
-
-When ``coro`` raises an exception, ``with_transaction``
-automatically aborts the current transaction. When ``coro`` or
-:meth:`~ClientSession.commit_transaction` raises an exception that
-includes the ``"TransientTransactionError"`` error label,
-``with_transaction`` starts a new transaction and re-executes
-the ``coro``.
-
-When :meth:`~ClientSession.commit_transaction` raises an exception with
-the ``"UnknownTransactionCommitResult"`` error label,
-``with_transaction`` retries the commit until the result of the
-transaction is known.
-
-This method will cease retrying after 120 seconds has elapsed. This
-timeout is not configurable and any exception raised by the
-``coro`` or by :meth:`ClientSession.commit_transaction` after the
-timeout is reached will be re-raised. Applications that desire a
-different timeout duration should not use this method.
-
-:Parameters:
-  - `coro`: The coroutine to run inside a transaction. The coroutine must
-    accept a single argument, this session. Note, under certain error
-    conditions the coroutine may be run multiple times.
-  - `read_concern` (optional): The
-    :class:`~pymongo.read_concern.ReadConcern` to use for this
-    transaction.
-  - `write_concern` (optional): The
-    :class:`~pymongo.write_concern.WriteConcern` to use for this
-    transaction.
-  - `read_preference` (optional): The read preference to use for this
-    transaction. If ``None`` (the default) the :attr:`read_preference`
-    of this :class:`Database` is used. See
-    :mod:`~pymongo.read_preferences` for options.
-
-:Returns:
-  The return value of the ``coro``.
-
-.. versionadded:: 3.9
 """

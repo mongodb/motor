@@ -18,7 +18,6 @@ from __future__ import unicode_literals, absolute_import
 
 import functools
 import sys
-import textwrap
 
 import pymongo
 import pymongo.auth
@@ -270,18 +269,15 @@ class _MotorTransactionContext(object):
     def __init__(self, session):
         self._session = session
 
-    if PY35:
-        exec(textwrap.dedent("""
-        async def __aenter__(self):
-            return self
+    async def __aenter__(self):
+        return self
 
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            if self._session.in_transaction:
-                if exc_val is None:
-                    await self._session.commit_transaction()
-                else:
-                    await self._session.abort_transaction()
-        """), globals(), locals())
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self._session.in_transaction:
+            if exc_val is None:
+                await self._session.commit_transaction()
+            else:
+                await self._session.abort_transaction()
 
 
 class AgnosticClientSession(AgnosticBase):
@@ -324,11 +320,92 @@ class AgnosticClientSession(AgnosticBase):
     def get_io_loop(self):
         return self._client.get_io_loop()
 
-    if PY35:
-        exec(textwrap.dedent("""
     async def with_transaction(self, coro, read_concern=None,
                                write_concern=None, read_preference=None,
                                max_commit_time_ms=None):
+        """Executes an awaitable in a transaction.
+
+        This method starts a transaction on this session, awaits ``coro``
+        once, and then commits the transaction. For example::
+
+          async def coro(session):
+              orders = session.client.db.orders
+              inventory = session.client.db.inventory
+              inserted_id = await orders.insert_one(
+                  {"sku": "abc123", "qty": 100}, session=session)
+              await inventory.update_one(
+                  {"sku": "abc123", "qty": {"$gte": 100}},
+                  {"$inc": {"qty": -100}}, session=session)
+              return inserted_id
+
+          async with await client.start_session() as session:
+              inserted_id = await session.with_transaction(coro)
+
+        To pass arbitrary arguments to the ``coro``, wrap it with a
+        ``lambda`` like this::
+
+          async def coro(session, custom_arg, custom_kwarg=None):
+              # Transaction operations...
+
+          async with await client.start_session() as session:
+              await session.with_transaction(
+                  lambda s: coro(s, "custom_arg", custom_kwarg=1))
+
+        In the event of an exception, ``with_transaction`` may retry the commit
+        or the entire transaction, therefore ``coro`` may be awaited
+        multiple times by a single call to ``with_transaction``. Developers
+        should be mindful of this possiblity when writing a ``coro`` that
+        modifies application state or has any other side-effects.
+        Note that even when the ``coro`` is invoked multiple times,
+        ``with_transaction`` ensures that the transaction will be committed
+        at-most-once on the server.
+
+        The ``coro`` should not attempt to start new transactions, but
+        should simply run operations meant to be contained within a
+        transaction. The ``coro`` should also not commit the transaction;
+        this is handled automatically by ``with_transaction``. If the
+        ``coro`` does commit or abort the transaction without error,
+        however, ``with_transaction`` will return without taking further
+        action.
+
+        When ``coro`` raises an exception, ``with_transaction``
+        automatically aborts the current transaction. When ``coro`` or
+        :meth:`~ClientSession.commit_transaction` raises an exception that
+        includes the ``"TransientTransactionError"`` error label,
+        ``with_transaction`` starts a new transaction and re-executes
+        the ``coro``.
+
+        When :meth:`~ClientSession.commit_transaction` raises an exception with
+        the ``"UnknownTransactionCommitResult"`` error label,
+        ``with_transaction`` retries the commit until the result of the
+        transaction is known.
+
+        This method will cease retrying after 120 seconds has elapsed. This
+        timeout is not configurable and any exception raised by the
+        ``coro`` or by :meth:`ClientSession.commit_transaction` after the
+        timeout is reached will be re-raised. Applications that desire a
+        different timeout duration should not use this method.
+
+        :Parameters:
+          - `coro`: The coroutine to run inside a transaction. The coroutine must
+            accept a single argument, this session. Note, under certain error
+            conditions the coroutine may be run multiple times.
+          - `read_concern` (optional): The
+            :class:`~pymongo.read_concern.ReadConcern` to use for this
+            transaction.
+          - `write_concern` (optional): The
+            :class:`~pymongo.write_concern.WriteConcern` to use for this
+            transaction.
+          - `read_preference` (optional): The read preference to use for this
+            transaction. If ``None`` (the default) the :attr:`read_preference`
+            of this :class:`Database` is used. See
+            :mod:`~pymongo.read_preferences` for options.
+
+        :Returns:
+          The return value of the ``coro``.
+
+        .. versionadded:: 2.1
+        """
         start_time = pymongo.monotonic.time()
         while True:
             async with self.start_transaction(
@@ -369,8 +446,6 @@ class AgnosticClientSession(AgnosticBase):
                 # Commit succeeded.
                 return ret
 
-    with_transaction.__doc__ = with_transaction_doc"""), globals(), locals())
-
     def start_transaction(self, read_concern=None, write_concern=None,
                           read_preference=None, max_commit_time_ms=None):
         """Start a multi-statement transaction.
@@ -400,14 +475,11 @@ class AgnosticClientSession(AgnosticBase):
         """The :class:`~MotorClient` this session was created from. """
         return self._client
 
-    if PY35:
-        exec(textwrap.dedent("""
-        async def __aenter__(self):
-            return self
-    
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            self.delegate.__exit__(exc_type, exc_val, exc_tb)
-        """), globals(), locals())
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        self.delegate.__exit__(exc_type, exc_val, exc_tb)
 
     def __enter__(self):
         raise AttributeError("Use Motor sessions like 'async with await"
@@ -1050,17 +1122,14 @@ class AgnosticBaseCursor(AgnosticBase):
         self.closed = False
 
     # python.org/dev/peps/pep-0492/#api-design-and-implementation-revisions
-    if PY35:
-        exec(textwrap.dedent("""
-        def __aiter__(self):
-            return self
+    def __aiter__(self):
+        return self
 
-        async def __anext__(self):
-            # An optimization: skip the "await" if possible.
-            if self._buffer_size() or await self.fetch_next:
-                return self.next_object()
-            raise StopAsyncIteration()
-        """), globals(), locals())
+    async def __anext__(self):
+        # An optimization: skip the "await" if possible.
+        if self._buffer_size() or await self.fetch_next:
+            return self.next_object()
+        raise StopAsyncIteration()
 
     def _get_more(self):
         """Initial query or getMore. Returns a Future."""
@@ -1690,20 +1759,17 @@ class AgnosticChangeStream(AgnosticBase):
         future.set_result(None)
         return future
 
-    if PY35:
-        exec(textwrap.dedent("""
-        def __aiter__(self):
-            return self
+    def __aiter__(self):
+        return self
 
-        __anext__ = next
+    __anext__ = next
 
-        async def __aenter__(self):
-            return self
-    
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            if self.delegate:
-                self.delegate.close() 
-        """), globals(), locals())
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self.delegate:
+            self.delegate.close()
 
     def get_io_loop(self):
         return self._target.get_io_loop()

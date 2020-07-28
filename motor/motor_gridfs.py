@@ -16,7 +16,6 @@ from __future__ import unicode_literals, absolute_import
 
 """GridFS implementation for Motor, an asynchronous driver for MongoDB."""
 
-import textwrap
 import warnings
 
 import gridfs
@@ -183,18 +182,14 @@ class AgnosticGridOut(object):
 
         self.io_loop = root_collection.get_io_loop()
 
-    # python.org/dev/peps/pep-0492/#api-design-and-implementation-revisions
-    if PY35:
-        exec(textwrap.dedent("""
-        def __aiter__(self):
-            return self
+    def __aiter__(self):
+        return self
 
-        async def __anext__(self):
-            chunk = await self.readchunk()
-            if chunk:
-                return chunk
-            raise StopAsyncIteration()
-        """), globals(), locals())
+    async def __anext__(self):
+        chunk = await self.readchunk()
+        if chunk:
+            return chunk
+        raise StopAsyncIteration()
 
     def __getattr__(self, item):
         if not self.delegate._file:
@@ -368,15 +363,12 @@ Metadata set on the file appears as attributes on a
                 disable_md5=disable_md5,
                 **kwargs)
 
-    if PY35:
-        # Support "async with bucket.open_upload_stream() as f:"
-        exec(textwrap.dedent("""
-        async def __aenter__(self):
-            return self
+    # Support "async with bucket.open_upload_stream() as f:"
+    async def __aenter__(self):
+        return self
 
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            await self.close()
-        """), globals(), locals())
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
 
     def get_io_loop(self):
         return self.io_loop
