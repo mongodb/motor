@@ -80,8 +80,7 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
         cls.fs.delete(cls.file_id)
         super().tearDownClass()
 
-    @asyncio.coroutine
-    def start_app(self, http_gridfs=None, extra_routes=None):
+    async def start_app(self, http_gridfs=None, extra_routes=None):
         self.app = aiohttp.web.Application()
         resource = self.app.router.add_resource('/fs/{filename}')
         handler = http_gridfs or AIOHTTPGridFS(self.db)
@@ -98,12 +97,11 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
                                          host='localhost',
                                          port=8088)
 
-        self.srv, _ = yield from asyncio.gather(server,
-                                                self.app.startup(),
-                                                loop=self.loop)
+        self.srv, _ = await asyncio.gather(server,
+                                           self.app.startup(),
+                                           loop=self.loop)
 
-    @asyncio.coroutine
-    def request(self, method, path, if_modified_since=None, headers=None):
+    async def request(self, method, path, if_modified_since=None, headers=None):
         headers = headers or {}
         if if_modified_since:
             headers['If-Modified-Since'] = format_date(if_modified_since)
@@ -113,12 +111,12 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
         try:
             method = getattr(session, method)
 
-            resp = yield from method('http://localhost:8088%s' % path,
-                                     headers=headers)
-            yield from resp.read()
+            resp = await method('http://localhost:8088%s' % path,
+                                headers=headers)
+            await resp.read()
             return resp
         finally:
-            yield from session.close()
+            await session.close()
 
     def get(self, path, **kwargs):
         return self.request('get', path, **kwargs)
@@ -126,25 +124,24 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
     def head(self, path, **kwargs):
         return self.request('head', path, **kwargs)
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         # aiohttp.rtfd.io/en/stable/web.html#aiohttp-web-graceful-shutdown
         self.srv.close()
-        yield from self.srv.wait_closed()
-        yield from self.app.shutdown()
-        yield from self.app_handler.shutdown(timeout=1)
-        yield from self.app.cleanup()
+        await self.srv.wait_closed()
+        await self.app.shutdown()
+        await self.app_handler.shutdown(timeout=1)
+        await self.app.cleanup()
 
 
 class AIOHTTPGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
     @asyncio_test
-    def test_basic(self):
-        yield from self.start_app()
+    async def test_basic(self):
+        await self.start_app()
         # First request
-        response = yield from self.get('/fs/foo')
+        response = await self.get('/fs/foo')
 
         self.assertEqual(200, response.status)
-        self.assertEqual(self.contents, (yield from response.read()))
+        self.assertEqual(self.contents, (await response.read()))
         self.assertEqual(
             len(self.contents), int(response.headers['Content-Length']))
         self.assertEqual('my type', response.headers['Content-Type'])
@@ -161,47 +158,47 @@ class AIOHTTPGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
             last_mod_dt,
             last_mod_dt + datetime.timedelta(seconds=1)
         ):
-            response = yield from self.get('/fs/foo',
-                                           if_modified_since=ims_value)
+            response = await self.get('/fs/foo',
+                                      if_modified_since=ims_value)
             self.assertEqual(304, response.status)
-            self.assertEqual(b'', (yield from response.read()))
+            self.assertEqual(b'', (await response.read()))
 
         # If-Modified-Since in the past, get whole response back
-        response = yield from self.get(
+        response = await self.get(
             '/fs/foo',
             if_modified_since=last_mod_dt - datetime.timedelta(seconds=1))
         self.assertEqual(200, response.status)
-        self.assertEqual(self.contents, (yield from response.read()))
+        self.assertEqual(self.contents, (await response.read()))
 
         # Matching Etag
-        response = yield from self.get('/fs/foo',
+        response = await self.get('/fs/foo',
                                        headers={'If-None-Match': etag})
         self.assertEqual(304, response.status)
-        self.assertEqual(b'', (yield from response.read()))
+        self.assertEqual(b'', (await response.read()))
 
         # Mismatched Etag
-        response = yield from self.get('/fs/foo',
+        response = await self.get('/fs/foo',
                                        headers={'If-None-Match': etag + 'a'})
         self.assertEqual(200, response.status)
-        self.assertEqual(self.contents, (yield from response.read()))
+        self.assertEqual(self.contents, (await response.read()))
 
     @asyncio_test
-    def test_404(self):
-        yield from self.start_app()
-        response = yield from self.get('/fs/bar')
+    async def test_404(self):
+        await self.start_app()
+        response = await self.get('/fs/bar')
         self.assertEqual(404, response.status)
 
     @asyncio_test
-    def test_head(self):
-        yield from self.start_app()
-        response = yield from self.head('/fs/foo')
+    async def test_head(self):
+        await self.start_app()
+        response = await self.head('/fs/foo')
 
         etag = response.headers['Etag']
         last_mod_dt = parse_date(response.headers['Last-Modified'])
 
         self.assertEqual(200, response.status)
         # Empty body for HEAD request.
-        self.assertEqual(b'', (yield from response.read()))
+        self.assertEqual(b'', (await response.read()))
         self.assertEqual(
             len(self.contents), int(response.headers['Content-Length']))
         self.assertEqual('my type', response.headers['Content-Type'])
@@ -210,17 +207,17 @@ class AIOHTTPGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
         self.assertEqual('public', response.headers['Cache-Control'])
 
     @asyncio_test
-    def test_bad_route(self):
+    async def test_bad_route(self):
         handler = AIOHTTPGridFS(self.db)
-        yield from self.start_app(extra_routes={'/x/{wrongname}': handler})
-        response = yield from self.get('/x/foo')
+        await self.start_app(extra_routes={'/x/{wrongname}': handler})
+        response = await self.get('/x/foo')
         self.assertEqual(500, response.status)
         msg = 'Bad AIOHTTPGridFS route "/x/{wrongname}"'
-        self.assertIn(msg, (yield from response.text()))
+        self.assertIn(msg, (await response.text()))
 
     @asyncio_test
-    def test_content_type(self):
-        yield from self.start_app()
+    async def test_content_type(self):
+        await self.start_app()
         # Check that GridFSHandler uses file extension to guess Content-Type
         # if not provided
         for filename, expected_type in [
@@ -234,7 +231,7 @@ class AIOHTTPGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
             self.addCleanup(self.fs.delete, _id)
 
             for method in self.get, self.head:
-                response = yield from method('/fs/' + filename)
+                response = await method('/fs/' + filename)
                 self.assertEqual(200, response.status)
                 # mimetypes are platform-defined, be fuzzy
                 self.assertIn(
@@ -242,32 +239,32 @@ class AIOHTTPGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
                     response.headers['Content-Type'].lower())
 
     @asyncio_test
-    def test_post(self):
+    async def test_post(self):
         # Only allow GET and HEAD, even if a POST route is added.
-        yield from self.start_app()
-        result = yield from self.request('post', '/fs/foo')
+        await self.start_app()
+        result = await self.request('post', '/fs/foo')
         self.assertEqual(405, result.status)
 
 
 class AIOHTTPTZAwareGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
     @asyncio_test
-    def test_tz_aware(self):
+    async def test_tz_aware(self):
         client = self.asyncio_client(tz_aware=True)
-        yield from self.start_app(AIOHTTPGridFS(client.motor_test))
+        await self.start_app(AIOHTTPGridFS(client.motor_test))
         now = datetime.datetime.utcnow()
         ago = now - datetime.timedelta(minutes=10)
         hence = now + datetime.timedelta(minutes=10)
 
-        response = yield from self.get('/fs/foo', if_modified_since=ago)
+        response = await self.get('/fs/foo', if_modified_since=ago)
         self.assertEqual(200, response.status)
 
-        response = yield from self.get('/fs/foo', if_modified_since=hence)
+        response = await self.get('/fs/foo', if_modified_since=hence)
         self.assertEqual(304, response.status)
 
 
 class AIOHTTPCustomHTTPGridFSTest(AIOHTTPGridFSHandlerTestBase):
     @asyncio_test
-    def test_get_gridfs_file(self):
+    async def test_get_gridfs_file(self):
         def getter(bucket, filename, request):
             # Test overriding the get_gridfs_file() method, path is
             # interpreted as file_id instead of filename.
@@ -279,20 +276,20 @@ class AIOHTTPCustomHTTPGridFSTest(AIOHTTPGridFSHandlerTestBase):
         def extras(response, gridout):
             response.headers['quux'] = 'fizzledy'
 
-        yield from self.start_app(AIOHTTPGridFS(self.db,
+        await self.start_app(AIOHTTPGridFS(self.db,
                                                 get_gridfs_file=getter,
                                                 get_cache_time=cache_time,
                                                 set_extra_headers=extras))
 
         # We overrode get_gridfs_file so we expect getting by filename *not* to
         # work now; we'll get a 404. We have to get by file_id now.
-        response = yield from self.get('/fs/foo')
+        response = await self.get('/fs/foo')
         self.assertEqual(404, response.status)
 
-        response = yield from self.get('/fs/' + str(self.file_id))
+        response = await self.get('/fs/' + str(self.file_id))
         self.assertEqual(200, response.status)
 
-        self.assertEqual(self.contents, (yield from response.read()))
+        self.assertEqual(self.contents, (await response.read()))
         cache_control = response.headers['Cache-Control']
         self.assertRegex(cache_control, r'max-age=\d+')
         self.assertEqual(10, int(cache_control.split('=')[1]))

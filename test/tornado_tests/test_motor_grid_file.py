@@ -34,26 +34,25 @@ from test.tornado_tests import MotorTest
 
 
 class MotorGridFileTest(MotorTest):
-    @gen.coroutine
-    def _reset(self):
-        yield self.db.drop_collection("fs.files")
-        yield self.db.drop_collection("fs.chunks")
-        yield self.db.drop_collection("alt.files")
-        yield self.db.drop_collection("alt.chunks")
+    async def _reset(self):
+        await self.db.drop_collection("fs.files")
+        await self.db.drop_collection("fs.chunks")
+        await self.db.drop_collection("alt.files")
+        await self.db.drop_collection("alt.chunks")
 
     def tearDown(self):
         self.io_loop.run_sync(self._reset)
         super(MotorGridFileTest, self).tearDown()
 
     @gen_test
-    def test_attributes(self):
+    async def test_attributes(self):
         f = motor.MotorGridIn(
             self.db.fs,
             filename="test",
             foo="bar",
             content_type="text")
 
-        yield f.close()
+        await f.close()
 
         g = motor.MotorGridOut(self.db.fs, f._id)
         attr_names = (
@@ -72,67 +71,67 @@ class MotorGridFileTest(MotorTest):
         for attr_name in attr_names:
             self.assertRaises(InvalidOperation, getattr, g, attr_name)
 
-        yield g.open()
+        await g.open()
         for attr_name in attr_names:
             getattr(g, attr_name)
 
     @gen_test
-    def test_iteration(self):
+    async def test_iteration(self):
         fs = motor.MotorGridFSBucket(self.db)
-        _id = yield fs.upload_from_stream('filename', b'foo')
+        _id = await fs.upload_from_stream('filename', b'foo')
         g = motor.MotorGridOut(self.db.fs, _id)
 
         # Iteration is prohibited.
         self.assertRaises(TypeError, iter, g)
 
     @gen_test
-    def test_basic(self):
+    async def test_basic(self):
         f = motor.MotorGridIn(self.db.fs, filename="test")
-        yield f.write(b"hello world")
-        yield f.close()
-        self.assertEqual(1, (yield self.db.fs.files.count_documents({})))
-        self.assertEqual(1, (yield self.db.fs.chunks.count_documents({})))
+        await f.write(b"hello world")
+        await f.close()
+        self.assertEqual(1, (await self.db.fs.files.count_documents({})))
+        self.assertEqual(1, (await self.db.fs.chunks.count_documents({})))
 
         g = motor.MotorGridOut(self.db.fs, f._id)
-        self.assertEqual(b"hello world", (yield g.read()))
+        self.assertEqual(b"hello world", (await g.read()))
 
         f = motor.MotorGridIn(self.db.fs, filename="test")
-        yield f.close()
-        self.assertEqual(2, (yield self.db.fs.files.count_documents({})))
-        self.assertEqual(1, (yield self.db.fs.chunks.count_documents({})))
+        await f.close()
+        self.assertEqual(2, (await self.db.fs.files.count_documents({})))
+        self.assertEqual(1, (await self.db.fs.chunks.count_documents({})))
 
         g = motor.MotorGridOut(self.db.fs, f._id)
-        self.assertEqual(b"", (yield g.read()))
+        self.assertEqual(b"", (await g.read()))
 
     @gen_test
-    def test_readchunk(self):
+    async def test_readchunk(self):
         in_data = b'a' * 10
         f = motor.MotorGridIn(self.db.fs, chunkSize=3)
-        yield f.write(in_data)
-        yield f.close()
+        await f.write(in_data)
+        await f.close()
 
         g = motor.MotorGridOut(self.db.fs, f._id)
 
         # This is starting to look like Lisp.
-        self.assertEqual(3, len((yield g.readchunk())))
+        self.assertEqual(3, len((await g.readchunk())))
 
-        self.assertEqual(2, len((yield g.read(2))))
-        self.assertEqual(1, len((yield g.readchunk())))
+        self.assertEqual(2, len((await g.read(2))))
+        self.assertEqual(1, len((await g.readchunk())))
 
-        self.assertEqual(3, len((yield g.read(3))))
+        self.assertEqual(3, len((await g.read(3))))
 
-        self.assertEqual(1, len((yield g.readchunk())))
+        self.assertEqual(1, len((await g.readchunk())))
 
-        self.assertEqual(0, len((yield g.readchunk())))
+        self.assertEqual(0, len((await g.readchunk())))
 
     @gen_test
-    def test_gridout_open_exc_info(self):
+    async def test_gridout_open_exc_info(self):
         if sys.version_info < (3, ):
             raise SkipTest("Requires Python 3")
 
         g = motor.MotorGridOut(self.db.fs, "_id that doesn't exist")
         try:
-            yield g.open()
+            await g.open()
         except NoFile:
             _, _, tb = sys.exc_info()
 
@@ -141,25 +140,25 @@ class MotorGridFileTest(MotorTest):
             self.assertTrue('_ensure_file' in formatted)
 
     @gen_test
-    def test_alternate_collection(self):
-        yield self.db.alt.files.delete_many({})
-        yield self.db.alt.chunks.delete_many({})
+    async def test_alternate_collection(self):
+        await self.db.alt.files.delete_many({})
+        await self.db.alt.chunks.delete_many({})
 
         f = motor.MotorGridIn(self.db.alt)
-        yield f.write(b"hello world")
-        yield f.close()
+        await f.write(b"hello world")
+        await f.close()
 
-        self.assertEqual(1, (yield self.db.alt.files.count_documents({})))
-        self.assertEqual(1, (yield self.db.alt.chunks.count_documents({})))
+        self.assertEqual(1, (await self.db.alt.files.count_documents({})))
+        self.assertEqual(1, (await self.db.alt.chunks.count_documents({})))
 
         g = motor.MotorGridOut(self.db.alt, f._id)
-        self.assertEqual(b"hello world", (yield g.read()))
+        self.assertEqual(b"hello world", (await g.read()))
 
         # test that md5 still works...
         self.assertEqual("5eb63bbbe01eeed093cb22bb8f5acdc3", g.md5)
 
     @gen_test
-    def test_grid_in_default_opts(self):
+    async def test_grid_in_default_opts(self):
         self.assertRaises(TypeError, motor.MotorGridIn, "foo")
 
         a = motor.MotorGridIn(self.db.fs)
@@ -176,11 +175,11 @@ class MotorGridFileTest(MotorTest):
         self.assertRaises(AttributeError, setter)
 
         # This method of setting attributes works in Motor
-        yield a.set("filename", "my_file")
+        await a.set("filename", "my_file")
         self.assertEqual("my_file", a.filename)
 
         self.assertEqual(None, a.content_type)
-        yield a.set("content_type", "text/html")
+        await a.set("content_type", "text/html")
         self.assertEqual("text/html", a.content_type)
 
         self.assertRaises(AttributeError, getattr, a, "length")
@@ -193,16 +192,16 @@ class MotorGridFileTest(MotorTest):
         self.assertRaises(AttributeError, setattr, a, "upload_date", 5)
 
         self.assertRaises(AttributeError, getattr, a, "aliases")
-        yield a.set("aliases", ["foo"])
+        await a.set("aliases", ["foo"])
         self.assertEqual(["foo"], a.aliases)
 
         self.assertRaises(AttributeError, getattr, a, "metadata")
-        yield a.set("metadata", {"foo": 1})
+        await a.set("metadata", {"foo": 1})
         self.assertEqual({"foo": 1}, a.metadata)
 
         self.assertRaises(AttributeError, setattr, a, "md5", 5)
 
-        yield a.close()
+        await a.close()
 
         self.assertTrue(isinstance(a._id, ObjectId))
         self.assertRaises(AttributeError, setattr, a, "_id", 5)
@@ -228,7 +227,7 @@ class MotorGridFileTest(MotorTest):
         self.assertRaises(AttributeError, setattr, a, "md5", 5)
 
     @gen_test
-    def test_grid_in_custom_opts(self):
+    async def test_grid_in_custom_opts(self):
         self.assertRaises(TypeError, motor.MotorGridIn, "foo")
         a = motor.MotorGridIn(
             self.db.fs, _id=5, filename="my_file",
@@ -256,16 +255,16 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual(100, b.baz)
 
     @gen_test
-    def test_grid_out_default_opts(self):
+    async def test_grid_out_default_opts(self):
         self.assertRaises(TypeError, motor.MotorGridOut, "foo")
         gout = motor.MotorGridOut(self.db.fs, 5)
         with self.assertRaises(NoFile):
-            yield gout.open()
+            await gout.open()
 
         a = motor.MotorGridIn(self.db.fs)
-        yield a.close()
+        await a.close()
 
-        b = yield motor.MotorGridOut(self.db.fs, a._id).open()
+        b = await motor.MotorGridOut(self.db.fs, a._id).open()
 
         self.assertEqual(a._id, b._id)
         self.assertEqual(0, b.length)
@@ -277,16 +276,16 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual("d41d8cd98f00b204e9800998ecf8427e", b.md5)
 
     @gen_test
-    def test_grid_out_custom_opts(self):
+    async def test_grid_out_custom_opts(self):
         one = motor.MotorGridIn(
             self.db.fs, _id=5, filename="my_file",
             contentType="text/html", chunkSize=1000, aliases=["foo"],
             metadata={"foo": 1, "bar": 2}, bar=3, baz="hello")
 
-        yield one.write(b"hello world")
-        yield one.close()
+        await one.write(b"hello world")
+        await one.close()
 
-        two = yield motor.MotorGridOut(self.db.fs, 5).open()
+        two = await motor.MotorGridOut(self.db.fs, 5).open()
 
         self.assertEqual(5, two._id)
         self.assertEqual(11, two.length)
@@ -299,41 +298,41 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual("5eb63bbbe01eeed093cb22bb8f5acdc3", two.md5)
 
     @gen_test
-    def test_grid_out_file_document(self):
+    async def test_grid_out_file_document(self):
         one = motor.MotorGridIn(self.db.fs)
-        yield one.write(b"foo bar")
-        yield one.close()
+        await one.write(b"foo bar")
+        await one.close()
 
-        file_document = yield self.db.fs.files.find_one()
+        file_document = await self.db.fs.files.find_one()
         two = motor.MotorGridOut(
             self.db.fs, file_document=file_document)
 
-        self.assertEqual(b"foo bar", (yield two.read()))
+        self.assertEqual(b"foo bar", (await two.read()))
 
-        file_document = yield self.db.fs.files.find_one()
+        file_document = await self.db.fs.files.find_one()
         three = motor.MotorGridOut(self.db.fs, 5, file_document)
-        self.assertEqual(b"foo bar", (yield three.read()))
+        self.assertEqual(b"foo bar", (await three.read()))
 
         gridout = motor.MotorGridOut(self.db.fs, file_document={})
         with self.assertRaises(NoFile):
-            yield gridout.open()
+            await gridout.open()
 
     @gen_test
-    def test_write_file_like(self):
+    async def test_write_file_like(self):
         one = motor.MotorGridIn(self.db.fs)
-        yield one.write(b"hello world")
-        yield one.close()
+        await one.write(b"hello world")
+        await one.close()
 
         two = motor.MotorGridOut(self.db.fs, one._id)
         three = motor.MotorGridIn(self.db.fs)
-        yield three.write(two)
-        yield three.close()
+        await three.write(two)
+        await three.close()
 
         four = motor.MotorGridOut(self.db.fs, three._id)
-        self.assertEqual(b"hello world", (yield four.read()))
+        self.assertEqual(b"hello world", (await four.read()))
 
     @gen_test
-    def test_set_after_close(self):
+    async def test_set_after_close(self):
         f = motor.MotorGridIn(self.db.fs, _id="foo", bar="baz")
 
         self.assertEqual("foo", f._id)
@@ -349,7 +348,7 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual(5, f.baz)
         self.assertRaises(AttributeError, getattr, f, "uploadDate")
 
-        yield f.close()
+        await f.close()
 
         self.assertEqual("foo", f._id)
         self.assertEqual("foo", f.bar)
@@ -357,25 +356,25 @@ class MotorGridFileTest(MotorTest):
         self.assertTrue(f.uploadDate)
 
         self.assertRaises(AttributeError, setattr, f, "_id", 5)
-        yield f.set("bar", "a")
-        yield f.set("baz", "b")
+        await f.set("bar", "a")
+        await f.set("baz", "b")
         self.assertRaises(AttributeError, setattr, f, "upload_date", 5)
 
-        g = yield motor.MotorGridOut(self.db.fs, f._id).open()
+        g = await motor.MotorGridOut(self.db.fs, f._id).open()
         self.assertEqual("a", g.bar)
         self.assertEqual("b", g.baz)
 
     @gen_test
-    def test_stream_to_handler(self):
+    async def test_stream_to_handler(self):
         fs = motor.MotorGridFSBucket(self.db)
 
         for content_length in (0, 1, 100, 100 * 1000):
-            _id = yield fs.upload_from_stream('filename', b'a' * content_length)
-            gridout = yield fs.open_download_stream(_id)
+            _id = await fs.upload_from_stream('filename', b'a' * content_length)
+            gridout = await fs.open_download_stream(_id)
             handler = MockRequestHandler()
-            yield gridout.stream_to_handler(handler)
+            await gridout.stream_to_handler(handler)
             self.assertEqual(content_length, handler.n_written)
-            yield fs.delete(_id)
+            await fs.delete(_id)
 
 if __name__ == "__main__":
     unittest.main()

@@ -21,6 +21,7 @@ See "Frameworks" in the Developer Guide.
 
 import functools
 import os
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 
 import tornado.process
@@ -76,13 +77,17 @@ def run_on_executor(loop, fn, *args, **kwargs):
 
 
 def chain_return_value(future, loop, return_value):
-    """Compatible way to return a value in all Pythons.
+    """**DEPRECATED** - Compatible way to return a value in all Pythons.
 
     PEP 479, raise StopIteration(value) from a coroutine won't work forever,
     but "return value" doesn't work in Python 2. Instead, Motor methods that
     return values resolve a Future with it, and are implemented with callbacks
     rather than a coroutine internally.
     """
+    warnings.warn(
+        "The chain_return_value function is deprecated and will be removed in"
+        "Motor 3.0", DeprecationWarning, stacklevel=2)
+
     chained = concurrent.Future()
 
     def copy(_future):
@@ -127,6 +132,13 @@ def pymongo_class_wrapper(f, pymongo_class):
             return result
 
     return _wrapper
+
+
+def yieldable(future):
+    warnings.warn(
+        "The yieldable function is deprecated and will be removed in "
+        "Motor 3.0", DeprecationWarning, stacklevel=2)
+    return future
 
 
 def platform_info():

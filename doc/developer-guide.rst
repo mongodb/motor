@@ -36,9 +36,7 @@ is a module implementing these properties and functions:
 - ``add_future``
 - ``call_soon``
 - ``chain_future``
-- ``chain_return_value``
 - ``check_event_loop``
-- ``coroutine``
 - ``get_event_loop``
 - ``get_future``
 - ``is_event_loop``
@@ -90,8 +88,8 @@ framework to:
 - create a ``Future`` that will be resolved by the event loop when the thread finishes
 - returns the ``Future`` to the caller
 
-This is what allows Tornado or asyncio coroutines to call Motor methods with
-``yield``, ``yield from``, or ``await`` to await I/O without blocking the event loop.
+This is what allows Tornado or asyncio awaitables to call Motor methods with
+``await`` to await I/O without blocking the event loop.
 
 Synchro
 -------

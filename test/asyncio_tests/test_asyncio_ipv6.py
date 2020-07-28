@@ -27,7 +27,7 @@ from test.test_environment import db_user, db_password, connected, env
 
 class MotorIPv6Test(AsyncIOTestCase):
     @asyncio_test
-    def test_ipv6(self):
+    async def test_ipv6(self):
         assert env.host in ('localhost', '127.0.0.1'), (
             "This unittest isn't written to test IPv6 "
             "with host %s" % repr(env.host))
@@ -50,8 +50,8 @@ class MotorIPv6Test(AsyncIOTestCase):
 
         cx = self.asyncio_client(uri=cx_string)
         collection = cx.motor_test.test_collection
-        yield from collection.insert_one({"dummy": "object"})
-        self.assertTrue((yield from collection.find_one({"dummy": "object"})))
+        await collection.insert_one({"dummy": "object"})
+        self.assertTrue((await collection.find_one({"dummy": "object"})))
 
 
 if __name__ == '__main__':

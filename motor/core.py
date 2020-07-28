@@ -870,7 +870,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         .. versionchanged:: 0.5
            :meth:`aggregate` now returns a cursor by default,
-           and the cursor is returned immediately without a ``yield``.
+           and the cursor is returned immediately without an ``await``.
            See :ref:`aggregation changes in Motor 0.5 <aggregate_changes_0_5>`.
 
         .. versionchanged:: 0.2
@@ -1553,13 +1553,13 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
     __motor_class_name__ = 'MotorLatentCommandCursor'
 
     def __init__(self, collection, start, *args, **kwargs):
-        # We're being constructed without yield or await, like:
+        # We're being constructed without await, like:
         #
         #     cursor = collection.aggregate(pipeline)
         #
         # ... so we can't send the "aggregate" command to the server and get
         # a PyMongo CommandCursor back yet. Set self.delegate to a latent
-        # cursor until the first yield or await triggers _get_more(), which
+        # cursor until the first await triggers _get_more(), which
         # will execute the callback "start", which gets a PyMongo CommandCursor.
         super(self.__class__, self).__init__(_LatentCursor(), collection)
         self.start = start

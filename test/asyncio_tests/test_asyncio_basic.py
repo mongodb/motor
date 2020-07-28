@@ -38,12 +38,12 @@ class AIOMotorTestBasic(AsyncIOTestCase):
         self.assertTrue(repr(cursor).startswith('AsyncIOMotorCursor'))
 
     @asyncio_test
-    def test_write_concern(self):
+    async def test_write_concern(self):
         # Default empty dict means "w=1"
         self.assertEqual(WriteConcern(), self.cx.write_concern)
 
-        yield from self.collection.delete_many({})
-        yield from self.collection.insert_one({'_id': 0})
+        await self.collection.delete_many({})
+        await self.collection.insert_one({'_id': 0})
 
         for gle_options in [
             {},
@@ -63,18 +63,18 @@ class AIOMotorTestBasic(AsyncIOTestCase):
 
             if wc.acknowledged:
                 with self.assertRaises(pymongo.errors.DuplicateKeyError):
-                    yield from collection.insert_one({'_id': 0})
+                    await collection.insert_one({'_id': 0})
             else:
-                yield from collection.insert_one({'_id': 0})  # No error
+                await collection.insert_one({'_id': 0})  # No error
 
             # No error
             c = collection.with_options(write_concern=WriteConcern(w=0))
-            yield from c.insert_one({'_id': 0})
+            await c.insert_one({'_id': 0})
             cx.close()
 
     @ignore_deprecations
     @asyncio_test
-    def test_read_preference(self):
+    async def test_read_preference(self):
         # Check the default
         cx = motor_asyncio.AsyncIOMotorClient(test.env.uri, io_loop=self.loop)
         self.assertEqual(ReadPreference.PRIMARY, cx.read_preference)

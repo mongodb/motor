@@ -46,7 +46,7 @@ class _TestMethodWrapper(object):
 
     def __call__(self):
         result = self.orig_method()
-        if inspect.isgenerator(result):
+        if inspect.iscoroutine(result):
             raise TypeError("Generator test methods should be decorated with "
                             "@asyncio_test")
         elif result is not None:
@@ -123,10 +123,9 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
             *args,
             **self.get_client_kwargs(**kwargs))
 
-    @asyncio.coroutine
-    def make_test_data(self):
-        yield from self.collection.delete_many({})
-        yield from self.collection.insert_many([{'_id': i} for i in range(200)])
+    async def make_test_data(self):
+        await self.collection.delete_many({})
+        await self.collection.insert_many([{'_id': i} for i in range(200)])
 
     make_test_data.__test__ = False
 
@@ -160,9 +159,8 @@ class AsyncIOMockServerTestCase(AsyncIOTestCase):
         return ensure_future(coro, loop=self.loop)
 
     def fetch_next(self, cursor):
-        @asyncio.coroutine
-        def fetch_next():
-            return (yield from cursor.fetch_next)
+        async def fetch_next():
+            return (await cursor.fetch_next)
 
         return self.ensure_future(fetch_next())
 
@@ -207,8 +205,7 @@ def asyncio_test(func=None, timeout=None):
                 task.cancel()
 
             self.loop.set_exception_handler(exc_handler)
-            coro = asyncio.coroutine(f)(self, *args, **kwargs)
-            coro = asyncio.wait_for(coro, actual_timeout, loop=self.loop)
+            coro = asyncio.wait_for(f(self, *args, **kwargs), actual_timeout, loop=self.loop)
             task = ensure_future(coro, loop=self.loop)
             try:
                 self.loop.run_until_complete(task)
@@ -238,26 +235,22 @@ def asyncio_test(func=None, timeout=None):
         return wrap
 
 
-@asyncio.coroutine
-def get_command_line(client):
-    command_line = yield from client.admin.command('getCmdLineOpts')
+async def get_command_line(client):
+    command_line = await client.admin.command('getCmdLineOpts')
     assert command_line['ok'] == 1, "getCmdLineOpts() failed"
     return command_line
 
 
-@asyncio.coroutine
-def server_is_mongos(client):
-    ismaster_response = yield from client.admin.command('ismaster')
+async def server_is_mongos(client):
+    ismaster_response = await client.admin.command('ismaster')
     return ismaster_response.get('msg') == 'isdbgrid'
 
 
-@asyncio.coroutine
-def skip_if_mongos(client):
-    is_mongos = yield from server_is_mongos(client)
+async def skip_if_mongos(client):
+    is_mongos = await server_is_mongos(client)
     if is_mongos:
         raise unittest.SkipTest("connected to mongos")
 
 
-@asyncio.coroutine
-def remove_all_users(db):
-    yield from db.command({"dropAllUsersFromDatabase": 1})
+async def remove_all_users(db):
+    await db.command({"dropAllUsersFromDatabase": 1})

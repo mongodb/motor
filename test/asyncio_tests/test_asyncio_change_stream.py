@@ -15,7 +15,6 @@
 """Test AsyncIOMotorChangeStream."""
 
 import copy
-import os
 import threading
 import time
 

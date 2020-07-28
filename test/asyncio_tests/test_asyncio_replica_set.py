@@ -35,14 +35,14 @@ class TestAsyncIOReplicaSet(AsyncIOTestCase):
         super().setUp()
 
     @asyncio_test
-    def test_connection_failure(self):
+    async def test_connection_failure(self):
         # Assuming there isn't anything actually running on this port.
         client = motor_asyncio.AsyncIOMotorClient(
             'localhost:8765', replicaSet='rs', io_loop=self.loop,
             serverSelectionTimeoutMS=10)
 
         with self.assertRaises(pymongo.errors.ConnectionFailure):
-            yield from client.admin.command('ismaster')
+            await client.admin.command('ismaster')
 
 
 class TestReplicaSetClientAgainstStandalone(AsyncIOTestCase):
@@ -57,13 +57,13 @@ class TestReplicaSetClientAgainstStandalone(AsyncIOTestCase):
                 "Connected to a replica set, not a standalone mongod")
 
     @asyncio_test
-    def test_connect(self):
+    async def test_connect(self):
         client = motor_asyncio.AsyncIOMotorClient(
             '%s:%s' % (env.host, env.port), replicaSet='anything',
             serverSelectionTimeoutMS=10, io_loop=self.loop)
 
         with self.assertRaises(pymongo.errors.ServerSelectionTimeoutError):
-            yield from client.test.test.find_one()
+            await client.test.test.find_one()
 
 
 if __name__ == '__main__':

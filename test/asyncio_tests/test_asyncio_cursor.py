@@ -44,7 +44,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertFalse(cursor.started, "Cursor shouldn't start immediately")
 
     @asyncio_test
-    def test_count(self):
+    async def test_count(self):
         await self.make_test_data()
         coll = self.collection
         self.assertEqual(
@@ -52,7 +52,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             (await coll.count_documents({'_id': {'$gt': 99}})))
 
     @asyncio_test
-    def test_fetch_next(self):
+    async def test_fetch_next(self):
         await self.make_test_data()
         coll = self.collection
         # 200 results, only including _id field, sorted by _id.
@@ -79,7 +79,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     @unittest.skipUnless(sys.version_info >= (3, 4), "Python 3.4 required")
     @unittest.skipIf('PyPy' in sys.version, "PyPy")
     @asyncio_test
-    def test_fetch_next_delete(self):
+    async def test_fetch_next_delete(self):
         client, server = self.client_server(auto_ismaster=True)
 
         cursor = client.test.coll.find()
@@ -92,14 +92,13 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
         # Decref the cursor and clear from the event loop.
         del cursor
-        yield
         request = await self.run_thread(
             server.receives, "killCursors", "coll")
 
         request.ok()
 
     @asyncio_test
-    def test_fetch_next_without_results(self):
+    async def test_fetch_next_without_results(self):
         coll = self.collection
         # Nothing matches this query.
         cursor = coll.find({'foo': 'bar'})
@@ -110,7 +109,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(0, cursor.cursor_id)
 
     @asyncio_test
-    def test_fetch_next_is_idempotent(self):
+    async def test_fetch_next_is_idempotent(self):
         # Subsequent calls to fetch_next don't do anything
         await self.make_test_data()
         coll = self.collection
@@ -124,7 +123,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         await cursor.close()
 
     @asyncio_test
-    def test_fetch_next_exception(self):
+    async def test_fetch_next_exception(self):
         coll = self.collection
         cursor = coll.find()
         cursor.delegate._Cursor__id = 1234  # Not valid on server.
@@ -136,7 +135,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         cursor.delegate._Cursor__id = None
 
     @asyncio_test(timeout=30)
-    def test_each(self):
+    async def test_each(self):
         await self.make_test_data()
         cursor = self.collection.find({}, {'_id': 1}).sort('_id')
         future = asyncio.Future(loop=self.loop)
@@ -158,7 +157,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(expected, results)
 
     @asyncio_test
-    def test_to_list_argument_checking(self):
+    async def test_to_list_argument_checking(self):
         # We need more than 10 documents so the cursor stays alive.
         await self.make_test_data()
         coll = self.collection
@@ -170,7 +169,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             await cursor.to_list('foo')
 
     @asyncio_test
-    def test_to_list_with_length(self):
+    async def test_to_list_with_length(self):
         await self.make_test_data()
         coll = self.collection
         cursor = coll.find().sort('_id')
@@ -199,7 +198,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         await cursor.close()
 
     @asyncio_test
-    def test_to_list_exc_info(self):
+    async def test_to_list_exc_info(self):
         await self.make_test_data()
         coll = self.collection
         cursor = coll.find()
@@ -217,7 +216,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
     @env.require_version_min(4, 2)  # failCommand
     @asyncio_test
-    def test_to_list_cancelled_error(self):
+    async def test_to_list_cancelled_error(self):
         await self.make_test_data()
 
         # Cause an error on a getMore after the cursor.to_list task is
@@ -240,7 +239,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
                 'configureFailPoint', 'failCommand', mode='off')
 
     @asyncio_test
-    def test_to_list_with_length_of_none(self):
+    async def test_to_list_with_length_of_none(self):
         await self.make_test_data()
         collection = self.collection
         cursor = collection.find()
@@ -249,7 +248,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(count, len(docs))
 
     @asyncio_test
-    def test_to_list_tailable(self):
+    async def test_to_list_tailable(self):
         coll = self.collection
         cursor = coll.find(cursor_type=CursorType.TAILABLE)
 
@@ -258,7 +257,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             await cursor.to_list(10)
 
     @asyncio_test
-    def test_cursor_explicit_close(self):
+    async def test_cursor_explicit_close(self):
         client, server = self.client_server(auto_ismaster=True)
         collection = client.test.coll
         cursor = collection.find()
@@ -291,7 +290,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertFalse(cursor.alive)
 
     @asyncio_test
-    def test_each_cancel(self):
+    async def test_each_cancel(self):
         await self.make_test_data()
         loop = self.loop
         collection = self.collection
@@ -334,7 +333,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
                          len(results))
 
     @asyncio_test
-    def test_rewind(self):
+    async def test_rewind(self):
         await self.collection.insert_many([{}, {}, {}])
         cursor = self.collection.find().limit(2)
 
@@ -368,7 +367,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     @unittest.skipUnless(sys.version_info >= (3, 4), "Python 3.4 required")
     @unittest.skipIf("PyPy" in sys.version, "PyPy")
     @asyncio_test
-    def test_cursor_del(self):
+    async def test_cursor_del(self):
         client, server = self.client_server(auto_ismaster=True)
         cursor = client.test.coll.find()
 
@@ -393,7 +392,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
     @unittest.skipUnless(sys.version_info >= (3, 4), "Python 3.4 required")
     @asyncio_test
-    def test_exhaust(self):
+    async def test_exhaust(self):
         if (await server_is_mongos(self.cx)):
             self.assertRaises(InvalidOperation,
                               self.db.test.find, cursor_type=CursorType.EXHAUST)
@@ -463,7 +462,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertTrue(sock.closed)
 
     @asyncio_test
-    def test_close_with_docs_in_batch(self):
+    async def test_close_with_docs_in_batch(self):
         # MOTOR-67 Killed cursor with docs batched is "alive", don't kill again.
         await self.make_test_data()  # Ensure multiple batches.
         cursor = self.collection.find()
@@ -477,7 +476,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(0, len(w))
 
     @asyncio_test
-    def test_aggregate_batch_size(self):
+    async def test_aggregate_batch_size(self):
         listener = TestListener()
         cx = self.asyncio_client(event_listeners=[listener])
         c = cx.motor_test.collection
@@ -499,7 +498,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             self.assertEqual(getMore.command['batchSize'], 2)
 
     @asyncio_test
-    def test_raw_batches(self):
+    async def test_raw_batches(self):
         c = self.collection
         await c.delete_many({})
         await c.insert_many({'_id': i} for i in range(4))
@@ -526,8 +525,7 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
         self.loop.run_until_complete(self.disable_timeout())
         super(TestAsyncIOCursorMaxTimeMS, self).tearDown()
 
-    @asyncio.coroutine
-    def maybe_skip(self):
+    async def maybe_skip(self):
         if (await server_is_mongos(self.cx)):
             raise SkipTest("mongos has no maxTimeAlwaysTimeOut fail point")
 
@@ -536,20 +534,18 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
             if 'enableTestCommands=1' not in cmdline['argv']:
                 raise SkipTest("testing maxTimeMS requires failpoints")
 
-    @asyncio.coroutine
-    def enable_timeout(self):
+    async def enable_timeout(self):
         await self.cx.admin.command("configureFailPoint",
                                          "maxTimeAlwaysTimeOut",
                                          mode="alwaysOn")
 
-    @asyncio.coroutine
-    def disable_timeout(self):
+    async def disable_timeout(self):
         await self.cx.admin.command("configureFailPoint",
                                          "maxTimeAlwaysTimeOut",
                                          mode="off")
 
     @asyncio_test
-    def test_max_time_ms_query(self):
+    async def test_max_time_ms_query(self):
         # Cursor parses server timeout error in response to initial query.
         await self.enable_timeout()
         cursor = self.collection.find().max_time_ms(100000)
@@ -564,7 +560,7 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
             await self.collection.find_one(max_time_ms=100000)
 
     @asyncio_test(timeout=60)
-    def test_max_time_ms_getmore(self):
+    async def test_max_time_ms_getmore(self):
         # Cursor handles server timeout during getmore, also.
         await self.collection.insert_many({} for _ in range(200))
         try:
@@ -600,7 +596,7 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
             await self.collection.delete_many({})
 
     @asyncio_test
-    def test_max_time_ms_each_query(self):
+    async def test_max_time_ms_each_query(self):
         # Cursor.each() handles server timeout during initial query.
         await self.enable_timeout()
         cursor = self.collection.find().max_time_ms(100000)
@@ -618,7 +614,7 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
             await future
 
     @asyncio_test(timeout=30)
-    def test_max_time_ms_each_getmore(self):
+    async def test_max_time_ms_each_getmore(self):
         # Cursor.each() handles server timeout during getmore.
         await self.collection.insert_many({} for _ in range(200))
         try:
