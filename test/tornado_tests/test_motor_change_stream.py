@@ -17,7 +17,6 @@ from __future__ import absolute_import, unicode_literals
 """Test MotorChangeStream."""
 
 import copy
-import os
 import threading
 import time
 

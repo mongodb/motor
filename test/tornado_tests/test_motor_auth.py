@@ -38,7 +38,7 @@ class MotorAuthTest(MotorTest):
         env.sync_cx.drop_database("scramtestdb")
 
     @gen_test
-    def test_scram(self):
+    async def test_scram(self):
         env.create_user('scramtestdb',
                         'sha1',
                         'pwd',
@@ -69,10 +69,10 @@ class MotorAuthTest(MotorTest):
                                        authmechanism=mechanism)
 
             if should_work:
-                yield client.scramtestdb.collection.insert_one({})
+                await client.scramtestdb.collection.insert_one({})
             else:
                 with self.assertRaises(OperationFailure):
-                    yield client.scramtestdb.collection.insert_one({})
+                    await client.scramtestdb.collection.insert_one({})
 
         # No mechanism specified, always works.
         for user, mechanism, should_work in [('sha1', None, True),
@@ -82,10 +82,10 @@ class MotorAuthTest(MotorTest):
                                        password='pwd',
                                        authsource='scramtestdb')
 
-            yield client.scramtestdb.collection.insert_one({})
+            await client.scramtestdb.collection.insert_one({})
 
     @gen_test
-    def test_saslprep(self):
+    async def test_saslprep(self):
         # Use Roman numeral for password, normalized by SASLprep to ASCII "IV",
         # see RFC 4013. MongoDB SASL mech normalizes password only, not user.
         env.create_user('scramtestdb',
@@ -98,4 +98,4 @@ class MotorAuthTest(MotorTest):
                                    password='IV',
                                    authsource='scramtestdb')
 
-        yield client.scramtestdb.collection.insert_one({})
+        await client.scramtestdb.collection.insert_one({})

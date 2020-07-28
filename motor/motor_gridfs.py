@@ -26,12 +26,10 @@ from gridfs import (DEFAULT_CHUNK_SIZE,
 
 from motor.core import (AgnosticBaseCursor,
                         AgnosticCollection,
-                        AgnosticDatabase,
-                        PY35)
+                        AgnosticDatabase)
 from motor.docstrings import *
 from motor.metaprogramming import (AsyncCommand,
                                    AsyncRead,
-                                   coroutine_annotation,
                                    create_class_with_framework,
                                    DelegateMethod,
                                    MotorCursorChainingMethod,
@@ -197,7 +195,6 @@ class AgnosticGridOut(object):
 
         return getattr(self.delegate, item)
 
-    @coroutine_annotation
     async def open(self):
         """Retrieve this file's attributes from the server.
 
@@ -231,15 +228,15 @@ class AgnosticGridOut(object):
                 @gen.coroutine
                 def get(self, filename):
                     db = self.settings['db']
-                    fs = yield motor.MotorGridFSBucket(db())
+                    fs = await motor.MotorGridFSBucket(db())
                     try:
-                        gridout = yield fs.open_download_stream_by_name(filename)
+                        gridout = await fs.open_download_stream_by_name(filename)
                     except gridfs.NoFile:
                         raise tornado.web.HTTPError(404)
 
                     self.set_header("Content-Type", gridout.content_type)
                     self.set_header("Content-Length", gridout.length)
-                    yield gridout.stream_to_handler(self)
+                    await gridout.stream_to_handler(self)
                     self.finish()
 
         .. seealso:: Tornado `RequestHandler <http://tornadoweb.org/en/stable/web.html#request-handlers>`_
@@ -486,9 +483,9 @@ class AgnosticGridFSBucket(object):
         For example::
 
           cursor = bucket.find({"filename": "lisa.txt"}, no_cursor_timeout=True)
-          while (yield cursor.fetch_next):
+          while (await cursor.fetch_next):
               grid_out = cursor.next_object()
-              data = yield grid_out.read()
+              data = await grid_out.read()
 
         This iterates through all versions of "lisa.txt" stored in GridFS.
         Note that setting no_cursor_timeout to True may be important to

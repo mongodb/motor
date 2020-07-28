@@ -28,12 +28,11 @@ from test.tornado_tests import MotorTest
 
 
 class MotorGridFSBucketTest(MotorTest):
-    @gen.coroutine
-    def _reset(self):
-        yield self.db.drop_collection("fs.files")
-        yield self.db.drop_collection("fs.chunks")
-        yield self.db.drop_collection("alt.files")
-        yield self.db.drop_collection("alt.chunks")
+    async def _reset(self):
+        await self.db.drop_collection("fs.files")
+        await self.db.drop_collection("fs.chunks")
+        await self.db.drop_collection("alt.files")
+        await self.db.drop_collection("alt.chunks")
 
     def setUp(self):
         super(MotorGridFSBucketTest, self).setUp()
@@ -45,25 +44,25 @@ class MotorGridFSBucketTest(MotorTest):
         super(MotorGridFSBucketTest, self).tearDown()
 
     @gen_test
-    def test_basic(self):
-        oid = yield self.bucket.upload_from_stream("test_filename",
+    async def test_basic(self):
+        oid = await self.bucket.upload_from_stream("test_filename",
                                                    b"hello world")
-        gout = yield self.bucket.open_download_stream(oid)
-        self.assertEqual(b"hello world", (yield gout.read()))
-        self.assertEqual(1, (yield self.db.fs.files.count_documents({})))
-        self.assertEqual(1, (yield self.db.fs.chunks.count_documents({})))
+        gout = await self.bucket.open_download_stream(oid)
+        self.assertEqual(b"hello world", (await gout.read()))
+        self.assertEqual(1, (await self.db.fs.files.count_documents({})))
+        self.assertEqual(1, (await self.db.fs.chunks.count_documents({})))
 
-        yield self.bucket.delete(oid)
+        await self.bucket.delete(oid)
         with self.assertRaises(NoFile):
-            yield self.bucket.open_download_stream(oid)
-        self.assertEqual(0, (yield self.db.fs.files.count_documents({})))
-        self.assertEqual(0, (yield self.db.fs.chunks.count_documents({})))
+            await self.bucket.open_download_stream(oid)
+        self.assertEqual(0, (await self.db.fs.files.count_documents({})))
+        self.assertEqual(0, (await self.db.fs.chunks.count_documents({})))
 
         gin = self.bucket.open_upload_stream("test_filename")
-        yield gin.write(b"hello world")
-        yield gin.close()
+        await gin.write(b"hello world")
+        await gin.close()
 
         dst = BytesIO()
-        yield self.bucket.download_to_stream(gin._id, dst)
+        await self.bucket.download_to_stream(gin._id, dst)
         self.assertEqual(b"hello world", dst.getvalue())
 

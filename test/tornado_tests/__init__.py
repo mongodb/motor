@@ -17,52 +17,47 @@ from __future__ import unicode_literals
 """Utilities for testing Motor with Tornado."""
 
 import concurrent.futures
+import functools
 from unittest import SkipTest
 
 from mockupdb import MockupDB
 from bson import SON
-from tornado import gen, testing
+from tornado import testing
 
 import motor
 from test.test_environment import env, CA_PEM, CLIENT_PEM
 from test.version import Version
 
 
-@gen.coroutine
-def get_command_line(client):
-    command_line = yield client.admin.command('getCmdLineOpts')
+async def get_command_line(client):
+    command_line = await client.admin.command('getCmdLineOpts')
     assert command_line['ok'] == 1, "getCmdLineOpts() failed"
-    raise gen.Return(command_line)
+    return command_line
 
 
-@gen.coroutine
-def server_is_mongos(client):
-    ismaster_response = yield client.admin.command('ismaster')
-    raise gen.Return(ismaster_response.get('msg') == 'isdbgrid')
+async def server_is_mongos(client):
+    ismaster_response = await client.admin.command('ismaster')
+    return ismaster_response.get('msg') == 'isdbgrid'
 
 
-@gen.coroutine
-def skip_if_mongos(client):
-    is_mongos = yield server_is_mongos(client)
+async def skip_if_mongos(client):
+    is_mongos = await server_is_mongos(client)
     if is_mongos:
         raise SkipTest("connected to mongos")
 
 
-@gen.coroutine
-def remove_all_users(db):
-    yield db.command({"dropAllUsersFromDatabase": 1})
+async def remove_all_users(db):
+    await db.command({"dropAllUsersFromDatabase": 1})
 
 
-@gen.coroutine
-def skip_if_mongos(client):
-    is_mongos = yield server_is_mongos(client)
+async def skip_if_mongos(client):
+    is_mongos = await server_is_mongos(client)
     if is_mongos:
         raise SkipTest("connected to mongos")
 
 
-@gen.coroutine
-def remove_all_users(db):
-    yield db.command({"dropAllUsersFromDatabase": 1})
+async def remove_all_users(db):
+    await db.command({"dropAllUsersFromDatabase": 1})
 
 
 class MotorTest(testing.AsyncTestCase):
@@ -79,18 +74,16 @@ class MotorTest(testing.AsyncTestCase):
         self.db = self.cx.motor_test
         self.collection = self.db.test_collection
 
-    @gen.coroutine
-    def make_test_data(self):
-        yield self.collection.delete_many({})
-        yield self.collection.insert_many([{'_id': i} for i in range(200)])
+    async def make_test_data(self):
+        await self.collection.delete_many({})
+        await self.collection.insert_many([{'_id': i} for i in range(200)])
 
     make_test_data.__test__ = False
 
-    @gen.coroutine
-    def set_fail_point(self, client, command_args):
+    async def set_fail_point(self, client, command_args):
         cmd = SON([('configureFailPoint', 'failCommand')])
         cmd.update(command_args)
-        yield client.admin.command(cmd)
+        await client.admin.command(cmd)
 
     def get_client_kwargs(self, **kwargs):
         if env.mongod_started_with_ssl:
@@ -157,17 +150,17 @@ class MotorMockServerTest(MotorTest):
         self.addCleanup(client.close)
         return client, server
 
-    def run_thread(self, fn, *args, **kwargs):
-        return self.executor.submit(fn, *args, **kwargs)
+    async def run_thread(self, fn, *args, **kwargs):
+        return await self.io_loop.run_in_executor(
+            None, functools.partial(fn, *args, **kwargs))
 
 
 class AsyncVersion(Version):
     """Version class that can be instantiated with an async client from
     within a coroutine."""
     @classmethod
-    @gen.coroutine
-    def from_client(cls, client):
-        info = yield client.server_info()
+    async def from_client(cls, client):
+        info = await client.server_info()
         if 'versionArray' in info:
-            raise gen.Return(cls.from_version_array(info['versionArray']))
-        raise gen.Return(cls.from_string(info['version']))
+            return cls.from_version_array(info['versionArray'])
+        return cls.from_string(info['version'])

@@ -31,7 +31,7 @@ from test.tornado_tests import MotorTest
 
 class MotorIPv6Test(MotorTest):
     @gen_test
-    def test_ipv6(self):
+    async def test_ipv6(self):
         assert env.host in ('localhost', '127.0.0.1'), (
             "This unittest isn't written to test IPv6 with host %s" %
             repr(env.host))
@@ -54,8 +54,8 @@ class MotorIPv6Test(MotorTest):
 
         cx = motor.MotorClient(cx_string, io_loop=self.io_loop)
         collection = cx.motor_test.test_collection
-        yield collection.insert_one({"dummy": "object"})
-        self.assertTrue((yield collection.find_one({"dummy": "object"})))
+        await collection.insert_one({"dummy": "object"})
+        self.assertTrue((await collection.find_one({"dummy": "object"})))
 
 
 if __name__ == '__main__':

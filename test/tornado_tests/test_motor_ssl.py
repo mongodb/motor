@@ -69,7 +69,7 @@ class MotorSSLTest(MotorTest):
         self.assertRaises(TypeError, motor.MotorClient, ssl_keyfile=True)
 
     @gen_test
-    def test_cert_ssl(self):
+    async def test_cert_ssl(self):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
@@ -81,15 +81,15 @@ class MotorSSLTest(MotorTest):
                                    ssl_ca_certs=CA_PEM,
                                    io_loop=self.io_loop)
 
-        yield client.db.collection.find_one()
-        response = yield client.admin.command('ismaster')
+        await client.db.collection.find_one()
+        response = await client.admin.command('ismaster')
         if 'setName' in response:
             client = self.motor_rsc(ssl_certfile=CLIENT_PEM,
                                     ssl_ca_certs=CA_PEM)
-            yield client.db.collection.find_one()
+            await client.db.collection.find_one()
 
     @gen_test
-    def test_cert_ssl_validation(self):
+    async def test_cert_ssl_validation(self):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
@@ -103,8 +103,8 @@ class MotorSSLTest(MotorTest):
             ssl_ca_certs=CA_PEM,
             io_loop=self.io_loop)
 
-        yield client.db.collection.find_one()
-        response = yield client.admin.command('ismaster')
+        await client.db.collection.find_one()
+        response = await client.admin.command('ismaster')
 
         if 'setName' in response:
             client = motor.MotorClient(
@@ -115,10 +115,10 @@ class MotorSSLTest(MotorTest):
                 ssl_ca_certs=CA_PEM,
                 io_loop=self.io_loop)
 
-            yield client.db.collection.find_one()
+            await client.db.collection.find_one()
 
     @gen_test
-    def test_cert_ssl_validation_none(self):
+    async def test_cert_ssl_validation_none(self):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
@@ -132,10 +132,10 @@ class MotorSSLTest(MotorTest):
             ssl_ca_certs=CA_PEM,
             io_loop=self.io_loop)
 
-        yield client.admin.command('ismaster')
+        await client.admin.command('ismaster')
 
     @gen_test
-    def test_cert_ssl_validation_hostname_fail(self):
+    async def test_cert_ssl_validation_hostname_fail(self):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
@@ -148,7 +148,7 @@ class MotorSSLTest(MotorTest):
             ssl_ca_certs=CA_PEM,
             io_loop=self.io_loop)
 
-        response = yield client.admin.command('ismaster')
+        response = await client.admin.command('ismaster')
         with self.assertRaises(ConnectionFailure):
             # Create client with hostname 'server', not 'localhost',
             # which is what the server cert presents.
@@ -160,7 +160,7 @@ class MotorSSLTest(MotorTest):
                 ssl_ca_certs=CA_PEM,
                 io_loop=self.io_loop)
 
-            yield client.db.collection.find_one()
+            await client.db.collection.find_one()
 
         if 'setName' in response:
             with self.assertRaises(ConnectionFailure):
@@ -173,4 +173,4 @@ class MotorSSLTest(MotorTest):
                     ssl_ca_certs=CA_PEM,
                     io_loop=self.io_loop)
 
-                yield client.db.collection.find_one()
+                await client.db.collection.find_one()

@@ -43,22 +43,22 @@ from test.utils import one, get_primary_pool
 
 class MotorClientTest(MotorTest):
     @gen_test
-    def test_client_lazy_connect(self):
-        yield self.db.test_client_lazy_connect.delete_many({})
+    async def test_client_lazy_connect(self):
+        await self.db.test_client_lazy_connect.delete_many({})
 
         # Create client without connecting; connect on demand.
         cx = self.motor_client()
         collection = cx.motor_test.test_client_lazy_connect
         future0 = collection.insert_one({'foo': 'bar'})
         future1 = collection.insert_one({'foo': 'bar'})
-        yield [future0, future1]
+        await [future0, future1]
 
-        self.assertEqual(2, (yield collection.count_documents({'foo': 'bar'})))
+        self.assertEqual(2, (await collection.count_documents({'foo': 'bar'})))
 
         cx.close()
 
     @gen_test
-    def test_unix_socket(self):
+    async def test_unix_socket(self):
         if env.mongod_started_with_ssl:
             raise SkipTest("Server started with SSL")
 
@@ -73,7 +73,7 @@ class MotorClientTest(MotorTest):
             uri = 'mongodb://%s' % (encoded_socket,)
 
         client = self.motor_client(uri)
-        yield client.motor_test.test.insert_one({"dummy": "object"})
+        await client.motor_test.test.insert_one({"dummy": "object"})
 
         # Confirm it fails with a missing socket.
         client = motor.MotorClient(
@@ -81,7 +81,7 @@ class MotorClientTest(MotorTest):
             serverSelectionTimeoutMS=100)
 
         with self.assertRaises(ConnectionFailure):
-            yield client.admin.command('ismaster')
+            await client.admin.command('ismaster')
 
     def test_io_loop(self):
         with self.assertRaises(TypeError):
@@ -94,16 +94,16 @@ class MotorClientTest(MotorTest):
                                    motor.MotorDatabase))
 
     @gen_test
-    def test_connection_failure(self):
+    async def test_connection_failure(self):
         # Assuming there isn't anything actually running on this port
         client = motor.MotorClient('localhost', 8765, io_loop=self.io_loop,
                                    serverSelectionTimeoutMS=10)
 
         with self.assertRaises(ConnectionFailure):
-            yield client.admin.command('ismaster')
+            await client.admin.command('ismaster')
 
     @gen_test(timeout=30)
-    def test_connection_timeout(self):
+    async def test_connection_timeout(self):
         # Motor merely tries to time out a connection attempt within the
         # specified duration; DNS lookup in particular isn't charged against
         # the timeout. So don't measure how long this takes.
@@ -112,9 +112,8 @@ class MotorClientTest(MotorTest):
             serverSelectionTimeoutMS=1, io_loop=self.io_loop)
 
         with self.assertRaises(ConnectionFailure):
-            yield client.admin.command('ismaster')
+            await client.admin.command('ismaster')
 
-    @gen_test
     def test_max_pool_size_validation(self):
         with self.assertRaises(ValueError):
             motor.MotorClient(maxPoolSize=-1)
@@ -127,23 +126,23 @@ class MotorClientTest(MotorTest):
         cx.close()
 
     @gen_test(timeout=30)
-    def test_drop_database(self):
+    async def test_drop_database(self):
         # Make sure we can pass a MotorDatabase instance to drop_database
         db = self.cx.test_drop_database
-        yield db.test_collection.insert_one({})
-        names = yield self.cx.list_database_names()
+        await db.test_collection.insert_one({})
+        names = await self.cx.list_database_names()
         self.assertTrue('test_drop_database' in names)
-        yield self.cx.drop_database(db)
-        names = yield self.cx.list_database_names()
+        await self.cx.drop_database(db)
+        names = await self.cx.list_database_names()
         self.assertFalse('test_drop_database' in names)
 
     @gen_test
-    def test_auth_from_uri(self):
+    async def test_auth_from_uri(self):
         if not test.env.auth:
             raise SkipTest('Authentication is not enabled on server')
 
         # self.db is logged in as root.
-        yield remove_all_users(self.db)
+        await remove_all_users(self.db)
         db = self.db
         try:
             test.env.create_user(db.name, 'mike', 'password',
@@ -153,13 +152,13 @@ class MotorClientTest(MotorTest):
                 'mongodb://u:pass@%s:%d' % (env.host, env.port))
 
             with self.assertRaises(OperationFailure):
-                yield client.db.collection.find_one()
+                await client.db.collection.find_one()
 
             client = self.motor_client(
                 'mongodb://mike:password@%s:%d/%s' %
                 (env.host, env.port, db.name))
 
-            yield client[db.name].collection.find_one()
+            await client[db.name].collection.find_one()
         finally:
             test.env.drop_user(db.name, 'mike')
 
@@ -176,13 +175,13 @@ class MotorClientTest(MotorTest):
         self.assertEqual(write_concern, db.write_concern)
 
     @gen_test
-    def test_list_databases(self):
-        yield self.collection.insert_one({})
-        cursor = yield self.cx.list_databases()
+    async def test_list_databases(self):
+        await self.collection.insert_one({})
+        cursor = await self.cx.list_databases()
         self.assertIsInstance(cursor, motor.motor_tornado.MotorCommandCursor)
 
         # Make sure the cursor works, by searching for "local" database.
-        while (yield cursor.fetch_next):
+        while (await cursor.fetch_next):
             info = cursor.next_object()
             if info['name'] == self.collection.database.name:
                 break
@@ -190,21 +189,21 @@ class MotorClientTest(MotorTest):
             self.fail("'%s' database not found" % self.collection.database.name)
 
     @gen_test
-    def test_list_database_names(self):
-        yield self.collection.insert_one({})
-        names = yield self.cx.list_database_names()
+    async def test_list_database_names(self):
+        await self.collection.insert_one({})
+        names = await self.cx.list_database_names()
         self.assertIsInstance(names, list)
         self.assertIn(self.collection.database.name, names)
 
 
 class MotorClientTimeoutTest(MotorMockServerTest):
     @gen_test
-    def test_timeout(self):
+    async def test_timeout(self):
         server = self.server(auto_ismaster=True)
         client = motor.MotorClient(server.uri, socketTimeoutMS=100)
 
         with self.assertRaises(pymongo.errors.AutoReconnect) as context:
-            yield client.motor_test.test_collection.find_one()
+            await client.motor_test.test_collection.find_one()
 
         self.assertIn('timed out', str(context.exception))
         client.close()
@@ -226,44 +225,42 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         else:
             return self.server(auto_ismaster=True)
 
-    @gen.coroutine
-    def _test_exhaust_query_server_error(self, rs):
+    async def _test_exhaust_query_server_error(self, rs):
         # When doing an exhaust query, the socket stays checked out on success
         # but must be checked in on error to avoid counter leak.
         server = self.primary_or_standalone(rs=rs)
         client = motor.MotorClient(server.uri, maxPoolSize=1)
-        yield client.admin.command('ismaster')
+        await client.admin.command('ismaster')
         pool = get_primary_pool(client)
         sock_info = one(pool.sockets)
         cursor = client.db.collection.find(cursor_type=CursorType.EXHAUST)
 
         # With Tornado, simply accessing fetch_next starts the fetch.
         fetch_next = cursor.fetch_next
-        request = yield self.run_thread(server.receives, OpQuery)
+        request = await self.run_thread(server.receives, OpQuery)
         request.fail()
 
         with self.assertRaises(pymongo.errors.OperationFailure):
-            yield fetch_next
+            await fetch_next
 
         self.assertFalse(sock_info.closed)
         self.assertEqual(sock_info, one(pool.sockets))
 
     @gen_test
-    def test_exhaust_query_server_error_standalone(self):
-        yield self._test_exhaust_query_server_error(rs=False)
+    async def test_exhaust_query_server_error_standalone(self):
+        await self._test_exhaust_query_server_error(rs=False)
 
     @gen_test
-    def test_exhaust_query_server_error_rs(self):
-        yield self._test_exhaust_query_server_error(rs=True)
+    async def test_exhaust_query_server_error_rs(self):
+        await self._test_exhaust_query_server_error(rs=True)
 
-    @gen.coroutine
-    def _test_exhaust_query_network_error(self, rs):
+    async def _test_exhaust_query_network_error(self, rs):
         # When doing an exhaust query, the socket stays checked out on success
         # but must be checked in on error to avoid counter leak.
         server = self.primary_or_standalone(rs=rs)
         client = motor.MotorClient(server.uri, maxPoolSize=1, retryReads=False)
 
-        yield client.admin.command('ismaster')
+        await client.admin.command('ismaster')
         pool = get_primary_pool(client)
         pool._check_interval_seconds = None  # Never check.
         sock_info = one(pool.sockets)
@@ -272,28 +269,28 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
 
         # With Tornado, simply accessing fetch_next starts the fetch.
         fetch_next = cursor.fetch_next
-        request = yield self.run_thread(server.receives, OpQuery)
+        request = await self.run_thread(server.receives, OpQuery)
         request.hangs_up()
 
         with self.assertRaises(pymongo.errors.ConnectionFailure):
-            yield fetch_next
+            await fetch_next
 
         self.assertTrue(sock_info.closed)
         del cursor
         self.assertNotIn(sock_info, pool.sockets)
 
     @gen_test
-    def test_exhaust_query_network_error_standalone(self):
-        yield self._test_exhaust_query_network_error(rs=False)
+    async def test_exhaust_query_network_error_standalone(self):
+        await self._test_exhaust_query_network_error(rs=False)
 
     @gen_test
-    def test_exhaust_query_network_error_rs(self):
-        yield self._test_exhaust_query_network_error(rs=True)
+    async def test_exhaust_query_network_error_rs(self):
+        await self._test_exhaust_query_network_error(rs=True)
 
 
 class MotorClientHandshakeTest(MotorMockServerTest):
     @gen_test
-    def test_handshake(self):
+    async def test_handshake(self):
         server = self.server()
         client = motor.MotorClient(server.uri,
                                    connectTimeoutMS=100,
@@ -301,7 +298,7 @@ class MotorClientHandshakeTest(MotorMockServerTest):
 
         # Trigger connection.
         future = client.db.command('ping')
-        ismaster = yield self.run_thread(server.receives, "ismaster")
+        ismaster = await self.run_thread(server.receives, "ismaster")
         meta = ismaster.doc['client']
         self.assertEqual('PyMongo|Motor', meta['driver']['name'])
         self.assertIn('Tornado', meta['platform'])
@@ -314,7 +311,7 @@ class MotorClientHandshakeTest(MotorMockServerTest):
         server.stop()
         client.close()
         try:
-            yield future
+            await future
         except Exception:
             pass
 

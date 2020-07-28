@@ -57,8 +57,6 @@ except ImportError:
     ssl = None
     HAS_SSL = False
 
-PY35 = sys.version_info >= (3, 5)
-
 # From the Convenient API for Transactions spec, with_transaction must
 # halt retries after 120 seconds.
 # This limit is non-configurable and was chosen to be twice the 60 second
@@ -553,7 +551,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
            # Lists all operations currently running on the server.
            pipeline = [{"$currentOp": {}}]
            cursor = client.admin.aggregate(pipeline)
-           while (yield cursor.fetch_next):
+           while (await cursor.fetch_next):
                operation = cursor.next_object()
                print(operation)
 
@@ -838,7 +836,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
           pipeline = [{'$project': {'name': {'$toUpper': '$name'}}}]
           cursor = collection.aggregate(pipeline)
-          while (yield cursor.fetch_next):
+          while (await cursor.fetch_next):
               doc = cursor.next_object()
               print(doc)
 
@@ -1161,9 +1159,9 @@ class AgnosticBaseCursor(AgnosticBase):
 
           >>> @gen.coroutine
           ... def f():
-          ...     yield collection.insert_many([{'_id': i} for i in range(5)])
+          ...     await collection.insert_many([{'_id': i} for i in range(5)])
           ...     cursor = collection.find().sort([('_id', 1)])
-          ...     while (yield cursor.fetch_next):
+          ...     while (await cursor.fetch_next):
           ...         doc = cursor.next_object()
           ...         sys.stdout.write(str(doc['_id']) + ', ')
           ...     print('done')
@@ -1310,10 +1308,10 @@ class AgnosticBaseCursor(AgnosticBase):
           >>> @gen.coroutine
           ... def f():
           ...     cursor = collection.find().sort([('_id', 1)])
-          ...     docs = yield cursor.to_list(length=2)
+          ...     docs = await cursor.to_list(length=2)
           ...     while docs:
           ...         print(docs)
-          ...         docs = yield cursor.to_list(length=2)
+          ...         docs = await cursor.to_list(length=2)
           ...
           ...     print('done')
           ...
