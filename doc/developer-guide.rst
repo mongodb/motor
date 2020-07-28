@@ -36,8 +36,7 @@ A Motor framework is a module implementing these properties and functions:
 - ``is_future``
 - ``platform_info``
 - ``pymongo_class_wrapper``
-- ``run_in_executor``
-- ``run_on_executor`` (**DEPRECATED**)
+- ``run_on_executor``
 - ``yieldable`` (**DEPRECATED**)
 
 See the ``frameworks/tornado`` and ``frameworks/asyncio`` modules.

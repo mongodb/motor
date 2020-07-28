@@ -29,18 +29,6 @@ from tornado import concurrent, gen, ioloop, version as tornado_version
 from tornado.gen import chain_future, coroutine  # For framework interface.
 
 
-def _get_executor():
-    if 'MOTOR_MAX_WORKERS' in os.environ:
-        max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
-    else:
-        max_workers = tornado.process.cpu_count() * 5
-
-    return ThreadPoolExecutor(max_workers=max_workers)
-
-
-_EXECUTOR = _get_executor()
-
-
 CLASS_PREFIX = ''
 
 
@@ -62,31 +50,15 @@ def get_future(loop):
     return concurrent.Future()
 
 
+if 'MOTOR_MAX_WORKERS' in os.environ:
+    max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
+else:
+    max_workers = tornado.process.cpu_count() * 5
+
+_EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
+
+
 def run_on_executor(loop, fn, *args, **kwargs):
-    # Need a Tornado Future for "await" expressions. exec_fut is resolved on a
-    # worker thread, loop.add_future ensures "future" is resolved on main.
-    warnings.warn(
-        "The run_on_executor function is deprecated and will be removed in "
-        "Motor 3.0; use the run_in_executor function instead.",
-        DeprecationWarning, stacklevel=2)
-
-    future = concurrent.Future()
-    exec_fut = _EXECUTOR.submit(fn, *args, **kwargs)
-
-    def copy(_):
-        if future.done():
-            return
-        if exec_fut.exception() is not None:
-            future.set_exception(exec_fut.exception())
-        else:
-            future.set_result(exec_fut.result())
-
-    # Ensure copy runs on main thread.
-    loop.add_future(exec_fut, copy)
-    return future
-
-
-def run_in_executor(loop, fn, *args, **kwargs):
     return loop.run_in_executor(
         _EXECUTOR, functools.partial(fn, *args, **kwargs))
 

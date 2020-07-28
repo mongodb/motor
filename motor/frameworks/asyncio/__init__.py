@@ -29,18 +29,6 @@ from asyncio import coroutine  # For framework interface.
 from concurrent.futures import ThreadPoolExecutor
 
 
-def _get_executor():
-    if 'MOTOR_MAX_WORKERS' in os.environ:
-        max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
-    else:
-        max_workers = multiprocessing.cpu_count() * 5
-
-    return ThreadPoolExecutor(max_workers=max_workers)
-
-
-_EXECUTOR = _get_executor()
-
-
 CLASS_PREFIX = 'AsyncIO'
 
 
@@ -63,50 +51,15 @@ def get_future(loop):
     return asyncio.Future(loop=loop)
 
 
+if 'MOTOR_MAX_WORKERS' in os.environ:
+    max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
+else:
+    max_workers = multiprocessing.cpu_count() * 5
+
+_EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
+
+
 def run_on_executor(loop, fn, *args, **kwargs):
-    # Adapted from asyncio's wrap_future and _chain_future. Ensure the wrapped
-    # future is resolved on the main thread when the executor's future is
-    # resolved on a worker thread. asyncio's wrap_future does the same, but
-    # throws an error if the loop is stopped. We want to avoid errors if a
-    # background task completes after the loop stops, e.g. ChangeStream.next()
-    # returns while the program is shutting down.
-    warnings.warn(
-        "The run_on_executor function is deprecated and will be removed in "
-        "Motor 3.0; use the run_in_executor function instead.",
-        DeprecationWarning, stacklevel=2)
-
-    def _set_state():
-        if dest.cancelled():
-            return
-
-        if source.cancelled():
-            dest.cancel()
-        else:
-            exception = source.exception()
-            if exception is not None:
-                dest.set_exception(exception)
-            else:
-                result = source.result()
-                dest.set_result(result)
-
-    def _call_check_cancel(_):
-        if dest.cancelled():
-            source.cancel()
-
-    def _call_set_state(_):
-        if loop.is_closed():
-            return
-
-        loop.call_soon_threadsafe(_set_state)
-
-    source = _EXECUTOR.submit(functools.partial(fn, *args, **kwargs))
-    dest = asyncio.Future(loop=loop)
-    dest.add_done_callback(_call_check_cancel)
-    source.add_done_callback(_call_set_state)
-    return dest
-
-
-def run_in_executor(loop, fn, *args, **kwargs):
     return loop.run_in_executor(
         _EXECUTOR, functools.partial(fn, *args, **kwargs))
 
