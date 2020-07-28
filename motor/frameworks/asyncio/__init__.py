@@ -49,12 +49,16 @@ def get_future(loop):
     return asyncio.Future(loop=loop)
 
 
-if 'MOTOR_MAX_WORKERS' in os.environ:
-    max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
-else:
-    max_workers = multiprocessing.cpu_count() * 5
+def get_executor():
+    if 'MOTOR_MAX_WORKERS' in os.environ:
+        max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
+    else:
+        max_workers = multiprocessing.cpu_count() * 5
 
-_EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
+    return ThreadPoolExecutor(max_workers=max_workers)
+
+
+_EXECUTOR = get_executor()
 
 
 def run_on_executor(loop, fn, *args, **kwargs):
@@ -64,6 +68,11 @@ def run_on_executor(loop, fn, *args, **kwargs):
     # throws an error if the loop is stopped. We want to avoid errors if a
     # background task completes after the loop stops, e.g. ChangeStream.next()
     # returns while the program is shutting down.
+    warnings.warn(
+        "The run_on_executor function is deprecated and will be removed in "
+        "Motor 3.0; use the run_in_executor function instead.",
+        DeprecationWarning, stacklevel=2)
+
     def _set_state():
         if dest.cancelled():
             return
@@ -93,6 +102,11 @@ def run_on_executor(loop, fn, *args, **kwargs):
     dest.add_done_callback(_call_check_cancel)
     source.add_done_callback(_call_set_state)
     return dest
+
+
+def run_in_executor(loop, fn, *args, **kwargs):
+    return loop.run_in_executor(
+        _EXECUTOR, functools.partial(fn, *args, **kwargs))
 
 
 # Adapted from tornado.gen.

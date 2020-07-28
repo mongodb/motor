@@ -1660,8 +1660,7 @@ class AgnosticChangeStream(AgnosticBase):
         self._lazy_init()
         return self.delegate.try_next()
 
-    @coroutine_annotation
-    def next(self):
+    async def next(self):
         """Advance the cursor.
 
         This method blocks until the next change document is returned or an
@@ -1700,10 +1699,9 @@ class AgnosticChangeStream(AgnosticBase):
         ``await change_stream.next()`` repeatedly.
         """
         loop = self.get_io_loop()
-        return self._framework.run_on_executor(loop, self._next)
+        return await self._framework.run_in_executor(loop, self._next)
 
-    @coroutine_annotation
-    def try_next(self):
+    async def try_next(self):
         """Advance the cursor without blocking indefinitely.
 
         This method returns the next change document without waiting
@@ -1738,7 +1736,8 @@ class AgnosticChangeStream(AgnosticBase):
         .. versionadded:: 2.1
         """
         loop = self.get_io_loop()
-        return self._framework.run_on_executor(loop, self._try_next)
+        return await self._framework.run_in_executor(loop, self._try_next)
+
 
     @coroutine_annotation
     def close(self):

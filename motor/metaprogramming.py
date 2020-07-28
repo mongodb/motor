@@ -72,7 +72,7 @@ def asynchronize(
                 for key, obj in kwargs.items()}
 
         loop = self.get_io_loop()
-        return framework.run_on_executor(loop,
+        return framework.run_in_executor(loop,
                                          sync_method,
                                          self.delegate,
                                          *unwrapped_args,
