@@ -86,10 +86,6 @@ def chain_return_value(future, loop, return_value):
     return values resolve a Future with it, and are implemented with callbacks
     rather than a coroutine internally.
     """
-    warnings.warn(
-        "The chain_return_value function is deprecated and will be removed in"
-        "Motor 3.0", DeprecationWarning, stacklevel=2)
-
     chained = asyncio.Future(loop=loop)
 
     def copy(_future):

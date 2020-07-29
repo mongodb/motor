@@ -210,7 +210,8 @@ class AgnosticGridOut(object):
            ``open`` explicitly is rarely needed.
         """
         return self._framework.chain_return_value(self._ensure_file(),
-                                                  self.get_io_loop())
+                                                  self.get_io_loop(),
+                                                  self)
 
     def get_io_loop(self):
         return self.io_loop
