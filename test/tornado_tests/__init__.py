@@ -151,7 +151,7 @@ class MotorMockServerTest(MotorTest):
         return client, server
 
     async def run_thread(self, fn, *args, **kwargs):
-        return await self.io_loop.run_in_executor(
+        return await self.io_loop.run_on_executor(
             None, functools.partial(fn, *args, **kwargs))
 
 

@@ -1697,7 +1697,7 @@ class AgnosticChangeStream(AgnosticBase):
         ``await change_stream.next()`` repeatedly.
         """
         loop = self.get_io_loop()
-        return await self._framework.run_in_executor(loop, self._next)
+        return await self._framework.run_on_executor(loop, self._next)
 
     async def try_next(self):
         """Advance the cursor without blocking indefinitely.
@@ -1734,7 +1734,7 @@ class AgnosticChangeStream(AgnosticBase):
         .. versionadded:: 2.1
         """
         loop = self.get_io_loop()
-        return await self._framework.run_in_executor(loop, self._try_next)
+        return await self._framework.run_on_executor(loop, self._try_next)
 
     async def close(self):
         """Close this change stream.
