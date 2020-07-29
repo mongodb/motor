@@ -14,8 +14,6 @@
 
 """Tornado support for Motor, an asynchronous driver for MongoDB."""
 
-from __future__ import unicode_literals, absolute_import
-
 from . import core, motor_gridfs
 from .frameworks import tornado as tornado_framework
 from .metaprogramming import create_class_with_framework
