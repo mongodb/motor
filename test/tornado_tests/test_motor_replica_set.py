@@ -31,8 +31,6 @@ from test.test_environment import db_user, db_password, env
 from test.tornado_tests import MotorReplicaSetTestBase, MotorTest
 from test.utils import one, get_primary_pool
 
-from motor.motor_py2_compat import text_type
-
 
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
     def test_io_loop(self):
@@ -66,8 +64,8 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         credentials = pymongo.auth._build_credentials_tuple(
             'DEFAULT',
             'admin',
-            text_type(db_user),
-            text_type(db_password),
+            str(db_user),
+            str(db_password),
             {},
             'admin')
 

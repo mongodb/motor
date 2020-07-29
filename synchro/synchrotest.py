@@ -30,7 +30,6 @@ from nose.plugins.xunit import Xunit
 from nose.selector import Selector
 
 import synchro
-from motor.motor_py2_compat import PY3
 
 excluded_modules = [
     # Exclude some PyMongo tests that can't be applied to Synchro.
@@ -281,10 +280,7 @@ class SynchroNosePlugin(Plugin):
             return False
 
         for excluded_name in excluded_tests:
-            if PY3:
-                classname = method.__self__.__class__.__name__
-            else:
-                classname = method.im_class.__name__
+            classname = method.__self__.__class__.__name__
 
             # Should we exclude this method's whole TestCase?
             suite_name, method_name = excluded_name.split('.')
