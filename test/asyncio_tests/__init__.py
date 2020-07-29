@@ -152,7 +152,7 @@ class AsyncIOMockServerTestCase(AsyncIOTestCase):
         return client, server
 
     def run_thread(self, fn, *args, **kwargs):
-        return self.loop.run_on_executor(None,
+        return self.loop.run_in_executor(None,
                                          functools.partial(fn, *args, **kwargs))
 
     def ensure_future(self, coro):
