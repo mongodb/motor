@@ -80,7 +80,7 @@ class TestAsyncIOSSL(unittest.TestCase):
                           io_loop=self.loop, ssl_keyfile=True)
 
     @asyncio_test
-    def test_cert_ssl(self):
+    async def test_cert_ssl(self):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
@@ -92,8 +92,8 @@ class TestAsyncIOSSL(unittest.TestCase):
                                     ssl_ca_certs=CA_PEM,
                                     io_loop=self.loop)
 
-        yield from client.db.collection.find_one()
-        response = yield from client.admin.command('ismaster')
+        await client.db.collection.find_one()
+        response = await client.admin.command('ismaster')
         if 'setName' in response:
             client = AsyncIOMotorClient(
                 env.host, env.port,
@@ -103,10 +103,10 @@ class TestAsyncIOSSL(unittest.TestCase):
                 replicaSet=response['setName'],
                 io_loop=self.loop)
 
-            yield from client.db.collection.find_one()
+            await client.db.collection.find_one()
 
     @asyncio_test
-    def test_cert_ssl_validation(self):
+    async def test_cert_ssl_validation(self):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
@@ -119,8 +119,8 @@ class TestAsyncIOSSL(unittest.TestCase):
                                     ssl_ca_certs=CA_PEM,
                                     io_loop=self.loop)
 
-        yield from client.db.collection.find_one()
-        response = yield from client.admin.command('ismaster')
+        await client.db.collection.find_one()
+        response = await client.admin.command('ismaster')
 
         if 'setName' in response:
             client = AsyncIOMotorClient(
@@ -131,10 +131,10 @@ class TestAsyncIOSSL(unittest.TestCase):
                 ssl_ca_certs=CA_PEM,
                 io_loop=self.loop)
 
-            yield from client.db.collection.find_one()
+            await client.db.collection.find_one()
 
     @asyncio_test
-    def test_cert_ssl_validation_none(self):
+    async def test_cert_ssl_validation_none(self):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
@@ -147,10 +147,10 @@ class TestAsyncIOSSL(unittest.TestCase):
                                     ssl_ca_certs=CA_PEM,
                                     io_loop=self.loop)
 
-        yield from client.admin.command('ismaster')
+        await client.admin.command('ismaster')
 
     @asyncio_test
-    def test_cert_ssl_validation_hostname_fail(self):
+    async def test_cert_ssl_validation_hostname_fail(self):
         if not test.env.mongod_validates_client_cert:
             raise SkipTest("No mongod available over SSL with certs")
 
@@ -162,7 +162,7 @@ class TestAsyncIOSSL(unittest.TestCase):
                                     ssl_ca_certs=CA_PEM,
                                     io_loop=self.loop)
 
-        response = yield from client.admin.command('ismaster')
+        response = await client.admin.command('ismaster')
         with self.assertRaises(ConnectionFailure):
             # Create client with hostname 'server', not 'localhost',
             # which is what the server cert presents.
@@ -173,7 +173,7 @@ class TestAsyncIOSSL(unittest.TestCase):
                                         ssl_ca_certs=CA_PEM,
                                         io_loop=self.loop)
 
-            yield from client.db.collection.find_one()
+            await client.db.collection.find_one()
 
         if 'setName' in response:
             with self.assertRaises(ConnectionFailure):
@@ -186,4 +186,4 @@ class TestAsyncIOSSL(unittest.TestCase):
                     ssl_ca_certs=CA_PEM,
                     io_loop=self.loop)
 
-                yield from client.db.collection.find_one()
+                await client.db.collection.find_one()

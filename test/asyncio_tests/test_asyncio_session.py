@@ -35,12 +35,11 @@ class TestAsyncIOSession(AsyncIOTestCase):
         if not env.sessions_enabled:
             raise SkipTest("Sessions not supported")
 
-    @asyncio.coroutine
-    def _test_ops(self, client, *ops):
+    async def _test_ops(self, client, *ops):
         listener = client.event_listeners()[0][0]
 
         for f, args, kw in ops:
-            s = yield from client.start_session()
+            s = await client.start_session()
             # Simulate "async with" on Python 3.4.
             try:
                 listener.results.clear()
@@ -48,7 +47,7 @@ class TestAsyncIOSession(AsyncIOTestCase):
                 args2 = copy.copy(args)
                 kw2 = copy.copy(kw)
                 kw2['session'] = s
-                yield from f(*args2, **kw2)
+                await f(*args2, **kw2)
                 for event in listener.results['started']:
                     self.assertTrue(
                         'lsid' in event.command,
@@ -63,15 +62,15 @@ class TestAsyncIOSession(AsyncIOTestCase):
 
                 self.assertFalse(s.has_ended)
             finally:
-                yield from s.end_session()
+                await s.end_session()
 
             with self.assertRaisesRegex(InvalidOperation, "ended session"):
-                yield from f(*args2, **kw2)
+                await f(*args2, **kw2)
 
         # No explicit session.
         for f, args, kw in ops:
             listener.results.clear()
-            yield from f(*args, **kw)
+            await f(*args, **kw)
             self.assertGreaterEqual(len(listener.results['started']), 1)
             lsids = []
             for event in listener.results['started']:
@@ -92,7 +91,7 @@ class TestAsyncIOSession(AsyncIOTestCase):
                             f.__name__,))
 
     @asyncio_test
-    def test_database(self):
+    async def test_database(self):
         listener = TestListener()
         client = self.asyncio_client(event_listeners=[listener])
 
@@ -104,26 +103,25 @@ class TestAsyncIOSession(AsyncIOTestCase):
             (db.list_collection_names, [], {}),
         ]
 
-        yield from self._test_ops(client, *ops)
+        await self._test_ops(client, *ops)
 
     @asyncio_test(timeout=30)
-    def test_collection(self):
+    async def test_collection(self):
         listener = TestListener()
         client = self.asyncio_client(event_listeners=[listener])
-        yield from client.drop_database('motor_test')
+        await client.drop_database('motor_test')
 
         coll = client.motor_test.test_collection
 
-        @asyncio.coroutine
-        def list_indexes(session=None):
-            yield from coll.list_indexes(session=session).to_list(length=None)
+        async def list_indexes(session=None):
+            await coll.list_indexes(session=session).to_list(length=None)
 
-        @asyncio.coroutine
-        def aggregate(session=None):
-            yield from coll.aggregate([], session=session).to_list(length=None)
+
+        async def aggregate(session=None):
+            await coll.aggregate([], session=session).to_list(length=None)
 
         # Test some collection methods - the rest are in test_cursor.
-        yield from self._test_ops(
+        await self._test_ops(
             client,
             (coll.drop, [], {}),
             (coll.bulk_write, [[InsertOne({})]], {}),
@@ -153,19 +151,19 @@ class TestAsyncIOSession(AsyncIOTestCase):
             (aggregate, [], {}))
 
     @asyncio_test
-    def test_cursor(self):
+    async def test_cursor(self):
         listener = TestListener()
         client = self.asyncio_client(event_listeners=[listener])
-        yield from self.make_test_data()
+        await self.make_test_data()
 
         coll = client.motor_test.test_collection
 
-        s = yield from client.start_session()
+        s = await client.start_session()
         # Simulate "async with" on Python 3.4.
         try:
             listener.results.clear()
             cursor = coll.find(session=s)
-            yield from cursor.to_list(length=None)
+            await cursor.to_list(length=None)
             self.assertEqual(len(listener.results['started']), 2)
             for event in listener.results['started']:
                 self.assertTrue(
@@ -177,15 +175,15 @@ class TestAsyncIOSession(AsyncIOTestCase):
                     event.command['lsid'],
                     "find sent wrong lsid with %s" % (event.command_name,))
         finally:
-            yield from s.end_session()
+            await s.end_session()
 
         with self.assertRaisesRegex(InvalidOperation, "ended session"):
-            yield from coll.find(session=s).to_list(length=None)
+            await coll.find(session=s).to_list(length=None)
 
         # No explicit session.
         listener.results.clear()
         cursor = coll.find()
-        yield from cursor.to_list(length=None)
+        await cursor.to_list(length=None)
         self.assertEqual(len(listener.results['started']), 2)
         event0 = listener.first_command_started()
         self.assertTrue(

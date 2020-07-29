@@ -41,7 +41,6 @@ from .metaprogramming import (AsyncCommand,
                               coroutine_annotation,
                               create_class_with_framework,
                               DelegateMethod,
-                              motor_coroutine,
                               MotorCursorChainingMethod,
                               ReadOnlyProperty,
                               unwrap_args_session,
@@ -55,8 +54,6 @@ try:
 except ImportError:
     ssl = None
     HAS_SSL = False
-
-PY35 = sys.version_info >= (3, 5)
 
 # From the Convenient API for Transactions spec, with_transaction must
 # halt retries after 120 seconds.
@@ -552,7 +549,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
            # Lists all operations currently running on the server.
            pipeline = [{"$currentOp": {}}]
            cursor = client.admin.aggregate(pipeline)
-           while (yield cursor.fetch_next):
+           while (await cursor.fetch_next):
                operation = cursor.next_object()
                print(operation)
 
@@ -837,7 +834,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
           pipeline = [{'$project': {'name': {'$toUpper': '$name'}}}]
           cursor = collection.aggregate(pipeline)
-          while (yield cursor.fetch_next):
+          while (await cursor.fetch_next):
               doc = cursor.next_object()
               print(doc)
 
@@ -869,7 +866,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         .. versionchanged:: 0.5
            :meth:`aggregate` now returns a cursor by default,
-           and the cursor is returned immediately without a ``yield``.
+           and the cursor is returned immediately without an ``await``.
            See :ref:`aggregation changes in Motor 0.5 <aggregate_changes_0_5>`.
 
         .. versionchanged:: 0.2
@@ -1160,9 +1157,9 @@ class AgnosticBaseCursor(AgnosticBase):
 
           >>> @gen.coroutine
           ... def f():
-          ...     yield collection.insert_many([{'_id': i} for i in range(5)])
+          ...     await collection.insert_many([{'_id': i} for i in range(5)])
           ...     cursor = collection.find().sort([('_id', 1)])
-          ...     while (yield cursor.fetch_next):
+          ...     while (await cursor.fetch_next):
           ...         doc = cursor.next_object()
           ...         sys.stdout.write(str(doc['_id']) + ', ')
           ...     print('done')
@@ -1309,10 +1306,10 @@ class AgnosticBaseCursor(AgnosticBase):
           >>> @gen.coroutine
           ... def f():
           ...     cursor = collection.find().sort([('_id', 1)])
-          ...     docs = yield cursor.to_list(length=2)
+          ...     docs = await cursor.to_list(length=2)
           ...     while docs:
           ...         print(docs)
-          ...         docs = yield cursor.to_list(length=2)
+          ...         docs = await cursor.to_list(length=2)
           ...
           ...     print('done')
           ...
@@ -1390,17 +1387,16 @@ class AgnosticBaseCursor(AgnosticBase):
     def get_io_loop(self):
         return self.collection.get_io_loop()
 
-    @motor_coroutine
-    def close(self):
+    async def close(self):
         """Explicitly kill this cursor on the server. Call like (in Tornado):
 
         .. code-block:: python
 
-            yield cursor.close()
+            await cursor.close()
         """
         if not self.closed:
             self.closed = True
-            yield self._framework.yieldable(self._close())
+            return self._close()
 
     def batch_size(self, batch_size):
         self.delegate.batch_size(batch_size)
@@ -1425,8 +1421,7 @@ class AgnosticBaseCursor(AgnosticBase):
     def _killed(self):
         raise NotImplementedError
 
-    @motor_coroutine
-    def _close(self):
+    async def _close(self):
         raise NotImplementedError()
 
 
@@ -1492,9 +1487,8 @@ class AgnosticCursor(AgnosticBaseCursor):
     def _killed(self):
         return self.delegate._Cursor__killed
 
-    @motor_coroutine
     def _close(self):
-        yield self._framework.yieldable(self._Cursor__die())
+        return self._Cursor__die()
 
 
 class AgnosticRawBatchCursor(AgnosticCursor):
@@ -1524,9 +1518,8 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
     def _killed(self):
         return self.delegate._CommandCursor__killed
 
-    @motor_coroutine
     def _close(self):
-        yield self._framework.yieldable(self._CommandCursor__die())
+        return self._CommandCursor__die()
 
 
 class AgnosticRawBatchCommandCursor(AgnosticCommandCursor):
@@ -1663,8 +1656,7 @@ class AgnosticChangeStream(AgnosticBase):
         self._lazy_init()
         return self.delegate.try_next()
 
-    @coroutine_annotation
-    def next(self):
+    async def next(self):
         """Advance the cursor.
 
         This method blocks until the next change document is returned or an
@@ -1703,10 +1695,9 @@ class AgnosticChangeStream(AgnosticBase):
         ``await change_stream.next()`` repeatedly.
         """
         loop = self.get_io_loop()
-        return self._framework.run_on_executor(loop, self._next)
+        return await self._framework.run_on_executor(loop, self._next)
 
-    @coroutine_annotation
-    def try_next(self):
+    async def try_next(self):
         """Advance the cursor without blocking indefinitely.
 
         This method returns the next change document without waiting
@@ -1741,21 +1732,15 @@ class AgnosticChangeStream(AgnosticBase):
         .. versionadded:: 2.1
         """
         loop = self.get_io_loop()
-        return self._framework.run_on_executor(loop, self._try_next)
+        return await self._framework.run_on_executor(loop, self._try_next)
 
-    @coroutine_annotation
-    def close(self):
+    async def close(self):
         """Close this change stream.
 
         Stops any "async for" loops using this change stream.
         """
         if self.delegate:
-            return self._close()
-
-        # Never started.
-        future = self._framework.get_future(self.get_io_loop())
-        future.set_result(None)
-        return future
+            await self._close()
 
     def __aiter__(self):
         return self

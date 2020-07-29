@@ -15,7 +15,6 @@
 """Test MotorChangeStream."""
 
 import copy
-import os
 import threading
 import time
 

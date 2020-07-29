@@ -19,7 +19,6 @@ Requires Python 3.5 or later and aiohttp 3.0 or later.
 See the :doc:`/examples/aiohttp_gridfs_example`.
 """
 
-import asyncio
 import datetime
 import mimetypes
 
@@ -172,8 +171,7 @@ class AIOHTTPGridFS:
         self._get_cache_time = get_cache_time
         self._set_extra_headers = set_extra_headers
 
-    @asyncio.coroutine
-    def __call__(self, request):
+    async def __call__(self, request):
         """Send filepath to client using request."""
         try:
             filename = request.match_info['filename']
@@ -185,9 +183,9 @@ class AIOHTTPGridFS:
                 method=request.method, allowed_methods={'GET', 'HEAD'})
 
         try:
-            gridout = yield from self._get_gridfs_file(self._bucket,
-                                                       filename,
-                                                       request)
+            gridout = await self._get_gridfs_file(self._bucket,
+                                                  filename,
+                                                  request)
         except gridfs.NoFile:
             raise aiohttp.web.HTTPNotFound(text=request.path)
 
@@ -216,14 +214,14 @@ class AIOHTTPGridFS:
             return resp
 
         resp.content_length = gridout.length
-        yield from resp.prepare(request)
+        await resp.prepare(request)
 
         if request.method == 'GET':
             written = 0
             while written < gridout.length:
                 # Reading chunk_size at a time minimizes buffering.
-                chunk = yield from gridout.read(gridout.chunk_size)
-                yield from resp.write(chunk)
+                chunk = await gridout.read(gridout.chunk_size)
+                await resp.write(chunk)
                 written += len(chunk)
         return resp
 

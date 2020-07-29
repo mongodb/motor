@@ -27,12 +27,11 @@ from test.utils import ignore_deprecations
 
 
 class TestAsyncIOGridFSBucket(AsyncIOTestCase):
-    @asyncio.coroutine
-    def _reset(self):
-        yield from self.db.drop_collection("fs.files")
-        yield from self.db.drop_collection("fs.chunks")
-        yield from self.db.drop_collection("alt.files")
-        yield from self.db.drop_collection("alt.chunks")
+    async def _reset(self):
+        await self.db.drop_collection("fs.files")
+        await self.db.drop_collection("fs.chunks")
+        await self.db.drop_collection("alt.files")
+        await self.db.drop_collection("alt.chunks")
 
     def setUp(self):
         super(TestAsyncIOGridFSBucket, self).setUp()
@@ -44,23 +43,23 @@ class TestAsyncIOGridFSBucket(AsyncIOTestCase):
         super(TestAsyncIOGridFSBucket, self).tearDown()
 
     @asyncio_test
-    def test_basic(self):
-        oid = yield from self.bucket.upload_from_stream("test_filename",
+    async def test_basic(self):
+        oid = await self.bucket.upload_from_stream("test_filename",
                                                         b"hello world")
-        gout = yield from self.bucket.open_download_stream(oid)
-        self.assertEqual(b"hello world", (yield from gout.read()))
-        self.assertEqual(1, (yield from self.db.fs.files.count_documents({})))
-        self.assertEqual(1, (yield from self.db.fs.chunks.count_documents({})))
+        gout = await self.bucket.open_download_stream(oid)
+        self.assertEqual(b"hello world", (await gout.read()))
+        self.assertEqual(1, (await self.db.fs.files.count_documents({})))
+        self.assertEqual(1, (await self.db.fs.chunks.count_documents({})))
 
         dst = BytesIO()
-        yield from self.bucket.download_to_stream(gout._id, dst)
+        await self.bucket.download_to_stream(gout._id, dst)
         self.assertEqual(b"hello world", dst.getvalue())
 
-        yield from self.bucket.delete(oid)
+        await self.bucket.delete(oid)
         with self.assertRaises(NoFile):
-            yield from self.bucket.open_download_stream(oid)
-        self.assertEqual(0, (yield from self.db.fs.files.count_documents({})))
-        self.assertEqual(0, (yield from self.db.fs.chunks.count_documents({})))
+            await self.bucket.open_download_stream(oid)
+        self.assertEqual(0, (await self.db.fs.files.count_documents({})))
+        self.assertEqual(0, (await self.db.fs.chunks.count_documents({})))
 
     def test_init(self):
         name = 'bucket'

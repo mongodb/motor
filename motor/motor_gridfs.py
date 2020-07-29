@@ -24,15 +24,13 @@ from gridfs import (DEFAULT_CHUNK_SIZE,
 
 from motor.core import (AgnosticBaseCursor,
                         AgnosticCollection,
-                        AgnosticDatabase,
-                        PY35)
+                        AgnosticDatabase)
 from motor.docstrings import *
 from motor.metaprogramming import (AsyncCommand,
                                    AsyncRead,
                                    coroutine_annotation,
                                    create_class_with_framework,
                                    DelegateMethod,
-                                   motor_coroutine,
                                    MotorCursorChainingMethod,
                                    ReadOnlyProperty)
 
@@ -103,9 +101,8 @@ class AgnosticGridOutCursor(AgnosticBaseCursor):
     def _killed(self):
         return self.delegate._Cursor__killed
 
-    @motor_coroutine
     def _close(self):
-        yield self._framework.yieldable(self._Cursor__die())
+        return self._Cursor__die()
 
 
 class MotorGridOutProperty(ReadOnlyProperty):
@@ -217,8 +214,7 @@ class AgnosticGridOut(object):
     def get_io_loop(self):
         return self.io_loop
 
-    @motor_coroutine
-    def stream_to_handler(self, request_handler):
+    async def stream_to_handler(self, request_handler):
         """Write the contents of this file to a
         :class:`tornado.web.RequestHandler`. This method calls
         :meth:`~tornado.web.RequestHandler.flush` on
@@ -233,15 +229,15 @@ class AgnosticGridOut(object):
                 @gen.coroutine
                 def get(self, filename):
                     db = self.settings['db']
-                    fs = yield motor.MotorGridFSBucket(db())
+                    fs = await motor.MotorGridFSBucket(db())
                     try:
-                        gridout = yield fs.open_download_stream_by_name(filename)
+                        gridout = await fs.open_download_stream_by_name(filename)
                     except gridfs.NoFile:
                         raise tornado.web.HTTPError(404)
 
                     self.set_header("Content-Type", gridout.content_type)
                     self.set_header("Content-Length", gridout.length)
-                    yield gridout.stream_to_handler(self)
+                    await gridout.stream_to_handler(self)
                     self.finish()
 
         .. seealso:: Tornado `RequestHandler <http://tornadoweb.org/en/stable/web.html#request-handlers>`_
@@ -249,9 +245,7 @@ class AgnosticGridOut(object):
         written = 0
         while written < self.length:
             # Reading chunk_size at a time minimizes buffering.
-            f = self._framework.yieldable(self.read(self.chunk_size))
-            yield f
-            chunk = f.result()
+            chunk = await self.read(self.chunk_size)
 
             # write() simply appends the output to a list; flush() sends it
             # over the network and minimizes buffering in the handler.
@@ -490,9 +484,9 @@ class AgnosticGridFSBucket(object):
         For example::
 
           cursor = bucket.find({"filename": "lisa.txt"}, no_cursor_timeout=True)
-          while (yield cursor.fetch_next):
+          while (await cursor.fetch_next):
               grid_out = cursor.next_object()
-              data = yield grid_out.read()
+              data = await grid_out.read()
 
         This iterates through all versions of "lisa.txt" stored in GridFS.
         Note that setting no_cursor_timeout to True may be important to

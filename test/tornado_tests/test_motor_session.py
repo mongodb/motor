@@ -36,20 +36,19 @@ class MotorSessionTest(MotorTest):
         if not env.sessions_enabled:
             raise SkipTest("Sessions not supported")
 
-    @gen.coroutine
-    def _test_ops(self, client, *ops):
+    async def _test_ops(self, client, *ops):
         listener = client.event_listeners()[0][0]
 
         for f, args, kw in ops:
             # Simulate "async with" on all Pythons.
-            s = yield client.start_session()
+            s = await client.start_session()
             try:
                 listener.results.clear()
                 # In case "f" modifies its inputs.
                 args2 = copy.copy(args)
                 kw2 = copy.copy(kw)
                 kw2['session'] = s
-                yield f(*args2, **kw2)
+                await f(*args2, **kw2)
                 for event in listener.results['started']:
                     self.assertTrue(
                         'lsid' in event.command,
@@ -64,17 +63,17 @@ class MotorSessionTest(MotorTest):
 
                 self.assertFalse(s.has_ended)
             finally:
-                yield s.end_session()
+                await s.end_session()
 
             with self.assertRaises(InvalidOperation) as ctx:
-                yield f(*args2, **kw2)
+                await f(*args2, **kw2)
 
             self.assertIn("ended session", str(ctx.exception))
 
         # No explicit session.
         for f, args, kw in ops:
             listener.results.clear()
-            yield f(*args, **kw)
+            await f(*args, **kw)
             self.assertGreaterEqual(len(listener.results['started']), 1)
             lsids = []
             for event in listener.results['started']:
@@ -95,7 +94,7 @@ class MotorSessionTest(MotorTest):
                             f.__name__,))
 
     @gen_test
-    def test_database(self):
+    async def test_database(self):
         listener = TestListener()
         client = self.motor_client(event_listeners=[listener])
 
@@ -107,26 +106,24 @@ class MotorSessionTest(MotorTest):
             (db.list_collection_names, [], {}),
         ]
 
-        yield self._test_ops(client, *ops)
+        await self._test_ops(client, *ops)
 
     @gen_test(timeout=30)
-    def test_collection(self):
+    async def test_collection(self):
         listener = TestListener()
         client = self.motor_client(event_listeners=[listener])
-        yield client.drop_database('motor_test')
+        await client.drop_database('motor_test')
 
         coll = client.motor_test.test_collection
 
-        @gen.coroutine
-        def list_indexes(session=None):
-            yield coll.list_indexes(session=session).to_list(length=None)
+        async def list_indexes(session=None):
+            await coll.list_indexes(session=session).to_list(length=None)
 
-        @gen.coroutine
-        def aggregate(session=None):
-            yield coll.aggregate([], session=session).to_list(length=None)
+        async def aggregate(session=None):
+            await coll.aggregate([], session=session).to_list(length=None)
 
         # Test some collection methods - the rest are in test_cursor.
-        yield self._test_ops(
+        await self._test_ops(
             client,
             (coll.drop, [], {}),
             (coll.bulk_write, [[InsertOne({})]], {}),
@@ -156,19 +153,19 @@ class MotorSessionTest(MotorTest):
             (aggregate, [], {}))
 
     @gen_test
-    def test_cursor(self):
+    async def test_cursor(self):
         listener = TestListener()
         client = self.motor_client(event_listeners=[listener])
-        yield self.make_test_data()
+        await self.make_test_data()
 
         coll = client.motor_test.test_collection
 
-        s = yield client.start_session()
+        s = await client.start_session()
         # Simulate "async with" on all Pythons.
         try:
             listener.results.clear()
             cursor = coll.find(session=s)
-            yield cursor.to_list(length=None)
+            await cursor.to_list(length=None)
             self.assertEqual(len(listener.results['started']), 2)
             for event in listener.results['started']:
                 self.assertTrue(
@@ -180,17 +177,17 @@ class MotorSessionTest(MotorTest):
                     event.command['lsid'],
                     "find sent wrong lsid with %s" % (event.command_name,))
         finally:
-            yield s.end_session()
+            await s.end_session()
 
         with self.assertRaises(InvalidOperation) as ctx:
-            yield coll.find(session=s).to_list(length=None)
+            await coll.find(session=s).to_list(length=None)
 
         self.assertIn("ended session", str(ctx.exception))
 
         # No explicit session.
         listener.results.clear()
         cursor = coll.find()
-        yield cursor.to_list(length=None)
+        await cursor.to_list(length=None)
         self.assertEqual(len(listener.results['started']), 2)
         event0 = listener.first_command_started()
         self.assertTrue(
@@ -210,14 +207,14 @@ class MotorSessionTest(MotorTest):
                 "find sent wrong lsid with %s" % (event.command_name,))
 
     @gen_test
-    def test_options(self):
-        s = yield self.cx.start_session()
+    async def test_options(self):
+        s = await self.cx.start_session()
         self.assertTrue(s.options.causal_consistency)
-        s = yield self.cx.start_session(False)
+        s = await self.cx.start_session(False)
         self.assertFalse(s.options.causal_consistency)
-        s = yield self.cx.start_session(causal_consistency=True)
+        s = await self.cx.start_session(causal_consistency=True)
         self.assertTrue(s.options.causal_consistency)
-        s = yield self.cx.start_session(causal_consistency=False)
+        s = await self.cx.start_session(causal_consistency=False)
         self.assertFalse(s.options.causal_consistency)
 
 

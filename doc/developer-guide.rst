@@ -7,9 +7,9 @@ Some explanations for those who would like to contribute to Motor development.
 Compatibility
 -------------
 
-Motor supports the asyncio module in the standard library of Python 3.4 and
+Motor supports the asyncio module in the standard library of Python 3.5.3 and
 later.
-Motor also works with Tornado 4.5 and later along with all the Python versions
+Motor also works with Tornado 5.0 and later along with all the Python versions
 it supports.
 
 Each new Motor feature release depends on the latest PyMongo minor version release
@@ -17,20 +17,11 @@ or newer, up to the next PyMongo major version release. For example, if 3.10
 is the latest available PyMongo version when Motor 2.1 is being released, Motor 2.1
 will require 3.10<=PyMongo<4.
 
-Motor is single-source compatible with all supported Python versions, although
-there are some tricks for Python 3. There is some code for the ``async``
-and ``await`` features of Python 3.5+ that is conditionally compiled with ``eval``
-in ``core.py``.
-
-In ``setup.py`` there are tricks to conditionally import tests depending on
-Python version. ``setup.py`` also avoids installing the ``frameworks/asyncio``
-directory in a Python 2 environment.
-
 Frameworks
 ----------
 
-Motor abstracts the differences between Tornado and asyncio by wrapping each in a "framework" interface. A Motor framework
-is a module implementing these properties and functions:
+Motor abstracts the differences between Tornado and asyncio by wrapping each in a "framework" interface.
+A Motor framework is a module implementing these properties and functions:
 
 - ``CLASS_PREFIX``
 - ``add_future``
@@ -38,7 +29,7 @@ is a module implementing these properties and functions:
 - ``chain_future``
 - ``chain_return_value``
 - ``check_event_loop``
-- ``coroutine``
+- ``coroutine`` (**DEPRECATED**)
 - ``get_event_loop``
 - ``get_future``
 - ``is_event_loop``
@@ -46,9 +37,15 @@ is a module implementing these properties and functions:
 - ``platform_info``
 - ``pymongo_class_wrapper``
 - ``run_on_executor``
-- ``yieldable``
+- ``yieldable`` (**DEPRECATED**)
 
 See the ``frameworks/tornado`` and ``frameworks/asyncio`` modules.
+
+.. note:: Starting in Motor 2.2, the functions marked **DEPRECATED** in the
+   list above are not used internally in Motor. Instead of being removed
+   from the codebase, they have been left in a deprecated state to avoid
+   breaking any libraries built on top of Motor. These deprecated functions
+   will be removed in Motor 3.0.
 
 A framework-specific class, like ``MotorClient`` for Tornado or
 ``AsyncIOMotorClient`` for asyncio, is created by the
@@ -91,8 +88,8 @@ framework to:
 - create a ``Future`` that will be resolved by the event loop when the thread finishes
 - returns the ``Future`` to the caller
 
-This is what allows Tornado or asyncio coroutines to call Motor methods with
-``yield``, ``yield from``, or ``await`` to await I/O without blocking the event loop.
+This is what allows Tornado or asyncio awaitables to call Motor methods with
+``await`` to await I/O without blocking the event loop.
 
 Synchro
 -------
