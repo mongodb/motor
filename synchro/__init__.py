@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import unicode_literals
-
 """Synchro, a fake synchronous PyMongo implementation built on top of Motor,
 for the sole purpose of checking that Motor passes the same unittests as
 PyMongo.

@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import unicode_literals, absolute_import
-
 """Python 2/3 compatibility utilities for Motor."""
 
 import sys
