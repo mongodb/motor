@@ -64,7 +64,7 @@ def run_on_executor(loop, fn, *args, **kwargs):
 
 
 def chain_return_value(future, loop, return_value):
-    """**DEPRECATED** - Compatible way to return a value in all Pythons.
+    """Compatible way to return a value in all Pythons.
 
     PEP 479, raise StopIteration(value) from a coroutine won't work forever,
     but "return value" doesn't work in Python 2. Instead, Motor methods that

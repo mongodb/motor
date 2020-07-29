@@ -27,7 +27,7 @@ A Motor framework is a module implementing these properties and functions:
 - ``add_future``
 - ``call_soon``
 - ``chain_future``
-- ``chain_return_value`` (**DEPRECATED**)
+- ``chain_return_value``
 - ``check_event_loop``
 - ``coroutine`` (**DEPRECATED**)
 - ``get_event_loop``
