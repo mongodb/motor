@@ -30,6 +30,7 @@ from motor.core import (AgnosticBaseCursor,
 from motor.docstrings import *
 from motor.metaprogramming import (AsyncCommand,
                                    AsyncRead,
+                                   coroutine_annotation,
                                    create_class_with_framework,
                                    DelegateMethod,
                                    MotorCursorChainingMethod,
@@ -195,7 +196,8 @@ class AgnosticGridOut(object):
 
         return getattr(self.delegate, item)
 
-    async def open(self):
+    @coroutine_annotation
+    def open(self):
         """Retrieve this file's attributes from the server.
 
         Returns a Future.
@@ -207,8 +209,8 @@ class AgnosticGridOut(object):
            :class:`~motor.MotorGridOut` now opens itself on demand, calling
            ``open`` explicitly is rarely needed.
         """
-        await self._ensure_file()
-        return self
+        return self._framework.chain_return_value(self._ensure_file(),
+                                                  self.get_io_loop())
 
     def get_io_loop(self):
         return self.io_loop
