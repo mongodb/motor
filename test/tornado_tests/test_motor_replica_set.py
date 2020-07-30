@@ -31,8 +31,6 @@ from test.test_environment import db_user, db_password, env
 from test.tornado_tests import MotorReplicaSetTestBase, MotorTest
 from test.utils import one, get_primary_pool
 
-from motor.motor_py2_compat import text_type
-
 
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
     def test_io_loop(self):
@@ -49,43 +47,6 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
         # Test the Future interface.
         with self.assertRaises(pymongo.errors.ConnectionFailure):
             await client.admin.command('ismaster')
-
-    @gen_test
-    async def test_auth_network_error(self):
-        if not test.env.auth:
-            raise SkipTest('Authentication is not enabled on server')
-
-        # Make sure there's no semaphore leak if we get a network error
-        # when authenticating a new socket with cached credentials.
-        # Get a client with one socket so we detect if it's leaked.
-        c = self.motor_rsc(maxPoolSize=1, waitQueueTimeoutMS=1,
-                           retryReads=False)
-        await c.admin.command('ismaster')
-
-        # Simulate an authenticate() call on a different socket.
-        credentials = pymongo.auth._build_credentials_tuple(
-            'DEFAULT',
-            'admin',
-            text_type(db_user),
-            text_type(db_password),
-            {},
-            'admin')
-
-        c.delegate._cache_credentials('test', credentials, connect=False)
-
-        # Cause a network error on the actual socket.
-        pool = get_primary_pool(c)
-        socket_info = one(pool.sockets)
-        socket_info.sock.close()
-
-        # In __check_auth, the client authenticates its socket with the
-        # new credential, but gets a socket.error. Should be reraised as
-        # AutoReconnect.
-        with self.assertRaises(pymongo.errors.AutoReconnect):
-            await c.test.collection.find_one()
-
-        # No semaphore leak, the pool is allowed to make a new socket.
-        await c.test.collection.find_one()
 
     @gen_test
     async def test_open_concurrent(self):
