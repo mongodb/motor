@@ -49,43 +49,6 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             yield client.admin.command('ismaster')
 
     @gen_test
-    def test_auth_network_error(self):
-        if not test.env.auth:
-            raise SkipTest('Authentication is not enabled on server')
-
-        # Make sure there's no semaphore leak if we get a network error
-        # when authenticating a new socket with cached credentials.
-        # Get a client with one socket so we detect if it's leaked.
-        c = self.motor_rsc(maxPoolSize=1, waitQueueTimeoutMS=1,
-                           retryReads=False)
-        yield c.admin.command('ismaster')
-
-        # Simulate an authenticate() call on a different socket.
-        credentials = pymongo.auth._build_credentials_tuple(
-            'DEFAULT',
-            'admin',
-            str(db_user),
-            str(db_password),
-            {},
-            'admin')
-
-        c.delegate._cache_credentials('test', credentials, connect=False)
-
-        # Cause a network error on the actual socket.
-        pool = get_primary_pool(c)
-        socket_info = one(pool.sockets)
-        socket_info.sock.close()
-
-        # In __check_auth, the client authenticates its socket with the
-        # new credential, but gets a socket.error. Should be reraised as
-        # AutoReconnect.
-        with self.assertRaises(pymongo.errors.AutoReconnect):
-            yield c.test.collection.find_one()
-
-        # No semaphore leak, the pool is allowed to make a new socket.
-        yield c.test.collection.find_one()
-
-    @gen_test
     def test_open_concurrent(self):
         # MOTOR-66: don't block on PyMongo's __monitor_lock, but also don't
         # spawn multiple monitors.
