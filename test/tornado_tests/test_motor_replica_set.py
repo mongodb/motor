@@ -38,7 +38,7 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
             motor.MotorClient(test.env.rs_uri, io_loop='foo')
 
     @gen_test
-    def test_connection_failure(self):
+    async def test_connection_failure(self):
         # Assuming there isn't anything actually running on this port
         client = motor.MotorClient(
             'localhost:8765', replicaSet='rs', io_loop=self.io_loop,
@@ -46,14 +46,15 @@ class MotorReplicaSetTest(MotorReplicaSetTestBase):
 
         # Test the Future interface.
         with self.assertRaises(pymongo.errors.ConnectionFailure):
-            yield client.admin.command('ismaster')
+            await client.admin.command('ismaster')
 
     @gen_test
-    def test_open_concurrent(self):
+    async def test_open_concurrent(self):
         # MOTOR-66: don't block on PyMongo's __monitor_lock, but also don't
         # spawn multiple monitors.
         c = self.motor_rsc()
-        yield [c.db.collection.find_one(), c.db.collection.find_one()]
+        await gen.multi(
+            [c.db.collection.find_one(), c.db.collection.find_one()])
 
 
 class TestReplicaSetClientAgainstStandalone(MotorTest):
@@ -67,9 +68,9 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
                 "Connected to a replica set, not a standalone mongod")
 
     @gen_test
-    def test_connect(self):
+    async def test_connect(self):
         with self.assertRaises(pymongo.errors.ServerSelectionTimeoutError):
-            yield motor.MotorClient(
+            await motor.MotorClient(
                 '%s:%s' % (env.host, env.port), replicaSet='anything',
                 io_loop=self.io_loop,
                 serverSelectionTimeoutMS=10).test.test.find_one()

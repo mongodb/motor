@@ -297,17 +297,17 @@ command document before it is sent.
 For example, a command like ``{buildinfo: 1}`` can be sent
 using::
 
-    result = yield db.command("buildinfo")
+    result = await db.command("buildinfo")
 
 For a command where the value matters, like ``{collstats:
 collection_name}`` we can do::
 
-    result = yield db.command("collstats", collection_name)
+    result = await db.command("collstats", collection_name)
 
 For commands that take additional arguments we can use
 kwargs. So ``{filemd5: object_id, root: file_root}`` becomes::
 
-    result = yield db.command("filemd5", object_id, root=file_root)
+    result = await db.command("filemd5", object_id, root=file_root)
 
 :Parameters:
   - `command`: document representing the command to be issued,
@@ -794,7 +794,7 @@ response from the server to the `map reduce command`_.
     `map reduce command`_ may be passed as keyword arguments to this
     helper method, e.g.::
 
-       result = yield db.test.map_reduce(map, reduce, "myresults", limit=2)
+       result = await db.test.map_reduce(map, reduce, "myresults", limit=2)
 
 Returns a Future.
 
@@ -1003,7 +1003,7 @@ Pass a field name and a direction, either
   >>> @gen.coroutine
   ... def f():
   ...     cursor = collection.find().sort('_id', pymongo.DESCENDING)
-  ...     docs = yield cursor.to_list(None)
+  ...     docs = await cursor.to_list(None)
   ...     print([d['_id'] for d in docs])
   ...
   >>> IOLoop.current().run_sync(f)
@@ -1019,7 +1019,7 @@ To sort by multiple fields, pass a list of (key, direction) pairs:
   ...         ('field1', pymongo.ASCENDING),
   ...         ('field2', pymongo.DESCENDING)])
   ...
-  ...     docs = yield cursor.to_list(None)
+  ...     docs = await cursor.to_list(None)
   ...     print([(d['field1'], d['field2']) for d in docs])
   ...
   >>> IOLoop.current().run_sync(f)
@@ -1047,7 +1047,7 @@ Text search results can be sorted by relevance:
   ...
   ...     # Sort by 'score' field.
   ...     cursor.sort([('score', {'$meta': 'textScore'})])
-  ...     docs = yield cursor.to_list(None)
+  ...     docs = await cursor.to_list(None)
   ...     for doc in docs:
   ...         print('%.1f %s' % (doc['score'], doc['field']))
   ...

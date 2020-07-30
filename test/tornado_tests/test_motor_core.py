@@ -14,11 +14,10 @@
 
 """Validate list of PyMongo attributes wrapped by Motor."""
 
-from tornado.testing import gen_test, unittest
+from tornado.testing import gen_test
 from gridfs import GridFSBucket, GridIn
 
 from motor import MotorGridFSBucket, MotorGridIn
-from motor.core import PY35
 from test import env
 from test.tornado_tests import MotorTest
 
@@ -43,11 +42,6 @@ pymongo_client_only = set([
     'is_locked',
     'set_cursor_manager',
     'kill_cursors']).union(pymongo_only)
-
-if PY35:
-    pymongo_client_session_only = set([])
-else:
-    pymongo_client_session_only = set(['with_transaction'])
 
 pymongo_database_only = set([
     'add_user',
@@ -95,14 +89,13 @@ class MotorCoreTest(MotorTest):
             attrs(env.sync_cx) - pymongo_client_only,
             attrs(self.cx) - motor_client_only)
 
-    @unittest.skip("Skip until MOTOR-444 is complete")
     @env.require_version_min(3, 6)
     @env.require_replica_set
     @gen_test
-    def test_client_session_attrs(self):
+    async def test_client_session_attrs(self):
         self.assertEqual(
-            attrs(env.sync_cx.start_session()) - pymongo_client_session_only,
-            attrs((yield self.cx.start_session())) - motor_only)
+            attrs(env.sync_cx.start_session()),
+            attrs((await self.cx.start_session())) - motor_only)
 
     def test_database_attrs(self):
         self.assertEqual(
@@ -170,14 +163,14 @@ class MotorCoreTestGridFS(MotorTest):
             attrs(MotorGridIn(self.cx.test.fs)) - motor_gridin_only)
 
     @gen_test
-    def test_gridout_attrs(self):
+    async def test_gridout_attrs(self):
         motor_gridout_only = set([
             'open',
             'stream_to_handler'
         ]).union(motor_only)
 
         fs = MotorGridFSBucket(self.cx.test)
-        motor_gridout = yield fs.open_download_stream(1)
+        motor_gridout = await fs.open_download_stream(1)
         self.assertEqual(
             attrs(self.sync_fs.open_download_stream(1)),
             attrs(motor_gridout) - motor_gridout_only)

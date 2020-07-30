@@ -19,11 +19,13 @@ See "Frameworks" in the Developer Guide.
 
 import functools
 import os
-from concurrent.futures import ThreadPoolExecutor
-
 import tornado.process
+import warnings
+
+from concurrent.futures import ThreadPoolExecutor
 from tornado import concurrent, gen, ioloop, version as tornado_version
 from tornado.gen import chain_future, coroutine  # For framework interface.
+
 
 CLASS_PREFIX = ''
 
@@ -55,22 +57,8 @@ _EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
 
 
 def run_on_executor(loop, fn, *args, **kwargs):
-    # Need a Tornado Future for "await" expressions. exec_fut is resolved on a
-    # worker thread, loop.add_future ensures "future" is resolved on main.
-    future = concurrent.Future()
-    exec_fut = _EXECUTOR.submit(fn, *args, **kwargs)
-
-    def copy(_):
-        if future.done():
-            return
-        if exec_fut.exception() is not None:
-            future.set_exception(exec_fut.exception())
-        else:
-            future.set_result(exec_fut.result())
-
-    # Ensure copy runs on main thread.
-    loop.add_future(exec_fut, copy)
-    return future
+    return loop.run_in_executor(
+        _EXECUTOR, functools.partial(fn, *args, **kwargs))
 
 
 def chain_return_value(future, loop, return_value):
@@ -114,21 +102,23 @@ def pymongo_class_wrapper(f, pymongo_class):
     See WrapAsync.
     """
     @functools.wraps(f)
-    @coroutine
-    def _wrapper(self, *args, **kwargs):
-        result = yield f(self, *args, **kwargs)
+    async def _wrapper(self, *args, **kwargs):
+        result = await f(self, *args, **kwargs)
 
         # Don't call isinstance(), not checking subclasses.
         if result.__class__ == pymongo_class:
             # Delegate to the current object to wrap the result.
-            raise gen.Return(self.wrap(result))
+            return self.wrap(result)
         else:
-            raise gen.Return(result)
+            return result
 
     return _wrapper
 
 
 def yieldable(future):
+    warnings.warn(
+        "The yieldable function is deprecated and will be removed in "
+        "Motor 3.0", DeprecationWarning, stacklevel=2)
     return future
 
 

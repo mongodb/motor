@@ -111,25 +111,10 @@ def unwrap_kwargs_session(kwargs):
 _coro_token = object()
 
 
-def motor_coroutine(f):
-    """Used by Motor classes to mark functions as coroutines.
-
-    create_class_with_framework will decorate the function with a framework-
-    specific coroutine decorator, like asyncio.coroutine or Tornado's
-    gen.coroutine.
-
-    You cannot return a value from a motor_coroutine, the syntax differences
-    between Tornado on Python 2 and asyncio with Python 3.5 are impossible to
-    bridge.
-    """
-    f._is_motor_coroutine = _coro_token
-    return f
-
-
 def coroutine_annotation(f):
     """In docs, annotate a function that returns a Future with 'coroutine'.
 
-    Unlike @motor_coroutine, this doesn't affect behavior.
+    This doesn't affect behavior.
     """
     # Like:
     # @coroutine_annotation
@@ -309,12 +294,6 @@ def create_class_with_framework(cls, framework, module_name):
             if isinstance(attr, MotorAttributeFactory):
                 new_class_attr = attr.create_attribute(new_class, name)
                 setattr(new_class, name, new_class_attr)
-
-            elif getattr(attr, '_is_motor_coroutine', None) is _coro_token:
-                coro = framework.coroutine(attr)
-                del coro._is_motor_coroutine
-                coro.coroutine_annotation = True
-                setattr(new_class, name, coro)
 
     _class_cache[cache_key] = new_class
     return new_class

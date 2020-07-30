@@ -30,16 +30,16 @@ from test.asyncio_tests import (AsyncIOTestCase, asyncio_test)
 
 class TestAsyncIODatabase(AsyncIOTestCase):
     @asyncio_test
-    def test_database(self):
+    async def test_database(self):
         # Test that we can create a db directly, not just get on from
         # AsyncIOMotorClient.
         db = AsyncIOMotorDatabase(self.cx, 'motor_test')
 
         # Make sure we got the right DB and it can do an operation.
         self.assertEqual('motor_test', db.name)
-        yield from db.test_collection.delete_many({})
-        yield from db.test_collection.insert_one({'_id': 1})
-        doc = yield from db.test_collection.find_one({'_id': 1})
+        await db.test_collection.delete_many({})
+        await db.test_collection.insert_one({'_id': 1})
+        doc = await db.test_collection.find_one({'_id': 1})
         self.assertEqual(1, doc['_id'])
 
     def test_collection_named_delegate(self):
@@ -59,7 +59,7 @@ class TestAsyncIODatabase(AsyncIOTestCase):
 
     @env.require_version_min(3, 6)
     @asyncio_test
-    def test_aggregate(self):
+    async def test_aggregate(self):
         pipeline = [{"$listLocalSessions": {}},
                     {"$limit": 1},
                     {"$addFields": {"dummy": "dummy field"}},
@@ -67,58 +67,58 @@ class TestAsyncIODatabase(AsyncIOTestCase):
         expected = [{"dummy": "dummy field"}]
 
         cursor = self.cx.admin.aggregate(pipeline)
-        docs = yield from cursor.to_list(10)
+        docs = await cursor.to_list(10)
         self.assertEqual(expected, docs)
 
     @asyncio_test
-    def test_command(self):
-        result = yield from self.cx.admin.command("buildinfo")
+    async def test_command(self):
+        result = await self.cx.admin.command("buildinfo")
         # Make sure we got some sane result or other.
         self.assertEqual(1, result['ok'])
 
     @asyncio_test
-    def test_create_collection(self):
+    async def test_create_collection(self):
         # Test creating collection, return val is wrapped in
         # AsyncIOMotorCollection, creating it again raises CollectionInvalid.
         db = self.db
-        yield from db.drop_collection('test_collection2')
-        collection = yield from db.create_collection('test_collection2')
+        await db.drop_collection('test_collection2')
+        collection = await db.create_collection('test_collection2')
         self.assertTrue(isinstance(collection, AsyncIOMotorCollection))
         self.assertTrue(
-            'test_collection2' in (yield from db.list_collection_names()))
+            'test_collection2' in (await db.list_collection_names()))
 
         with self.assertRaises(CollectionInvalid):
-            yield from db.create_collection('test_collection2')
+            await db.create_collection('test_collection2')
 
     @asyncio_test
-    def test_drop_collection(self):
+    async def test_drop_collection(self):
         # Make sure we can pass an AsyncIOMotorCollection instance to
         # drop_collection.
         db = self.db
         collection = db.test_drop_collection
-        yield from collection.insert_one({})
-        names = yield from db.list_collection_names()
+        await collection.insert_one({})
+        names = await db.list_collection_names()
         self.assertTrue('test_drop_collection' in names)
-        yield from db.drop_collection(collection)
-        names = yield from db.list_collection_names()
+        await db.drop_collection(collection)
+        names = await db.list_collection_names()
         self.assertFalse('test_drop_collection' in names)
 
     @asyncio_test
-    def test_validate_collection(self):
+    async def test_validate_collection(self):
         db = self.db
 
         with self.assertRaises(TypeError):
-            yield from db.validate_collection(5)
+            await db.validate_collection(5)
         with self.assertRaises(TypeError):
-            yield from db.validate_collection(None)
+            await db.validate_collection(None)
         with self.assertRaises(OperationFailure):
-            yield from db.validate_collection("test.doesnotexist")
+            await db.validate_collection("test.doesnotexist")
         with self.assertRaises(OperationFailure):
-            yield from db.validate_collection(db.test.doesnotexist)
+            await db.validate_collection(db.test.doesnotexist)
 
-        yield from db.test.insert_one({"dummy": "object"})
-        self.assertTrue((yield from db.validate_collection("test")))
-        self.assertTrue((yield from db.validate_collection(db.test)))
+        await db.test.insert_one({"dummy": "object"})
+        self.assertTrue((await db.validate_collection("test")))
+        self.assertTrue((await db.validate_collection(db.test)))
 
     def test_get_collection(self):
         codec_options = CodecOptions(

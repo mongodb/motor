@@ -91,12 +91,11 @@ class GridFSHandler(tornado.web.RequestHandler):
         """
         return bucket.open_download_stream_by_name(filename)
 
-    @gen.coroutine
-    def get(self, path, include_body=True):
+    async def get(self, path, include_body=True):
         fs = motor.MotorGridFSBucket(self.database, self.root_collection)
 
         try:
-            gridout = yield self.get_gridfs_file(fs, path, self.request)
+            gridout = await self.get_gridfs_file(fs, path, self.request)
         except gridfs.NoFile:
             raise tornado.web.HTTPError(404)
 
@@ -152,7 +151,7 @@ class GridFSHandler(tornado.web.RequestHandler):
 
         self.set_header("Content-Length", gridout.length)
         if include_body:
-            yield gridout.stream_to_handler(self)
+            await gridout.stream_to_handler(self)
 
         # Needed until fix for Tornado bug 751 is released, see
         # https://github.com/facebook/tornado/issues/751 and

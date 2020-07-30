@@ -38,27 +38,27 @@ from test.utils import get_primary_pool
 
 class TestAsyncIOClient(AsyncIOTestCase):
     @asyncio_test
-    def test_client_lazy_connect(self):
-        yield from self.db.test_client_lazy_connect.delete_many({})
+    async def test_client_lazy_connect(self):
+        await self.db.test_client_lazy_connect.delete_many({})
 
         # Create client without connecting; connect on demand.
         cx = self.asyncio_client()
         collection = cx.motor_test.test_client_lazy_connect
         future0 = collection.insert_one({'foo': 'bar'})
         future1 = collection.insert_one({'foo': 'bar'})
-        yield from asyncio.gather(future0, future1, loop=self.loop)
-        resp = yield from collection.count_documents({'foo': 'bar'})
+        await asyncio.gather(future0, future1, loop=self.loop)
+        resp = await collection.count_documents({'foo': 'bar'})
         self.assertEqual(2, resp)
         cx.close()
 
     @asyncio_test
-    def test_close(self):
+    async def test_close(self):
         cx = self.asyncio_client()
         cx.close()
         self.assertEqual(None, get_primary_pool(cx))
 
     @asyncio_test
-    def test_unix_socket(self):
+    async def test_unix_socket(self):
         if env.mongod_started_with_ssl:
             raise SkipTest("Server started with SSL")
 
@@ -75,7 +75,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
         client = self.asyncio_client(uri)
         collection = client.motor_test.test
-        yield from collection.insert_one({"dummy": "object"})
+        await collection.insert_one({"dummy": "object"})
 
         # Confirm it fails with a missing socket.
         client = motor_asyncio.AsyncIOMotorClient(
@@ -83,7 +83,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
             serverSelectionTimeoutMS=100)
 
         with self.assertRaises(ConnectionFailure):
-            yield from client.admin.command('ismaster')
+            await client.admin.command('ismaster')
         client.close()
 
     def test_database_named_delegate(self):
@@ -93,9 +93,9 @@ class TestAsyncIOClient(AsyncIOTestCase):
                                    motor_asyncio.AsyncIOMotorDatabase))
 
     @asyncio_test
-    def test_reconnect_in_case_connection_closed_by_mongo(self):
+    async def test_reconnect_in_case_connection_closed_by_mongo(self):
         cx = self.asyncio_client(maxPoolSize=1, retryReads=False)
-        yield from cx.admin.command('ping')
+        await cx.admin.command('ping')
 
         # close motor_socket, we imitate that connection to mongo server
         # lost, as result we should have AutoReconnect instead of
@@ -106,20 +106,20 @@ class TestAsyncIOClient(AsyncIOTestCase):
         pool.sockets.appendleft(socket)
 
         with self.assertRaises(pymongo.errors.AutoReconnect):
-            yield from cx.motor_test.test_collection.find_one()
+            await cx.motor_test.test_collection.find_one()
 
     @asyncio_test
-    def test_connection_failure(self):
+    async def test_connection_failure(self):
         # Assuming there isn't anything actually running on this port
         client = motor_asyncio.AsyncIOMotorClient('localhost', 8765,
                                                   serverSelectionTimeoutMS=10,
                                                   io_loop=self.loop)
 
         with self.assertRaises(ConnectionFailure):
-            yield from client.admin.command('ismaster')
+            await client.admin.command('ismaster')
 
     @asyncio_test(timeout=30)
-    def test_connection_timeout(self):
+    async def test_connection_timeout(self):
         # Motor merely tries to time out a connection attempt within the
         # specified duration; DNS lookup in particular isn't charged against
         # the timeout. So don't measure how long this takes.
@@ -128,10 +128,10 @@ class TestAsyncIOClient(AsyncIOTestCase):
             serverSelectionTimeoutMS=1, io_loop=self.loop)
 
         with self.assertRaises(ConnectionFailure):
-            yield from client.admin.command('ismaster')
+            await client.admin.command('ismaster')
 
     @asyncio_test
-    def test_max_pool_size_validation(self):
+    async def test_max_pool_size_validation(self):
         with self.assertRaises(ValueError):
             motor_asyncio.AsyncIOMotorClient(maxPoolSize=-1,
                                              io_loop=self.loop)
@@ -145,24 +145,24 @@ class TestAsyncIOClient(AsyncIOTestCase):
         cx.close()
 
     @asyncio_test(timeout=30)
-    def test_drop_database(self):
+    async def test_drop_database(self):
         # Make sure we can pass an AsyncIOMotorDatabase instance
         # to drop_database
         db = self.cx.test_drop_database
-        yield from db.test_collection.insert_one({})
-        names = yield from self.cx.list_database_names()
+        await db.test_collection.insert_one({})
+        names = await self.cx.list_database_names()
         self.assertTrue('test_drop_database' in names)
-        yield from self.cx.drop_database(db)
-        names = yield from self.cx.list_database_names()
+        await self.cx.drop_database(db)
+        names = await self.cx.list_database_names()
         self.assertFalse('test_drop_database' in names)
 
     @asyncio_test
-    def test_auth_from_uri(self):
+    async def test_auth_from_uri(self):
         if not test.env.auth:
             raise SkipTest('Authentication is not enabled on server')
 
         # self.db is logged in as root.
-        yield from remove_all_users(self.db)
+        await remove_all_users(self.db)
         db = self.db
         try:
             test.env.create_user(db.name, 'mike', 'password',
@@ -172,13 +172,13 @@ class TestAsyncIOClient(AsyncIOTestCase):
                 'mongodb://u:pass@%s:%d' % (env.host, env.port))
 
             with self.assertRaises(OperationFailure):
-                yield from client.db.collection.find_one()
+                await client.db.collection.find_one()
 
             client = self.asyncio_client(
                 'mongodb://mike:password@%s:%d/%s' %
                 (env.host, env.port, db.name))
 
-            yield from client[db.name].collection.find_one()
+            await client[db.name].collection.find_one()
         finally:
             test.env.drop_user(db.name, 'mike')
 
@@ -195,12 +195,12 @@ class TestAsyncIOClient(AsyncIOTestCase):
         self.assertEqual(write_concern, db.write_concern)
 
     @asyncio_test
-    def test_list_databases(self):
-        yield from self.collection.insert_one({})
-        cursor = yield from self.cx.list_databases()
+    async def test_list_databases(self):
+        await self.collection.insert_one({})
+        cursor = await self.cx.list_databases()
         self.assertIsInstance(cursor, motor_asyncio.AsyncIOMotorCommandCursor)
 
-        while (yield from cursor.fetch_next):
+        while (await cursor.fetch_next):
             info = cursor.next_object()
             if info['name'] == self.collection.database.name:
                 break
@@ -208,23 +208,23 @@ class TestAsyncIOClient(AsyncIOTestCase):
             self.fail("'%s' database not found" % self.collection.database.name)
 
     @asyncio_test
-    def test_list_database_names(self):
-        yield from self.collection.insert_one({})
-        names = yield from self.cx.list_database_names()
+    async def test_list_database_names(self):
+        await self.collection.insert_one({})
+        names = await self.cx.list_database_names()
         self.assertIsInstance(names, list)
         self.assertIn(self.collection.database.name, names)
 
 
 class TestAsyncIOClientTimeout(AsyncIOMockServerTestCase):
     @asyncio_test
-    def test_timeout(self):
+    async def test_timeout(self):
         server = self.server(auto_ismaster=True)
         client = motor_asyncio.AsyncIOMotorClient(server.uri,
                                                   socketTimeoutMS=100,
                                                   io_loop=self.loop)
 
         with self.assertRaises(pymongo.errors.AutoReconnect) as context:
-            yield from client.motor_test.test_collection.find_one()
+            await client.motor_test.test_collection.find_one()
 
         self.assertIn('timed out', str(context.exception))
         client.close()
@@ -232,7 +232,7 @@ class TestAsyncIOClientTimeout(AsyncIOMockServerTestCase):
 
 class TestAsyncIOClientHandshake(AsyncIOMockServerTestCase):
     @asyncio_test
-    def test_handshake(self):
+    async def test_handshake(self):
         server = self.server()
         client = motor_asyncio.AsyncIOMotorClient(server.uri,
                                                   connectTimeoutMS=100,
@@ -240,7 +240,7 @@ class TestAsyncIOClientHandshake(AsyncIOMockServerTestCase):
 
         # Trigger connection.
         future = client.db.command('ping')
-        ismaster = yield from self.run_thread(server.receives, "ismaster")
+        ismaster = await self.run_thread(server.receives, "ismaster")
         meta = ismaster.doc['client']
         self.assertEqual('PyMongo|Motor', meta['driver']['name'])
         # AsyncIOMotorClient adds nothing to platform.
@@ -254,7 +254,7 @@ class TestAsyncIOClientHandshake(AsyncIOMockServerTestCase):
         server.stop()
         client.close()
         try:
-            yield from future
+            await future
         except Exception:
             pass
 

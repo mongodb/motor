@@ -12,7 +12,6 @@ Tutorial: Using Motor With :mod:`asyncio`
   import pymongo
   import motor.motor_asyncio
   import asyncio
-  from asyncio import coroutine
   db = motor.motor_asyncio.AsyncIOMotorClient().test_database
 
 .. testsetup:: after-inserting-2000-docs
@@ -20,7 +19,6 @@ Tutorial: Using Motor With :mod:`asyncio`
   import pymongo
   import motor.motor_asyncio
   import asyncio
-  from asyncio import coroutine
   db = motor.motor_asyncio.AsyncIOMotorClient().test_database
   pymongo.MongoClient().test_database.test_collection.insert_many(
       [{'i': i} for i in range(2000)])
@@ -271,10 +269,9 @@ and :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.next_object`:
 
 .. doctest:: after-inserting-2000-docs
 
-  >>> @coroutine
-  ... def do_find():
+  >>> async def do_find():
   ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
-  ...     while (yield from cursor.fetch_next):
+  ...     while (await cursor.fetch_next):
   ...         document = cursor.next_object()
   ...         pprint.pprint(document)
   ...
