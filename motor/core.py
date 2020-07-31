@@ -1538,6 +1538,9 @@ class _LatentCursor(object):
     _CommandCursor__killed = False
     cursor_id = None
 
+    def _CommandCursor__end_session(self, *args, **kwargs):
+        pass
+
     def _CommandCursor__die(self, *args, **kwargs):
         pass
 
