@@ -1356,6 +1356,9 @@ class AgnosticBaseCursor(AgnosticBase):
         return future
 
     def _to_list(self, length, the_list, future, get_more_result):
+        # Return early if the task was cancelled.
+        if future.done():
+            return
         # get_more_result is the result of self._get_more().
         # to_list_future will be the result of the user's to_list() call.
         try:
@@ -1381,8 +1384,7 @@ class AgnosticBaseCursor(AgnosticBase):
                     self._get_more(),
                     self._to_list, length, the_list, future)
         except Exception as exc:
-            if not future.done():
-                future.set_exception(exc)
+            future.set_exception(exc)
 
     def get_io_loop(self):
         return self.collection.get_io_loop()
@@ -1587,6 +1589,9 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
         return super(self.__class__, self)._get_more()
 
     def _on_started(self, original_future, future):
+        # Return early if the task was cancelled.
+        if original_future.done():
+            return
         try:
             # "result" is a PyMongo command cursor from PyMongo's aggregate() or
             # aggregate_raw_batches(). Set its batch size from our latent
@@ -1594,8 +1599,7 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
             pymongo_cursor = future.result()
             self.delegate = pymongo_cursor
         except Exception as exc:
-            if not original_future.done():
-                original_future.set_exception(exc)
+            original_future.set_exception(exc)
         else:
             if self.delegate._CommandCursor__data or not self.delegate.alive:
                 # _get_more is complete.
