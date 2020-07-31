@@ -28,7 +28,11 @@ from pymongo.errors import InvalidOperation, ExecutionTimeout
 from pymongo.errors import OperationFailure
 
 from motor import motor_asyncio
-from test.utils import one, safe_get, get_primary_pool, TestListener
+from test.utils import (one,
+                        FailPoint,
+                        get_primary_pool,
+                        safe_get,
+                        TestListener)
 from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase,
                                 AsyncIOMockServerTestCase,
@@ -214,29 +218,47 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             self.assertTrue('_unpack_response' in formatted
                             or '_check_command_response' in formatted)
 
-    @env.require_version_min(4, 2)  # failCommand
-    @asyncio_test
-    async def test_to_list_cancelled_error(self):
+    async def _test_cancelled_error(self, coro):
         await self.make_test_data()
-
         # Cause an error on a getMore after the cursor.to_list task is
         # cancelled.
-        await self.cx.admin.command(
-            'configureFailPoint', 'failCommand', mode={'times': 1},
-            data={'failCommands': ['getMore'], 'errorCode': 96})
-
-        try:
-            cursor = self.collection.find(batch_size=2)
-            task = cursor.to_list(None)
+        fp = {'configureFailPoint': 'failCommand',
+              'data': {'failCommands': ['getMore'], 'errorCode': 96},
+              'mode': {'times': 1}}
+        async with FailPoint(self.cx, fp):
+            cleanup, task = coro(self.collection)
             task.cancel()
             with self.assertRaises(asyncio.CancelledError):
-                task.result()
-            await cursor.close()
+                await task
+            await cleanup()
             # Yield for some time to allow pending Cursor callbacks to run.
-            await asyncio.sleep(1)
-        finally:
-            await self.cx.admin.command(
-                'configureFailPoint', 'failCommand', mode='off')
+            await asyncio.sleep(.5)
+
+    @env.require_version_min(4, 2)  # failCommand
+    @asyncio_test
+    async def test_cancelled_error_to_list(self):
+        # Note: We intentionally don't use "async def" here to avoid wrapping
+        # the returned to_list Future in a coroutine.
+        def to_list(collection):
+            cursor = collection.find(batch_size=2)
+            return cursor.close, cursor.to_list(None)
+        await self._test_cancelled_error(to_list)
+
+    @env.require_version_min(4, 2)  # failCommand
+    @asyncio_test
+    async def test_cancelled_error_fetch_next(self):
+        def fetch_next(collection):
+            cursor = collection.find(batch_size=2)
+            return cursor.close, cursor.fetch_next
+        await self._test_cancelled_error(fetch_next)
+
+    @env.require_version_min(4, 2)  # failCommand
+    @asyncio_test
+    async def test_cancelled_error_fetch_next_aggregate(self):
+        def fetch_next(collection):
+            cursor = collection.aggregate([], batchSize=2)
+            return cursor.close, cursor.fetch_next
+        await self._test_cancelled_error(fetch_next)
 
     @asyncio_test
     async def test_to_list_with_length_of_none(self):

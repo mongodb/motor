@@ -124,3 +124,18 @@ def get_async_test_timeout(default=5):
         return max(timeout, default)
     except (ValueError, TypeError):
         return default
+
+
+class FailPoint:
+    def __init__(self, client, command_args):
+        self.client = client
+        self.cmd_on = SON([('configureFailPoint', 'failCommand')])
+        self.cmd_on.update(command_args)
+
+    async def __aenter__(self):
+        await self.client.admin.command(self.cmd_on)
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.client.admin.command(
+            'configureFailPoint', self.cmd_on['configureFailPoint'],
+            mode='off')
