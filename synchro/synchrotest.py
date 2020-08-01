@@ -19,6 +19,9 @@ This program monkey-patches sys.modules, so run it alone, rather than as part
 of a larger test suite.
 """
 
+import importlib
+import importlib.abc
+import importlib.machinery
 import sys
 
 import nose
@@ -55,11 +58,6 @@ excluded_modules = [
     'test.test_son_manipulator',
 ]
 
-if sys.version_info[:2] < (3, 5):
-    excluded_modules.extend([
-        # Motor's change streams need Python 3.5.
-        'test.test_change_stream',
-    ])
 
 excluded_tests = [
     # Motor's reprs aren't the same as PyMongo's.
@@ -205,16 +203,13 @@ excluded_tests = [
 
     # TODO: MOTOR-280
     'TestTransactionsConvenientAPI.*',
-]
 
-if sys.version_info[:2] >= (3, 5):
-    excluded_tests.extend([
-        # Motor's change streams need Python 3.5 to support async iteration but
-        # these change streams tests spawn threads which don't work without an
-        # IO loop.
-        '*.test_next_blocks',
-        '*.test_aggregate_cursor_blocks',
-    ])
+    # Motor's change streams need Python 3.5 to support async iteration but
+    # these change streams tests spawn threads which don't work without an
+    # IO loop.
+    '*.test_next_blocks',
+    '*.test_aggregate_cursor_blocks',
+]
 
 
 excluded_modules_matched = set()
@@ -297,67 +292,40 @@ class SynchroNosePlugin(Plugin):
         return True
 
 
-if sys.version_info[0] < 3:
-    # So that e.g. 'from pymongo.mongo_client import MongoClient' gets the
-    # Synchro MongoClient, not the real one.
-    class SynchroModuleFinder(object):
-        def find_module(self, fullname, path=None):
-            parts = fullname.split('.')
-            if parts[-1] in ('gridfs', 'pymongo'):
-                # E.g. "import pymongo"
-                return SynchroModuleLoader(path)
-            elif len(parts) >= 2 and parts[-2] in ('gridfs', 'pymongo'):
-                # E.g. "import pymongo.mongo_client"
-                return SynchroModuleLoader(path)
+class SynchroModuleFinder(importlib.abc.MetaPathFinder):
+    def __init__(self):
+        self._loader = SynchroModuleLoader()
 
-            # Let regular module search continue.
-            return None
+    def find_spec(self, fullname, path, target=None):
+        if self._loader.patch_spec(fullname):
+            return importlib.machinery.ModuleSpec(fullname, self._loader)
+
+        # Let regular module search continue.
+        return None
 
 
-    class SynchroModuleLoader(object):
-        def __init__(self, path):
-            self.path = path
+class SynchroModuleLoader(importlib.abc.Loader):
+    def patch_spec(self, fullname):
+        parts = fullname.split('.')
+        if parts[-1] in ('gridfs', 'pymongo'):
+            # E.g. "import pymongo"
+            return True
+        elif len(parts) >= 2 and parts[-2] in ('gridfs', 'pymongo'):
+            # E.g. "import pymongo.mongo_client"
+            return True
 
-        def load_module(self, fullname):
+        return False
+
+    def exec_module(self, module):
+        pass
+
+    def create_module(self, spec):
+        if self.patch_spec(spec.name):
             return synchro
-else:
-    import importlib
-    import importlib.abc
-    import importlib.machinery
 
-    class SynchroModuleFinder(importlib.abc.MetaPathFinder):
-        def __init__(self):
-            self._loader = SynchroModuleLoader()
+        # Let regular module search continue.
+        return None
 
-        def find_spec(self, fullname, path, target=None):
-            if self._loader.patch_spec(fullname):
-                return importlib.machinery.ModuleSpec(fullname, self._loader)
-
-            # Let regular module search continue.
-            return None
-
-
-    class SynchroModuleLoader(importlib.abc.Loader):
-        def patch_spec(self, fullname):
-            parts = fullname.split('.')
-            if parts[-1] in ('gridfs', 'pymongo'):
-                # E.g. "import pymongo"
-                return True
-            elif len(parts) >= 2 and parts[-2] in ('gridfs', 'pymongo'):
-                # E.g. "import pymongo.mongo_client"
-                return True
-
-            return False
-
-        def exec_module(self, module):
-            pass
-
-        def create_module(self, spec):
-            if self.patch_spec(spec.name):
-                return synchro
-
-            # Let regular module search continue.
-            return None
 
 if __name__ == '__main__':
     try:

@@ -32,6 +32,7 @@ from motor.metaprogramming import MotorAttributeFactory
 # Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
 # importing * won't pick up underscore-prefixed attrs.
 from gridfs import *
+from gridfs import _disallow_transactions
 from gridfs.errors import *
 from gridfs.grid_file import (DEFAULT_CHUNK_SIZE,
                               _SEEK_CUR,
@@ -53,7 +54,6 @@ from pymongo import (collation,
                      write_concern)
 from pymongo.auth import _build_credentials_tuple
 from pymongo.helpers import _check_command_response
-from pymongo.change_stream import _NON_RESUMABLE_GETMORE_ERRORS
 from pymongo.client_session import TransactionOptions
 from pymongo.collation import *
 from pymongo.common import *
