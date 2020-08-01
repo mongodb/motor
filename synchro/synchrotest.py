@@ -209,6 +209,10 @@ excluded_tests = [
     # IO loop.
     '*.test_next_blocks',
     '*.test_aggregate_cursor_blocks',
+
+    # Can't run these tests because they use threads.
+    '*.test_ignore_stale_connection_errors'
+    '*.test_ignore_stale_connection_errors'
 ]
 
 
@@ -256,6 +260,7 @@ class SynchroNosePlugin(Plugin):
                            'create_tests',
                            'create_connection_string_test',
                            'create_document_test',
+                           'create_operation_test',
                            'create_selection_tests',
                            ):
             return False

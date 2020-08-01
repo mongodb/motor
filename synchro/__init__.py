@@ -73,6 +73,7 @@ from pymongo.monitor import *
 from pymongo.monitoring import *
 from pymongo.monitoring import _LISTENERS, _Listeners, _SENSITIVE_COMMANDS
 from pymongo.monotonic import time
+from pymongo.ocsp_cache import _OCSPCache
 from pymongo.operations import *
 from pymongo.pool import *
 from pymongo.pool import _METADATA, _PoolClosedError
@@ -353,10 +354,9 @@ class MongoClient(Synchro):
 
     @property
     def is_locked(self):
-        # MotorClient doesn't support the is_locked property.
-        # Synchro has already synchronized current_op; use it.
-        result = self.admin.current_op()
-        return bool(result.get('fsyncLock', None))
+        # # MotorClient doesn't support the is_locked property.
+        # # Use the property directly from the underlying MongoClient.
+        return self.delegate.delegate.is_locked
 
     def __enter__(self):
         return self
