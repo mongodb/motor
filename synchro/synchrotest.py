@@ -201,9 +201,6 @@ excluded_tests = [
     # Tests that use warnings.catch_warnings which don't show up in Motor
     'TestCursor.test_min_max_without_hint',
 
-    # TODO: MOTOR-280
-    'TestTransactionsConvenientAPI.*',
-
     # Motor's change streams need Python 3.5 to support async iteration but
     # these change streams tests spawn threads which don't work without an
     # IO loop.
