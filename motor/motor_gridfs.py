@@ -22,7 +22,7 @@ import pymongo.errors
 from gridfs import (DEFAULT_CHUNK_SIZE,
                     grid_file)
 
-from motor.core import (AgnosticBaseCursor,
+from motor.core import (AgnosticCursor,
                         AgnosticCollection,
                         AgnosticDatabase)
 from motor.docstrings import *
@@ -35,34 +35,12 @@ from motor.metaprogramming import (AsyncCommand,
                                    ReadOnlyProperty)
 
 
-class AgnosticGridOutCursor(AgnosticBaseCursor):
+class AgnosticGridOutCursor(AgnosticCursor):
     __motor_class_name__ = 'MotorGridOutCursor'
     __delegate_class__ = gridfs.GridOutCursor
 
-    add_option        = MotorCursorChainingMethod()
-    address           = ReadOnlyProperty()
-    collation         = ReadOnlyProperty()
-    comment           = MotorCursorChainingMethod()
-    distinct          = AsyncRead()
-    explain           = AsyncRead()
-    hint              = MotorCursorChainingMethod()
-    limit             = MotorCursorChainingMethod()
-    max               = MotorCursorChainingMethod()
-    max_await_time_ms = MotorCursorChainingMethod()
-    max_scan          = MotorCursorChainingMethod()
-    max_time_ms       = MotorCursorChainingMethod()
-    min               = MotorCursorChainingMethod()
-    remove_option     = MotorCursorChainingMethod()
-    skip              = MotorCursorChainingMethod()
-    sort              = MotorCursorChainingMethod(doc=cursor_sort_doc)
-    where             = MotorCursorChainingMethod()
-
     # PyMongo's GridOutCursor inherits __die from Cursor.
     _Cursor__die = AsyncCommand()
-
-    def clone(self):
-        """Get a clone of this cursor."""
-        return self.__class__(self.delegate.clone(), self.collection)
 
     def next_object(self):
         """Get next GridOut object from cursor."""
@@ -76,33 +54,9 @@ class AgnosticGridOutCursor(AgnosticBaseCursor):
             # Exhausted.
             return None
 
-    def rewind(self):
-        """Rewind this cursor to its unevaluated state."""
-        self.delegate.rewind()
-        self.started = False
-        return self
-
-    def _empty(self):
-        return self.delegate._Cursor__empty
-
-    def _query_flags(self):
-        return self.delegate._Cursor__query_flags
-
-    def _data(self):
-        return self.delegate._Cursor__data
-
-    def _clear_cursor_id(self):
-        self.delegate._Cursor__id = 0
-
     def _close_exhaust_cursor(self):
         # Exhaust MotorGridOutCursors are prohibited.
         pass
-
-    def _killed(self):
-        return self.delegate._Cursor__killed
-
-    def _close(self):
-        return self._Cursor__die()
 
 
 class MotorGridOutProperty(ReadOnlyProperty):
