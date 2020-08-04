@@ -354,6 +354,10 @@ This deletes all matching documents and prints "3".
   - `collation` (optional): An instance of
     :class:`~pymongo.collation.Collation`. This option is only supported
     on MongoDB 3.4 and above.
+  - `hint` (optional): An index used to support the query predicate specified
+    either by its string name, or in the same format as passed to
+    :meth:`~MotorDatabase.create_index` (e.g. ``[('field', ASCENDING)]``).
+    This option is only supported on MongoDB 4.4 and above.
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
@@ -361,8 +365,10 @@ This deletes all matching documents and prints "3".
 :Returns:
   - An instance of :class:`~pymongo.results.DeleteResult`.
 
+.. versionchanged:: 2.2
+   Added ``hint`` parameter.
 .. versionchanged:: 1.2
-   Added session parameter.
+   Added ``session`` parameter.
 """
 
 delete_one_doc = """Delete a single document matching the filter.
@@ -380,6 +386,10 @@ This deletes one matching document and prints "1".
   - `collation` (optional): An instance of
     :class:`~pymongo.collation.Collation`. This option is only supported
     on MongoDB 3.4 and above.
+  - `hint` (optional): An index used to support the query predicate specified
+    either by its string name, or in the same format as passed to
+    :meth:`~MotorDatabase.create_index` (e.g. ``[('field', ASCENDING)]``).
+    This option is only supported on MongoDB 4.4 and above.
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
@@ -387,8 +397,10 @@ This deletes one matching document and prints "1".
 :Returns:
   - An instance of :class:`~pymongo.results.DeleteResult`.
 
+.. versionchanged:: 2.2
+   Added ``hint`` parameter.
 .. versionchanged:: 1.2
-   Added session parameter.
+   Added ``session`` parameter.
 """
 
 drop_doc = """Alias for ``drop_collection``.
@@ -483,6 +495,10 @@ This prints::
   - `sort` (optional): a list of (key, direction) pairs
     specifying the sort order for the query. If multiple documents
     match the query, they are sorted and the first is deleted.
+  - `hint` (optional): An index used to support the query predicate specified
+    either by its string name, or in the same format as passed to
+    :meth:`~MotorDatabase.create_index` (e.g. ``[('field', ASCENDING)]``).
+    This option is only supported on MongoDB 4.4 and above.
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
@@ -495,8 +511,10 @@ This command uses the :class:`~pymongo.write_concern.WriteConcern` of this
 that using an elevated write concern with this command may be slower compared
 to using the default write concern.
 
+.. versionchanged:: 2.2
+   Added ``hint`` parameter.
 .. versionchanged:: 1.2
-   Added session parameter.
+   Added ``session`` parameter.
 """
 
 find_one_and_replace_doc = """Finds a single document and replaces it, returning
