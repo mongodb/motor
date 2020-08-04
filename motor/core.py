@@ -1445,6 +1445,7 @@ class AgnosticCursor(AgnosticBaseCursor):
     min               = MotorCursorChainingMethod()
     max               = MotorCursorChainingMethod()
     comment           = MotorCursorChainingMethod()
+    allow_disk_use    = MotorCursorChainingMethod()
 
     _Cursor__die  = AsyncRead()
 

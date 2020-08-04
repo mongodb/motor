@@ -56,6 +56,7 @@ class AgnosticGridOutCursor(AgnosticBaseCursor):
     skip              = MotorCursorChainingMethod()
     sort              = MotorCursorChainingMethod(doc=cursor_sort_doc)
     where             = MotorCursorChainingMethod()
+    allow_disk_use    = MotorCursorChainingMethod()
 
     # PyMongo's GridOutCursor inherits __die from Cursor.
     _Cursor__die = AsyncCommand()
