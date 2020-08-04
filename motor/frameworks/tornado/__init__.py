@@ -72,6 +72,9 @@ def chain_return_value(future, loop, return_value):
     chained = concurrent.Future()
 
     def copy(_future):
+        # Return early if the task was cancelled.
+        if chained.done():
+            return
         if _future.exception() is not None:
             chained.set_exception(_future.exception())
         else:

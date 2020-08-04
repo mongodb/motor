@@ -1360,6 +1360,9 @@ class AgnosticBaseCursor(AgnosticBase):
         # to_list_future will be the result of the user's to_list() call.
         try:
             result = get_more_result.result()
+            # Return early if the task was cancelled.
+            if future.done():
+                return
             collection = self.collection
             fix_outgoing = collection.database.delegate._fix_outgoing
 
@@ -1536,6 +1539,9 @@ class _LatentCursor(object):
     _CommandCursor__killed = False
     cursor_id = None
 
+    def _CommandCursor__end_session(self, *args, **kwargs):
+        pass
+
     def _CommandCursor__die(self, *args, **kwargs):
         pass
 
@@ -1597,6 +1603,9 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
             if not original_future.done():
                 original_future.set_exception(exc)
         else:
+            # Return early if the task was cancelled.
+            if original_future.done():
+                return
             if self.delegate._CommandCursor__data or not self.delegate.alive:
                 # _get_more is complete.
                 original_future.set_result(
