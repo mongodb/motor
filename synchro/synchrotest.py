@@ -208,8 +208,7 @@ excluded_tests = [
     '*.test_aggregate_cursor_blocks',
 
     # Can't run these tests because they use threads.
-    '*.test_ignore_stale_connection_errors'
-    '*.test_ignore_stale_connection_errors'
+    '*.test_ignore_stale_connection_errors',
 ]
 
 
