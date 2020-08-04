@@ -199,7 +199,8 @@ def asyncio_test(func=None, timeout=None):
 
             def exc_handler(loop, context):
                 nonlocal coro_exc
-                coro_exc = context['exception']
+                # Exception is optional.
+                coro_exc = context.get('exception', Exception(context))
 
                 # Raise CancelledError from run_until_complete below.
                 task.cancel()
