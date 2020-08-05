@@ -3,6 +3,13 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 2.2
+---------
+
+Motor 2.2 adds support for MongoDB 4.4 features. It depends on PyMongo 3.11 or
+later. Motor continues to support MongoDB 3.0 and later. Motor 2.2 also drops
+support for Python 2.7 and Python 3.4.
+
 Motor 2.1
 ---------
 
