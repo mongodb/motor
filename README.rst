@@ -91,10 +91,6 @@ Motor can be installed with `pip <http://pypi.python.org/pypi/pip>`_::
 
   $ pip install motor
 
-You can also download the project source and do::
-
-  $ python setup.py install
-
 Dependencies
 ============
 
