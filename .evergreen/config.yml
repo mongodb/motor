@@ -777,6 +777,14 @@ axes:
         variables:
            TOX_ENV: "tornado_git-py37"
            PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+      - id: "asyncio-py35"
+        variables:
+           TOX_ENV: "asyncio-py35"
+           PYTHON_BINARY: "/opt/python/3.5/bin/python3"
+      - id: "asyncio-py36"
+        variables:
+           TOX_ENV: "asyncio-py36"
+           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
       - id: "asyncio-py37"
         variables:
            TOX_ENV: "asyncio-py37"
