@@ -43,7 +43,7 @@ Forums <https://developer.mongodb.com/community/forums/tag/motor-driver>`_.
 Bugs / Feature Requests
 =======================
 
-Think you’ve found a bug? Want to see a new feature in Motor? Please open a
+Think you've found a bug? Want to see a new feature in Motor? Please open a
 case in our issue management tool, JIRA:
 
 - `Create an account and login <https://jira.mongodb.org>`_.
@@ -80,7 +80,7 @@ Please include all of the following information when opening an issue:
 Security Vulnerabilities
 ------------------------
 
-If you’ve identified a security vulnerability in a driver or any other
+If you've identified a security vulnerability in a driver or any other
 MongoDB project, please report it according to the `instructions here
 <http://docs.mongodb.org/manual/tutorial/create-a-vulnerability-report>`_.
 
