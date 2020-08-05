@@ -1056,7 +1056,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         If the only index is the default index on ``_id``, this might print::
 
-            SON([('v', 1), ('key', SON([('_id', 1)])), ('name', '_id_'), ('ns', 'test.test')])
+            SON([('v', 1), ('key', SON([('_id', 1)])), ('name', '_id_')])
         """
         cursor_class = create_class_with_framework(
             AgnosticLatentCommandCursor, self._framework, self.__module__)
