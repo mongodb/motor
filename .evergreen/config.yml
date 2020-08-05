@@ -635,6 +635,33 @@ tasks:
             TOPOLOGY: "sharded_cluster"
         - func: "run tox"
 
+    - name: "test-4.4-standalone"
+      tags: ["4.4", "standalone"]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.4"
+            TOPOLOGY: "server"
+        - func: "run tox"
+
+    - name: "test-4.4-replica_set"
+      tags: ["4.4", "replica_set"]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.4"
+            TOPOLOGY: "replica_set"
+        - func: "run tox"
+
+    - name: "test-4.4-sharded_cluster"
+      tags: ["4.4", "sharded_cluster"]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.4"
+            TOPOLOGY: "sharded_cluster"
+        - func: "run tox"
+
     - name: "test-latest-standalone"
       tags: ["latest", "standalone"]
       commands:
@@ -846,6 +873,7 @@ buildvariants:
       ssl: "ssl"
   tasks:
      - ".latest"
+     - ".4.4"
      - ".4.2"
      - ".4.0"
      - ".3.6"
