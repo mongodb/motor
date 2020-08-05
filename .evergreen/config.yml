@@ -733,10 +733,14 @@ axes:
   - id: tox-env
     display_name: "Tox Env"
     values:
-      - id: "tornado5-pypy3"
+      - id: "tornado5-pypy35"
         variables:
-           TOX_ENV: "tornado5-pypy3"
+           TOX_ENV: "tornado5-pypy35"
            PYTHON_BINARY: "/opt/python/pypy3.5/bin/pypy3"
+      - id: "tornado5-pypy36"
+        variables:
+           TOX_ENV: "tornado5-pypy36"
+           PYTHON_BINARY: "/opt/python/pypy3.6/bin/pypy3"
       - id: "tornado5-py35"
         variables:
            TOX_ENV: "tornado5-py35"
@@ -749,6 +753,14 @@ axes:
         variables:
            TOX_ENV: "tornado5-py37"
            PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+      - id: "tornado6-pypy35"
+        variables:
+          TOX_ENV: "tornado6-pypy35"
+          PYTHON_BINARY: "/opt/python/pypy3.5/bin/pypy3"
+      - id: "tornado6-pypy36"
+        variables:
+          TOX_ENV: "tornado6-pypy36"
+          PYTHON_BINARY: "/opt/python/pypy3.6/bin/pypy3"
       - id: "tornado6-py35"
         variables:
            TOX_ENV: "tornado6-py35"
@@ -777,6 +789,14 @@ axes:
         variables:
            TOX_ENV: "tornado_git-py37"
            PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+      - id: "asyncio-pypy35"
+        variables:
+          TOX_ENV: "asyncio-pypy35"
+          PYTHON_BINARY: "/opt/python/pypy3.5/bin/pypy3"
+      - id: "asyncio-pypy36"
+        variables:
+          TOX_ENV: "asyncio-pypy36"
+          PYTHON_BINARY: "/opt/python/pypy3.6/bin/pypy3"
       - id: "asyncio-py35"
         variables:
            TOX_ENV: "asyncio-py35"
