@@ -8,7 +8,7 @@ Install Motor from PyPI_ with pip_::
 Pip automatically installs Motor's prerequisite packages.
 See :doc:`requirements`.
 
-To install Motor from sources, you can clone its git repository do::
+To install Motor from sources, you can clone its git repository and do::
 
   $ python3 -m pip install .
 
