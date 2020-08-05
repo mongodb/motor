@@ -47,10 +47,10 @@ Think you’ve found a bug? Want to see a new feature in Motor? Please open a
 case in our issue management tool, JIRA:
 
 - `Create an account and login <https://jira.mongodb.org>`_.
-- Navigate to `the PYTHON project <https://jira.mongodb.org/browse/MOTOR>`_.
+- Navigate to `the MOTOR project <https://jira.mongodb.org/browse/MOTOR>`_.
 - Click **Create Issue** - Please provide as much information as possible about the issue type and how to reproduce it.
 
-Bug reports in JIRA for all driver projects (i.e. PYTHON, CSHARP, JAVA) and the
+Bug reports in JIRA for all driver projects (i.e. MOTOR, CSHARP, JAVA) and the
 Core Server (i.e. SERVER) project are **public**.
 
 How To Ask For Help
