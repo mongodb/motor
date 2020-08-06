@@ -406,7 +406,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
         # Let the event loop iterate once more to clear its references to
         # callbacks, allowing the cursor to be freed.
-        await asyncio.sleep(0, loop=self.loop)
+        await asyncio.sleep(0)
         request = await self.run_thread(
             server.receives, "killCursors", "coll")
 
@@ -476,7 +476,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
         del cur
 
-        await asyncio.sleep(0.1, loop=self.loop)
+        await asyncio.sleep(0.1)
 
         # The exhaust cursor's socket was discarded, although another may
         # already have been opened to send OP_KILLCURSORS.

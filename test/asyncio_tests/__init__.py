@@ -206,7 +206,7 @@ def asyncio_test(func=None, timeout=None):
                 task.cancel()
 
             self.loop.set_exception_handler(exc_handler)
-            coro = asyncio.wait_for(f(self, *args, **kwargs), actual_timeout, loop=self.loop)
+            coro = asyncio.wait_for(f(self, *args, **kwargs), actual_timeout)
             task = ensure_future(coro, loop=self.loop)
             try:
                 self.loop.run_until_complete(task)
