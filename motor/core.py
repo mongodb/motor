@@ -1666,9 +1666,6 @@ class AgnosticChangeStream(AgnosticBase):
         self._lazy_init()
         return self.delegate.try_next()
 
-    async def _run_on_executor(self, func):
-        return await self._framework.run_on_executor(self.get_io_loop(), func)
-
     async def next(self):
         """Advance the cursor.
 
@@ -1707,7 +1704,8 @@ class AgnosticChangeStream(AgnosticBase):
         example above, you can also iterate the change stream by calling
         ``await change_stream.next()`` repeatedly.
         """
-        return await self._run_on_executor(self._next)
+        loop = self.get_io_loop()
+        return await self._framework.run_on_executor(loop, self._next)
 
     async def try_next(self):
         """Advance the cursor without blocking indefinitely.
@@ -1743,7 +1741,8 @@ class AgnosticChangeStream(AgnosticBase):
 
         .. versionadded:: 2.1
         """
-        return await self._run_on_executor(self._try_next)
+        loop = self.get_io_loop()
+        return await self._framework.run_on_executor(loop, self._try_next)
 
     async def close(self):
         """Close this change stream.
@@ -1760,7 +1759,8 @@ class AgnosticChangeStream(AgnosticBase):
 
     async def __aenter__(self):
         if not self.delegate:
-            await self._run_on_executor(self._lazy_init)
+            loop = self.get_io_loop()
+            await self._framework.run_on_executor(loop, self._lazy_init)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
