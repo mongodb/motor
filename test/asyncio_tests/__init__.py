@@ -47,6 +47,10 @@ class _TestMethodWrapper(object):
     def __call__(self):
         result = self.orig_method()
         if inspect.iscoroutine(result):
+            # Cancel the undecorated task to avoid this warning:
+            # RuntimeWarning: coroutine 'test_foo' was never awaited
+            task = ensure_future(result)
+            task.cancel()
             raise TypeError("Generator test methods should be decorated with "
                             "@asyncio_test")
         elif result is not None:
