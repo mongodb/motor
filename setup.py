@@ -25,7 +25,8 @@ Programming Language :: Python :: Implementation :: PyPy
 
 description = 'Non-blocking MongoDB driver for Tornado or asyncio'
 
-long_description = open("README.rst").read()
+with open("README.rst") as readme:
+    long_description = readme.read()
 
 install_requires = ['pymongo>=3.11,<4']
 
