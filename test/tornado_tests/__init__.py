@@ -85,10 +85,10 @@ class MotorTest(testing.AsyncTestCase):
 
     def get_client_kwargs(self, **kwargs):
         if env.mongod_started_with_ssl:
-            kwargs.setdefault('ssl_certfile', CLIENT_PEM)
-            kwargs.setdefault('ssl_ca_certs', CA_PEM)
+            kwargs.setdefault('tlsCAFile', CA_PEM)
+            kwargs.setdefault('tlsCertificateKeyFile', CLIENT_PEM)
 
-        kwargs.setdefault('ssl', env.mongod_started_with_ssl)
+        kwargs.setdefault('tls', env.mongod_started_with_ssl)
         kwargs.setdefault('io_loop', self.io_loop)
 
         return kwargs
