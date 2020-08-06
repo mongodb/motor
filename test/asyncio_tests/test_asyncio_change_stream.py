@@ -218,8 +218,7 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
             self.assertEqual([{'_id': 1}],
                              await coll.find().to_list(None))
             await coll.insert_one({'_id': 2})
-            doc = await stream.try_next()
-            self.assertIsNotNone(doc)
+            doc = await stream.next()
             self.assertEqual({'_id': 2}, doc['fullDocument'])
 
     @asyncio_test
