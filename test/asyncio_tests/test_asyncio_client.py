@@ -46,7 +46,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
         collection = cx.motor_test.test_client_lazy_connect
         future0 = collection.insert_one({'foo': 'bar'})
         future1 = collection.insert_one({'foo': 'bar'})
-        await asyncio.gather(future0, future1, loop=self.loop)
+        await asyncio.gather(future0, future1)
         resp = await collection.count_documents({'foo': 'bar'})
         self.assertEqual(2, resp)
         cx.close()

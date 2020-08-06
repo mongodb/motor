@@ -142,7 +142,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     async def test_each(self):
         await self.make_test_data()
         cursor = self.collection.find({}, {'_id': 1}).sort('_id')
-        future = asyncio.Future(loop=self.loop)
+        future = self.loop.create_future()
         results = []
 
         def callback(result, error):
@@ -295,7 +295,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertTrue((await future))
         self.assertEqual(123, cursor.cursor_id)
 
-        future = self.ensure_future(cursor.close())
+        future = asyncio.ensure_future(cursor.close())
 
         # No reply to OP_KILLCURSORS.
         request = await self.run_thread(
@@ -317,7 +317,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         loop = self.loop
         collection = self.collection
         results = []
-        future = asyncio.Future(loop=self.loop)
+        future = self.loop.create_future()
 
         def cancel(result, error):
             if error:
@@ -622,7 +622,7 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
         # Cursor.each() handles server timeout during initial query.
         await self.enable_timeout()
         cursor = self.collection.find().max_time_ms(100000)
-        future = asyncio.Future(loop=self.loop)
+        future = self.loop.create_future()
 
         def callback(result, error):
             if error:
@@ -645,7 +645,7 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
             await cursor.fetch_next
             cursor.next_object()
 
-            future = asyncio.Future(loop=self.loop)
+            future = self.loop.create_future()
 
             def callback(result, error):
                 if error:

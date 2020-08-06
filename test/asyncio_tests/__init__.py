@@ -159,14 +159,11 @@ class AsyncIOMockServerTestCase(AsyncIOTestCase):
         return self.loop.run_in_executor(None,
                                          functools.partial(fn, *args, **kwargs))
 
-    def ensure_future(self, coro):
-        return ensure_future(coro, loop=self.loop)
-
     def fetch_next(self, cursor):
         async def fetch_next():
-            return (await cursor.fetch_next)
+            return await cursor.fetch_next
 
-        return self.ensure_future(fetch_next())
+        return ensure_future(fetch_next())
 
 
 # TODO: Spin off to a PyPI package.
@@ -211,7 +208,7 @@ def asyncio_test(func=None, timeout=None):
 
             self.loop.set_exception_handler(exc_handler)
             coro = asyncio.wait_for(f(self, *args, **kwargs), actual_timeout)
-            task = ensure_future(coro, loop=self.loop)
+            task = ensure_future(coro)
             try:
                 self.loop.run_until_complete(task)
             except:
