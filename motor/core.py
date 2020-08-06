@@ -1758,11 +1758,14 @@ class AgnosticChangeStream(AgnosticBase):
     __anext__ = next
 
     async def __aenter__(self):
+        if not self.delegate:
+            loop = self.get_io_loop()
+            await self._framework.run_on_executor(loop, self._lazy_init)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self.delegate:
-            self.delegate.close()
+            await self.close()
 
     def get_io_loop(self):
         return self._target.get_io_loop()

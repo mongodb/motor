@@ -211,6 +211,18 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         self.assertFalse(change_stream.delegate._cursor.alive)
 
     @asyncio_test
+    async def test_async_with_creates_cursor(self):
+        coll = self.collection
+        await coll.insert_one({'_id': 1})
+        async with coll.watch() as stream:
+            self.assertEqual([{'_id': 1}],
+                             await coll.find().to_list(None))
+            await coll.insert_one({'_id': 2})
+            doc = await stream.try_next()
+            self.assertIsNotNone(doc)
+            self.assertEqual({'_id': 2}, doc['fullDocument'])
+
+    @asyncio_test
     async def test_with_statement(self):
         with self.assertRaises(RuntimeError):
             with self.collection.watch():
