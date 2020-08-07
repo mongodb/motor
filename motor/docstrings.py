@@ -566,6 +566,11 @@ This will print::
     if no document matches. If
     :attr:`ReturnDocument.AFTER`, returns the replaced
     or inserted document.
+  - `hint` (optional): An index to use to support the query
+    predicate specified either by its string name, or in the same
+    format as passed to
+    :meth:`~MotorDatabase.create_index` (e.g. ``[('field', ASCENDING)]``).
+    This option is only supported on MongoDB 4.4 and above.
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
@@ -578,8 +583,10 @@ This command uses the :class:`~pymongo.write_concern.WriteConcern` of this
 that using an elevated write concern with this command may be slower compared
 to using the default write concern.
 
+.. versionchanged:: 2.2
+   Added ``hint`` parameter.
 .. versionchanged:: 1.2
-   Added session parameter.
+   Added ``session`` parameter.
 """
 
 find_one_and_update_doc = """Finds a single document and updates it, returning
@@ -677,6 +684,11 @@ This would print::
     or inserted document.
   - `array_filters` (optional): A list of filters specifying which
     array elements an update should apply. Requires MongoDB 3.6+.
+  - `hint` (optional): An index to use to support the query
+    predicate specified either by its string name, or in the same
+    format as passed to
+    :meth:`~MotorDatabase.create_index` (e.g. ``[('field', ASCENDING)]``).
+    This option is only supported on MongoDB 4.4 and above.
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
@@ -690,8 +702,10 @@ This command uses the
 3.2. Note that using an elevated write concern with this command may
 be slower compared to using the default write concern.
 
+.. versionchanged:: 2.2
+   Added ``hint`` parameter.
 .. versionchanged:: 1.2
-   Added array_filters and session parameters.
+   Added ``array_filters`` and ``session`` parameters.
 """
 
 index_information_doc = """Get information on this collection's indexes.
@@ -881,6 +895,11 @@ This prints::
   - `collation` (optional): An instance of
     :class:`~pymongo.collation.Collation`. This option is only supported
     on MongoDB 3.4 and above.
+  - `hint` (optional): An index to use to support the query
+    predicate specified either by its string name, or in the same
+    format as passed to
+    :meth:`~MotorDatabase.create_index` (e.g. ``[('field', ASCENDING)]``).
+    This option is only supported on MongoDB 4.2 and above.
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
@@ -891,8 +910,10 @@ This prints::
 .. note:: `bypass_document_validation` requires server version
   **>= 3.2**
 
+.. versionchanged:: 2.2
+   Added ``hint`` parameter.
 .. versionchanged:: 1.2
-   Added session parameter.
+   Added ``session`` parameter.
 """
 
 update_many_doc = """Update one or more documents that match the filter.
@@ -935,6 +956,11 @@ This prints::
     on MongoDB 3.4 and above.
   - `array_filters` (optional): A list of filters specifying which
     array elements an update should apply. Requires MongoDB 3.6+.
+  - `hint` (optional): An index to use to support the query
+    predicate specified either by its string name, or in the same
+    format as passed to
+    :meth:`~MotorDatabase.create_index` (e.g. ``[('field', ASCENDING)]``).
+    This option is only supported on MongoDB 4.2 and above.
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
@@ -945,8 +971,10 @@ This prints::
 .. note:: `bypass_document_validation` requires server version
   **>= 3.2**
 
+.. versionchanged:: 2.2
+   Added ``hint`` parameter.
 .. versionchanged:: 1.2
-   Added array_filters and session parameters.
+   Added ``array_filters`` and ``session`` parameters.
 """
 
 update_one_doc = """Update a single document matching the filter.
@@ -989,6 +1017,11 @@ This prints::
     on MongoDB 3.4 and above.
   - `array_filters` (optional): A list of filters specifying which
     array elements an update should apply. Requires MongoDB 3.6+.
+  - `hint` (optional): An index to use to support the query
+    predicate specified either by its string name, or in the same
+    format as passed to
+    :meth:`~MotorDatabase.create_index` (e.g. ``[('field', ASCENDING)]``).
+    This option is only supported on MongoDB 4.2 and above.
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
@@ -999,8 +1032,10 @@ This prints::
 .. note:: `bypass_document_validation` requires server version
   **>= 3.2**
 
+.. versionchanged:: 2.2
+   Added ``hint`` parameter.
 .. versionchanged:: 1.2
-   Added array_filters and session parameters.
+   Added ``array_filters`` and ``session`` parameters.
 """
 
 cursor_sort_doc = """Sorts this cursor's results.
