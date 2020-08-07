@@ -839,6 +839,10 @@ axes:
   - id: tox-env-win
     display_name: "Tox Env Windows"
     values:
+      - id: "asyncio-py37"
+        variables:
+          TOX_ENV: "asyncio-py37"
+          PYTHON_BINARY: "c:\\python\\Python37\\python.exe"
       - id: "tornado5-py36"
         variables:
            TOX_ENV: "tornado5-py36"
