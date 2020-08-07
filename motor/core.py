@@ -16,6 +16,7 @@
 
 import functools
 import sys
+import warnings
 
 import pymongo
 import pymongo.auth
@@ -1139,11 +1140,15 @@ class AgnosticBaseCursor(AgnosticBase):
     @property
     @coroutine_annotation
     def fetch_next(self):
-        """A Future used with `gen.coroutine`_ to asynchronously retrieve the
-        next document in the result set, fetching a batch of documents from the
-        server if necessary. Resolves to ``False`` if there are no more
-        documents, otherwise :meth:`next_object` is guaranteed to return a
-        document.
+        """**DEPRECATED** - A Future used with `gen.coroutine`_ to
+        asynchronously retrieve the next document in the result set,
+        fetching a batch of documents from the server if necessary.
+        Resolves to ``False`` if there are no more documents, otherwise
+        :meth:`next_object` is guaranteed to return a document.
+
+        The :attr:`fetch_next` property is deprecated and will be removed
+        in Motor 3.0. Use `async for` to elegantly iterate over
+        :class:`MotorCursor` objects instead.
 
         .. _`gen.coroutine`: http://tornadoweb.org/en/stable/gen.html
 
@@ -1184,8 +1189,16 @@ class AgnosticBaseCursor(AgnosticBase):
           >>> IOLoop.current().run_sync(f)
           0, 1, 2, 3, 4, done
 
+        .. versionchanged:: 2.2
+           Deprecated.
+
         .. _`large batches`: https://docs.mongodb.com/manual/tutorial/iterate-a-cursor/#cursor-batches
         """
+        warnings.warn("The fetch_next property is deprecated and will be "
+                      "removed in Motor 3.0. Use Use `async for` to iterate "
+                      "over Cursor objects instead.",
+                      DeprecationWarning, stacklevel=2)
+
         if not self._buffer_size() and self.alive:
             # Return the Future, which resolves to number of docs fetched or 0.
             return self._get_more()
@@ -1200,9 +1213,21 @@ class AgnosticBaseCursor(AgnosticBase):
             return future
 
     def next_object(self):
-        """Get a document from the most recently fetched batch, or ``None``.
-        See :attr:`fetch_next`.
+        """**DEPRECATED** - Get a document from the most recently fetched
+        batch, or ``None``. See :attr:`fetch_next`.
+
+        The :meth:`next_object` method is deprecated and will be removed
+        in Motor 3.0. Use `async for` to elegantly iterate over
+        :class:`MotorCursor` objects instead.
+
+        .. versionchanged:: 2.2
+           Deprecated.
         """
+        warnings.warn("The next_object method is deprecated and will be "
+                      "removed in Motor 3.0. Use Use `async for` to iterate "
+                      "over Cursor objects instead.",
+                      DeprecationWarning, stacklevel=2)
+
         if not self._buffer_size():
             return None
         return next(self.delegate)
