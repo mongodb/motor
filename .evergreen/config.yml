@@ -863,7 +863,7 @@ axes:
            TOX_BINARY: "/opt/python/3.6/bin/tox"
       - id: "win"
         display_name: "Windows"
-        run_on: "windows-64-vs2015-test"
+        run_on: "windows-64-vsMulti-small"
         variables:
            INSTALL_TOX: true
            VIRTUALENV: "/cygdrive/c/python/Python36/python.exe -m virtualenv"
