@@ -97,7 +97,8 @@ def chain_return_value(future, loop, return_value):
         else:
             chained.set_result(return_value)
 
-    future._future.add_done_callback(functools.partial(loop.add_callback, copy))
+    future.add_done_callback(
+        functools.partial(loop.call_soon_threadsafe, copy))
     return chained
 
 
