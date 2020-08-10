@@ -839,6 +839,10 @@ axes:
   - id: tox-env-win
     display_name: "Tox Env Windows"
     values:
+      - id: "asyncio-py37"
+        variables:
+          TOX_ENV: "asyncio-py37"
+          PYTHON_BINARY: "c:\\python\\Python37\\python.exe"
       - id: "tornado5-py36"
         variables:
            TOX_ENV: "tornado5-py36"
@@ -863,7 +867,7 @@ axes:
            TOX_BINARY: "/opt/python/3.6/bin/tox"
       - id: "win"
         display_name: "Windows"
-        run_on: "windows-64-vs2015-test"
+        run_on: "windows-64-vsMulti-small"
         variables:
            INSTALL_TOX: true
            VIRTUALENV: "/cygdrive/c/python/Python36/python.exe -m virtualenv"
