@@ -156,7 +156,7 @@ class TestEnvironment(object):
                 connectTimeoutMS=connectTimeoutMS,
                 socketTimeoutMS=socketTimeoutMS,
                 serverSelectionTimeoutMS=serverSelectionTimeoutMS,
-                ssl_ca_certs=CA_PEM,
+                tlsCAFile=CA_PEM,
                 ssl=True))
 
             self.mongod_started_with_ssl = True
@@ -169,8 +169,8 @@ class TestEnvironment(object):
                     connectTimeoutMS=connectTimeoutMS,
                     socketTimeoutMS=socketTimeoutMS,
                     serverSelectionTimeoutMS=serverSelectionTimeoutMS,
-                    ssl_ca_certs=CA_PEM,
-                    ssl_certfile=CLIENT_PEM))
+                    tlsCAFile=CA_PEM,
+                    tlsCertificateKeyFile=CLIENT_PEM))
 
                 self.mongod_started_with_ssl = True
                 self.mongod_validates_client_cert = True
@@ -203,16 +203,18 @@ class TestEnvironment(object):
 
         # Reconnect to found primary, without short timeouts.
         if self.mongod_started_with_ssl:
-            client = connected(pymongo.MongoClient(host, port,
-                                                   username=db_user,
-                                                   password=db_password,
-                                                   ssl_ca_certs=CA_PEM,
-                                                   ssl_certfile=CLIENT_PEM))
+            client = connected(pymongo.MongoClient(
+                host, port,
+                username=db_user,
+                password=db_password,
+                tlsCAFile=CA_PEM,
+                tlsCertificateKeyFile=CLIENT_PEM))
         else:
-            client = connected(pymongo.MongoClient(host, port,
-                                                   username=db_user,
-                                                   password=db_password,
-                                                   ssl=False))
+            client = connected(pymongo.MongoClient(
+                host, port,
+                username=db_user,
+                password=db_password,
+                ssl=False))
 
         self.sync_cx = client
         self.host = host

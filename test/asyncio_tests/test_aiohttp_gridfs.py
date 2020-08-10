@@ -97,9 +97,7 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
                                          host='localhost',
                                          port=8088)
 
-        self.srv, _ = await asyncio.gather(server,
-                                           self.app.startup(),
-                                           loop=self.loop)
+        self.srv, _ = await asyncio.gather(server, self.app.startup())
 
     async def request(self, method, path, if_modified_since=None, headers=None):
         headers = headers or {}

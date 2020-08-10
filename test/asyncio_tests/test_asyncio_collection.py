@@ -163,7 +163,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
         # The insert is eventually executed.
         while not (await coll.count_documents({})):
-            await asyncio.sleep(0.1, loop=self.loop)
+            await asyncio.sleep(0.1)
 
     @ignore_deprecations
     @asyncio_test
@@ -175,7 +175,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             {'_id': 1}, {'$set': {'a': 1}})
 
         while not (await coll.find_one({'a': 1})):
-            await asyncio.sleep(0.1, loop=self.loop)
+            await asyncio.sleep(0.1)
 
     @asyncio_test
     async def test_map_reduce(self):

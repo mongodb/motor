@@ -47,6 +47,10 @@ class _TestMethodWrapper(object):
     def __call__(self):
         result = self.orig_method()
         if inspect.iscoroutine(result):
+            # Cancel the undecorated task to avoid this warning:
+            # RuntimeWarning: coroutine 'test_foo' was never awaited
+            task = ensure_future(result)
+            task.cancel()
             raise TypeError("Generator test methods should be decorated with "
                             "@asyncio_test")
         elif result is not None:
@@ -95,10 +99,10 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
 
     def get_client_kwargs(self, **kwargs):
         if env.mongod_started_with_ssl:
-            kwargs.setdefault('ssl_ca_certs', CA_PEM)
-            kwargs.setdefault('ssl_certfile', CLIENT_PEM)
+            kwargs.setdefault('tlsCAFile', CA_PEM)
+            kwargs.setdefault('tlsCertificateKeyFile', CLIENT_PEM)
 
-        kwargs.setdefault('ssl', env.mongod_started_with_ssl)
+        kwargs.setdefault('tls', env.mongod_started_with_ssl)
         kwargs.setdefault('io_loop', self.loop)
 
         return kwargs
@@ -155,14 +159,11 @@ class AsyncIOMockServerTestCase(AsyncIOTestCase):
         return self.loop.run_in_executor(None,
                                          functools.partial(fn, *args, **kwargs))
 
-    def ensure_future(self, coro):
-        return ensure_future(coro, loop=self.loop)
-
     def fetch_next(self, cursor):
         async def fetch_next():
-            return (await cursor.fetch_next)
+            return await cursor.fetch_next
 
-        return self.ensure_future(fetch_next())
+        return ensure_future(fetch_next())
 
 
 # TODO: Spin off to a PyPI package.
@@ -206,7 +207,7 @@ def asyncio_test(func=None, timeout=None):
                 task.cancel()
 
             self.loop.set_exception_handler(exc_handler)
-            coro = asyncio.wait_for(f(self, *args, **kwargs), actual_timeout, loop=self.loop)
+            coro = asyncio.wait_for(f(self, *args, **kwargs), actual_timeout)
             task = ensure_future(coro, loop=self.loop)
             try:
                 self.loop.run_until_complete(task)

@@ -48,7 +48,7 @@ def check_event_loop(loop):
 
 
 def get_future(loop):
-    return asyncio.Future(loop=loop)
+    return loop.create_future()
 
 
 if 'MOTOR_MAX_WORKERS' in os.environ:
@@ -86,7 +86,7 @@ def chain_return_value(future, loop, return_value):
     return values resolve a Future with it, and are implemented with callbacks
     rather than a coroutine internally.
     """
-    chained = asyncio.Future(loop=loop)
+    chained = loop.create_future()
 
     def copy(_future):
         # Return early if the task was cancelled.
@@ -102,7 +102,7 @@ def chain_return_value(future, loop, return_value):
 
 
 def is_future(f):
-    return isinstance(f, asyncio.Future)
+    return asyncio.isfuture(f)
 
 
 def call_soon(loop, callback, *args, **kwargs):

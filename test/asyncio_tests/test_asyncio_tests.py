@@ -100,7 +100,7 @@ class TestAsyncIOTests(unittest.TestCase):
                 await self.inner()
 
             async def inner(self):
-                await asyncio.sleep(1, loop=self.loop)
+                await asyncio.sleep(1)
 
         with set_environ('ASYNC_TEST_TIMEOUT', '0'):
             result = run_test_case(Test)
@@ -117,7 +117,7 @@ class TestAsyncIOTests(unittest.TestCase):
 
         @asyncio_test
         async def default_timeout(self):
-            await asyncio.sleep(0.1, loop=self.loop)
+            await asyncio.sleep(0.1)
 
         with set_environ('ASYNC_TEST_TIMEOUT', '0.2'):
             # No error, sleeps for 0.1 seconds and the timeout is 0.2 seconds.
@@ -125,7 +125,7 @@ class TestAsyncIOTests(unittest.TestCase):
 
         @asyncio_test(timeout=0.1)
         async def custom_timeout(self):
-            await asyncio.sleep(0.2, loop=self.loop)
+            await asyncio.sleep(0.2)
 
         with set_environ('ASYNC_TEST_TIMEOUT', '0'):
             # No error, default timeout of 5 seconds overrides '0'.
@@ -176,7 +176,7 @@ class TestAsyncIOTests(unittest.TestCase):
 
         class Test(AsyncIOTestCase):
             async def test_that_should_be_decorated(self):
-                await asyncio.sleep(0.01, loop=self.loop)
+                await asyncio.sleep(0.01)
 
         result = run_test_case(Test)
         self.assertEqual(1, len(result.errors))
