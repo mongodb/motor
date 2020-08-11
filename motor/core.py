@@ -1165,6 +1165,8 @@ class AgnosticBaseCursor(AgnosticBase):
            .. doctest:: fetch_next
 
               >>> async def f():
+              ...     await collection.drop()
+              ...     await collection.insert_many([{'_id': i} for i in range(5)])
               ...     async for doc in collection.find():
               ...         sys.stdout.write(str(doc['_id']) + ', ')
               ...     print('done')
@@ -1175,6 +1177,7 @@ class AgnosticBaseCursor(AgnosticBase):
         .. doctest:: fetch_next
 
            >>> async def f():
+           ...     await collection.drop()
            ...     await collection.insert_many([{'_id': i} for i in range(5)])
            ...     cursor = collection.find().sort([('_id', 1)])
            ...     while (await cursor.fetch_next):
@@ -1330,7 +1333,10 @@ class AgnosticBaseCursor(AgnosticBase):
          - `length`: maximum number of documents to return for this call, or
            None
 
-         Returns a Future.
+         Returns a :class:`~asyncio.Task`.
+
+        .. versionchanged:: 2.2
+           Returns a :class:`~asyncio.Task` instead of a Future.
 
         .. versionchanged:: 2.0
            No longer accepts a callback argument.
@@ -1368,9 +1374,11 @@ class AgnosticBaseCursor(AgnosticBase):
         return self.collection.get_io_loop()
 
     async def close(self):
-        """Explicitly kill this cursor on the server. Call like::
+        """Explicitly kill this cursor on the server.
+        Call like::
 
-             await cursor.close()
+            await cursor.close()
+
         """
         if not self.closed:
             self.closed = True
