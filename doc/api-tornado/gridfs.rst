@@ -125,13 +125,11 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
 
       For example::
 
-          @gen.coroutine
-          def find():
+          async def find():
               cursor = fs.find({"filename": "lisa.txt"},
                                no_cursor_timeout=True)
 
-              while (yield cursor.fetch_next):
-                  grid_data = cursor.next_object()
+              async for grid_data in cursor:
                   data = grid_data.read()
 
       iterates through all versions of "lisa.txt" stored in GridFS.

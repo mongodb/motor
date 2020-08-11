@@ -3,27 +3,43 @@
 Motor Tailable Cursor Example
 =============================
 
-This example describes using Motor with Tornado. Beginning in
-version 0.5 Motor can also integrate with asyncio instead of Tornado.
+By default, MongoDB will automatically close a cursor when the client has
+exhausted all results in the cursor. However, for capped collections you may
+use a tailable cursor that remains open after the client exhausts the results
+in the initial cursor.
 
-A cursor on a capped collection can be tailed using :meth:`~MotorCursor.fetch_next`:
+The following is a basic example of using a tailable cursor to tail the oplog
+of a replica set member:
 
 .. code-block:: python
 
-    @gen.coroutine
-    def tail_example():
-        results = []
-        collection = db.my_capped_collection
-        cursor = collection.find(cursor_type=CursorType.TAILABLE, await_data=True)
-        while True:
-            if not cursor.alive:
-                now = datetime.datetime.utcnow()
-                # While collection is empty, tailable cursor dies immediately
-                yield gen.sleep(1)
-                cursor = collection.find(cursor_type=CursorType.TAILABLE, await_data=True)
+    from asyncio import sleep
+    from pymongo.cursor import CursorType
 
-            if (yield cursor.fetch_next):
-                results.append(cursor.next_object())
-                print results
+    async def tail_oplog_example():
+        oplog = client.local.oplog.rs
+        first = await oplog.find().sort('$natural', pymongo.ASCENDING).limit(-1).next()
+        print(first)
+        ts = first['ts']
+
+        while True:
+            # For a regular capped collection CursorType.TAILABLE_AWAIT is the
+            # only option required to create a tailable cursor. When querying the
+            # oplog, the oplog_replay option enables an optimization to quickly
+            # find the 'ts' value we're looking for. The oplog_replay option
+            # can only be used when querying the oplog. Starting in MongoDB 4.4
+            # this option is ignored by the server as queries against the oplog
+            # are optimized automatically by the MongoDB query engine.
+            cursor = oplog.find({'ts': {'$gt': ts}},
+                                cursor_type=CursorType.TAILABLE_AWAIT,
+                                oplog_replay=True)
+            while cursor.alive:
+                async for doc in cursor:
+                    ts = doc['ts']
+                    print(doc)
+                # We end up here if the find() returned no documents or if the
+                # tailable cursor timed out (no new documents were added to the
+                # collection for more than 1 second).
+                await sleep(1)
 
 .. seealso:: `Tailable cursors <http://docs.mongodb.org/manual/tutorial/create-tailable-cursor/>`_

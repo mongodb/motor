@@ -550,8 +550,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
            # Lists all operations currently running on the server.
            pipeline = [{"$currentOp": {}}]
            cursor = client.admin.aggregate(pipeline)
-           while (await cursor.fetch_next):
-               operation = cursor.next_object()
+           async for operation in cursor:
                print(operation)
 
         In Python 3.5 and newer, aggregation cursors can be iterated elegantly
@@ -835,8 +834,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
           pipeline = [{'$project': {'name': {'$toUpper': '$name'}}}]
           cursor = collection.aggregate(pipeline)
-          while (await cursor.fetch_next):
-              doc = cursor.next_object()
+          async for doc in cursor:
               print(doc)
 
         In Python 3.5 and newer, aggregation cursors can be iterated elegantly
@@ -1106,10 +1104,10 @@ class AgnosticBaseCursor(AgnosticBase):
 
         .. note::
           There is no need to manually close cursors; they are closed
-          by the server after being fully iterated
-          with :meth:`to_list`, :meth:`each`, or :attr:`fetch_next`, or
-          automatically closed by the client when the :class:`MotorCursor` is
-          cleaned up by the garbage collector.
+          by the server after being fully iterated using `async for`,
+          :meth:`to_list`, or :meth:`each`, or automatically closed
+          by the client when the :class:`MotorCursor` is cleaned up by
+          the garbage collector.
         """
         # 'cursor' is a PyMongo Cursor, CommandCursor, or a _LatentCursor.
         super(AgnosticBaseCursor, self).__init__(delegate=cursor)
@@ -1121,11 +1119,17 @@ class AgnosticBaseCursor(AgnosticBase):
     def __aiter__(self):
         return self
 
-    async def __anext__(self):
-        # An optimization: skip the "await" if possible.
-        if self._buffer_size() or await self.fetch_next:
-            return self.next_object()
-        raise StopAsyncIteration()
+    async def next(self):
+        """Advance the cursor."""
+        try:
+            if self._buffer_size() or await self._get_more():
+                return next(self.delegate)
+            else:
+                raise StopAsyncIteration
+        except pymongo.errors.InvalidOperation:
+            raise StopAsyncIteration
+
+    __anext__ = next
 
     def _get_more(self):
         """Initial query or getMore. Returns a Future."""
@@ -1144,55 +1148,50 @@ class AgnosticBaseCursor(AgnosticBase):
         asynchronously retrieve the next document in the result set,
         fetching a batch of documents from the server if necessary.
         Resolves to ``False`` if there are no more documents, otherwise
-        :meth:`next_object` is guaranteed to return a document.
-
-        The :attr:`fetch_next` property is deprecated and will be removed
-        in Motor 3.0. Use `async for` to elegantly iterate over
-        :class:`MotorCursor` objects instead.
-
-        .. _`gen.coroutine`: http://tornadoweb.org/en/stable/gen.html
+        :meth:`next_object` is guaranteed to return a document:
 
         .. doctest:: fetch_next
-          :hide:
+           :hide:
 
-          >>> _ = MongoClient().test.test_collection.delete_many({})
-          >>> collection = MotorClient().test.test_collection
+           >>> _ = MongoClient().test.test_collection.delete_many({})
+           >>> collection = MotorClient().test.test_collection
+
+        .. attention:: The :attr:`fetch_next` property is deprecated and will
+           be removed in Motor 3.0. Use `async for` to iterate elegantly and
+           efficiently over :class:`MotorCursor` objects instead.:
+
+           .. doctest:: fetch_next
+
+              >>> async def f():
+              ...     async for doc in collection.find():
+              ...         sys.stdout.write(str(doc['_id']) + ', ')
+              ...     print('done')
+              ...
+              >>> IOLoop.current().run_sync(f)
+              0, 1, 2, 3, 4, done
 
         .. doctest:: fetch_next
 
-          >>> @gen.coroutine
-          ... def f():
-          ...     await collection.insert_many([{'_id': i} for i in range(5)])
-          ...     cursor = collection.find().sort([('_id', 1)])
-          ...     while (await cursor.fetch_next):
-          ...         doc = cursor.next_object()
-          ...         sys.stdout.write(str(doc['_id']) + ', ')
-          ...     print('done')
-          ...
-          >>> IOLoop.current().run_sync(f)
-          0, 1, 2, 3, 4, done
+           >>> async def f():
+           ...     await collection.insert_many([{'_id': i} for i in range(5)])
+           ...     cursor = collection.find().sort([('_id', 1)])
+           ...     while (await cursor.fetch_next):
+           ...         doc = cursor.next_object()
+           ...         sys.stdout.write(str(doc['_id']) + ', ')
+           ...     print('done')
+           ...
+           >>> IOLoop.current().run_sync(f)
+           0, 1, 2, 3, 4, done
 
         While it appears that fetch_next retrieves each document from
         the server individually, the cursor actually fetches documents
         efficiently in `large batches`_.
 
-        In Python 3.5 and newer, cursors can be iterated elegantly and very
-        efficiently in native coroutines with `async for`:
-
-        .. doctest:: fetch_next
-
-          >>> async def f():
-          ...     async for doc in collection.find():
-          ...         sys.stdout.write(str(doc['_id']) + ', ')
-          ...     print('done')
-          ...
-          >>> IOLoop.current().run_sync(f)
-          0, 1, 2, 3, 4, done
-
         .. versionchanged:: 2.2
            Deprecated.
 
         .. _`large batches`: https://docs.mongodb.com/manual/tutorial/iterate-a-cursor/#cursor-batches
+        .. _`gen.coroutine`: http://tornadoweb.org/en/stable/gen.html
         """
         warnings.warn("The fetch_next property is deprecated and will be "
                       "removed in Motor 3.0. Use Use `async for` to iterate "
@@ -1244,29 +1243,29 @@ class AgnosticBaseCursor(AgnosticBase):
 
         .. testsetup:: each
 
-          from tornado.ioloop import IOLoop
-          MongoClient().test.test_collection.delete_many({})
-          MongoClient().test.test_collection.insert_many(
-              [{'_id': i} for i in range(5)])
+           from tornado.ioloop import IOLoop
+           MongoClient().test.test_collection.delete_many({})
+           MongoClient().test.test_collection.insert_many(
+               [{'_id': i} for i in range(5)])
 
-          collection = MotorClient().test.test_collection
+           collection = MotorClient().test.test_collection
 
         .. doctest:: each
 
-          >>> def each(result, error):
-          ...     if error:
-          ...         raise error
-          ...     elif result:
-          ...         sys.stdout.write(str(result['_id']) + ', ')
-          ...     else:
-          ...         # Iteration complete
-          ...         IOLoop.current().stop()
-          ...         print('done')
-          ...
-          >>> cursor = collection.find().sort([('_id', 1)])
-          >>> cursor.each(callback=each)
-          >>> IOLoop.current().start()
-          0, 1, 2, 3, 4, done
+           >>> def each(result, error):
+           ...     if error:
+           ...         raise error
+           ...     elif result:
+           ...         sys.stdout.write(str(result['_id']) + ', ')
+           ...     else:
+           ...         # Iteration complete
+           ...         IOLoop.current().stop()
+           ...         print('done')
+           ...
+           >>> cursor = collection.find().sort([('_id', 1)])
+           >>> cursor.each(callback=each)
+           >>> IOLoop.current().start()
+           0, 1, 2, 3, 4, done
 
         .. note:: Unlike other Motor methods, ``each`` requires a callback and
            does not return a Future, so it cannot be used in a coroutine.
@@ -1279,38 +1278,18 @@ class AgnosticBaseCursor(AgnosticBase):
         if not callable(callback):
             raise callback_type_error
 
-        self._each_got_more(callback, None)
+        async def _coro():
+            async for doc in self:
+                # Quit if callback returns exactly False (not None). Note we
+                # don't close the cursor: user may want to resume iteration.
+                if callback(doc, None) is False:
+                    return
+                # The callback closed this cursor?
+                if self.closed:
+                    return
+            callback(None, None)
 
-    def _each_got_more(self, callback, future):
-        if future:
-            try:
-                future.result()
-            except Exception as error:
-                callback(None, error)
-                return
-
-        while self._buffer_size() > 0:
-            doc = next(self.delegate)  # decrements self.buffer_size
-
-            # Quit if callback returns exactly False (not None). Note we
-            # don't close the cursor: user may want to resume iteration.
-            if callback(doc, None) is False:
-                return
-
-            # The callback closed this cursor?
-            if self.closed:
-                return
-
-        if self.alive and (self.cursor_id or not self.started):
-            self._framework.add_future(
-                self.get_io_loop(),
-                self._get_more(),
-                self._each_got_more, callback)
-        else:
-            # Complete
-            self._framework.call_soon(
-                self.get_io_loop(),
-                functools.partial(callback, None, None))
+        self._framework.create_task(self.get_io_loop(), _coro())
 
     @coroutine_annotation
     def to_list(self, length):
@@ -1328,8 +1307,7 @@ class AgnosticBaseCursor(AgnosticBase):
           >>> from motor.motor_tornado import MotorClient
           >>> collection = MotorClient().test.test_collection
           >>>
-          >>> @gen.coroutine
-          ... def f():
+          >>> async def f():
           ...     cursor = collection.find().sort([('_id', 1)])
           ...     docs = await cursor.to_list(length=2)
           ...     while docs:
@@ -1367,60 +1345,26 @@ class AgnosticBaseCursor(AgnosticBase):
             raise pymongo.errors.InvalidOperation(
                 "Can't call to_list on tailable cursor")
 
-        future = self._framework.get_future(self.get_io_loop())
-
-        if not self.alive:
-            future.set_result([])
-        else:
+        # import pdb; pdb.set_trace()
+        async def _coro():
             the_list = []
-            self._framework.add_future(
-                self.get_io_loop(),
-                self._get_more(),
-                self._to_list, length, the_list, future)
 
-        return future
+            async for doc in self:
+                the_list.append(doc)
+                if (length is not None and
+                        len(the_list) >= length):
+                    break
+            return the_list
 
-    def _to_list(self, length, the_list, future, get_more_result):
-        # get_more_result is the result of self._get_more().
-        # to_list_future will be the result of the user's to_list() call.
-        try:
-            result = get_more_result.result()
-            # Return early if the task was cancelled.
-            if future.done():
-                return
-            collection = self.collection
-            fix_outgoing = collection.database.delegate._fix_outgoing
-
-            if length is None:
-                n = result
-            else:
-                n = min(length, result)
-
-            for _ in range(n):
-                the_list.append(fix_outgoing(self._data().popleft(),
-                                             collection))
-
-            reached_length = (length is not None and len(the_list) >= length)
-            if reached_length or not self.alive:
-                future.set_result(the_list)
-            else:
-                self._framework.add_future(
-                    self.get_io_loop(),
-                    self._get_more(),
-                    self._to_list, length, the_list, future)
-        except Exception as exc:
-            if not future.done():
-                future.set_exception(exc)
+        return self._framework.create_task(self.get_io_loop(), _coro())
 
     def get_io_loop(self):
         return self.collection.get_io_loop()
 
     async def close(self):
-        """Explicitly kill this cursor on the server. Call like (in Tornado):
+        """Explicitly kill this cursor on the server. Call like::
 
-        .. code-block:: python
-
-            await cursor.close()
+             await cursor.close()
         """
         if not self.closed:
             self.closed = True

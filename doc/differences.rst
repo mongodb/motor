@@ -102,7 +102,7 @@ Motor does not.
 Cursor slicing
 --------------
 
-In Pymongo, the following raises an ``IndexError`` if the collection has fewer
+In PyMongo, the following raises an ``IndexError`` if the collection has fewer
 than 101 documents:
 
 .. code-block:: python
@@ -114,13 +114,12 @@ In Motor, however, no exception is raised. The query simply has no results:
 
 .. code-block:: python
 
-    @gen.coroutine
-    def f():
+    async def f():
         cursor = db.collection.find()[100]
 
         # Iterates zero or one times.
-        while (yield cursor.fetch_next):
-            doc = cursor.next_object()
+        async for doc in cursor:
+            pass
 
 The difference arises because the PyMongo :class:`~pymongo.cursor.Cursor`'s
 slicing operator blocks until it has queried the MongoDB server, and determines
