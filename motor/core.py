@@ -129,7 +129,7 @@ class AgnosticClient(AgnosticBaseProperties):
     server_info              = AsyncRead()
     server_selection_timeout = ReadOnlyProperty()
     start_session            = AsyncCommand(doc=start_session_doc).wrap(ClientSession)
-    unlock                   = AsyncCommand()
+    unlock                   = AsyncCommand(doc=unlock_doc)
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -717,7 +717,7 @@ class AgnosticCollection(AgnosticBaseProperties):
     map_reduce               = AsyncCommand(doc=mr_doc).wrap(Collection)
     name                     = ReadOnlyProperty()
     options                  = AsyncRead()
-    reindex                  = AsyncCommand()
+    reindex                  = AsyncCommand(doc=reindex_doc)
     rename                   = AsyncCommand()
     replace_one              = AsyncCommand(doc=replace_one_doc)
     update_many              = AsyncCommand(doc=update_many_doc)
@@ -1442,7 +1442,7 @@ class AgnosticCursor(AgnosticBaseCursor):
     max_scan          = MotorCursorChainingMethod()
     sort              = MotorCursorChainingMethod(doc=cursor_sort_doc)
     hint              = MotorCursorChainingMethod()
-    where             = MotorCursorChainingMethod()
+    where             = MotorCursorChainingMethod(doc=where_doc)
     max_await_time_ms = MotorCursorChainingMethod()
     max_time_ms       = MotorCursorChainingMethod()
     min               = MotorCursorChainingMethod()

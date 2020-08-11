@@ -1053,8 +1053,7 @@ Pass a field name and a direction, either
 
 .. doctest:: sort
 
-  >>> @gen.coroutine
-  ... def f():
+  >>> async def f():
   ...     cursor = collection.find().sort('_id', pymongo.DESCENDING)
   ...     docs = await cursor.to_list(None)
   ...     print([d['_id'] for d in docs])
@@ -1066,8 +1065,7 @@ To sort by multiple fields, pass a list of (key, direction) pairs:
 
 .. doctest:: sort
 
-  >>> @gen.coroutine
-  ... def f():
+  >>> async def f():
   ...     cursor = collection.find().sort([
   ...         ('field1', pymongo.ASCENDING),
   ...         ('field2', pymongo.DESCENDING)])
@@ -1092,16 +1090,14 @@ Text search results can be sorted by relevance:
 
 .. doctest:: sort_text
 
-  >>> @gen.coroutine
-  ... def f():
+  >>> async def f():
   ...     cursor = collection.find({
   ...         '$text': {'$search': 'some words'}},
   ...         {'score': {'$meta': 'textScore'}})
   ...
   ...     # Sort by 'score' field.
   ...     cursor.sort([('score', {'$meta': 'textScore'})])
-  ...     docs = await cursor.to_list(None)
-  ...     for doc in docs:
+  ...     async for doc in cursor:
   ...         print('%.1f %s' % (doc['score'], doc['field']))
   ...
   >>> IOLoop.current().run_sync(f)
@@ -1185,4 +1181,80 @@ started it.
   :class:`~pymongo.client_session.ClientSession`.
 
 .. versionadded:: 1.2
+"""
+
+unlock_doc = """**DEPRECATED**: Unlock a previously locked server.
+
+:Parameters:
+  - `session` (optional): a
+    :class:`~motor.motor_tornado.MotorClientSession`.
+
+Deprecated. Users of MongoDB version 3.2 or newer can run the
+`fsyncUnlock command`_ directly with
+:meth:`~motor.motor_tornado.MotorDatabase.command`::
+
+     await motor_client.admin.command('fsyncUnlock')
+
+Users of MongoDB version 3.0 can query the "unlock" virtual
+collection::
+
+    await motor_client.admin["$cmd.sys.unlock"].find_one()
+
+.. versionchanged:: 2.2
+   Deprecated.
+
+.. _fsyncUnlock command: https://docs.mongodb.com/manual/reference/command/fsyncUnlock/
+"""
+
+reindex_doc = """**DEPRECATED**: Rebuild all indexes on this collection.
+
+Deprecated. Use :meth:`~motor.motor_tornado.MotorDatabase.command`
+to run the ``reIndex`` command directly instead::
+
+  await db.command({"reIndex": "<collection_name>"})
+
+.. note:: Starting in MongoDB 4.6, the `reIndex` command can only be
+  run when connected to a standalone mongod.
+
+:Parameters:
+  - `session` (optional): a
+    :class:`~motor.motor_tornado.MotorClientSession`.
+  - `**kwargs` (optional): optional arguments to the reIndex
+    command (like maxTimeMS) can be passed as keyword arguments.
+
+.. warning:: reindex blocks all other operations (indexes
+   are built in the foreground) and will be slow for large
+   collections.
+
+.. versionchanged:: 2.2
+   Deprecated.
+"""
+
+where_doc = """Adds a `$where`_ clause to this query.
+
+The `code` argument must be an instance of :class:`str`
+:class:`~bson.code.Code` containing a JavaScript expression.
+This expression will be evaluated for each document scanned.
+Only those documents for which the expression evaluates to *true*
+will be returned as results. The keyword *this* refers to the object
+currently being scanned. For example::
+
+    # Find all documents where field "a" is less than "b" plus "c".
+    async for doc in db.test.find().where('this.a < (this.b + this.c)'):
+        print(doc)
+
+Raises :class:`TypeError` if `code` is not an instance of
+:class:`str`. Raises :class:`~pymongo.errors.InvalidOperation`
+if this :class:`~motor.motor_tornado.MotorCursor` has already been used.
+Only the last call to :meth:`where` applied to a
+:class:`~motor.motor_tornado.MotorCursor` has any effect.
+
+.. note:: MongoDB 4.4 drops support for :class:`~bson.code.Code`
+  with scope variables. Consider using `$expr`_ instead.
+
+:Parameters:
+  - `code`: JavaScript expression to use as a filter
+
+.. _$expr: https://docs.mongodb.com/manual/reference/operator/query/expr/
+.. _$where: https://docs.mongodb.com/manual/reference/operator/query/where/
 """
