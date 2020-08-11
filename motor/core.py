@@ -1120,13 +1120,15 @@ class AgnosticBaseCursor(AgnosticBase):
         return self
 
     async def next(self):
-        """Advance the cursor."""
-        try:
-            if self._buffer_size() or await self._get_more():
-                return next(self.delegate)
-            else:
-                raise StopAsyncIteration
-        except pymongo.errors.InvalidOperation:
+        """Advance the cursor.
+
+        .. versionadded:: 2.2
+        """
+        if not self.alive:
+            raise StopAsyncIteration
+        if self._buffer_size() or await self._get_more():
+            return next(self.delegate)
+        else:
             raise StopAsyncIteration
 
     __anext__ = next
@@ -1279,15 +1281,18 @@ class AgnosticBaseCursor(AgnosticBase):
             raise callback_type_error
 
         async def _coro():
-            async for doc in self:
-                # Quit if callback returns exactly False (not None). Note we
-                # don't close the cursor: user may want to resume iteration.
-                if callback(doc, None) is False:
-                    return
-                # The callback closed this cursor?
-                if self.closed:
-                    return
-            callback(None, None)
+            try:
+                async for doc in self:
+                    # The callback closed this cursor?
+                    if self.closed:
+                        return
+                    # Quit if callback returns exactly False (not None). Note we
+                    # don't close the cursor: user may want to resume iteration.
+                    if callback(doc, None) is False:
+                        return
+                callback(None, None)
+            except Exception as exc:
+                callback(None, exc)
 
         self._framework.create_task(self.get_io_loop(), _coro())
 
@@ -1345,15 +1350,14 @@ class AgnosticBaseCursor(AgnosticBase):
             raise pymongo.errors.InvalidOperation(
                 "Can't call to_list on tailable cursor")
 
-        # import pdb; pdb.set_trace()
         async def _coro():
             the_list = []
 
             async for doc in self:
-                the_list.append(doc)
                 if (length is not None and
                         len(the_list) >= length):
                     break
+                the_list.append(doc)
             return the_list
 
         return self._framework.create_task(self.get_io_loop(), _coro())

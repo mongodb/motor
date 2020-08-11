@@ -634,6 +634,7 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
         with self.assertRaises(ExecutionTimeout):
             cursor.each(callback)
             await future
+            raise ValueError
 
     @asyncio_test(timeout=30)
     async def test_max_time_ms_each_getmore(self):
