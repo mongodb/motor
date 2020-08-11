@@ -1352,12 +1352,14 @@ class AgnosticBaseCursor(AgnosticBase):
 
         async def _coro():
             the_list = []
-
+            if length == 0:
+                return the_list
+            # Else
             async for doc in self:
+                the_list.append(doc)
                 if (length is not None and
                         len(the_list) >= length):
                     break
-                the_list.append(doc)
             return the_list
 
         return self._framework.create_task(self.get_io_loop(), _coro())
