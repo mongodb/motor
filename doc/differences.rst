@@ -64,14 +64,13 @@ GridFS
     Updating metadata on a :class:`MotorGridIn` is asynchronous, so
     the API is different::
 
-        @gen.coroutine
-        def f():
+        async def f():
             fs = motor.motor_tornado.MotorGridFSBucket(db)
             grid_in, file_id = fs.open_upload_stream('test_file')
-            yield grid_in.close()
+            await grid_in.close()
 
             # Sends update to server.
-            yield grid_in.set('my_field', 'my_value')
+            await grid_in.set('my_field', 'my_value')
 
 .. seealso:: :doc:`../api-tornado/gridfs`.
 
@@ -83,7 +82,7 @@ In PyMongo ``is_locked`` is a property of
 server has been fsyncLocked requires I/O, Motor has no such convenience method.
 The equivalent in Motor is::
 
-    result = yield client.admin.current_op()
+    result = await client.admin.current_op()
     locked = bool(result.get('fsyncLock', None))
 
 system_js
@@ -119,7 +118,7 @@ In Motor, however, no exception is raised. The query simply has no results:
 
         # Iterates zero or one times.
         async for doc in cursor:
-            pass
+            print(doc)
 
 The difference arises because the PyMongo :class:`~pymongo.cursor.Cursor`'s
 slicing operator blocks until it has queried the MongoDB server, and determines
@@ -151,9 +150,8 @@ only the typical style is allowed:
 
 .. code-block:: python
 
-    @gen.coroutine
-    def f():
-        yield db.create_collection(
+    async def f():
+        await db.create_collection(
             'collection1',
             capped=True,
             size=1000)

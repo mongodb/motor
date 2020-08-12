@@ -547,16 +547,9 @@ class AgnosticDatabase(AgnosticBaseProperties):
         Returns a :class:`MotorCommandCursor` that can be iterated like a
         cursor from :meth:`find`::
 
-           # Lists all operations currently running on the server.
-           pipeline = [{"$currentOp": {}}]
-           cursor = client.admin.aggregate(pipeline)
-           async for operation in cursor:
-               print(operation)
-
-        In Python 3.5 and newer, aggregation cursors can be iterated elegantly
-        in native coroutines with `async for`::
-
            async def f():
+               # Lists all operations currently running on the server.
+               pipeline = [{"$currentOp": {}}]
                async for operation in client.admin.aggregate(pipeline):
                    print(operation)
 
@@ -832,15 +825,8 @@ class AgnosticCollection(AgnosticBaseProperties):
         Returns a :class:`MotorCommandCursor` that can be iterated like a
         cursor from :meth:`find`::
 
-          pipeline = [{'$project': {'name': {'$toUpper': '$name'}}}]
-          cursor = collection.aggregate(pipeline)
-          async for doc in cursor:
-              print(doc)
-
-        In Python 3.5 and newer, aggregation cursors can be iterated elegantly
-        in native coroutines with `async for`::
-
           async def f():
+              pipeline = [{'$project': {'name': {'$toUpper': '$name'}}}]
               async for doc in collection.aggregate(pipeline):
                   print(doc)
 
@@ -1104,10 +1090,10 @@ class AgnosticBaseCursor(AgnosticBase):
 
         .. note::
           There is no need to manually close cursors; they are closed
-          by the server after being fully iterated using `async for`,
-          :meth:`to_list`, or :meth:`each`, or automatically closed
-          by the client when the :class:`MotorCursor` is cleaned up by
-          the garbage collector.
+          by the server after being fully iterated
+          with :meth:`to_list`, :meth:`each`, or `async for`, or
+          automatically closed by the client when the :class:`MotorCursor` is
+          cleaned up by the garbage collector.
         """
         # 'cursor' is a PyMongo Cursor, CommandCursor, or a _LatentCursor.
         super(AgnosticBaseCursor, self).__init__(delegate=cursor)
@@ -1170,20 +1156,6 @@ class AgnosticBaseCursor(AgnosticBase):
               ...
               >>> IOLoop.current().run_sync(f)
               0, 1, 2, 3, 4, done
-
-        .. doctest:: fetch_next
-
-           >>> async def f():
-           ...     await collection.drop()
-           ...     await collection.insert_many([{'_id': i} for i in range(5)])
-           ...     cursor = collection.find().sort([('_id', 1)])
-           ...     while (await cursor.fetch_next):
-           ...         doc = cursor.next_object()
-           ...         sys.stdout.write(str(doc['_id']) + ', ')
-           ...     print('done')
-           ...
-           >>> IOLoop.current().run_sync(f)
-           0, 1, 2, 3, 4, done
 
         While it appears that fetch_next retrieves each document from
         the server individually, the cursor actually fetches documents
@@ -1271,8 +1243,7 @@ class AgnosticBaseCursor(AgnosticBase):
 
         .. note:: Unlike other Motor methods, ``each`` requires a callback and
            does not return a Future, so it cannot be used in a coroutine.
-           ``async for``, :meth:`to_list`, :attr:`fetch_next` are much easier to
-           use.
+           ``async for`` and :meth:`to_list` are much easier to use.
 
         :Parameters:
          - `callback`: function taking (document, error)
@@ -1582,13 +1553,13 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
     __motor_class_name__ = 'MotorLatentCommandCursor'
 
     def __init__(self, collection, start, *args, **kwargs):
-        # We're being constructed without yield or await, like:
+        # We're being constructed without await, like:
         #
         #     cursor = collection.aggregate(pipeline)
         #
         # ... so we can't send the "aggregate" command to the server and get
         # a PyMongo CommandCursor back yet. Set self.delegate to a latent
-        # cursor until the first yield or await triggers _get_more(), which
+        # cursor until the first await triggers _get_more(), which
         # will execute the callback "start", which gets a PyMongo CommandCursor.
         super(self.__class__, self).__init__(_LatentCursor(), collection)
         self.start = start

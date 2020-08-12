@@ -5,6 +5,7 @@
 
 .. autoclass:: AsyncIOMotorCursor
   :members:
+  :inherited-members:
 
 
 :class:`~motor.motor_asyncio.AsyncIOMotorCommandCursor`
@@ -14,3 +15,4 @@
 
 .. autoclass:: AsyncIOMotorCommandCursor
   :members:
+  :inherited-members:

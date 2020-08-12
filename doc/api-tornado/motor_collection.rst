@@ -34,18 +34,18 @@
       To create a single key ascending index on the key ``'mike'`` we just
       use a string argument::
 
-        yield my_collection.create_index("mike")
+        await my_collection.create_index("mike")
 
       For a compound index on ``'mike'`` descending and ``'eliot'``
       ascending we need to use a list of tuples::
 
-        yield my_collection.create_index([("mike", pymongo.DESCENDING),
+        await my_collection.create_index([("mike", pymongo.DESCENDING),
                                           ("eliot", pymongo.ASCENDING)])
 
       All optional index creation parameters should be passed as
       keyword arguments to this method. For example::
 
-        yield my_collection.create_index([("mike", pymongo.DESCENDING)],
+        await my_collection.create_index([("mike", pymongo.DESCENDING)],
                                          background=True)
 
       Valid options include, but are not limited to:
@@ -122,7 +122,7 @@
           `map reduce command`_ may be passed as keyword arguments to this
           helper method, e.g.::
 
-            yield db.test.inline_map_reduce(map, reduce, limit=2)
+            await db.test.inline_map_reduce(map, reduce, limit=2)
 
       Returns a Future.
 
