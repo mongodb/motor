@@ -92,7 +92,7 @@ based only on the URI in a configuration file.
    Removed this method.
 """
 
-fsync_doc = """Flush all pending writes to datafiles.
+fsync_doc = """**DEPRECATED**: Flush all pending writes to datafiles.
 
 Optional parameters can be passed as keyword arguments:
   - `lock`: If True lock the server to disallow writes.
@@ -108,14 +108,24 @@ Optional parameters can be passed as keyword arguments:
     options = {'async': True}
     await client.fsync(**options)
 
+Deprecated. Run the `fsync command`_ directly with
+:meth:`~motor.motor_tornado.MotorDatabase.command` instead. For example::
+
+    await client.admin.command('fsync', lock=True)
+
+.. versionchanged:: 2.2
+   Deprecated.
+
 .. versionchanged:: 1.2
-   Added session parameter.
+   Added ``session`` parameter.
 
 .. warning:: `async` and `lock` can not be used together.
 
 .. warning:: MongoDB does not support the `async` option
              on Windows and will raise an exception on that
              platform.
+
+.. _fsync command: https://docs.mongodb.com/manual/reference/command/fsync/
 """
 
 current_op_doc = """
