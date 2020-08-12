@@ -136,7 +136,7 @@ excluded_tests = [
     # Accesses PyMongo internals.
     'TestClient.test_close_kills_cursors',
     'TestClient.test_stale_getmore',
-    'TestCleint.test_direct_connection',
+    'TestClient.test_direct_connection',
     'TestCollection.test_aggregation_cursor',
     'TestCommandAndReadPreference.*',
     'TestCommandMonitoring.test_get_more_failure',
