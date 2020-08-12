@@ -136,10 +136,12 @@ excluded_tests = [
     # Accesses PyMongo internals.
     'TestClient.test_close_kills_cursors',
     'TestClient.test_stale_getmore',
+    'TestCleint.test_direct_connection',
     'TestCollection.test_aggregation_cursor',
     'TestCommandAndReadPreference.*',
     'TestCommandMonitoring.test_get_more_failure',
     'TestCommandMonitoring.test_sensitive_commands',
+    'TestCursor.test_allow_disk_use',
     'TestCursor.test_close_kills_cursor_synchronously',
     'TestCursor.test_delete_not_initialized',
     'TestGridFile.test_grid_out_cursor_options',
@@ -201,6 +203,10 @@ excluded_tests = [
     # Tests that use warnings.catch_warnings which don't show up in Motor
     'TestCursor.test_min_max_without_hint',
 
+    # TODO: MOTOR-606
+    'TestTransactionsConvenientAPI.*',
+    'TestTransactions.test_create_collection',
+
     # Motor's change streams need Python 3.5 to support async iteration but
     # these change streams tests spawn threads which don't work without an
     # IO loop.
@@ -209,6 +215,8 @@ excluded_tests = [
 
     # Can't run these tests because they use threads.
     '*.test_ignore_stale_connection_errors',
+    '*.test_discovery_and_monitoring_integration_find_shutdown_error_Concurrent_shutdown_error_on_find',
+    '*.test_discovery_and_monitoring_integration_insert_shutdown_error_Concurrent_shutdown_error_on_insert',
 ]
 
 
@@ -252,6 +260,7 @@ class SynchroNosePlugin(Plugin):
         # PyMongo's test generators run at import time; tell Nose not to run
         # them as unittests.
         if fn.__name__ in ('test_cases',
+                           'create_spec_test',
                            'create_test',
                            'create_tests',
                            'create_connection_string_test',
