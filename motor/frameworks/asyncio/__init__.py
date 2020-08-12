@@ -51,6 +51,10 @@ def get_future(loop):
     return loop.create_future()
 
 
+def create_task(loop, coro):
+    return loop.create_task(coro)
+
+
 if 'MOTOR_MAX_WORKERS' in os.environ:
     max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
 else:

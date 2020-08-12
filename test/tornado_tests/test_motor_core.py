@@ -80,7 +80,7 @@ motor_cursor_only = set([
 
 pymongo_cursor_only = set([
     'count',
-    'retrieved']).union(pymongo_only)
+    'retrieved'])
 
 
 class MotorCoreTest(MotorTest):
