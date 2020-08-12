@@ -1124,12 +1124,9 @@ class AgnosticBaseCursor(AgnosticBase):
 
         .. versionadded:: 2.2
         """
-        if not self.alive:
-            raise StopAsyncIteration
-        if self._buffer_size() or await self._get_more():
+        if self.alive and (self._buffer_size() or await self._get_more()):
             return next(self.delegate)
-        else:
-            raise StopAsyncIteration
+        raise StopAsyncIteration
 
     __anext__ = next
 
@@ -1199,7 +1196,7 @@ class AgnosticBaseCursor(AgnosticBase):
         .. _`gen.coroutine`: http://tornadoweb.org/en/stable/gen.html
         """
         warnings.warn("The fetch_next property is deprecated and will be "
-                      "removed in Motor 3.0. Use Use `async for` to iterate "
+                      "removed in Motor 3.0. Use `async for` to iterate "
                       "over Cursor objects instead.",
                       DeprecationWarning, stacklevel=2)
 
@@ -1420,6 +1417,7 @@ class AgnosticBaseCursor(AgnosticBase):
 
     async def close(self):
         """Explicitly kill this cursor on the server.
+
         Call like::
 
             await cursor.close()
