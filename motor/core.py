@@ -1283,21 +1283,38 @@ class AgnosticBaseCursor(AgnosticBase):
         if not callable(callback):
             raise callback_type_error
 
-        async def _coro():
-            try:
-                async for doc in self:
-                    # The callback closed this cursor?
-                    if self.closed:
-                        return
-                    # Quit if callback returns exactly False (not None). Note we
-                    # don't close the cursor: user may want to resume iteration.
-                    if callback(doc, None) is False:
-                        return
-                callback(None, None)
-            except Exception as exc:
-                callback(None, exc)
+        self._each_got_more(callback, None)
 
-        self._framework.create_task(self.get_io_loop(), _coro())
+    def _each_got_more(self, callback, future):
+        if future:
+            try:
+                future.result()
+            except Exception as error:
+                callback(None, error)
+                return
+
+        while self._buffer_size() > 0:
+            doc = next(self.delegate)  # decrements self.buffer_size
+
+            # Quit if callback returns exactly False (not None). Note we
+            # don't close the cursor: user may want to resume iteration.
+            if callback(doc, None) is False:
+                return
+
+            # The callback closed this cursor?
+            if self.closed:
+                return
+
+        if self.alive and (self.cursor_id or not self.started):
+            self._framework.add_future(
+                self.get_io_loop(),
+                self._get_more(),
+                self._each_got_more, callback)
+        else:
+            # Complete
+            self._framework.call_soon(
+                self.get_io_loop(),
+                functools.partial(callback, None, None))
 
     @coroutine_annotation
     def to_list(self, length):
@@ -1333,10 +1350,7 @@ class AgnosticBaseCursor(AgnosticBase):
          - `length`: maximum number of documents to return for this call, or
            None
 
-         Returns a :class:`~asyncio.Task`.
-
-        .. versionchanged:: 2.2
-           Returns a :class:`~asyncio.Task` instead of a Future.
+         Returns a Future.
 
         .. versionchanged:: 2.0
            No longer accepts a callback argument.
@@ -1356,19 +1370,50 @@ class AgnosticBaseCursor(AgnosticBase):
             raise pymongo.errors.InvalidOperation(
                 "Can't call to_list on tailable cursor")
 
-        async def _coro():
-            the_list = []
-            if length == 0:
-                return the_list
-            # Else
-            async for doc in self:
-                the_list.append(doc)
-                if (length is not None and
-                        len(the_list) >= length):
-                    break
-            return the_list
+        future = self._framework.get_future(self.get_io_loop())
 
-        return self._framework.create_task(self.get_io_loop(), _coro())
+        if not self.alive:
+            future.set_result([])
+        else:
+            the_list = []
+            self._framework.add_future(
+                self.get_io_loop(),
+                self._get_more(),
+                self._to_list, length, the_list, future)
+
+        return future
+
+    def _to_list(self, length, the_list, future, get_more_result):
+        # get_more_result is the result of self._get_more().
+        # to_list_future will be the result of the user's to_list() call.
+        try:
+            result = get_more_result.result()
+            # Return early if the task was cancelled.
+            if future.done():
+                return
+            collection = self.collection
+            fix_outgoing = collection.database.delegate._fix_outgoing
+
+            if length is None:
+                n = result
+            else:
+                n = min(length, result)
+
+            for _ in range(n):
+                the_list.append(fix_outgoing(self._data().popleft(),
+                                             collection))
+
+            reached_length = (length is not None and len(the_list) >= length)
+            if reached_length or not self.alive:
+                future.set_result(the_list)
+            else:
+                self._framework.add_future(
+                    self.get_io_loop(),
+                    self._get_more(),
+                    self._to_list, length, the_list, future)
+        except Exception as exc:
+            if not future.done():
+                future.set_exception(exc)
 
     def get_io_loop(self):
         return self.collection.get_io_loop()

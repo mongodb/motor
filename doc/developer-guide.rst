@@ -32,7 +32,6 @@ A Motor framework is a module implementing these properties and functions:
 - ``coroutine`` (**DEPRECATED**)
 - ``get_event_loop``
 - ``get_future``
-- ``create_task``
 - ``is_event_loop``
 - ``is_future``
 - ``platform_info``
