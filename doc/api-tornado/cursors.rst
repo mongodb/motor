@@ -7,7 +7,6 @@
   :members:
   :inherited-members:
 
-
 :class:`~motor.motor_tornado.MotorCommandCursor`
 ================================================
 
