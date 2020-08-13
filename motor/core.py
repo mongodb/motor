@@ -1159,7 +1159,7 @@ class AgnosticBaseCursor(AgnosticBase):
 
         While it appears that fetch_next retrieves each document from
         the server individually, the cursor actually fetches documents
-        efficiently in `large batches`_.
+        efficiently in `large batches`_. Example usage:
 
         .. doctest:: fetch_next
 

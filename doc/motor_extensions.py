@@ -129,6 +129,13 @@ def get_motor_attr(motor_class, name, *defargs):
     attribute. While we're at it, store some info about each attribute
     in the global motor_info dict.
     """
+    try:
+        attr = safe_getattr(motor_class, name)
+    except AttributeError:
+        if name == '__annotations__':
+            return {}
+        raise
+
     attr = safe_getattr(motor_class, name)
 
     # Store some info for process_motor_nodes()
