@@ -201,7 +201,7 @@ excluded_tests = [
     'TestCollectionChangeStreamsWCustomTypes.*',
     'TestDatabaseChangeStreamsWCustomTypes.*',
 
-    # Tests that use warnings.catch_warnings which don't show up in Motor
+    # Tests that use warnings.catch_warnings which don't show up in Motor.
     'TestCursor.test_min_max_without_hint',
 
     # TODO: MOTOR-606
@@ -218,6 +218,9 @@ excluded_tests = [
     '*.test_ignore_stale_connection_errors',
     '*.test_discovery_and_monitoring_integration_find_shutdown_error_Concurrent_shutdown_error_on_find',
     '*.test_discovery_and_monitoring_integration_insert_shutdown_error_Concurrent_shutdown_error_on_insert',
+
+    # Needs synchro.GridFS class, see MOTOR-609.
+    '*.test.test_transactions.TestTransactions.test_gridfs_does_not_support_transactions',
 ]
 
 

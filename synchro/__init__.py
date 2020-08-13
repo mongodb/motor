@@ -579,15 +579,9 @@ class Cursor(Synchro):
         return self.delegate.__deepcopy__(memo)
 
     def next(self):
-        cursor = self.delegate
-
-        if cursor._buffer_size():
-            return self.synchronize(cursor.next)()
-        elif cursor.alive:
-            self.synchronize(cursor._get_more)()
-            if cursor._buffer_size():
-                return cursor.next_object()
-
+        motor_cursor = self.delegate
+        if motor_cursor.alive:
+            return self.synchronize(motor_cursor.next)()
         raise StopIteration
 
     __next__ = next
