@@ -10,6 +10,19 @@ Motor 2.2 adds support for MongoDB 4.4 features. It depends on PyMongo 3.11 or
 later. Motor continues to support MongoDB 3.0 and later. Motor 2.2 also drops
 support for Python 2.7 and Python 3.4.
 
+Additional changes:
+
+- Deprecated ``AsyncIOMotorCursor`` method
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.next_object` and
+  property :attr:`~motor.motor_asyncio.AsyncIOMotorCursor.fetch_next`.
+  Applications should use ``async for`` to iterate over cursors instead.
+- Added the ``AsyncIOMotorCursor`` method
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.next` that advances the
+  cursor one document at a time, similar to to the
+  ``AsyncIOMotorChangeStream`` method
+  :meth:`~motor.motor_asyncio.AsyncIOMotorChangeStream.next`.
+
+
 Motor 2.1
 ---------
 
