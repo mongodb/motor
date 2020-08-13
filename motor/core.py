@@ -1161,6 +1161,20 @@ class AgnosticBaseCursor(AgnosticBase):
         the server individually, the cursor actually fetches documents
         efficiently in `large batches`_.
 
+        .. doctest:: fetch_next
+
+           >>> async def f():
+           ...     await collection.drop()
+           ...     await collection.insert_many([{'_id': i} for i in range(5)])
+           ...     cursor = collection.find().sort([('_id', 1)])
+           ...     while (await cursor.fetch_next):
+           ...         doc = cursor.next_object()
+           ...         sys.stdout.write(str(doc['_id']) + ', ')
+           ...     print('done')
+           ...
+           >>> IOLoop.current().run_sync(f)
+           0, 1, 2, 3, 4, done
+
         .. versionchanged:: 2.2
            Deprecated.
 
