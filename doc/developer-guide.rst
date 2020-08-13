@@ -105,6 +105,5 @@ synchronous and Motor is async; how can Motor pass PyMongo's tests?
 Synchro is a hacky little module that re-synchronizes all Motor methods using
 the Tornado IOLoop's ``run_sync`` method. ``synchrotest.py`` overrides the Python
 interpreter's import machinery to allow Synchro to masquerade as PyMongo, and
-runs PyMongo's test suite against it. Use ``tox -e synchro27`` or
-``tox -e synchro37`` to check out PyMongo's test suite and run it with
-Synchro.
+runs PyMongo's test suite against it. Use ``tox -e synchro37`` to check out
+PyMongo's test suite and run it with Synchro.
