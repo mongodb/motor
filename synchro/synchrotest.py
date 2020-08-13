@@ -165,7 +165,6 @@ excluded_tests = [
     'TestCommandMonitoring.test_legacy_insert_many',
     'TestCommandMonitoring.test_legacy_writes',
     'TestClient.test_database_names',
-    'TestClient.test_is_locked_does_not_raise_warning',
     'TestCollectionWCustomType.test_find_and_modify_w_custom_type_decoder',
 
     # Tests that use "count", deprecated in PyMongo, removed in Motor 2.0.
