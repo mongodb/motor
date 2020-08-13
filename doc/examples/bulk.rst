@@ -30,10 +30,9 @@ bulk insert operations.
 
 .. doctest::
 
-  >>> @gen.coroutine
-  ... def f():
-  ...     yield db.test.insert_many(({'i': i} for i in range(10000)))
-  ...     count = yield db.test.count_documents({})
+  >>> async def f():
+  ...     await db.test.insert_many(({'i': i} for i in range(10000)))
+  ...     count = await db.test.count_documents({})
   ...     print("Final count: %d" % count)
   >>>
   >>> IOLoop.current().run_sync(f)
@@ -61,9 +60,8 @@ of operations performed.
 
   >>> from pprint import pprint
   >>> from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
-  >>> @gen.coroutine
-  ... def f():
-  ...     result = yield db.test.bulk_write([
+  >>> async def f():
+  ...     result = await db.test.bulk_write([
   ...     DeleteMany({}),  # Remove all documents from the previous example.
   ...     InsertOne({'_id': 1}),
   ...     InsertOne({'_id': 2}),
@@ -95,14 +93,13 @@ the failure.
 
   >>> from pymongo import InsertOne, DeleteOne, ReplaceOne
   >>> from pymongo.errors import BulkWriteError
-  >>> @gen.coroutine
-  ... def f():
+  >>> async def f():
   ...     requests = [
   ...         ReplaceOne({'j': 2}, {'i': 5}),
   ...         InsertOne({'_id': 4}),  # Violates the unique key constraint on _id.
   ...         DeleteOne({'i': 5})]
   ...     try:
-  ...         yield db.test.bulk_write(requests)
+  ...         await db.test.bulk_write(requests)
   ...     except BulkWriteError as bwe:
   ...         pprint(bwe.details)
   ...
@@ -135,15 +132,14 @@ and fourth operations succeed.
 .. doctest::
   :options: +NORMALIZE_WHITESPACE
 
-  >>> @gen.coroutine
-  ... def f():
+  >>> async def f():
   ...     requests = [
   ...         InsertOne({'_id': 1}),
   ...         DeleteOne({'_id': 2}),
   ...         InsertOne({'_id': 3}),
   ...         ReplaceOne({'_id': 4}, {'i': 1})]
   ...     try:
-  ...         yield db.test.bulk_write(requests, ordered=False)
+  ...         await db.test.bulk_write(requests, ordered=False)
   ...     except BulkWriteError as bwe:
   ...         pprint(bwe.details)
   ...
@@ -178,12 +174,11 @@ after all operations are attempted, regardless of execution order.
   .. Standalone MongoDB raises "can't use w>1" with this example, so skip it.
 
   >>> from pymongo import WriteConcern
-  >>> @gen.coroutine
-  ... def f():
+  >>> async def f():
   ...     coll = db.get_collection(
   ...         'test', write_concern=WriteConcern(w=4, wtimeout=1))
   ...     try:
-  ...         yield coll.bulk_write([InsertOne({'a': i}) for i in range(4)])
+  ...         await coll.bulk_write([InsertOne({'a': i}) for i in range(4)])
   ...     except BulkWriteError as bwe:
   ...         pprint(bwe.details)
   ...

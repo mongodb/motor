@@ -37,14 +37,13 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
 
       Delete a file's metadata and data chunks from a GridFS bucket::
 
-          @gen.coroutine
-          def delete():
+          async def delete():
               my_db = MotorClient().test
               fs = MotorGridFSBucket(my_db)
               # Get _id of file to delete
-              file_id = yield fs.upload_from_stream("test_file",
+              file_id = await fs.upload_from_stream("test_file",
                                                     b"data I want to store!")
-              yield fs.delete(file_id)
+              await fs.delete(file_id)
 
       Raises :exc:`~gridfs.errors.NoFile` if no file with file_id exists.
 
@@ -58,16 +57,15 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
       Downloads the contents of the stored file specified by file_id and
       writes the contents to `destination`::
 
-          @gen.coroutine
-          def download():
+          async def download():
               my_db = MotorClient().test
               fs = MotorGridFSBucket(my_db)
               # Get _id of file to read
-              file_id = yield fs.upload_from_stream("test_file",
+              file_id = await fs.upload_from_stream("test_file",
                                                     b"data I want to store!")
               # Get file to write to
               file = open('myfile','wb+')
-              yield fs.download_to_stream(file_id, file)
+              await fs.download_to_stream(file_id, file)
               file.seek(0)
               contents = file.read()
 
@@ -86,13 +84,12 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
 
       For example::
 
-          @gen.coroutine
-          def download_by_name():
+          async def download_by_name():
               my_db = MotorClient().test
               fs = MotorGridFSBucket(my_db)
               # Get file to write to
               file = open('myfile','wb')
-              yield fs.download_to_stream_by_name("test_file", file)
+              await fs.download_to_stream_by_name("test_file", file)
 
       Raises :exc:`~gridfs.errors.NoFile` if no such version of
       that file exists.
@@ -165,15 +162,14 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
 
       Opens a stream to read the contents of the stored file specified by file_id::
 
-          @gen.coroutine
-          def download_stream():
+          async def download_stream():
               my_db = MotorClient().test
               fs = MotorGridFSBucket(my_db)
               # get _id of file to read.
-              file_id = yield fs.upload_from_stream("test_file",
+              file_id = await fs.upload_from_stream("test_file",
                                                     b"data I want to store!")
-              grid_out = yield fs.open_download_stream(file_id)
-              contents = yield grid_out.read()
+              grid_out = await fs.open_download_stream(file_id)
+              contents = await grid_out.read()
 
       Raises :exc:`~gridfs.errors.NoFile` if no file with file_id exists.
 
@@ -186,15 +182,14 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
 
       Opens a stream to read the contents of `filename` and optional `revision`::
 
-          @gen.coroutine
-          def download_by_name():
+          async def download_by_name():
               my_db = MotorClient().test
               fs = MotorGridFSBucket(my_db)
               # get _id of file to read.
-              file_id = yield fs.upload_from_stream("test_file",
+              file_id = await fs.upload_from_stream("test_file",
                                                     b"data I want to store!")
-              grid_out = yield fs.open_download_stream_by_name(file_id)
-              contents = yield grid_out.read()
+              grid_out = await fs.open_download_stream_by_name(file_id)
+              contents = await grid_out.read()
 
       Raises :exc:`~gridfs.errors.NoFile` if no such version of
       that file exists.
@@ -225,16 +220,15 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
       Specify the filename, and add any additional information in the metadata
       field of the file document or modify the chunk size::
 
-          @gen.coroutine
-          def upload():
+          async def upload():
               my_db = MotorClient().test
               fs = MotorGridFSBucket(my_db)
               grid_in, file_id = fs.open_upload_stream(
                   "test_file", chunk_size_bytes=4,
                   metadata={"contentType": "text/plain"})
 
-              yield grid_in.write(b"data I want to store!")
-              yield grid_in.close()  # uploaded on close
+              await grid_in.write(b"data I want to store!")
+              await grid_in.close()  # uploaded on close
 
       Returns an instance of :class:`MotorGridIn`.
 
@@ -242,8 +236,8 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
       that file exists.
       Raises :exc:`~ValueError` if `filename` is not a string.
 
-      In a Python 3.5 native coroutine, the "async with" statement calls
-      :meth:`~MotorGridIn.close` automatically::
+      Using the "async with" statement calls :meth:`~MotorGridIn.close`
+      automatically::
 
           async def upload():
               my_db = MotorClient().test
@@ -269,8 +263,7 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
       Specify the filed_id and filename, and add any additional information in
       the metadata field of the file document, or modify the chunk size::
 
-          @gen.coroutine
-          def upload():
+          async def upload():
               my_db = MotorClient().test
               fs = MotorGridFSBucket(my_db)
               grid_in, file_id = fs.open_upload_stream_with_id(
@@ -279,8 +272,8 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
                   chunk_size_bytes=4,
                   metadata={"contentType": "text/plain"})
 
-              yield grid_in.write(b"data I want to store!")
-              yield grid_in.close()  # uploaded on close
+              await grid_in.write(b"data I want to store!")
+              await grid_in.close()  # uploaded on close
 
       Returns an instance of :class:`MotorGridIn`.
 
@@ -305,15 +298,14 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
       For example::
 
 
-          @gen.coroutine
-          def rename():
+          async def rename():
               my_db = MotorClient().test
               fs = MotorGridFSBucket(my_db)
               # get _id of file to read.
-              file_id = yield fs.upload_from_stream("test_file",
+              file_id = await fs.upload_from_stream("test_file",
                                                     b"data I want to store!")
 
-              yield fs.rename(file_id, "new_test_name")
+              await fs.rename(file_id, "new_test_name")
 
       Raises :exc:`~gridfs.errors.NoFile` if no file with file_id exists.
 
@@ -331,11 +323,10 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
       it to the file `filename`. Source can be a string or file-like object.
       For example::
 
-          @gen.coroutine
-          def upload_from_stream():
+          async def upload_from_stream():
               my_db = MotorClient().test
               fs = MotorGridFSBucket(my_db)
-              file_id = yield fs.upload_from_stream(
+              file_id = await fs.upload_from_stream(
                   "test_file",
                   b"data I want to store!",
                   chunk_size_bytes=4,
@@ -365,11 +356,10 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
       it to the file `filename`. Source can be a string or file-like object.
       For example::
 
-          @gen.coroutine
-          def upload_from_stream_with_id():
+          async def upload_from_stream_with_id():
               my_db = MotorClient().test
               fs = MotorGridFSBucket(my_db)
-              file_id = yield fs.upload_from_stream_with_id(
+              file_id = await fs.upload_from_stream_with_id(
                   ObjectId(),
                   "test_file",
                   b"data I want to store!",
