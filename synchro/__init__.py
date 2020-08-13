@@ -524,7 +524,7 @@ class ChangeStream(Synchro):
         try:
             return self._next()
         except StopAsyncIteration:
-            raise StopIteration()
+            raise StopIteration
 
     def __init__(self, motor_change_stream):
         self.delegate = motor_change_stream
@@ -562,6 +562,8 @@ class Cursor(Synchro):
     clone      = WrapOutgoing()
     close      = Sync('close')
 
+    _next = Sync('next')
+
     def __init__(self, motor_cursor):
         self.delegate = motor_cursor
 
@@ -579,10 +581,10 @@ class Cursor(Synchro):
         return self.delegate.__deepcopy__(memo)
 
     def next(self):
-        motor_cursor = self.delegate
-        if motor_cursor.alive:
-            return self.synchronize(motor_cursor.next)()
-        raise StopIteration
+        try:
+            return self._next()
+        except StopAsyncIteration:
+            raise StopIteration
 
     __next__ = next
 
