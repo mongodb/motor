@@ -92,6 +92,7 @@ excluded_tests = [
     # Requires indexing / slicing cursors, which Motor doesn't do, see MOTOR-84.
     'TestCollection.test_min_query',
     'TestCursor.test_clone',
+    'TestCursor.test_clone_empty',
     'TestCursor.test_count_with_limit_and_skip',
     'TestCursor.test_getitem_numeric_index',
     'TestCursor.test_getitem_slice_index',

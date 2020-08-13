@@ -582,7 +582,7 @@ class Cursor(Synchro):
         cursor = self.delegate
 
         if cursor._buffer_size():
-            return cursor.next_object()
+            return self.synchronize(cursor.next)()
         elif cursor.alive:
             self.synchronize(cursor._get_more)()
             if cursor._buffer_size():
@@ -591,13 +591,6 @@ class Cursor(Synchro):
         raise StopIteration
 
     __next__ = next
-
-    def __getitem__(self, index):
-        if isinstance(index, slice):
-            return Cursor(self.delegate[index])
-        else:
-            to_list = self.synchronize(self.delegate[index].to_list)
-            return to_list(length=10000)[0]
 
     @property
     @wrap_synchro
