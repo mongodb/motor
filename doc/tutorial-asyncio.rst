@@ -260,29 +260,6 @@ individually; it gets documents efficiently in `large batches`_.
 
 .. _`large batches`: https://docs.mongodb.com/manual/tutorial/iterate-a-cursor/#cursor-batches
 
-Iteration in Python 3.4
-~~~~~~~~~~~~~~~~~~~~~~~
-
-In Python versions without ``async for``, handle one document at a time with
-:attr:`~motor.motor_asyncio.AsyncIOMotorCursor.fetch_next`
-and :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.next_object`:
-
-.. doctest:: after-inserting-2000-docs
-
-  >>> async def do_find():
-  ...     cursor = db.test_collection.find({'i': {'$lt': 5}})
-  ...     while (await cursor.fetch_next):
-  ...         document = cursor.next_object()
-  ...         pprint.pprint(document)
-  ...
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_find())
-  {'_id': ObjectId('...'), 'i': 0}
-  {'_id': ObjectId('...'), 'i': 1}
-  {'_id': ObjectId('...'), 'i': 2}
-  {'_id': ObjectId('...'), 'i': 3}
-  {'_id': ObjectId('...'), 'i': 4}
-
 Counting Documents
 ------------------
 Use :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.count_documents` to

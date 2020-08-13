@@ -5,6 +5,7 @@
 
 .. autoclass:: MotorCursor
   :members:
+  :inherited-members:
 
 
 :class:`~motor.motor_tornado.MotorCommandCursor`
@@ -14,3 +15,4 @@
 
 .. autoclass:: MotorCommandCursor
   :members:
+  :inherited-members:
