@@ -32,6 +32,7 @@ from motor.metaprogramming import MotorAttributeFactory
 # Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
 # importing * won't pick up underscore-prefixed attrs.
 from gridfs import *
+from gridfs import _disallow_transactions
 from gridfs.errors import *
 from gridfs.grid_file import (DEFAULT_CHUNK_SIZE,
                               _SEEK_CUR,
@@ -53,7 +54,6 @@ from pymongo import (collation,
                      write_concern)
 from pymongo.auth import _build_credentials_tuple
 from pymongo.helpers import _check_command_response
-from pymongo.change_stream import _NON_RESUMABLE_GETMORE_ERRORS
 from pymongo.client_session import TransactionOptions
 from pymongo.collation import *
 from pymongo.common import *
@@ -73,6 +73,7 @@ from pymongo.monitor import *
 from pymongo.monitoring import *
 from pymongo.monitoring import _LISTENERS, _Listeners, _SENSITIVE_COMMANDS
 from pymongo.monotonic import time
+from pymongo.ocsp_cache import _OCSPCache
 from pymongo.operations import *
 from pymongo.pool import *
 from pymongo.pool import _METADATA, _PoolClosedError
@@ -353,10 +354,9 @@ class MongoClient(Synchro):
 
     @property
     def is_locked(self):
-        # MotorClient doesn't support the is_locked property.
-        # Synchro has already synchronized current_op; use it.
-        result = self.admin.current_op()
-        return bool(result.get('fsyncLock', None))
+        # # MotorClient doesn't support the is_locked property.
+        # # Use the property directly from the underlying MongoClient.
+        return self.delegate.delegate.is_locked
 
     def __enter__(self):
         return self
@@ -524,7 +524,7 @@ class ChangeStream(Synchro):
         try:
             return self._next()
         except StopAsyncIteration:
-            raise StopIteration()
+            raise StopIteration
 
     def __init__(self, motor_change_stream):
         self.delegate = motor_change_stream
@@ -562,6 +562,8 @@ class Cursor(Synchro):
     clone      = WrapOutgoing()
     close      = Sync('close')
 
+    _next = Sync('next')
+
     def __init__(self, motor_cursor):
         self.delegate = motor_cursor
 
@@ -579,25 +581,12 @@ class Cursor(Synchro):
         return self.delegate.__deepcopy__(memo)
 
     def next(self):
-        cursor = self.delegate
-
-        if cursor._buffer_size():
-            return cursor.next_object()
-        elif cursor.alive:
-            self.synchronize(cursor._get_more)()
-            if cursor._buffer_size():
-                return cursor.next_object()
-
-        raise StopIteration
+        try:
+            return self._next()
+        except StopAsyncIteration:
+            raise StopIteration
 
     __next__ = next
-
-    def __getitem__(self, index):
-        if isinstance(index, slice):
-            return Cursor(self.delegate[index])
-        else:
-            to_list = self.synchronize(self.delegate[index].to_list)
-            return to_list(length=10000)[0]
 
     @property
     @wrap_synchro

@@ -19,6 +19,9 @@ This program monkey-patches sys.modules, so run it alone, rather than as part
 of a larger test suite.
 """
 
+import importlib
+import importlib.abc
+import importlib.machinery
 import sys
 
 import nose
@@ -55,11 +58,6 @@ excluded_modules = [
     'test.test_son_manipulator',
 ]
 
-if sys.version_info[:2] < (3, 5):
-    excluded_modules.extend([
-        # Motor's change streams need Python 3.5.
-        'test.test_change_stream',
-    ])
 
 excluded_tests = [
     # Motor's reprs aren't the same as PyMongo's.
@@ -94,6 +92,7 @@ excluded_tests = [
     # Requires indexing / slicing cursors, which Motor doesn't do, see MOTOR-84.
     'TestCollection.test_min_query',
     'TestCursor.test_clone',
+    'TestCursor.test_clone_empty',
     'TestCursor.test_count_with_limit_and_skip',
     'TestCursor.test_getitem_numeric_index',
     'TestCursor.test_getitem_slice_index',
@@ -138,10 +137,12 @@ excluded_tests = [
     # Accesses PyMongo internals.
     'TestClient.test_close_kills_cursors',
     'TestClient.test_stale_getmore',
+    'TestClient.test_direct_connection',
     'TestCollection.test_aggregation_cursor',
     'TestCommandAndReadPreference.*',
     'TestCommandMonitoring.test_get_more_failure',
     'TestCommandMonitoring.test_sensitive_commands',
+    'TestCursor.test_allow_disk_use',
     'TestCursor.test_close_kills_cursor_synchronously',
     'TestCursor.test_delete_not_initialized',
     'TestGridFile.test_grid_out_cursor_options',
@@ -164,7 +165,6 @@ excluded_tests = [
     'TestCommandMonitoring.test_legacy_insert_many',
     'TestCommandMonitoring.test_legacy_writes',
     'TestClient.test_database_names',
-    'TestClient.test_is_locked_does_not_raise_warning',
     'TestCollectionWCustomType.test_find_and_modify_w_custom_type_decoder',
 
     # Tests that use "count", deprecated in PyMongo, removed in Motor 2.0.
@@ -200,21 +200,27 @@ excluded_tests = [
     'TestCollectionChangeStreamsWCustomTypes.*',
     'TestDatabaseChangeStreamsWCustomTypes.*',
 
-    # Tests that use warnings.catch_warnings which don't show up in Motor
+    # Tests that use warnings.catch_warnings which don't show up in Motor.
     'TestCursor.test_min_max_without_hint',
 
-    # TODO: MOTOR-280
+    # TODO: MOTOR-606
     'TestTransactionsConvenientAPI.*',
-]
+    'TestTransactions.test_create_collection',
 
-if sys.version_info[:2] >= (3, 5):
-    excluded_tests.extend([
-        # Motor's change streams need Python 3.5 to support async iteration but
-        # these change streams tests spawn threads which don't work without an
-        # IO loop.
-        '*.test_next_blocks',
-        '*.test_aggregate_cursor_blocks',
-    ])
+    # Motor's change streams need Python 3.5 to support async iteration but
+    # these change streams tests spawn threads which don't work without an
+    # IO loop.
+    '*.test_next_blocks',
+    '*.test_aggregate_cursor_blocks',
+
+    # Can't run these tests because they use threads.
+    '*.test_ignore_stale_connection_errors',
+    '*.test_discovery_and_monitoring_integration_find_shutdown_error_Concurrent_shutdown_error_on_find',
+    '*.test_discovery_and_monitoring_integration_insert_shutdown_error_Concurrent_shutdown_error_on_insert',
+
+    # Needs synchro.GridFS class, see MOTOR-609.
+    'TestTransactions.test_gridfs_does_not_support_transactions',
+]
 
 
 excluded_modules_matched = set()
@@ -257,10 +263,12 @@ class SynchroNosePlugin(Plugin):
         # PyMongo's test generators run at import time; tell Nose not to run
         # them as unittests.
         if fn.__name__ in ('test_cases',
+                           'create_spec_test',
                            'create_test',
                            'create_tests',
                            'create_connection_string_test',
                            'create_document_test',
+                           'create_operation_test',
                            'create_selection_tests',
                            ):
             return False
@@ -297,67 +305,40 @@ class SynchroNosePlugin(Plugin):
         return True
 
 
-if sys.version_info[0] < 3:
-    # So that e.g. 'from pymongo.mongo_client import MongoClient' gets the
-    # Synchro MongoClient, not the real one.
-    class SynchroModuleFinder(object):
-        def find_module(self, fullname, path=None):
-            parts = fullname.split('.')
-            if parts[-1] in ('gridfs', 'pymongo'):
-                # E.g. "import pymongo"
-                return SynchroModuleLoader(path)
-            elif len(parts) >= 2 and parts[-2] in ('gridfs', 'pymongo'):
-                # E.g. "import pymongo.mongo_client"
-                return SynchroModuleLoader(path)
+class SynchroModuleFinder(importlib.abc.MetaPathFinder):
+    def __init__(self):
+        self._loader = SynchroModuleLoader()
 
-            # Let regular module search continue.
-            return None
+    def find_spec(self, fullname, path, target=None):
+        if self._loader.patch_spec(fullname):
+            return importlib.machinery.ModuleSpec(fullname, self._loader)
+
+        # Let regular module search continue.
+        return None
 
 
-    class SynchroModuleLoader(object):
-        def __init__(self, path):
-            self.path = path
+class SynchroModuleLoader(importlib.abc.Loader):
+    def patch_spec(self, fullname):
+        parts = fullname.split('.')
+        if parts[-1] in ('gridfs', 'pymongo'):
+            # E.g. "import pymongo"
+            return True
+        elif len(parts) >= 2 and parts[-2] in ('gridfs', 'pymongo'):
+            # E.g. "import pymongo.mongo_client"
+            return True
 
-        def load_module(self, fullname):
+        return False
+
+    def exec_module(self, module):
+        pass
+
+    def create_module(self, spec):
+        if self.patch_spec(spec.name):
             return synchro
-else:
-    import importlib
-    import importlib.abc
-    import importlib.machinery
 
-    class SynchroModuleFinder(importlib.abc.MetaPathFinder):
-        def __init__(self):
-            self._loader = SynchroModuleLoader()
+        # Let regular module search continue.
+        return None
 
-        def find_spec(self, fullname, path, target=None):
-            if self._loader.patch_spec(fullname):
-                return importlib.machinery.ModuleSpec(fullname, self._loader)
-
-            # Let regular module search continue.
-            return None
-
-
-    class SynchroModuleLoader(importlib.abc.Loader):
-        def patch_spec(self, fullname):
-            parts = fullname.split('.')
-            if parts[-1] in ('gridfs', 'pymongo'):
-                # E.g. "import pymongo"
-                return True
-            elif len(parts) >= 2 and parts[-2] in ('gridfs', 'pymongo'):
-                # E.g. "import pymongo.mongo_client"
-                return True
-
-            return False
-
-        def exec_module(self, module):
-            pass
-
-        def create_module(self, spec):
-            if self.patch_spec(spec.name):
-                return synchro
-
-            # Let regular module search continue.
-            return None
 
 if __name__ == '__main__':
     try:
