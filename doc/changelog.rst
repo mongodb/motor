@@ -10,18 +10,63 @@ Motor 2.2 adds support for MongoDB 4.4 features. It depends on PyMongo 3.11 or
 later. Motor continues to support MongoDB 3.0 and later. Motor 2.2 also drops
 support for Python 2.7 and Python 3.4.
 
-Additional changes:
+New features:
 
-- Deprecated ``AsyncIOMotorCursor`` method
-  :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.next_object` and
-  property :attr:`~motor.motor_asyncio.AsyncIOMotorCursor.fetch_next`.
-  Applications should use ``async for`` to iterate over cursors instead.
 - Added the ``AsyncIOMotorCursor`` method
   :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.next` that advances the
   cursor one document at a time, similar to to the
   ``AsyncIOMotorChangeStream`` method
   :meth:`~motor.motor_asyncio.AsyncIOMotorChangeStream.next`.
+- Added index-hinting support to the
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.replace_one`,
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.update_one`,
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.update_many`,
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.delete_one`,
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.delete_many`,
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find_one_and_replace`,
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find_one_and_update`, and
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find_one_and_delete`
+  methods.
+- Added support for the ``allow_disk_use`` parameter to
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find`.
+- Modified the :meth:`~motor.motor_asyncio.AsyncIOMotorChangeStream` class'
+  async context manager such that the change stream cursor is now created
+  during the call to ``async with``. Previously, the cursor was only created
+  when the application iterated the
+  :meth:`~motor.motor_asyncio.AsyncIOMotorChangeStream` object which could
+  result in the application missing some changes.
+- Motor now advertises the framework used by the application to
+  the MongoDB server as ``asyncio`` or ``Tornado``. Previously, no framework
+  information was reported if the application used ``asyncio``.
 
+Bug-fixes:
+
+- Fixed a bug that caused calls to the
+  :meth:`~motor.motor_asyncio.AsyncIOMotorGridOut.open()` method to raise
+  :exc:`AttributeError`.
+- Fixed a bug that sometimes caused :meth:`~asyncio.Future.set_result` to be
+  called on a cancelled :meth:`~asyncio.Future` when iterating a
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCommandCursor`.
+
+Deprecations:
+
+- Deprecated ``AsyncIOMotorCursor`` method
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.next_object` and
+  property :attr:`~motor.motor_asyncio.AsyncIOMotorCursor.fetch_next`.
+  Applications should use ``async for`` to iterate over cursors instead.
+- Deprecated the :meth:`~motor.motor_asyncio.AsyncIOMotorClient.fsync`
+  method. Applications should run the
+  `fsync command <https://docs.mongodb.com/manual/reference/command/fsync/>`_
+  directly with :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.command`
+  instead.
+
+Issues Resolved
+~~~~~~~~~~~~~~~
+
+See the `Motor 2.2 release notes in JIRA`_ for the complete list of resolved
+issues in this release.
+
+.. _Motor 2.2 release notes in JIRA: https://jira.mongodb.org/secure/ReleaseNote.jspa?projectId=11182&version=24884
 
 Motor 2.1
 ---------
