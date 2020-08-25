@@ -27,6 +27,12 @@ from tornado import concurrent, gen, ioloop, version as tornado_version
 from tornado.gen import chain_future, coroutine  # For framework interface.
 
 
+try:
+    import contextvars
+except ImportError:
+    contextvars = None
+
+
 CLASS_PREFIX = ''
 
 
@@ -57,6 +63,10 @@ _EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
 
 
 def run_on_executor(loop, fn, *args, **kwargs):
+    if contextvars:
+        context = contextvars.copy_context()
+        fn = functools.partial(context.run, fn)
+
     return loop.run_in_executor(
         _EXECUTOR, functools.partial(fn, *args, **kwargs))
 

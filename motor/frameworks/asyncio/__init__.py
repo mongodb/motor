@@ -29,6 +29,12 @@ from asyncio import coroutine  # For framework interface.
 from concurrent.futures import ThreadPoolExecutor
 
 
+try:
+    import contextvars
+except ImportError:
+    contextvars = None
+
+
 CLASS_PREFIX = 'AsyncIO'
 
 
@@ -60,6 +66,10 @@ _EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
 
 
 def run_on_executor(loop, fn, *args, **kwargs):
+    if contextvars:
+        context = contextvars.copy_context()
+        fn = functools.partial(context.run, fn)
+
     return loop.run_in_executor(
         _EXECUTOR, functools.partial(fn, *args, **kwargs))
 
