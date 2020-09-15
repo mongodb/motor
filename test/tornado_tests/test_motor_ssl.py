@@ -52,7 +52,7 @@ class MotorSSLTest(MotorTest):
         if not test.env.server_is_resolvable:
             raise SkipTest("The hostname 'server' must be a localhost alias")
 
-        super(MotorSSLTest, self).setUp()
+        super().setUp()
 
     def test_config_ssl(self):
         self.assertRaises(ValueError, motor.MotorClient, ssl='foo')

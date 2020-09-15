@@ -234,10 +234,10 @@ class SynchroNosePlugin(Plugin):
         # We need a standard Nose selector in order to filter out methods that
         # don't match TestSuite.test_*
         self.selector = Selector(config=None)
-        super(SynchroNosePlugin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def configure(self, options, conf):
-        super(SynchroNosePlugin, self).configure(options, conf)
+        super().configure(options, conf)
         self.enabled = True
 
     def wantModule(self, module):

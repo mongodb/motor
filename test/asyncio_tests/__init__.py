@@ -82,7 +82,7 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
             getattr(self, methodName)))
 
     def setUp(self):
-        super(AsyncIOTestCase, self).setUp()
+        super().setUp()
 
         # Ensure that the event loop is passed explicitly in Motor.
         asyncio.set_event_loop(None)

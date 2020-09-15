@@ -517,12 +517,12 @@ class MotorCursorTest(MotorMockServerTest):
 
 class MotorCursorMaxTimeMSTest(MotorTest):
     def setUp(self):
-        super(MotorCursorMaxTimeMSTest, self).setUp()
+        super().setUp()
         self.io_loop.run_sync(self.maybe_skip)
 
     def tearDown(self):
         self.io_loop.run_sync(self.disable_timeout)
-        super(MotorCursorMaxTimeMSTest, self).tearDown()
+        super().tearDown()
 
     async def maybe_skip(self):
         if (await server_is_mongos(self.cx)):

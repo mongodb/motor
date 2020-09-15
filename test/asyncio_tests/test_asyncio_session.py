@@ -31,7 +31,7 @@ from test.utils import TestListener, session_ids
 class TestAsyncIOSession(AsyncIOTestCase):
     @classmethod
     def setUpClass(cls):
-        super(TestAsyncIOSession, cls).setUpClass()
+        super()setUpClass()
         if not env.sessions_enabled:
             raise SkipTest("Sessions not supported")
 

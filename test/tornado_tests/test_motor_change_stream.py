@@ -31,7 +31,7 @@ class MotorChangeStreamTest(MotorTest):
     @classmethod
     @env.require_version_min(3, 6)
     def setUpClass(cls):
-        super(MotorChangeStreamTest, cls).setUpClass()
+        super().setUpClass()
         if env.is_standalone:
             raise SkipTest("Standalone")
 

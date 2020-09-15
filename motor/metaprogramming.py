@@ -145,7 +145,7 @@ class Async(MotorAttributeFactory):
          - `attr_name`: The name of the attribute on the PyMongo class, if
            different from attribute on the Motor class
         """
-        super(Async, self).__init__(doc)
+        super().__init__(doc)
         self.attr_name = attr_name
         self.wrap_class = None
         self.unwrap_class = None

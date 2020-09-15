@@ -63,7 +63,7 @@ class MotorTest(testing.AsyncTestCase):
     ssl = False  # If True, connect with SSL, skip if mongod isn't SSL
 
     def setUp(self):
-        super(MotorTest, self).setUp()
+        super().setUp()
 
         if self.ssl and not env.mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")
@@ -118,12 +118,12 @@ class MotorTest(testing.AsyncTestCase):
     def tearDown(self):
         env.sync_cx.motor_test.test_collection.delete_many({})
         self.cx.close()
-        super(MotorTest, self).tearDown()
+        super().tearDown()
 
 
 class MotorReplicaSetTestBase(MotorTest):
     def setUp(self):
-        super(MotorReplicaSetTestBase, self).setUp()
+        super().setUp()
         if not env.is_replica_set:
             raise SkipTest("Not connected to a replica set")
 

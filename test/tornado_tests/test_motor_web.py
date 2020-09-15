@@ -35,7 +35,7 @@ from test.test_environment import env, CA_PEM, CLIENT_PEM
 # the convenience of self.fetch().
 class GridFSHandlerTestBase(AsyncHTTPTestCase):
     def setUp(self):
-        super(GridFSHandlerTestBase, self).setUp()
+        super().setUp()
 
         self.fs = gridfs.GridFS(test.env.sync_cx.motor_test)
 
@@ -69,7 +69,7 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
 
     def tearDown(self):
         self.fs.delete(self.file_id)
-        super(GridFSHandlerTestBase, self).tearDown()
+        super().tearDown()
         
     def get_app(self):
         return Application([
@@ -184,7 +184,7 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
 
 class TZAwareGridFSHandlerTest(GridFSHandlerTestBase):
     def motor_db(self):
-        return super(TZAwareGridFSHandlerTest, self).motor_db(tz_aware=True)
+        return super().motor_db(tz_aware=True)
 
     def test_tz_aware(self):
         now = datetime.datetime.utcnow()

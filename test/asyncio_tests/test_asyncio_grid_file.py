@@ -38,7 +38,7 @@ class MotorGridFileTest(AsyncIOTestCase):
 
     def tearDown(self):
         self.loop.run_until_complete(self._reset())
-        super(MotorGridFileTest, self).tearDown()
+        super().tearDown()
 
     @asyncio_test
     async def test_attributes(self):
