@@ -154,7 +154,7 @@ class AgnosticClient(AgnosticBaseProperties):
             DriverInfo('Motor', motor_version, self._framework.platform_info()))
 
         delegate = self.__delegate_class__(*args, **kwargs)
-        super().__init__(delegate)
+        super(AgnosticClient, self).__init__(delegate)
         self.io_loop = io_loop
 
     def get_io_loop(self):

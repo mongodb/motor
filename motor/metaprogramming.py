@@ -278,7 +278,7 @@ def create_class_with_framework(cls, framework, module_name):
     cls_dict = dict(cls.__dict__)
     cls_dict.pop('__dict__', None)
 
-    new_class = type(str(motor_class_name), cls.__bases__, cls_dict)
+    new_class = type(str(motor_class_name), (cls,), cls_dict)
     new_class.__module__ = module_name
     new_class._framework = framework
 
