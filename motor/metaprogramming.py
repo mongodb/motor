@@ -271,29 +271,17 @@ def create_class_with_framework(cls, framework, module_name):
     if cached_class:
         return cached_class
 
-    # Remove the special __dict__ proxy and let type() create it instead,
-    # otherwise attempting to access cls().__dict__ will raise a TypeError:
-    # TypeError: descriptor '__dict__' for 'AgnosticGridIn' objects doesn't
-    # apply to 'MotorGridIn' object.
-    cls_dict = dict(cls.__dict__)
-    cls_dict.pop('__dict__', None)
-
-    new_class = type(str(motor_class_name), (cls,), cls_dict)
+    new_class = type(str(motor_class_name), (cls,), {})
     new_class.__module__ = module_name
     new_class._framework = framework
 
     assert hasattr(new_class, '__delegate_class__')
 
-    # If we're constructing MotorClient from AgnosticClient, for example,
-    # the method resolution order is (AgnosticClient, AgnosticBase, object).
-    # Iterate over bases looking for attributes and coroutines that must be
-    # replaced with framework-specific ones.
-    for base in reversed(inspect.getmro(cls)):
-        # Turn attribute factories into real methods or descriptors.
-        for name, attr in base.__dict__.items():
-            if isinstance(attr, MotorAttributeFactory):
-                new_class_attr = attr.create_attribute(new_class, name)
-                setattr(new_class, name, new_class_attr)
+    # Turn attribute factories into real methods or descriptors.
+    for name, attr in cls.__dict__.items():
+        if isinstance(attr, MotorAttributeFactory):
+            new_class_attr = attr.create_attribute(new_class, name)
+            setattr(new_class, name, new_class_attr)
 
     _class_cache[cache_key] = new_class
     return new_class
