@@ -12,3 +12,4 @@ The following is a list of people who have contributed to
 - Nikolay Novik
 - Prashant Mital
 - Shane Harvey
+- Bulat Khasanov

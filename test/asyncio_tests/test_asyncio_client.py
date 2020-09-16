@@ -19,9 +19,15 @@ import os
 import unittest
 from unittest import SkipTest
 
+try:
+    import contextvars
+except ImportError:
+    contextvars = False
+
+
 import pymongo
 from bson import CodecOptions
-from pymongo import ReadPreference, WriteConcern
+from pymongo import monitoring, ReadPreference, WriteConcern
 from pymongo.errors import ConnectionFailure, OperationFailure
 
 import motor
@@ -213,6 +219,44 @@ class TestAsyncIOClient(AsyncIOTestCase):
         names = await self.cx.list_database_names()
         self.assertIsInstance(names, list)
         self.assertIn(self.collection.database.name, names)
+
+    @unittest.skipIf(not contextvars, 'this test requires contextvars')
+    @asyncio_test
+    async def test_contextvars_support(self):
+        contextvar = contextvars.ContextVar('variable', default='default')
+
+        class Listener(monitoring.CommandListener):
+            def __init__(self):
+                self.vars = []
+
+            def save_contextvar_value(self):
+                self.vars.append(contextvar.get())
+
+            def started(self, event):
+                self.save_contextvar_value()
+
+            def succeeded(self, event):
+                self.save_contextvar_value()
+
+            def failed(self, event):
+                self.save_contextvar_value()
+
+        listener = Listener()
+        client = self.asyncio_client(event_listeners=[listener])
+        coll = client[self.db.name].test
+
+        await coll.insert_one({})
+        self.assertTrue(listener.vars)
+        for var in listener.vars:
+            self.assertEqual(var, 'default')
+
+        contextvar.set('ContextVar value')
+        listener.vars.clear()
+
+        await coll.insert_one({})
+        self.assertTrue(listener.vars)
+        for var in listener.vars:
+            self.assertEqual(var, 'ContextVar value')
 
 
 class TestAsyncIOClientTimeout(AsyncIOMockServerTestCase):
