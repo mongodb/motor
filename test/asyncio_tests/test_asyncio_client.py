@@ -223,14 +223,14 @@ class TestAsyncIOClient(AsyncIOTestCase):
     @unittest.skipIf(not contextvars, 'this test requires contextvars')
     @asyncio_test
     async def test_contextvars_support(self):
-        contextvar = contextvars.ContextVar('variable', default='default')
+        var = contextvars.ContextVar('variable', default='default')
 
         class Listener(monitoring.CommandListener):
             def __init__(self):
-                self.vars = []
+                self.values = []
 
             def save_contextvar_value(self):
-                self.vars.append(contextvar.get())
+                self.values.append(var.get())
 
             def started(self, event):
                 self.save_contextvar_value()
@@ -239,24 +239,24 @@ class TestAsyncIOClient(AsyncIOTestCase):
                 self.save_contextvar_value()
 
             def failed(self, event):
-                self.save_contextvar_value()
+                pass
 
         listener = Listener()
         client = self.asyncio_client(event_listeners=[listener])
         coll = client[self.db.name].test
 
         await coll.insert_one({})
-        self.assertTrue(listener.vars)
-        for var in listener.vars:
-            self.assertEqual(var, 'default')
+        self.assertTrue(listener.values)
+        for val in listener.values:
+            self.assertEqual(val, 'default')
 
-        contextvar.set('ContextVar value')
-        listener.vars.clear()
+        var.set('ContextVar value')
+        listener.values.clear()
 
         await coll.insert_one({})
-        self.assertTrue(listener.vars)
-        for var in listener.vars:
-            self.assertEqual(var, 'ContextVar value')
+        self.assertTrue(listener.values)
+        for val in listener.values:
+            self.assertEqual(val, 'ContextVar value')
 
 
 class TestAsyncIOClientTimeout(AsyncIOMockServerTestCase):
