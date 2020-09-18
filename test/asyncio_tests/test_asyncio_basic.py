@@ -144,5 +144,5 @@ class AIOMotorTestBasic(AsyncIOTestCase):
             def __getitem__(self, name):
                 return DatabaseSubclass(self, name)
 
-        cx = ClientSubclass(test.env.uri, io_loop=self.loop)
+        cx = ClientSubclass(test.env.uri, **self.get_client_kwargs())
         self.assertIsNotNone(await cx.testdb.testcoll.insert_one({}))
