@@ -271,14 +271,7 @@ def create_class_with_framework(cls, framework, module_name):
     if cached_class:
         return cached_class
 
-    # Remove the special __dict__ proxy and let type() create it instead,
-    # otherwise attempting to access cls().__dict__ will raise a TypeError:
-    # TypeError: descriptor '__dict__' for 'AgnosticGridIn' objects doesn't
-    # apply to 'MotorGridIn' object.
-    cls_dict = dict(cls.__dict__)
-    cls_dict.pop('__dict__', None)
-
-    new_class = type(str(motor_class_name), (cls,), cls_dict)
+    new_class = type(str(motor_class_name), (cls,), {})
     new_class.__module__ = module_name
     new_class._framework = framework
 

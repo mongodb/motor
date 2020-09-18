@@ -130,3 +130,16 @@ class AIOMotorTestBasic(AsyncIOTestCase):
         # MOTOR-104, TypeError: Can't instantiate abstract class C with abstract
         # methods collection, db, subcollection.
         C()
+
+    def test_inheritance(self):
+        class ClientSubclass(motor_asyncio.AsyncIOMotorClient):
+            pass
+        cx = ClientSubclass()
+
+        class DatabaseSubclass(motor_asyncio.AsyncIOMotorDatabase):
+            pass
+        db = DatabaseSubclass(cx, 'db')
+
+        class CollectionSubclass(motor_asyncio.AsyncIOMotorCollection):
+            pass
+        _ = CollectionSubclass(db, 'coll')
