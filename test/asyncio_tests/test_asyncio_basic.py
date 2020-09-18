@@ -131,15 +131,18 @@ class AIOMotorTestBasic(AsyncIOTestCase):
         # methods collection, db, subcollection.
         C()
 
-    def test_inheritance(self):
-        class ClientSubclass(motor_asyncio.AsyncIOMotorClient):
-            pass
-        cx = ClientSubclass()
-
-        class DatabaseSubclass(motor_asyncio.AsyncIOMotorDatabase):
-            pass
-        db = DatabaseSubclass(cx, 'db')
-
+    @asyncio_test
+    async def test_inheritance(self):
         class CollectionSubclass(motor_asyncio.AsyncIOMotorCollection):
             pass
-        _ = CollectionSubclass(db, 'coll')
+
+        class DatabaseSubclass(motor_asyncio.AsyncIOMotorDatabase):
+            def __getitem__(self, name):
+                return CollectionSubclass(self, name)
+
+        class ClientSubclass(motor_asyncio.AsyncIOMotorClient):
+            def __getitem__(self, name):
+                return DatabaseSubclass(self, name)
+
+        cx = ClientSubclass(test.env.uri, io_loop=self.loop)
+        self.assertIsNotNone(await cx.testdb.testcoll.insert_one({}))
