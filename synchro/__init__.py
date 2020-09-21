@@ -626,10 +626,10 @@ class GridOutCursor(Cursor):
             raise TypeError(
                 "Expected MotorGridOutCursor, got %r" % delegate)
 
-        super(GridOutCursor, self).__init__(delegate)
+        super().__init__(delegate)
 
     def next(self):
-        motor_grid_out = super(GridOutCursor, self).next()
+        motor_grid_out = super().next()
         if motor_grid_out:
             return GridOut(self.collection, delegate=motor_grid_out)
 
@@ -739,7 +739,7 @@ class GridOut(Synchro):
                 "upload_date", "aliases", "metadata", "md5"):
             raise AttributeError()
 
-        super(GridOut, self).__setattr__(key, value)
+        super().__setattr__(key, value)
 
     def __enter__(self):
         return self

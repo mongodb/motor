@@ -30,7 +30,7 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
     @classmethod
     @env.require_version_min(3, 6)
     def setUpClass(cls):
-        super(TestAsyncIOChangeStream, cls).setUpClass()
+        super().setUpClass()
         if env.is_standalone:
             raise SkipTest("Standalone")
 

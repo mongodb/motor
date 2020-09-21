@@ -140,13 +140,13 @@ class MotorCoreTest(MotorTest):
 
 class MotorCoreTestGridFS(MotorTest):
     def setUp(self):
-        super(MotorCoreTestGridFS, self).setUp()
+        super().setUp()
         self.sync_fs = GridFSBucket(env.sync_cx.test)
         self.sync_fs.upload_from_stream_with_id(1, 'filename', source=b'')
 
     def tearDown(self):
         self.sync_fs.delete(file_id=1)
-        super(MotorCoreTestGridFS, self).tearDown()
+        super().tearDown()
 
     def test_gridfs_attrs(self):
         motor_gridfs_only = set(['collection']).union(motor_only)

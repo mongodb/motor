@@ -34,13 +34,13 @@ class TestAsyncIOGridFSBucket(AsyncIOTestCase):
         await self.db.drop_collection("alt.chunks")
 
     def setUp(self):
-        super(TestAsyncIOGridFSBucket, self).setUp()
+        super().setUp()
         self.loop.run_until_complete(self._reset())
         self.bucket = AsyncIOMotorGridFSBucket(self.db)
 
     def tearDown(self):
         self.loop.run_until_complete(self._reset())
-        super(TestAsyncIOGridFSBucket, self).tearDown()
+        super().tearDown()
 
     @asyncio_test
     async def test_basic(self):

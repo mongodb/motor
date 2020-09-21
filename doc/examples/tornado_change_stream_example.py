@@ -29,10 +29,10 @@ class Application(tornado.web.Application):
         templates = os.path.join(os.path.dirname(__file__),
                                  "tornado_change_stream_templates")
 
-        super(Application, self).__init__(handlers,
-                                          template_path=templates,
-                                          template_whitespace="all",
-                                          debug=options.debug)
+        super().__init__(handlers,
+                         template_path=templates,
+                         template_whitespace="all",
+                         debug=options.debug)
 
 
 class MainHandler(tornado.web.RequestHandler):

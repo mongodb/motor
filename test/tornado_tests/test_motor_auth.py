@@ -25,7 +25,7 @@ class MotorAuthTest(MotorTest):
     @env.require_auth
     @env.require_version_min(4, 0)
     def setUp(self):
-        super(MotorAuthTest, self).setUp()
+        super().setUp()
         self._reset()
 
     def tearDown(self):

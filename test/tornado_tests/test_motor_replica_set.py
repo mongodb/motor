@@ -62,7 +62,7 @@ class TestReplicaSetClientAgainstStandalone(MotorTest):
     MotorClient but only if the database at DB_IP and DB_PORT is a standalone.
     """
     def setUp(self):
-        super(TestReplicaSetClientAgainstStandalone, self).setUp()
+        super().setUp()
         if test.env.is_replica_set:
             raise SkipTest(
                 "Connected to a replica set, not a standalone mongod")

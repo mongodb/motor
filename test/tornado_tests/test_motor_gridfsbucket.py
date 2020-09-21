@@ -33,13 +33,13 @@ class MotorGridFSBucketTest(MotorTest):
         await self.db.drop_collection("alt.chunks")
 
     def setUp(self):
-        super(MotorGridFSBucketTest, self).setUp()
+        super().setUp()
         self.io_loop.run_sync(self._reset)
         self.bucket = motor.MotorGridFSBucket(self.db)
 
     def tearDown(self):
         self.io_loop.run_sync(self._reset)
-        super(MotorGridFSBucketTest, self).tearDown()
+        super().tearDown()
 
     @gen_test
     async def test_basic(self):

@@ -540,12 +540,12 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
 class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
     def setUp(self):
-        super(TestAsyncIOCursorMaxTimeMS, self).setUp()
+        super().setUp()
         self.loop.run_until_complete(self.maybe_skip())
 
     def tearDown(self):
         self.loop.run_until_complete(self.disable_timeout())
-        super(TestAsyncIOCursorMaxTimeMS, self).tearDown()
+        super().tearDown()
 
     async def maybe_skip(self):
         if (await server_is_mongos(self.cx)):

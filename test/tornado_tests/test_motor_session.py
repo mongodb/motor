@@ -32,7 +32,7 @@ from test.utils import TestListener, session_ids
 class MotorSessionTest(MotorTest):
     @classmethod
     def setUpClass(cls):
-        super(MotorSessionTest, cls).setUpClass()
+        super().setUpClass()
         if not env.sessions_enabled:
             raise SkipTest("Sessions not supported")
 

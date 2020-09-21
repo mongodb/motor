@@ -51,7 +51,7 @@ class TestReplicaSetClientAgainstStandalone(AsyncIOTestCase):
     standalone.
     """
     def setUp(self):
-        super(TestReplicaSetClientAgainstStandalone, self).setUp()
+        super().setUp()
         if test.env.is_replica_set:
             raise SkipTest(
                 "Connected to a replica set, not a standalone mongod")

@@ -55,7 +55,7 @@ class SkippedModule(object):
 
 class MotorTestLoader(unittest.TestLoader):
     def __init__(self, avoid=None, reason=None):
-        super(MotorTestLoader, self).__init__()
+        super().__init__()
         self._avoid = []
 
     def avoid(self, *prefixes, **kwargs):
@@ -75,7 +75,7 @@ class MotorTestLoader(unittest.TestLoader):
             if name.startswith(prefix):
                 return SkippedModule(name, reason)
 
-        return super(MotorTestLoader, self)._get_module_from_name(name)
+        return super()._get_module_from_name(name)
 
 
 class MockRequestHandler(object):

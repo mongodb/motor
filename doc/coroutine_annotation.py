@@ -6,7 +6,7 @@ from sphinx import addnodes
 
 class PyCoroutineMixin(object):
     def handle_signature(self, sig, signode):
-        ret = super(PyCoroutineMixin, self).handle_signature(sig, signode)
+        ret = super().handle_signature(sig, signode)
         signode.insert(0, addnodes.desc_annotation('coroutine ', 'coroutine '))
         return ret
 

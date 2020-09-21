@@ -40,7 +40,7 @@ class MotorGridFileTest(MotorTest):
 
     def tearDown(self):
         self.io_loop.run_sync(self._reset)
-        super(MotorGridFileTest, self).tearDown()
+        super().tearDown()
 
     @gen_test
     async def test_attributes(self):
