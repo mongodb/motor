@@ -145,4 +145,11 @@ class AIOMotorTestBasic(AsyncIOTestCase):
                 return DatabaseSubclass(self, name)
 
         cx = ClientSubclass(test.env.uri, **self.get_client_kwargs())
-        self.assertIsNotNone(await cx.testdb.testcoll.insert_one({}))
+        self.assertIsInstance(cx, ClientSubclass)
+
+        db = cx['testdb']
+        self.assertIsInstance(db, DatabaseSubclass)
+
+        coll = db['testcoll']
+        self.assertIsInstance(coll, CollectionSubclass)
+        self.assertIsNotNone(await coll.insert_one({}))
