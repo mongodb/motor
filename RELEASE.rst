@@ -48,8 +48,8 @@ and a `source distribution <https://packaging.python.org/guides/distributing-pac
 #. Build the release packages by running the `release.sh`
    script on macOS::
 
-     $ git clone git@github.com:mongodb/mongo-python-driver.git
-     $ cd mongo-python-driver
+     $ git clone git@github.com:mongodb/motor.git
+     $ cd motor
      $ git checkout "<release version number>"
      $ ./release.sh
 
