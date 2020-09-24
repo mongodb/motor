@@ -16,7 +16,13 @@ New features:
 
 Bug-fixes:
 
--
+- Fixed a bug that prohibited users from subclassing the
+  :class:`motor.motor_asyncio.AsyncIOMotorClient`,
+  :class:`motor.motor_asyncio.AsyncIOMotorDatabase`, and
+  :class:`motor.motor_asyncio.AsyncIOMotorCollection` classes.
+- Updated the documentation to indicate full support for Windows.
+  Previously, the documentation stated that Windows support was
+  experimental.
 
 Issues Resolved
 ~~~~~~~~~~~~~~~

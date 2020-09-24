@@ -839,18 +839,22 @@ axes:
   - id: tox-env-win
     display_name: "Tox Env Windows"
     values:
+      - id: "asyncio-py36"
+        variables:
+          TOX_ENV: "asyncio-py36"
+          PYTHON_BINARY: "c:\\python\\Python36\\python.exe"
       - id: "asyncio-py37"
         variables:
           TOX_ENV: "asyncio-py37"
           PYTHON_BINARY: "c:\\python\\Python37\\python.exe"
-      - id: "tornado5-py36"
+      - id: "tornado6-py36"
         variables:
-           TOX_ENV: "tornado5-py36"
+           TOX_ENV: "tornado6-py36"
            PYTHON_BINARY: "c:\\python\\Python36\\python.exe"
-      - id: "tornado_git-py36"
+      - id: "tornado6-py37"
         variables:
-           TOX_ENV: "tornado_git-py36"
-           PYTHON_BINARY: "c:\\python\\Python36\\python.exe"
+           TOX_ENV: "tornado6-py37"
+           PYTHON_BINARY: "c:\\python\\Python37\\python.exe"
 
   - id: os
     display_name: "Operating System"
@@ -920,6 +924,12 @@ buildvariants:
     ssl: "*"
   tasks:
      - ".latest"
+     - ".4.4"
+     - ".4.2"
+     - ".4.0"
+     - ".3.6"
+     - ".3.4"
+     - ".3.2"
 
 - matrix_name: "test-macos"
   display_name: "${os}-${tox-env-osx}-${ssl}"
