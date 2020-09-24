@@ -30,7 +30,7 @@ Issues Resolved
 See the `Motor 2.3 release notes in JIRA`_ for the complete list of resolved
 issues in this release.
 
-.. _Motor 2.3 release notes in JIRA: https://jira.mongodb.org/secure/ReleaseNote.jspa?projectId=11182&version=29749
+.. _Motor 2.3 release notes in JIRA: https://jira.mongodb.org/secure/ReleaseNote.jspa?projectId=11182&version=29836
 
 Motor 2.2
 ---------

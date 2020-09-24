@@ -129,7 +129,7 @@ packages = ['motor', 'motor.frameworks', 'motor.frameworks.tornado',
 
 
 setup(name='motor',
-      version='2.3.0.dev0',
+      version='2.3.0',
       packages=packages,
       description=description,
       long_description=long_description,
