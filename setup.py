@@ -18,6 +18,7 @@ Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Operating System :: MacOS :: MacOS X
 Operating System :: Unix
+Operating System :: Microsoft :: Windows
 Programming Language :: Python
 Programming Language :: Python :: Implementation :: CPython
 Programming Language :: Python :: Implementation :: PyPy
