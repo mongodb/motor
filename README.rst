@@ -30,6 +30,10 @@ and the docs are on ReadTheDocs_.
     software to guarantee massively scalable sensor systems for everyone."
 
     --*Ryan Smith, inXus Interactive*
+    
+    "Performance means a lot to a popular financial company. We use Motor to have precise and efficient database operations in our scalable applications."
+
+    --*Amirreza Hamzavi, Varja investment*
 
 Support / Feedback
 ==================
