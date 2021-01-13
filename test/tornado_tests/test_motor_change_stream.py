@@ -239,3 +239,15 @@ class MotorChangeStreamTest(MotorTest):
             i += 1
             if i == 3:
                 break
+
+    @gen_test
+    async def test_watch_with_session(self):
+        async with await self.cx.start_session() as session:
+            # Pass MotorSession.
+            async with self.collection.watch(session=session) as cs:
+                self.wait_and_insert(cs, 1)
+                _ = await cs.next()
+            # Pass PyMongo session directly.
+            async with self.collection.watch(session=session.delegate) as cs:
+                self.wait_and_insert(cs, 1)
+                _ = await cs.next()
