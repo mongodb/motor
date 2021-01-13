@@ -14,11 +14,14 @@
 
 """Test AsyncIOMotorChangeStream."""
 
+import asyncio
 import copy
 import threading
 import time
 
 from pymongo.errors import InvalidOperation, OperationFailure
+
+from motor.frameworks.asyncio import max_workers
 
 from test import SkipTest, env
 from test.asyncio_tests import asyncio_test, AsyncIOTestCase
@@ -272,3 +275,24 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
             async with self.collection.watch(session=session.delegate) as cs:
                 self.wait_and_insert(cs, 1)
                 _ = await cs.next()
+
+    @asyncio_test
+    async def test_iterate_more_streams_than_workers(self):
+        # Create more tasks running ChangeStream.next than there are worker
+        # threads, and then ensure that other tasks can still run.
+        streams = [self.collection.watch() for _ in range(max_workers)]
+        tasks = [stream.next() for stream in streams]
+        try:
+            async def find_insert():
+                # Wait for all change streams to be created
+                while not all(stream.delegate for stream in streams):
+                    await asyncio.sleep(.1)
+                await self.collection.find_one()
+                await self.collection.insert_one({})
+            tasks.extend([find_insert() for _ in range(10)])
+            await asyncio.gather(*tasks)
+        finally:
+            # Ensure that the .next() tasks always unblock.
+            self.collection.delegate.insert_one({})
+            for stream in streams:
+                await stream.close()
