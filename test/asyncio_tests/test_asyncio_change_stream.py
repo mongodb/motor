@@ -276,7 +276,7 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
                 self.wait_and_insert(cs, 1)
                 _ = await cs.next()
 
-    @asyncio_test
+    @asyncio_test(timeout=10)
     async def test_iterate_more_streams_than_workers(self):
         # Create more tasks running ChangeStream.next than there are worker
         # threads, and then ensure that other tasks can still run.
