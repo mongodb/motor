@@ -1678,7 +1678,7 @@ class AgnosticChangeStream(AgnosticBase):
 
         """
         if not self.delegate:
-            # Not yet fully initialized, so we way return data.
+            # Not yet fully initialized, so we may return data.
             return True
         return self.delegate.alive
 
