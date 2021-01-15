@@ -1641,7 +1641,6 @@ class AgnosticChangeStream(AgnosticBase):
 
     _close = AsyncCommand(attr_name='close')
 
-    alive = ReadOnlyProperty()
     resume_token = ReadOnlyProperty()
 
     def __init__(self, target, pipeline, full_document, resume_after,
@@ -1665,18 +1664,23 @@ class AgnosticChangeStream(AgnosticBase):
             self.delegate = self._target.delegate.watch(
                 **unwrap_kwargs_session(self._kwargs))
 
-    def _next(self):
-        # This method is run on a thread.
-        try:
-            self._lazy_init()
-            return self.delegate.next()
-        except StopIteration:
-            raise StopAsyncIteration()
-
     def _try_next(self):
         # This method is run on a thread.
         self._lazy_init()
         return self.delegate.try_next()
+
+    @property
+    def alive(self):
+        """Does this cursor have the potential to return more data?
+
+        .. note:: Even if :attr:`alive` is ``True``, :meth:`next` can raise
+            :exc:`StopAsyncIteration` and :meth:`try_next` can return ``None``.
+
+        """
+        if not self.delegate:
+            # Not yet fully initialized, so we may return data.
+            return True
+        return self.delegate.alive
 
     async def next(self):
         """Advance the cursor.
@@ -1716,8 +1720,12 @@ class AgnosticChangeStream(AgnosticBase):
         example above, you can also iterate the change stream by calling
         ``await change_stream.next()`` repeatedly.
         """
-        loop = self.get_io_loop()
-        return await self._framework.run_on_executor(loop, self._next)
+        while self.alive:
+            doc = await self.try_next()
+            if doc is not None:
+                return doc
+
+        raise StopAsyncIteration()
 
     async def try_next(self):
         """Advance the cursor without blocking indefinitely.
