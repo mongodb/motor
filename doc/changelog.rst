@@ -3,6 +3,27 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 2.3.1
+-----------
+
+Motor 2.3.1 fixes two bugs related to change streams.
+
+Bug-fixes:
+
+- The :meth:`motor.motor_asyncio.AsyncIOMotorCollection.watch`,
+  :meth:`motor.motor_asyncio.AsyncIOMotorDatabase.watch`, and
+  :meth:`motor.motor_asyncio.AsyncIOMotorClient.watch` methods now properly
+  support passing :class:`~motor.motor_asyncio.AsyncIOMotorClientSession` via
+  the ``session`` argument.
+
+Issues Resolved
+~~~~~~~~~~~~~~~
+
+See the `Motor 2.3.1 release notes in JIRA`_ for the complete list of resolved
+issues in this release.
+
+.. _Motor 2.3.1 release notes in JIRA: https://jira.mongodb.org/secure/ReleaseNote.jspa?projectId=11182&version=30136
+
 Motor 2.3
 ---------
 

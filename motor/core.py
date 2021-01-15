@@ -1662,7 +1662,8 @@ class AgnosticChangeStream(AgnosticBase):
 
     def _lazy_init(self):
         if not self.delegate:
-            self.delegate = self._target.delegate.watch(**self._kwargs)
+            self.delegate = self._target.delegate.watch(
+                **unwrap_kwargs_session(self._kwargs))
 
     def _next(self):
         # This method is run on a thread.
