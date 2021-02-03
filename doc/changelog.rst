@@ -15,6 +15,8 @@ Bug-fixes:
   :meth:`motor.motor_asyncio.AsyncIOMotorClient.watch` methods now properly
   support passing :class:`~motor.motor_asyncio.AsyncIOMotorClientSession` via
   the ``session`` argument.
+- Avoid exhausting Motor's worker thread pool when many change streams are
+  being iterated simultaneously.
 
 Issues Resolved
 ~~~~~~~~~~~~~~~
