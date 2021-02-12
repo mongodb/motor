@@ -57,7 +57,7 @@ GridFS
     the server, even after the ``GridIn`` is closed::
 
         fs = gridfs.GridFSBucket(db)
-        grid_in, file_id = fs.open_upload_stream('test_file')
+        grid_in = fs.open_upload_stream('test_file')
         grid_in.close()
         grid_in.my_field = 'my_value'  # Sends update to server.
 
@@ -66,7 +66,7 @@ GridFS
 
         async def f():
             fs = motor.motor_tornado.MotorGridFSBucket(db)
-            grid_in, file_id = fs.open_upload_stream('test_file')
+            grid_in = fs.open_upload_stream('test_file')
             await grid_in.close()
 
             # Sends update to server.
