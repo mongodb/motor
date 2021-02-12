@@ -216,7 +216,7 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
           async def upload():
               my_db = AsyncIOMotorClient().test
               fs = AsyncIOMotorGridFSBucket(my_db)
-              grid_in, file_id = fs.open_upload_stream(
+              grid_in = fs.open_upload_stream(
                   "test_file", chunk_size_bytes=4,
                   metadata={"contentType": "text/plain"})
 
@@ -259,7 +259,7 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
           async def upload():
               my_db = AsyncIOMotorClient().test
               fs = AsyncIOMotorGridFSBucket(my_db)
-              grid_in, file_id = fs.open_upload_stream_with_id(
+              grid_in = fs.open_upload_stream_with_id(
                   ObjectId(),
                   "test_file",
                   chunk_size_bytes=4,
