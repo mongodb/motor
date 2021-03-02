@@ -242,7 +242,8 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
           async def upload():
               my_db = MotorClient().test
               fs = MotorGridFSBucket(my_db)
-              async with await fs.new_file() as gridin:
+              async with await fs.open_upload_stream(
+                  "test_file", metadata={"contentType": "text/plain"}) as gridin:
                   await gridin.write(b'First part\n')
                   await gridin.write(b'Second part')
 
