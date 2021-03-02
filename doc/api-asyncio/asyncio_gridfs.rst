@@ -217,8 +217,7 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
               my_db = AsyncIOMotorClient().test
               fs = AsyncIOMotorGridFSBucket(my_db)
               grid_in = fs.open_upload_stream(
-                  "test_file", chunk_size_bytes=4,
-                  metadata={"contentType": "text/plain"})
+                  "test_file", metadata={"contentType": "text/plain"})
 
               await grid_in.write(b"data I want to store!")
               await grid_in.close()  # uploaded on close
@@ -236,8 +235,7 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
               my_db = AsyncIOMotorClient().test
               fs = AsyncIOMotorGridFSBucket(my_db)
               async with await fs.open_upload_stream(
-                  "test_file", chunk_size_bytes=4, 
-                  metadata={"contentType": "text/plain"}) as gridin:
+                  "test_file", metadata={"contentType": "text/plain"}) as gridin:
                   await gridin.write(b'First part\n')
                   await gridin.write(b'Second part')
 
@@ -262,9 +260,7 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
               my_db = AsyncIOMotorClient().test
               fs = AsyncIOMotorGridFSBucket(my_db)
               grid_in = fs.open_upload_stream_with_id(
-                  ObjectId(),
-                  "test_file",
-                  chunk_size_bytes=4,
+                  ObjectId(), "test_file",
                   metadata={"contentType": "text/plain"})
 
               await grid_in.write(b"data I want to store!")
@@ -322,7 +318,6 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
               file_id = await fs.upload_from_stream(
                   "test_file",
                   b"data I want to store!",
-                  chunk_size_bytes=4,
                   metadata={"contentType": "text/plain"})
 
       Raises :exc:`~gridfs.errors.NoFile` if no such version of
@@ -356,7 +351,6 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
                   ObjectId(),
                   "test_file",
                   b"data I want to store!",
-                  chunk_size_bytes=4,
                   metadata={"contentType": "text/plain"})
 
       Raises :exc:`~gridfs.errors.NoFile` if no such version of
