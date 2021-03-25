@@ -1810,57 +1810,12 @@ class AgnosticClientEncryption(AgnosticBase):
     def __init__(self, kms_providers, key_vault_namespace, key_vault_client, codec_options, io_loop=None):
         """Explicit client-side field level encryption.
 
-        The ClientEncryption class encapsulates explicit operations on a key
-        vault collection that cannot be done directly on a AsyncIOMotorClient. Similar
-        to configuring auto encryption on a AsyncIOMotorClient, it is constructed with
-        a AsyncIOMotorClient (to a MongoDB cluster containing the key vault
-        collection), KMS provider configuration, and keyVaultNamespace. It
-        provides an API for explicitly encrypting and decrypting values, and
-        creating data keys. It does not provide an API to query keys from the
-        key vault collection, as this can be done directly on the AsyncIOMotorClient.
-
-        See :ref:`explicit-client-side-encryption` for an example.
+        Takes the same constructor arguments as
+        :class:`pymongo.encryption.ClientEncryption`, as well as:
 
         :Parameters:
-          - `kms_providers`: Map of KMS provider options. Two KMS providers
-            are supported: "aws" and "local". The kmsProviders map values
-            differ by provider:
-
-              - `aws`: Map with "accessKeyId" and "secretAccessKey" as strings.
-                These are the AWS access key ID and AWS secret access key used
-                to generate KMS messages. An optional "sessionToken" may be
-                included to support temporary AWS credentials.
-              - `azure`: Map with "tenantId", "clientId", and "clientSecret" as
-                strings. Additionally, "identityPlatformEndpoint" may also be
-                specified as a string (defaults to 'login.microsoftonline.com').
-                These are the Azure Active Directory credentials used to
-                generate Azure Key Vault messages.
-              - `gcp`: Map with "email" as a string and "privateKey"
-                as `bytes` or a base64 encoded string (unicode on Python 2).
-                Additionally, "endpoint" may also be specified as a string
-                (defaults to 'oauth2.googleapis.com'). These are the
-                credentials used to generate Google Cloud KMS messages.
-              - `local`: Map with "key" as `bytes` (96 bytes in length) or
-                a base64 encoded string (unicode on Python 2) which decodes
-                to 96 bytes. "key" is the master key used to encrypt/decrypt
-                data keys. This key should be generated and stored as securely
-                as possible.
-
-          - `key_vault_namespace`: The namespace for the key vault collection.
-            The key vault collection contains all data keys used for encryption
-            and decryption. Data keys are stored as documents in this MongoDB
-            collection. Data keys are protected with encryption by a KMS
-            provider.
-          - `key_vault_client`: A AsyncIOMotorClient connected to a MongoDB cluster
-            containing the `key_vault_namespace` collection.
-          - `codec_options`: An instance of
-            :class:`~bson.codec_options.CodecOptions` to use when encoding a
-            value for encryption and decoding the decrypted BSON value. This
-            should be the same CodecOptions instance configured on the
-            AsyncIOMotorClient, Database, or Collection used to access application
-            data.
-
-        .. versionadded:: 2.4
+          - `io_loop` (optional): Special event loop
+            instance to use instead of default
         """
         if io_loop:
             self._framework.check_event_loop(io_loop)
