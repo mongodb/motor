@@ -45,7 +45,7 @@ def create_json_schema_file(kms_providers, key_vault_namespace,
     json_schema_string = json_util.dumps(
         schema, json_options=json_util.CANONICAL_JSON_OPTIONS)
 
-    with open('../../motor/jsonSchema.json', 'w') as file:
+    with open('jsonSchema.json', 'w') as file:
         file.write(json_schema_string)
 
 
@@ -78,7 +78,7 @@ async def main():
         kms_providers, key_vault_namespace, key_vault_client)
 
     # Load the JSON Schema and construct the local schema_map option.
-    with open('../../motor/jsonSchema.json', 'r') as file:
+    with open('jsonSchema.json', 'r') as file:
         json_schema_string = file.read()
     json_schema = json_util.loads(json_schema_string)
     schema_map = {encrypted_namespace: json_schema}
