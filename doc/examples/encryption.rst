@@ -3,7 +3,7 @@
 Client-Side Field Level Encryption
 ==================================
 
-New in MongoDB 4.2, client-side field level encryption allows an application
+Starting in MongoDB 4.2, client-side field level encryption allows an application
 to encrypt specific data fields in addition to pre-existing MongoDB
 encryption features such as `Encryption at Rest
 <https://dochub.mongodb.org/core/security-encryption-at-rest>`_ and
@@ -54,8 +54,8 @@ examples show how to setup automatic client-side field level encryption
 using :class:`~pymongo.encryption.ClientEncryption` to create a new
 encryption data key.
 
-.. note:: Automatic client-side field level encryption requires MongoDB 4.2
-   enterprise or a MongoDB 4.2 Atlas cluster. The community version of the
+.. note:: Automatic client-side field level encryption requires MongoDB 4.2+
+   enterprise or a MongoDB 4.2+ Atlas cluster. The community version of the
    server supports automatic decryption as well as
    :ref:`explicit-client-side-encryption`.
 
@@ -84,7 +84,7 @@ will result in an error.
 Server-Side Field Level Encryption Enforcement
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The MongoDB 4.2 server supports using schema validation to enforce encryption
+The MongoDB 4.2+ server supports using schema validation to enforce encryption
 of specific fields in a collection. This schema validation will prevent an
 application from inserting unencrypted values for any fields marked with the
 ``"encrypt"`` JSON schema keyword.
