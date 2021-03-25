@@ -34,6 +34,7 @@ from pymongo.command_cursor import CommandCursor, RawBatchCommandCursor
 from pymongo.cursor import Cursor, RawBatchCursor, _QUERY_OPTIONS
 from pymongo.database import Database
 from pymongo.driver_info import DriverInfo
+from pymongo.encryption import Algorithm, ClientEncryption
 
 from . import version as motor_version
 from .metaprogramming import (AsyncCommand,
@@ -1795,3 +1796,31 @@ class AgnosticChangeStream(AgnosticBase):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+class AgnosticClientEncryption(AgnosticBase):
+    __motor_class_name__ = 'MotorClientEncryption'
+    __delegate_class__ = ClientEncryption
+
+    create_data_key = AsyncCommand()
+    encrypt = AsyncCommand()
+    decrypt = AsyncCommand()
+    close = AsyncCommand()
+
+    def __init__(self, kms_providers, key_vault_namespace, key_vault_client, codec_options, io_loop=None):
+        if io_loop:
+            self._framework.check_event_loop(io_loop)
+        else:
+            io_loop = self._framework.get_event_loop()
+        delegate = self.__delegate_class__(kms_providers, key_vault_namespace, key_vault_client, codec_options)
+        super().__init__(delegate)
+        self.io_loop = io_loop
+
+    def get_io_loop(self):
+        return self.io_loop
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self.delegate:
+            await self.close()

@@ -18,7 +18,7 @@ from . import core, motor_gridfs
 from .frameworks import asyncio as asyncio_framework
 from .metaprogramming import create_class_with_framework
 
-__all__ = ['AsyncIOMotorClient']
+__all__ = ['AsyncIOMotorClient, AsyncIOMotorClientEncryption']
 
 
 def create_asyncio_class(cls):
@@ -70,3 +70,7 @@ AsyncIOMotorGridOut = create_asyncio_class(
 
 AsyncIOMotorGridOutCursor = create_asyncio_class(
     motor_gridfs.AgnosticGridOutCursor)
+
+
+AsyncIOMotorClientEncryption = create_asyncio_class(
+    core.AgnosticClientEncryption)
