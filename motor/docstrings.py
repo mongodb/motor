@@ -1324,3 +1324,13 @@ create_data_key_doc = """Create and insert a new data key into the key vault col
   :class:`~bson.binary.Binary` with subtype
   :data:`~bson.binary.UUID_SUBTYPE`.
 """
+
+close_doc = """Release resources.
+
+Note that using this class in a with-statement will automatically call
+:meth:`close`::
+
+    with ClientEncryption(...) as client_encryption:
+        encrypted = client_encryption.encrypt(value, ...)
+        decrypted = client_encryption.decrypt(encrypted)
+"""

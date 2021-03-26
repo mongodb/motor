@@ -1804,8 +1804,7 @@ class AgnosticClientEncryption(AgnosticBase):
     create_data_key = AsyncCommand(doc=create_data_key_doc)
     encrypt = AsyncCommand()
     decrypt = AsyncCommand()
-
-    _close = AsyncCommand(attr_name='close')
+    close = AsyncCommand(doc=close_doc)
 
     def __init__(self, kms_providers, key_vault_namespace, key_vault_client, codec_options, io_loop=None):
         """Explicit client-side field level encryption.
@@ -1833,4 +1832,4 @@ class AgnosticClientEncryption(AgnosticBase):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self.delegate:
-            await self._close()
+            await self.close()
