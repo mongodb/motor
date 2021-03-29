@@ -919,7 +919,9 @@ axes:
         tags: ["encryption_tag"]
         variables:
           test_encryption: true
-        batchtime: 10080  # 7 daysbuildvariants:
+        batchtime: 10080  # 7 days
+
+buildvariants:
 
 # Test MongoDB 3.0 and Python only up to 3.6 on RHEL.
 - matrix_name: "test-mongodb-3.0-rhel"
