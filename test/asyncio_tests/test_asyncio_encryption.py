@@ -103,7 +103,7 @@ class TestExplicitSimple(AsyncIOTestCase):
                 unencodable_value,
                 Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
                 key_id=Binary(uuid.uuid4().bytes, UUID_SUBTYPE))
-            
+
         await client_encryption.close()
 
     @asyncio_test
