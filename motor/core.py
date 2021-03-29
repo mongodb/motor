@@ -1833,3 +1833,9 @@ class AgnosticClientEncryption(AgnosticBase):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self.delegate:
             await self.close()
+
+    def __enter__(self):
+        raise RuntimeError('Use this encryption module in "async with", not "with"')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
