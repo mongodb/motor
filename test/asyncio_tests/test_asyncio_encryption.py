@@ -31,10 +31,9 @@ class TestExplicitSimple(AsyncIOTestCase):
 
     @asyncio_test
     async def test_encrypt_decrypt(self):
-        client = self.cx
+        client = self.asyncio_client()
         client_encryption = AsyncIOMotorClientEncryption(
             KMS_PROVIDERS, 'keyvault.datakeys', client, OPTS)
-        # self.addCleanup(client_encryption.close)
         # Use standard UUID representation.
         key_vault = client.keyvault.get_collection(
             'datakeys', codec_options=OPTS)
@@ -67,110 +66,114 @@ class TestExplicitSimple(AsyncIOTestCase):
         decrypted_ssn = await client_encryption.decrypt(encrypted_ssn)
         self.assertEqual(decrypted_ssn, doc['ssn'])
 
-    # @asyncio_test
-    # async def test_validation(self):
-    #     client = self.asyncio_client()
-    #     client_encryption = AsyncIOMotorClientEncryption(
-    #         KMS_PROVIDERS, 'keyvault.datakeys', client, OPTS)
-    #     # self.addCleanup(client_encryption.close)
-    #
-    #     msg = 'value to decrypt must be a bson.binary.Binary with subtype 6'
-    #     async with self.assertRaisesRegex(TypeError, msg):
-    #         await client_encryption.decrypt('str')
-    #     async with self.assertRaisesRegex(TypeError, msg):
-    #         await client_encryption.decrypt(Binary(b'123'))
-    #
-    #     msg = 'key_id must be a bson.binary.Binary with subtype 4'
-    #     algo = Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic
-    #     async with self.assertRaisesRegex(TypeError, msg):
-    #         await client_encryption.encrypt('str', algo, key_id=uuid.uuid4())
-    #     async with self.assertRaisesRegex(TypeError, msg):
-    #         await client_encryption.encrypt('str', algo, key_id=Binary(b'123'))
-    #
-    # @asyncio_test
-    # async def test_bson_errors(self):
-    #     client = self.asyncio_client()
-    #     client_encryption = AsyncIOMotorClientEncryption(
-    #         KMS_PROVIDERS, 'keyvault.datakeys', client, OPTS)
-    #     # self.addCleanup(client_encryption.close)
-    #
-    #     # Attempt to encrypt an unencodable object.
-    #     unencodable_value = object()
-    #     async with self.assertRaises(BSONError):
-    #         await client_encryption.encrypt(
-    #             unencodable_value,
-    #             Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
-    #             key_id=Binary(uuid.uuid4().bytes, UUID_SUBTYPE))
-    #
-    # @asyncio_test
-    # async def test_codec_options(self):
-    #     client = self.asyncio_client()
-    #     async with self.assertRaisesRegex(TypeError, 'codec_options must be'):
-    #         AsyncIOMotorClientEncryption(
-    #             KMS_PROVIDERS, 'keyvault.datakeys', client, None)
-    #
-    #     opts = CodecOptions(uuid_representation=JAVA_LEGACY)
-    #     client_encryption_legacy = AsyncIOMotorClientEncryption(
-    #         KMS_PROVIDERS, 'keyvault.datakeys', client, opts)
-    #     # self.addCleanup(client_encryption_legacy.close)
-    #
-    #     # Create the encrypted field's data key.
-    #     key_id = await client_encryption_legacy.create_data_key('local')
-    #
-    #     # Encrypt a UUID with JAVA_LEGACY codec options.
-    #     value = uuid.uuid4()
-    #     encrypted_legacy = await client_encryption_legacy.encrypt(
-    #         value, Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
-    #         key_id=key_id)
-    #     decrypted_value_legacy = await client_encryption_legacy.decrypt(
-    #         encrypted_legacy)
-    #     self.assertEqual(decrypted_value_legacy, value)
-    #
-    #     # Encrypt the same UUID with STANDARD codec options.
-    #     client_encryption = AsyncIOMotorClientEncryption(
-    #         KMS_PROVIDERS, 'keyvault.datakeys', client, OPTS)
-    #     # self.addCleanup(client_encryption.close)
-    #     encrypted_standard = await client_encryption.encrypt(
-    #         value, Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
-    #         key_id=key_id)
-    #     decrypted_standard = await client_encryption.decrypt(encrypted_standard)
-    #     self.assertEqual(decrypted_standard, value)
-    #
-    #     # Test that codec_options is applied during encryption.
-    #     self.assertNotEqual(encrypted_standard, encrypted_legacy)
-    #     # Test that codec_options is applied during decryption.
-    #     self.assertEqual(
-    #         await client_encryption_legacy.decrypt(encrypted_standard), value)
-    #     self.assertNotEqual(
-    #         await client_encryption.decrypt(encrypted_legacy), value)
-    #
-    # @asyncio_test
-    # async def test_close(self):
-    #     client = self.asyncio_client()
-    #     client_encryption = AsyncIOMotorClientEncryption(
-    #         KMS_PROVIDERS, 'keyvault.datakeys', client, OPTS)
-    #     await client_encryption.close()
-    #     # Close can be called multiple times.
-    #     await client_encryption.close()
-    #     algo = Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic
-    #     msg = 'Cannot use closed ClientEncryption'
-    #     async with self.assertRaisesRegex(InvalidOperation, msg):
-    #         await client_encryption.create_data_key('local')
-    #     async with self.assertRaisesRegex(InvalidOperation, msg):
-    #         await client_encryption.encrypt('val', algo, key_alt_name='name')
-    #     async with self.assertRaisesRegex(InvalidOperation, msg):
-    #         await client_encryption.decrypt(Binary(b'', 6))
-    #
-    # @asyncio_test
-    # async def test_with_statement(self):
-    #     client = self.asyncio_client()
-    #     async with AsyncIOMotorClientEncryption(
-    #             KMS_PROVIDERS, 'keyvault.datakeys',
-    #             client, OPTS) as client_encryption:
-    #         pass
-    #     async with self.assertRaisesRegex(
-    #             InvalidOperation, 'Cannot use closed ClientEncryption'):
-    #         await client_encryption.create_data_key('local')
+        await key_vault.drop()
+        await client_encryption.close()
+
+    @asyncio_test
+    async def test_validation(self):
+        client = self.asyncio_client()
+        client_encryption = AsyncIOMotorClientEncryption(
+            KMS_PROVIDERS, 'keyvault.datakeys', client, OPTS)
+
+        msg = 'value to decrypt must be a bson.binary.Binary with subtype 6'
+        with self.assertRaisesRegex(TypeError, msg):
+            await client_encryption.decrypt('str')
+        with self.assertRaisesRegex(TypeError, msg):
+            await client_encryption.decrypt(Binary(b'123'))
+
+        msg = 'key_id must be a bson.binary.Binary with subtype 4'
+        algo = Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic
+        with self.assertRaisesRegex(TypeError, msg):
+            await client_encryption.encrypt('str', algo, key_id=uuid.uuid4())
+        with self.assertRaisesRegex(TypeError, msg):
+            await client_encryption.encrypt('str', algo, key_id=Binary(b'123'))
+
+        await client_encryption.close()
+
+    @asyncio_test
+    async def test_bson_errors(self):
+        client = self.asyncio_client()
+        client_encryption = AsyncIOMotorClientEncryption(
+            KMS_PROVIDERS, 'keyvault.datakeys', client, OPTS)
+        # self.addCleanup(client_encryption.close)
+
+        # Attempt to encrypt an unencodable object.
+        unencodable_value = object()
+        with self.assertRaises(BSONError):
+            await client_encryption.encrypt(
+                unencodable_value,
+                Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
+                key_id=Binary(uuid.uuid4().bytes, UUID_SUBTYPE))
+
+    @asyncio_test
+    async def test_codec_options(self):
+        client = self.asyncio_client()
+        with self.assertRaisesRegex(TypeError, 'codec_options must be'):
+            AsyncIOMotorClientEncryption(
+                KMS_PROVIDERS, 'keyvault.datakeys', client, None)
+
+        opts = CodecOptions(uuid_representation=JAVA_LEGACY)
+        client_encryption_legacy = AsyncIOMotorClientEncryption(
+            KMS_PROVIDERS, 'keyvault.datakeys', client, opts)
+        # self.addCleanup(client_encryption_legacy.close)
+
+        # Create the encrypted field's data key.
+        key_id = await client_encryption_legacy.create_data_key('local')
+
+        # Encrypt a UUID with JAVA_LEGACY codec options.
+        value = uuid.uuid4()
+        encrypted_legacy = await client_encryption_legacy.encrypt(
+            value, Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
+            key_id=key_id)
+        decrypted_value_legacy = await client_encryption_legacy.decrypt(
+            encrypted_legacy)
+        self.assertEqual(decrypted_value_legacy, value)
+
+        # Encrypt the same UUID with STANDARD codec options.
+        client_encryption = AsyncIOMotorClientEncryption(
+            KMS_PROVIDERS, 'keyvault.datakeys', client, OPTS)
+        # self.addCleanup(client_encryption.close)
+        encrypted_standard = await client_encryption.encrypt(
+            value, Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
+            key_id=key_id)
+        decrypted_standard = await client_encryption.decrypt(encrypted_standard)
+        self.assertEqual(decrypted_standard, value)
+
+        # Test that codec_options is applied during encryption.
+        self.assertNotEqual(encrypted_standard, encrypted_legacy)
+        # Test that codec_options is applied during decryption.
+        self.assertEqual(
+            await client_encryption_legacy.decrypt(encrypted_standard), value)
+        self.assertNotEqual(
+            await client_encryption.decrypt(encrypted_legacy), value)
+
+    @asyncio_test
+    async def test_close(self):
+        client = self.asyncio_client()
+        client_encryption = AsyncIOMotorClientEncryption(
+            KMS_PROVIDERS, 'keyvault.datakeys', client, OPTS)
+        await client_encryption.close()
+        # Close can be called multiple times.
+        await client_encryption.close()
+        algo = Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic
+        msg = 'Cannot use closed ClientEncryption'
+        with self.assertRaisesRegex(InvalidOperation, msg):
+            await client_encryption.create_data_key('local')
+        with self.assertRaisesRegex(InvalidOperation, msg):
+            await client_encryption.encrypt('val', algo, key_alt_name='name')
+        with self.assertRaisesRegex(InvalidOperation, msg):
+            await client_encryption.decrypt(Binary(b'', 6))
+
+    @asyncio_test
+    async def test_with_statement(self):
+        client = self.asyncio_client()
+        async with AsyncIOMotorClientEncryption(
+                KMS_PROVIDERS, 'keyvault.datakeys',
+                client, OPTS) as client_encryption:
+            pass
+        with self.assertRaisesRegex(
+                InvalidOperation, 'Cannot use closed ClientEncryption'):
+            await client_encryption.create_data_key('local')
 
 if __name__ == '__main__':
     unittest.main()

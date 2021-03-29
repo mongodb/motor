@@ -1820,7 +1820,8 @@ class AgnosticClientEncryption(AgnosticBase):
             self._framework.check_event_loop(io_loop)
         else:
             io_loop = self._framework.get_event_loop()
-        delegate = self.__delegate_class__(kms_providers, key_vault_namespace, key_vault_client, codec_options)
+        sync_client = key_vault_client.delegate
+        delegate = self.__delegate_class__(kms_providers, key_vault_namespace, sync_client, codec_options)
         super().__init__(delegate)
         self.io_loop = io_loop
 
