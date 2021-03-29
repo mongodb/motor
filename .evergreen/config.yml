@@ -331,9 +331,38 @@ functions:
     - command: shell.exec
       type: test
       params:
+        silent: true
+        working_dir: "src"
+        script: |
+          if [ -n "${test_encryption}" ]; then
+            cat <<EOT > fle_creds.sh
+            export FLE_AWS_KEY="${fle_aws_key}"
+            export FLE_AWS_SECRET="${fle_aws_secret}"
+            export FLE_AZURE_CLIENTID="${fle_azure_clientid}"
+            export FLE_AZURE_TENANTID="${fle_azure_tenantid}"
+            export FLE_AZURE_CLIENTSECRET="${fle_azure_clientsecret}"
+            export FLE_GCP_EMAIL="${fle_gcp_email}"
+            export FLE_GCP_PRIVATEKEY="${fle_gcp_privatekey}"
+            # Needed for generating temporary aws credentials.
+            export AWS_ACCESS_KEY_ID="${fle_aws_key}"
+            export AWS_SECRET_ACCESS_KEY="${fle_aws_secret}"
+            export AWS_DEFAULT_REGION=us-east-1
+          EOT
+          fi
+    - command: shell.exec
+      type: test
+      params:
         working_dir: "src"
         script: |
           ${PREPARE_SHELL}
+          if [ -n "${test_encryption}" ]; then
+            # Disable xtrace (just in case it was accidentally set).
+            set +x
+            . ./fle_creds.sh
+            rm -f ./fle_creds.sh
+            export LIBMONGOCRYPT_URL="${libmongocrypt_url}"
+            export TEST_ENCRYPTION=1
+          fi
 
           PYTHON_BINARY="${PYTHON_BINARY}" \
           TOX_BINARY="${TOX_BINARY}" \
@@ -882,7 +911,15 @@ axes:
            INSTALL_TOX: true
            VIRTUALENV: "/opt/mongodbtoolchain/v2/bin/python3.6 -m virtualenv"
 
-buildvariants:
+  - id: encryption
+    display_name: "Encryption"
+    values:
+      - id: "encryption"
+        display_name: "Encryption"
+        tags: ["encryption_tag"]
+        variables:
+          test_encryption: true
+        batchtime: 10080  # 7 daysbuildvariants:
 
 # Test MongoDB 3.0 and Python only up to 3.6 on RHEL.
 - matrix_name: "test-mongodb-3.0-rhel"

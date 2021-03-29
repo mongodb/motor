@@ -35,7 +35,14 @@ KMS_PROVIDERS = {'local': {'key': b'\x00'*96}}
 
 OPTS = CodecOptions(uuid_representation=STANDARD)
 
+try:
+    import pymongocrypt
+    _HAVE_PYMONGOCRYPT = True
+except ImportError:
+    _HAVE_PYMONGOCRYPT = False
 
+
+@unittest.skipUnless(_HAVE_PYMONGOCRYPT)
 class TestExplicitSimple(AsyncIOTestCase):
     def assertEncrypted(self, val):
         self.assertIsInstance(val, Binary)
