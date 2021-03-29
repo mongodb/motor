@@ -95,7 +95,6 @@ class TestExplicitSimple(AsyncIOTestCase):
         client = self.asyncio_client()
         client_encryption = AsyncIOMotorClientEncryption(
             KMS_PROVIDERS, 'keyvault.datakeys', client, OPTS)
-        # self.addCleanup(client_encryption.close)
 
         # Attempt to encrypt an unencodable object.
         unencodable_value = object()
@@ -104,6 +103,8 @@ class TestExplicitSimple(AsyncIOTestCase):
                 unencodable_value,
                 Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
                 key_id=Binary(uuid.uuid4().bytes, UUID_SUBTYPE))
+            
+        await client_encryption.close()
 
     @asyncio_test
     async def test_codec_options(self):
@@ -132,7 +133,6 @@ class TestExplicitSimple(AsyncIOTestCase):
         # Encrypt the same UUID with STANDARD codec options.
         client_encryption = AsyncIOMotorClientEncryption(
             KMS_PROVIDERS, 'keyvault.datakeys', client, OPTS)
-        # self.addCleanup(client_encryption.close)
         encrypted_standard = await client_encryption.encrypt(
             value, Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
             key_id=key_id)
@@ -146,6 +146,8 @@ class TestExplicitSimple(AsyncIOTestCase):
             await client_encryption_legacy.decrypt(encrypted_standard), value)
         self.assertNotEqual(
             await client_encryption.decrypt(encrypted_legacy), value)
+
+        await client_encryption.close()
 
     @asyncio_test
     async def test_close(self):
