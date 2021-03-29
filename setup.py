@@ -33,6 +33,10 @@ install_requires = ['pymongo>=3.11,<4']
 
 tests_require = ['mockupdb>=1.4.0']
 
+extras_require = {
+    'encryption': ['pymongocrypt>=1.1.0,<2.0.0'],
+}
+
 class test(Command):
     description = "run the tests"
 
@@ -147,4 +151,5 @@ setup(name='motor',
       tests_require=tests_require,
       test_suite='test',
       zip_safe=False,
-      cmdclass={'test': test})
+      cmdclass={'test': test},
+      extras_require=extras_require)

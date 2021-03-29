@@ -141,7 +141,7 @@ class AgnosticClient(AgnosticBaseProperties):
 
         :Parameters:
           - `io_loop` (optional): Special event loop
-            instance to use instead of default
+            instance to use instead of default.
         """
         if 'io_loop' in kwargs:
             io_loop = kwargs.pop('io_loop')
@@ -1798,6 +1798,8 @@ class AgnosticChangeStream(AgnosticBase):
         pass
 
 class AgnosticClientEncryption(AgnosticBase):
+    """Explicit client-side field level encryption."""
+
     __motor_class_name__ = 'MotorClientEncryption'
     __delegate_class__ = ClientEncryption
 
@@ -1814,7 +1816,7 @@ class AgnosticClientEncryption(AgnosticBase):
 
         :Parameters:
           - `io_loop` (optional): Special event loop
-            instance to use instead of default
+            instance to use instead of default.
         """
         if io_loop:
             self._framework.check_event_loop(io_loop)

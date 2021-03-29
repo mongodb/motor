@@ -1271,43 +1271,11 @@ Only the last call to :meth:`where` applied to a
 
 create_data_key_doc = """Create and insert a new data key into the key vault collection.
 
+Takes the same constructors as 
+:class:`pymongo.encryption.ClientEncryption.create_data_key`,
+with only the following slight difference using async syntax:
+
 :Parameters:
-  - `kms_provider`: The KMS provider to use. Supported values are
-    "aws" and "local".
-  - `master_key`: Identifies a KMS-specific key used to encrypt the
-    new data key. If the kmsProvider is "local" the `master_key` is
-    not applicable and may be omitted.
-
-    If the `kms_provider` is "aws" it is required and has the
-    following fields::
-
-      - `region` (string): Required. The AWS region, e.g. "us-east-1".
-      - `key` (string): Required. The Amazon Resource Name (ARN) to
-         the AWS customer.
-      - `endpoint` (string): Optional. An alternate host to send KMS
-        requests to. May include port number, e.g.
-        "kms.us-east-1.amazonaws.com:443".
-
-    If the `kms_provider` is "azure" it is required and has the
-    following fields::
-
-      - `keyVaultEndpoint` (string): Required. Host with optional
-         port, e.g. "example.vault.azure.net".
-      - `keyName` (string): Required. Key name in the key vault.
-      - `keyVersion` (string): Optional. Version of the key to use.
-
-    If the `kms_provider` is "gcp" it is required and has the
-    following fields::
-
-      - `projectId` (string): Required. The Google cloud project ID.
-      - `location` (string): Required. The GCP location, e.g. "us-east1".
-      - `keyRing` (string): Required. Name of the key ring that contains
-        the key to use.
-      - `keyName` (string): Required. Name of the key to use.
-      - `keyVersion` (string): Optional. Version of the key to use.
-      - `endpoint` (string): Optional. Host with optional port.
-        Defaults to "cloudkms.googleapis.com".
-
   - `key_alt_names` (optional): An optional list of string alternate
     names used to reference a key. If a key is created with alternate
     names, then encryption may refer to the key by the unique alternate
@@ -1318,11 +1286,6 @@ create_data_key_doc = """Create and insert a new data key into the key vault col
       # reference the key with the alternate name
       await client_encryption.encrypt("457-55-5462", keyAltName="name1",
                                 algorithm=Algorithm.Random)
-
-:Returns:
-  The ``_id`` of the created data key document as a
-  :class:`~bson.binary.Binary` with subtype
-  :data:`~bson.binary.UUID_SUBTYPE`.
 """
 
 close_doc = """Release resources.
@@ -1330,7 +1293,7 @@ close_doc = """Release resources.
 Note that using this class in a with-statement will automatically call
 :meth:`close`::
 
-    with ClientEncryption(...) as client_encryption:
-        encrypted = client_encryption.encrypt(value, ...)
-        decrypted = client_encryption.decrypt(encrypted)
+    async with AsyncIOMotorClientEncryption(...) as client_encryption:
+        encrypted = await client_encryption.encrypt(value, ...)
+        decrypted = await client_encryption.decrypt(encrypted)
 """
