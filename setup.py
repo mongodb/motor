@@ -34,7 +34,7 @@ install_requires = ['pymongo>=3.11,<4']
 tests_require = ['mockupdb>=1.4.0']
 
 extras_require = {
-    'encryption': ['pymongocrypt>=1.1.0,<2.0.0'],
+    'encryption': ['pymongo[encryption]>=3.11,<4'],
 }
 
 class test(Command):
@@ -142,6 +142,7 @@ setup(name='motor',
       url='https://github.com/mongodb/motor/',
       python_requires='>=3.5.2',
       install_requires=install_requires,
+      extras_require=extras_require,
       license='http://www.apache.org/licenses/LICENSE-2.0',
       classifiers=[c for c in classifiers.split('\n') if c],
       keywords=[
@@ -151,5 +152,4 @@ setup(name='motor',
       tests_require=tests_require,
       test_suite='test',
       zip_safe=False,
-      cmdclass={'test': test},
-      extras_require=extras_require)
+      cmdclass={'test': test})
