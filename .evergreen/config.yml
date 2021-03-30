@@ -334,6 +334,10 @@ functions:
         working_dir: "src"
         script: |
           ${PREPARE_SHELL}
+          if [ "${CSFLE}" = "csfle" ]; then
+            # Disable xtrace (just in case it was accidentally set).
+            export TEST_ENCRYPTION=1
+          fi
 
           PYTHON_BINARY="${PYTHON_BINARY}" \
           TOX_BINARY="${TOX_BINARY}" \
