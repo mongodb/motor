@@ -53,7 +53,7 @@ if [ -n "$TEST_ENCRYPTION" ]; then
     createvirtualenv $PYTHON_BINARY venv-encryption
     trap "deactivate; rm -rf venv-encryption" EXIT HUP
     PYTHON=python
-    python -m pip install pymongo[encrypt]
+    python -m pip install pymongo[encryption]
 fi
 
 # Run the tests, and store the results in Evergreen compatible XUnit XML
