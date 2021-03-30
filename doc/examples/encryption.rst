@@ -98,3 +98,27 @@ data key and create a collection with the
 
 .. literalinclude:: server_fle_enforcement_example.py
   :language: python3
+
+.. _explicit-client-side-encryption:
+
+Explicit Encryption
+~~~~~~~~~~~~~~~~~~~
+
+Explicit encryption is a MongoDB community feature and does not use the
+``mongocryptd`` process. Explicit encryption is provided by the
+:class:`~pymongo.encryption.ClientEncryption` class, for example:
+
+.. literalinclude:: explicit_encryption_example.py
+  :language: python3
+
+Explicit Encryption with Automatic Decryption
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Although automatic encryption requires MongoDB 4.2 enterprise or a
+MongoDB 4.2 Atlas cluster, automatic *decryption* is supported for all users.
+To configure automatic *decryption* without automatic *encryption* set
+``bypass_auto_encryption=True`` in
+:class:`~pymongo.encryption_options.AutoEncryptionOpts`::
+
+.. literalinclude:: explicit_encryption_automatic_decryption_example.py
+  :language: python3
