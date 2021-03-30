@@ -50,7 +50,8 @@ fi
 . .evergreen/utils.sh
 
 if [ -n "$TEST_ENCRYPTION" ]; then
-    createvirtualenv $PYTHON venv-encryption
+    $PYTHON_BINARY -m virtualenv --system-site-packages --never-download venv-encryption
+    . venv-encryption/bin/activate
     trap "deactivate; rm -rf venv-encryption" EXIT HUP
     PYTHON=python
 
