@@ -10,7 +10,7 @@ services: mongodb
 
 install:
   - pip install tornado
-  - pip install pymongo[encryption]
+  - pip install -e '.[encryption]'
 
 script: "python setup.py test"
 

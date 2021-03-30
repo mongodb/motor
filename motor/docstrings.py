@@ -1271,21 +1271,16 @@ Only the last call to :meth:`where` applied to a
 
 create_data_key_doc = """Create and insert a new data key into the key vault collection.
 
-Takes the same constructors as 
+Takes the same arguments as 
 :class:`pymongo.encryption.ClientEncryption.create_data_key`,
-with only the following slight difference using async syntax:
-
-:Parameters:
-  - `key_alt_names` (optional): An optional list of string alternate
-    names used to reference a key. If a key is created with alternate
-    names, then encryption may refer to the key by the unique alternate
-    name instead of by ``key_id``. The following example shows creating
-    and referring to a data key by alternate name::
-
-      await client_encryption.create_data_key("local", keyAltNames=["name1"])
-      # reference the key with the alternate name
-      await client_encryption.encrypt("457-55-5462", keyAltName="name1",
-                                algorithm=Algorithm.Random)
+with only the following slight difference using async syntax.
+The following example shows creating and referring to a data
+key by alternate name::
+   
+    await client_encryption.create_data_key("local", keyAltNames=["name1"])
+    # reference the key with the alternate name
+    await client_encryption.encrypt("457-55-5462", keyAltName="name1",
+                                    algorithm=Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Random)
 """
 
 close_doc = """Release resources.
