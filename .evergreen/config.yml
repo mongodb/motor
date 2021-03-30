@@ -334,7 +334,7 @@ functions:
         silent: true
         working_dir: "src"
         script: |
-          if [ -n "${test_encryption}" ]; then
+          if [ "${CSFLE}" = "csfle" ]; then
             cat <<EOT > fle_creds.sh
             export FLE_AWS_KEY="${fle_aws_key}"
             export FLE_AWS_SECRET="${fle_aws_secret}"
@@ -355,7 +355,7 @@ functions:
         working_dir: "src"
         script: |
           ${PREPARE_SHELL}
-          if [ -n "${test_encryption}" ]; then
+          if [ "${CSFLE}" = "csfle" ]; then
             # Disable xtrace (just in case it was accidentally set).
             set +x
             . ./fle_creds.sh
@@ -759,6 +759,19 @@ axes:
            SSL: "nossl"
            AUTH: "noauth"
 
+  - id: csfle
+    display_name: "CSFLE"
+    values:
+      - id: csfle
+        display_name: CSFLE
+        variables:
+          CSFLE: "csfle"
+        batchtime: 10080  # 7 days
+      - id: nocsfle
+        display_name: NoCSFLE
+        variables:
+          CSFLE: "nocsfle"
+
   - id: tox-env
     display_name: "Tox Env"
     values:
@@ -911,41 +924,34 @@ axes:
            INSTALL_TOX: true
            VIRTUALENV: "/opt/mongodbtoolchain/v2/bin/python3.6 -m virtualenv"
 
-  - id: encryption
-    display_name: "Encryption"
-    values:
-      - id: "encryption"
-        display_name: "Encryption"
-        tags: ["encryption_tag"]
-        variables:
-          test_encryption: true
-        batchtime: 10080  # 7 days
-
 buildvariants:
 
 # Test MongoDB 3.0 and Python only up to 3.6 on RHEL.
 - matrix_name: "test-mongodb-3.0-rhel"
-  display_name: "${os}-${tox-env}-${ssl}"
+  display_name: "${os}-${tox-env}-${ssl}-${csfle}"
   matrix_spec:
     os: "rhel"
     tox-env: ["tornado5-py36", "py3-pymongo-master"]
     ssl: "*"
+    csfle: "*"
   tasks:
      - ".3.0"
 
 # Main test matrix.
 - matrix_name: "main"
-  display_name: "${os}-${tox-env}-${ssl}"
+  display_name: "${os}-${tox-env}-${ssl}-${csfle}"
   matrix_spec:
     os: "ubuntu"
     tox-env: "*"
     ssl: "*"
+    csfle: "*"
   exclude_spec:
     # TODO: synchro needs PyMongo master's updated SSL test certs,
     # which may require Motor test suite changes.
     - os: "*"
       tox-env: ["synchro37"]
       ssl: "ssl"
+      csfle: "*"
   tasks:
      - ".latest"
      - ".4.4"
@@ -956,11 +962,12 @@ buildvariants:
      - ".3.2"
 
 - matrix_name: "test-win"
-  display_name: "${os}-${tox-env-win}-${ssl}"
+  display_name: "${os}-${tox-env-win}-${ssl}-${csfle}"
   matrix_spec:
     os: "win"
     tox-env-win: "*"
     ssl: "*"
+    csfle: "*"
   tasks:
      - ".latest"
      - ".4.4"
@@ -971,11 +978,12 @@ buildvariants:
      - ".3.2"
 
 - matrix_name: "test-macos"
-  display_name: "${os}-${tox-env-osx}-${ssl}"
+  display_name: "${os}-${tox-env-osx}-${ssl}-${csfle}"
   matrix_spec:
     os: "macos-1014"
     tox-env-osx: "*"
     ssl: "*"
+    csfle: "*"
   tasks:
      - ".latest"
 
