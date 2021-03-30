@@ -22,12 +22,10 @@ Dependencies
 ------------
 
 To get started using client-side field level encryption in your project,
-you will need to install the
-`pymongocrypt <https://pypi.org/project/pymongocrypt/>`_ library
-as well as the driver itself. Install both the driver and a compatible
-version of pymongocrypt like this::
+you will need to install the pymongocrypt library as well as the driver itself.
+Install both the driver and a compatible version of pymongocrypt like this::
 
-  $ python -m pip install 'pymongo[encryption]'
+    $ python -m pip install 'motor[encryption]'
 
 Note that installing on Linux requires pip 19 or later for manylinux2010 wheel
 support. For more information about installing pymongocrypt see
