@@ -50,10 +50,10 @@ fi
 . .evergreen/utils.sh
 
 if [ -n "$TEST_ENCRYPTION" ]; then
-    $PYTHON_BINARY -m virtualenv --system-site-packages --never-download venv-encryption
+    createvirtualenv $PYTHON_BINARY venv-encryption
     trap "deactivate; rm -rf venv-encryption" EXIT HUP
-    python -m pip install pymongo[encryption]
     PYTHON=python
+    python -m pip install pymongo[encrypt]
 fi
 
 # Run the tests, and store the results in Evergreen compatible XUnit XML
