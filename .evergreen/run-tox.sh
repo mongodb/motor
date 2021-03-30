@@ -10,12 +10,9 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       INSTALL_TOX             Whether to install tox in a virtualenv
 #       PYTHON_BINARY           Path to python
 #       VIRTUALENV              Path to virtualenv script
-#       TEST_ENCRYPTION         If non-empty, install pymongocrypt.
-
 
 AUTH=${AUTH:-noauth}
 SSL=${SSL:-nossl}
-TEST_ENCRYPTION=${TEST_ENCRYPTION:-}
 
 if [ "$AUTH" != "noauth" ]; then
     export DB_USER="bob"
@@ -44,18 +41,6 @@ if [ "${INSTALL_TOX}" = "true" ]; then
     set -o xtrace
     pip install tox
     TOX_BINARY=tox
-fi
-
-# For createvirtualenv.
-. .evergreen/utils.sh
-
-if [ -n "$TEST_ENCRYPTION" ]; then
-    createvirtualenv $PYTHON_BINARY venv-encryption
-    trap "deactivate; rm -rf venv-encryption" EXIT HUP
-    PYTHON=python
-    python -m pip install pymongo[encryption]
-    python -c "import pymongocrypt; print('pymongocrypt version: '+pymongocrypt.__version__)"
-    python -c "import pymongocrypt; print('libmongocrypt version: '+pymongocrypt.libmongocrypt_version())"
 fi
 
 # Run the tests, and store the results in Evergreen compatible XUnit XML
