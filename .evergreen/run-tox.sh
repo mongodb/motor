@@ -54,6 +54,8 @@ if [ -n "$TEST_ENCRYPTION" ]; then
     trap "deactivate; rm -rf venv-encryption" EXIT HUP
     PYTHON=python
     python -m pip install pymongo[encryption]
+    python -c "import pymongocrypt; print('pymongocrypt version: '+pymongocrypt.__version__)"
+    python -c "import pymongocrypt; print('libmongocrypt version: '+pymongocrypt.libmongocrypt_version())"
 fi
 
 # Run the tests, and store the results in Evergreen compatible XUnit XML
