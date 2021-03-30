@@ -46,6 +46,9 @@ if [ "${INSTALL_TOX}" = "true" ]; then
     TOX_BINARY=tox
 fi
 
+# For createvirtualenv.
+. .evergreen/utils.sh
+
 if [ -n "$TEST_ENCRYPTION" ]; then
     createvirtualenv $PYTHON venv-encryption
     trap "deactivate; rm -rf venv-encryption" EXIT HUP
