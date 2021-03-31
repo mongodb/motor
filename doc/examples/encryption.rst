@@ -118,7 +118,7 @@ Although automatic encryption requires MongoDB 4.2 enterprise or a
 MongoDB 4.2 Atlas cluster, automatic *decryption* is supported for all users.
 To configure automatic *decryption* without automatic *encryption* set
 ``bypass_auto_encryption=True`` in
-:class:`~pymongo.encryption_options.AutoEncryptionOpts`::
+:class:`~pymongo.encryption_options.AutoEncryptionOpts`:
 
 .. literalinclude:: explicit_encryption_automatic_decryption_example.py
   :language: python3
