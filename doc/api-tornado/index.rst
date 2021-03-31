@@ -8,6 +8,7 @@ Motor Tornado API
     motor_database
     motor_collection
     motor_change_stream
+    motor_client_encryption
     cursors
     gridfs
     web
