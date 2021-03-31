@@ -9,6 +9,7 @@ python:
 services: mongodb
 
 install:
+  - pip install -U pip
   - pip install tornado
   - pip install -e '.[encryption]'
 
