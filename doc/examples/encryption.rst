@@ -27,7 +27,7 @@ you will need to install the
 as well as the driver itself. Install both the driver and a compatible
 version of pymongocrypt like this::
 
-  $ python -m pip install 'pymongo[encryption]'
+    $ python -m pip install 'motor[encryption]'
 
 Note that installing on Linux requires pip 19 or later for manylinux2010 wheel
 support. For more information about installing pymongocrypt see
@@ -91,7 +91,7 @@ application from inserting unencrypted values for any fields marked with the
 
 The following example shows how to setup automatic client-side field level
 encryption using
-:class:`~pymongo.encryption.ClientEncryption` to create a new encryption
+:class:`~motor.motor_asyncio.AsyncIOMotorClientEncryption` to create a new encryption
 data key and create a collection with the
 `Automatic Encryption JSON Schema Syntax
 <https://dochub.mongodb.org/core/client-side-field-level-encryption-automatic-encryption-rules>`_.

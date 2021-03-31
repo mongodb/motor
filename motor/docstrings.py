@@ -1268,3 +1268,27 @@ Only the last call to :meth:`where` applied to a
 .. _$expr: https://docs.mongodb.com/manual/reference/operator/query/expr/
 .. _$where: https://docs.mongodb.com/manual/reference/operator/query/where/
 """
+
+create_data_key_doc = """Create and insert a new data key into the key vault collection.
+
+Takes the same arguments as 
+:class:`pymongo.encryption.ClientEncryption.create_data_key`,
+with only the following slight difference using async syntax.
+The following example shows creating and referring to a data
+key by alternate name::
+   
+    await client_encryption.create_data_key("local", keyAltNames=["name1"])
+    # reference the key with the alternate name
+    await client_encryption.encrypt("457-55-5462", keyAltName="name1",
+                                    algorithm=Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Random)
+"""
+
+close_doc = """Release resources.
+
+Note that using this class in a with-statement will automatically call
+:meth:`close`::
+
+    async with AsyncIOMotorClientEncryption(...) as client_encryption:
+        encrypted = await client_encryption.encrypt(value, ...)
+        decrypted = await client_encryption.decrypt(encrypted)
+"""

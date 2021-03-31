@@ -1,3 +1,4 @@
+import asyncio
 import os
 
 from motor.motor_asyncio import (AsyncIOMotorClient,
@@ -6,7 +7,7 @@ from pymongo.encryption import Algorithm
 from pymongo.encryption_options import AutoEncryptionOpts
 
 
-def main():
+async def main():
     # This must be the same master key that was used to create
     # the encryption key.
     local_master_key = os.urandom(96)
@@ -66,8 +67,8 @@ def main():
 
     # Cleanup resources.
     await client_encryption.close()
-    await client.close()
 
 
 if __name__ == "__main__":
-    main()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())

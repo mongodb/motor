@@ -1,11 +1,7 @@
-:class:`~motor.motor_asyncio.AsyncIOMotorClientEncryption` -- Connection to MongoDB
-=========================================================================
+:class:`~motor.motor_asyncio.AsyncIOMotorClientEncryption`
+==========================================================
 
-.. autoclass:: motor.motor_asyncio.AsyncIOMotorClient
+.. currentmodule:: motor.motor_asyncio
+
+.. autoclass:: AsyncIOMotorClientEncryption
   :members:
-
-  .. describe:: client[db_name] || client.db_name
-
-     Get the `db_name` :class:`AsyncIOMotorDatabase` on :class:`AsyncIOMotorClient` `client`.
-
-     Raises :class:`~pymongo.errors.InvalidName` if an invalid database name is used.

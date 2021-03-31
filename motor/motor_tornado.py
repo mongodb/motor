@@ -18,7 +18,7 @@ from . import core, motor_gridfs
 from .frameworks import tornado as tornado_framework
 from .metaprogramming import create_class_with_framework
 
-__all__ = ['MotorClient']
+__all__ = ['MotorClient', 'MotorClientEncryption']
 
 
 def create_motor_class(cls):
@@ -60,3 +60,6 @@ MotorGridOut = create_motor_class(motor_gridfs.AgnosticGridOut)
 
 
 MotorGridOutCursor = create_motor_class(motor_gridfs.AgnosticGridOutCursor)
+
+
+MotorClientEncryption = create_motor_class(core.AgnosticClientEncryption)

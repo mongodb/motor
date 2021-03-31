@@ -34,6 +34,7 @@ from pymongo.command_cursor import CommandCursor, RawBatchCommandCursor
 from pymongo.cursor import Cursor, RawBatchCursor, _QUERY_OPTIONS
 from pymongo.database import Database
 from pymongo.driver_info import DriverInfo
+from pymongo.encryption import ClientEncryption
 
 from . import version as motor_version
 from .metaprogramming import (AsyncCommand,
@@ -140,7 +141,7 @@ class AgnosticClient(AgnosticBaseProperties):
 
         :Parameters:
           - `io_loop` (optional): Special event loop
-            instance to use instead of default
+            instance to use instead of default.
         """
         if 'io_loop' in kwargs:
             io_loop = kwargs.pop('io_loop')
@@ -1792,6 +1793,52 @@ class AgnosticChangeStream(AgnosticBase):
 
     def __enter__(self):
         raise RuntimeError('Use a change stream in "async with", not "with"')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+class AgnosticClientEncryption(AgnosticBase):
+    """Explicit client-side field level encryption."""
+
+    __motor_class_name__ = 'MotorClientEncryption'
+    __delegate_class__ = ClientEncryption
+
+    create_data_key = AsyncCommand(doc=create_data_key_doc)
+    encrypt = AsyncCommand()
+    decrypt = AsyncCommand()
+    close = AsyncCommand(doc=close_doc)
+
+    def __init__(self, kms_providers, key_vault_namespace, key_vault_client, codec_options, io_loop=None):
+        """Explicit client-side field level encryption.
+
+        Takes the same constructor arguments as
+        :class:`pymongo.encryption.ClientEncryption`, as well as:
+
+        :Parameters:
+          - `io_loop` (optional): Special event loop
+            instance to use instead of default.
+        """
+        if io_loop:
+            self._framework.check_event_loop(io_loop)
+        else:
+            io_loop = self._framework.get_event_loop()
+        sync_client = key_vault_client.delegate
+        delegate = self.__delegate_class__(kms_providers, key_vault_namespace, sync_client, codec_options)
+        super().__init__(delegate)
+        self.io_loop = io_loop
+
+    def get_io_loop(self):
+        return self.io_loop
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self.delegate:
+            await self.close()
+
+    def __enter__(self):
+        raise RuntimeError('Use {} in "async with", not "with"'.format(self.__class__.__name__))
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
