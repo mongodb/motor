@@ -29,14 +29,13 @@ description = 'Non-blocking MongoDB driver for Tornado or asyncio'
 with open("README.rst") as readme:
     long_description = readme.read()
 
-pymongo_ver = ">=3.11,<4"
-
-install_requires = ["pymongo" + pymongo_ver]
-    
-extras_require = {'encryption': ["pymongo" + "[encryption]" + pymongo_ver]}
+install_requires = ['pymongo>=3.11,<4']
 
 tests_require = ['mockupdb>=1.4.0']
 
+extras_require = {
+    'encryption': ['pymongo[encryption]>=3.11,<4'],
+}
 
 class test(Command):
     description = "run the tests"
