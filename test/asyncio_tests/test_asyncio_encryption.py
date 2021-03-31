@@ -42,10 +42,8 @@ except ImportError:
     _HAVE_PYMONGOCRYPT = False
 
 
+@unittest.skipUnless(_HAVE_PYMONGOCRYPT, "pymongocrypt is a required dependency")
 class TestExplicitSimple(AsyncIOTestCase):
-    def setUp(self):
-        if not _HAVE_PYMONGOCRYPT:
-            self.fail("PyMongoCrypt is a required dependency")
     def assertEncrypted(self, val):
         self.assertIsInstance(val, Binary)
         self.assertEqual(val.subtype, 6)
