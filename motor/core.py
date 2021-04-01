@@ -56,6 +56,9 @@ except ImportError:
     ssl = None
     HAS_SSL = False
 
+# Surface deprecation warnings to users by default
+warnings.filterwarnings("default", category=DeprecationWarning)
+
 # From the Convenient API for Transactions spec, with_transaction must
 # halt retries after 120 seconds.
 # This limit is non-configurable and was chosen to be twice the 60 second
