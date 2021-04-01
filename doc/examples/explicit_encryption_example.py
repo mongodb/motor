@@ -17,7 +17,7 @@ async def main():
   key_vault_namespace = "encryption.__pymongoTestKeyVault"
   key_vault_db_name, key_vault_coll_name = key_vault_namespace.split(".", 1)
 
-  # The MongoClient used to read/write application data.
+  # The MotorClient used to read/write application data.
   client = AsyncIOMotorClient()
   coll = client.test.coll
   # Clear old data
@@ -35,12 +35,12 @@ async def main():
   client_encryption = AsyncIOMotorClientEncryption(
       kms_providers,
       key_vault_namespace,
-      # The MongoClient to use for reading/writing to the key vault.
-      # This can be the same MongoClient used by the main application.
+      # The Motorlient to use for reading/writing to the key vault.
+      # This can be the same MotorClient used by the main application.
       client,
       # The CodecOptions class used for encrypting and decrypting.
       # This should be the same CodecOptions instance you have configured
-      # on MongoClient, Database, or Collection.
+      # on MotorClient, Database, or Collection.
       coll.codec_options)
 
   # Create a new data key for the encryptedField.
