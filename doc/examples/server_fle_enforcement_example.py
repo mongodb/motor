@@ -4,9 +4,9 @@ import asyncio
 from bson.codec_options import CodecOptions
 from bson.binary import STANDARD
 
-from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo.encryption import (Algorithm,
-                                ClientEncryption)
+from motor.motor_asyncio import (AsyncIOMotorClient,
+                                 AsyncIOMotorClientEncryption)
+from pymongo.encryption import Algorithm
 from pymongo.encryption_options import AutoEncryptionOpts
 from pymongo.errors import OperationFailure
 from pymongo.write_concern import WriteConcern
@@ -37,7 +37,7 @@ async def main():
         unique=True,
         partialFilterExpression={"keyAltNames": {"$exists": True}})
 
-    client_encryption = ClientEncryption(
+    client_encryption = AsyncIOMotorClientEncryption(
         kms_providers,
         key_vault_namespace,
         key_vault_client,
@@ -49,7 +49,7 @@ async def main():
         CodecOptions())
 
     # Create a new data key and json schema for the encryptedField.
-    data_key_id = client_encryption.create_data_key(
+    data_key_id = await client_encryption.create_data_key(
         'local', key_alt_names=['pymongo_encryption_example_2'])
     json_schema = {
         "properties": {
