@@ -47,11 +47,11 @@ Automatic Client-Side Field Level Encryption
 --------------------------------------------
 
 Automatic client-side field level encryption is enabled by creating a
-:class:`~pymongo.mongo_client.MongoClient` with the ``auto_encryption_opts``
+:class:`~motor.motor_asyncio.AsyncIOMotorClient` with the ``auto_encryption_opts``
 option set to an instance of
 :class:`~pymongo.encryption_options.AutoEncryptionOpts`. The following
 examples show how to setup automatic client-side field level encryption
-using :class:`~pymongo.encryption.ClientEncryption` to create a new
+using :class:`~motor.motor_asyncio.AsyncIOMotorClientEncryption` to create a new
 encryption data key.
 
 .. note:: Automatic client-side field level encryption requires MongoDB 4.2+
@@ -106,7 +106,7 @@ Explicit Encryption
 
 Explicit encryption is a MongoDB community feature and does not use the
 ``mongocryptd`` process. Explicit encryption is provided by the
-:class:`~pymongo.encryption.ClientEncryption` class, for example:
+:class:`~motor.motor_asyncio.AsyncIOMotorClientEncryption` class, for example:
 
 .. literalinclude:: explicit_encryption_example.py
   :language: python3
