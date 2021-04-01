@@ -27,7 +27,7 @@ async def main():
     key_vault_namespace = "encryption.__pymongoTestKeyVault"
     key_vault_db_name, key_vault_coll_name = key_vault_namespace.split(".", 1)
 
-    # The MongoClient used to access the key vault (key_vault_namespace).
+    # The MotorClient used to access the key vault (key_vault_namespace).
     key_vault_client = AsyncIOMotorClient()
     key_vault = key_vault_client[key_vault_db_name][key_vault_coll_name]
     # Ensure that two data keys cannot share the same keyAltName.
@@ -43,7 +43,7 @@ async def main():
         key_vault_client,
         # The CodecOptions class used for encrypting and decrypting.
         # This should be the same CodecOptions instance you have configured
-        # on MongoClient, Database, or Collection. We will not be calling
+        # on MotorClient, Database, or Collection. We will not be calling
         # encrypt() or decrypt() in this example so we can use any
         # CodecOptions.
         CodecOptions())
