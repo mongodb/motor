@@ -47,11 +47,11 @@ Automatic Client-Side Field Level Encryption
 --------------------------------------------
 
 Automatic client-side field level encryption is enabled by creating a
-:class:`~pymongo.mongo_client.MongoClient` with the ``auto_encryption_opts``
+:class:`~motor.motor_asyncio.AsyncIOMotorClient` with the ``auto_encryption_opts``
 option set to an instance of
 :class:`~pymongo.encryption_options.AutoEncryptionOpts`. The following
 examples show how to setup automatic client-side field level encryption
-using :class:`~pymongo.encryption.ClientEncryption` to create a new
+using :class:`~motor.motor_asyncio.AsyncIOMotorClientEncryption` to create a new
 encryption data key.
 
 .. note:: Automatic client-side field level encryption requires MongoDB 4.2+
@@ -91,10 +91,34 @@ application from inserting unencrypted values for any fields marked with the
 
 The following example shows how to setup automatic client-side field level
 encryption using
-:class:`~pymongo.encryption.ClientEncryption` to create a new encryption
+:class:`~motor.motor_asyncio.AsyncIOMotorClientEncryption` to create a new encryption
 data key and create a collection with the
 `Automatic Encryption JSON Schema Syntax
 <https://dochub.mongodb.org/core/client-side-field-level-encryption-automatic-encryption-rules>`_.
 
 .. literalinclude:: server_fle_enforcement_example.py
+  :language: python3
+
+.. _explicit-client-side-encryption:
+
+Explicit Encryption
+~~~~~~~~~~~~~~~~~~~
+
+Explicit encryption is a MongoDB community feature and does not use the
+``mongocryptd`` process. Explicit encryption is provided by the
+:class:`~motor.motor_asyncio.AsyncIOMotorClientEncryption` class, for example:
+
+.. literalinclude:: explicit_encryption_example.py
+  :language: python3
+
+Explicit Encryption with Automatic Decryption
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Although automatic encryption requires MongoDB 4.2 enterprise or a
+MongoDB 4.2 Atlas cluster, automatic *decryption* is supported for all users.
+To configure automatic *decryption* without automatic *encryption* set
+``bypass_auto_encryption=True`` in
+:class:`~pymongo.encryption_options.AutoEncryptionOpts`:
+
+.. literalinclude:: explicit_encryption_automatic_decryption_example.py
   :language: python3

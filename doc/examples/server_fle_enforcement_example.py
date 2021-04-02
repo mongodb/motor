@@ -4,9 +4,9 @@ import asyncio
 from bson.codec_options import CodecOptions
 from bson.binary import STANDARD
 
-from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo.encryption import (Algorithm,
-                                ClientEncryption)
+from motor.motor_asyncio import (AsyncIOMotorClient,
+                                 AsyncIOMotorClientEncryption)
+from pymongo.encryption import Algorithm
 from pymongo.encryption_options import AutoEncryptionOpts
 from pymongo.errors import OperationFailure
 from pymongo.write_concern import WriteConcern
@@ -27,7 +27,7 @@ async def main():
     key_vault_namespace = "encryption.__pymongoTestKeyVault"
     key_vault_db_name, key_vault_coll_name = key_vault_namespace.split(".", 1)
 
-    # The MongoClient used to access the key vault (key_vault_namespace).
+    # The MotorClient used to access the key vault (key_vault_namespace).
     key_vault_client = AsyncIOMotorClient()
     key_vault = key_vault_client[key_vault_db_name][key_vault_coll_name]
     # Ensure that two data keys cannot share the same keyAltName.
@@ -37,19 +37,19 @@ async def main():
         unique=True,
         partialFilterExpression={"keyAltNames": {"$exists": True}})
 
-    client_encryption = ClientEncryption(
+    client_encryption = AsyncIOMotorClientEncryption(
         kms_providers,
         key_vault_namespace,
         key_vault_client,
         # The CodecOptions class used for encrypting and decrypting.
         # This should be the same CodecOptions instance you have configured
-        # on MongoClient, Database, or Collection. We will not be calling
+        # on MotorClient, Database, or Collection. We will not be calling
         # encrypt() or decrypt() in this example so we can use any
         # CodecOptions.
         CodecOptions())
 
     # Create a new data key and json schema for the encryptedField.
-    data_key_id = client_encryption.create_data_key(
+    data_key_id = await client_encryption.create_data_key(
         'local', key_alt_names=['pymongo_encryption_example_2'])
     json_schema = {
         "properties": {
