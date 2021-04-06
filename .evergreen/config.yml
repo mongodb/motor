@@ -821,9 +821,9 @@ axes:
         variables:
            TOX_ENV: "asyncio-py39"
            PYTHON_BINARY: "/opt/python/3.9/bin/python3"
-      - id: "py3-pymongo-master"
+      - id: "py3-pymongo-v3.12"
         variables:
-           TOX_ENV: "py3-pymongo-master"
+           TOX_ENV: "py3-pymongo-v3.12"
            # Use 3.6 for now until 3.7 is on all Evergreen distros.
            PYTHON_BINARY: "/opt/python/3.6/bin/python3"
       - id: "synchro37"
@@ -897,7 +897,7 @@ buildvariants:
   display_name: "${os}-${tox-env}-${ssl}"
   matrix_spec:
     os: "rhel"
-    tox-env: ["tornado5-py36", "py3-pymongo-master"]
+    tox-env: ["tornado5-py36", "py3-pymongo-v3.12"]
     ssl: "*"
   tasks:
      - ".3.0"
