@@ -27,6 +27,7 @@ from motor.motor_asyncio import AsyncIOMotorClientEncryption
 
 from pymongo.encryption import Algorithm
 from pymongo.errors import InvalidOperation
+from test import env
 from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase,
                                 skip_if_mongos)
@@ -41,7 +42,7 @@ try:
 except ImportError:
     _HAVE_PYMONGOCRYPT = False
 
-
+@env.require_version_min(4,2,-1)
 class TestExplicitSimple(AsyncIOTestCase):
     def setUp(self):
         super().setUp()
