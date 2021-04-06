@@ -42,6 +42,7 @@ try:
 except ImportError:
     _HAVE_PYMONGOCRYPT = False
 
+
 @env.require_version_min(4,2,-1)
 class TestExplicitSimple(AsyncIOTestCase):
     def setUp(self):
