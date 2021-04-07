@@ -12,8 +12,8 @@ and Python 3.9.
 New Features:
 
 - Added the :class:`motor.motor_asyncio.AsyncIOMotorClientEncryption` class,
-with the same interface as the corresponding PyMongo class.
-See :doc:`examples/encryption` for examples.
+  with the same interface as the corresponding PyMongo class.
+  See :doc:`examples/encryption` for examples.
 - Added support for Python 3.9
 
 Issues Resolved
