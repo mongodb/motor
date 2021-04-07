@@ -6,6 +6,15 @@ Changelog
 Motor 2.4
 ---------
 
+Motor 2.4 adds support for client-side field-level encryption
+and Python 3.9.
+
+New Features:
+
+- Added the :class:`motor.motor_asyncio.AsyncIOMotorClientEncryption` class,
+with the same interface as the corresponding PyMongo class.
+- Added support for Python 3.9
+
 Issues Resolved
 ~~~~~~~~~~~~~~~
 
