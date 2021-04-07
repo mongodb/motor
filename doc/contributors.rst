@@ -13,3 +13,4 @@ The following is a list of people who have contributed to
 - Prashant Mital
 - Shane Harvey
 - Bulat Khasanov
+- William Zhou
