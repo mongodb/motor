@@ -124,13 +124,6 @@ html_sidebars = {
    'index': ['globaltoc.html', 'searchbox.html'],
 }
 
-# These paths are either relative to html_static_path
-# or fully qualified paths (eg. https://...)
-# Note: html_js_files was added in Sphinx 1.8.
-html_js_files = [
-    'delighted.js',
-]
-
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
 #html_title = None
