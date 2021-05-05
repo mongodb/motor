@@ -80,12 +80,10 @@ Further Information
 See also:
 
 * PyMongo's :mod:`~pymongo.monitoring` module
-* `The Command Monitoring Spec`_
-* `The Topology Monitoring Spec`_
+* The `Command Monitoring`_ Spec
+* The `Topology Monitoring`_ Spec
 * The `monitoring_example.py`_ example file in the Motor repository
 
-.. _The Command Monitoring Spec:
 .. _Command Monitoring: https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst
-.. _The Topology Monitoring Spec:
 .. _Topology Monitoring: https://github.com/mongodb/specifications/blob/master/source/server-discovery-and-monitoring/server-discovery-and-monitoring-monitoring.rst
-.. _monitoring.py: https://github.com/mongodb/motor/blob/master/doc/examples/monitoring_example.py
+.. _monitoring_example.py: https://github.com/mongodb/motor/blob/master/doc/examples/monitoring_example.py
