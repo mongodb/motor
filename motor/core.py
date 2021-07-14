@@ -130,6 +130,7 @@ class AgnosticClient(AgnosticBaseProperties):
     secondaries              = ReadOnlyProperty()
     server_info              = AsyncRead()
     server_selection_timeout = ReadOnlyProperty()
+    topology_description     = ReadOnlyProperty()
     start_session            = AsyncCommand(doc=start_session_doc).wrap(ClientSession)
     unlock                   = AsyncCommand(doc=unlock_doc)
 
