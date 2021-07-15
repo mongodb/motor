@@ -37,7 +37,12 @@ from test.tornado_tests import (get_command_line,
                                 MotorTest,
                                 MotorMockServerTest,
                                 server_is_mongos)
-from test.utils import one, safe_get, get_primary_pool, TestListener
+from test.utils import (one,
+                        safe_get,
+                        get_async_test_timeout,
+                        get_primary_pool,
+                        TestListener)
+from test.py35utils import wait_until
 
 
 class MotorCursorTest(MotorMockServerTest):
@@ -438,7 +443,11 @@ class MotorCursorTest(MotorMockServerTest):
 
         del cur
 
-        await gen.sleep(0.1)
+        async def sock_closed():
+            return sock not in socks and sock.closed
+
+        await wait_until(sock_closed, "closed exhaust cursor socket",
+                         timeout=get_async_test_timeout())
 
         # The exhaust cursor's socket was discarded, although another may
         # already have been opened to send OP_KILLCURSORS.
