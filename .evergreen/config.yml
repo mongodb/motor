@@ -662,6 +662,33 @@ tasks:
             TOPOLOGY: "sharded_cluster"
         - func: "run tox"
 
+    - name: "test-5.0-standalone"
+      tags: ["5.0", "standalone"]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "5.0"
+            TOPOLOGY: "server"
+        - func: "run tox"
+
+    - name: "test-5.0-replica_set"
+      tags: ["5.0", "replica_set"]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "5.0"
+            TOPOLOGY: "replica_set"
+        - func: "run tox"
+
+    - name: "test-5.0-sharded_cluster"
+      tags: ["5.0", "sharded_cluster"]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "5.0"
+            TOPOLOGY: "sharded_cluster"
+        - func: "run tox"
+
     - name: "test-latest-standalone"
       tags: ["latest", "standalone"]
       commands:
@@ -872,9 +899,9 @@ axes:
         run_on: "rhel62-small"
         variables:
            TOX_BINARY: "/opt/python/3.6/bin/tox"
-      - id: "ubuntu"
-        display_name: "Ubuntu 16.04"
-        run_on: "ubuntu1604-test"
+      - id: "amazon1-2018"
+        display_name: "Linux"
+        run_on: "amazon1-2018-test"
         variables:
            TOX_BINARY: "/opt/python/3.6/bin/tox"
       - id: "win"
@@ -906,7 +933,7 @@ buildvariants:
 - matrix_name: "main"
   display_name: "${os}-${tox-env}-${ssl}"
   matrix_spec:
-    os: "ubuntu"
+    os: "amazon1-2018"
     tox-env: "*"
     ssl: "*"
   exclude_spec:
@@ -917,6 +944,7 @@ buildvariants:
       ssl: "ssl"
   tasks:
      - ".latest"
+     - ".5.0"
      - ".4.4"
      - ".4.2"
      - ".4.0"
@@ -932,6 +960,7 @@ buildvariants:
     ssl: "*"
   tasks:
      - ".latest"
+     - ".5.0"
      - ".4.4"
      - ".4.2"
      - ".4.0"
@@ -952,14 +981,14 @@ buildvariants:
   display_name: "Enterprise Auth-${tox-env}"
   matrix_spec: {"tox-env": ["synchro37"], ssl: "ssl"}
   run_on:
-     - ubuntu1604-test
+     - amazon1-2018-test
   tasks:
      - name: "test-enterprise-auth"
 
 - name: "docs"
   display_name: "Docs - Build"
   run_on:
-     - ubuntu1604-test
+     - amazon1-2018-test
   expansions:
      TOX_ENV: "py3-sphinx-docs"
      TOX_BINARY: "/opt/python/3.6/bin/tox"
@@ -970,7 +999,7 @@ buildvariants:
 - name: "doctests"
   display_name: "Docs - Test"
   run_on:
-     - ubuntu1604-test
+     - amazon1-2018-test
   expansions:
      TOX_ENV: "py3-sphinx-doctest"
      TOX_BINARY: "/opt/python/3.6/bin/tox"
