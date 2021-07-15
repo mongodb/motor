@@ -13,4 +13,7 @@ sphinx:
 python:
    version: 3.7
    install:
-   - requirements: doc/docs-requirements.txt
+      # Install motor itself.
+      - method: pip
+        path: .
+      - requirements: doc/docs-requirements.txt
