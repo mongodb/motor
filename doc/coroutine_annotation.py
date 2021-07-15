@@ -1,6 +1,6 @@
 """Gratefully adapted from aiohttp, provides coroutine support to autodoc."""
 
-from sphinx.domains.python import PyModulelevel, PyClassmember
+from sphinx.domains.python import PyFunction, PyMethod
 from sphinx import addnodes
 
 
@@ -11,16 +11,16 @@ class PyCoroutineMixin(object):
         return ret
 
 
-class PyCoroutineFunction(PyCoroutineMixin, PyModulelevel):
+class PyCoroutineFunction(PyCoroutineMixin, PyFunction):
     def run(self):
         self.name = 'py:function'
-        return PyModulelevel.run(self)
+        return PyFunction.run(self)
 
 
-class PyCoroutineMethod(PyCoroutineMixin, PyClassmember):
+class PyCoroutineMethod(PyCoroutineMixin, PyMethod):
     def run(self):
         self.name = 'py:method'
-        return PyClassmember.run(self)
+        return PyMethod.run(self)
 
 
 def setup(app):
