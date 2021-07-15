@@ -435,8 +435,10 @@ class MotorCursorTest(MotorMockServerTest):
         sock = one(socks)
         cur = client[self.db.name].test.find(
             cursor_type=CursorType.EXHAUST).batch_size(1)
+        await cur.fetch_next
+        self.assertTrue(cur.next_object())
         # Run at least one getMore to initiate the OP_MSG exhaust protocol.
-        for _ in range(3):
+        if env.version.at_least(4, 2):
             await cur.fetch_next
             self.assertTrue(cur.next_object())
         self.assertEqual(0, len(socks))
