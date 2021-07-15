@@ -900,7 +900,7 @@ axes:
         variables:
            TOX_BINARY: "/opt/python/3.6/bin/tox"
       - id: "amazon1-2018"
-        display_name: "Amazon Linux 2018"
+        display_name: "Linux"
         run_on: "amazon1-2018-test"
         variables:
            TOX_BINARY: "/opt/python/3.6/bin/tox"
