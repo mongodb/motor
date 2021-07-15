@@ -131,7 +131,8 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     async def test_fetch_next_exception(self):
         coll = self.collection
         cursor = coll.find()
-        cursor.delegate._Cursor__id = 1234  # Not valid on server.
+        # Not valid on server, causes CursorNotFound.
+        cursor.delegate._Cursor__id = bson.int64.Int64(1234)
 
         with self.assertRaises(OperationFailure):
             await cursor.fetch_next
