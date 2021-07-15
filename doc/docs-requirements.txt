@@ -1,2 +1,5 @@
 tornado
 aiohttp
+Sphinx~=4.1
+sphinx_rtd_theme~=0.5
+readthedocs-sphinx-search~=0.1
