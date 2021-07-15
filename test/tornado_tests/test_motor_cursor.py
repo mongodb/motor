@@ -435,8 +435,10 @@ class MotorCursorTest(MotorMockServerTest):
         sock = one(socks)
         cur = client[self.db.name].test.find(
             cursor_type=CursorType.EXHAUST).batch_size(1)
-        has_next = await cur.fetch_next
-        self.assertTrue(has_next)
+        # Run at least one getMore to initiate the OP_MSG exhaust protocol.
+        for _ in range(3):
+            await cur.fetch_next
+            self.assertTrue(cur.next_object())
         self.assertEqual(0, len(socks))
         if 'PyPy' in sys.version:
             # Don't wait for GC or use gc.collect(), it's unreliable.
@@ -447,7 +449,7 @@ class MotorCursorTest(MotorMockServerTest):
         async def sock_closed():
             return sock not in socks and sock.closed
 
-        await wait_until(sock_closed, "closed exhaust cursor socket",
+        await wait_until(sock_closed, "close exhaust cursor socket",
                          timeout=get_async_test_timeout())
 
         # The exhaust cursor's socket was discarded, although another may
