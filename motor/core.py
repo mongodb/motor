@@ -1550,7 +1550,13 @@ class _LatentCursor(object):
     _CommandCursor__data = []
     _CommandCursor__id = None
     _CommandCursor__killed = False
+    _CommandCursor__sock_mgr = None
+    _CommandCursor__session = None
+    _CommandCursor__explicit_session = None
     cursor_id = None
+
+    def __init__(self, collection):
+        self._CommandCursor__collection = collection.delegate
 
     def _CommandCursor__end_session(self, *args, **kwargs):
         pass
@@ -1559,7 +1565,7 @@ class _LatentCursor(object):
         pass
 
     def clone(self):
-        return _LatentCursor()
+        return _LatentCursor(self._CommandCursor__collection)
 
     def rewind(self):
         pass
@@ -1577,7 +1583,7 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
         # a PyMongo CommandCursor back yet. Set self.delegate to a latent
         # cursor until the first await triggers _get_more(), which
         # will execute the callback "start", which gets a PyMongo CommandCursor.
-        super().__init__(_LatentCursor(), collection)
+        super().__init__(_LatentCursor(collection), collection)
         self.start = start
         self.args = args
         self.kwargs = kwargs
