@@ -124,9 +124,6 @@ class MotorGridFileTest(MotorTest):
 
     @gen_test
     async def test_gridout_open_exc_info(self):
-        if sys.version_info < (3, ):
-            raise SkipTest("Requires Python 3")
-
         g = motor.MotorGridOut(self.db.fs, "_id that doesn't exist")
         try:
             await g.open()

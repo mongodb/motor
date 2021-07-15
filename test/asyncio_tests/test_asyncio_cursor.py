@@ -30,6 +30,7 @@ from pymongo.errors import OperationFailure
 from motor import motor_asyncio
 from test.utils import (one,
                         FailPoint,
+                        get_async_test_timeout,
                         get_primary_pool,
                         safe_get,
                         TestListener)
@@ -38,6 +39,7 @@ from test.asyncio_tests import (asyncio_test,
                                 AsyncIOMockServerTestCase,
                                 server_is_mongos,
                                 get_command_line)
+from test.py35utils import wait_until
 from test.test_environment import env
 
 
@@ -80,7 +82,6 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(0, cursor.cursor_id)
         self.assertEqual(200, i)
 
-    @unittest.skipUnless(sys.version_info >= (3, 4), "Python 3.4 required")
     @unittest.skipIf('PyPy' in sys.version, "PyPy")
     @asyncio_test
     async def test_fetch_next_delete(self):
@@ -130,7 +131,8 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     async def test_fetch_next_exception(self):
         coll = self.collection
         cursor = coll.find()
-        cursor.delegate._Cursor__id = 1234  # Not valid on server.
+        # Not valid on server, causes CursorNotFound.
+        cursor.delegate._Cursor__id = bson.int64.Int64(1234)
 
         with self.assertRaises(OperationFailure):
             await cursor.fetch_next
@@ -386,7 +388,6 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(2, count)
         self.assertEqual(cursor, cursor.rewind())
 
-    @unittest.skipUnless(sys.version_info >= (3, 4), "Python 3.4 required")
     @unittest.skipIf("PyPy" in sys.version, "PyPy")
     @asyncio_test
     async def test_cursor_del(self):
@@ -412,7 +413,6 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
         request.ok()
 
-    @unittest.skipUnless(sys.version_info >= (3, 4), "Python 3.4 required")
     @asyncio_test
     async def test_exhaust(self):
         if (await server_is_mongos(self.cx)):
@@ -467,8 +467,12 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         sock = one(socks)
         cur = client[self.db.name].test.find(
             cursor_type=CursorType.EXHAUST).batch_size(1)
-        has_next = await cur.fetch_next
-        self.assertTrue(has_next)
+        await cur.fetch_next
+        self.assertTrue(cur.next_object())
+        # Run at least one getMore to initiate the OP_MSG exhaust protocol.
+        if env.version.at_least(4, 2):
+            await cur.fetch_next
+            self.assertTrue(cur.next_object())
         self.assertEqual(0, len(socks))
         if 'PyPy' in sys.version:
             # Don't wait for GC or use gc.collect(), it's unreliable.
@@ -476,7 +480,11 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
         del cur
 
-        await asyncio.sleep(0.1)
+        async def sock_closed():
+            return sock not in socks and sock.closed
+
+        await wait_until(sock_closed, "close exhaust cursor socket",
+                         timeout=get_async_test_timeout())
 
         # The exhaust cursor's socket was discarded, although another may
         # already have been opened to send OP_KILLCURSORS.

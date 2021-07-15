@@ -260,9 +260,6 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     async def test_aggregation_cursor_exc_info(self):
-        if sys.version_info < (3,):
-            raise SkipTest("Requires Python 3")
-
         await self._make_test_data(200)
         cursor = self.db.test.aggregate(self.pipeline)
         await cursor.to_list(length=10)

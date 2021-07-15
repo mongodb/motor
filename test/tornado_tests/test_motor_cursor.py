@@ -37,7 +37,12 @@ from test.tornado_tests import (get_command_line,
                                 MotorTest,
                                 MotorMockServerTest,
                                 server_is_mongos)
-from test.utils import one, safe_get, get_primary_pool, TestListener
+from test.utils import (one,
+                        safe_get,
+                        get_async_test_timeout,
+                        get_primary_pool,
+                        TestListener)
+from test.py35utils import wait_until
 
 
 class MotorCursorTest(MotorMockServerTest):
@@ -130,7 +135,8 @@ class MotorCursorTest(MotorMockServerTest):
     async def test_fetch_next_exception(self):
         coll = self.collection
         cursor = coll.find()
-        cursor.delegate._Cursor__id = 1234  # Not valid on server
+        # Not valid on server, causes CursorNotFound.
+        cursor.delegate._Cursor__id = bson.int64.Int64(1234)
 
         with self.assertRaises(OperationFailure):
             await cursor.fetch_next
@@ -209,9 +215,6 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     async def test_to_list_exc_info(self):
-        if sys.version_info < (3,):
-            raise SkipTest("Requires Python 3")
-
         await self.make_test_data()
         coll = self.collection
         cursor = coll.find()
@@ -359,9 +362,6 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     async def test_cursor_del(self):
-        if sys.version_info < (3, 4):
-            raise SkipTest("requires Python 3.4")
-
         if 'PyPy' in sys.version:
             raise SkipTest("PyPy")
 
@@ -387,9 +387,6 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     async def test_exhaust(self):
-        if sys.version_info < (3, 4):
-            raise SkipTest("requires Python 3.4")
-
         if (await server_is_mongos(self.cx)):
             self.assertRaises(InvalidOperation,
                               self.db.test.find, cursor_type=CursorType.EXHAUST)
@@ -438,8 +435,12 @@ class MotorCursorTest(MotorMockServerTest):
         sock = one(socks)
         cur = client[self.db.name].test.find(
             cursor_type=CursorType.EXHAUST).batch_size(1)
-        has_next = await cur.fetch_next
-        self.assertTrue(has_next)
+        await cur.fetch_next
+        self.assertTrue(cur.next_object())
+        # Run at least one getMore to initiate the OP_MSG exhaust protocol.
+        if env.version.at_least(4, 2):
+            await cur.fetch_next
+            self.assertTrue(cur.next_object())
         self.assertEqual(0, len(socks))
         if 'PyPy' in sys.version:
             # Don't wait for GC or use gc.collect(), it's unreliable.
@@ -447,7 +448,11 @@ class MotorCursorTest(MotorMockServerTest):
 
         del cur
 
-        await gen.sleep(0.1)
+        async def sock_closed():
+            return sock not in socks and sock.closed
+
+        await wait_until(sock_closed, "close exhaust cursor socket",
+                         timeout=get_async_test_timeout())
 
         # The exhaust cursor's socket was discarded, although another may
         # already have been opened to send OP_KILLCURSORS.

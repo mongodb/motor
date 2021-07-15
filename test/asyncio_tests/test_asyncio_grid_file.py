@@ -122,9 +122,6 @@ class MotorGridFileTest(AsyncIOTestCase):
 
     @asyncio_test
     async def test_gridout_open_exc_info(self):
-        if sys.version_info < (3, ):
-            raise SkipTest("Requires Python 3")
-
         g = motor_asyncio.AsyncIOMotorGridOut(self.db.fs, "_id that doesn't exist")
         try:
             await g.open()
