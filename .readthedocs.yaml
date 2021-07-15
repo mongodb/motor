@@ -5,9 +5,9 @@
 # Required
 version: 2
 
-# Build documentation in the docs/ directory with Sphinx
+# Build documentation in the doc/ directory with Sphinx
 sphinx:
-   configuration: docs/conf.py
+   configuration: doc/conf.py
 
 # Set the version of Python and requirements required to build the docs.
 python:
