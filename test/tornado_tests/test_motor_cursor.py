@@ -209,9 +209,6 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     async def test_to_list_exc_info(self):
-        if sys.version_info < (3,):
-            raise SkipTest("Requires Python 3")
-
         await self.make_test_data()
         coll = self.collection
         cursor = coll.find()
@@ -359,9 +356,6 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     async def test_cursor_del(self):
-        if sys.version_info < (3, 4):
-            raise SkipTest("requires Python 3.4")
-
         if 'PyPy' in sys.version:
             raise SkipTest("PyPy")
 
@@ -387,9 +381,6 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     async def test_exhaust(self):
-        if sys.version_info < (3, 4):
-            raise SkipTest("requires Python 3.4")
-
         if (await server_is_mongos(self.cx)):
             self.assertRaises(InvalidOperation,
                               self.db.test.find, cursor_type=CursorType.EXHAUST)
