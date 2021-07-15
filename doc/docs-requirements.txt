@@ -1,2 +1,3 @@
 tornado
 aiohttp
+Sphinx>=4,<5
