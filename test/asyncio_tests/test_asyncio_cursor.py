@@ -130,15 +130,19 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     @asyncio_test
     async def test_fetch_next_exception(self):
         coll = self.collection
-        cursor = coll.find()
+        await coll.insert_many([{} for _ in range(10)])
+        cursor = coll.find(batch_size=2)
+        await cursor.fetch_next
+        self.assertTrue(cursor.next_object())
+
         # Not valid on server, causes CursorNotFound.
         cursor.delegate._Cursor__id = bson.int64.Int64(1234)
 
         with self.assertRaises(OperationFailure):
             await cursor.fetch_next
-
-        # Avoid the cursor trying to close itself when it goes out of scope.
-        cursor.delegate._Cursor__id = None
+            self.assertTrue(cursor.next_object())
+            await cursor.fetch_next
+            self.assertTrue(cursor.next_object())
 
     @asyncio_test(timeout=30)
     async def test_each(self):
