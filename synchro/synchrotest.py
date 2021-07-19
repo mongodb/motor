@@ -270,6 +270,7 @@ class SynchroNosePlugin(Plugin):
                            'create_document_test',
                            'create_operation_test',
                            'create_selection_tests',
+                           'generate_test_classes',
                            ):
             return False
 
@@ -284,7 +285,7 @@ class SynchroNosePlugin(Plugin):
         if not self.selector.matches(method.__name__):
             return False
 
-        if method.__name__ in ('run_test_ops',):
+        if method.__name__ in ('run_test_ops', 'maybe_skip_test'):
             return False
 
         for excluded_name in excluded_tests:

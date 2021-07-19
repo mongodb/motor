@@ -54,7 +54,7 @@ from pymongo import (collation,
                      write_concern)
 from pymongo.auth import _build_credentials_tuple
 from pymongo.helpers import _check_command_response
-from pymongo.client_session import TransactionOptions
+from pymongo.client_session import TransactionOptions, _TxnState
 from pymongo.collation import *
 from pymongo.common import *
 from pymongo.common import _UUID_REPRESENTATIONS, _MAX_END_SESSIONS
@@ -62,6 +62,7 @@ from pymongo.compression_support import _HAVE_SNAPPY, _HAVE_ZLIB, _HAVE_ZSTD
 from pymongo.cursor import *
 from pymongo.cursor import _QUERY_OPTIONS
 from pymongo.encryption import *
+from pymongo.encryption import _Encrypter
 from pymongo.encryption_options import *
 from pymongo.encryption_options import _HAVE_PYMONGOCRYPT
 from pymongo.errors import *
@@ -312,6 +313,9 @@ class Synchro(with_metaclass(SynchroMeta)):
                 and hasattr(other, 'delegate')):
             return self.delegate == other.delegate
         return NotImplemented
+
+    def __hash__(self):
+        return self.delegate.__hash__()
 
     def synchronize(self, async_method):
         """
