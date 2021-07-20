@@ -185,6 +185,9 @@ excluded_tests = [
     'TestSCRAMSHA1.test_scram_sha1',
     'TestThreadedAuth.*',
 
+    # Uses "collection_names", deprecated in PyMongo, removed in Motor 2.0.
+    'TestSingleSecondaryOk.test_reads_from_secondary',
+
     # Slow.
     'TestDatabase.test_collection_names_single_socket',
     'TestDatabase.test_list_collection_names',
