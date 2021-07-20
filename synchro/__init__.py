@@ -42,6 +42,7 @@ from pymongo import *
 from pymongo import (collation,
                      compression_support,
                      change_stream,
+                     encryption,
                      errors,
                      monotonic,
                      operations,
@@ -62,7 +63,7 @@ from pymongo.compression_support import _HAVE_SNAPPY, _HAVE_ZLIB, _HAVE_ZSTD
 from pymongo.cursor import *
 from pymongo.cursor import _QUERY_OPTIONS
 from pymongo.encryption import *
-from pymongo.encryption import _Encrypter
+from pymongo.encryption import _Encrypter, _MONGOCRYPTD_TIMEOUT_MS
 from pymongo.encryption_options import *
 from pymongo.encryption_options import _HAVE_PYMONGOCRYPT
 from pymongo.errors import *
