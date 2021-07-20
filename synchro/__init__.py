@@ -780,3 +780,9 @@ class ClientEncryption(Synchro):
         self.delegate = motor.MotorClientEncryption(
             kms_providers, key_vault_namespace, key_vault_client.delegate,
             codec_options)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return self.synchronize(self.delegate.__aexit__)(*args)
