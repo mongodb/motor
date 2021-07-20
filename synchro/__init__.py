@@ -363,6 +363,12 @@ class MongoClient(Synchro):
         # # Use the property directly from the underlying MongoClient.
         return self.delegate.delegate.is_locked
 
+    def _duplicate(self, **kwargs):
+        client = self.delegate._duplicate(**kwargs)
+        if isinstance(client, Synchro):
+            return client.delegate.delegate
+        return client
+
     def __enter__(self):
         return self
 
@@ -757,16 +763,20 @@ class GridOut(Synchro):
         self.close()
 
     def __next__(self):
-        if sys.version_info >= (3, 5):
-            try:
-                return self.synchronize(self.delegate.__anext__)()
-            except StopAsyncIteration:
-                raise StopIteration()
-        else:
-            chunk = self.readchunk()
-            if chunk:
-                return chunk
+        try:
+            return self.synchronize(self.delegate.__anext__)()
+        except StopAsyncIteration:
             raise StopIteration()
 
     def __iter__(self):
         return self
+
+
+class ClientEncryption(Synchro):
+    __delegate_class__ = motor.MotorClientEncryption
+
+    def __init__(self, kms_providers, key_vault_namespace, key_vault_client,
+                 codec_options):
+        self.delegate = motor.MotorClientEncryption(
+            kms_providers, key_vault_namespace, key_vault_client.delegate,
+            codec_options)
