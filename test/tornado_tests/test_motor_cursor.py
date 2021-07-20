@@ -279,9 +279,11 @@ class MotorCursorTest(MotorMockServerTest):
 
         self.assertTrue((await fetch_next))
 
-        await cursor.close()
-        request = await self.run_thread(server.receives, "killCursors", "coll")
-        request.ok()
+        async def mock_kill_cursors():
+            request = await self.run_thread(
+                server.receives, "killCursors", "coll")
+            request.ok()
+        await gen.multi([cursor.close(), mock_kill_cursors()])
 
         # Cursor reports it's alive because it has buffered data, even though
         # it's killed on the server.
