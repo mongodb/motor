@@ -104,6 +104,7 @@ class AgnosticClient(AgnosticBaseProperties):
     address                  = ReadOnlyProperty()
     arbiters                 = ReadOnlyProperty()
     close                    = DelegateMethod()
+    __hash__                 = DelegateMethod()
     drop_database            = AsyncCommand().unwrap('MotorDatabase')
     event_listeners          = ReadOnlyProperty()
     fsync                    = AsyncCommand(doc=fsync_doc)
@@ -491,6 +492,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
     __motor_class_name__ = 'MotorDatabase'
     __delegate_class__ = Database
 
+    __hash__              = DelegateMethod()
     command               = AsyncCommand(doc=cmd_doc)
     create_collection     = AsyncCommand().wrap(Collection)
     current_op            = AsyncRead(doc=current_op_doc)
@@ -689,6 +691,7 @@ class AgnosticCollection(AgnosticBaseProperties):
     __motor_class_name__ = 'MotorCollection'
     __delegate_class__ = Collection
 
+    __hash__                 = DelegateMethod()
     bulk_write               = AsyncCommand(doc=bulk_write_doc)
     count_documents          = AsyncRead()
     create_index             = AsyncCommand()
@@ -1080,6 +1083,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
 class AgnosticBaseCursor(AgnosticBase):
     """Base class for AgnosticCursor and AgnosticCommandCursor"""
+    _async_close  = AsyncRead(attr_name='close')
     _refresh      = AsyncRead()
     address       = ReadOnlyProperty()
     cursor_id     = ReadOnlyProperty()
@@ -1412,7 +1416,7 @@ class AgnosticBaseCursor(AgnosticBase):
         """
         if not self.closed:
             self.closed = True
-            return self._close()
+            await self._async_close()
 
     def batch_size(self, batch_size):
         self.delegate.batch_size(batch_size)
@@ -1428,17 +1432,8 @@ class AgnosticBaseCursor(AgnosticBase):
     def _data(self):
         raise NotImplementedError
 
-    def _clear_cursor_id(self):
-        raise NotImplementedError
-
-    def _close_exhaust_cursor(self):
-        raise NotImplementedError
-
     def _killed(self):
         raise NotImplementedError
-
-    async def _close(self):
-        raise NotImplementedError()
 
 
 class AgnosticCursor(AgnosticBaseCursor):
@@ -1487,25 +1482,8 @@ class AgnosticCursor(AgnosticBaseCursor):
     def _data(self):
         return self.delegate._Cursor__data
 
-    def _clear_cursor_id(self):
-        self.delegate._Cursor__id = 0
-
-    def _close_exhaust_cursor(self):
-        # If an exhaust cursor is dying without fully iterating its results,
-        # it must close the socket. PyMongo's Cursor does this, but we've
-        # disabled its cleanup so we must do it ourselves.
-        if self.delegate._Cursor__exhaust:
-            manager = self.delegate._Cursor__exhaust_mgr
-            if manager.sock:
-                manager.sock.close()
-
-            manager.close()
-
     def _killed(self):
         return self.delegate._Cursor__killed
-
-    def _close(self):
-        return self._Cursor__die()
 
 
 class AgnosticRawBatchCursor(AgnosticCursor):
@@ -1525,18 +1503,8 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
     def _data(self):
         return self.delegate._CommandCursor__data
 
-    def _clear_cursor_id(self):
-        self.delegate._CommandCursor__id = 0
-
-    def _close_exhaust_cursor(self):
-        # MongoDB doesn't have exhaust command cursors yet.
-        pass
-
     def _killed(self):
         return self.delegate._CommandCursor__killed
-
-    def _close(self):
-        return self._CommandCursor__die()
 
 
 class AgnosticRawBatchCommandCursor(AgnosticCommandCursor):

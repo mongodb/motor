@@ -415,6 +415,10 @@ class ClientSession(Synchro):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.synchronize(self.delegate.end_session)
 
+    def with_transaction(self, *args, **kwargs):
+        raise unittest.SkipTest('MOTOR-606 Synchro does not support '
+                                'with_transaction')
+
     # For PyMongo tests that access session internals.
     _client              = SynchroProperty()
     _pinned_address      = SynchroProperty()
