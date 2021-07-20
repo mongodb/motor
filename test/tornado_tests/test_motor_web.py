@@ -169,7 +169,6 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
             ('foo.jpg', 'jpeg'),
             ('foo.png', 'png'),
             ('ht.html', 'html'),
-            ('jscr.js', 'javascript'),
         ]:
             # 'fs' is PyMongo's blocking GridFS
             self.fs.put(b'', filename=filename)
@@ -177,9 +176,9 @@ class GridFSHandlerTest(GridFSHandlerTestBase):
                 response = self.fetch('/' + filename, method=method)
                 self.assertEqual(200, response.code)
                 # mimetypes are platform-defined, be fuzzy
-                self.assertTrue(
-                    response.headers['Content-Type'].lower().endswith(
-                        expected_type))
+                self.assertIn(
+                    expected_type,
+                    response.headers['Content-Type'].lower())
 
 
 class TZAwareGridFSHandlerTest(GridFSHandlerTestBase):

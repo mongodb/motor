@@ -222,7 +222,6 @@ class AIOHTTPGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
             ('bar', 'octet-stream'),
             ('bar.png', 'png'),
             ('ht.html', 'html'),
-            ('jscr.js', 'javascript'),
         ]:
             # 'fs' is PyMongo's blocking GridFS
             _id = self.fs.put(b'', filename=filename)
