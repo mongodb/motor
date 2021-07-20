@@ -168,9 +168,6 @@ excluded_tests = [
     'TestCollectionWCustomType.test_find_and_modify_w_custom_type_decoder',
 
     # Tests that use "count", deprecated in PyMongo, removed in Motor 2.0.
-    '*.test_command_monitoring_command_A_failed_command_event',
-    '*.test_command_monitoring_command_A_successful_command',
-    '*.test_command_monitoring_command_A_successful_command_with_a_non-primary_read_preference',
     '*.test_read_count_Deprecated_count_with_a_filter',
     '*.test_read_count_Deprecated_count_without_a_filter',
     'TestBinary.test_uuid_queries',
@@ -187,9 +184,6 @@ excluded_tests = [
     'TestSCRAM.test_scram',
     'TestSCRAMSHA1.test_scram_sha1',
     'TestThreadedAuth.*',
-
-    # Uses "collection_names", deprecated in PyMongo, removed in Motor 2.0.
-    'TestSingleSlaveOk.test_reads_from_secondary',
 
     # Slow.
     'TestDatabase.test_collection_names_single_socket',
