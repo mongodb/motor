@@ -143,9 +143,10 @@ def wrap_synchro(fn):
             motor_obj._lazy_init()
             return ChangeStream(motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorLatentCommandCursor):
-            # Send the initial command as PyMongo expects.
             synchro_cursor = CommandCursor(motor_obj)
-            synchro_cursor.synchronize(motor_obj._get_more)()
+            # Send the initial command as PyMongo expects.
+            if not motor_obj.started:
+                synchro_cursor.synchronize(motor_obj._get_more)()
             return synchro_cursor
         if isinstance(motor_obj, motor.motor_tornado.MotorCommandCursor):
             return CommandCursor(motor_obj)
@@ -443,6 +444,7 @@ class Database(Synchro):
 
     get_collection     = WrapOutgoing()
     watch              = WrapOutgoing()
+    aggregate          = WrapOutgoing()
 
     def __init__(self, client, name, **kwargs):
         assert isinstance(client, MongoClient), (
@@ -456,13 +458,6 @@ class Database(Synchro):
         assert isinstance(self.delegate, motor.MotorDatabase), (
             "synchro.Database delegate must be MotorDatabase, not "
             " %s" % repr(self.delegate))
-
-    def aggregate(self, *args, **kwargs):
-        # Motor does no I/O initially in aggregate() but PyMongo does.
-        func = wrap_synchro(unwrap_synchro(self.delegate.aggregate))
-        cursor = func(*args, **kwargs)
-        self.synchronize(cursor.delegate._get_more)()
-        return cursor
 
     @property
     def client(self):
@@ -480,6 +475,8 @@ class Collection(Synchro):
 
     find                            = WrapOutgoing()
     find_raw_batches                = WrapOutgoing()
+    aggregate                       = WrapOutgoing()
+    aggregate_raw_batches           = WrapOutgoing()
     list_indexes                    = WrapOutgoing()
     watch                           = WrapOutgoing()
 
@@ -497,20 +494,6 @@ class Collection(Synchro):
             raise TypeError(
                 "Expected to get synchro Collection from Database,"
                 " got %s" % repr(self.delegate))
-
-    def aggregate(self, *args, **kwargs):
-        # Motor does no I/O initially in aggregate() but PyMongo does.
-        func = wrap_synchro(unwrap_synchro(self.delegate.aggregate))
-        cursor = func(*args, **kwargs)
-        self.synchronize(cursor.delegate._get_more)()
-        return cursor
-
-    def aggregate_raw_batches(self, *args, **kwargs):
-        # Motor does no I/O initially in aggregate() but PyMongo does.
-        func = wrap_synchro(unwrap_synchro(self.delegate.aggregate_raw_batches))
-        cursor = func(*args, **kwargs)
-        self.synchronize(cursor.delegate._get_more)()
-        return cursor
 
     def __getattr__(self, name):
         # Access to collections with dotted names, like db.test.mike
