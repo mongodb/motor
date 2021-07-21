@@ -364,12 +364,13 @@ if __name__ == '__main__':
               'pymongo.command_cursor',
               'pymongo.change_stream',
               'pymongo.cursor',
+              'pymongo.encryption',
+              'pymongo.encryption_options',
               'pymongo.mongo_client',
               'pymongo.database',
               'pymongo.mongo_replica_set_client',
               'gridfs',
-              'gridfs.grid_file',
-              'pymongo.encryption']:
+              'gridfs.grid_file']:
         sys.modules.pop(n)
 
     if '--check-exclude-patterns' in sys.argv:

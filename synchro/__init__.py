@@ -42,7 +42,7 @@ from pymongo import *
 from pymongo import (collation,
                      compression_support,
                      change_stream,
-                     encryption,
+                     encryption_options,
                      errors,
                      monotonic,
                      operations,
@@ -770,6 +770,17 @@ class GridOut(Synchro):
 
     def __iter__(self):
         return self
+
+
+# Unwrap key_vault_client, pymongo expects it to be a regular MongoClient.
+class AutoEncryptionOpts(encryption_options.AutoEncryptionOpts):
+    def __init__(self, kms_providers, key_vault_namespace,
+                 key_vault_client=None, **kwargs):
+        if key_vault_client is not None:
+            key_vault_client = key_vault_client.delegate.delegate
+        super(AutoEncryptionOpts, self).__init__(
+            kms_providers, key_vault_namespace,
+            key_vault_client=key_vault_client, **kwargs)
 
 
 class ClientEncryption(Synchro):
