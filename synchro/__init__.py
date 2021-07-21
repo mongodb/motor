@@ -143,7 +143,10 @@ def wrap_synchro(fn):
             motor_obj._lazy_init()
             return ChangeStream(motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorLatentCommandCursor):
-            return CommandCursor(motor_obj)
+            # Send the initial command as PyMongo expects.
+            synchro_cursor = CommandCursor(motor_obj)
+            synchro_cursor.synchronize(motor_obj._get_more)()
+            return synchro_cursor
         if isinstance(motor_obj, motor.motor_tornado.MotorCommandCursor):
             return CommandCursor(motor_obj)
         if isinstance(motor_obj, _MotorRawBatchCommandCursor):
