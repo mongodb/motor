@@ -26,8 +26,8 @@ templates_path = ['_templates']
 # The suffix of source filenames.
 source_suffix = '.rst'
 
-# The master toctree document.
-master_doc = 'index'
+# The root toctree document.
+root_doc = 'index'
 
 # General information about the project.
 project = u'Motor'
@@ -87,20 +87,20 @@ import pymongo
 from pymongo.mongo_client import MongoClient
 
 sync_client = MongoClient()
-ismaster = sync_client.admin.command('isMaster')
+hello = sync_client.admin.command('hello')
 server_info = sync_client.server_info()
 
-if 'setName' in ismaster:
+if 'setName' in hello:
     raise Exception(
-        "Run doctests with standalone MongoDB 4.0 server, not a replica set")
+        "Run doctests with standalone MongoDB 5.0 server, not a replica set")
 
-if ismaster.get('msg') == 'isdbgrid':
+if hello.get('msg') == 'isdbgrid':
     raise Exception(
-        "Run doctests with standalone MongoDB 4.0 server, not mongos")
+        "Run doctests with standalone MongoDB 5.0 server, not mongos")
 
-if server_info['versionArray'][:2] != [4, 0]:
+if server_info['versionArray'][:2] != [5, 0]:
     raise Exception(
-        "Run doctests with standalone MongoDB 4.0 server, not %s" % (
+        "Run doctests with standalone MongoDB 5.0 server, not %s" % (
             server_info['version'], ))
 
 sync_client.drop_database("doctest_test")

@@ -70,12 +70,7 @@ def partition_node(node):
 
 def connected(client):
     """Convenience, wait for a new PyMongo MongoClient to connect."""
-    with warnings.catch_warnings():
-        # Ignore warning that "ismaster" is always routed to primary even
-        # if client's read preference isn't PRIMARY.
-        warnings.simplefilter("ignore", UserWarning)
-        client.admin.command('ismaster')  # Force connection.
-
+    client.admin.command('ping')  # Force connection.
     return client
 
 

@@ -734,7 +734,7 @@ tasks:
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "4.0"
+            VERSION: "5.0"
             TOPOLOGY: "server"
         - func: "run tox"
           vars:
@@ -933,7 +933,7 @@ buildvariants:
     tox-env: "*"
     ssl: "*"
   exclude_spec:
-    # TODO: synchro needs PyMongo master's updated SSL test certs,
+    # TODO: synchro needs PyMongo's updated SSL test certs,
     # which may require Motor test suite changes.
     - os: "*"
       tox-env: ["synchro37"]
