@@ -1138,3 +1138,43 @@ class TestExamples(AsyncIOTestCase):
         client = AsyncIOMotorClient(
             uri, server_api=ServerApi("1", deprecation_errors=True))
         # End Versioned API Example 4
+
+    @env.require_version_min(4, 7)
+    @asyncio_test
+    async def test_versioned_api_migration(self):
+        client = self.asyncio_client(server_api=ServerApi("1", strict=True))
+        await client.db.sales.drop()
+
+        # Start Versioned API Example 5
+        await client.db.sales.insert_many([
+            {"_id": 1, "item": "abc", "price": 10, "quantity": 2, "date": datetime.datetime.strptime("2021-01-01T08:00:00Z", "%Y-%m-%dT%H:%M:%SZ")},
+            {"_id": 2, "item": "jkl", "price": 20, "quantity": 1, "date": datetime.datetime.strptime("2021-02-03T09:00:00Z", "%Y-%m-%dT%H:%M:%SZ")},
+            {"_id": 3, "item": "xyz", "price": 5, "quantity": 5, "date": datetime.datetime.strptime("2021-02-03T09:05:00Z", "%Y-%m-%dT%H:%M:%SZ")},
+            {"_id": 4, "item": "abc", "price": 10, "quantity": 10, "date": datetime.datetime.strptime("2021-02-15T08:00:00Z", "%Y-%m-%dT%H:%M:%SZ")},
+            {"_id": 5, "item": "xyz", "price": 5, "quantity": 10, "date": datetime.datetime.strptime("2021-02-15T09:05:00Z", "%Y-%m-%dT%H:%M:%SZ")},
+            {"_id": 6, "item": "xyz", "price": 5, "quantity": 5, "date": datetime.datetime.strptime("2021-02-15T12:05:10Z", "%Y-%m-%dT%H:%M:%SZ")},
+            {"_id": 7, "item": "xyz", "price": 5, "quantity": 10, "date": datetime.datetime.strptime("2021-02-15T14:12:12Z", "%Y-%m-%dT%H:%M:%SZ")},
+            {"_id": 8, "item": "abc", "price": 10, "quantity": 5, "date": datetime.datetime.strptime("2021-03-16T20:20:13Z", "%Y-%m-%dT%H:%M:%SZ")}
+        ])
+        # End Versioned API Example 5
+
+        try:
+            await client.db.command('count', 'sales', query={})
+        except OperationFailure as exc:
+            err_msg = str(exc)
+        else:
+            self.fail("Running count with apiVersion=1 and strict=True didn't "
+                      "raise an exception")
+
+        # Start Versioned API Example 6
+        # pymongo.errors.OperationFailure: Provided apiStrict:true, but the command count is not in API Version 1, full error: {'ok': 0.0, 'errmsg': 'Provided apiStrict:true, but the command count is not in API Version 1', 'code': 323, 'codeName': 'APIStrictError', '$clusterTime': {'clusterTime': Timestamp(1626977595, 10), 'signature': {'hash': b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', 'keyId': 0}}, 'operationTime': Timestamp(1626977595, 10)}
+        # End Versioned API Example 6
+
+        # Start Versioned API Example 7
+        await client.db.sales.aggregate(
+            [{"$group": {"_id": None, "count": {"$count": {}}}}]).to_list(length=None)
+        # End Versioned API Example 7
+
+        # Start Versioned API Example 8
+        # [{'_id': None, 'count': 8}]
+        # End Versioned API Example 7
