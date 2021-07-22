@@ -1138,3 +1138,43 @@ class TestExamples(AsyncIOTestCase):
         client = AsyncIOMotorClient(
             uri, server_api=ServerApi("1", deprecation_errors=True))
         # End Versioned API Example 4
+
+    @env.require_version_min(4, 7)
+    # Only run on RS until https://jira.mongodb.org/browse/SERVER-58785 is resolved.
+    @env.require_replica_set
+    @asyncio_test
+    async def test_versioned_api_migration(self):
+        client = self.asyncio_client(server_api=ServerApi("1", strict=True))
+        await client.db.sales.drop()
+
+        # Start Versioned API Example 5
+        def strptime(s):
+            return datetime.datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ")
+        await client.db.sales.insert_many([
+            {"_id": 1, "item": "abc", "price": 10, "quantity": 2, "date": strptime("2021-01-01T08:00:00Z")},
+            {"_id": 2, "item": "jkl", "price": 20, "quantity": 1, "date": strptime("2021-02-03T09:00:00Z")},
+            {"_id": 3, "item": "xyz", "price": 5, "quantity": 5, "date": strptime("2021-02-03T09:05:00Z")},
+            {"_id": 4, "item": "abc", "price": 10, "quantity": 10, "date": strptime("2021-02-15T08:00:00Z")},
+            {"_id": 5, "item": "xyz", "price": 5, "quantity": 10, "date": strptime("2021-02-15T09:05:00Z")},
+            {"_id": 6, "item": "xyz", "price": 5, "quantity": 5, "date": strptime("2021-02-15T12:05:10Z")},
+            {"_id": 7, "item": "xyz", "price": 5, "quantity": 10, "date": strptime("2021-02-15T14:12:12Z")},
+            {"_id": 8, "item": "abc", "price": 10, "quantity": 5, "date": strptime("2021-03-16T20:20:13Z")}
+        ])
+        # End Versioned API Example 5
+
+        with self.assertRaisesRegex(
+                OperationFailure, "Provided apiStrict:true, but the command "
+                                  "count is not in API Version 1"):
+            await client.db.command('count', 'sales', query={})
+
+        # Start Versioned API Example 6
+        # pymongo.errors.OperationFailure: Provided apiStrict:true, but the command count is not in API Version 1, full error: {'ok': 0.0, 'errmsg': 'Provided apiStrict:true, but the command count is not in API Version 1', 'code': 323, 'codeName': 'APIStrictError'}
+        # End Versioned API Example 6
+
+        # Start Versioned API Example 7
+        await client.db.sales.count_documents({})
+        # End Versioned API Example 7
+
+        # Start Versioned API Example 8
+        # 8
+        # End Versioned API Example 7
