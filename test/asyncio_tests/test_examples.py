@@ -1140,12 +1140,12 @@ class TestExamples(AsyncIOTestCase):
         # End Versioned API Example 4
 
     @env.require_version_min(4, 7)
+    # Only run on RS until https://jira.mongodb.org/browse/SERVER-58785 is resolved.
+    @env.require_replica_set
     @asyncio_test
     async def test_versioned_api_migration(self):
         client = self.asyncio_client(server_api=ServerApi("1", strict=True))
         await client.db.sales.drop()
-        # Explicitly create collection to avoid failures on sharded
-        await client.db.create_collection('sales', create=True)
 
         # Start Versioned API Example 5
         def strptime(s):
