@@ -24,6 +24,7 @@ from pymongo import WriteConcern
 from pymongo.errors import ConnectionFailure, OperationFailure
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
+from pymongo.server_api import ServerApi
 
 from test import env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
@@ -1107,3 +1108,31 @@ class TestExamples(AsyncIOTestCase):
             async for item in items.find({'end': None}, session=s2):
                 print(item)
         # End Causal Consistency Example 2
+
+    @env.require_version_min(4, 7)
+    @asyncio_test
+    def test_versioned_api(self):
+        # Versioned API examples
+        AsyncIOMotorClient = lambda _, server_api: self.asyncio_client(
+            server_api=server_api, connect=False)
+        uri = None
+
+        # Start Versioned API Example 1
+        from pymongo.server_api import ServerApi
+        client = AsyncIOMotorClient(uri, server_api=ServerApi("1"))
+        # End Versioned API Example 1
+
+        # Start Versioned API Example 2
+        client = AsyncIOMotorClient(
+            uri, server_api=ServerApi("1", strict=True))
+        # End Versioned API Example 2
+
+        # Start Versioned API Example 3
+        client = AsyncIOMotorClient(
+            uri, server_api=ServerApi("1", strict=False))
+        # End Versioned API Example 3
+
+        # Start Versioned API Example 4
+        client = AsyncIOMotorClient(
+            uri, server_api=ServerApi("1", deprecation_errors=True))
+        # End Versioned API Example 4
