@@ -1111,7 +1111,7 @@ class TestExamples(AsyncIOTestCase):
 
     @env.require_version_min(4, 7)
     @asyncio_test
-    def test_versioned_api(self):
+    async def test_versioned_api(self):
         # Versioned API examples
         # Use connect=False to reduce overhead as client is not used to run
         # any operations.
