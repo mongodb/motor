@@ -6,7 +6,7 @@ Changelog
 Motor 2.5
 ---------
 
-Motor 2.4 adds support for MongoDB 5.0. It depends on PyMongo 3.12 or
+Motor 2.5 adds support for MongoDB 5.0. It depends on PyMongo 3.12 or
 later.
 
 New features:
@@ -34,6 +34,7 @@ New features:
 
 Deprecations:
 
+- Deprecated support for Python 3.5.
 - Deprecated :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.profiling_info`,
   :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.profiling_level`, and
   :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.set_profiling_level`.

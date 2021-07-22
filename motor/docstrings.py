@@ -1292,3 +1292,97 @@ Note that using this class in a with-statement will automatically call
         encrypted = await client_encryption.encrypt(value, ...)
         decrypted = await client_encryption.decrypt(encrypted)
 """
+
+profiling_info_doc ="""**DEPRECATED**: Returns a list containing current profiling
+information.
+
+Starting with Motor 2.5, this helper is obsolete. Instead, users
+can view the database profiler output by running
+:meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find` against the
+``system.profile`` collection as detailed in the `profiler output`_
+documentation::
+
+   profiling_info = await db["system.profile"].find().to_list()
+
+:Parameters:
+  - `session` (optional): a
+    :class:`~motor.motor_asyncio.AsyncIOMotorClientSession`.
+
+.. versionchanged:: 2.5
+   Deprecated.
+
+.. mongodoc:: profiling
+.. _profiler output: https://docs.mongodb.com/manual/reference/database-profiler/
+"""
+
+profiling_level_doc = """**DEPRECATED**: Get the database's current profiling level.
+
+Starting with Motor 2.5, this helper is obsolete. Instead, users
+can run the `profile command`_, using the :meth:`command`
+helper to get the current profiler level. Running the
+`profile command`_ with the level set to ``-1`` returns the current
+profiler information without changing it::
+
+   res = await db.command("profile", -1)
+   profiling_level = res["was"]
+
+The format of ``res`` depends on the version of MongoDB in use.
+
+Returns one of (:data:`~pymongo.OFF`,
+:data:`~pymongo.SLOW_ONLY`, :data:`~pymongo.ALL`).
+
+:Parameters:
+  - `session` (optional): a
+    :class:`~motor.motor_asyncio.AsyncIOMotorClientSession`.
+
+.. versionchanged:: 2.5
+   Deprecated.
+
+.. mongodoc:: profiling
+.. _profile command: https://docs.mongodb.com/manual/reference/command/profile/
+"""
+
+set_profiling_level_doc = """**DEPRECATED**: Set the database's profiling level.
+
+Starting with Motor 2.5, this helper is obsolete. Instead, users
+can directly run the `profile command`_, using the :meth:`command`
+helper, e.g.::
+
+   res = await db.command("profile", 2, filter={"op": "query"})
+
+:Parameters:
+  - `level`: Specifies a profiling level, see list of possible values
+    below.
+  - `slow_ms`: Optionally modify the threshold for the profile to
+    consider a query or operation.  Even if the profiler is off queries
+    slower than the `slow_ms` level will get written to the logs.
+  - `session` (optional): a
+    :class:`~motor.motor_asyncio.AsyncIOMotorClientSession`.
+  - `sample_rate` (optional): The fraction of slow operations that
+    should be profiled or logged expressed as a float between 0 and 1.
+  - `filter` (optional): A filter expression that controls which
+    operations are profiled and logged.
+
+Possible `level` values:
+
++----------------------------+------------------------------------+
+| Level                      | Setting                            |
++============================+====================================+
+| :data:`~pymongo.OFF`       | Off. No profiling.                 |
++----------------------------+------------------------------------+
+| :data:`~pymongo.SLOW_ONLY` | On. Only includes slow operations. |
++----------------------------+------------------------------------+
+| :data:`~pymongo.ALL`       | On. Includes all operations.       |
++----------------------------+------------------------------------+
+
+Raises :class:`ValueError` if level is not one of
+(:data:`~pymongo.OFF`, :data:`~pymongo.SLOW_ONLY`,
+:data:`~pymongo.ALL`).
+
+.. versionchanged:: 2.5
+   Added the ``sample_rate`` and ``filter`` parameters.
+   Deprecated.
+
+.. mongodoc:: profiling
+.. _profile command: https://docs.mongodb.com/manual/reference/command/profile/
+"""

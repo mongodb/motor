@@ -502,9 +502,9 @@ class AgnosticDatabase(AgnosticBaseProperties):
     list_collection_names = AsyncRead(doc=list_collection_names_doc)
     list_collections      = AsyncRead()
     name                  = ReadOnlyProperty()
-    profiling_info        = AsyncRead()
-    profiling_level       = AsyncRead()
-    set_profiling_level   = AsyncCommand()
+    profiling_info        = AsyncRead(doc=profiling_info_doc)
+    profiling_level       = AsyncRead(doc=profiling_level_doc)
+    set_profiling_level   = AsyncCommand(doc=set_profiling_level_doc)
     validate_collection   = AsyncRead().unwrap('MotorCollection')
     with_options          = DelegateMethod().wrap(Database)
 
