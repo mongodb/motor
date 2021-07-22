@@ -1113,6 +1113,8 @@ class TestExamples(AsyncIOTestCase):
     @asyncio_test
     def test_versioned_api(self):
         # Versioned API examples
+        # Use connect=False to reduce overhead as client is not used to run
+        # any operations.
         AsyncIOMotorClient = lambda _, server_api: self.asyncio_client(
             server_api=server_api, connect=False)
         uri = None
