@@ -199,8 +199,10 @@ latex_documents = [
 # If false, no module index is generated.
 #latex_use_modindex = True
 
-autodoc_default_flags = ['inherited-members']
-autodoc_member_order = 'groupwise'
+autodoc_default_options = {
+    'inherited-members': True,
+    'member-order': 'groupwise',
+}
 
 pymongo_inventory = ('https://pymongo.readthedocs.io/en/%s/' % pymongo_version,
                      None)
