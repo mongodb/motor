@@ -54,10 +54,6 @@ class AgnosticGridOutCursor(AgnosticCursor):
             # Exhausted.
             return None
 
-    def _close_exhaust_cursor(self):
-        # Exhaust MotorGridOutCursors are prohibited.
-        pass
-
 
 class MotorGridOutProperty(ReadOnlyProperty):
     """Creates a readonly attribute on the wrapped PyMongo GridOut."""

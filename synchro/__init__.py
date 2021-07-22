@@ -42,6 +42,7 @@ from pymongo import *
 from pymongo import (collation,
                      compression_support,
                      change_stream,
+                     encryption_options,
                      errors,
                      monotonic,
                      operations,
@@ -54,7 +55,7 @@ from pymongo import (collation,
                      write_concern)
 from pymongo.auth import _build_credentials_tuple
 from pymongo.helpers import _check_command_response
-from pymongo.client_session import TransactionOptions
+from pymongo.client_session import TransactionOptions, _TxnState
 from pymongo.collation import *
 from pymongo.common import *
 from pymongo.common import _UUID_REPRESENTATIONS, _MAX_END_SESSIONS
@@ -62,6 +63,7 @@ from pymongo.compression_support import _HAVE_SNAPPY, _HAVE_ZLIB, _HAVE_ZSTD
 from pymongo.cursor import *
 from pymongo.cursor import _QUERY_OPTIONS
 from pymongo.encryption import *
+from pymongo.encryption import _Encrypter, _MONGOCRYPTD_TIMEOUT_MS
 from pymongo.encryption_options import *
 from pymongo.encryption_options import _HAVE_PYMONGOCRYPT
 from pymongo.errors import *
@@ -141,7 +143,11 @@ def wrap_synchro(fn):
             motor_obj._lazy_init()
             return ChangeStream(motor_obj)
         if isinstance(motor_obj, motor.motor_tornado.MotorLatentCommandCursor):
-            return CommandCursor(motor_obj)
+            synchro_cursor = CommandCursor(motor_obj)
+            # Send the initial command as PyMongo expects.
+            if not motor_obj.started:
+                synchro_cursor.synchronize(motor_obj._get_more)()
+            return synchro_cursor
         if isinstance(motor_obj, motor.motor_tornado.MotorCommandCursor):
             return CommandCursor(motor_obj)
         if isinstance(motor_obj, _MotorRawBatchCommandCursor):
@@ -313,6 +319,9 @@ class Synchro(with_metaclass(SynchroMeta)):
             return self.delegate == other.delegate
         return NotImplemented
 
+    def __hash__(self):
+        return self.delegate.__hash__()
+
     def synchronize(self, async_method):
         """
         @param async_method: Bound method of a MotorClient, MotorDatabase, etc.
@@ -357,6 +366,13 @@ class MongoClient(Synchro):
         # # MotorClient doesn't support the is_locked property.
         # # Use the property directly from the underlying MongoClient.
         return self.delegate.delegate.is_locked
+
+    # PyMongo expects this to return a real MongoClient, unwrap it.
+    def _duplicate(self, **kwargs):
+        client = self.delegate._duplicate(**kwargs)
+        if isinstance(client, Synchro):
+            return client.delegate.delegate
+        return client
 
     def __enter__(self):
         return self
@@ -411,6 +427,10 @@ class ClientSession(Synchro):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.synchronize(self.delegate.end_session)
 
+    def with_transaction(self, *args, **kwargs):
+        raise unittest.SkipTest('MOTOR-606 Synchro does not support '
+                                'with_transaction')
+
     # For PyMongo tests that access session internals.
     _client              = SynchroProperty()
     _pinned_address      = SynchroProperty()
@@ -425,6 +445,7 @@ class Database(Synchro):
 
     get_collection     = WrapOutgoing()
     watch              = WrapOutgoing()
+    aggregate          = WrapOutgoing()
 
     def __init__(self, client, name, **kwargs):
         assert isinstance(client, MongoClient), (
@@ -438,13 +459,6 @@ class Database(Synchro):
         assert isinstance(self.delegate, motor.MotorDatabase), (
             "synchro.Database delegate must be MotorDatabase, not "
             " %s" % repr(self.delegate))
-
-    def aggregate(self, *args, **kwargs):
-        # Motor does no I/O initially in aggregate() but PyMongo does.
-        func = wrap_synchro(unwrap_synchro(self.delegate.aggregate))
-        cursor = func(*args, **kwargs)
-        self.synchronize(cursor.delegate._get_more)()
-        return cursor
 
     @property
     def client(self):
@@ -462,6 +476,8 @@ class Collection(Synchro):
 
     find                            = WrapOutgoing()
     find_raw_batches                = WrapOutgoing()
+    aggregate                       = WrapOutgoing()
+    aggregate_raw_batches           = WrapOutgoing()
     list_indexes                    = WrapOutgoing()
     watch                           = WrapOutgoing()
 
@@ -479,20 +495,6 @@ class Collection(Synchro):
             raise TypeError(
                 "Expected to get synchro Collection from Database,"
                 " got %s" % repr(self.delegate))
-
-    def aggregate(self, *args, **kwargs):
-        # Motor does no I/O initially in aggregate() but PyMongo does.
-        func = wrap_synchro(unwrap_synchro(self.delegate.aggregate))
-        cursor = func(*args, **kwargs)
-        self.synchronize(cursor.delegate._get_more)()
-        return cursor
-
-    def aggregate_raw_batches(self, *args, **kwargs):
-        # Motor does no I/O initially in aggregate() but PyMongo does.
-        func = wrap_synchro(unwrap_synchro(self.delegate.aggregate_raw_batches))
-        cursor = func(*args, **kwargs)
-        self.synchronize(cursor.delegate._get_more)()
-        return cursor
 
     def __getattr__(self, name):
         # Access to collections with dotted names, like db.test.mike
@@ -748,16 +750,37 @@ class GridOut(Synchro):
         self.close()
 
     def __next__(self):
-        if sys.version_info >= (3, 5):
-            try:
-                return self.synchronize(self.delegate.__anext__)()
-            except StopAsyncIteration:
-                raise StopIteration()
-        else:
-            chunk = self.readchunk()
-            if chunk:
-                return chunk
+        try:
+            return self.synchronize(self.delegate.__anext__)()
+        except StopAsyncIteration:
             raise StopIteration()
 
     def __iter__(self):
         return self
+
+
+# Unwrap key_vault_client, pymongo expects it to be a regular MongoClient.
+class AutoEncryptionOpts(encryption_options.AutoEncryptionOpts):
+    def __init__(self, kms_providers, key_vault_namespace,
+                 key_vault_client=None, **kwargs):
+        if key_vault_client is not None:
+            key_vault_client = key_vault_client.delegate.delegate
+        super(AutoEncryptionOpts, self).__init__(
+            kms_providers, key_vault_namespace,
+            key_vault_client=key_vault_client, **kwargs)
+
+
+class ClientEncryption(Synchro):
+    __delegate_class__ = motor.MotorClientEncryption
+
+    def __init__(self, kms_providers, key_vault_namespace, key_vault_client,
+                 codec_options):
+        self.delegate = motor.MotorClientEncryption(
+            kms_providers, key_vault_namespace, key_vault_client.delegate,
+            codec_options)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return self.synchronize(self.delegate.__aexit__)(*args)

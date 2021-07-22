@@ -168,9 +168,6 @@ excluded_tests = [
     'TestCollectionWCustomType.test_find_and_modify_w_custom_type_decoder',
 
     # Tests that use "count", deprecated in PyMongo, removed in Motor 2.0.
-    '*.test_command_monitoring_command_A_failed_command_event',
-    '*.test_command_monitoring_command_A_successful_command',
-    '*.test_command_monitoring_command_A_successful_command_with_a_non-primary_read_preference',
     '*.test_read_count_Deprecated_count_with_a_filter',
     '*.test_read_count_Deprecated_count_without_a_filter',
     'TestBinary.test_uuid_queries',
@@ -189,7 +186,7 @@ excluded_tests = [
     'TestThreadedAuth.*',
 
     # Uses "collection_names", deprecated in PyMongo, removed in Motor 2.0.
-    'TestSingleSlaveOk.test_reads_from_secondary',
+    'TestSingleSecondaryOk.test_reads_from_secondary',
 
     # Slow.
     'TestDatabase.test_collection_names_single_socket',
@@ -270,6 +267,7 @@ class SynchroNosePlugin(Plugin):
                            'create_document_test',
                            'create_operation_test',
                            'create_selection_tests',
+                           'generate_test_classes',
                            ):
             return False
 
@@ -284,7 +282,7 @@ class SynchroNosePlugin(Plugin):
         if not self.selector.matches(method.__name__):
             return False
 
-        if method.__name__ in ('run_test_ops',):
+        if method.__name__ in ('run_test_ops', 'maybe_skip_test'):
             return False
 
         for excluded_name in excluded_tests:
@@ -366,12 +364,13 @@ if __name__ == '__main__':
               'pymongo.command_cursor',
               'pymongo.change_stream',
               'pymongo.cursor',
+              'pymongo.encryption',
+              'pymongo.encryption_options',
               'pymongo.mongo_client',
               'pymongo.database',
               'pymongo.mongo_replica_set_client',
               'gridfs',
-              'gridfs.grid_file',
-              'pymongo.encryption']:
+              'gridfs.grid_file']:
         sys.modules.pop(n)
 
     if '--check-exclude-patterns' in sys.argv:
