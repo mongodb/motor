@@ -367,6 +367,7 @@ class MongoClient(Synchro):
         # # Use the property directly from the underlying MongoClient.
         return self.delegate.delegate.is_locked
 
+    # PyMongo expects this to return a real MongoClient, unwrap it.
     def _duplicate(self, **kwargs):
         client = self.delegate._duplicate(**kwargs)
         if isinstance(client, Synchro):

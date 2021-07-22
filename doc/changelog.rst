@@ -6,6 +6,38 @@ Changelog
 Motor 2.5
 ---------
 
+Motor 2.4 adds support for MongoDB 5.0. It depends on PyMongo 3.12 or
+later.
+
+New features:
+
+- Added support for MongoDB 5.0.
+- Support for MongoDB Versioned API, see :class:`~pymongo.server_api.ServerApi`.
+- Support for snapshot reads on secondaries via the new ``snapshot`` option to
+  :meth:`~motor.motor_asyncio.AsyncIOMotorClient.start_session`.
+- Support for Azure and GCP KMS providers for client side field level
+  encryption. See the examples in :doc:`examples/encryption`.
+- Support AWS authentication with temporary credentials when connecting to KMS
+  in client side field level encryption.
+- Support for connecting to load balanced MongoDB clusters via the new
+  ``loadBalanced`` URI option.
+- Support for creating timeseries collections via the ``timeseries`` and
+  ``expireAfterSeconds`` arguments to
+  :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.create_collection`.
+- Added :attr:`motor.motor_asyncio.AsyncIOMotorClient.topology_description`.
+- Added hash support to :class:`motor.motor_asyncio.AsyncIOMotorClient`,
+  :class:`motor.motor_asyncio.AsyncIOMotorDatabase`, and
+  :class:`motor.motor_asyncio.AsyncIOMotorCollection` classes.
+- Added session and read concern support to
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find_raw_batches`
+  and :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.aggregate_raw_batches`.
+
+Deprecations:
+
+- Deprecated :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.profiling_info`,
+  :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.profiling_level`, and
+  :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.set_profiling_level`.
+
 Issues Resolved
 ~~~~~~~~~~~~~~~
 
