@@ -1172,10 +1172,9 @@ class TestExamples(AsyncIOTestCase):
         # End Versioned API Example 6
 
         # Start Versioned API Example 7
-        await client.db.sales.aggregate(
-            [{"$group": {"_id": None, "count": {"$count": {}}}}]).to_list(length=None)
+        await client.db.sales.count_documents({})
         # End Versioned API Example 7
 
         # Start Versioned API Example 8
-        # [{'_id': None, 'count': 8}]
+        # 8
         # End Versioned API Example 7
