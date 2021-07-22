@@ -14,7 +14,7 @@
 
 """Serve GridFS files with Motor and aiohttp.
 
-Requires Python 3.5 or later and aiohttp 3.0 or later.
+Requires Python 3.6 or later and aiohttp 3.0 or later.
 
 See the :doc:`/examples/aiohttp_gridfs_example`.
 """

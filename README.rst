@@ -99,7 +99,7 @@ asyncio. It requires:
 
 * Unix (including macOS) or Windows.
 * PyMongo_ >=3.12,<4
-* Python 3.5+
+* Python 3.6+
 
 See `requirements <https://motor.readthedocs.io/en/stable/requirements.html>`_
 for details about compatibility.
@@ -114,7 +114,7 @@ Documentation
 
 Motor's documentation is on ReadTheDocs_.
 
-Build the documentation with Python 3.5. Install sphinx_, Tornado_, and aiohttp_,
+Build the documentation with Python 3.6. Install sphinx_, Tornado_, and aiohttp_,
 and do ``cd doc; make html``.
 
 Testing

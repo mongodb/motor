@@ -41,8 +41,7 @@ from test.utils import (one,
                         safe_get,
                         get_async_test_timeout,
                         get_primary_pool,
-                        TestListener)
-from test.py35utils import wait_until
+                        TestListener, wait_until)
 
 
 class MotorCursorTest(MotorMockServerTest):

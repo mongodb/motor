@@ -3,7 +3,7 @@ Requirements
 
 The current version of Motor requires:
 
-* CPython 3.5 and later.
+* CPython 3.6 and later.
 * PyMongo_ 3.12 and later.
 
 Motor can integrate with either Tornado or asyncio.
@@ -117,12 +117,12 @@ Motor and Python
 ````````````````
 
 Motor 1.2 dropped support for the short-lived version of
-the "async for" protocol implemented in Python 3.5.0 and 3.5.1. Motor continues
-to work with "async for" loops in Python 3.5.2 and later.
+the "async for" protocol implemented in Python 3.5.0 and 3.5.1. Motor<=2.4
+continued to work with "async for" loops in Python 3.5.2 and later.
 
 Motor 1.2.5 and 1.3.1 add compatibility with Python 3.7, but at the cost of
 dropping Python 3.4.3 and older. Motor 2.2 dropped support for Pythons older
-than 3.5.2.
+than 3.5.2. Motor 2.5 dropped support for Python 3.5.
 
 +-------------------------------------------------------------------------------------------+
 |                   Python Version                                                          |

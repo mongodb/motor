@@ -25,8 +25,7 @@ from motor.frameworks.asyncio import max_workers
 
 from test import SkipTest, env
 from test.asyncio_tests import asyncio_test, AsyncIOTestCase
-from test.py35utils import wait_until
-from test.utils import get_async_test_timeout
+from test.utils import get_async_test_timeout, wait_until
 
 
 class TestAsyncIOChangeStream(AsyncIOTestCase):

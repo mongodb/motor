@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import time
 from collections import defaultdict
 
 from bson import SON
@@ -139,3 +139,24 @@ class FailPoint:
         await self.client.admin.command(
             'configureFailPoint', self.cmd_on['configureFailPoint'],
             mode='off')
+
+
+async def wait_until(predicate, success_description, timeout=10):
+    """Copied from PyMongo's test.utils.wait_until.
+
+    Wait up to 10 seconds (by default) for predicate to be true. The
+    predicate must be an awaitable.
+
+    Returns the predicate's first true value.
+    """
+    start = time.time()
+    interval = min(float(timeout)/100, 0.1)
+    while True:
+        retval = await predicate()
+        if retval:
+            return retval
+
+        if time.time() - start > timeout:
+            raise AssertionError("Didn't ever %s" % success_description)
+
+        time.sleep(interval)

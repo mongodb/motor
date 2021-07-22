@@ -8,10 +8,10 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
-# Only build distributions with Python 3.5.2 or later.
-python3 -c "import sys; exit(sys.version_info < (3, 5, 2))"
+# Only build distributions with Python 3.6 or later.
+python3 -c "import sys; exit(sys.version_info < (3, 6))"
 if [ $? -ne 0 ]; then
-  echo "ERROR: Run this script with Python 3.5.2 or later."
+  echo "ERROR: Run this script with Python 3.6 or later."
   exit 1
 fi
 

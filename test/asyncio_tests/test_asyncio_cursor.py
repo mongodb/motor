@@ -33,13 +33,12 @@ from test.utils import (one,
                         get_async_test_timeout,
                         get_primary_pool,
                         safe_get,
-                        TestListener)
+                        TestListener, wait_until)
 from test.asyncio_tests import (asyncio_test,
                                 AsyncIOTestCase,
                                 AsyncIOMockServerTestCase,
                                 server_is_mongos,
                                 get_command_line)
-from test.py35utils import wait_until
 from test.test_environment import env
 
 
