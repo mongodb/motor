@@ -865,12 +865,14 @@ class AgnosticCollection(AgnosticBaseProperties):
         an aggregation with ``$out`` or ``$merge`` the application needs to
         iterate the cursor, for example::
 
-           cursor = motor_coll.aggregate([{'$out': 'output-collection'}])
+           cursor = motor_coll.aggregate([{'$out': 'out'}])
            # Iterate the cursor to run the $out (or $merge) operation.
            await cursor.to_list(length=None)
-           # Or more succinctly.
-           await motor_coll.aggregate(
-               [{'$out': 'output-collection'}]).to_list(length=None)
+           # Or more succinctly:
+           await motor_coll.aggregate([{'$out': 'out'}]).to_list(length=None)
+           # Or:
+           async for _ in motor_coll.aggregate([{'$out': 'out'}]):
+               pass
 
         :class:`MotorCommandCursor` does not allow the ``explain`` option. To
         explain MongoDB's query plan for the aggregation, use
