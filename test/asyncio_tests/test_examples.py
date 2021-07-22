@@ -1145,7 +1145,7 @@ class TestExamples(AsyncIOTestCase):
         client = self.asyncio_client(server_api=ServerApi("1", strict=True))
         await client.db.sales.drop()
         # Explicitly create collection to avoid failures on sharded
-        await client.db.create_collection('sales')
+        await client.db.create_collection('sales', create=True)
 
         # Start Versioned API Example 5
         def strptime(s):
