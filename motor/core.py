@@ -547,6 +547,11 @@ class AgnosticDatabase(AgnosticBaseProperties):
             returning aggregate results using a cursor.
           - `collation` (optional): An instance of
             :class:`~pymongo.collation.Collation`.
+          - `let` (dict): A dict of parameter names and values. Values must be
+            constant or closed expressions that do not reference document
+            fields. Parameters can then be accessed as variables in an
+            aggregate expression context (e.g. ``"$$var"``). This option is
+            only supported on MongoDB >= 5.0.
 
         Returns a :class:`MotorCommandCursor` that can be iterated like a
         cursor from :meth:`find`::
@@ -827,6 +832,26 @@ class AgnosticCollection(AgnosticBaseProperties):
             :meth:`~MotorClient.start_session`.
           - `**kwargs`: send arbitrary parameters to the aggregate command
 
+        All optional `aggregate command`_ parameters should be passed as
+        keyword arguments to this method. Valid options include, but are not
+        limited to:
+
+          - `allowDiskUse` (bool): Enables writing to temporary files. When set
+            to True, aggregation stages can write data to the _tmp subdirectory
+            of the --dbpath directory. The default is False.
+          - `maxTimeMS` (int): The maximum amount of time to allow the operation
+            to run in milliseconds.
+          - `batchSize` (int): The maximum number of documents to return per
+            batch. Ignored if the connected mongod or mongos does not support
+            returning aggregate results using a cursor.
+          - `collation` (optional): An instance of
+            :class:`~pymongo.collation.Collation`.
+          - `let` (dict): A dict of parameter names and values. Values must be
+            constant or closed expressions that do not reference document
+            fields. Parameters can then be accessed as variables in an
+            aggregate expression context (e.g. ``"$$var"``). This option is
+            only supported on MongoDB >= 5.0.
+
         Returns a :class:`MotorCommandCursor` that can be iterated like a
         cursor from :meth:`find`::
 
@@ -834,6 +859,20 @@ class AgnosticCollection(AgnosticBaseProperties):
               pipeline = [{'$project': {'name': {'$toUpper': '$name'}}}]
               async for doc in collection.aggregate(pipeline):
                   print(doc)
+
+        Note that this method returns a :class:`MotorCommandCursor` which
+        lazily runs the aggregate command when first iterated. In order to run
+        an aggregation with ``$out`` or ``$merge`` the application needs to
+        iterate the cursor, for example::
+
+           cursor = motor_coll.aggregate([{'$out': 'out'}])
+           # Iterate the cursor to run the $out (or $merge) operation.
+           await cursor.to_list(length=None)
+           # Or more succinctly:
+           await motor_coll.aggregate([{'$out': 'out'}]).to_list(length=None)
+           # Or:
+           async for _ in motor_coll.aggregate([{'$out': 'out'}]):
+               pass
 
         :class:`MotorCommandCursor` does not allow the ``explain`` option. To
         explain MongoDB's query plan for the aggregation, use
