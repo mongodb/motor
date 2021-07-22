@@ -39,7 +39,7 @@ if [ "${INSTALL_TOX}" = "true" ]; then
         source motorenv/Scripts/activate
     fi
     set -o xtrace
-    pip install tox
+    pip install tox>=3.18
     TOX_BINARY=tox
 fi
 

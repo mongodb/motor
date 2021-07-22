@@ -114,6 +114,8 @@ the failure.
    'writeErrors': [{'code': 11000,
                     'errmsg': '... duplicate key error ...',
                     'index': 1,
+                    'keyPattern': {'_id': 1},
+                    'keyValue': {'_id': 4},
                     'op': {'_id': 4}}]}
 
 .. _unordered_bulk:
@@ -154,10 +156,14 @@ and fourth operations succeed.
    'writeErrors': [{'code': 11000,
                     'errmsg': '... duplicate key error ...',
                     'index': 0,
+                    'keyPattern': {'_id': 1},
+                    'keyValue': {'_id': 1},
                     'op': {'_id': 1}},
                    {'code': 11000,
                     'errmsg': '... duplicate key error ...',
                     'index': 2,
+                    'keyPattern': {'_id': 1},
+                    'keyValue': {'_id': 3},
                     'op': {'_id': 3}}]}
 
 Write Concern
