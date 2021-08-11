@@ -143,6 +143,9 @@ class MotorChangeStreamTest(MotorTest):
         # Generate invalidate event and store corresponding resume token.
         await self.collection.drop()
         _ = await change_stream.next()
+        # v5.1 requires an extra getMore after an invalidate event to exhaust
+        # the cursor.
+        self.assertIsNone(await change_stream.try_next())
         self.assertFalse(change_stream.alive)
         resume_token = change_stream.resume_token
 
