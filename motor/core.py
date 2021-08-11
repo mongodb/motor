@@ -1424,7 +1424,7 @@ class AgnosticBaseCursor(AgnosticBase):
             if length is None:
                 n = result
             else:
-                n = min(length, result)
+                n = min(length - len(the_list), result)
 
             for _ in range(n):
                 the_list.append(fix_outgoing(self._data().popleft(),

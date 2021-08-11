@@ -208,6 +208,26 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         await cursor.close()
 
     @asyncio_test
+    async def test_to_list_multiple_getMores(self):
+        await self.make_test_data()
+        coll = self.collection
+        cursor = coll.find(batch_size=5).sort('_id')
+
+        def expected(start, stop):
+            return [{'_id': i} for i in range(start, stop)]
+
+        # 2 batches (find+getMore):
+        self.assertEqual(expected(0, 10), (await cursor.to_list(10)))
+        # 5 batches, stop in the middle of a batch:
+        self.assertEqual(expected(10, 33), (await cursor.to_list(23)))
+        # 33 batches:
+        self.assertEqual(expected(33, 200), (await cursor.to_list(167)))
+        # Nothing left.
+        self.assertEqual([], (await cursor.to_list(100)))
+        
+        await cursor.close()
+
+    @asyncio_test
     async def test_to_list_exc_info(self):
         await self.make_test_data()
         coll = self.collection
