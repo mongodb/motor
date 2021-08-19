@@ -3,6 +3,20 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 2.5.1
+-----------
+
+Motor 2.5.1 fixes a bug where :meth:`MotorCursor.to_list` could return more
+than ``length`` documents.
+
+Issues Resolved
+~~~~~~~~~~~~~~~
+
+See the `Motor 2.5.1 release notes in JIRA`_ for the complete list of resolved
+issues in this release.
+
+.. _Motor 2.5.1 release notes in JIRA: https://jira.mongodb.org/secure/ReleaseNote.jspa?projectId=11182&version=31791
+
 Motor 2.5
 ---------
 
