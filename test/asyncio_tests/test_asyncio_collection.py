@@ -177,55 +177,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
         while not (await coll.find_one({'a': 1})):
             await asyncio.sleep(0.1)
 
-    @asyncio_test
-    async def test_map_reduce(self):
-        # Count number of documents with even and odd _id
-        await self.make_test_data()
-        expected_result = [{'_id': 0, 'value': 100}, {'_id': 1, 'value': 100}]
-        map_fn = bson.Code('function map() { emit(this._id % 2, 1); }')
-        reduce_fn = bson.Code('''
-        function reduce(key, values) {
-            r = 0;
-            values.forEach(function(value) { r += value; });
-            return r;
-        }''')
-
-        await self.db.tmp_mr.drop()
-
-        # First do a standard mapreduce, should return AsyncIOMotorCollection
-        collection = self.collection
-        tmp_mr = await collection.map_reduce(map_fn, reduce_fn, 'tmp_mr')
-
-        self.assertTrue(
-            isinstance(tmp_mr, motor_asyncio.AsyncIOMotorCollection),
-            'map_reduce should return AsyncIOMotorCollection, not %s' % tmp_mr)
-
-        result = await tmp_mr.find().sort([('_id', 1)]).to_list(
-            length=1000)
-        self.assertEqual(expected_result, result)
-
-        # Standard mapreduce with full response
-        await self.db.tmp_mr.drop()
-        response = await collection.map_reduce(
-            map_fn, reduce_fn, 'tmp_mr', full_response=True)
-
-        self.assertTrue(
-            isinstance(response, dict),
-            'map_reduce should return dict, not %s' % response)
-
-        self.assertEqual('tmp_mr', response['result'])
-        result = await tmp_mr.find().sort([('_id', 1)]).to_list(
-            length=1000)
-        self.assertEqual(expected_result, result)
-
-        # Inline mapreduce
-        await self.db.tmp_mr.drop()
-        result = await collection.inline_map_reduce(
-            map_fn, reduce_fn)
-
-        result.sort(key=lambda doc: doc['_id'])
-        self.assertEqual(expected_result, result)
-
     @ignore_deprecations
     @asyncio_test
     async def test_indexes(self):
@@ -274,6 +225,14 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             formatted = '\n'.join(traceback.format_tb(tb))
             self.assertTrue('_unpack_response' in formatted
                             or '_check_command_response' in formatted)
+
+    @asyncio_test
+    async def test_aggregate_cursor_del(self):
+        cursor = self.db.test.aggregate(self.pipeline)
+        del cursor
+        cursor = self.db.test.aggregate(self.pipeline)
+        await cursor.close()
+        del cursor
 
     def test_with_options(self):
         coll = self.db.test

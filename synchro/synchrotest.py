@@ -41,7 +41,6 @@ excluded_modules = [
     'test.test_threads',
     'test.test_pooling',
     'test.test_legacy_api',
-    'test.test_monotonic',
     'test.test_saslprep',
 
     # Complex PyMongo-specific mocking.
@@ -55,7 +54,6 @@ excluded_modules = [
 
     # Deprecated in PyMongo, removed in Motor 2.0.
     'test.test_gridfs',
-    'test.test_son_manipulator',
 ]
 
 
@@ -162,20 +160,11 @@ excluded_tests = [
     'TestCollection.test_parallel_scan',
     'TestCollection.test_parallel_scan_max_time_ms',
     'TestCollection.test_write_error_text_handling',
-    'TestCommandMonitoring.test_legacy_insert_many',
-    'TestCommandMonitoring.test_legacy_writes',
     'TestClient.test_database_names',
     'TestCollectionWCustomType.test_find_and_modify_w_custom_type_decoder',
 
-    # Tests that use "count", deprecated in PyMongo, removed in Motor 2.0.
-    '*.test_read_count_Deprecated_count_with_a_filter',
-    '*.test_read_count_Deprecated_count_without_a_filter',
     'TestBinary.test_uuid_queries',
-    'TestCollection.test_count',
     'TestCursor.test_comment',
-    'TestCursor.test_count',
-    'TestCursor.test_count_with_fields',
-    'TestCursor.test_count_with_hint',
     'TestCursor.test_where',
     'TestGridfs.test_gridfs_find',
 
@@ -368,7 +357,6 @@ if __name__ == '__main__':
               'pymongo.encryption_options',
               'pymongo.mongo_client',
               'pymongo.database',
-              'pymongo.mongo_replica_set_client',
               'gridfs',
               'gridfs.grid_file']:
         sys.modules.pop(n)

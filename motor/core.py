@@ -16,6 +16,7 @@
 
 import functools
 import sys
+import time
 import warnings
 
 import pymongo
@@ -24,8 +25,6 @@ import pymongo.common
 import pymongo.database
 import pymongo.errors
 import pymongo.mongo_client
-import pymongo.mongo_replica_set_client
-import pymongo.monotonic
 
 from pymongo.change_stream import ChangeStream
 from pymongo.client_session import ClientSession
@@ -66,7 +65,7 @@ _WITH_TRANSACTION_RETRY_TIME_LIMIT = 120
 
 def _within_time_limit(start_time):
     """Are we within the with_transaction retry limit?"""
-    return (pymongo.monotonic.time() - start_time <
+    return (time.monotonic() - start_time <
             _WITH_TRANSACTION_RETRY_TIME_LIMIT)
 
 
@@ -106,8 +105,7 @@ class AgnosticClient(AgnosticBaseProperties):
     close                    = DelegateMethod()
     __hash__                 = DelegateMethod()
     drop_database            = AsyncCommand().unwrap('MotorDatabase')
-    event_listeners          = ReadOnlyProperty()
-    fsync                    = AsyncCommand(doc=fsync_doc)
+    options                  = ReadOnlyProperty()
     get_database             = DelegateMethod(doc=get_database_doc).wrap(Database)
     get_default_database     = DelegateMethod(doc=get_default_database_doc).wrap(Database)
     HOST                     = ReadOnlyProperty()
@@ -115,25 +113,14 @@ class AgnosticClient(AgnosticBaseProperties):
     is_primary               = ReadOnlyProperty()
     list_databases           = AsyncRead().wrap(CommandCursor)
     list_database_names      = AsyncRead()
-    local_threshold_ms       = ReadOnlyProperty()
-    max_bson_size            = ReadOnlyProperty()
-    max_idle_time_ms         = ReadOnlyProperty()
-    max_message_size         = ReadOnlyProperty()
-    max_pool_size            = ReadOnlyProperty()
-    max_write_batch_size     = ReadOnlyProperty()
-    min_pool_size            = ReadOnlyProperty()
     nodes                    = ReadOnlyProperty()
     PORT                     = ReadOnlyProperty()
     primary                  = ReadOnlyProperty()
     read_concern             = ReadOnlyProperty()
-    retry_reads              = ReadOnlyProperty()
-    retry_writes             = ReadOnlyProperty()
     secondaries              = ReadOnlyProperty()
     server_info              = AsyncRead()
-    server_selection_timeout = ReadOnlyProperty()
     topology_description     = ReadOnlyProperty()
     start_session            = AsyncCommand(doc=start_session_doc).wrap(ClientSession)
-    unlock                   = AsyncCommand(doc=unlock_doc)
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -405,7 +392,7 @@ class AgnosticClientSession(AgnosticBase):
 
         .. versionadded:: 2.1
         """
-        start_time = pymongo.monotonic.time()
+        start_time = time.monotonic()
         while True:
             async with self.start_transaction(
                     read_concern, write_concern, read_preference,
@@ -495,29 +482,21 @@ class AgnosticDatabase(AgnosticBaseProperties):
     __hash__              = DelegateMethod()
     command               = AsyncCommand(doc=cmd_doc)
     create_collection     = AsyncCommand().wrap(Collection)
-    current_op            = AsyncRead(doc=current_op_doc)
     dereference           = AsyncRead()
     drop_collection       = AsyncCommand().unwrap('MotorCollection')
     get_collection        = DelegateMethod().wrap(Collection)
     list_collection_names = AsyncRead(doc=list_collection_names_doc)
     list_collections      = AsyncRead()
     name                  = ReadOnlyProperty()
-    profiling_info        = AsyncRead(doc=profiling_info_doc)
-    profiling_level       = AsyncRead(doc=profiling_level_doc)
-    set_profiling_level   = AsyncCommand(doc=set_profiling_level_doc)
     validate_collection   = AsyncRead().unwrap('MotorCollection')
     with_options          = DelegateMethod().wrap(Database)
-
-    incoming_manipulators         = ReadOnlyProperty()
-    incoming_copying_manipulators = ReadOnlyProperty()
-    outgoing_manipulators         = ReadOnlyProperty()
-    outgoing_copying_manipulators = ReadOnlyProperty()
 
     _async_aggregate = AsyncRead(attr_name='aggregate')
 
     def __init__(self, client, name, **kwargs):
         self._client = client
-        delegate = kwargs.get('_delegate') or Database(
+        _delegate = kwargs.get('_delegate')
+        delegate = _delegate if _delegate is not None else Database(
             client.delegate, name, **kwargs)
 
         super().__init__(delegate)
@@ -714,13 +693,10 @@ class AgnosticCollection(AgnosticBaseProperties):
     find_one_and_update      = AsyncCommand(doc=find_one_and_update_doc)
     full_name                = ReadOnlyProperty()
     index_information        = AsyncRead(doc=index_information_doc)
-    inline_map_reduce        = AsyncRead()
     insert_many              = AsyncWrite(doc=insert_many_doc)
     insert_one               = AsyncCommand(doc=insert_one_doc)
-    map_reduce               = AsyncCommand(doc=mr_doc).wrap(Collection)
     name                     = ReadOnlyProperty()
     options                  = AsyncRead()
-    reindex                  = AsyncCommand(doc=reindex_doc)
     rename                   = AsyncCommand()
     replace_one              = AsyncCommand(doc=replace_one_doc)
     update_many              = AsyncCommand(doc=update_many_doc)
@@ -741,7 +717,7 @@ class AgnosticCollection(AgnosticBaseProperties):
             raise TypeError("First argument to MotorCollection must be "
                             "MotorDatabase, not %r" % database)
 
-        delegate = _delegate or Collection(
+        delegate = _delegate if _delegate is not None else Collection(
             database.delegate, name, codec_options=codec_options,
             read_preference=read_preference, write_concern=write_concern,
             read_concern=read_concern)
@@ -1419,7 +1395,6 @@ class AgnosticBaseCursor(AgnosticBase):
             if future.done():
                 return
             collection = self.collection
-            fix_outgoing = collection.database.delegate._fix_outgoing
 
             if length is None:
                 n = result
@@ -1427,8 +1402,7 @@ class AgnosticBaseCursor(AgnosticBase):
                 n = min(length - len(the_list), result)
 
             for _ in range(n):
-                the_list.append(fix_outgoing(self._data().popleft(),
-                                             collection))
+                the_list.append(self._data().popleft())
 
             reached_length = (length is not None and len(the_list) >= length)
             if reached_length or not self.alive:

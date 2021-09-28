@@ -59,25 +59,19 @@ class TestAsyncIOSSL(unittest.TestCase):
         self.assertRaises(ValueError,
                           AsyncIOMotorClient,
                           io_loop=self.loop,
-                          ssl='foo')
+                          tls='foo')
 
         self.assertRaises(ConfigurationError,
                           AsyncIOMotorClient,
                           io_loop=self.loop,
-                          ssl=False,
-                          ssl_certfile=CLIENT_PEM)
+                          tls=False,
+                          tlsCertificateKeyFile=CLIENT_PEM)
 
         self.assertRaises(IOError, AsyncIOMotorClient,
-                          io_loop=self.loop, ssl_certfile="NoFile")
+                          io_loop=self.loop, tlsCertificateKeyFile="NoFile")
 
         self.assertRaises(TypeError, AsyncIOMotorClient,
-                          io_loop=self.loop, ssl_certfile=True)
-
-        self.assertRaises(IOError, AsyncIOMotorClient,
-                          io_loop=self.loop, ssl_keyfile="NoFile")
-
-        self.assertRaises(TypeError, AsyncIOMotorClient,
-                          io_loop=self.loop, ssl_keyfile=True)
+                          io_loop=self.loop, tlsCertificateKeyFile=True)
 
     @asyncio_test
     async def test_cert_ssl(self):
@@ -88,8 +82,8 @@ class TestAsyncIOSSL(unittest.TestCase):
             raise SkipTest("Can't test with auth")
 
         client = AsyncIOMotorClient(env.host, env.port,
-                                    ssl_certfile=CLIENT_PEM,
-                                    ssl_ca_certs=CA_PEM,
+                                    tlsCertificateKeyFile=CLIENT_PEM,
+                                    tlsCAFile=CA_PEM,
                                     io_loop=self.loop)
 
         await client.db.collection.find_one()
@@ -97,9 +91,9 @@ class TestAsyncIOSSL(unittest.TestCase):
         if 'setName' in response:
             client = AsyncIOMotorClient(
                 env.host, env.port,
-                ssl=True,
-                ssl_certfile=CLIENT_PEM,
-                ssl_ca_certs=CA_PEM,
+                tls=True,
+                tlsCertificateKeyFile=CLIENT_PEM,
+                tlsCAFile=CA_PEM,
                 replicaSet=response['setName'],
                 io_loop=self.loop)
 
@@ -114,9 +108,8 @@ class TestAsyncIOSSL(unittest.TestCase):
             raise SkipTest("Can't test with auth")
 
         client = AsyncIOMotorClient(env.host, env.port,
-                                    ssl_certfile=CLIENT_PEM,
-                                    ssl_cert_reqs=ssl.CERT_REQUIRED,
-                                    ssl_ca_certs=CA_PEM,
+                                    tlsCertificateKeyFile=CLIENT_PEM,
+                                    tlsCAFile=CA_PEM,
                                     io_loop=self.loop)
 
         await client.db.collection.find_one()
@@ -126,9 +119,8 @@ class TestAsyncIOSSL(unittest.TestCase):
             client = AsyncIOMotorClient(
                 env.host, env.port,
                 replicaSet=response['setName'],
-                ssl_certfile=CLIENT_PEM,
-                ssl_cert_reqs=ssl.CERT_REQUIRED,
-                ssl_ca_certs=CA_PEM,
+                tlsCertificateKeyFile=CLIENT_PEM,
+                tlsCAFile=CA_PEM,
                 io_loop=self.loop)
 
             await client.db.collection.find_one()
@@ -142,9 +134,9 @@ class TestAsyncIOSSL(unittest.TestCase):
             raise SkipTest("Can't test with auth")
 
         client = AsyncIOMotorClient(test.env.fake_hostname_uri,
-                                    ssl_certfile=CLIENT_PEM,
-                                    ssl_cert_reqs=ssl.CERT_NONE,
-                                    ssl_ca_certs=CA_PEM,
+                                    tlsCertificateKeyFile=CLIENT_PEM,
+                                    tlsAllowInvalidCertificates=True,
+                                    tlsCAFile=CA_PEM,
                                     io_loop=self.loop)
 
         await client.admin.command('ismaster')
@@ -158,8 +150,8 @@ class TestAsyncIOSSL(unittest.TestCase):
             raise SkipTest("Can't test with auth")
 
         client = AsyncIOMotorClient(env.host, env.port,
-                                    ssl=True, ssl_certfile=CLIENT_PEM,
-                                    ssl_ca_certs=CA_PEM,
+                                    tls=True, tlsCertificateKeyFile=CLIENT_PEM,
+                                    tlsCAFile=CA_PEM,
                                     io_loop=self.loop)
 
         response = await client.admin.command('ismaster')
@@ -168,9 +160,8 @@ class TestAsyncIOSSL(unittest.TestCase):
             # which is what the server cert presents.
             client = AsyncIOMotorClient(test.env.fake_hostname_uri,
                                         serverSelectionTimeoutMS=1000,
-                                        ssl_certfile=CLIENT_PEM,
-                                        ssl_cert_reqs=ssl.CERT_REQUIRED,
-                                        ssl_ca_certs=CA_PEM,
+                                        tlsCertificateKeyFile=CLIENT_PEM,
+                                        tlsCAFile=CA_PEM,
                                         io_loop=self.loop)
 
             await client.db.collection.find_one()
@@ -181,9 +172,8 @@ class TestAsyncIOSSL(unittest.TestCase):
                     test.env.fake_hostname_uri,
                     serverSelectionTimeoutMS=1000,
                     replicaSet=response['setName'],
-                    ssl_certfile=CLIENT_PEM,
-                    ssl_cert_reqs=ssl.CERT_REQUIRED,
-                    ssl_ca_certs=CA_PEM,
+                    tlsCertificateKeyFile=CLIENT_PEM,
+                    tlsCAFile=CA_PEM,
                     io_loop=self.loop)
 
                 await client.db.collection.find_one()

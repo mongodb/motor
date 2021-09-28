@@ -55,16 +55,14 @@ class MotorSSLTest(MotorTest):
         super().setUp()
 
     def test_config_ssl(self):
-        self.assertRaises(ValueError, motor.MotorClient, ssl='foo')
+        self.assertRaises(ValueError, motor.MotorClient, tls='foo')
         self.assertRaises(ConfigurationError,
                           motor.MotorClient,
-                          ssl=False,
-                          ssl_certfile=CLIENT_PEM)
+                          tls=False,
+                          tlsCertificateKeyFile=CLIENT_PEM)
 
-        self.assertRaises(IOError, motor.MotorClient, ssl_certfile="NoFile")
-        self.assertRaises(TypeError, motor.MotorClient, ssl_certfile=True)
-        self.assertRaises(IOError, motor.MotorClient, ssl_keyfile="NoFile")
-        self.assertRaises(TypeError, motor.MotorClient, ssl_keyfile=True)
+        self.assertRaises(IOError, motor.MotorClient, tlsCertificateKeyFile="NoFile")
+        self.assertRaises(TypeError, motor.MotorClient, tlsCertificateKeyFile=True)
 
     @gen_test
     async def test_cert_ssl(self):
@@ -75,15 +73,15 @@ class MotorSSLTest(MotorTest):
             raise SkipTest("can't test with auth")
 
         client = motor.MotorClient(env.host, env.port,
-                                   ssl_certfile=CLIENT_PEM,
-                                   ssl_ca_certs=CA_PEM,
+                                   tlsCertificateKeyFile=CLIENT_PEM,
+                                   tlsCAFile=CA_PEM,
                                    io_loop=self.io_loop)
 
         await client.db.collection.find_one()
         response = await client.admin.command('ismaster')
         if 'setName' in response:
-            client = self.motor_rsc(ssl_certfile=CLIENT_PEM,
-                                    ssl_ca_certs=CA_PEM)
+            client = self.motor_rsc(tlsCertificateKeyFile=CLIENT_PEM,
+                                    tlsCAFile=CA_PEM)
             await client.db.collection.find_one()
 
     @gen_test
@@ -96,9 +94,8 @@ class MotorSSLTest(MotorTest):
 
         client = motor.MotorClient(
             env.host, env.port,
-            ssl_certfile=CLIENT_PEM,
-            ssl_cert_reqs=ssl.CERT_REQUIRED,
-            ssl_ca_certs=CA_PEM,
+            tlsCertificateKeyFile=CLIENT_PEM,
+            tlsCAFile=CA_PEM,
             io_loop=self.io_loop)
 
         await client.db.collection.find_one()
@@ -108,9 +105,8 @@ class MotorSSLTest(MotorTest):
             client = motor.MotorClient(
                 env.host, env.port,
                 replicaSet=response['setName'],
-                ssl_certfile=CLIENT_PEM,
-                ssl_cert_reqs=ssl.CERT_REQUIRED,
-                ssl_ca_certs=CA_PEM,
+                tlsCertificateKeyFile=CLIENT_PEM,
+                tlsCAFile=CA_PEM,
                 io_loop=self.io_loop)
 
             await client.db.collection.find_one()
@@ -125,9 +121,9 @@ class MotorSSLTest(MotorTest):
 
         client = motor.MotorClient(
             test.env.fake_hostname_uri,
-            ssl_certfile=CLIENT_PEM,
-            ssl_cert_reqs=ssl.CERT_NONE,
-            ssl_ca_certs=CA_PEM,
+            tlsCertificateKeyFile=CLIENT_PEM,
+            tlsAllowInvalidCertificates=True,
+            tlsCAFile=CA_PEM,
             io_loop=self.io_loop)
 
         await client.admin.command('ismaster')
@@ -142,8 +138,8 @@ class MotorSSLTest(MotorTest):
 
         client = motor.MotorClient(
             env.host, env.port,
-            ssl_certfile=CLIENT_PEM,
-            ssl_ca_certs=CA_PEM,
+            tlsCertificateKeyFile=CLIENT_PEM,
+            tlsCAFile=CA_PEM,
             io_loop=self.io_loop)
 
         response = await client.admin.command('ismaster')
@@ -153,9 +149,8 @@ class MotorSSLTest(MotorTest):
             client = motor.MotorClient(
                 test.env.fake_hostname_uri,
                 serverSelectionTimeoutMS=100,
-                ssl_certfile=CLIENT_PEM,
-                ssl_cert_reqs=ssl.CERT_REQUIRED,
-                ssl_ca_certs=CA_PEM,
+                tlsCertificateKeyFile=CLIENT_PEM,
+                tlsCAFile=CA_PEM,
                 io_loop=self.io_loop)
 
             await client.db.collection.find_one()
@@ -166,9 +161,8 @@ class MotorSSLTest(MotorTest):
                     test.env.fake_hostname_uri,
                     serverSelectionTimeoutMS=100,
                     replicaSet=response['setName'],
-                    ssl_certfile=CLIENT_PEM,
-                    ssl_cert_reqs=ssl.CERT_REQUIRED,
-                    ssl_ca_certs=CA_PEM,
+                    tlsCertificateKeyFile=CLIENT_PEM,
+                    tlsCAFile=CA_PEM,
                     io_loop=self.io_loop)
 
                 await client.db.collection.find_one()

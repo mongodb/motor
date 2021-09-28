@@ -19,7 +19,6 @@ import unittest
 import pymongo
 import pymongo.auth
 import pymongo.errors
-import pymongo.mongo_replica_set_client
 from tornado import gen
 from tornado.testing import gen_test
 
@@ -27,9 +26,8 @@ import motor
 import motor.core
 import test
 from test import SkipTest
-from test.test_environment import db_user, db_password, env
+from test.test_environment import env
 from test.tornado_tests import MotorReplicaSetTestBase, MotorTest
-from test.utils import one, get_primary_pool
 
 
 class MotorReplicaSetTest(MotorReplicaSetTestBase):

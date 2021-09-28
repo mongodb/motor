@@ -43,14 +43,17 @@ class AIOMotorTestBasic(AsyncIOTestCase):
         await self.collection.delete_many({})
         await self.collection.insert_one({'_id': 0})
 
-        for gle_options in [
+        for wc_opts in [
             {},
             {'w': 0},
             {'w': 1},
-            {'wtimeout': 1000},
+            {'wTimeoutMS': 1000},
         ]:
-            cx = self.asyncio_client(test.env.uri, **gle_options)
-            wc = WriteConcern(**gle_options)
+            cx = self.asyncio_client(test.env.uri, **wc_opts)
+            wtimeout = wc_opts.pop('wTimeoutMS', None)
+            if wtimeout:
+                wc_opts['wtimeout'] = wtimeout
+            wc = WriteConcern(**wc_opts)
             self.assertEqual(wc, cx.write_concern)
 
             db = cx.motor_test

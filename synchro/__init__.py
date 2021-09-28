@@ -20,6 +20,7 @@ DO NOT USE THIS MODULE.
 """
 
 import inspect
+import time
 import unittest
 from tornado.ioloop import IOLoop
 
@@ -44,13 +45,10 @@ from pymongo import (collation,
                      change_stream,
                      encryption_options,
                      errors,
-                     monotonic,
                      operations,
                      server_selectors,
                      server_type,
-                     son_manipulator,
                      saslprep,
-                     ssl_match_hostname,
                      ssl_support,
                      write_concern)
 from pymongo.auth import _build_credentials_tuple
@@ -74,7 +72,6 @@ from pymongo.message import (_COMMAND_OVERHEAD,
 from pymongo.monitor import *
 from pymongo.monitoring import *
 from pymongo.monitoring import _LISTENERS, _Listeners, _SENSITIVE_COMMANDS
-from pymongo.monotonic import time
 from pymongo.ocsp_cache import _OCSPCache
 from pymongo.operations import *
 from pymongo.pool import *
@@ -91,7 +88,6 @@ from pymongo.server_selectors import *
 from pymongo.settings import *
 from pymongo.saslprep import *
 from pymongo.ssl_support import *
-from pymongo.son_manipulator import *
 from pymongo.topology import *
 from pymongo.topology_description import *
 from pymongo.uri_parser import *
