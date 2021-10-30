@@ -290,7 +290,7 @@ class SynchroNosePlugin(Plugin):
 
             # Should we exclude this method's whole TestCase?
             suite_name, method_name = excluded_name.split('.')
-            suite_matches = (suite_name == classname or suite_name == '*')
+            suite_matches = suite_name in [classname, '*']
 
             # Should we exclude this particular method?
             method_matches = (
