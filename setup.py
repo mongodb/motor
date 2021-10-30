@@ -102,8 +102,8 @@ class test(Command):
                          reason='no aiohttp')
 
         # Decide if we can run async / await tests with Tornado.
-        test_motor_await = 'tornado_tests.test_motor_await'
         if not testenv.HAVE_TORNADO:
+            test_motor_await = 'tornado_tests.test_motor_await'
             loader.avoid(test_motor_await, reason='no tornado')
 
         if self.test_suite is None:
