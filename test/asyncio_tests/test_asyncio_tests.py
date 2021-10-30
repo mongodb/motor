@@ -26,11 +26,7 @@ from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 def run_test_case(case, suppress_output=True):
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(case)
-    if suppress_output:
-        stream = io.StringIO()
-    else:
-        stream = None
-
+    stream = io.StringIO() if suppress_output else None
     runner = unittest.TextTestRunner(stream=stream)
     return runner.run(suite)
 

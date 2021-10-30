@@ -238,8 +238,7 @@ class MotorCollectionTest(MotorTest):
     async def _make_test_data(self, n):
         await self.db.drop_collection("test")
         await self.db.test.insert_many([{'_id': i} for i in range(n)])
-        expected_sum = sum(range(n))
-        return expected_sum
+        return sum(range(n))
 
     pipeline = [{'$project': {'_id': '$_id'}}]
 

@@ -902,16 +902,11 @@ class TestExamples(AsyncIOTestCase):
                     await txn_coro(session)  # performs transaction
                     break
                 except (ConnectionFailure, OperationFailure) as exc:
-                    print("Transaction aborted. Caught exception during "
-                          "transaction.")
-
-                    # If transient error, retry the whole transaction
-                    if exc.has_error_label("TransientTransactionError"):
-                        print("TransientTransactionError, retrying"
-                              "transaction ...")
-                        continue
-                    else:
+                    print('Transaction aborted. Caught exception during transaction.')
+                    if not exc.has_error_label('TransientTransactionError'):
                         raise
+                    print('TransientTransactionError, retryingtransaction ...')
+                    continue
         # End Transactions Retry Example 1
 
         # Test the example.
@@ -974,12 +969,12 @@ class TestExamples(AsyncIOTestCase):
                     break
                 except (ConnectionFailure, OperationFailure) as exc:
                     # If transient error, retry the whole transaction
-                    if exc.has_error_label("TransientTransactionError"):
-                        print("TransientTransactionError, retrying "
-                              "transaction ...")
-                        continue
-                    else:
+                    if not exc.has_error_label("TransientTransactionError"):
                         raise
+
+                    print("TransientTransactionError, retrying "
+                          "transaction ...")
+                    continue
 
         async def commit_with_retry(session):
             while True:
