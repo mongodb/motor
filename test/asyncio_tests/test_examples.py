@@ -974,12 +974,12 @@ class TestExamples(AsyncIOTestCase):
                     break
                 except (ConnectionFailure, OperationFailure) as exc:
                     # If transient error, retry the whole transaction
-                    if not exc.has_error_label("TransientTransactionError"):
+                    if exc.has_error_label("TransientTransactionError"):
+                        print("TransientTransactionError, retrying "
+                              "transaction ...")
+                        continue
+                    else:
                         raise
-
-                    print("TransientTransactionError, retrying "
-                          "transaction ...")
-                    continue
 
         async def commit_with_retry(session):
             while True:
