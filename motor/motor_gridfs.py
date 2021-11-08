@@ -295,11 +295,8 @@ Metadata set on the file appears as attributes on a
                 "MotorCollection, not %r" % root_collection)
 
         self.io_loop = root_collection.get_io_loop()
-        if delegate:
-            # Short cut.
-            self.delegate = delegate
-        else:
-            self.delegate = self.__delegate_class__(
+        # Short cut.
+        self.delegate = delegate or self.__delegate_class__(
                 root_collection.delegate,
                 session=session,
                 disable_md5=disable_md5,
