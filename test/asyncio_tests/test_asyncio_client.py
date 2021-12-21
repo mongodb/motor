@@ -69,7 +69,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
         if env.mongod_started_with_ssl:
             raise SkipTest("Server started with SSL")
         if os.name == "nt":
-            raise SkipTest("Unit tests not available on Windows")
+            raise SkipTest("Unix socket not available on Windows")
 
         mongodb_socket = '/tmp/mongodb-%d.sock' % env.port
 
