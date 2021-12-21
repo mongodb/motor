@@ -89,6 +89,9 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
+        if not env.initialized:
+            env.setup()
+
         if self.ssl and not env.mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")
 

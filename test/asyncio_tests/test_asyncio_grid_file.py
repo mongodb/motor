@@ -135,7 +135,6 @@ class MotorGridFileTest(AsyncIOTestCase):
     async def test_alternate_collection(self):
         await self.db.alt.files.delete_many({})
         await self.db.alt.chunks.delete_many({})
-
         f = motor_asyncio.AsyncIOMotorGridIn(self.db.alt)
         await f.write(b"hello world")
         await f.close()
