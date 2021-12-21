@@ -16,6 +16,7 @@
 
 import datetime
 import email.utils
+import hashlib
 import mimetypes
 import time
 
@@ -103,8 +104,17 @@ class GridFSHandler(tornado.web.RequestHandler):
         modified = gridout.upload_date.replace(microsecond=0)
         self.set_header("Last-Modified", modified)
 
-        # MD5 is calculated on the MongoDB server when GridFS file is created
-        self.set_header("Etag", '"%s"' % gridout.md5)
+        # Calculate the md5 for the GridFS file.
+        md5 = hashlib.md5()
+        while True:
+            chunk = await gridout.readchunk()
+            if not chunk:
+                break
+            md5.update(chunk)
+        md5 = md5.hexdigest()
+        gridout.seek(0)
+    
+        self.set_header("Etag", '"%s"' % md5)
 
         mime_type = gridout.content_type
 
@@ -145,7 +155,7 @@ class GridFSHandler(tornado.web.RequestHandler):
 
         # Same for Etag
         etag = self.request.headers.get("If-None-Match")
-        if etag is not None and etag.strip('"') == gridout.md5:
+        if etag is not None and etag.strip('"') == md5:
             self.set_status(304)
             return
 

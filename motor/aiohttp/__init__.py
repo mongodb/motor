@@ -20,6 +20,7 @@ See the :doc:`/examples/aiohttp_gridfs_example`.
 """
 
 import datetime
+import hashlib
 import mimetypes
 
 import aiohttp.web
@@ -190,7 +191,18 @@ class AIOHTTPGridFS:
             raise aiohttp.web.HTTPNotFound(text=request.path)
 
         resp = aiohttp.web.StreamResponse()
-        self._set_standard_headers(request.path, resp, gridout)
+
+         # Calculate the md5 for the GridFS file.
+        md5 = hashlib.md5()
+        while True:
+            chunk = await gridout.readchunk()
+            if not chunk:
+                break
+            md5.update(chunk)
+        gridout.seek(0)
+        md5 = md5.hexdigest()
+
+        self._set_standard_headers(request.path, resp, gridout, md5)
 
         # Overridable method set_extra_headers.
         self._set_extra_headers(resp, gridout)
@@ -209,7 +221,7 @@ class AIOHTTPGridFS:
 
         # Same for Etag
         etag = request.headers.get("If-None-Match")
-        if etag is not None and etag.strip('"') == gridout.md5:
+        if etag is not None and etag.strip('"') == md5:
             resp.set_status(304)
             return resp
 
@@ -225,7 +237,7 @@ class AIOHTTPGridFS:
                 written += len(chunk)
         return resp
 
-    def _set_standard_headers(self, path, resp, gridout):
+    def _set_standard_headers(self, path, resp, gridout, md5):
         resp.last_modified = gridout.upload_date
         content_type = gridout.content_type
         if content_type is None:
@@ -234,8 +246,7 @@ class AIOHTTPGridFS:
         if content_type:
             resp.content_type = content_type
 
-        # MD5 is calculated on the MongoDB server when GridFS file is created.
-        resp.headers["Etag"] = '"%s"' % gridout.md5
+        resp.headers["Etag"] = '"%s"' % md5
 
         # Overridable method get_cache_time.
         cache_time = self._get_cache_time(path,

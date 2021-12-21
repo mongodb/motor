@@ -63,8 +63,7 @@ class MotorGridFileTest(MotorTest):
             'chunk_size',
             'upload_date',
             'aliases',
-            'metadata',
-            'md5')
+            'metadata')
 
         for attr_name in attr_names:
             self.assertRaises(InvalidOperation, getattr, g, attr_name)
@@ -149,9 +148,6 @@ class MotorGridFileTest(MotorTest):
         g = motor.MotorGridOut(self.db.alt, f._id)
         self.assertEqual(b"hello world", (await g.read()))
 
-        # test that md5 still works...
-        self.assertEqual("5eb63bbbe01eeed093cb22bb8f5acdc3", g.md5)
-
     @gen_test
     async def test_grid_in_default_opts(self):
         self.assertRaises(TypeError, motor.MotorGridIn, "foo")
@@ -194,8 +190,6 @@ class MotorGridFileTest(MotorTest):
         await a.set("metadata", {"foo": 1})
         self.assertEqual({"foo": 1}, a.metadata)
 
-        self.assertRaises(AttributeError, setattr, a, "md5", 5)
-
         await a.close()
 
         self.assertTrue(isinstance(a._id, ObjectId))
@@ -217,9 +211,6 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual(["foo"], a.aliases)
 
         self.assertEqual({"foo": 1}, a.metadata)
-
-        self.assertEqual("d41d8cd98f00b204e9800998ecf8427e", a.md5)
-        self.assertRaises(AttributeError, setattr, a, "md5", 5)
 
     @gen_test
     async def test_grid_in_custom_opts(self):
@@ -268,7 +259,6 @@ class MotorGridFileTest(MotorTest):
         self.assertTrue(isinstance(b.upload_date, datetime.datetime))
         self.assertEqual(None, b.aliases)
         self.assertEqual(None, b.metadata)
-        self.assertEqual("d41d8cd98f00b204e9800998ecf8427e", b.md5)
 
     @gen_test
     async def test_grid_out_custom_opts(self):
@@ -290,7 +280,6 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual(["foo"], two.aliases)
         self.assertEqual({"foo": 1, "bar": 2}, two.metadata)
         self.assertEqual(3, two.bar)
-        self.assertEqual("5eb63bbbe01eeed093cb22bb8f5acdc3", two.md5)
 
     @gen_test
     async def test_grid_out_file_document(self):

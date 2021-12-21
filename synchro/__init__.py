@@ -690,7 +690,6 @@ class GridOut(Synchro):
     content_type = SynchroGridOutProperty('content_type')
     filename     = SynchroGridOutProperty('filename')
     length       = SynchroGridOutProperty('length')
-    md5          = SynchroGridOutProperty('md5')
     metadata     = SynchroGridOutProperty('metadata')
     name         = SynchroGridOutProperty('name')
     upload_date  = SynchroGridOutProperty('upload_date')
@@ -721,7 +720,7 @@ class GridOut(Synchro):
         # to make PyMongo's assertRaises tests pass.
         if key in (
                 "_id", "name", "content_type", "length", "chunk_size",
-                "upload_date", "aliases", "metadata", "md5"):
+                "upload_date", "aliases", "metadata"):
             raise AttributeError()
 
         super().__setattr__(key, value)

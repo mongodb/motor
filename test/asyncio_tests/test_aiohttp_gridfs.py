@@ -133,7 +133,7 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
 
 
 class AIOHTTPGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
-    @asyncio_test
+    @asyncio_test(timeout=10)
     async def test_basic(self):
         await self.start_app()
         # First request
@@ -187,7 +187,7 @@ class AIOHTTPGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
         response = await self.get('/fs/bar')
         self.assertEqual(404, response.status)
 
-    @asyncio_test
+    @asyncio_test()
     async def test_head(self):
         await self.start_app()
         response = await self.head('/fs/foo')
