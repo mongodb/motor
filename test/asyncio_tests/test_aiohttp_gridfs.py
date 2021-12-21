@@ -56,7 +56,7 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
     def setUpClass(cls):
         super().setUpClass()
         logging.getLogger('aiohttp.web').setLevel(logging.CRITICAL)
-    
+
         cls.fs = gridfs.GridFS(test.env.sync_cx.motor_test)
 
         # Make a 500k file in GridFS with filename 'foo'
