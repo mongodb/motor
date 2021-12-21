@@ -18,6 +18,7 @@ import asyncio
 import os
 import unittest
 from unittest import SkipTest
+from sys import platform
 
 try:
     import contextvars
@@ -65,8 +66,13 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
     @asyncio_test
     async def test_unix_socket(self):
+        if not env.initialized:
+            env.setup()
+
         if env.mongod_started_with_ssl:
             raise SkipTest("Server started with SSL")
+        if os.name == "nt":
+            raise SkipTest("Unit tests not available on Windows")
 
         mongodb_socket = '/tmp/mongodb-%d.sock' % env.port
 
@@ -147,7 +153,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
                                              io_loop=self.loop)
 
         cx = self.asyncio_client(maxPoolSize=100)
-        self.assertEqual(cx.max_pool_size, 100)
+        self.assertEqual(cx.options.pool_options.max_pool_size, 100)
         cx.close()
 
     @asyncio_test(timeout=30)
