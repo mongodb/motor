@@ -242,7 +242,7 @@ Metadata set on the file appears as attributes on a
 """)
 
     def __init__(self, root_collection, delegate=None, session=None,
-                 disable_md5=False, **kwargs):
+                **kwargs):
         """
         Class to write data to GridFS. Application developers should not
         generally need to instantiate this class - see
@@ -277,10 +277,6 @@ Metadata set on the file appears as attributes on a
           - `session` (optional): a
             :class:`~pymongo.client_session.ClientSession` to use for all
             commands
-          - `disable_md5` (optional): When True, an MD5 checksum will not be
-            computed for the uploaded file. Useful in environments where
-            MD5 cannot be used for regulatory or other reasons. Defaults to
-            False.
           - `**kwargs` (optional): file level options (see above)
 
         .. versionchanged:: 0.2
@@ -299,7 +295,6 @@ Metadata set on the file appears as attributes on a
         self.delegate = delegate or self.__delegate_class__(
                 root_collection.delegate,
                 session=session,
-                disable_md5=disable_md5,
                 **kwargs)
 
     # Support "async with bucket.open_upload_stream() as f:"
@@ -328,7 +323,7 @@ class AgnosticGridFSBucket(object):
     upload_from_stream           = AsyncCommand()
     upload_from_stream_with_id   = AsyncCommand()
 
-    def __init__(self, database, bucket_name="fs", disable_md5=False,
+    def __init__(self, database, bucket_name="fs",
                  chunk_size_bytes=DEFAULT_CHUNK_SIZE, write_concern=None,
                  read_preference=None, collection=None):
         """Create a handle to a GridFS bucket.
@@ -350,9 +345,6 @@ class AgnosticGridFSBucket(object):
             (the default) db.write_concern is used.
           - `read_preference` (optional): The read preference to use. If
             ``None`` (the default) db.read_preference is used.
-          - `disable_md5` (optional): When True, MD5 checksums will not be
-            computed for uploaded files. Useful in environments where MD5
-            cannot be used for regulatory or other reasons. Defaults to False.
           - `collection` (optional): Deprecated, an alias for `bucket_name`
             that exists solely to provide backwards compatibility.
 
@@ -390,8 +382,7 @@ class AgnosticGridFSBucket(object):
             bucket_name,
             chunk_size_bytes=chunk_size_bytes,
             write_concern=write_concern,
-            read_preference=read_preference,
-            disable_md5=disable_md5)
+            read_preference=read_preference)
 
     def get_io_loop(self):
         return self.io_loop

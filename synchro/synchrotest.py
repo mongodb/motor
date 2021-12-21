@@ -80,7 +80,6 @@ excluded_tests = [
 
     # Can't do MotorCollection(name, create=True), Motor constructors do no I/O.
     'TestCollection.test_create',
-    'TestCollection.test_reindex',
 
     # Motor doesn't support PyMongo's syntax, db.system_js['my_func'] = "code",
     # users should just use system.js as a regular collection.

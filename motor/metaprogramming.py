@@ -178,7 +178,7 @@ class AsyncRead(Async):
 
 class AsyncWrite(Async):
     def __init__(self, attr_name=None, doc=None):
-        """A descriptor that wraps a PyMongo write method like update() that
+        """A descriptor that wraps a PyMongo write method like update_one() that
         accepts getLastError options and returns a Future.
         """
         Async.__init__(self, attr_name=attr_name, doc=doc)

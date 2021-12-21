@@ -122,7 +122,7 @@ def wrap_synchro(fn):
         motor_obj = fn(*args, **kwargs)
 
         # Not all Motor classes appear here, only those we need to return
-        # from methods like map_reduce() or create_collection()
+        # from methods like create_collection()
         if isinstance(motor_obj, motor.MotorCollection):
             client = MongoClient(delegate=motor_obj.database.client)
             database = Database(client, motor_obj.database.name)
@@ -341,7 +341,6 @@ class MongoClient(Synchro):
 
     get_database = WrapOutgoing()
     max_pool_size = SynchroProperty()
-    max_write_batch_size = SynchroProperty()
     start_session = Sync()
     watch = WrapOutgoing()
 
@@ -356,12 +355,6 @@ class MongoClient(Synchro):
         kwargs.setdefault('connect', True)
         if not self.delegate:
             self.delegate = self.__delegate_class__(host, port, *args, **kwargs)
-
-    @property
-    def is_locked(self):
-        # # MotorClient doesn't support the is_locked property.
-        # # Use the property directly from the underlying MongoClient.
-        return self.delegate.delegate.is_locked
 
     # PyMongo expects this to return a real MongoClient, unwrap it.
     def _duplicate(self, **kwargs):
@@ -503,12 +496,6 @@ class Collection(Synchro):
         fullname = self.name + '.' + name
         return Collection(self.database, fullname,
                           delegate=self.delegate[name])
-
-    def count(self, *args, **kwargs):
-        raise unittest.SkipTest('count() is not supported in Motor')
-
-    def group(self, *args, **kwargs):
-        raise unittest.SkipTest('group() is not supported in Motor')
 
 
 class ChangeStream(Synchro):

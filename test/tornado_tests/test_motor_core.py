@@ -36,39 +36,11 @@ pymongo_only = set(['next'])
 
 motor_client_only = motor_only.union(['open'])
 
-pymongo_client_only = set([
-    'close_cursor',
-    'database_names',
-    'is_locked',
-    'set_cursor_manager',
-    'kill_cursors']).union(pymongo_only)
+pymongo_client_only = set([]).union(pymongo_only)
 
-pymongo_database_only = set([
-    'add_user',
-    'collection_names',
-    'remove_user',
-    'system_js',
-    'last_status',
-    'reset_error_history',
-    'eval',
-    'add_son_manipulator',
-    'logout',
-    'error',
-    'authenticate',
-    'previous_error']).union(pymongo_only)
+pymongo_database_only = set([]).union(pymongo_only)
 
-pymongo_collection_only = set([
-    'count',
-    'ensure_index',
-    'group',
-    'initialize_ordered_bulk_op',
-    'initialize_unordered_bulk_op',
-    'save',
-    'remove',
-    'insert',
-    'update',
-    'find_and_modify',
-    'parallel_scan']).union(pymongo_only)
+pymongo_collection_only = set([]).union(pymongo_only)
 
 motor_cursor_only = set([
     'fetch_next',
@@ -79,7 +51,6 @@ motor_cursor_only = set([
     'closed']).union(motor_only)
 
 pymongo_cursor_only = set([
-    'count',
     'retrieved'])
 
 
