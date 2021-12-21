@@ -128,9 +128,10 @@ class MotorCoreTestGridFS(MotorTest):
 
     def test_gridin_attrs(self):
         motor_gridin_only = set(['set']).union(motor_only)
-
+        gridin_only = set(['md5'])
+        
         self.assertEqual(
-            attrs(GridIn(env.sync_cx.test.fs)),
+            attrs(GridIn(env.sync_cx.test.fs)) - gridin_only,
             attrs(MotorGridIn(self.cx.test.fs)) - motor_gridin_only)
 
     @gen_test
@@ -140,10 +141,14 @@ class MotorCoreTestGridFS(MotorTest):
             'stream_to_handler'
         ]).union(motor_only)
 
+        gridin_only = set([
+            'md5', 'readlines', 'truncate', 'flush', 'fileno', 'closed', 'writelines',
+            'isatty', 'writable'])
+
         fs = MotorGridFSBucket(self.cx.test)
         motor_gridout = await fs.open_download_stream(1)
         self.assertEqual(
-            attrs(self.sync_fs.open_download_stream(1)),
+            attrs(self.sync_fs.open_download_stream(1)) - gridin_only,
             attrs(motor_gridout) - motor_gridout_only)
 
     def test_gridout_cursor_attrs(self):

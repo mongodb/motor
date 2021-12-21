@@ -37,7 +37,7 @@ class MotorSessionTest(MotorTest):
             raise SkipTest("Sessions not supported")
 
     async def _test_ops(self, client, *ops):
-        listener = client.event_listeners()[0][0]
+        listener = client.options.event_listeners[0]
 
         for f, args, kw in ops:
             # Simulate "async with" on all Pythons.

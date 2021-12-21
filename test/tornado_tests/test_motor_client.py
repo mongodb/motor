@@ -120,7 +120,7 @@ class MotorClientTest(MotorTest):
             motor.MotorClient(maxPoolSize='foo')
 
         cx = self.motor_client(maxPoolSize=100)
-        self.assertEqual(cx.max_pool_size, 100)
+        self.assertEqual(cx.options.pool_options.max_pool_size, 100)
         cx.close()
 
     @gen_test(timeout=30)
