@@ -31,7 +31,7 @@ description = 'Non-blocking MongoDB driver for Tornado or asyncio'
 with open("README.rst") as readme:
     long_description = readme.read()
 
-pymongo_ver = ">=3.12"
+pymongo_ver = ">=3.12,<5"
 
 install_requires = ["pymongo" + pymongo_ver]
 
@@ -123,8 +123,7 @@ class test(Command):
             runner_class = unittest.TextTestRunner
 
         runner = runner_class(**runner_kwargs)
-        if not env.initialized:
-            env.setup()
+        env.setup()
         if not self.tornado_warnings:
             suppress_tornado_warnings()
 
