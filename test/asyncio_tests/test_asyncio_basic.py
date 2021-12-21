@@ -87,7 +87,7 @@ class AIOMotorTestBasic(AsyncIOTestCase):
 
         self.assertEqual(ReadPreference.SECONDARY.mode, cx.read_preference.mode)
         self.assertEqual([{'foo': 'bar'}], cx.read_preference.tag_sets)
-        self.assertEqual(42, cx.local_threshold_ms)
+        self.assertEqual(42, cx.options.local_threshold_ms)
 
         # Make a MotorCursor and get its PyMongo Cursor
         collection = cx.motor_test.test_collection.with_options(
