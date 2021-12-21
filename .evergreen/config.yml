@@ -473,87 +473,6 @@ tasks:
 
 # Test tasks {{{
 
-    - name: "test-3.0-standalone"
-      tags: ["3.0", "standalone"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.0"
-            TOPOLOGY: "server"
-        - func: "run tox"
-
-    - name: "test-3.0-replica_set"
-      tags: ["3.0", "replica_set"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.0"
-            TOPOLOGY: "replica_set"
-        - func: "run tox"
-
-    - name: "test-3.0-sharded_cluster"
-      tags: ["3.0", "sharded_cluster"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.0"
-            TOPOLOGY: "sharded_cluster"
-        - func: "run tox"
-
-    - name: "test-3.2-standalone"
-      tags: ["3.2", "standalone"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.2"
-            TOPOLOGY: "server"
-        - func: "run tox"
-
-    - name: "test-3.2-replica_set"
-      tags: ["3.2", "replica_set"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.2"
-            TOPOLOGY: "replica_set"
-        - func: "run tox"
-
-    - name: "test-3.2-sharded_cluster"
-      tags: ["3.2", "sharded_cluster"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.2"
-            TOPOLOGY: "sharded_cluster"
-        - func: "run tox"
-
-    - name: "test-3.4-standalone"
-      tags: ["3.4", "standalone"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.4"
-            TOPOLOGY: "server"
-        - func: "run tox"
-
-    - name: "test-3.4-replica_set"
-      tags: ["3.4", "replica_set"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.4"
-            TOPOLOGY: "replica_set"
-        - func: "run tox"
-
-    - name: "test-3.4-sharded_cluster"
-      tags: ["3.4", "sharded_cluster"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.4"
-            TOPOLOGY: "sharded_cluster"
-        - func: "run tox"
-
     - name: "test-3.6-standalone"
       tags: ["3.6", "standalone"]
       commands:
@@ -932,16 +851,6 @@ axes:
 
 buildvariants:
 
-# Test MongoDB 3.0 and Python only up to 3.6 on RHEL.
-- matrix_name: "test-mongodb-3.0-rhel"
-  display_name: "${os}-${tox-env}-${ssl}"
-  matrix_spec:
-    os: "rhel"
-    tox-env: ["tornado5-py36", "py3-pymongo-latest"]
-    ssl: "*"
-  tasks:
-     - ".3.0"
-
 # Main test matrix.
 - matrix_name: "main"
   display_name: "${os}-${tox-env}-${ssl}"
@@ -962,8 +871,6 @@ buildvariants:
      - ".4.2"
      - ".4.0"
      - ".3.6"
-     - ".3.4"
-     - ".3.2"
 
 - matrix_name: "test-ubuntu"
   display_name: "${os}-${tox-env-ubuntu}-${ssl}"
@@ -989,8 +896,6 @@ buildvariants:
      - ".4.2"
      - ".4.0"
      - ".3.6"
-     - ".3.4"
-     - ".3.2"
 
 - matrix_name: "test-macos"
   display_name: "${os}-${tox-env-osx}-${ssl}"
