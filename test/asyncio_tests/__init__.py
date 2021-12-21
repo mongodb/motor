@@ -72,8 +72,6 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
 
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
-        if not env.initialized:
-            env.setup()
 
         # It's easy to forget the @asyncio_test decorator, but if you do
         # the test will silently be ignored because nothing will consume
@@ -90,9 +88,6 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         asyncio.set_event_loop(None)
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-
-        if not env.initialized:
-            env.setup()
 
         if self.ssl and not env.mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")

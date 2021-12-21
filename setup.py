@@ -123,7 +123,8 @@ class test(Command):
             runner_class = unittest.TextTestRunner
 
         runner = runner_class(**runner_kwargs)
-        env.setup()
+        if not env.initialized:
+            env.setup()
         if not self.tornado_warnings:
             suppress_tornado_warnings()
 

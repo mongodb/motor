@@ -65,9 +65,6 @@ class MotorTest(testing.AsyncTestCase):
     def setUp(self):
         super().setUp()
 
-        if not env.initialized:
-            env.setup()
-
         if self.ssl and not env.mongod_started_with_ssl:
             raise SkipTest("mongod doesn't support SSL, or is down")
 

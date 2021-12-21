@@ -66,9 +66,6 @@ class TestAsyncIOClient(AsyncIOTestCase):
 
     @asyncio_test
     async def test_unix_socket(self):
-        if not env.initialized:
-            env.setup()
-
         if env.mongod_started_with_ssl:
             raise SkipTest("Server started with SSL")
         if os.name == "nt":
