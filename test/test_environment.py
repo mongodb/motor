@@ -296,11 +296,15 @@ class TestEnvironment(object):
 
     def require_auth(self, func):
         """Run a test only if the server is started with auth."""
+        if not self.initialized:
+            self.setup()
         return self.require(
             lambda: self.auth, "Server must be start with auth", func=func)
 
     def require_version_min(self, *ver):
         """Run a test only if the server version is at least ``version``."""
+        if not self.initialized:
+            self.setup()
         other_version = Version(*ver)
         return self.require(lambda: self.version >= other_version,
                             "Server version must be at least %s"
@@ -308,6 +312,8 @@ class TestEnvironment(object):
 
     def require_version_max(self, *ver):
         """Run a test only if the server version is at most ``version``."""
+        if not self.initialized:
+            self.setup()
         other_version = Version(*ver)
         return self.require(lambda: self.version <= other_version,
                             "Server version must be at most %s"
@@ -315,6 +321,8 @@ class TestEnvironment(object):
 
     def require_replica_set(self, func):
         """Run a test only if the client is connected to a replica set."""
+        if not self.initialized:
+            self.setup()
         return self.require(lambda: self.is_replica_set,
                             "Not connected to a replica set",
                             func=func)
@@ -324,6 +332,8 @@ class TestEnvironment(object):
 
         *Might* because this does not test the FCV.
         """
+        if not self.initialized:
+            self.setup()
         return self.require(self.supports_transactions,
                             "Transactions are not supported",
                             func=func)

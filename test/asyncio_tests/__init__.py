@@ -72,6 +72,8 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
 
     def __init__(self, methodName='runTest'):
         super().__init__(methodName)
+        if not env.initialized:
+            env.setup()
 
         # It's easy to forget the @asyncio_test decorator, but if you do
         # the test will silently be ignored because nothing will consume

@@ -31,7 +31,6 @@ from test.utils import get_async_test_timeout
 
 class TestAsyncIOChangeStream(AsyncIOTestCase):
     @classmethod
-    @env.require_version_min(3, 6)
     def setUpClass(cls):
         super().setUpClass()
         if env.is_standalone:
