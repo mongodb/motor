@@ -71,8 +71,7 @@
         - `partialFilterExpression`: A document that specifies a filter for
           a partial index.
         - `collation` (optional): An instance of
-          :class:`~pymongo.collation.Collation`. This option is only supported
-          on MongoDB 3.4 and above.
+          :class:`~pymongo.collation.Collation`.
 
       See the MongoDB documentation for a full list of supported options by
       server version.
@@ -84,8 +83,7 @@
       .. note:: `partialFilterExpression` requires server version **>= 3.2**
 
       .. note:: The :attr:`~pymongo.collection.Collection.write_concern` of
-         this collection is automatically applied to this operation when using
-         MongoDB >= 3.4.
+         this collection is automatically applied to this operation.
 
       :Parameters:
         - `keys`: a single key or a list of (key, direction)

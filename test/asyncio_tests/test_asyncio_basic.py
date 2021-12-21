@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest import SkipTest
+from abc import ABC
 
 import pymongo
 from pymongo import WriteConcern
@@ -119,11 +119,6 @@ class AIOMotorTestBasic(AsyncIOTestCase):
             self.collection._collection
 
     def test_abc(self):
-        try:
-            from abc import ABC
-        except ImportError:
-            # Python < 3.4.
-            raise SkipTest()
 
         class C(ABC):
             db = self.db

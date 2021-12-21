@@ -14,6 +14,8 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+from abc import ABC
+
 import pymongo
 from pymongo import WriteConcern
 from pymongo.errors import ConfigurationError
@@ -118,12 +120,6 @@ class MotorTestBasic(MotorTest):
             self.collection._collection
 
     def test_abc(self):
-        try:
-            from abc import ABC
-        except ImportError:
-            # Python < 3.4.
-            raise SkipTest()
-
         class C(ABC):
             db = self.db
             collection = self.collection

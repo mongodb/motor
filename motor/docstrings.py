@@ -213,8 +213,7 @@ This prints::
     command (like maxTimeMS) can be passed as keyword arguments.
 
 The :attr:`~pymongo.collection.Collection.write_concern` of
-this collection is automatically applied to this operation when using
-MongoDB >= 3.4.
+this collection is automatically applied to this operation.
 
 .. versionchanged:: 1.2
    Added session parameter.
@@ -288,8 +287,7 @@ This deletes all matching documents and prints "3".
 :Parameters:
   - `filter`: A query that matches the documents to delete.
   - `collation` (optional): An instance of
-    :class:`~pymongo.collation.Collation`. This option is only supported
-    on MongoDB 3.4 and above.
+    :class:`~pymongo.collation.Collation`.
   - `hint` (optional): An index used to support the query predicate specified
     either by its string name, or in the same format as passed to
     :meth:`~MotorDatabase.create_index` (e.g. ``[('field', ASCENDING)]``).
@@ -320,8 +318,7 @@ This deletes one matching document and prints "1".
 :Parameters:
   - `filter`: A query that matches the document to delete.
   - `collation` (optional): An instance of
-    :class:`~pymongo.collation.Collation`. This option is only supported
-    on MongoDB 3.4 and above.
+    :class:`~pymongo.collation.Collation`.
   - `hint` (optional): An index used to support the query predicate specified
     either by its string name, or in the same format as passed to
     :meth:`~MotorDatabase.create_index` (e.g. ``[('field', ASCENDING)]``).
@@ -829,8 +826,7 @@ This prints::
     write to opt-out of document level validation. Default is
     ``False``.
   - `collation` (optional): An instance of
-    :class:`~pymongo.collation.Collation`. This option is only supported
-    on MongoDB 3.4 and above.
+    :class:`~pymongo.collation.Collation`.
   - `hint` (optional): An index to use to support the query
     predicate specified either by its string name, or in the same
     format as passed to
@@ -888,8 +884,7 @@ This prints::
     write to opt-out of document level validation. Default is
     ``False``.
   - `collation` (optional): An instance of
-    :class:`~pymongo.collation.Collation`. This option is only supported
-    on MongoDB 3.4 and above.
+    :class:`~pymongo.collation.Collation`.
   - `array_filters` (optional): A list of filters specifying which
     array elements an update should apply. Requires MongoDB 3.6+.
   - `hint` (optional): An index to use to support the query
@@ -949,8 +944,7 @@ This prints::
     write to opt-out of document level validation. Default is
     ``False``.
   - `collation` (optional): An instance of
-    :class:`~pymongo.collation.Collation`. This option is only supported
-    on MongoDB 3.4 and above.
+    :class:`~pymongo.collation.Collation`.
   - `array_filters` (optional): A list of filters specifying which
     array elements an update should apply. Requires MongoDB 3.6+.
   - `hint` (optional): An index to use to support the query
