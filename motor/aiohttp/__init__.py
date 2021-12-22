@@ -192,17 +192,18 @@ class AIOHTTPGridFS:
 
         resp = aiohttp.web.StreamResponse()
 
-         # Calculate the md5 for the GridFS file.
-        md5 = hashlib.md5()
+        # Calculate the sha256 checksum for the GridFS file
+        # for a FIPS-compliant Etag HTTP header.
+        sha = hashlib.sha256()
         while True:
             chunk = await gridout.readchunk()
             if not chunk:
                 break
-            md5.update(chunk)
+            sha.update(chunk)
         gridout.seek(0)
-        md5 = md5.hexdigest()
+        sha = sha.hexdigest()
 
-        self._set_standard_headers(request.path, resp, gridout, md5)
+        self._set_standard_headers(request.path, resp, gridout, sha)
 
         # Overridable method set_extra_headers.
         self._set_extra_headers(resp, gridout)
@@ -221,7 +222,7 @@ class AIOHTTPGridFS:
 
         # Same for Etag
         etag = request.headers.get("If-None-Match")
-        if etag is not None and etag.strip('"') == md5:
+        if etag is not None and etag.strip('"') == sha:
             resp.set_status(304)
             return resp
 
@@ -237,7 +238,7 @@ class AIOHTTPGridFS:
                 written += len(chunk)
         return resp
 
-    def _set_standard_headers(self, path, resp, gridout, md5):
+    def _set_standard_headers(self, path, resp, gridout, sha):
         resp.last_modified = gridout.upload_date
         content_type = gridout.content_type
         if content_type is None:
@@ -246,7 +247,7 @@ class AIOHTTPGridFS:
         if content_type:
             resp.content_type = content_type
 
-        resp.headers["Etag"] = '"%s"' % md5
+        resp.headers["Etag"] = '"%s"' % sha
 
         # Overridable method get_cache_time.
         cache_time = self._get_cache_time(path,

@@ -12,3 +12,4 @@ setup.cfg
 doc/_build/
 .idea/
 xunit-results
+.eggs

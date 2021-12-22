@@ -61,7 +61,7 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
 
         # Make a 500k file in GridFS with filename 'foo'
         cls.contents = b'Jesse' * 100 * 1024
-        cls.contents_hash = hashlib.md5(cls.contents).hexdigest()
+        cls.contents_hash = hashlib.sha256(cls.contents).hexdigest()
 
         # Record when we created the file, to check the Last-Modified header
         cls.put_start = datetime.datetime.utcnow().replace(microsecond=0)
