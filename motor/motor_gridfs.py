@@ -14,6 +14,7 @@
 
 """GridFS implementation for Motor, an asynchronous driver for MongoDB."""
 
+import hashlib
 import warnings
 
 import gridfs
@@ -474,3 +475,16 @@ class AgnosticGridFSBucket(object):
             AgnosticGridOutCursor, self._framework, self.__module__)
 
         return grid_out_cursor(cursor, self.collection)
+
+
+def _hash_gridout(gridout):
+    """Compute the effective hash of a GridOut object for use with an Etag header.
+
+    Create a FIPS-compliant Etag HTTP header hash using sha256
+    We use the _id + length + upload_date as a proxy for
+    uniqueness to avoid reading the entire file.
+    """
+    grid_hash = hashlib.sha256(str(gridout._id).encode('utf8'))
+    grid_hash.update(str(gridout.length).encode('utf8'))
+    grid_hash.update(str(gridout.upload_date).encode('utf8'))
+    return grid_hash.hexdigest()

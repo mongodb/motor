@@ -26,6 +26,7 @@ import aiohttp.web
 import gridfs
 
 from motor.aiohttp import AIOHTTPGridFS
+from motor.motor_gridfs import _hash_gridout
 
 import test
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
@@ -72,11 +73,7 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
                    filename='foo',
                    content_type='my type')
         item = cls.fs.get(file_id)
-        contents_hash = hashlib.sha256(file_id.encode('utf8'))
-        contents_hash.update(str(item.length).encode('utf8'))
-        contents_hash.update(str(item.upload_date).encode('utf8'))
-        cls.contents_hash = contents_hash.hexdigest()
-
+        cls.contents_hash = _hash_gridout(item)
         cls.put_end = datetime.datetime.utcnow().replace(microsecond=0)
         cls.app = cls.srv = cls.app_handler = None
 

@@ -28,6 +28,8 @@ import gridfs
 from gridfs.grid_file import GridOut
 from motor.motor_asyncio import (AsyncIOMotorDatabase,
                                  AsyncIOMotorGridFSBucket)
+from motor.motor_gridfs import _hash_gridout
+
 
 
 def get_gridfs_file(bucket, filename, request):
@@ -193,16 +195,10 @@ class AIOHTTPGridFS:
 
         resp = aiohttp.web.StreamResponse()
 
-        # Calculate a sha256 hash for the GridFS file
-        # for a FIPS-compliant Etag HTTP header.
-        # We use the _id + length + upload_date as a proxy for
-        # uniqueness to avoid reading the entire file.
-        sha = hashlib.sha256(str(gridout._id).encode('utf8'))
-        sha.update(str(gridout.length).encode('utf8'))
-        sha.update(str(gridout.upload_date).encode('utf8'))
-        sha = sha.hexdigest()
+        # Get the hash for the GridFS file.
+        checksum = _hash_gridout(gridout)
 
-        self._set_standard_headers(request.path, resp, gridout, sha)
+        self._set_standard_headers(request.path, resp, gridout, checksum)
 
         # Overridable method set_extra_headers.
         self._set_extra_headers(resp, gridout)
@@ -237,7 +233,7 @@ class AIOHTTPGridFS:
                 written += len(chunk)
         return resp
 
-    def _set_standard_headers(self, path, resp, gridout, sha):
+    def _set_standard_headers(self, path, resp, gridout, checksum):
         resp.last_modified = gridout.upload_date
         content_type = gridout.content_type
         if content_type is None:
@@ -246,7 +242,7 @@ class AIOHTTPGridFS:
         if content_type:
             resp.content_type = content_type
 
-        resp.headers["Etag"] = '"%s"' % sha
+        resp.headers["Etag"] = '"%s"' % checksum
 
         # Overridable method get_cache_time.
         cache_time = self._get_cache_time(path,

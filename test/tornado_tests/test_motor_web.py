@@ -27,6 +27,7 @@ from tornado.web import Application
 
 import motor
 import motor.web
+from motor.motor_gridfs import _hash_gridout
 import test
 from test.test_environment import env, CA_PEM, CLIENT_PEM
 
@@ -51,9 +52,7 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
             self.contents, _id=file_id, filename='foo', content_type='my type')
 
         item = self.fs.get(file_id)
-        contents_hash = hashlib.sha256(file_id.encode('utf8'))
-        contents_hash.update(str(item.length).encode('utf8'))
-        contents_hash.update(str(item.upload_date).encode('utf8'))
+        self.contents_hash = _hash_gridout(item)
         self.put_end = datetime.datetime.utcnow().replace(microsecond=0)
         self.assertTrue(self.fs.get_last_version('foo'))
 

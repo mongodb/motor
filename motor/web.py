@@ -25,6 +25,7 @@ from tornado import gen
 
 import gridfs
 import motor
+from motor.motor_gridfs import _hash_gridout
 
 
 # TODO: this class is not a drop-in replacement for StaticFileHandler.
@@ -104,16 +105,10 @@ class GridFSHandler(tornado.web.RequestHandler):
         modified = gridout.upload_date.replace(microsecond=0)
         self.set_header("Last-Modified", modified)
 
-        # Calculate a sha256 hash for the GridFS file
-        # for a FIPS-compliant Etag HTTP header.
-        # We use the _id + length + upload_date as a proxy for
-        # uniqueness to avoid reading the entire file.
-        sha = hashlib.sha256(gridout._id)
-        sha.update(gridout.length)
-        sha.update(gridout.upload_date)
-        sha = sha.hexdigest()
+        # Get the hash for the GridFS file.
+        checksum = _hash_gridout(gridout)
     
-        self.set_header("Etag", '"%s"' % sha)
+        self.set_header("Etag", '"%s"' % checksum)
 
         mime_type = gridout.content_type
 
