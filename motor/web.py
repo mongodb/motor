@@ -104,17 +104,14 @@ class GridFSHandler(tornado.web.RequestHandler):
         modified = gridout.upload_date.replace(microsecond=0)
         self.set_header("Last-Modified", modified)
 
-        # Calculate the sha256 checksum for the GridFS file
+        # Calculate a sha256 hash for the GridFS file
         # for a FIPS-compliant Etag HTTP header.
-        sha = hashlib.sha256()
-        while True:
-            chunk = await gridout.readchunk()
-            if not chunk:
-                break
-            sha.update(chunk)
-        gridout.seek(0)
+        # We use the _id + length + upload_date as a proxy for
+        # uniqueness to avoid reading the entire file.
+        sha = hashlib.sha256(gridout._id)
+        sha.update(gridout.length)
+        sha.update(gridout.upload_date)
         sha = sha.hexdigest()
-        gridout.seek(0)
     
         self.set_header("Etag", '"%s"' % sha)
 

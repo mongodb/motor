@@ -41,15 +41,19 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
 
         # Make a 500k file in GridFS with filename 'foo'
         self.contents = b'Jesse' * 100 * 1024
-        self.contents_hash = hashlib.sha256(self.contents).hexdigest()
-
+ 
         # Record when we created the file, to check the Last-Modified header
         self.put_start = datetime.datetime.utcnow().replace(microsecond=0)
-        self.file_id = 'id'
+        file_id = 'id'
+        self.file_id = file_id
         self.fs.delete(self.file_id)
         self.fs.put(
-            self.contents, _id='id', filename='foo', content_type='my type')
+            self.contents, _id=file_id, filename='foo', content_type='my type')
 
+        item = self.fs.get(file_id)
+        contents_hash = hashlib.sha256(file_id)
+        contents_hash.update(item.length)
+        contents_hash.update(item.upload_date)
         self.put_end = datetime.datetime.utcnow().replace(microsecond=0)
         self.assertTrue(self.fs.get_last_version('foo'))
 
