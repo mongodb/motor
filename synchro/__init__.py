@@ -20,6 +20,7 @@ DO NOT USE THIS MODULE.
 """
 
 import inspect
+import time
 import unittest
 from tornado.ioloop import IOLoop
 
@@ -44,13 +45,10 @@ from pymongo import (collation,
                      change_stream,
                      encryption_options,
                      errors,
-                     monotonic,
                      operations,
                      server_selectors,
                      server_type,
-                     son_manipulator,
                      saslprep,
-                     ssl_match_hostname,
                      ssl_support,
                      write_concern)
 from pymongo.auth import _build_credentials_tuple
@@ -74,7 +72,6 @@ from pymongo.message import (_COMMAND_OVERHEAD,
 from pymongo.monitor import *
 from pymongo.monitoring import *
 from pymongo.monitoring import _LISTENERS, _Listeners, _SENSITIVE_COMMANDS
-from pymongo.monotonic import time
 from pymongo.ocsp_cache import _OCSPCache
 from pymongo.operations import *
 from pymongo.pool import *
@@ -91,7 +88,6 @@ from pymongo.server_selectors import *
 from pymongo.settings import *
 from pymongo.saslprep import *
 from pymongo.ssl_support import *
-from pymongo.son_manipulator import *
 from pymongo.topology import *
 from pymongo.topology_description import *
 from pymongo.uri_parser import *
@@ -126,7 +122,7 @@ def wrap_synchro(fn):
         motor_obj = fn(*args, **kwargs)
 
         # Not all Motor classes appear here, only those we need to return
-        # from methods like map_reduce() or create_collection()
+        # from methods like create_collection()
         if isinstance(motor_obj, motor.MotorCollection):
             client = MongoClient(delegate=motor_obj.database.client)
             database = Database(client, motor_obj.database.name)
@@ -345,7 +341,6 @@ class MongoClient(Synchro):
 
     get_database = WrapOutgoing()
     max_pool_size = SynchroProperty()
-    max_write_batch_size = SynchroProperty()
     start_session = Sync()
     watch = WrapOutgoing()
 
@@ -360,12 +355,6 @@ class MongoClient(Synchro):
         kwargs.setdefault('connect', True)
         if not self.delegate:
             self.delegate = self.__delegate_class__(host, port, *args, **kwargs)
-
-    @property
-    def is_locked(self):
-        # # MotorClient doesn't support the is_locked property.
-        # # Use the property directly from the underlying MongoClient.
-        return self.delegate.delegate.is_locked
 
     # PyMongo expects this to return a real MongoClient, unwrap it.
     def _duplicate(self, **kwargs):
@@ -507,12 +496,6 @@ class Collection(Synchro):
         fullname = self.name + '.' + name
         return Collection(self.database, fullname,
                           delegate=self.delegate[name])
-
-    def count(self, *args, **kwargs):
-        raise unittest.SkipTest('count() is not supported in Motor')
-
-    def group(self, *args, **kwargs):
-        raise unittest.SkipTest('group() is not supported in Motor')
 
 
 class ChangeStream(Synchro):
@@ -707,7 +690,6 @@ class GridOut(Synchro):
     content_type = SynchroGridOutProperty('content_type')
     filename     = SynchroGridOutProperty('filename')
     length       = SynchroGridOutProperty('length')
-    md5          = SynchroGridOutProperty('md5')
     metadata     = SynchroGridOutProperty('metadata')
     name         = SynchroGridOutProperty('name')
     upload_date  = SynchroGridOutProperty('upload_date')
@@ -738,7 +720,7 @@ class GridOut(Synchro):
         # to make PyMongo's assertRaises tests pass.
         if key in (
                 "_id", "name", "content_type", "length", "chunk_size",
-                "upload_date", "aliases", "metadata", "md5"):
+                "upload_date", "aliases", "metadata"):
             raise AttributeError()
 
         super().__setattr__(key, value)

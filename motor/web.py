@@ -16,6 +16,7 @@
 
 import datetime
 import email.utils
+import hashlib
 import mimetypes
 import time
 
@@ -24,15 +25,16 @@ from tornado import gen
 
 import gridfs
 import motor
+from motor.motor_gridfs import _hash_gridout
 
 
 # TODO: this class is not a drop-in replacement for StaticFileHandler.
 #   StaticFileHandler provides class method make_static_url, which appends
-#   an MD5 of the static file's contents. Templates thus can do
+#   an checksum of the static file's contents. Templates thus can do
 #   {{ static_url('image.png') }} and get "/static/image.png?v=1234abcdef",
-#   which is cached forever. Problem is, it calculates the MD5 synchronously.
+#   which is cached forever. Problem is, it calculates the checksum synchronously.
 #   Two options: keep a synchronous GridFS available to get each grid file's
-#   MD5 synchronously for every static_url call, or find some other idiom.
+#   checksum synchronously for every static_url call, or find some other idiom.
 
 
 class GridFSHandler(tornado.web.RequestHandler):
@@ -103,8 +105,10 @@ class GridFSHandler(tornado.web.RequestHandler):
         modified = gridout.upload_date.replace(microsecond=0)
         self.set_header("Last-Modified", modified)
 
-        # MD5 is calculated on the MongoDB server when GridFS file is created
-        self.set_header("Etag", '"%s"' % gridout.md5)
+        # Get the hash for the GridFS file.
+        checksum = _hash_gridout(gridout)
+    
+        self.set_header("Etag", '"%s"' % checksum)
 
         mime_type = gridout.content_type
 
@@ -145,7 +149,7 @@ class GridFSHandler(tornado.web.RequestHandler):
 
         # Same for Etag
         etag = self.request.headers.get("If-None-Match")
-        if etag is not None and etag.strip('"') == gridout.md5:
+        if etag is not None and etag.strip('"') == checksum:
             self.set_status(304)
             return
 

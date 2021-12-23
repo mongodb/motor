@@ -27,6 +27,7 @@ from tornado.web import Application
 
 import motor
 import motor.web
+from motor.motor_gridfs import _hash_gridout
 import test
 from test.test_environment import env, CA_PEM, CLIENT_PEM
 
@@ -41,15 +42,17 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
 
         # Make a 500k file in GridFS with filename 'foo'
         self.contents = b'Jesse' * 100 * 1024
-        self.contents_hash = hashlib.md5(self.contents).hexdigest()
-
+ 
         # Record when we created the file, to check the Last-Modified header
         self.put_start = datetime.datetime.utcnow().replace(microsecond=0)
-        self.file_id = 'id'
+        file_id = 'id'
+        self.file_id = file_id
         self.fs.delete(self.file_id)
         self.fs.put(
-            self.contents, _id='id', filename='foo', content_type='my type')
+            self.contents, _id=file_id, filename='foo', content_type='my type')
 
+        item = self.fs.get(file_id)
+        self.contents_hash = _hash_gridout(item)
         self.put_end = datetime.datetime.utcnow().replace(microsecond=0)
         self.assertTrue(self.fs.get_last_version('foo'))
 

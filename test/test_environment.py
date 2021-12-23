@@ -148,6 +148,7 @@ class TestEnvironment(object):
                 host, port,
                 username=db_user,
                 password=db_password,
+                directConnection=True,
                 connectTimeoutMS=connectTimeoutMS,
                 socketTimeoutMS=socketTimeoutMS,
                 serverSelectionTimeoutMS=serverSelectionTimeoutMS,
@@ -161,6 +162,7 @@ class TestEnvironment(object):
                     host, port,
                     username=db_user,
                     password=db_password,
+                    directConnection=True,
                     connectTimeoutMS=connectTimeoutMS,
                     socketTimeoutMS=socketTimeoutMS,
                     serverSelectionTimeoutMS=serverSelectionTimeoutMS,
@@ -174,6 +176,7 @@ class TestEnvironment(object):
                     host, port,
                     username=db_user,
                     password=db_password,
+                    directConnection=True,
                     connectTimeoutMS=connectTimeoutMS,
                     socketTimeoutMS=socketTimeoutMS,
                     serverSelectionTimeoutMS=serverSelectionTimeoutMS))
@@ -202,6 +205,7 @@ class TestEnvironment(object):
                 host, port,
                 username=db_user,
                 password=db_password,
+                directConnection=True,
                 tlsCAFile=CA_PEM,
                 tlsCertificateKeyFile=CLIENT_PEM))
         else:
@@ -209,6 +213,7 @@ class TestEnvironment(object):
                 host, port,
                 username=db_user,
                 password=db_password,
+                directConnection=True,
                 ssl=False))
 
         self.sync_cx = client

@@ -14,6 +14,7 @@
 
 """GridFS implementation for Motor, an asynchronous driver for MongoDB."""
 
+import hashlib
 import warnings
 
 import gridfs
@@ -93,7 +94,6 @@ class AgnosticGridOut(object):
     content_type = MotorGridOutProperty()
     filename     = MotorGridOutProperty()
     length       = MotorGridOutProperty()
-    md5          = MotorGridOutProperty()
     metadata     = MotorGridOutProperty()
     name         = MotorGridOutProperty()
     read         = AsyncRead()
@@ -217,7 +217,6 @@ class AgnosticGridIn(object):
     content_type = ReadOnlyProperty()
     filename     = ReadOnlyProperty()
     length       = ReadOnlyProperty()
-    md5          = ReadOnlyProperty()
     name         = ReadOnlyProperty()
     read         = DelegateMethod()
     readable     = DelegateMethod()
@@ -242,7 +241,7 @@ Metadata set on the file appears as attributes on a
 """)
 
     def __init__(self, root_collection, delegate=None, session=None,
-                 disable_md5=False, **kwargs):
+                **kwargs):
         """
         Class to write data to GridFS. Application developers should not
         generally need to instantiate this class - see
@@ -277,12 +276,11 @@ Metadata set on the file appears as attributes on a
           - `session` (optional): a
             :class:`~pymongo.client_session.ClientSession` to use for all
             commands
-          - `disable_md5` (optional): When True, an MD5 checksum will not be
-            computed for the uploaded file. Useful in environments where
-            MD5 cannot be used for regulatory or other reasons. Defaults to
-            False.
           - `**kwargs` (optional): file level options (see above)
 
+        .. versionchanged:: 3.0
+           Removed support for the `disable_md5` parameter (to match the
+           GridIn class in PyMongo).
         .. versionchanged:: 0.2
            ``open`` method removed, no longer needed.
         """
@@ -299,7 +297,6 @@ Metadata set on the file appears as attributes on a
         self.delegate = delegate or self.__delegate_class__(
                 root_collection.delegate,
                 session=session,
-                disable_md5=disable_md5,
                 **kwargs)
 
     # Support "async with bucket.open_upload_stream() as f:"
@@ -328,7 +325,7 @@ class AgnosticGridFSBucket(object):
     upload_from_stream           = AsyncCommand()
     upload_from_stream_with_id   = AsyncCommand()
 
-    def __init__(self, database, bucket_name="fs", disable_md5=False,
+    def __init__(self, database, bucket_name="fs",
                  chunk_size_bytes=DEFAULT_CHUNK_SIZE, write_concern=None,
                  read_preference=None, collection=None):
         """Create a handle to a GridFS bucket.
@@ -350,12 +347,12 @@ class AgnosticGridFSBucket(object):
             (the default) db.write_concern is used.
           - `read_preference` (optional): The read preference to use. If
             ``None`` (the default) db.read_preference is used.
-          - `disable_md5` (optional): When True, MD5 checksums will not be
-            computed for uploaded files. Useful in environments where MD5
-            cannot be used for regulatory or other reasons. Defaults to False.
           - `collection` (optional): Deprecated, an alias for `bucket_name`
             that exists solely to provide backwards compatibility.
 
+        .. versionchanged:: 3.0
+           Removed support for the `disable_md5` parameter (to match the
+           GridFSBucket class in PyMongo).
         .. versionchanged:: 2.1
            Added support for the `bucket_name`, `chunk_size_bytes`,
            `write_concern`, and `read_preference` parameters.
@@ -390,8 +387,7 @@ class AgnosticGridFSBucket(object):
             bucket_name,
             chunk_size_bytes=chunk_size_bytes,
             write_concern=write_concern,
-            read_preference=read_preference,
-            disable_md5=disable_md5)
+            read_preference=read_preference)
 
     def get_io_loop(self):
         return self.io_loop
@@ -479,3 +475,16 @@ class AgnosticGridFSBucket(object):
             AgnosticGridOutCursor, self._framework, self.__module__)
 
         return grid_out_cursor(cursor, self.collection)
+
+
+def _hash_gridout(gridout):
+    """Compute the effective hash of a GridOut object for use with an Etag header.
+
+    Create a FIPS-compliant Etag HTTP header hash using sha256
+    We use the _id + length + upload_date as a proxy for
+    uniqueness to avoid reading the entire file.
+    """
+    grid_hash = hashlib.sha256(str(gridout._id).encode('utf8'))
+    grid_hash.update(str(gridout.length).encode('utf8'))
+    grid_hash.update(str(gridout.upload_date).encode('utf8'))
+    return grid_hash.hexdigest()

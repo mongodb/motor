@@ -18,11 +18,10 @@ import unittest
 
 import pymongo
 import pymongo.errors
-import pymongo.mongo_replica_set_client
 
 import test
 from motor import motor_asyncio
-from test import env, SkipTest
+from test import SkipTest
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.test_environment import env
 

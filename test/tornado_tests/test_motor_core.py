@@ -36,39 +36,11 @@ pymongo_only = set(['next'])
 
 motor_client_only = motor_only.union(['open'])
 
-pymongo_client_only = set([
-    'close_cursor',
-    'database_names',
-    'is_locked',
-    'set_cursor_manager',
-    'kill_cursors']).union(pymongo_only)
+pymongo_client_only = set([]).union(pymongo_only)
 
-pymongo_database_only = set([
-    'add_user',
-    'collection_names',
-    'remove_user',
-    'system_js',
-    'last_status',
-    'reset_error_history',
-    'eval',
-    'add_son_manipulator',
-    'logout',
-    'error',
-    'authenticate',
-    'previous_error']).union(pymongo_only)
+pymongo_database_only = set([]).union(pymongo_only)
 
-pymongo_collection_only = set([
-    'count',
-    'ensure_index',
-    'group',
-    'initialize_ordered_bulk_op',
-    'initialize_unordered_bulk_op',
-    'save',
-    'remove',
-    'insert',
-    'update',
-    'find_and_modify',
-    'parallel_scan']).union(pymongo_only)
+pymongo_collection_only = set([]).union(pymongo_only)
 
 motor_cursor_only = set([
     'fetch_next',
@@ -79,7 +51,6 @@ motor_cursor_only = set([
     'closed']).union(motor_only)
 
 pymongo_cursor_only = set([
-    'count',
     'retrieved'])
 
 
@@ -157,9 +128,10 @@ class MotorCoreTestGridFS(MotorTest):
 
     def test_gridin_attrs(self):
         motor_gridin_only = set(['set']).union(motor_only)
-
+        gridin_only = set(['md5'])
+        
         self.assertEqual(
-            attrs(GridIn(env.sync_cx.test.fs)),
+            attrs(GridIn(env.sync_cx.test.fs)) - gridin_only,
             attrs(MotorGridIn(self.cx.test.fs)) - motor_gridin_only)
 
     @gen_test
@@ -169,10 +141,14 @@ class MotorCoreTestGridFS(MotorTest):
             'stream_to_handler'
         ]).union(motor_only)
 
+        gridin_only = set([
+            'md5', 'readlines', 'truncate', 'flush', 'fileno', 'closed', 'writelines',
+            'isatty', 'writable'])
+
         fs = MotorGridFSBucket(self.cx.test)
         motor_gridout = await fs.open_download_stream(1)
         self.assertEqual(
-            attrs(self.sync_fs.open_download_stream(1)),
+            attrs(self.sync_fs.open_download_stream(1)) - gridin_only,
             attrs(motor_gridout) - motor_gridout_only)
 
     def test_gridout_cursor_attrs(self):

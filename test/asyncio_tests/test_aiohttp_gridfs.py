@@ -26,6 +26,7 @@ import aiohttp.web
 import gridfs
 
 from motor.aiohttp import AIOHTTPGridFS
+from motor.motor_gridfs import _hash_gridout
 
 import test
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
@@ -61,17 +62,18 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
 
         # Make a 500k file in GridFS with filename 'foo'
         cls.contents = b'Jesse' * 100 * 1024
-        cls.contents_hash = hashlib.md5(cls.contents).hexdigest()
 
         # Record when we created the file, to check the Last-Modified header
         cls.put_start = datetime.datetime.utcnow().replace(microsecond=0)
-        cls.file_id = 'id'
+        file_id = 'id'
+        cls.file_id = file_id
         cls.fs.delete(cls.file_id)
         cls.fs.put(cls.contents,
-                   _id='id',
+                   _id=file_id,
                    filename='foo',
                    content_type='my type')
-
+        item = cls.fs.get(file_id)
+        cls.contents_hash = _hash_gridout(item)
         cls.put_end = datetime.datetime.utcnow().replace(microsecond=0)
         cls.app = cls.srv = cls.app_handler = None
 

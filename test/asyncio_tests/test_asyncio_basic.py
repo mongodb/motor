@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest import SkipTest
+from abc import ABC
 
 import pymongo
 from pymongo import WriteConcern
@@ -43,14 +43,17 @@ class AIOMotorTestBasic(AsyncIOTestCase):
         await self.collection.delete_many({})
         await self.collection.insert_one({'_id': 0})
 
-        for gle_options in [
+        for wc_opts in [
             {},
             {'w': 0},
             {'w': 1},
-            {'wtimeout': 1000},
+            {'wTimeoutMS': 1000},
         ]:
-            cx = self.asyncio_client(test.env.uri, **gle_options)
-            wc = WriteConcern(**gle_options)
+            cx = self.asyncio_client(test.env.uri, **wc_opts)
+            wtimeout = wc_opts.pop('wTimeoutMS', None)
+            if wtimeout:
+                wc_opts['wtimeout'] = wtimeout
+            wc = WriteConcern(**wc_opts)
             self.assertEqual(wc, cx.write_concern)
 
             db = cx.motor_test
@@ -84,7 +87,7 @@ class AIOMotorTestBasic(AsyncIOTestCase):
 
         self.assertEqual(ReadPreference.SECONDARY.mode, cx.read_preference.mode)
         self.assertEqual([{'foo': 'bar'}], cx.read_preference.tag_sets)
-        self.assertEqual(42, cx.local_threshold_ms)
+        self.assertEqual(42, cx.options.local_threshold_ms)
 
         # Make a MotorCursor and get its PyMongo Cursor
         collection = cx.motor_test.test_collection.with_options(
@@ -116,11 +119,6 @@ class AIOMotorTestBasic(AsyncIOTestCase):
             self.collection._collection
 
     def test_abc(self):
-        try:
-            from abc import ABC
-        except ImportError:
-            # Python < 3.4.
-            raise SkipTest()
 
         class C(ABC):
             db = self.db

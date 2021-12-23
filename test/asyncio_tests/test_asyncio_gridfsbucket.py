@@ -67,7 +67,7 @@ class TestAsyncIOGridFSBucket(AsyncIOTestCase):
         rp = ReadPreference.SECONDARY
         size = 8
         bucket = AsyncIOMotorGridFSBucket(
-            self.db, name, disable_md5=True, chunk_size_bytes=size,
+            self.db, name, chunk_size_bytes=size,
             write_concern=wc, read_preference=rp)
         self.assertEqual(name, bucket.collection.name)
         self.assertEqual(wc, bucket.collection.write_concern)

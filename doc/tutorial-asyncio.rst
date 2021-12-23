@@ -36,7 +36,7 @@ Tutorial Prerequisites
 ----------------------
 You can learn about MongoDB with the `MongoDB Tutorial`_ before you learn Motor.
 
-Using Python 3.4 or later, do::
+Using Python 3.5 or later, do::
 
   $ python3 -m pip install motor
 
