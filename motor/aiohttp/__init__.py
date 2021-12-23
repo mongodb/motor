@@ -20,12 +20,10 @@ See the :doc:`/examples/aiohttp_gridfs_example`.
 """
 
 import datetime
-import hashlib
 import mimetypes
 
 import aiohttp.web
 import gridfs
-from gridfs.grid_file import GridOut
 from motor.motor_asyncio import (AsyncIOMotorDatabase,
                                  AsyncIOMotorGridFSBucket)
 from motor.motor_gridfs import _hash_gridout
