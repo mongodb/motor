@@ -149,7 +149,7 @@ class GridFSHandler(tornado.web.RequestHandler):
 
         # Same for Etag
         etag = self.request.headers.get("If-None-Match")
-        if etag is not None and etag.strip('"') == sha:
+        if etag is not None and etag.strip('"') == checksum:
             self.set_status(304)
             return
 

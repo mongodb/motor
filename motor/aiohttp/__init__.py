@@ -217,7 +217,7 @@ class AIOHTTPGridFS:
 
         # Same for Etag
         etag = request.headers.get("If-None-Match")
-        if etag is not None and etag.strip('"') == sha:
+        if etag is not None and etag.strip('"') == checksum:
             resp.set_status(304)
             return resp
 
