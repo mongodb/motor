@@ -51,9 +51,9 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
             self.contents, _id=file_id, filename='foo', content_type='my type')
 
         item = self.fs.get(file_id)
-        contents_hash = hashlib.sha256(file_id)
-        contents_hash.update(item.length)
-        contents_hash.update(item.upload_date)
+        contents_hash = hashlib.sha256(file_id.encode('utf8'))
+        contents_hash.update(str(item.length).encode('utf8'))
+        contents_hash.update(str(item.upload_date).encode('utf8'))
         self.put_end = datetime.datetime.utcnow().replace(microsecond=0)
         self.assertTrue(self.fs.get_last_version('foo'))
 

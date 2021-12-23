@@ -72,9 +72,9 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
                    filename='foo',
                    content_type='my type')
         item = cls.fs.get(file_id)
-        contents_hash = hashlib.sha256(file_id)
-        contents_hash.update(item.length)
-        contents_hash.update(item.upload_date)
+        contents_hash = hashlib.sha256(file_id.encode('utf8'))
+        contents_hash.update(str(item.length).encode('utf8'))
+        contents_hash.update(str(item.upload_date).encode('utf8'))
         cls.contents_hash = contents_hash.hexdigest()
 
         cls.put_end = datetime.datetime.utcnow().replace(microsecond=0)

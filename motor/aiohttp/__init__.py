@@ -197,9 +197,9 @@ class AIOHTTPGridFS:
         # for a FIPS-compliant Etag HTTP header.
         # We use the _id + length + upload_date as a proxy for
         # uniqueness to avoid reading the entire file.
-        sha = hashlib.sha256(gridout._id)
-        sha.update(gridout.length)
-        sha.update(gridout.upload_date)
+        sha = hashlib.sha256(file_id.encode('utf8'))
+        sha.update(str(item.length).encode('utf8'))
+        sha.update(str(item.upload_date).encode('utf8'))
         sha = sha.hexdigest()
 
         self._set_standard_headers(request.path, resp, gridout, sha)
