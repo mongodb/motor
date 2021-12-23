@@ -277,6 +277,9 @@ Metadata set on the file appears as attributes on a
             commands
           - `**kwargs` (optional): file level options (see above)
 
+        .. versionchanged:: 3.0
+           Removed support for the `disable_md5` parameter (to match the
+           GridIn class in PyMongo).
         .. versionchanged:: 0.2
            ``open`` method removed, no longer needed.
         """
@@ -346,6 +349,9 @@ class AgnosticGridFSBucket(object):
           - `collection` (optional): Deprecated, an alias for `bucket_name`
             that exists solely to provide backwards compatibility.
 
+        .. versionchanged:: 3.0
+           Removed support for the `disable_md5` parameter (to match the
+           GridFSBucket class in PyMongo).
         .. versionchanged:: 2.1
            Added support for the `bucket_name`, `chunk_size_bytes`,
            `write_concern`, and `read_preference` parameters.
