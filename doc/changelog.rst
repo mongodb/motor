@@ -26,7 +26,7 @@ later.
 New features:
 
 - Added support for MongoDB 5.0.
-- Support for MongoDB Versioned API, see :class:`~pymongo.server_api.ServerApi`.
+- Support for MongoDB Stable API, see :class:`~pymongo.server_api.ServerApi`.
 - Support for snapshot reads on secondaries via the new ``snapshot`` option to
   :meth:`~motor.motor_asyncio.AsyncIOMotorClient.start_session`.
 - Support for Azure and GCP KMS providers for client side field level
