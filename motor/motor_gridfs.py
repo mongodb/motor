@@ -20,24 +20,23 @@ import warnings
 import gridfs
 import pymongo
 import pymongo.errors
-from gridfs import (DEFAULT_CHUNK_SIZE,
-                    grid_file)
+from gridfs import DEFAULT_CHUNK_SIZE, grid_file
 
-from motor.core import (AgnosticCursor,
-                        AgnosticCollection,
-                        AgnosticDatabase)
+from motor.core import AgnosticCollection, AgnosticCursor, AgnosticDatabase
 from motor.docstrings import *
-from motor.metaprogramming import (AsyncCommand,
-                                   AsyncRead,
-                                   coroutine_annotation,
-                                   create_class_with_framework,
-                                   DelegateMethod,
-                                   MotorCursorChainingMethod,
-                                   ReadOnlyProperty)
+from motor.metaprogramming import (
+    AsyncCommand,
+    AsyncRead,
+    DelegateMethod,
+    MotorCursorChainingMethod,
+    ReadOnlyProperty,
+    coroutine_annotation,
+    create_class_with_framework,
+)
 
 
 class AgnosticGridOutCursor(AgnosticCursor):
-    __motor_class_name__ = 'MotorGridOutCursor'
+    __motor_class_name__ = "MotorGridOutCursor"
     __delegate_class__ = gridfs.GridOutCursor
 
     # PyMongo's GridOutCursor inherits __die from Cursor.
@@ -48,7 +47,8 @@ class AgnosticGridOutCursor(AgnosticCursor):
         grid_out = super().next_object()
         if grid_out:
             grid_out_class = create_class_with_framework(
-                AgnosticGridOut, self._framework, self.__module__)
+                AgnosticGridOut, self._framework, self.__module__
+            )
 
             return grid_out_class(self.collection, delegate=grid_out)
         else:
@@ -58,12 +58,14 @@ class AgnosticGridOutCursor(AgnosticCursor):
 
 class MotorGridOutProperty(ReadOnlyProperty):
     """Creates a readonly attribute on the wrapped PyMongo GridOut."""
+
     def create_attribute(self, cls, attr_name):
         def fget(obj):
             if not obj.delegate._file:
                 raise pymongo.errors.InvalidOperation(
                     "You must call MotorGridOut.open() before accessing "
-                    "the %s property" % attr_name)
+                    "the %s property" % attr_name
+                )
 
             return getattr(obj.delegate, attr_name)
 
@@ -83,47 +85,49 @@ class AgnosticGridOut(object):
     instantiated directly, call :meth:`open`, :meth:`read`, or
     :meth:`readline` before accessing its attributes.
     """
-    __motor_class_name__ = 'MotorGridOut'
+
+    __motor_class_name__ = "MotorGridOut"
     __delegate_class__ = gridfs.GridOut
 
     _ensure_file = AsyncCommand()
-    _id          = MotorGridOutProperty()
-    aliases      = MotorGridOutProperty()
-    chunk_size   = MotorGridOutProperty()
-    close        = MotorGridOutProperty()
+    _id = MotorGridOutProperty()
+    aliases = MotorGridOutProperty()
+    chunk_size = MotorGridOutProperty()
+    close = MotorGridOutProperty()
     content_type = MotorGridOutProperty()
-    filename     = MotorGridOutProperty()
-    length       = MotorGridOutProperty()
-    metadata     = MotorGridOutProperty()
-    name         = MotorGridOutProperty()
-    read         = AsyncRead()
-    readable     = DelegateMethod()
-    readchunk    = AsyncRead()
-    readline     = AsyncRead()
-    seek         = DelegateMethod()
-    seekable     = DelegateMethod()
-    tell         = DelegateMethod()
-    upload_date  = MotorGridOutProperty()
-    write        = DelegateMethod()
+    filename = MotorGridOutProperty()
+    length = MotorGridOutProperty()
+    metadata = MotorGridOutProperty()
+    name = MotorGridOutProperty()
+    read = AsyncRead()
+    readable = DelegateMethod()
+    readchunk = AsyncRead()
+    readline = AsyncRead()
+    seek = DelegateMethod()
+    seekable = DelegateMethod()
+    tell = DelegateMethod()
+    upload_date = MotorGridOutProperty()
+    write = DelegateMethod()
 
-    def __init__(self, root_collection, file_id=None, file_document=None,
-                 delegate=None, session=None):
+    def __init__(
+        self, root_collection, file_id=None, file_document=None, delegate=None, session=None
+    ):
         collection_class = create_class_with_framework(
-            AgnosticCollection, self._framework, self.__module__)
+            AgnosticCollection, self._framework, self.__module__
+        )
 
         if not isinstance(root_collection, collection_class):
             raise TypeError(
                 "First argument to MotorGridOut must be "
-                "MotorCollection, not %r" % root_collection)
+                "MotorCollection, not %r" % root_collection
+            )
 
         if delegate:
             self.delegate = delegate
         else:
             self.delegate = self.__delegate_class__(
-                root_collection.delegate,
-                file_id,
-                file_document,
-                session=session)
+                root_collection.delegate, file_id, file_document, session=session
+            )
 
         self.io_loop = root_collection.get_io_loop()
 
@@ -139,8 +143,8 @@ class AgnosticGridOut(object):
     def __getattr__(self, item):
         if not self.delegate._file:
             raise pymongo.errors.InvalidOperation(
-                "You must call MotorGridOut.open() before accessing "
-                "the %s property" % item)
+                "You must call MotorGridOut.open() before accessing " "the %s property" % item
+            )
 
         return getattr(self.delegate, item)
 
@@ -157,9 +161,7 @@ class AgnosticGridOut(object):
            :class:`~motor.MotorGridOut` now opens itself on demand, calling
            ``open`` explicitly is rarely needed.
         """
-        return self._framework.chain_return_value(self._ensure_file(),
-                                                  self.get_io_loop(),
-                                                  self)
+        return self._framework.chain_return_value(self._ensure_file(), self.get_io_loop(), self)
 
     def get_io_loop(self):
         return self.io_loop
@@ -205,27 +207,29 @@ class AgnosticGridOut(object):
 
 
 class AgnosticGridIn(object):
-    __motor_class_name__ = 'MotorGridIn'
+    __motor_class_name__ = "MotorGridIn"
     __delegate_class__ = gridfs.GridIn
 
-    __getattr__  = DelegateMethod()
-    _id          = ReadOnlyProperty()
-    abort        = AsyncCommand()
-    chunk_size   = ReadOnlyProperty()
-    closed       = ReadOnlyProperty()
-    close        = AsyncCommand()
+    __getattr__ = DelegateMethod()
+    _id = ReadOnlyProperty()
+    abort = AsyncCommand()
+    chunk_size = ReadOnlyProperty()
+    closed = ReadOnlyProperty()
+    close = AsyncCommand()
     content_type = ReadOnlyProperty()
-    filename     = ReadOnlyProperty()
-    length       = ReadOnlyProperty()
-    name         = ReadOnlyProperty()
-    read         = DelegateMethod()
-    readable     = DelegateMethod()
-    seekable     = DelegateMethod()
-    upload_date  = ReadOnlyProperty()
-    write        = AsyncCommand().unwrap('MotorGridOut')
-    writeable    = DelegateMethod()
-    writelines   = AsyncCommand().unwrap('MotorGridOut')
-    set          = AsyncCommand(attr_name='__setattr__', doc="""
+    filename = ReadOnlyProperty()
+    length = ReadOnlyProperty()
+    name = ReadOnlyProperty()
+    read = DelegateMethod()
+    readable = DelegateMethod()
+    seekable = DelegateMethod()
+    upload_date = ReadOnlyProperty()
+    write = AsyncCommand().unwrap("MotorGridOut")
+    writeable = DelegateMethod()
+    writelines = AsyncCommand().unwrap("MotorGridOut")
+    set = AsyncCommand(
+        attr_name="__setattr__",
+        doc="""
 Set an arbitrary metadata attribute on the file. Stores value on the server
 as a key-value pair within the file document once the file is closed. If
 the file is already closed, calling :meth:`set` will immediately update the file
@@ -238,10 +242,10 @@ Metadata set on the file appears as attributes on a
   - `name`: Name of the attribute, will be stored as a key in the file
     document on the server
   - `value`: Value of the attribute
-""")
+""",
+    )
 
-    def __init__(self, root_collection, delegate=None, session=None,
-                **kwargs):
+    def __init__(self, root_collection, delegate=None, session=None, **kwargs):
         """
         Class to write data to GridFS. Application developers should not
         generally need to instantiate this class - see
@@ -285,19 +289,19 @@ Metadata set on the file appears as attributes on a
            ``open`` method removed, no longer needed.
         """
         collection_class = create_class_with_framework(
-            AgnosticCollection, self._framework, self.__module__)
+            AgnosticCollection, self._framework, self.__module__
+        )
 
         if not isinstance(root_collection, collection_class):
             raise TypeError(
-                "First argument to MotorGridIn must be "
-                "MotorCollection, not %r" % root_collection)
+                "First argument to MotorGridIn must be " "MotorCollection, not %r" % root_collection
+            )
 
         self.io_loop = root_collection.get_io_loop()
         # Short cut.
         self.delegate = delegate or self.__delegate_class__(
-                root_collection.delegate,
-                session=session,
-                **kwargs)
+            root_collection.delegate, session=session, **kwargs
+        )
 
     # Support "async with bucket.open_upload_stream() as f:"
     async def __aenter__(self):
@@ -311,23 +315,29 @@ Metadata set on the file appears as attributes on a
 
 
 class AgnosticGridFSBucket(object):
-    __motor_class_name__ = 'MotorGridFSBucket'
+    __motor_class_name__ = "MotorGridFSBucket"
     __delegate_class__ = gridfs.GridFSBucket
 
-    delete                       = AsyncCommand()
-    download_to_stream           = AsyncCommand()
-    download_to_stream_by_name   = AsyncCommand()
-    open_download_stream         = AsyncCommand().wrap(gridfs.GridOut)
+    delete = AsyncCommand()
+    download_to_stream = AsyncCommand()
+    download_to_stream_by_name = AsyncCommand()
+    open_download_stream = AsyncCommand().wrap(gridfs.GridOut)
     open_download_stream_by_name = AsyncCommand().wrap(gridfs.GridOut)
-    open_upload_stream           = DelegateMethod().wrap(gridfs.GridIn)
-    open_upload_stream_with_id   = DelegateMethod().wrap(gridfs.GridIn)
-    rename                       = AsyncCommand()
-    upload_from_stream           = AsyncCommand()
-    upload_from_stream_with_id   = AsyncCommand()
+    open_upload_stream = DelegateMethod().wrap(gridfs.GridIn)
+    open_upload_stream_with_id = DelegateMethod().wrap(gridfs.GridIn)
+    rename = AsyncCommand()
+    upload_from_stream = AsyncCommand()
+    upload_from_stream_with_id = AsyncCommand()
 
-    def __init__(self, database, bucket_name="fs",
-                 chunk_size_bytes=DEFAULT_CHUNK_SIZE, write_concern=None,
-                 read_preference=None, collection=None):
+    def __init__(
+        self,
+        database,
+        bucket_name="fs",
+        chunk_size_bytes=DEFAULT_CHUNK_SIZE,
+        write_concern=None,
+        read_preference=None,
+        collection=None,
+    ):
         """Create a handle to a GridFS bucket.
 
         Raises :exc:`~pymongo.errors.ConfigurationError` if `write_concern`
@@ -364,30 +374,31 @@ class AgnosticGridFSBucket(object):
         """
         # Preserve backwards compatibility of "collection" parameter
         if collection is not None:
-            warnings.warn('the "collection" parameter is deprecated, use '
-                          '"bucket_name" instead', DeprecationWarning,
-                          stacklevel=2)
+            warnings.warn(
+                'the "collection" parameter is deprecated, use ' '"bucket_name" instead',
+                DeprecationWarning,
+                stacklevel=2,
+            )
             bucket_name = collection
 
-        db_class = create_class_with_framework(
-            AgnosticDatabase, self._framework, self.__module__)
+        db_class = create_class_with_framework(AgnosticDatabase, self._framework, self.__module__)
 
         if not isinstance(database, db_class):
             raise TypeError(
-                "First argument to %s must be  MotorDatabase, not %r" % (
-                    self.__class__, database))
+                "First argument to %s must be  MotorDatabase, not %r" % (self.__class__, database)
+            )
 
         self.io_loop = database.get_io_loop()
         self.collection = database.get_collection(
-            bucket_name,
-            write_concern=write_concern,
-            read_preference=read_preference)
+            bucket_name, write_concern=write_concern, read_preference=read_preference
+        )
         self.delegate = self.__delegate_class__(
             database.delegate,
             bucket_name,
             chunk_size_bytes=chunk_size_bytes,
             write_concern=write_concern,
-            read_preference=read_preference)
+            read_preference=read_preference,
+        )
 
     def get_io_loop(self):
         return self.io_loop
@@ -395,27 +406,24 @@ class AgnosticGridFSBucket(object):
     def wrap(self, obj):
         if obj.__class__ is grid_file.GridIn:
             grid_in_class = create_class_with_framework(
-                AgnosticGridIn, self._framework, self.__module__)
+                AgnosticGridIn, self._framework, self.__module__
+            )
 
-            return grid_in_class(
-                root_collection=self.collection,
-                delegate=obj)
+            return grid_in_class(root_collection=self.collection, delegate=obj)
 
         elif obj.__class__ is grid_file.GridOut:
             grid_out_class = create_class_with_framework(
-                AgnosticGridOut, self._framework, self.__module__)
+                AgnosticGridOut, self._framework, self.__module__
+            )
 
-            return grid_out_class(
-                root_collection=self.collection,
-                delegate=obj)
+            return grid_out_class(root_collection=self.collection, delegate=obj)
 
         elif obj.__class__ is gridfs.GridOutCursor:
             grid_out_class = create_class_with_framework(
-                AgnosticGridOutCursor, self._framework, self.__module__)
+                AgnosticGridOutCursor, self._framework, self.__module__
+            )
 
-            return grid_out_class(
-                cursor=obj,
-                collection=self.collection)
+            return grid_out_class(cursor=obj, collection=self.collection)
 
     def find(self, *args, **kwargs):
         """Find and return the files collection documents that match ``filter``.
@@ -472,7 +480,8 @@ class AgnosticGridFSBucket(object):
         """
         cursor = self.delegate.find(*args, **kwargs)
         grid_out_cursor = create_class_with_framework(
-            AgnosticGridOutCursor, self._framework, self.__module__)
+            AgnosticGridOutCursor, self._framework, self.__module__
+        )
 
         return grid_out_cursor(cursor, self.collection)
 
@@ -484,7 +493,7 @@ def _hash_gridout(gridout):
     We use the _id + length + upload_date as a proxy for
     uniqueness to avoid reading the entire file.
     """
-    grid_hash = hashlib.sha256(str(gridout._id).encode('utf8'))
-    grid_hash.update(str(gridout.length).encode('utf8'))
-    grid_hash.update(str(gridout.upload_date).encode('utf8'))
+    grid_hash = hashlib.sha256(str(gridout._id).encode("utf8"))
+    grid_hash.update(str(gridout.length).encode("utf8"))
+    grid_hash.update(str(gridout.upload_date).encode("utf8"))
     return grid_hash.hexdigest()

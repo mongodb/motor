@@ -1,15 +1,14 @@
-import os
 import asyncio
+import os
 
-from bson.codec_options import CodecOptions
 from bson.binary import STANDARD
-
-from motor.motor_asyncio import (AsyncIOMotorClient,
-                                 AsyncIOMotorClientEncryption)
+from bson.codec_options import CodecOptions
 from pymongo.encryption import Algorithm
 from pymongo.encryption_options import AutoEncryptionOpts
 from pymongo.errors import OperationFailure
 from pymongo.write_concern import WriteConcern
+
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorClientEncryption
 
 
 async def main():
@@ -33,9 +32,8 @@ async def main():
     # Ensure that two data keys cannot share the same keyAltName.
     await key_vault.drop()
     await key_vault.create_index(
-        "keyAltNames",
-        unique=True,
-        partialFilterExpression={"keyAltNames": {"$exists": True}})
+        "keyAltNames", unique=True, partialFilterExpression={"keyAltNames": {"$exists": True}}
+    )
 
     client_encryption = AsyncIOMotorClientEncryption(
         kms_providers,
@@ -46,27 +44,27 @@ async def main():
         # on MotorClient, Database, or Collection. We will not be calling
         # encrypt() or decrypt() in this example so we can use any
         # CodecOptions.
-        CodecOptions())
+        CodecOptions(),
+    )
 
     # Create a new data key and json schema for the encryptedField.
     data_key_id = await client_encryption.create_data_key(
-        'local', key_alt_names=['pymongo_encryption_example_2'])
+        "local", key_alt_names=["pymongo_encryption_example_2"]
+    )
     json_schema = {
         "properties": {
             "encryptedField": {
                 "encrypt": {
                     "keyId": [data_key_id],
                     "bsonType": "string",
-                    "algorithm":
-                        Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic
+                    "algorithm": Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
                 }
             }
         },
-        "bsonType": "object"
+        "bsonType": "object",
     }
 
-    auto_encryption_opts = AutoEncryptionOpts(
-        kms_providers, key_vault_namespace)
+    auto_encryption_opts = AutoEncryptionOpts(kms_providers, key_vault_namespace)
     client = AsyncIOMotorClient(auto_encryption_opts=auto_encryption_opts)
     db_name, coll_name = encrypted_namespace.split(".", 1)
     db = client[db_name]
@@ -82,19 +80,20 @@ async def main():
         # JSON Schema.
         codec_options=CodecOptions(uuid_representation=STANDARD),
         write_concern=WriteConcern(w="majority"),
-        validator={"$jsonSchema": json_schema})
+        validator={"$jsonSchema": json_schema},
+    )
     coll = client[db_name][coll_name]
 
     await coll.insert_one({"encryptedField": "123456789"})
     decrypted_doc = await coll.find_one()
-    print('Decrypted document: %s' % (decrypted_doc,))
+    print("Decrypted document: %s" % (decrypted_doc,))
     unencrypted_coll = AsyncIOMotorClient()[db_name][coll_name]
     encrypted_doc = await unencrypted_coll.find_one()
-    print('Encrypted document: %s' % (encrypted_doc,))
+    print("Encrypted document: %s" % (encrypted_doc,))
     try:
         await unencrypted_coll.insert_one({"encryptedField": "123456789"})
     except OperationFailure as exc:
-        print('Unencrypted insert failed: %s' % (exc.details,))
+        print("Unencrypted insert failed: %s" % (exc.details,))
 
 
 if __name__ == "__main__":

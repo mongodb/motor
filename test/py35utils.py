@@ -26,7 +26,7 @@ async def wait_until(predicate, success_description, timeout=10):
     Returns the predicate's first true value.
     """
     start = time.time()
-    interval = min(float(timeout)/100, 0.1)
+    interval = min(float(timeout) / 100, 0.1)
     while True:
         retval = await predicate()
         if retval:

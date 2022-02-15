@@ -3,9 +3,7 @@
 import collections
 import logging
 
-
-_LoggingWatcher = collections.namedtuple("_LoggingWatcher",
-                                         ["records", "output"])
+_LoggingWatcher = collections.namedtuple("_LoggingWatcher", ["records", "output"])
 
 
 class _BaseTestCaseContext(object):
@@ -19,6 +17,7 @@ class _BaseTestCaseContext(object):
 
 class _CapturingHandler(logging.Handler):
     """Handler capturing all (raw and formatted) logging output."""
+
     def __init__(self):
         logging.Handler.__init__(self)
         self.watcher = _LoggingWatcher([], [])
@@ -34,6 +33,7 @@ class _CapturingHandler(logging.Handler):
 
 class _AssertLogsContext(_BaseTestCaseContext):
     """A context manager used to implement TestCase.assertLogs()."""
+
     LOGGING_FORMAT = "%(levelname)s:%(name)s:%(message)s"
 
     def __init__(self, test_case, logger_name, level):
@@ -70,8 +70,10 @@ class _AssertLogsContext(_BaseTestCaseContext):
             return False
         if len(self.watcher.records) == 0:
             self._raiseFailure(
-                "no logs of level {0} or higher triggered on {1}"
-                .format(self.level_name, self.logger.name))
+                "no logs of level {0} or higher triggered on {1}".format(
+                    self.level_name, self.logger.name
+                )
+            )
 
 
 class AssertLogsMixin(object):

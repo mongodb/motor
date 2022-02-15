@@ -4,15 +4,15 @@ import sys
 from base64 import urlsafe_b64encode
 from pprint import pformat
 
-from motor.motor_tornado import MotorClient
-from bson import json_util  # Installed with PyMongo.
-
 import tornado.escape
 import tornado.ioloop
 import tornado.options
 import tornado.web
 import tornado.websocket
+from bson import json_util  # Installed with PyMongo.
 from tornado.options import define, options
+
+from motor.motor_tornado import MotorClient
 
 define("port", default=8888, help="run on the given port", type=int)
 define("debug", default=False, help="reload on source changes")
@@ -22,17 +22,13 @@ define("ns", default="test.test", help="database and collection name")
 
 class Application(tornado.web.Application):
     def __init__(self):
-        handlers = [
-            (r"/", MainHandler),
-            (r"/socket", ChangesHandler)]
+        handlers = [(r"/", MainHandler), (r"/socket", ChangesHandler)]
 
-        templates = os.path.join(os.path.dirname(__file__),
-                                 "tornado_change_stream_templates")
+        templates = os.path.join(os.path.dirname(__file__), "tornado_change_stream_templates")
 
-        super().__init__(handlers,
-                         template_path=templates,
-                         template_whitespace="all",
-                         debug=options.debug)
+        super().__init__(
+            handlers, template_path=templates, template_whitespace="all", debug=options.debug
+        )
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -55,7 +51,7 @@ class ChangesHandler(tornado.websocket.WebSocketHandler):
     def update_cache(cls, change):
         cls.cache.append(change)
         if len(cls.cache) > cls.cache_size:
-            cls.cache = cls.cache[-cls.cache_size:]
+            cls.cache = cls.cache[-cls.cache_size :]
 
     @classmethod
     def send_change(cls, change):
@@ -68,17 +64,18 @@ class ChangesHandler(tornado.websocket.WebSocketHandler):
 
     @classmethod
     def on_change(cls, change):
-        logging.info("got change of type '%s'", change.get('operationType'))
+        logging.info("got change of type '%s'", change.get("operationType"))
 
         # Each change notification has a binary _id. Use it to make an HTML
         # element id, then remove it.
-        html_id = urlsafe_b64encode(change['_id']['_data']).decode().rstrip('=')
-        change.pop('_id')
-        change['html'] = '<div id="change-%s"><pre>%s</pre></div>' % (
+        html_id = urlsafe_b64encode(change["_id"]["_data"]).decode().rstrip("=")
+        change.pop("_id")
+        change["html"] = '<div id="change-%s"><pre>%s</pre></div>' % (
             html_id,
-            tornado.escape.xhtml_escape(pformat(change)))
+            tornado.escape.xhtml_escape(pformat(change)),
+        )
 
-        change['html_id'] = html_id
+        change["html_id"] = html_id
         ChangesHandler.send_change(change)
         ChangesHandler.update_cache(change)
 
@@ -96,11 +93,11 @@ async def watch(collection):
 
 def main():
     tornado.options.parse_command_line()
-    if '.' not in options.ns:
+    if "." not in options.ns:
         sys.stderr.write('Invalid ns "%s", must contain a "."' % (options.ns,))
         sys.exit(1)
 
-    db_name, collection_name = options.ns.split('.', 1)
+    db_name, collection_name = options.ns.split(".", 1)
     client = MotorClient(options.mongo)
     collection = client[db_name][collection_name]
 

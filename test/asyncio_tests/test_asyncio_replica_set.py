@@ -14,22 +14,22 @@
 
 """Test replica set AsyncIOClient."""
 
+import test
 import unittest
+from test import SkipTest
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.test_environment import env
 
 import pymongo
 import pymongo.errors
 
-import test
 from motor import motor_asyncio
-from test import SkipTest
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from test.test_environment import env
 
 
 class TestAsyncIOReplicaSet(AsyncIOTestCase):
     def setUp(self):
         if not test.env.is_replica_set:
-            raise SkipTest('Not connected to a replica set')
+            raise SkipTest("Not connected to a replica set")
 
         super().setUp()
 
@@ -37,11 +37,11 @@ class TestAsyncIOReplicaSet(AsyncIOTestCase):
     async def test_connection_failure(self):
         # Assuming there isn't anything actually running on this port.
         client = motor_asyncio.AsyncIOMotorClient(
-            'localhost:8765', replicaSet='rs', io_loop=self.loop,
-            serverSelectionTimeoutMS=10)
+            "localhost:8765", replicaSet="rs", io_loop=self.loop, serverSelectionTimeoutMS=10
+        )
 
         with self.assertRaises(pymongo.errors.ConnectionFailure):
-            await client.admin.command('ismaster')
+            await client.admin.command("ismaster")
 
 
 class TestReplicaSetClientAgainstStandalone(AsyncIOTestCase):
@@ -49,21 +49,24 @@ class TestReplicaSetClientAgainstStandalone(AsyncIOTestCase):
     AsyncIOMotorClient but only if the database at DB_IP and DB_PORT is a
     standalone.
     """
+
     def setUp(self):
         super().setUp()
         if test.env.is_replica_set:
-            raise SkipTest(
-                "Connected to a replica set, not a standalone mongod")
+            raise SkipTest("Connected to a replica set, not a standalone mongod")
 
     @asyncio_test
     async def test_connect(self):
         client = motor_asyncio.AsyncIOMotorClient(
-            '%s:%s' % (env.host, env.port), replicaSet='anything',
-            serverSelectionTimeoutMS=10, io_loop=self.loop)
+            "%s:%s" % (env.host, env.port),
+            replicaSet="anything",
+            serverSelectionTimeoutMS=10,
+            io_loop=self.loop,
+        )
 
         with self.assertRaises(pymongo.errors.ServerSelectionTimeoutError):
             await client.test.test.find_one()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

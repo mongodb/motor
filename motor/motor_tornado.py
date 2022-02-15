@@ -18,12 +18,11 @@ from . import core, motor_gridfs
 from .frameworks import tornado as tornado_framework
 from .metaprogramming import create_class_with_framework
 
-__all__ = ['MotorClient', 'MotorClientEncryption']
+__all__ = ["MotorClient", "MotorClientEncryption"]
 
 
 def create_motor_class(cls):
-    return create_class_with_framework(cls, tornado_framework,
-                                       'motor.motor_tornado')
+    return create_class_with_framework(cls, tornado_framework, "motor.motor_tornado")
 
 
 MotorClient = create_motor_class(core.AgnosticClient)

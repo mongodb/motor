@@ -17,16 +17,15 @@
 import asyncio
 import gc
 import ssl
+import test
 import unittest
+from test.asyncio_tests import asyncio_test
+from test.test_environment import CA_PEM, CLIENT_PEM, env
 from unittest import SkipTest
 
 from pymongo.errors import ConfigurationError, ConnectionFailure
 
-import test
 from motor.motor_asyncio import AsyncIOMotorClient
-from test.asyncio_tests import asyncio_test
-from test.test_environment import CA_PEM, CLIENT_PEM, env
-
 
 # Start a mongod instance like:
 #
@@ -39,11 +38,11 @@ from test.test_environment import CA_PEM, CLIENT_PEM, env
 
 
 class TestAsyncIOSSL(unittest.TestCase):
-
     def setUp(self):
         if not test.env.server_is_resolvable:
-            raise SkipTest("No hosts entry for 'server'. Cannot validate "
-                           "hostname in the certificate")
+            raise SkipTest(
+                "No hosts entry for 'server'. Cannot validate " "hostname in the certificate"
+            )
 
         asyncio.set_event_loop(None)
         self.loop = asyncio.new_event_loop()
@@ -56,22 +55,23 @@ class TestAsyncIOSSL(unittest.TestCase):
 
     def test_config_ssl(self):
         # This test doesn't require a running mongod.
-        self.assertRaises(ValueError,
-                          AsyncIOMotorClient,
-                          io_loop=self.loop,
-                          tls='foo')
+        self.assertRaises(ValueError, AsyncIOMotorClient, io_loop=self.loop, tls="foo")
 
-        self.assertRaises(ConfigurationError,
-                          AsyncIOMotorClient,
-                          io_loop=self.loop,
-                          tls=False,
-                          tlsCertificateKeyFile=CLIENT_PEM)
+        self.assertRaises(
+            ConfigurationError,
+            AsyncIOMotorClient,
+            io_loop=self.loop,
+            tls=False,
+            tlsCertificateKeyFile=CLIENT_PEM,
+        )
 
-        self.assertRaises(IOError, AsyncIOMotorClient,
-                          io_loop=self.loop, tlsCertificateKeyFile="NoFile")
+        self.assertRaises(
+            IOError, AsyncIOMotorClient, io_loop=self.loop, tlsCertificateKeyFile="NoFile"
+        )
 
-        self.assertRaises(TypeError, AsyncIOMotorClient,
-                          io_loop=self.loop, tlsCertificateKeyFile=True)
+        self.assertRaises(
+            TypeError, AsyncIOMotorClient, io_loop=self.loop, tlsCertificateKeyFile=True
+        )
 
     @asyncio_test
     async def test_cert_ssl(self):
@@ -81,21 +81,26 @@ class TestAsyncIOSSL(unittest.TestCase):
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
-        client = AsyncIOMotorClient(env.host, env.port,
-                                    tlsCertificateKeyFile=CLIENT_PEM,
-                                    tlsCAFile=CA_PEM,
-                                    io_loop=self.loop)
+        client = AsyncIOMotorClient(
+            env.host,
+            env.port,
+            tlsCertificateKeyFile=CLIENT_PEM,
+            tlsCAFile=CA_PEM,
+            io_loop=self.loop,
+        )
 
         await client.db.collection.find_one()
-        response = await client.admin.command('ismaster')
-        if 'setName' in response:
+        response = await client.admin.command("ismaster")
+        if "setName" in response:
             client = AsyncIOMotorClient(
-                env.host, env.port,
+                env.host,
+                env.port,
                 tls=True,
                 tlsCertificateKeyFile=CLIENT_PEM,
                 tlsCAFile=CA_PEM,
-                replicaSet=response['setName'],
-                io_loop=self.loop)
+                replicaSet=response["setName"],
+                io_loop=self.loop,
+            )
 
             await client.db.collection.find_one()
 
@@ -107,21 +112,26 @@ class TestAsyncIOSSL(unittest.TestCase):
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
-        client = AsyncIOMotorClient(env.host, env.port,
-                                    tlsCertificateKeyFile=CLIENT_PEM,
-                                    tlsCAFile=CA_PEM,
-                                    io_loop=self.loop)
+        client = AsyncIOMotorClient(
+            env.host,
+            env.port,
+            tlsCertificateKeyFile=CLIENT_PEM,
+            tlsCAFile=CA_PEM,
+            io_loop=self.loop,
+        )
 
         await client.db.collection.find_one()
-        response = await client.admin.command('ismaster')
+        response = await client.admin.command("ismaster")
 
-        if 'setName' in response:
+        if "setName" in response:
             client = AsyncIOMotorClient(
-                env.host, env.port,
-                replicaSet=response['setName'],
+                env.host,
+                env.port,
+                replicaSet=response["setName"],
                 tlsCertificateKeyFile=CLIENT_PEM,
                 tlsCAFile=CA_PEM,
-                io_loop=self.loop)
+                io_loop=self.loop,
+            )
 
             await client.db.collection.find_one()
 
@@ -133,13 +143,15 @@ class TestAsyncIOSSL(unittest.TestCase):
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
-        client = AsyncIOMotorClient(test.env.fake_hostname_uri,
-                                    tlsCertificateKeyFile=CLIENT_PEM,
-                                    tlsAllowInvalidCertificates=True,
-                                    tlsCAFile=CA_PEM,
-                                    io_loop=self.loop)
+        client = AsyncIOMotorClient(
+            test.env.fake_hostname_uri,
+            tlsCertificateKeyFile=CLIENT_PEM,
+            tlsAllowInvalidCertificates=True,
+            tlsCAFile=CA_PEM,
+            io_loop=self.loop,
+        )
 
-        await client.admin.command('ismaster')
+        await client.admin.command("ismaster")
 
     @asyncio_test
     async def test_cert_ssl_validation_hostname_fail(self):
@@ -149,31 +161,38 @@ class TestAsyncIOSSL(unittest.TestCase):
         if test.env.auth:
             raise SkipTest("Can't test with auth")
 
-        client = AsyncIOMotorClient(env.host, env.port,
-                                    tls=True, tlsCertificateKeyFile=CLIENT_PEM,
-                                    tlsCAFile=CA_PEM,
-                                    io_loop=self.loop)
+        client = AsyncIOMotorClient(
+            env.host,
+            env.port,
+            tls=True,
+            tlsCertificateKeyFile=CLIENT_PEM,
+            tlsCAFile=CA_PEM,
+            io_loop=self.loop,
+        )
 
-        response = await client.admin.command('ismaster')
+        response = await client.admin.command("ismaster")
         with self.assertRaises(ConnectionFailure):
             # Create client with hostname 'server', not 'localhost',
             # which is what the server cert presents.
-            client = AsyncIOMotorClient(test.env.fake_hostname_uri,
-                                        serverSelectionTimeoutMS=1000,
-                                        tlsCertificateKeyFile=CLIENT_PEM,
-                                        tlsCAFile=CA_PEM,
-                                        io_loop=self.loop)
+            client = AsyncIOMotorClient(
+                test.env.fake_hostname_uri,
+                serverSelectionTimeoutMS=1000,
+                tlsCertificateKeyFile=CLIENT_PEM,
+                tlsCAFile=CA_PEM,
+                io_loop=self.loop,
+            )
 
             await client.db.collection.find_one()
 
-        if 'setName' in response:
+        if "setName" in response:
             with self.assertRaises(ConnectionFailure):
                 client = AsyncIOMotorClient(
                     test.env.fake_hostname_uri,
                     serverSelectionTimeoutMS=1000,
-                    replicaSet=response['setName'],
+                    replicaSet=response["setName"],
                     tlsCertificateKeyFile=CLIENT_PEM,
                     tlsCAFile=CA_PEM,
-                    io_loop=self.loop)
+                    io_loop=self.loop,
+                )
 
                 await client.db.collection.find_one()

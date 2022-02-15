@@ -14,16 +14,15 @@
 
 """Dynamic class-creation for Motor."""
 
-import inspect
 import functools
+import inspect
 
 from pymongo.cursor import Cursor
 
 _class_cache = {}
 
 
-def asynchronize(
-        framework, sync_method, doc=None, wrap_class=None, unwrap_class=None):
+def asynchronize(framework, sync_method, doc=None, wrap_class=None, unwrap_class=None):
     """Decorate `sync_method` so it returns a Future.
 
     The method runs on a thread and resolves the Future when it completes.
@@ -40,41 +39,42 @@ def asynchronize(
                             this Motor class name and pass the wrapped PyMongo
                             object instead
     """
+
     @functools.wraps(sync_method)
     def method(self, *args, **kwargs):
         if unwrap_class is not None:
             # Don't call isinstance(), not checking subclasses.
             unwrapped_args = [
                 obj.delegate
-                if obj.__class__.__name__.endswith(
-                    (unwrap_class, 'MotorClientSession'))
+                if obj.__class__.__name__.endswith((unwrap_class, "MotorClientSession"))
                 else obj
-                for obj in args]
+                for obj in args
+            ]
             unwrapped_kwargs = {
-                key: (obj.delegate
-                      if obj.__class__.__name__.endswith(
-                        (unwrap_class, 'MotorClientSession'))
-                      else obj)
-                for key, obj in kwargs.items()}
+                key: (
+                    obj.delegate
+                    if obj.__class__.__name__.endswith((unwrap_class, "MotorClientSession"))
+                    else obj
+                )
+                for key, obj in kwargs.items()
+            }
         else:
             # For speed, don't call unwrap_args_session/unwrap_kwargs_session.
             unwrapped_args = [
-                obj.delegate
-                if obj.__class__.__name__.endswith('MotorClientSession')
-                else obj
-                for obj in args]
+                obj.delegate if obj.__class__.__name__.endswith("MotorClientSession") else obj
+                for obj in args
+            ]
             unwrapped_kwargs = {
-                key: (obj.delegate
-                      if obj.__class__.__name__.endswith('MotorClientSession')
-                      else obj)
-                for key, obj in kwargs.items()}
+                key: (
+                    obj.delegate if obj.__class__.__name__.endswith("MotorClientSession") else obj
+                )
+                for key, obj in kwargs.items()
+            }
 
         loop = self.get_io_loop()
-        return framework.run_on_executor(loop,
-                                         sync_method,
-                                         self.delegate,
-                                         *unwrapped_args,
-                                         **unwrapped_kwargs)
+        return framework.run_on_executor(
+            loop, sync_method, self.delegate, *unwrapped_args, **unwrapped_kwargs
+        )
 
     if wrap_class is not None:
         method = framework.pymongo_class_wrapper(method, wrap_class)
@@ -94,18 +94,16 @@ def asynchronize(
 
 def unwrap_args_session(args):
     return (
-        obj.delegate
-        if obj.__class__.__name__.endswith('MotorClientSession')
-        else obj
-        for obj in args)
+        obj.delegate if obj.__class__.__name__.endswith("MotorClientSession") else obj
+        for obj in args
+    )
 
 
 def unwrap_kwargs_session(kwargs):
     return {
-        key: (obj.delegate
-              if obj.__class__.__name__.endswith('MotorClientSession')
-              else obj)
-        for key, obj in kwargs.items()}
+        key: (obj.delegate if obj.__class__.__name__.endswith("MotorClientSession") else obj)
+        for key, obj in kwargs.items()
+    }
 
 
 _coro_token = object()
@@ -129,6 +127,7 @@ class MotorAttributeFactory(object):
     PyMongo. At module import time, create_class_with_framework calls
     create_attribute() for each attr to create the final class attribute.
     """
+
     def __init__(self, doc=None):
         self.doc = doc
 
@@ -153,11 +152,13 @@ class Async(MotorAttributeFactory):
     def create_attribute(self, cls, attr_name):
         name = self.attr_name or attr_name
         method = getattr(cls.__delegate_class__, name)
-        return asynchronize(framework=cls._framework,
-                            sync_method=method,
-                            doc=self.doc,
-                            wrap_class=self.wrap_class,
-                            unwrap_class=self.unwrap_class)
+        return asynchronize(
+            framework=cls._framework,
+            sync_method=method,
+            doc=self.doc,
+            wrap_class=self.wrap_class,
+            unwrap_class=self.unwrap_class,
+        )
 
     def wrap(self, original_class):
         self.wrap_class = original_class
@@ -194,6 +195,7 @@ class AsyncCommand(Async):
 
 class ReadOnlyProperty(MotorAttributeFactory):
     """Creates a readonly attribute on the wrapped PyMongo object."""
+
     def create_attribute(self, cls, attr_name):
         def fget(obj):
             return getattr(obj.delegate, attr_name)
@@ -275,7 +277,7 @@ def create_class_with_framework(cls, framework, module_name):
     new_class.__module__ = module_name
     new_class._framework = framework
 
-    assert hasattr(new_class, '__delegate_class__')
+    assert hasattr(new_class, "__delegate_class__")
 
     # If we're constructing MotorClient from AgnosticClient, for example,
     # the method resolution order is (AgnosticClient, AgnosticBase, object).

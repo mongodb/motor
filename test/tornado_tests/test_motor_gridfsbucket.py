@@ -16,13 +16,13 @@
 """Test MotorGridFSBucket."""
 
 from io import BytesIO
+from test.tornado_tests import MotorTest
 
 from gridfs.errors import NoFile
 from tornado import gen
 from tornado.testing import gen_test
 
 import motor
-from test.tornado_tests import MotorTest
 
 
 class MotorGridFSBucketTest(MotorTest):
@@ -43,8 +43,7 @@ class MotorGridFSBucketTest(MotorTest):
 
     @gen_test
     async def test_basic(self):
-        oid = await self.bucket.upload_from_stream("test_filename",
-                                                   b"hello world")
+        oid = await self.bucket.upload_from_stream("test_filename", b"hello world")
         gout = await self.bucket.open_download_stream(oid)
         self.assertEqual(b"hello world", (await gout.read()))
         self.assertEqual(1, (await self.db.fs.files.count_documents({})))
@@ -63,4 +62,3 @@ class MotorGridFSBucketTest(MotorTest):
         dst = BytesIO()
         await self.bucket.download_to_stream(gin._id, dst)
         self.assertEqual(b"hello world", dst.getvalue())
-

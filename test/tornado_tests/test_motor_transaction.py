@@ -15,37 +15,42 @@
 import collections
 import os
 import re
+from test.utils import TestListener
+from test.version import Version
 
 from bson import json_util
 from bson.json_util import JSONOptions
 from pymongo.read_concern import ReadConcern
-from pymongo.results import (BulkWriteResult,
-                             InsertManyResult,
-                             InsertOneResult,
-                             UpdateResult, DeleteResult)
+from pymongo.results import (
+    BulkWriteResult,
+    DeleteResult,
+    InsertManyResult,
+    InsertOneResult,
+    UpdateResult,
+)
 
-from motor.motor_tornado import (MotorCommandCursor,
-                                 MotorCursor,
-                                 MotorLatentCommandCursor)
-from test.utils import TestListener
-
-from test.version import Version
+from motor.motor_tornado import (
+    MotorCommandCursor,
+    MotorCursor,
+    MotorLatentCommandCursor,
+)
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import unittest
-
-from pymongo import (ReadPreference,
-                     WriteConcern)
-from pymongo.errors import ConnectionFailure, OperationFailure
-from tornado.testing import gen_test
-from motor import core
 from test.test_environment import env
 from test.tornado_tests import MotorTest
+
+from pymongo import ReadPreference, WriteConcern
+from pymongo.errors import ConnectionFailure, OperationFailure
+from tornado.testing import gen_test
+
+from motor import core
 
 
 class PatchSessionTimeout(object):
     """Patches the client_session's with_transaction timeout for testing."""
+
     def __init__(self, mock_timeout):
         self.real_timeout = core._WITH_TRANSACTION_RETRY_TIME_LIMIT
         self.mock_timeout = mock_timeout
@@ -66,17 +71,19 @@ class TestTransactionsConvenientAPI(MotorTest):
         await self.collection.insert_one({})
 
         async def coro(session):
-            await self.collection.insert_one({'_id': 1}, session=session)
+            await self.collection.insert_one({"_id": 1}, session=session)
 
         async with await self.cx.start_session() as s:
-            await s.with_transaction(coro,
-                                     read_concern=ReadConcern('local'),
-                                     write_concern=WriteConcern('majority'),
-                                     read_preference=ReadPreference.PRIMARY,
-                                     max_commit_time_ms=30000)
+            await s.with_transaction(
+                coro,
+                read_concern=ReadConcern("local"),
+                write_concern=WriteConcern("majority"),
+                read_preference=ReadPreference.PRIMARY,
+                max_commit_time_ms=30000,
+            )
 
-        doc = await self.collection.find_one({'_id': 1})
-        self.assertEqual(doc, {'_id': 1})
+        doc = await self.collection.find_one({"_id": 1})
+        self.assertEqual(doc, {"_id": 1})
 
     @env.require_transactions
     @gen_test
@@ -95,19 +102,19 @@ class TestTransactionsConvenientAPI(MotorTest):
     @gen_test
     async def test_callback_returns_value(self):
         async def callback(_):
-            return 'Foo'
+            return "Foo"
 
         async with await self.cx.start_session() as s:
-            self.assertEqual(await s.with_transaction(callback), 'Foo')
+            self.assertEqual(await s.with_transaction(callback), "Foo")
 
         await self.db.test.insert_one({})
 
         async def callback(session):
             await self.db.test.insert_one({}, session=session)
-            return 'Foo'
+            return "Foo"
 
         async with await self.cx.start_session() as s:
-            self.assertEqual(await s.with_transaction(callback), 'Foo')
+            self.assertEqual(await s.with_transaction(callback), "Foo")
 
     @env.require_transactions
     @gen_test
@@ -119,13 +126,13 @@ class TestTransactionsConvenientAPI(MotorTest):
         async def callback(session):
             await coll.insert_one({}, session=session)
             err = {
-                'ok': 0,
-                'errmsg': 'Transaction 7819 has been aborted.',
-                'code': 251,
-                'codeName': 'NoSuchTransaction',
-                'errorLabels': ['TransientTransactionError'],
+                "ok": 0,
+                "errmsg": "Transaction 7819 has been aborted.",
+                "code": 251,
+                "codeName": "NoSuchTransaction",
+                "errorLabels": ["TransientTransactionError"],
             }
-            raise OperationFailure(err['errmsg'], err['code'], err)
+            raise OperationFailure(err["errmsg"], err["code"], err)
 
         # Create the collection.
         await coll.insert_one({})
@@ -135,8 +142,7 @@ class TestTransactionsConvenientAPI(MotorTest):
                 with self.assertRaises(OperationFailure):
                     await s.with_transaction(callback)
 
-        self.assertEqual(listener.started_command_names(),
-                         ['insert', 'abortTransaction'])
+        self.assertEqual(listener.started_command_names(), ["insert", "abortTransaction"])
 
     @env.require_transactions
     @gen_test
@@ -150,12 +156,17 @@ class TestTransactionsConvenientAPI(MotorTest):
 
         # Create the collection.
         await coll.insert_one({})
-        await self.set_fail_point(client, {
-            'configureFailPoint': 'failCommand', 'mode': {'times': 1},
-            'data': {
-                'failCommands': ['commitTransaction'],
-                'errorCode': 251,  # NoSuchTransaction
-            }})
+        await self.set_fail_point(
+            client,
+            {
+                "configureFailPoint": "failCommand",
+                "mode": {"times": 1},
+                "data": {
+                    "failCommands": ["commitTransaction"],
+                    "errorCode": 251,  # NoSuchTransaction
+                },
+            },
+        )
         listener.results.clear()
 
         async with await client.start_session() as s:
@@ -163,11 +174,9 @@ class TestTransactionsConvenientAPI(MotorTest):
                 with self.assertRaises(OperationFailure):
                     await s.with_transaction(callback)
 
-        self.assertEqual(listener.started_command_names(),
-                         ['insert', 'commitTransaction'])
+        self.assertEqual(listener.started_command_names(), ["insert", "commitTransaction"])
 
-        await self.set_fail_point(client, {
-            'configureFailPoint': 'failCommand', 'mode': 'off'})
+        await self.set_fail_point(client, {"configureFailPoint": "failCommand", "mode": "off"})
 
     @env.require_transactions
     @gen_test
@@ -181,11 +190,14 @@ class TestTransactionsConvenientAPI(MotorTest):
 
         # Create the collection.
         await coll.insert_one({})
-        await self.set_fail_point(client, {
-            'configureFailPoint': 'failCommand', 'mode': {'times': 2},
-            'data': {
-                'failCommands': ['commitTransaction'],
-                'closeConnection': True}})
+        await self.set_fail_point(
+            client,
+            {
+                "configureFailPoint": "failCommand",
+                "mode": {"times": 2},
+                "data": {"failCommands": ["commitTransaction"], "closeConnection": True},
+            },
+        )
         listener.results.clear()
 
         async with await client.start_session() as s:
@@ -195,11 +207,11 @@ class TestTransactionsConvenientAPI(MotorTest):
 
         # One insert for the callback and two commits (includes the automatic
         # retry).
-        self.assertEqual(listener.started_command_names(),
-                         ['insert', 'commitTransaction', 'commitTransaction'])
-        self.set_fail_point(client, {
-            'configureFailPoint': 'failCommand', 'mode': 'off'})
+        self.assertEqual(
+            listener.started_command_names(), ["insert", "commitTransaction", "commitTransaction"]
+        )
+        self.set_fail_point(client, {"configureFailPoint": "failCommand", "mode": "off"})
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

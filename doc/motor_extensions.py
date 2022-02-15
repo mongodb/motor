@@ -18,11 +18,7 @@ import re
 
 from docutils.nodes import doctest_block, literal_block
 from sphinx import addnodes
-from sphinx.addnodes import (desc,
-                             desc_content,
-                             desc_signature,
-                             seealso,
-                             versionmodified)
+from sphinx.addnodes import desc, desc_content, desc_signature, seealso, versionmodified
 from sphinx.util.inspect import safe_getattr
 
 import motor
@@ -66,7 +62,7 @@ def maybe_warn_about_code_block(name, content_node):
 
 def has_coro_annotation(signature_node):
     try:
-        return 'coroutine' in signature_node[0][0]
+        return "coroutine" in signature_node[0][0]
     except IndexError:
         return False
 
@@ -83,34 +79,31 @@ def process_motor_nodes(app, doctree):
     # 'autodoc-process-signature' event, because it's way easier to handle the
     # parsed doctree before it's turned into HTML than it is to update the RST.
     for objnode in doctree.traverse(desc):
-        if objnode['objtype'] in ('method', 'attribute'):
+        if objnode["objtype"] in ("method", "attribute"):
             signature_node = find_by_path(objnode, [desc_signature])[0]
-            name = '.'.join([
-                signature_node['module'], signature_node['fullname']])
+            name = ".".join([signature_node["module"], signature_node["fullname"]])
 
-            assert name.startswith('motor.')
+            assert name.startswith("motor.")
             obj_motor_info = motor_info.get(name)
             if obj_motor_info:
                 desc_content_node = find_by_path(objnode, [desc_content])[0]
-                if (desc_content_node.line is None and
-                        obj_motor_info['is_pymongo_docstring']):
+                if desc_content_node.line is None and obj_motor_info["is_pymongo_docstring"]:
                     maybe_warn_about_code_block(name, desc_content_node)
 
-                if obj_motor_info['is_async_method']:
+                if obj_motor_info["is_async_method"]:
                     # Might be a handwritten RST with "coroutine" already.
                     if not has_coro_annotation(signature_node):
                         coro_annotation = addnodes.desc_annotation(
-                            'coroutine ', 'coroutine ',
-                            classes=['coro-annotation'])
+                            "coroutine ", "coroutine ", classes=["coro-annotation"]
+                        )
 
                         signature_node.insert(0, coro_annotation)
 
-                if obj_motor_info['is_pymongo_docstring']:
+                if obj_motor_info["is_pymongo_docstring"]:
                     # Remove all "versionadded", "versionchanged" and
                     # "deprecated" directives from the docs we imported from
                     # PyMongo
-                    version_nodes = find_by_path(
-                        desc_content_node, [versionmodified])
+                    version_nodes = find_by_path(desc_content_node, [versionmodified])
 
                     for version_node in version_nodes:
                         version_node.parent.remove(version_node)
@@ -132,19 +125,16 @@ def get_motor_attr(motor_class, name, *defargs):
     attr = safe_getattr(motor_class, name, *defargs)
 
     # Store some info for process_motor_nodes()
-    full_name = '%s.%s.%s' % (
-        motor_class.__module__, motor_class.__name__, name)
+    full_name = "%s.%s.%s" % (motor_class.__module__, motor_class.__name__, name)
 
-    full_name_legacy = 'motor.%s.%s.%s' % (
-        motor_class.__module__, motor_class.__name__, name)
+    full_name_legacy = "motor.%s.%s.%s" % (motor_class.__module__, motor_class.__name__, name)
 
     # These sub-attributes are set in motor.asynchronize()
-    has_coroutine_annotation = getattr(attr, 'coroutine_annotation', False)
-    is_async_method = getattr(attr, 'is_async_method', False)
-    is_cursor_method = getattr(attr, 'is_motorcursor_chaining_method', False)
+    has_coroutine_annotation = getattr(attr, "coroutine_annotation", False)
+    is_async_method = getattr(attr, "is_async_method", False)
+    is_cursor_method = getattr(attr, "is_motorcursor_chaining_method", False)
     if is_async_method or is_cursor_method:
-        pymongo_method = getattr(
-            motor_class.__delegate_class__, attr.pymongo_method_name)
+        pymongo_method = getattr(motor_class.__delegate_class__, attr.pymongo_method_name)
     else:
         pymongo_method = None
 
@@ -152,27 +142,27 @@ def get_motor_attr(motor_class, name, *defargs):
     is_pymongo_doc = pymongo_method and attr.__doc__ == pymongo_method.__doc__
 
     motor_info[full_name] = motor_info[full_name_legacy] = {
-        'is_async_method': is_async_method or has_coroutine_annotation,
-        'is_pymongo_docstring': is_pymongo_doc,
-        'pymongo_method': pymongo_method,
+        "is_async_method": is_async_method or has_coroutine_annotation,
+        "is_pymongo_docstring": is_pymongo_doc,
+        "pymongo_method": pymongo_method,
     }
 
     return attr
 
 
-pymongo_ref_pat = re.compile(r':doc:`(.*?)`', re.MULTILINE)
+pymongo_ref_pat = re.compile(r":doc:`(.*?)`", re.MULTILINE)
 
 
 def _sub_pymongo_ref(match):
     ref = match.group(1)
-    return ':doc:`%s`' % ref.lstrip('/')
+    return ":doc:`%s`" % ref.lstrip("/")
 
 
 def process_motor_docstring(app, what, name, obj, options, lines):
-    if name in motor_info and motor_info[name].get('is_pymongo_docstring'):
-        joined = '\n'.join(lines)
+    if name in motor_info and motor_info[name].get("is_pymongo_docstring"):
+        joined = "\n".join(lines)
         subbed = pymongo_ref_pat.sub(_sub_pymongo_ref, joined)
-        lines[:] = subbed.split('\n')
+        lines[:] = subbed.split("\n")
 
 
 def build_finished(app, exception):
@@ -184,7 +174,7 @@ def build_finished(app, exception):
 
 def setup(app):
     app.add_autodoc_attrgetter(type(motor.core.AgnosticBase), get_motor_attr)
-    app.connect('autodoc-process-docstring', process_motor_docstring)
-    app.connect('doctree-read', process_motor_nodes)
-    app.connect('build-finished', build_finished)
-    return {'parallel_write_safe': True, 'parallel_read_safe': False}
+    app.connect("autodoc-process-docstring", process_motor_docstring)
+    app.connect("doctree-read", process_motor_nodes)
+    app.connect("build-finished", build_finished)
+    return {"parallel_write_safe": True, "parallel_read_safe": False}

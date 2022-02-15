@@ -20,14 +20,14 @@ import gc
 import inspect
 import unittest
 from asyncio import ensure_future
+from test.assert_logs_backport import AssertLogsMixin
+from test.test_environment import CA_PEM, CLIENT_PEM, env
+from test.utils import get_async_test_timeout
 from unittest import SkipTest
 
 from mockupdb import MockupDB
 
 from motor import motor_asyncio
-from test.assert_logs_backport import AssertLogsMixin
-from test.test_environment import env, CA_PEM, CLIENT_PEM
-from test.utils import get_async_test_timeout
 
 
 class _TestMethodWrapper(object):
@@ -41,6 +41,7 @@ class _TestMethodWrapper(object):
 
     Adapted from Tornado's test framework.
     """
+
     def __init__(self, orig_method):
         self.orig_method = orig_method
 
@@ -51,11 +52,9 @@ class _TestMethodWrapper(object):
             # RuntimeWarning: coroutine 'test_foo' was never awaited
             task = ensure_future(result)
             task.cancel()
-            raise TypeError("Generator test methods should be decorated with "
-                            "@asyncio_test")
+            raise TypeError("Generator test methods should be decorated with " "@asyncio_test")
         elif result is not None:
-            raise ValueError("Return value from test method ignored: %r" %
-                             result)
+            raise ValueError("Return value from test method ignored: %r" % result)
 
     def __getattr__(self, name):
         """Proxy all unknown attributes to the original method.
@@ -70,7 +69,7 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
     longMessage = True  # Used by unittest.TestCase
     ssl = False  # If True, connect with SSL, skip if mongod isn't SSL
 
-    def __init__(self, methodName='runTest'):
+    def __init__(self, methodName="runTest"):
         super().__init__(methodName)
 
         # It's easy to forget the @asyncio_test decorator, but if you do
@@ -78,8 +77,7 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         # the generator. Replace the test method with a wrapper that will
         # make sure it's not an undecorated generator.
         # (Adapted from Tornado's AsyncTestCase.)
-        setattr(self, methodName, _TestMethodWrapper(
-            getattr(self, methodName)))
+        setattr(self, methodName, _TestMethodWrapper(getattr(self, methodName)))
 
     def setUp(self):
         super().setUp()
@@ -99,11 +97,11 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
 
     def get_client_kwargs(self, **kwargs):
         if env.mongod_started_with_ssl:
-            kwargs.setdefault('tlsCAFile', CA_PEM)
-            kwargs.setdefault('tlsCertificateKeyFile', CLIENT_PEM)
+            kwargs.setdefault("tlsCAFile", CA_PEM)
+            kwargs.setdefault("tlsCertificateKeyFile", CLIENT_PEM)
 
-        kwargs.setdefault('tls', env.mongod_started_with_ssl)
-        kwargs.setdefault('io_loop', self.loop)
+        kwargs.setdefault("tls", env.mongod_started_with_ssl)
+        kwargs.setdefault("io_loop", self.loop)
 
         return kwargs
 
@@ -113,9 +111,8 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         Ignores self.ssl, you must pass 'ssl' argument.
         """
         return motor_asyncio.AsyncIOMotorClient(
-            uri or env.uri,
-            *args,
-            **self.get_client_kwargs(**kwargs))
+            uri or env.uri, *args, **self.get_client_kwargs(**kwargs)
+        )
 
     def asyncio_rsc(self, uri=None, *args, **kwargs):
         """Get an open MotorClient for replica set.
@@ -123,13 +120,12 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         Ignores self.ssl, you must pass 'ssl' argument.
         """
         return motor_asyncio.AsyncIOMotorClient(
-            uri or env.rs_uri,
-            *args,
-            **self.get_client_kwargs(**kwargs))
+            uri or env.rs_uri, *args, **self.get_client_kwargs(**kwargs)
+        )
 
     async def make_test_data(self):
         await self.collection.delete_many({})
-        await self.collection.insert_many([{'_id': i} for i in range(200)])
+        await self.collection.insert_many([{"_id": i} for i in range(200)])
 
     make_test_data.__test__ = False
 
@@ -156,8 +152,7 @@ class AsyncIOMockServerTestCase(AsyncIOTestCase):
         return client, server
 
     def run_thread(self, fn, *args, **kwargs):
-        return self.loop.run_in_executor(None,
-                                         functools.partial(fn, *args, **kwargs))
+        return self.loop.run_in_executor(None, functools.partial(fn, *args, **kwargs))
 
     def fetch_next(self, cursor):
         async def fetch_next():
@@ -188,6 +183,7 @@ def asyncio_test(func=None, timeout=None):
     of seconds. The final timeout is the ASYNC_TEST_TIMEOUT or the timeout
     in the test (5 seconds or the passed-in timeout), whichever is longest.
     """
+
     def wrap(f):
         @functools.wraps(f)
         def wrapped(self, *args, **kwargs):
@@ -201,7 +197,7 @@ def asyncio_test(func=None, timeout=None):
             def exc_handler(loop, context):
                 nonlocal coro_exc
                 # Exception is optional.
-                coro_exc = context.get('exception', Exception(context))
+                coro_exc = context.get("exception", Exception(context))
 
                 # Raise CancelledError from run_until_complete below.
                 task.cancel()
@@ -228,8 +224,10 @@ def asyncio_test(func=None, timeout=None):
         #     def f(self):
         #         pass
         if not inspect.isfunction(func):
-            msg = ("%r is not a test method. Pass a timeout as"
-                   " a keyword argument, like @asyncio_test(timeout=7)")
+            msg = (
+                "%r is not a test method. Pass a timeout as"
+                " a keyword argument, like @asyncio_test(timeout=7)"
+            )
             raise TypeError(msg % func)
         return wrap(func)
     else:
@@ -238,14 +236,14 @@ def asyncio_test(func=None, timeout=None):
 
 
 async def get_command_line(client):
-    command_line = await client.admin.command('getCmdLineOpts')
-    assert command_line['ok'] == 1, "getCmdLineOpts() failed"
+    command_line = await client.admin.command("getCmdLineOpts")
+    assert command_line["ok"] == 1, "getCmdLineOpts() failed"
     return command_line
 
 
 async def server_is_mongos(client):
-    ismaster_response = await client.admin.command('ismaster')
-    return ismaster_response.get('msg') == 'isdbgrid'
+    ismaster_response = await client.admin.command("ismaster")
+    return ismaster_response.get("msg") == "isdbgrid"
 
 
 async def skip_if_mongos(client):

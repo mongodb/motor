@@ -17,6 +17,8 @@
 import asyncio
 import datetime
 from io import StringIO
+from test import env
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from unittest.mock import patch
 
 import pymongo
@@ -25,9 +27,6 @@ from pymongo.errors import ConnectionFailure, OperationFailure
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
 from pymongo.server_api import ServerApi
-
-from test import env
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 
 async def count(cursor):
@@ -39,7 +38,6 @@ async def count(cursor):
 
 
 class TestExamples(AsyncIOTestCase):
-
     @classmethod
     def setUpClass(cls):
         env.sync_cx.motor_test.inventory.drop()
@@ -53,10 +51,13 @@ class TestExamples(AsyncIOTestCase):
 
         # Start Example 1
         await db.inventory.insert_one(
-            {"item": "canvas",
-             "qty": 100,
-             "tags": ["cotton"],
-             "size": {"h": 28, "w": 35.5, "uom": "cm"}})
+            {
+                "item": "canvas",
+                "qty": 100,
+                "tags": ["cotton"],
+                "size": {"h": 28, "w": 35.5, "uom": "cm"},
+            }
+        )
         # End Example 1
 
         self.assertEqual(await db.inventory.count_documents({}), 1)
@@ -68,19 +69,28 @@ class TestExamples(AsyncIOTestCase):
         self.assertEqual(await count(cursor), 1)
 
         # Start Example 3
-        await db.inventory.insert_many([
-            {"item": "journal",
-             "qty": 25,
-             "tags": ["blank", "red"],
-             "size": {"h": 14, "w": 21, "uom": "cm"}},
-            {"item": "mat",
-             "qty": 85,
-             "tags": ["gray"],
-             "size": {"h": 27.9, "w": 35.5, "uom": "cm"}},
-            {"item": "mousepad",
-             "qty": 25,
-             "tags": ["gel", "blue"],
-             "size": {"h": 19, "w": 22.85, "uom": "cm"}}])
+        await db.inventory.insert_many(
+            [
+                {
+                    "item": "journal",
+                    "qty": 25,
+                    "tags": ["blank", "red"],
+                    "size": {"h": 14, "w": 21, "uom": "cm"},
+                },
+                {
+                    "item": "mat",
+                    "qty": 85,
+                    "tags": ["gray"],
+                    "size": {"h": 27.9, "w": 35.5, "uom": "cm"},
+                },
+                {
+                    "item": "mousepad",
+                    "qty": 25,
+                    "tags": ["gel", "blue"],
+                    "size": {"h": 19, "w": 22.85, "uom": "cm"},
+                },
+            ]
+        )
         # End Example 3
 
         self.assertEqual(await db.inventory.count_documents({}), 4)
@@ -90,26 +100,40 @@ class TestExamples(AsyncIOTestCase):
         db = self.db
 
         # Start Example 6
-        await db.inventory.insert_many([
-            {"item": "journal",
-             "qty": 25,
-             "size": {"h": 14, "w": 21, "uom": "cm"},
-             "status": "A"},
-            {"item": "notebook",
-             "qty": 50,
-             "size": {"h": 8.5, "w": 11, "uom": "in"},
-             "status": "A"},
-            {"item": "paper",
-             "qty": 100,
-             "size": {"h": 8.5, "w": 11, "uom": "in"},
-             "status": "D"},
-            {"item": "planner",
-             "qty": 75, "size": {"h": 22.85, "w": 30, "uom": "cm"},
-             "status": "D"},
-            {"item": "postcard",
-             "qty": 45,
-             "size": {"h": 10, "w": 15.25, "uom": "cm"},
-             "status": "A"}])
+        await db.inventory.insert_many(
+            [
+                {
+                    "item": "journal",
+                    "qty": 25,
+                    "size": {"h": 14, "w": 21, "uom": "cm"},
+                    "status": "A",
+                },
+                {
+                    "item": "notebook",
+                    "qty": 50,
+                    "size": {"h": 8.5, "w": 11, "uom": "in"},
+                    "status": "A",
+                },
+                {
+                    "item": "paper",
+                    "qty": 100,
+                    "size": {"h": 8.5, "w": 11, "uom": "in"},
+                    "status": "D",
+                },
+                {
+                    "item": "planner",
+                    "qty": 75,
+                    "size": {"h": 22.85, "w": 30, "uom": "cm"},
+                    "status": "D",
+                },
+                {
+                    "item": "postcard",
+                    "qty": 45,
+                    "size": {"h": 10, "w": 15.25, "uom": "cm"},
+                    "status": "A",
+                },
+            ]
+        )
         # End Example 6
 
         self.assertEqual(await db.inventory.count_documents({}), 5)
@@ -139,16 +163,15 @@ class TestExamples(AsyncIOTestCase):
         self.assertEqual(await count(cursor), 1)
 
         # Start Example 12
-        cursor = db.inventory.find(
-            {"$or": [{"status": "A"}, {"qty": {"$lt": 30}}]})
+        cursor = db.inventory.find({"$or": [{"status": "A"}, {"qty": {"$lt": 30}}]})
         # End Example 12
 
         self.assertEqual(await count(cursor), 3)
 
         # Start Example 13
-        cursor = db.inventory.find({
-            "status": "A",
-            "$or": [{"qty": {"$lt": 30}}, {"item": {"$regex": "^p"}}]})
+        cursor = db.inventory.find(
+            {"status": "A", "$or": [{"qty": {"$lt": 30}}, {"item": {"$regex": "^p"}}]}
+        )
         # End Example 13
 
         self.assertEqual(await count(cursor), 2)
@@ -161,39 +184,51 @@ class TestExamples(AsyncIOTestCase):
         # Subdocument key order matters in a few of these examples so we have
         # to use bson.son.SON instead of a Python dict.
         from bson.son import SON
-        await db.inventory.insert_many([
-            {"item": "journal",
-             "qty": 25,
-             "size": SON([("h", 14), ("w", 21), ("uom", "cm")]),
-             "status": "A"},
-            {"item": "notebook",
-             "qty": 50,
-             "size": SON([("h", 8.5), ("w", 11), ("uom", "in")]),
-             "status": "A"},
-            {"item": "paper",
-             "qty": 100,
-             "size": SON([("h", 8.5), ("w", 11), ("uom", "in")]),
-             "status": "D"},
-            {"item": "planner",
-             "qty": 75,
-             "size": SON([("h", 22.85), ("w", 30), ("uom", "cm")]),
-             "status": "D"},
-            {"item": "postcard",
-             "qty": 45,
-             "size": SON([("h", 10), ("w", 15.25), ("uom", "cm")]),
-             "status": "A"}])
+
+        await db.inventory.insert_many(
+            [
+                {
+                    "item": "journal",
+                    "qty": 25,
+                    "size": SON([("h", 14), ("w", 21), ("uom", "cm")]),
+                    "status": "A",
+                },
+                {
+                    "item": "notebook",
+                    "qty": 50,
+                    "size": SON([("h", 8.5), ("w", 11), ("uom", "in")]),
+                    "status": "A",
+                },
+                {
+                    "item": "paper",
+                    "qty": 100,
+                    "size": SON([("h", 8.5), ("w", 11), ("uom", "in")]),
+                    "status": "D",
+                },
+                {
+                    "item": "planner",
+                    "qty": 75,
+                    "size": SON([("h", 22.85), ("w", 30), ("uom", "cm")]),
+                    "status": "D",
+                },
+                {
+                    "item": "postcard",
+                    "qty": 45,
+                    "size": SON([("h", 10), ("w", 15.25), ("uom", "cm")]),
+                    "status": "A",
+                },
+            ]
+        )
         # End Example 14
 
         # Start Example 15
-        cursor = db.inventory.find(
-            {"size": SON([("h", 14), ("w", 21), ("uom", "cm")])})
+        cursor = db.inventory.find({"size": SON([("h", 14), ("w", 21), ("uom", "cm")])})
         # End Example 15
 
         self.assertEqual(await count(cursor), 1)
 
         # Start Example 16
-        cursor = db.inventory.find(
-            {"size": SON([("w", 21), ("h", 14), ("uom", "cm")])})
+        cursor = db.inventory.find({"size": SON([("w", 21), ("h", 14), ("uom", "cm")])})
         # End Example 16
 
         self.assertEqual(await count(cursor), 0)
@@ -211,8 +246,7 @@ class TestExamples(AsyncIOTestCase):
         self.assertEqual(await count(cursor), 4)
 
         # Start Example 19
-        cursor = db.inventory.find(
-            {"size.h": {"$lt": 15}, "size.uom": "in", "status": "D"})
+        cursor = db.inventory.find({"size.h": {"$lt": 15}, "size.uom": "in", "status": "D"})
         # End Example 19
 
         self.assertEqual(await count(cursor), 1)
@@ -222,27 +256,20 @@ class TestExamples(AsyncIOTestCase):
         db = self.db
 
         # Start Example 20
-        await db.inventory.insert_many([
-            {"item": "journal",
-             "qty": 25,
-             "tags": ["blank", "red"],
-             "dim_cm": [14, 21]},
-            {"item": "notebook",
-             "qty": 50,
-             "tags": ["red", "blank"],
-             "dim_cm": [14, 21]},
-            {"item": "paper",
-             "qty": 100,
-             "tags": ["red", "blank", "plain"],
-             "dim_cm": [14, 21]},
-            {"item": "planner",
-             "qty": 75,
-             "tags": ["blank", "red"],
-             "dim_cm": [22.85, 30]},
-            {"item": "postcard",
-             "qty": 45,
-             "tags": ["blue"],
-             "dim_cm": [10, 15.25]}])
+        await db.inventory.insert_many(
+            [
+                {"item": "journal", "qty": 25, "tags": ["blank", "red"], "dim_cm": [14, 21]},
+                {"item": "notebook", "qty": 50, "tags": ["red", "blank"], "dim_cm": [14, 21]},
+                {
+                    "item": "paper",
+                    "qty": 100,
+                    "tags": ["red", "blank", "plain"],
+                    "dim_cm": [14, 21],
+                },
+                {"item": "planner", "qty": 75, "tags": ["blank", "red"], "dim_cm": [22.85, 30]},
+                {"item": "postcard", "qty": 45, "tags": ["blue"], "dim_cm": [10, 15.25]},
+            ]
+        )
         # End Example 20
 
         # Start Example 21
@@ -276,8 +303,7 @@ class TestExamples(AsyncIOTestCase):
         self.assertEqual(await count(cursor), 4)
 
         # Start Example 26
-        cursor = db.inventory.find(
-            {"dim_cm": {"$elemMatch": {"$gt": 22, "$lt": 30}}})
+        cursor = db.inventory.find({"dim_cm": {"$elemMatch": {"$gt": 22, "$lt": 30}}})
         # End Example 26
 
         self.assertEqual(await count(cursor), 1)
@@ -302,64 +328,74 @@ class TestExamples(AsyncIOTestCase):
         # Subdocument key order matters in a few of these examples so we have
         # to use bson.son.SON instead of a Python dict.
         from bson.son import SON
-        await db.inventory.insert_many([
-            {"item": "journal",
-             "instock": [
-                 SON([("warehouse", "A"), ("qty", 5)]),
-                 SON([("warehouse", "C"), ("qty", 15)])]},
-            {"item": "notebook",
-             "instock": [
-                 SON([("warehouse", "C"), ("qty", 5)])]},
-            {"item": "paper",
-             "instock": [
-                 SON([("warehouse", "A"), ("qty", 60)]),
-                 SON([("warehouse", "B"), ("qty", 15)])]},
-            {"item": "planner",
-             "instock": [
-                 SON([("warehouse", "A"), ("qty", 40)]),
-                 SON([("warehouse", "B"), ("qty", 5)])]},
-            {"item": "postcard",
-             "instock": [
-                 SON([("warehouse", "B"), ("qty", 15)]),
-                 SON([("warehouse", "C"), ("qty", 35)])]}])
+
+        await db.inventory.insert_many(
+            [
+                {
+                    "item": "journal",
+                    "instock": [
+                        SON([("warehouse", "A"), ("qty", 5)]),
+                        SON([("warehouse", "C"), ("qty", 15)]),
+                    ],
+                },
+                {"item": "notebook", "instock": [SON([("warehouse", "C"), ("qty", 5)])]},
+                {
+                    "item": "paper",
+                    "instock": [
+                        SON([("warehouse", "A"), ("qty", 60)]),
+                        SON([("warehouse", "B"), ("qty", 15)]),
+                    ],
+                },
+                {
+                    "item": "planner",
+                    "instock": [
+                        SON([("warehouse", "A"), ("qty", 40)]),
+                        SON([("warehouse", "B"), ("qty", 5)]),
+                    ],
+                },
+                {
+                    "item": "postcard",
+                    "instock": [
+                        SON([("warehouse", "B"), ("qty", 15)]),
+                        SON([("warehouse", "C"), ("qty", 35)]),
+                    ],
+                },
+            ]
+        )
         # End Example 29
 
         # Start Example 30
-        cursor = db.inventory.find(
-            {"instock": SON([("warehouse", "A"), ("qty", 5)])})
+        cursor = db.inventory.find({"instock": SON([("warehouse", "A"), ("qty", 5)])})
         # End Example 30
 
         self.assertEqual(await count(cursor), 1)
 
         # Start Example 31
-        cursor = db.inventory.find(
-            {"instock": SON([("qty", 5), ("warehouse", "A")])})
+        cursor = db.inventory.find({"instock": SON([("qty", 5), ("warehouse", "A")])})
         # End Example 31
 
         self.assertEqual(await count(cursor), 0)
 
         # Start Example 32
-        cursor = db.inventory.find({'instock.0.qty': {"$lte": 20}})
+        cursor = db.inventory.find({"instock.0.qty": {"$lte": 20}})
         # End Example 32
 
         self.assertEqual(await count(cursor), 3)
 
         # Start Example 33
-        cursor = db.inventory.find({'instock.qty': {"$lte": 20}})
+        cursor = db.inventory.find({"instock.qty": {"$lte": 20}})
         # End Example 33
 
         self.assertEqual(await count(cursor), 5)
 
         # Start Example 34
-        cursor = db.inventory.find(
-            {"instock": {"$elemMatch": {"qty": 5, "warehouse": "A"}}})
+        cursor = db.inventory.find({"instock": {"$elemMatch": {"qty": 5, "warehouse": "A"}}})
         # End Example 34
 
         self.assertEqual(await count(cursor), 1)
 
         # Start Example 35
-        cursor = db.inventory.find(
-            {"instock": {"$elemMatch": {"qty": {"$gt": 10, "$lte": 20}}}})
+        cursor = db.inventory.find({"instock": {"$elemMatch": {"qty": {"$gt": 10, "$lte": 20}}}})
         # End Example 35
 
         self.assertEqual(await count(cursor), 3)
@@ -371,8 +407,7 @@ class TestExamples(AsyncIOTestCase):
         self.assertEqual(await count(cursor), 4)
 
         # Start Example 37
-        cursor = db.inventory.find(
-            {"instock.qty": 5, "instock.warehouse": "A"})
+        cursor = db.inventory.find({"instock.qty": 5, "instock.warehouse": "A"})
         # End Example 37
 
         self.assertEqual(await count(cursor), 2)
@@ -408,29 +443,40 @@ class TestExamples(AsyncIOTestCase):
         db = self.db
 
         # Start Example 42
-        await db.inventory.insert_many([
-            {"item": "journal",
-             "status": "A",
-             "size": {"h": 14, "w": 21, "uom": "cm"},
-             "instock": [{"warehouse": "A", "qty": 5}]},
-            {"item": "notebook",
-             "status": "A",
-             "size": {"h": 8.5, "w": 11, "uom": "in"},
-             "instock": [{"warehouse": "C", "qty": 5}]},
-            {"item": "paper",
-             "status": "D",
-             "size": {"h": 8.5, "w": 11, "uom": "in"},
-             "instock": [{"warehouse": "A", "qty": 60}]},
-            {"item": "planner",
-             "status": "D",
-             "size": {"h": 22.85, "w": 30, "uom": "cm"},
-             "instock": [{"warehouse": "A", "qty": 40}]},
-            {"item": "postcard",
-             "status": "A",
-             "size": {"h": 10, "w": 15.25, "uom": "cm"},
-             "instock": [
-                 {"warehouse": "B", "qty": 15},
-                 {"warehouse": "C", "qty": 35}]}])
+        await db.inventory.insert_many(
+            [
+                {
+                    "item": "journal",
+                    "status": "A",
+                    "size": {"h": 14, "w": 21, "uom": "cm"},
+                    "instock": [{"warehouse": "A", "qty": 5}],
+                },
+                {
+                    "item": "notebook",
+                    "status": "A",
+                    "size": {"h": 8.5, "w": 11, "uom": "in"},
+                    "instock": [{"warehouse": "C", "qty": 5}],
+                },
+                {
+                    "item": "paper",
+                    "status": "D",
+                    "size": {"h": 8.5, "w": 11, "uom": "in"},
+                    "instock": [{"warehouse": "A", "qty": 60}],
+                },
+                {
+                    "item": "planner",
+                    "status": "D",
+                    "size": {"h": 22.85, "w": 30, "uom": "cm"},
+                    "instock": [{"warehouse": "A", "qty": 40}],
+                },
+                {
+                    "item": "postcard",
+                    "status": "A",
+                    "size": {"h": 10, "w": 15.25, "uom": "cm"},
+                    "instock": [{"warehouse": "B", "qty": 15}, {"warehouse": "C", "qty": 35}],
+                },
+            ]
+        )
         # End Example 42
 
         # Start Example 43
@@ -440,8 +486,7 @@ class TestExamples(AsyncIOTestCase):
         self.assertEqual(await count(cursor), 3)
 
         # Start Example 44
-        cursor = db.inventory.find(
-            {"status": "A"}, {"item": 1, "status": 1})
+        cursor = db.inventory.find({"status": "A"}, {"item": 1, "status": 1})
         # End Example 44
 
         async for doc in cursor:
@@ -452,8 +497,7 @@ class TestExamples(AsyncIOTestCase):
             self.assertFalse("instock" in doc)
 
         # Start Example 45
-        cursor = db.inventory.find(
-            {"status": "A"}, {"item": 1, "status": 1, "_id": 0})
+        cursor = db.inventory.find({"status": "A"}, {"item": 1, "status": 1, "_id": 0})
         # End Example 45
 
         async for doc in cursor:
@@ -464,8 +508,7 @@ class TestExamples(AsyncIOTestCase):
             self.assertFalse("instock" in doc)
 
         # Start Example 46
-        cursor = db.inventory.find(
-            {"status": "A"}, {"status": 0, "instock": 0})
+        cursor = db.inventory.find({"status": "A"}, {"status": 0, "instock": 0})
         # End Example 46
 
         async for doc in cursor:
@@ -476,8 +519,7 @@ class TestExamples(AsyncIOTestCase):
             self.assertFalse("instock" in doc)
 
         # Start Example 47
-        cursor = db.inventory.find(
-            {"status": "A"}, {"item": 1, "status": 1, "size.uom": 1})
+        cursor = db.inventory.find({"status": "A"}, {"item": 1, "status": 1, "size.uom": 1})
         # End Example 47
 
         async for doc in cursor:
@@ -486,10 +528,10 @@ class TestExamples(AsyncIOTestCase):
             self.assertTrue("status" in doc)
             self.assertTrue("size" in doc)
             self.assertFalse("instock" in doc)
-            size = doc['size']
-            self.assertTrue('uom' in size)
-            self.assertFalse('h' in size)
-            self.assertFalse('w' in size)
+            size = doc["size"]
+            self.assertTrue("uom" in size)
+            self.assertFalse("h" in size)
+            self.assertFalse("w" in size)
 
         # Start Example 48
         cursor = db.inventory.find({"status": "A"}, {"size.uom": 0})
@@ -501,14 +543,13 @@ class TestExamples(AsyncIOTestCase):
             self.assertTrue("status" in doc)
             self.assertTrue("size" in doc)
             self.assertTrue("instock" in doc)
-            size = doc['size']
-            self.assertFalse('uom' in size)
-            self.assertTrue('h' in size)
-            self.assertTrue('w' in size)
+            size = doc["size"]
+            self.assertFalse("uom" in size)
+            self.assertTrue("h" in size)
+            self.assertTrue("w" in size)
 
         # Start Example 49
-        cursor = db.inventory.find(
-            {"status": "A"}, {"item": 1, "status": 1, "instock.qty": 1})
+        cursor = db.inventory.find({"status": "A"}, {"item": 1, "status": 1, "instock.qty": 1})
         # End Example 49
 
         async for doc in cursor:
@@ -517,14 +558,14 @@ class TestExamples(AsyncIOTestCase):
             self.assertTrue("status" in doc)
             self.assertFalse("size" in doc)
             self.assertTrue("instock" in doc)
-            for subdoc in doc['instock']:
-                self.assertFalse('warehouse' in subdoc)
-                self.assertTrue('qty' in subdoc)
+            for subdoc in doc["instock"]:
+                self.assertFalse("warehouse" in subdoc)
+                self.assertTrue("qty" in subdoc)
 
         # Start Example 50
         cursor = db.inventory.find(
-            {"status": "A"},
-            {"item": 1, "status": 1, "instock": {"$slice": -1}})
+            {"status": "A"}, {"item": 1, "status": 1, "instock": {"$slice": -1}}
+        )
         # End Example 50
 
         async for doc in cursor:
@@ -540,54 +581,77 @@ class TestExamples(AsyncIOTestCase):
         db = self.db
 
         # Start Example 51
-        await db.inventory.insert_many([
-            {"item": "canvas",
-             "qty": 100,
-             "size": {"h": 28, "w": 35.5, "uom": "cm"},
-             "status": "A"},
-            {"item": "journal",
-             "qty": 25,
-             "size": {"h": 14, "w": 21, "uom": "cm"},
-             "status": "A"},
-            {"item": "mat",
-             "qty": 85,
-             "size": {"h": 27.9, "w": 35.5, "uom": "cm"},
-             "status": "A"},
-            {"item": "mousepad",
-             "qty": 25,
-             "size": {"h": 19, "w": 22.85, "uom": "cm"},
-             "status": "P"},
-            {"item": "notebook",
-             "qty": 50,
-             "size": {"h": 8.5, "w": 11, "uom": "in"},
-             "status": "P"},
-            {"item": "paper",
-             "qty": 100,
-             "size": {"h": 8.5, "w": 11, "uom": "in"},
-             "status": "D"},
-            {"item": "planner",
-             "qty": 75,
-             "size": {"h": 22.85, "w": 30, "uom": "cm"},
-             "status": "D"},
-            {"item": "postcard",
-             "qty": 45,
-             "size": {"h": 10, "w": 15.25, "uom": "cm"},
-             "status": "A"},
-            {"item": "sketchbook",
-             "qty": 80,
-             "size": {"h": 14, "w": 21, "uom": "cm"},
-             "status": "A"},
-            {"item": "sketch pad",
-             "qty": 95,
-             "size": {"h": 22.85, "w": 30.5, "uom": "cm"},
-             "status": "A"}])
+        await db.inventory.insert_many(
+            [
+                {
+                    "item": "canvas",
+                    "qty": 100,
+                    "size": {"h": 28, "w": 35.5, "uom": "cm"},
+                    "status": "A",
+                },
+                {
+                    "item": "journal",
+                    "qty": 25,
+                    "size": {"h": 14, "w": 21, "uom": "cm"},
+                    "status": "A",
+                },
+                {
+                    "item": "mat",
+                    "qty": 85,
+                    "size": {"h": 27.9, "w": 35.5, "uom": "cm"},
+                    "status": "A",
+                },
+                {
+                    "item": "mousepad",
+                    "qty": 25,
+                    "size": {"h": 19, "w": 22.85, "uom": "cm"},
+                    "status": "P",
+                },
+                {
+                    "item": "notebook",
+                    "qty": 50,
+                    "size": {"h": 8.5, "w": 11, "uom": "in"},
+                    "status": "P",
+                },
+                {
+                    "item": "paper",
+                    "qty": 100,
+                    "size": {"h": 8.5, "w": 11, "uom": "in"},
+                    "status": "D",
+                },
+                {
+                    "item": "planner",
+                    "qty": 75,
+                    "size": {"h": 22.85, "w": 30, "uom": "cm"},
+                    "status": "D",
+                },
+                {
+                    "item": "postcard",
+                    "qty": 45,
+                    "size": {"h": 10, "w": 15.25, "uom": "cm"},
+                    "status": "A",
+                },
+                {
+                    "item": "sketchbook",
+                    "qty": 80,
+                    "size": {"h": 14, "w": 21, "uom": "cm"},
+                    "status": "A",
+                },
+                {
+                    "item": "sketch pad",
+                    "qty": 95,
+                    "size": {"h": 22.85, "w": 30.5, "uom": "cm"},
+                    "status": "A",
+                },
+            ]
+        )
         # End Example 51
 
         # Start Example 52
         await db.inventory.update_one(
             {"item": "paper"},
-            {"$set": {"size.uom": "cm", "status": "P"},
-             "$currentDate": {"lastModified": True}})
+            {"$set": {"size.uom": "cm", "status": "P"}, "$currentDate": {"lastModified": True}},
+        )
         # End Example 52
 
         async for doc in db.inventory.find({"item": "paper"}):
@@ -598,8 +662,8 @@ class TestExamples(AsyncIOTestCase):
         # Start Example 53
         await db.inventory.update_many(
             {"qty": {"$lt": 50}},
-            {"$set": {"size.uom": "in", "status": "P"},
-             "$currentDate": {"lastModified": True}})
+            {"$set": {"size.uom": "in", "status": "P"}, "$currentDate": {"lastModified": True}},
+        )
         # End Example 53
 
         async for doc in db.inventory.find({"qty": {"$lt": 50}}):
@@ -610,10 +674,11 @@ class TestExamples(AsyncIOTestCase):
         # Start Example 54
         await db.inventory.replace_one(
             {"item": "paper"},
-            {"item": "paper",
-             "instock": [
-                 {"warehouse": "A", "qty": 60},
-                 {"warehouse": "B", "qty": 40}]})
+            {
+                "item": "paper",
+                "instock": [{"warehouse": "A", "qty": 60}, {"warehouse": "B", "qty": 40}],
+            },
+        )
         # End Example 54
 
         async for doc in db.inventory.find({"item": "paper"}, {"_id": 0}):
@@ -627,27 +692,40 @@ class TestExamples(AsyncIOTestCase):
         db = self.db
 
         # Start Example 55
-        await db.inventory.insert_many([
-            {"item": "journal",
-             "qty": 25,
-             "size": {"h": 14, "w": 21, "uom": "cm"},
-             "status": "A"},
-            {"item": "notebook",
-             "qty": 50,
-             "size": {"h": 8.5, "w": 11, "uom": "in"},
-             "status": "P"},
-            {"item": "paper",
-             "qty": 100,
-             "size": {"h": 8.5, "w": 11, "uom": "in"},
-             "status": "D"},
-            {"item": "planner",
-             "qty": 75,
-             "size": {"h": 22.85, "w": 30, "uom": "cm"},
-             "status": "D"},
-            {"item": "postcard",
-             "qty": 45,
-             "size": {"h": 10, "w": 15.25, "uom": "cm"},
-             "status": "A"}])
+        await db.inventory.insert_many(
+            [
+                {
+                    "item": "journal",
+                    "qty": 25,
+                    "size": {"h": 14, "w": 21, "uom": "cm"},
+                    "status": "A",
+                },
+                {
+                    "item": "notebook",
+                    "qty": 50,
+                    "size": {"h": 8.5, "w": 11, "uom": "in"},
+                    "status": "P",
+                },
+                {
+                    "item": "paper",
+                    "qty": 100,
+                    "size": {"h": 8.5, "w": 11, "uom": "in"},
+                    "status": "D",
+                },
+                {
+                    "item": "planner",
+                    "qty": 75,
+                    "size": {"h": 22.85, "w": 30, "uom": "cm"},
+                    "status": "D",
+                },
+                {
+                    "item": "postcard",
+                    "qty": 45,
+                    "size": {"h": 10, "w": 15.25, "uom": "cm"},
+                    "status": "A",
+                },
+            ]
+        )
         # End Example 55
 
         self.assertEqual(await db.inventory.count_documents({}), 5)
@@ -691,7 +769,7 @@ class TestExamples(AsyncIOTestCase):
             # End Changestream Example 1
 
             # Start Changestream Example 2
-            cursor = db.inventory.watch(full_document='updateLookup')
+            cursor = db.inventory.watch(full_document="updateLookup")
             document = await cursor.next()
             # End Changestream Example 2
 
@@ -703,8 +781,8 @@ class TestExamples(AsyncIOTestCase):
 
             # Start Changestream Example 4
             pipeline = [
-                {'$match': {'fullDocument.username': 'alice'}},
-                {'$addFields': {'newField': 'this is an added field!'}}
+                {"$match": {"fullDocument.username": "alice"}},
+                {"$addFields": {"newField": "this is an added field!"}},
             ]
             cursor = db.inventory.watch(pipeline=pipeline)
             document = await cursor.next()
@@ -720,89 +798,86 @@ class TestExamples(AsyncIOTestCase):
         db = self.db
 
         # Start Aggregation Example 1
-        cursor = db.sales.aggregate([
-            {"$match": {"items.fruit": "banana"}},
-            {"$sort": {"date": 1}}
-        ])
+        cursor = db.sales.aggregate([{"$match": {"items.fruit": "banana"}}, {"$sort": {"date": 1}}])
 
         async for doc in cursor:
             print(doc)
         # End Aggregation Example 1
 
         # Start Aggregation Example 2
-        cursor = db.sales.aggregate([
-            {"$unwind": "$items"},
-            {"$match": {"items.fruit": "banana"}},
-            {"$group": {
-                "_id": {"day": {"$dayOfWeek": "$date"}},
-                "count": {"$sum": "$items.quantity"}
-            }},
-            {"$project": {
-                "dayOfWeek": "$_id.day",
-                "numberSold": "$count",
-                "_id": 0
-            }},
-            {"$sort": {"numberSold": 1}}
-        ])
+        cursor = db.sales.aggregate(
+            [
+                {"$unwind": "$items"},
+                {"$match": {"items.fruit": "banana"}},
+                {
+                    "$group": {
+                        "_id": {"day": {"$dayOfWeek": "$date"}},
+                        "count": {"$sum": "$items.quantity"},
+                    }
+                },
+                {"$project": {"dayOfWeek": "$_id.day", "numberSold": "$count", "_id": 0}},
+                {"$sort": {"numberSold": 1}},
+            ]
+        )
 
         async for doc in cursor:
             print(doc)
         # End Aggregation Example 2
 
         # Start Aggregation Example 3
-        cursor = db.sales.aggregate([
-            {"$unwind": "$items"},
-            {"$group": {
-                "_id": {"day": {"$dayOfWeek": "$date"}},
-                "items_sold": {"$sum": "$items.quantity"},
-                "revenue": {
-                    "$sum": {
-                        "$multiply": [
-                            "$items.quantity", "$items.price"]
+        cursor = db.sales.aggregate(
+            [
+                {"$unwind": "$items"},
+                {
+                    "$group": {
+                        "_id": {"day": {"$dayOfWeek": "$date"}},
+                        "items_sold": {"$sum": "$items.quantity"},
+                        "revenue": {"$sum": {"$multiply": ["$items.quantity", "$items.price"]}},
                     }
-                }
-            }},
-            {"$project": {
-                "day": "$_id.day",
-                "revenue": 1,
-                "items_sold": 1,
-                "discount": {
-                    "$cond": {
-                        "if": {"$lte": ["$revenue", 250]},
-                        "then": 25,
-                        "else": 0
+                },
+                {
+                    "$project": {
+                        "day": "$_id.day",
+                        "revenue": 1,
+                        "items_sold": 1,
+                        "discount": {
+                            "$cond": {"if": {"$lte": ["$revenue", 250]}, "then": 25, "else": 0}
+                        },
                     }
-                }
-            }}
-        ])
+                },
+            ]
+        )
 
         async for doc in cursor:
             print(doc)
         # End Aggregation Example 3
 
         # Start Aggregation Example 4
-        cursor = db.air_alliances.aggregate([
-            {"$lookup": {
-                "from": "air_airlines",
-                "let": {"constituents": "$airlines"},
-                "pipeline": [
-                    {"$match": {
-                        "$expr": {"$in": ["$name", "$$constituents"]}}}
-                ],
-                "as": "airlines"
-            }},
-            {"$project": {
-                "_id": 0,
-                "name": 1,
-                "airlines": {
-                    "$filter": {
-                        "input": "$airlines",
-                        "as": "airline",
-                        "cond": {"$eq": ["$$airline.country", "Canada"]}
+        cursor = db.air_alliances.aggregate(
+            [
+                {
+                    "$lookup": {
+                        "from": "air_airlines",
+                        "let": {"constituents": "$airlines"},
+                        "pipeline": [{"$match": {"$expr": {"$in": ["$name", "$$constituents"]}}}],
+                        "as": "airlines",
                     }
-                }
-            }}
-        ])
+                },
+                {
+                    "$project": {
+                        "_id": 0,
+                        "name": 1,
+                        "airlines": {
+                            "$filter": {
+                                "input": "$airlines",
+                                "as": "airline",
+                                "cond": {"$eq": ["$$airline.country", "Canada"]},
+                            }
+                        },
+                    }
+                },
+            ]
+        )
 
         async for doc in cursor:
             print(doc)
@@ -832,7 +907,8 @@ class TestExamples(AsyncIOTestCase):
         # Start Index Example 1
         await db.restaurants.create_index(
             [("cuisine", pymongo.ASCENDING), ("name", pymongo.ASCENDING)],
-            partialFilterExpression={"rating": {"$gt": 5}})
+            partialFilterExpression={"rating": {"$gt": 5}},
+        )
         # End Index Example 1
 
     @env.require_version_min(3, 7)
@@ -847,8 +923,7 @@ class TestExamples(AsyncIOTestCase):
         employees = self.cx.hr.employees
         events = self.cx.reporting.events
         await employees.insert_one({"employee": 3, "status": "Active"})
-        await events.insert_one(
-            {"employee": 3, "status": {"new": "Active", "old": None}})
+        await events.insert_one({"employee": 3, "status": {"new": "Active", "old": None}})
 
         # Start Transactions Intro Example 1
 
@@ -857,15 +932,14 @@ class TestExamples(AsyncIOTestCase):
             events_coll = session.client.reporting.events
 
             async with session.start_transaction(
-                    read_concern=ReadConcern("snapshot"),
-                    write_concern=WriteConcern(w="majority")):
+                read_concern=ReadConcern("snapshot"), write_concern=WriteConcern(w="majority")
+            ):
                 await employees_coll.update_one(
-                    {"employee": 3}, {"$set": {"status": "Inactive"}},
-                    session=session)
+                    {"employee": 3}, {"$set": {"status": "Inactive"}}, session=session
+                )
                 await events_coll.insert_one(
-                    {"employee": 3, "status": {
-                        "new": "Inactive", "old": "Active"}},
-                    session=session)
+                    {"employee": 3, "status": {"new": "Inactive", "old": "Active"}}, session=session
+                )
 
                 while True:
                     try:
@@ -875,24 +949,25 @@ class TestExamples(AsyncIOTestCase):
                         break
                     except (ConnectionFailure, OperationFailure) as exc:
                         # Can retry commit
-                        if exc.has_error_label(
-                                "UnknownTransactionCommitResult"):
-                            print("UnknownTransactionCommitResult, retrying "
-                                  "commit operation ...")
+                        if exc.has_error_label("UnknownTransactionCommitResult"):
+                            print(
+                                "UnknownTransactionCommitResult, retrying " "commit operation ..."
+                            )
                             continue
                         else:
                             print("Error during commit ...")
                             raise
+
         # End Transactions Intro Example 1
 
         # Test the example.
-        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
             async with await client.start_session() as s:
                 await update_employee_info(s)
 
         employee = await employees.find_one({"employee": 3})
         self.assertIsNotNone(employee)
-        self.assertEqual(employee['status'], 'Inactive')
+        self.assertEqual(employee["status"], "Inactive")
         self.assertIn("Transaction committed", mock_stdout.getvalue())
 
         # Start Transactions Retry Example 1
@@ -902,26 +977,25 @@ class TestExamples(AsyncIOTestCase):
                     await txn_coro(session)  # performs transaction
                     break
                 except (ConnectionFailure, OperationFailure) as exc:
-                    print("Transaction aborted. Caught exception during "
-                          "transaction.")
+                    print("Transaction aborted. Caught exception during " "transaction.")
 
                     # If transient error, retry the whole transaction
                     if exc.has_error_label("TransientTransactionError"):
-                        print("TransientTransactionError, retrying"
-                              "transaction ...")
+                        print("TransientTransactionError, retrying" "transaction ...")
                         continue
                     else:
                         raise
+
         # End Transactions Retry Example 1
 
         # Test the example.
-        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
             async with await client.start_session() as s:
                 await run_transaction_with_retry(update_employee_info, s)
 
         employee = await employees.find_one({"employee": 3})
         self.assertIsNotNone(employee)
-        self.assertEqual(employee['status'], 'Inactive')
+        self.assertEqual(employee["status"], "Inactive")
         self.assertIn("Transaction committed", mock_stdout.getvalue())
 
         # Start Transactions Retry Example 2
@@ -935,34 +1009,31 @@ class TestExamples(AsyncIOTestCase):
                 except (ConnectionFailure, OperationFailure) as exc:
                     # Can retry commit
                     if exc.has_error_label("UnknownTransactionCommitResult"):
-                        print("UnknownTransactionCommitResult, retrying "
-                              "commit operation ...")
+                        print("UnknownTransactionCommitResult, retrying " "commit operation ...")
                         continue
                     else:
                         print("Error during commit ...")
                         raise
+
         # End Transactions Retry Example 2
 
         # Test commit_with_retry from the previous examples
         async def _insert_employee_retry_commit(session):
             async with session.start_transaction():
-                await employees.insert_one(
-                    {"employee": 4, "status": "Active"},
-                    session=session)
+                await employees.insert_one({"employee": 4, "status": "Active"}, session=session)
                 await events.insert_one(
-                    {"employee": 4, "status": {"new": "Active", "old": None}},
-                    session=session)
+                    {"employee": 4, "status": {"new": "Active", "old": None}}, session=session
+                )
 
                 await commit_with_retry(session)
 
-        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
             async with await client.start_session() as s:
-                await run_transaction_with_retry(
-                    _insert_employee_retry_commit, s)
+                await run_transaction_with_retry(_insert_employee_retry_commit, s)
 
         employee = await employees.find_one({"employee": 4})
         self.assertIsNotNone(employee)
-        self.assertEqual(employee['status'], 'Active')
+        self.assertEqual(employee["status"], "Active")
         self.assertIn("Transaction committed", mock_stdout.getvalue())
 
         # Start Transactions Retry Example 3
@@ -975,8 +1046,7 @@ class TestExamples(AsyncIOTestCase):
                 except (ConnectionFailure, OperationFailure) as exc:
                     # If transient error, retry the whole transaction
                     if exc.has_error_label("TransientTransactionError"):
-                        print("TransientTransactionError, retrying "
-                              "transaction ...")
+                        print("TransientTransactionError, retrying " "transaction ...")
                         continue
                     else:
                         raise
@@ -991,8 +1061,7 @@ class TestExamples(AsyncIOTestCase):
                 except (ConnectionFailure, OperationFailure) as exc:
                     # Can retry commit
                     if exc.has_error_label("UnknownTransactionCommitResult"):
-                        print("UnknownTransactionCommitResult, retrying "
-                              "commit operation ...")
+                        print("UnknownTransactionCommitResult, retrying " "commit operation ...")
                         continue
                     else:
                         print("Error during commit ...")
@@ -1005,16 +1074,16 @@ class TestExamples(AsyncIOTestCase):
             events_coll = session.client.reporting.events
 
             async with session.start_transaction(
-                    read_concern=ReadConcern("snapshot"),
-                    write_concern=WriteConcern(w="majority"),
-                    read_preference=ReadPreference.PRIMARY):
+                read_concern=ReadConcern("snapshot"),
+                write_concern=WriteConcern(w="majority"),
+                read_preference=ReadPreference.PRIMARY,
+            ):
                 await employees_coll.update_one(
-                    {"employee": 3}, {"$set": {"status": "Inactive"}},
-                    session=session)
+                    {"employee": 3}, {"$set": {"status": "Inactive"}}, session=session
+                )
                 await events_coll.insert_one(
-                    {"employee": 3, "status": {
-                        "new": "Inactive", "old": "Active"}},
-                    session=session)
+                    {"employee": 3, "status": {"new": "Inactive", "old": "Active"}}, session=session
+                )
 
                 await commit_with_retry(session)
 
@@ -1030,7 +1099,7 @@ class TestExamples(AsyncIOTestCase):
 
         employee = await employees.find_one({"employee": 3})
         self.assertIsNotNone(employee)
-        self.assertEqual(employee['status'], 'Inactive')
+        self.assertEqual(employee["status"], "Inactive")
 
         AsyncIOMotorClient = lambda _: self.cx
         uriString = None
@@ -1046,10 +1115,8 @@ class TestExamples(AsyncIOTestCase):
         wc_majority = WriteConcern("majority", wtimeout=1000)
 
         # Prereq: Create collections.
-        await client.get_database(
-            "mydb1", write_concern=wc_majority).foo.insert_one({'abc': 0})
-        await client.get_database(
-            "mydb2", write_concern=wc_majority).bar.insert_one({'xyz': 0})
+        await client.get_database("mydb1", write_concern=wc_majority).foo.insert_one({"abc": 0})
+        await client.get_database("mydb2", write_concern=wc_majority).bar.insert_one({"xyz": 0})
 
         # Step 1: Define the callback that specifies the sequence of operations to perform inside the transactions.
         async def callback(my_session):
@@ -1057,16 +1124,18 @@ class TestExamples(AsyncIOTestCase):
             collection_two = my_session.client.mydb2.bar
 
             # Important:: You must pass the session to the operations.
-            await collection_one.insert_one({'abc': 1}, session=my_session)
-            await collection_two.insert_one({'xyz': 999}, session=my_session)
+            await collection_one.insert_one({"abc": 1}, session=my_session)
+            await collection_two.insert_one({"xyz": 999}, session=my_session)
 
         # Step 2: Start a client session.
         async with await client.start_session() as session:
             # Step 3: Use with_transaction to start a transaction, execute the callback, and commit (or abort on error).
             await session.with_transaction(
-                callback, read_concern=ReadConcern('local'),
+                callback,
+                read_concern=ReadConcern("local"),
                 write_concern=wc_majority,
-                read_preference=ReadPreference.PRIMARY)
+                read_preference=ReadPreference.PRIMARY,
+            )
 
         # End Transactions withTxn API Example 1
 
@@ -1076,24 +1145,26 @@ class TestExamples(AsyncIOTestCase):
     async def test_causal_consistency(self):
         # Causal consistency examples
         client = self.cx
-        self.addCleanup(env.sync_cx.drop_database, 'test')
-        await client.test.drop_collection('items')
-        await client.test.items.insert_one({
-            'sku': "111", 'name': 'Peanuts',
-            'start': datetime.datetime.today()})
+        self.addCleanup(env.sync_cx.drop_database, "test")
+        await client.test.drop_collection("items")
+        await client.test.items.insert_one(
+            {"sku": "111", "name": "Peanuts", "start": datetime.datetime.today()}
+        )
 
         # Start Causal Consistency Example 1
         async with await client.start_session(causal_consistency=True) as s1:
             current_date = datetime.datetime.today()
             items = client.get_database(
-                'test', read_concern=ReadConcern('majority'),
-                write_concern=WriteConcern('majority', wtimeout=1000)).items
+                "test",
+                read_concern=ReadConcern("majority"),
+                write_concern=WriteConcern("majority", wtimeout=1000),
+            ).items
             await items.update_one(
-                {'sku': "111", 'end': None},
-                {'$set': {'end': current_date}}, session=s1)
+                {"sku": "111", "end": None}, {"$set": {"end": current_date}}, session=s1
+            )
             await items.insert_one(
-                {'sku': "nuts-111", 'name': "Pecans",
-                 'start': current_date}, session=s1)
+                {"sku": "nuts-111", "name": "Pecans", "start": current_date}, session=s1
+            )
         # End Causal Consistency Example 1
 
         # Start Causal Consistency Example 2
@@ -1102,10 +1173,12 @@ class TestExamples(AsyncIOTestCase):
             s2.advance_operation_time(s1.operation_time)
 
             items = client.get_database(
-                'test', read_preference=ReadPreference.SECONDARY,
-                read_concern=ReadConcern('majority'),
-                write_concern=WriteConcern('majority', wtimeout=1000)).items
-            async for item in items.find({'end': None}, session=s2):
+                "test",
+                read_preference=ReadPreference.SECONDARY,
+                read_concern=ReadConcern("majority"),
+                write_concern=WriteConcern("majority", wtimeout=1000),
+            ).items
+            async for item in items.find({"end": None}, session=s2):
                 print(item)
         # End Causal Consistency Example 2
 
@@ -1116,27 +1189,26 @@ class TestExamples(AsyncIOTestCase):
         # Use connect=False to reduce overhead as client is not used to run
         # any operations.
         AsyncIOMotorClient = lambda _, server_api: self.asyncio_client(
-            server_api=server_api, connect=False)
+            server_api=server_api, connect=False
+        )
         uri = None
 
         # Start Versioned API Example 1
         from pymongo.server_api import ServerApi
+
         client = AsyncIOMotorClient(uri, server_api=ServerApi("1"))
         # End Versioned API Example 1
 
         # Start Versioned API Example 2
-        client = AsyncIOMotorClient(
-            uri, server_api=ServerApi("1", strict=True))
+        client = AsyncIOMotorClient(uri, server_api=ServerApi("1", strict=True))
         # End Versioned API Example 2
 
         # Start Versioned API Example 3
-        client = AsyncIOMotorClient(
-            uri, server_api=ServerApi("1", strict=False))
+        client = AsyncIOMotorClient(uri, server_api=ServerApi("1", strict=False))
         # End Versioned API Example 3
 
         # Start Versioned API Example 4
-        client = AsyncIOMotorClient(
-            uri, server_api=ServerApi("1", deprecation_errors=True))
+        client = AsyncIOMotorClient(uri, server_api=ServerApi("1", deprecation_errors=True))
         # End Versioned API Example 4
 
     @env.require_version_min(4, 7)
@@ -1150,22 +1222,74 @@ class TestExamples(AsyncIOTestCase):
         # Start Versioned API Example 5
         def strptime(s):
             return datetime.datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ")
-        await client.db.sales.insert_many([
-            {"_id": 1, "item": "abc", "price": 10, "quantity": 2, "date": strptime("2021-01-01T08:00:00Z")},
-            {"_id": 2, "item": "jkl", "price": 20, "quantity": 1, "date": strptime("2021-02-03T09:00:00Z")},
-            {"_id": 3, "item": "xyz", "price": 5, "quantity": 5, "date": strptime("2021-02-03T09:05:00Z")},
-            {"_id": 4, "item": "abc", "price": 10, "quantity": 10, "date": strptime("2021-02-15T08:00:00Z")},
-            {"_id": 5, "item": "xyz", "price": 5, "quantity": 10, "date": strptime("2021-02-15T09:05:00Z")},
-            {"_id": 6, "item": "xyz", "price": 5, "quantity": 5, "date": strptime("2021-02-15T12:05:10Z")},
-            {"_id": 7, "item": "xyz", "price": 5, "quantity": 10, "date": strptime("2021-02-15T14:12:12Z")},
-            {"_id": 8, "item": "abc", "price": 10, "quantity": 5, "date": strptime("2021-03-16T20:20:13Z")}
-        ])
+
+        await client.db.sales.insert_many(
+            [
+                {
+                    "_id": 1,
+                    "item": "abc",
+                    "price": 10,
+                    "quantity": 2,
+                    "date": strptime("2021-01-01T08:00:00Z"),
+                },
+                {
+                    "_id": 2,
+                    "item": "jkl",
+                    "price": 20,
+                    "quantity": 1,
+                    "date": strptime("2021-02-03T09:00:00Z"),
+                },
+                {
+                    "_id": 3,
+                    "item": "xyz",
+                    "price": 5,
+                    "quantity": 5,
+                    "date": strptime("2021-02-03T09:05:00Z"),
+                },
+                {
+                    "_id": 4,
+                    "item": "abc",
+                    "price": 10,
+                    "quantity": 10,
+                    "date": strptime("2021-02-15T08:00:00Z"),
+                },
+                {
+                    "_id": 5,
+                    "item": "xyz",
+                    "price": 5,
+                    "quantity": 10,
+                    "date": strptime("2021-02-15T09:05:00Z"),
+                },
+                {
+                    "_id": 6,
+                    "item": "xyz",
+                    "price": 5,
+                    "quantity": 5,
+                    "date": strptime("2021-02-15T12:05:10Z"),
+                },
+                {
+                    "_id": 7,
+                    "item": "xyz",
+                    "price": 5,
+                    "quantity": 10,
+                    "date": strptime("2021-02-15T14:12:12Z"),
+                },
+                {
+                    "_id": 8,
+                    "item": "abc",
+                    "price": 10,
+                    "quantity": 5,
+                    "date": strptime("2021-03-16T20:20:13Z"),
+                },
+            ]
+        )
         # End Versioned API Example 5
 
         with self.assertRaisesRegex(
-                OperationFailure, "Provided apiStrict:true, but the command "
-                                  "count is not in API Version 1"):
-            await client.db.command('count', 'sales', query={})
+            OperationFailure,
+            "Provided apiStrict:true, but the command " "count is not in API Version 1",
+        ):
+            await client.db.command("count", "sales", query={})
 
         # Start Versioned API Example 6
         # pymongo.errors.OperationFailure: Provided apiStrict:true, but the command count is not in API Version 1, full error: {'ok': 0.0, 'errmsg': 'Provided apiStrict:true, but the command count is not in API Version 1', 'code': 323, 'codeName': 'APIStrictError'}

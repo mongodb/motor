@@ -36,16 +36,14 @@ def depart_mongodoc_node(self, node):
 
 
 def visit_mongoref_node(self, node):
-    atts = {"class": "reference external",
-            "href": node["refuri"],
-            "name": node["name"]}
-    self.body.append(self.starttag(node, 'a', '', **atts))
+    atts = {"class": "reference external", "href": node["refuri"], "name": node["name"]}
+    self.body.append(self.starttag(node, "a", "", **atts))
 
 
 def depart_mongoref_node(self, node):
-    self.body.append('</a>')
+    self.body.append("</a>")
     if not isinstance(node.parent, nodes.TextElement):
-        self.body.append('\n')
+        self.body.append("\n")
 
 
 class MongodocDirective(rst.Directive):
@@ -58,7 +56,7 @@ class MongodocDirective(rst.Directive):
 
     def run(self):
         node = mongodoc()
-        title = 'The MongoDB documentation on'
+        title = "The MongoDB documentation on"
         node += nodes.title(title, title)
         self.state.nested_parse(self.content, self.content_offset, node)
         return [node]
@@ -86,12 +84,13 @@ def process_mongodoc_nodes(app, doctree, fromdocname):
 
 
 def setup(app):
-    app.add_node(mongodoc,
-                 html=(visit_mongodoc_node, depart_mongodoc_node),
-                 latex=(visit_mongodoc_node, depart_mongodoc_node),
-                 text=(visit_mongodoc_node, depart_mongodoc_node))
-    app.add_node(mongoref,
-                 html=(visit_mongoref_node, depart_mongoref_node))
+    app.add_node(
+        mongodoc,
+        html=(visit_mongodoc_node, depart_mongodoc_node),
+        latex=(visit_mongodoc_node, depart_mongodoc_node),
+        text=(visit_mongodoc_node, depart_mongodoc_node),
+    )
+    app.add_node(mongoref, html=(visit_mongoref_node, depart_mongoref_node))
 
     app.add_directive("mongodoc", MongodocDirective)
     app.connect("doctree-resolved", process_mongodoc_nodes)

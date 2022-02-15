@@ -31,7 +31,7 @@ def one(s):
 
 
 def safe_get(dct, dotted_key, default=None):
-    for key in dotted_key.split('.'):
+    for key in dotted_key.split("."):
         if key not in dct:
             return default
 
@@ -43,6 +43,7 @@ def safe_get(dct, dotted_key, default=None):
 # Use as a decorator or in a "with" statement.
 def ignore_deprecations(fn=None):
     if fn:
+
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
             with warnings.catch_warnings():
@@ -52,6 +53,7 @@ def ignore_deprecations(fn=None):
         return wrapper
 
     else:
+
         @contextlib.contextmanager
         def ignore_deprecations_context():
             with warnings.catch_warnings():
@@ -73,31 +75,30 @@ class TestListener(monitoring.CommandListener):
         self.results = defaultdict(list)
 
     def started(self, event):
-        if not event.command_name.startswith('sasl'):
-            self.results['started'].append(event)
+        if not event.command_name.startswith("sasl"):
+            self.results["started"].append(event)
 
     def succeeded(self, event):
-        if not event.command_name.startswith('sasl'):
-            self.results['succeeded'].append(event)
+        if not event.command_name.startswith("sasl"):
+            self.results["succeeded"].append(event)
 
     def failed(self, event):
-        if not event.command_name.startswith('sasl'):
-            self.results['failed'].append(event)
+        if not event.command_name.startswith("sasl"):
+            self.results["failed"].append(event)
 
     def first_command_started(self, name=None):
-        assert len(self.results['started']) >= 1, (
-            "No command-started events")
+        assert len(self.results["started"]) >= 1, "No command-started events"
 
         if name:
-            for result in self.results['started']:
+            for result in self.results["started"]:
                 if result.command_name == name:
                     return result
         else:
-            return self.results['started'][0]
+            return self.results["started"][0]
 
     def started_command_names(self):
         """Return list of command names started."""
-        return [event.command_name for event in self.results['started']]
+        return [event.command_name for event in self.results["started"]]
 
 
 def session_ids(client):
@@ -105,11 +106,11 @@ def session_ids(client):
 
 
 def create_user(authdb, user, pwd=None, roles=None, **kwargs):
-    cmd = SON([('createUser', user)])
+    cmd = SON([("createUser", user)])
     # X509 doesn't use a password
     if pwd:
-        cmd['pwd'] = pwd
-    cmd['roles'] = roles or ['root']
+        cmd["pwd"] = pwd
+    cmd["roles"] = roles or ["root"]
     cmd.update(**kwargs)
     return authdb.command(cmd)
 
@@ -120,7 +121,7 @@ def get_async_test_timeout(default=5):
     Returns a float, the timeout in seconds.
     """
     try:
-        timeout = float(os.environ.get('ASYNC_TEST_TIMEOUT'))
+        timeout = float(os.environ.get("ASYNC_TEST_TIMEOUT"))
         return max(timeout, default)
     except (ValueError, TypeError):
         return default
@@ -129,7 +130,7 @@ def get_async_test_timeout(default=5):
 class FailPoint:
     def __init__(self, client, command_args):
         self.client = client
-        self.cmd_on = SON([('configureFailPoint', 'failCommand')])
+        self.cmd_on = SON([("configureFailPoint", "failCommand")])
         self.cmd_on.update(command_args)
 
     async def __aenter__(self):
@@ -137,5 +138,5 @@ class FailPoint:
 
     async def __aexit__(self, exc_type, exc, tb):
         await self.client.admin.command(
-            'configureFailPoint', self.cmd_on['configureFailPoint'],
-            mode='off')
+            "configureFailPoint", self.cmd_on["configureFailPoint"], mode="off"
+        )

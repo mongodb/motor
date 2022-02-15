@@ -36,175 +36,146 @@ import synchro
 
 excluded_modules = [
     # Exclude some PyMongo tests that can't be applied to Synchro.
-    'test.test_cursor_manager',
-    'test.test_examples',
-    'test.test_threads',
-    'test.test_pooling',
-    'test.test_legacy_api',
-    'test.test_saslprep',
-
+    "test.test_cursor_manager",
+    "test.test_examples",
+    "test.test_threads",
+    "test.test_pooling",
+    "test.test_legacy_api",
+    "test.test_saslprep",
     # Complex PyMongo-specific mocking.
-    'test.test_replica_set_reconfig',
-
+    "test.test_replica_set_reconfig",
     # Accesses PyMongo internals.
-    'test.test_retryable_writes',
-
+    "test.test_retryable_writes",
     # Accesses PyMongo internals. Tested directly in Motor.
-    'test.test_session',
-
+    "test.test_session",
     # Deprecated in PyMongo, removed in Motor 2.0.
-    'test.test_gridfs',
+    "test.test_gridfs",
 ]
 
 
 excluded_tests = [
     # Motor's reprs aren't the same as PyMongo's.
-    '*.test_repr',
-    'TestClient.test_unix_socket',
-
+    "*.test_repr",
+    "TestClient.test_unix_socket",
     # Motor extends the handshake metadata.
-    'ClientUnitTest.test_metadata',
-
+    "ClientUnitTest.test_metadata",
     # Lazy-connection tests require multithreading; we test concurrent
     # lazy connection directly.
-    'TestClientLazyConnect.*',
-
+    "TestClientLazyConnect.*",
     # Motor doesn't support forking or threading.
-    '*.test_interrupt_signal',
-    'TestSCRAM.test_scram_threaded',
-    'TestGSSAPI.test_gssapi_threaded',
-    'TestCursor.test_concurrent_close',
+    "*.test_interrupt_signal",
+    "TestSCRAM.test_scram_threaded",
+    "TestGSSAPI.test_gssapi_threaded",
+    "TestCursor.test_concurrent_close",
     # These are in test_gridfs_bucket.
-    'TestGridfs.test_threaded_reads',
-    'TestGridfs.test_threaded_writes',
-
+    "TestGridfs.test_threaded_reads",
+    "TestGridfs.test_threaded_writes",
     # Can't do MotorCollection(name, create=True), Motor constructors do no I/O.
-    'TestCollection.test_create',
-
+    "TestCollection.test_create",
     # Motor doesn't support PyMongo's syntax, db.system_js['my_func'] = "code",
     # users should just use system.js as a regular collection.
-    'TestDatabase.test_system_js',
-    'TestDatabase.test_system_js_list',
-
+    "TestDatabase.test_system_js",
+    "TestDatabase.test_system_js_list",
     # Requires indexing / slicing cursors, which Motor doesn't do, see MOTOR-84.
-    'TestCollection.test_min_query',
-    'TestCursor.test_clone',
-    'TestCursor.test_clone_empty',
-    'TestCursor.test_count_with_limit_and_skip',
-    'TestCursor.test_getitem_numeric_index',
-    'TestCursor.test_getitem_slice_index',
-    'TestCursor.test_tailable',
-    'TestRawBatchCursor.test_get_item',
-    'TestRawBatchCommandCursor.test_get_item',
-
+    "TestCollection.test_min_query",
+    "TestCursor.test_clone",
+    "TestCursor.test_clone_empty",
+    "TestCursor.test_count_with_limit_and_skip",
+    "TestCursor.test_getitem_numeric_index",
+    "TestCursor.test_getitem_slice_index",
+    "TestCursor.test_tailable",
+    "TestRawBatchCursor.test_get_item",
+    "TestRawBatchCommandCursor.test_get_item",
     # No context-manager protocol for MotorCursor.
-    'TestCursor.test_with_statement',
-
+    "TestCursor.test_with_statement",
     # Motor's cursors initialize lazily.
-    'TestRawBatchCommandCursor.test_monitoring',
-
+    "TestRawBatchCommandCursor.test_monitoring",
     # Can't iterate a GridOut in Motor.
-    'TestGridFile.test_iterator',
-    'TestGridfs.test_missing_length_iter',
-
+    "TestGridFile.test_iterator",
+    "TestGridfs.test_missing_length_iter",
     # No context-manager protocol for MotorGridIn, and can't set attrs.
-    'TestGridFile.test_context_manager',
-    'TestGridFile.test_grid_in_default_opts',
-    'TestGridFile.test_set_after_close',
-
+    "TestGridFile.test_context_manager",
+    "TestGridFile.test_grid_in_default_opts",
+    "TestGridFile.test_set_after_close",
     # GridOut always connects lazily in Motor.
-    'TestGridFile.test_grid_out_lazy_connect',
-    'TestGridfs.test_gridfs_lazy_connect',  # In test_gridfs_bucket.
-
+    "TestGridFile.test_grid_out_lazy_connect",
+    "TestGridfs.test_gridfs_lazy_connect",  # In test_gridfs_bucket.
     # Complex PyMongo-specific mocking.
-    '*.test_wire_version',
-    'TestClient.test_heartbeat_frequency_ms',
-    'TestExhaustCursor.*',
-    'TestHeartbeatMonitoring.*',
-    'TestMongoClientFailover.*',
-    'TestMongosLoadBalancing.*',
-    'TestReplicaSetClientInternalIPs.*',
-    'TestReplicaSetClientMaxWriteBatchSize.*',
-    'TestSSL.test_system_certs_config_error',
-
+    "*.test_wire_version",
+    "TestClient.test_heartbeat_frequency_ms",
+    "TestExhaustCursor.*",
+    "TestHeartbeatMonitoring.*",
+    "TestMongoClientFailover.*",
+    "TestMongosLoadBalancing.*",
+    "TestReplicaSetClientInternalIPs.*",
+    "TestReplicaSetClientMaxWriteBatchSize.*",
+    "TestSSL.test_system_certs_config_error",
     # Motor is correct here, it's just unreliable on slow CI servers.
-    'TestReplicaSetClient.test_timeout_does_not_mark_member_down',
-    'TestCMAP.test_cmap_wait_queue_timeout_must_aggressively_timeout_threads_enqueued_longer_than_waitQueueTimeoutMS',
-
+    "TestReplicaSetClient.test_timeout_does_not_mark_member_down",
+    "TestCMAP.test_cmap_wait_queue_timeout_must_aggressively_timeout_threads_enqueued_longer_than_waitQueueTimeoutMS",
     # Accesses PyMongo internals.
-    'TestClient.test_close_kills_cursors',
-    'TestClient.test_stale_getmore',
-    'TestClient.test_direct_connection',
-    'TestCollection.test_aggregation_cursor',
-    'TestCommandAndReadPreference.*',
-    'TestCommandMonitoring.test_get_more_failure',
-    'TestCommandMonitoring.test_sensitive_commands',
-    'TestCursor.test_allow_disk_use',
-    'TestCursor.test_close_kills_cursor_synchronously',
-    'TestCursor.test_delete_not_initialized',
-    'TestGridFile.test_grid_out_cursor_options',
-    'TestGridFile.test_survive_cursor_not_found',
-    'TestMaxStaleness.test_last_write_date',
-    'TestMaxStaleness.test_last_write_date_absent',
-    'TestReplicaSetClient.test_kill_cursor_explicit_primary',
-    'TestReplicaSetClient.test_kill_cursor_explicit_secondary',
-    'TestSelections.test_bool',
-
+    "TestClient.test_close_kills_cursors",
+    "TestClient.test_stale_getmore",
+    "TestClient.test_direct_connection",
+    "TestCollection.test_aggregation_cursor",
+    "TestCommandAndReadPreference.*",
+    "TestCommandMonitoring.test_get_more_failure",
+    "TestCommandMonitoring.test_sensitive_commands",
+    "TestCursor.test_allow_disk_use",
+    "TestCursor.test_close_kills_cursor_synchronously",
+    "TestCursor.test_delete_not_initialized",
+    "TestGridFile.test_grid_out_cursor_options",
+    "TestGridFile.test_survive_cursor_not_found",
+    "TestMaxStaleness.test_last_write_date",
+    "TestMaxStaleness.test_last_write_date_absent",
+    "TestReplicaSetClient.test_kill_cursor_explicit_primary",
+    "TestReplicaSetClient.test_kill_cursor_explicit_secondary",
+    "TestSelections.test_bool",
     # Deprecated in PyMongo, removed in Motor 2.0.
-    'TestDatabase.test_collection_names',
-    'TestDatabase.test_errors',
-    'TestDatabase.test_eval',
-    'TestCollation.*',
-    'TestCollection.test_find_one_and_write_concern',
-    'TestCollection.test_parallel_scan',
-    'TestCollection.test_parallel_scan_max_time_ms',
-    'TestCollection.test_write_error_text_handling',
-    'TestClient.test_database_names',
-    'TestCollectionWCustomType.test_find_and_modify_w_custom_type_decoder',
-
-    'TestBinary.test_uuid_queries',
-    'TestCursor.test_comment',
-    'TestCursor.test_where',
-    'TestGridfs.test_gridfs_find',
-
+    "TestDatabase.test_collection_names",
+    "TestDatabase.test_errors",
+    "TestDatabase.test_eval",
+    "TestCollation.*",
+    "TestCollection.test_find_one_and_write_concern",
+    "TestCollection.test_parallel_scan",
+    "TestCollection.test_parallel_scan_max_time_ms",
+    "TestCollection.test_write_error_text_handling",
+    "TestClient.test_database_names",
+    "TestCollectionWCustomType.test_find_and_modify_w_custom_type_decoder",
+    "TestBinary.test_uuid_queries",
+    "TestCursor.test_comment",
+    "TestCursor.test_where",
+    "TestGridfs.test_gridfs_find",
     # Tests that use "authenticate" or "logoout", removed in Motor 2.0.
-    'TestSASLPlain.test_sasl_plain_bad_credentials',
-    'TestSCRAM.test_scram',
-    'TestSCRAMSHA1.test_scram_sha1',
-    'TestThreadedAuth.*',
-
+    "TestSASLPlain.test_sasl_plain_bad_credentials",
+    "TestSCRAM.test_scram",
+    "TestSCRAMSHA1.test_scram_sha1",
+    "TestThreadedAuth.*",
     # Uses "collection_names", deprecated in PyMongo, removed in Motor 2.0.
-    'TestSingleSecondaryOk.test_reads_from_secondary',
-
+    "TestSingleSecondaryOk.test_reads_from_secondary",
     # Slow.
-    'TestDatabase.test_collection_names_single_socket',
-    'TestDatabase.test_list_collection_names',
-
+    "TestDatabase.test_collection_names_single_socket",
+    "TestDatabase.test_list_collection_names",
     # MOTOR-425 these tests fail with duplicate key errors.
-    'TestClusterChangeStreamsWCustomTypes.*',
-    'TestCollectionChangeStreamsWCustomTypes.*',
-    'TestDatabaseChangeStreamsWCustomTypes.*',
-
+    "TestClusterChangeStreamsWCustomTypes.*",
+    "TestCollectionChangeStreamsWCustomTypes.*",
+    "TestDatabaseChangeStreamsWCustomTypes.*",
     # Tests that use warnings.catch_warnings which don't show up in Motor.
-    'TestCursor.test_min_max_without_hint',
-
+    "TestCursor.test_min_max_without_hint",
     # TODO: MOTOR-606
-    'TestTransactionsConvenientAPI.*',
-    'TestTransactions.test_create_collection',
-
+    "TestTransactionsConvenientAPI.*",
+    "TestTransactions.test_create_collection",
     # Motor's change streams need Python 3.5 to support async iteration but
     # these change streams tests spawn threads which don't work without an
     # IO loop.
-    '*.test_next_blocks',
-    '*.test_aggregate_cursor_blocks',
-
+    "*.test_next_blocks",
+    "*.test_aggregate_cursor_blocks",
     # Can't run these tests because they use threads.
-    '*.test_ignore_stale_connection_errors',
-    '*.test_discovery_and_monitoring_integration_find_shutdown_error_Concurrent_shutdown_error_on_find',
-    '*.test_discovery_and_monitoring_integration_insert_shutdown_error_Concurrent_shutdown_error_on_insert',
-
+    "*.test_ignore_stale_connection_errors",
+    "*.test_discovery_and_monitoring_integration_find_shutdown_error_Concurrent_shutdown_error_on_find",
+    "*.test_discovery_and_monitoring_integration_insert_shutdown_error_Concurrent_shutdown_error_on_insert",
     # Needs synchro.GridFS class, see MOTOR-609.
-    'TestTransactions.test_gridfs_does_not_support_transactions',
+    "TestTransactions.test_gridfs_does_not_support_transactions",
 ]
 
 
@@ -213,7 +184,7 @@ excluded_tests_matched = set()
 
 
 class SynchroNosePlugin(Plugin):
-    name = 'synchro'
+    name = "synchro"
 
     def __init__(self, *args, **kwargs):
         # We need a standard Nose selector in order to filter out methods that
@@ -228,12 +199,12 @@ class SynchroNosePlugin(Plugin):
     def wantModule(self, module):
         # Depending on PYTHONPATH, Motor's direct tests may be imported - don't
         # run them now.
-        if module.__name__.startswith('test.test_motor_'):
+        if module.__name__.startswith("test.test_motor_"):
             return False
 
         for module_name in excluded_modules:
-            if module_name.endswith('*'):
-                if module.__name__.startswith(module_name.rstrip('*')):
+            if module_name.endswith("*"):
+                if module.__name__.startswith(module_name.rstrip("*")):
                     # E.g., test_motor_cursor matches "test_motor_*".
                     excluded_modules_matched.add(module_name)
                     return False
@@ -247,22 +218,23 @@ class SynchroNosePlugin(Plugin):
     def wantFunction(self, fn):
         # PyMongo's test generators run at import time; tell Nose not to run
         # them as unittests.
-        if fn.__name__ in ('test_cases',
-                           'create_spec_test',
-                           'create_test',
-                           'create_tests',
-                           'create_connection_string_test',
-                           'create_document_test',
-                           'create_operation_test',
-                           'create_selection_tests',
-                           'generate_test_classes',
-                           ):
+        if fn.__name__ in (
+            "test_cases",
+            "create_spec_test",
+            "create_test",
+            "create_tests",
+            "create_connection_string_test",
+            "create_document_test",
+            "create_operation_test",
+            "create_selection_tests",
+            "generate_test_classes",
+        ):
             return False
 
     def wantClass(self, cls):
         # PyMongo's test generator classes run at import time; tell Nose not
         # to run them as unittests.
-        if cls.__name__ in ('TestCreator',):
+        if cls.__name__ in ("TestCreator",):
             return False
 
     def wantMethod(self, method):
@@ -270,19 +242,18 @@ class SynchroNosePlugin(Plugin):
         if not self.selector.matches(method.__name__):
             return False
 
-        if method.__name__ in ('run_test_ops', 'maybe_skip_test'):
+        if method.__name__ in ("run_test_ops", "maybe_skip_test"):
             return False
 
         for excluded_name in excluded_tests:
             classname = method.__self__.__class__.__name__
 
             # Should we exclude this method's whole TestCase?
-            suite_name, method_name = excluded_name.split('.')
-            suite_matches = suite_name in [classname, '*']
+            suite_name, method_name = excluded_name.split(".")
+            suite_matches = suite_name in [classname, "*"]
 
             # Should we exclude this particular method?
-            method_matches = (
-                method.__name__ == method_name or method_name == '*')
+            method_matches = method.__name__ == method_name or method_name == "*"
 
             if suite_matches and method_matches:
                 excluded_tests_matched.add(excluded_name)
@@ -305,11 +276,11 @@ class SynchroModuleFinder(importlib.abc.MetaPathFinder):
 
 class SynchroModuleLoader(importlib.abc.Loader):
     def patch_spec(self, fullname):
-        parts = fullname.split('.')
-        if parts[-1] in ('gridfs', 'pymongo'):
+        parts = fullname.split(".")
+        if parts[-1] in ("gridfs", "pymongo"):
             # E.g. "import pymongo"
             return True
-        elif len(parts) >= 2 and parts[-2] in ('gridfs', 'pymongo'):
+        elif len(parts) >= 2 and parts[-2] in ("gridfs", "pymongo"):
             # E.g. "import pymongo.mongo_client"
             return True
 
@@ -326,7 +297,7 @@ class SynchroModuleLoader(importlib.abc.Loader):
         return None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         # Enable the fault handler to dump the traceback of each running
         # thread
@@ -335,7 +306,7 @@ if __name__ == '__main__':
 
         faulthandler.enable()
         # Dump the tracebacks of all threads after 25 minutes.
-        if hasattr(faulthandler, 'dump_traceback_later'):
+        if hasattr(faulthandler, "dump_traceback_later"):
             faulthandler.dump_traceback_later(25 * 60)
     except ImportError:
         pass
@@ -346,38 +317,38 @@ if __name__ == '__main__':
     # Delete the cached pymongo/gridfs modules so that SynchroModuleFinder will
     # be invoked in Python 3, see
     # https://docs.python.org/3/reference/import.html#import-hooks
-    for n in ['pymongo',
-              'pymongo.collection',
-              'pymongo.client_session',
-              'pymongo.command_cursor',
-              'pymongo.change_stream',
-              'pymongo.cursor',
-              'pymongo.encryption',
-              'pymongo.encryption_options',
-              'pymongo.mongo_client',
-              'pymongo.database',
-              'gridfs',
-              'gridfs.grid_file']:
+    for n in [
+        "pymongo",
+        "pymongo.collection",
+        "pymongo.client_session",
+        "pymongo.command_cursor",
+        "pymongo.change_stream",
+        "pymongo.cursor",
+        "pymongo.encryption",
+        "pymongo.encryption_options",
+        "pymongo.mongo_client",
+        "pymongo.database",
+        "gridfs",
+        "gridfs.grid_file",
+    ]:
         sys.modules.pop(n)
 
-    if '--check-exclude-patterns' in sys.argv:
+    if "--check-exclude-patterns" in sys.argv:
         check_exclude_patterns = True
-        sys.argv.remove('--check-exclude-patterns')
+        sys.argv.remove("--check-exclude-patterns")
     else:
         check_exclude_patterns = False
 
     success = nose.run(
-        config=Config(plugins=PluginManager()),
-        addplugins=[SynchroNosePlugin(), Skip(), Xunit()])
+        config=Config(plugins=PluginManager()), addplugins=[SynchroNosePlugin(), Skip(), Xunit()]
+    )
 
     if not success:
         sys.exit(1)
 
     if check_exclude_patterns:
         unused_module_pats = set(excluded_modules) - excluded_modules_matched
-        assert not unused_module_pats, "Unused module patterns: %s" % (
-            unused_module_pats, )
+        assert not unused_module_pats, "Unused module patterns: %s" % (unused_module_pats,)
 
         unused_test_pats = set(excluded_tests) - excluded_tests_matched
-        assert not unused_test_pats, "Unused test patterns: %s" % (
-            unused_test_pats, )
+        assert not unused_test_pats, "Unused test patterns: %s" % (unused_test_pats,)

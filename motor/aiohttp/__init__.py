@@ -24,10 +24,9 @@ import mimetypes
 
 import aiohttp.web
 import gridfs
-from motor.motor_asyncio import (AsyncIOMotorDatabase,
-                                 AsyncIOMotorGridFSBucket)
-from motor.motor_gridfs import _hash_gridout
 
+from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorGridFSBucket
+from motor.motor_gridfs import _hash_gridout
 
 
 def get_gridfs_file(bucket, filename, request):
@@ -112,12 +111,11 @@ def set_extra_headers(response, gridout):
 
 def _config_error(request):
     try:
-        formatter = request.match_info.route.resource.get_info()['formatter']
-        msg = ('Bad AIOHTTPGridFS route "%s", requires a {filename} variable' %
-               formatter)
+        formatter = request.match_info.route.resource.get_info()["formatter"]
+        msg = 'Bad AIOHTTPGridFS route "%s", requires a {filename} variable' % formatter
     except (KeyError, AttributeError):
         # aiohttp API changed? Fall back to simpler error message.
-        msg = ('Bad AIOHTTPGridFS route for request: %s' % request)
+        msg = "Bad AIOHTTPGridFS route for request: %s" % request
 
     raise aiohttp.web.HTTPInternalServerError(text=msg) from None
 
@@ -157,15 +155,18 @@ class AIOHTTPGridFS:
     .. _GridFS: https://docs.mongodb.com/manual/core/gridfs/
     """
 
-    def __init__(self,
-                 database,
-                 root_collection='fs',
-                 get_gridfs_file=get_gridfs_file,
-                 get_cache_time=get_cache_time,
-                 set_extra_headers=set_extra_headers):
+    def __init__(
+        self,
+        database,
+        root_collection="fs",
+        get_gridfs_file=get_gridfs_file,
+        get_cache_time=get_cache_time,
+        set_extra_headers=set_extra_headers,
+    ):
         if not isinstance(database, AsyncIOMotorDatabase):
-            raise TypeError("First argument to AIOHTTPGridFS must be "
-                            "AsyncIOMotorDatabase, not %r" % database)
+            raise TypeError(
+                "First argument to AIOHTTPGridFS must be " "AsyncIOMotorDatabase, not %r" % database
+            )
 
         self._database = database
         self._bucket = AsyncIOMotorGridFSBucket(self._database, root_collection)
@@ -176,18 +177,17 @@ class AIOHTTPGridFS:
     async def __call__(self, request):
         """Send filepath to client using request."""
         try:
-            filename = request.match_info['filename']
+            filename = request.match_info["filename"]
         except KeyError:
             _config_error(request)
 
-        if request.method not in ('GET', 'HEAD'):
+        if request.method not in ("GET", "HEAD"):
             raise aiohttp.web.HTTPMethodNotAllowed(
-                method=request.method, allowed_methods={'GET', 'HEAD'})
+                method=request.method, allowed_methods={"GET", "HEAD"}
+            )
 
         try:
-            gridout = await self._get_gridfs_file(self._bucket,
-                                                  filename,
-                                                  request)
+            gridout = await self._get_gridfs_file(self._bucket, filename, request)
         except gridfs.NoFile:
             raise aiohttp.web.HTTPNotFound(text=request.path)
 
@@ -222,7 +222,7 @@ class AIOHTTPGridFS:
         resp.content_length = gridout.length
         await resp.prepare(request)
 
-        if request.method == 'GET':
+        if request.method == "GET":
             written = 0
             while written < gridout.length:
                 # Reading chunk_size at a time minimizes buffering.
@@ -243,14 +243,11 @@ class AIOHTTPGridFS:
         resp.headers["Etag"] = '"%s"' % checksum
 
         # Overridable method get_cache_time.
-        cache_time = self._get_cache_time(path,
-                                          gridout.upload_date,
-                                          gridout.content_type)
+        cache_time = self._get_cache_time(path, gridout.upload_date, gridout.content_type)
 
         if cache_time > 0:
             resp.headers["Expires"] = (
-                datetime.datetime.utcnow() +
-                datetime.timedelta(seconds=cache_time)
+                datetime.datetime.utcnow() + datetime.timedelta(seconds=cache_time)
             ).strftime("%a, %d %b %Y %H:%M:%S GMT")
 
             resp.headers["Cache-Control"] = "max-age=" + str(cache_time)

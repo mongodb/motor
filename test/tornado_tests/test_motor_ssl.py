@@ -26,14 +26,15 @@ except ImportError:
     # Python 3.
     from urllib.parse import quote_plus
 
+import test
+from test import SkipTest
+from test.test_environment import CA_PEM, CLIENT_PEM, env
+from test.tornado_tests import MotorTest
+
 from pymongo.errors import ConfigurationError, ConnectionFailure
 from tornado.testing import gen_test
 
 import motor
-import test
-from test import SkipTest
-from test.tornado_tests import MotorTest
-from test.test_environment import CA_PEM, CLIENT_PEM, env
 
 # Start a mongod instance like:
 #
@@ -55,11 +56,10 @@ class MotorSSLTest(MotorTest):
         super().setUp()
 
     def test_config_ssl(self):
-        self.assertRaises(ValueError, motor.MotorClient, tls='foo')
-        self.assertRaises(ConfigurationError,
-                          motor.MotorClient,
-                          tls=False,
-                          tlsCertificateKeyFile=CLIENT_PEM)
+        self.assertRaises(ValueError, motor.MotorClient, tls="foo")
+        self.assertRaises(
+            ConfigurationError, motor.MotorClient, tls=False, tlsCertificateKeyFile=CLIENT_PEM
+        )
 
         self.assertRaises(IOError, motor.MotorClient, tlsCertificateKeyFile="NoFile")
         self.assertRaises(TypeError, motor.MotorClient, tlsCertificateKeyFile=True)
@@ -72,16 +72,18 @@ class MotorSSLTest(MotorTest):
         if test.env.auth:
             raise SkipTest("can't test with auth")
 
-        client = motor.MotorClient(env.host, env.port,
-                                   tlsCertificateKeyFile=CLIENT_PEM,
-                                   tlsCAFile=CA_PEM,
-                                   io_loop=self.io_loop)
+        client = motor.MotorClient(
+            env.host,
+            env.port,
+            tlsCertificateKeyFile=CLIENT_PEM,
+            tlsCAFile=CA_PEM,
+            io_loop=self.io_loop,
+        )
 
         await client.db.collection.find_one()
-        response = await client.admin.command('ismaster')
-        if 'setName' in response:
-            client = self.motor_rsc(tlsCertificateKeyFile=CLIENT_PEM,
-                                    tlsCAFile=CA_PEM)
+        response = await client.admin.command("ismaster")
+        if "setName" in response:
+            client = self.motor_rsc(tlsCertificateKeyFile=CLIENT_PEM, tlsCAFile=CA_PEM)
             await client.db.collection.find_one()
 
     @gen_test
@@ -93,21 +95,25 @@ class MotorSSLTest(MotorTest):
             raise SkipTest("can't test with auth")
 
         client = motor.MotorClient(
-            env.host, env.port,
+            env.host,
+            env.port,
             tlsCertificateKeyFile=CLIENT_PEM,
             tlsCAFile=CA_PEM,
-            io_loop=self.io_loop)
+            io_loop=self.io_loop,
+        )
 
         await client.db.collection.find_one()
-        response = await client.admin.command('ismaster')
+        response = await client.admin.command("ismaster")
 
-        if 'setName' in response:
+        if "setName" in response:
             client = motor.MotorClient(
-                env.host, env.port,
-                replicaSet=response['setName'],
+                env.host,
+                env.port,
+                replicaSet=response["setName"],
                 tlsCertificateKeyFile=CLIENT_PEM,
                 tlsCAFile=CA_PEM,
-                io_loop=self.io_loop)
+                io_loop=self.io_loop,
+            )
 
             await client.db.collection.find_one()
 
@@ -124,9 +130,10 @@ class MotorSSLTest(MotorTest):
             tlsCertificateKeyFile=CLIENT_PEM,
             tlsAllowInvalidCertificates=True,
             tlsCAFile=CA_PEM,
-            io_loop=self.io_loop)
+            io_loop=self.io_loop,
+        )
 
-        await client.admin.command('ismaster')
+        await client.admin.command("ismaster")
 
     @gen_test
     async def test_cert_ssl_validation_hostname_fail(self):
@@ -137,12 +144,14 @@ class MotorSSLTest(MotorTest):
             raise SkipTest("can't test with auth")
 
         client = motor.MotorClient(
-            env.host, env.port,
+            env.host,
+            env.port,
             tlsCertificateKeyFile=CLIENT_PEM,
             tlsCAFile=CA_PEM,
-            io_loop=self.io_loop)
+            io_loop=self.io_loop,
+        )
 
-        response = await client.admin.command('ismaster')
+        response = await client.admin.command("ismaster")
         with self.assertRaises(ConnectionFailure):
             # Create client with hostname 'server', not 'localhost',
             # which is what the server cert presents.
@@ -151,18 +160,20 @@ class MotorSSLTest(MotorTest):
                 serverSelectionTimeoutMS=100,
                 tlsCertificateKeyFile=CLIENT_PEM,
                 tlsCAFile=CA_PEM,
-                io_loop=self.io_loop)
+                io_loop=self.io_loop,
+            )
 
             await client.db.collection.find_one()
 
-        if 'setName' in response:
+        if "setName" in response:
             with self.assertRaises(ConnectionFailure):
                 client = motor.MotorClient(
                     test.env.fake_hostname_uri,
                     serverSelectionTimeoutMS=100,
-                    replicaSet=response['setName'],
+                    replicaSet=response["setName"],
                     tlsCertificateKeyFile=CLIENT_PEM,
                     tlsCAFile=CA_PEM,
-                    io_loop=self.io_loop)
+                    io_loop=self.io_loop,
+                )
 
                 await client.db.collection.find_one()

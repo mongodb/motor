@@ -14,11 +14,11 @@
 
 """Motor, an asynchronous driver for MongoDB."""
 
-version_tuple = (2, 5, 2, 'dev0')
+version_tuple = (2, 5, 2, "dev0")
 
 
 def get_version_string():
-    return '.'.join(map(str, version_tuple))
+    return ".".join(map(str, version_tuple))
 
 
 version = get_version_string()
@@ -32,14 +32,14 @@ except ImportError:
 else:
     # For backwards compatibility with Motor 0.4, export Motor's Tornado classes
     # at module root. This may change in the future. First get __all__.
-    from .motor_tornado import *
-
-    # Now some classes that aren't in __all__ but might be expected.
-    from .motor_tornado import (MotorCollection,
-                                MotorDatabase,
-                                MotorGridFSBucket,
-                                MotorGridIn,
-                                MotorGridOut)
-
     # Make "from motor import *" the same as "from motor.motor_tornado import *"
-    from .motor_tornado import __all__
+    # Now some classes that aren't in __all__ but might be expected.
+    from .motor_tornado import *
+    from .motor_tornado import (
+        MotorCollection,
+        MotorDatabase,
+        MotorGridFSBucket,
+        MotorGridIn,
+        MotorGridOut,
+        __all__,
+    )

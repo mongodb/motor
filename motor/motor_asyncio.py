@@ -18,12 +18,11 @@ from . import core, motor_gridfs
 from .frameworks import asyncio as asyncio_framework
 from .metaprogramming import create_class_with_framework
 
-__all__ = ['AsyncIOMotorClient','AsyncIOMotorClientEncryption']
+__all__ = ["AsyncIOMotorClient", "AsyncIOMotorClientEncryption"]
 
 
 def create_asyncio_class(cls):
-    return create_class_with_framework(cls, asyncio_framework,
-                                       'motor.motor_asyncio')
+    return create_class_with_framework(cls, asyncio_framework, "motor.motor_asyncio")
 
 
 AsyncIOMotorClient = create_asyncio_class(core.AgnosticClient)
@@ -32,45 +31,34 @@ AsyncIOMotorClient = create_asyncio_class(core.AgnosticClient)
 AsyncIOMotorClientSession = create_asyncio_class(core.AgnosticClientSession)
 
 
-AsyncIOMotorDatabase = create_asyncio_class(
-    core.AgnosticDatabase)
+AsyncIOMotorDatabase = create_asyncio_class(core.AgnosticDatabase)
 
 
-AsyncIOMotorCollection = create_asyncio_class(
-    core.AgnosticCollection)
+AsyncIOMotorCollection = create_asyncio_class(core.AgnosticCollection)
 
 
-AsyncIOMotorCursor = create_asyncio_class(
-    core.AgnosticCursor)
+AsyncIOMotorCursor = create_asyncio_class(core.AgnosticCursor)
 
 
-AsyncIOMotorCommandCursor = create_asyncio_class(
-    core.AgnosticCommandCursor)
+AsyncIOMotorCommandCursor = create_asyncio_class(core.AgnosticCommandCursor)
 
 
-AsyncIOMotorLatentCommandCursor = create_asyncio_class(
-    core.AgnosticLatentCommandCursor)
+AsyncIOMotorLatentCommandCursor = create_asyncio_class(core.AgnosticLatentCommandCursor)
 
 
-AsyncIOMotorChangeStream = create_asyncio_class(
-    core.AgnosticChangeStream)
+AsyncIOMotorChangeStream = create_asyncio_class(core.AgnosticChangeStream)
 
 
-AsyncIOMotorGridFSBucket = create_asyncio_class(
-    motor_gridfs.AgnosticGridFSBucket)
+AsyncIOMotorGridFSBucket = create_asyncio_class(motor_gridfs.AgnosticGridFSBucket)
 
 
-AsyncIOMotorGridIn = create_asyncio_class(
-    motor_gridfs.AgnosticGridIn)
+AsyncIOMotorGridIn = create_asyncio_class(motor_gridfs.AgnosticGridIn)
 
 
-AsyncIOMotorGridOut = create_asyncio_class(
-    motor_gridfs.AgnosticGridOut)
+AsyncIOMotorGridOut = create_asyncio_class(motor_gridfs.AgnosticGridOut)
 
 
-AsyncIOMotorGridOutCursor = create_asyncio_class(
-    motor_gridfs.AgnosticGridOutCursor)
+AsyncIOMotorGridOutCursor = create_asyncio_class(motor_gridfs.AgnosticGridOutCursor)
 
 
-AsyncIOMotorClientEncryption = create_asyncio_class(
-    core.AgnosticClientEncryption)
+AsyncIOMotorClientEncryption = create_asyncio_class(core.AgnosticClientEncryption)
