@@ -1112,32 +1112,32 @@ class TestExamples(AsyncIOTestCase):
     @env.require_version_min(4, 7)
     @asyncio_test
     async def test_versioned_api(self):
-        # Versioned API examples
+        # Stable API examples
         # Use connect=False to reduce overhead as client is not used to run
         # any operations.
         AsyncIOMotorClient = lambda _, server_api: self.asyncio_client(
             server_api=server_api, connect=False)
         uri = None
 
-        # Start Versioned API Example 1
+        # Start Stable API Example 1
         from pymongo.server_api import ServerApi
         client = AsyncIOMotorClient(uri, server_api=ServerApi("1"))
-        # End Versioned API Example 1
+        # End Stable API Example 1
 
-        # Start Versioned API Example 2
+        # Start Stable API Example 2
         client = AsyncIOMotorClient(
             uri, server_api=ServerApi("1", strict=True))
-        # End Versioned API Example 2
+        # End Stable API Example 2
 
-        # Start Versioned API Example 3
+        # Start Stable API Example 3
         client = AsyncIOMotorClient(
             uri, server_api=ServerApi("1", strict=False))
-        # End Versioned API Example 3
+        # End Stable API Example 3
 
-        # Start Versioned API Example 4
+        # Start Stable API Example 4
         client = AsyncIOMotorClient(
             uri, server_api=ServerApi("1", deprecation_errors=True))
-        # End Versioned API Example 4
+        # End Stable API Example 4
 
     @env.require_version_min(4, 7)
     # Only run on RS until https://jira.mongodb.org/browse/SERVER-58785 is resolved.
@@ -1147,7 +1147,7 @@ class TestExamples(AsyncIOTestCase):
         client = self.asyncio_client(server_api=ServerApi("1", strict=True))
         await client.db.sales.drop()
 
-        # Start Versioned API Example 5
+        # Start Stable API Example 5
         def strptime(s):
             return datetime.datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ")
         await client.db.sales.insert_many([
@@ -1160,21 +1160,21 @@ class TestExamples(AsyncIOTestCase):
             {"_id": 7, "item": "xyz", "price": 5, "quantity": 10, "date": strptime("2021-02-15T14:12:12Z")},
             {"_id": 8, "item": "abc", "price": 10, "quantity": 5, "date": strptime("2021-03-16T20:20:13Z")}
         ])
-        # End Versioned API Example 5
+        # End Stable API Example 5
 
         with self.assertRaisesRegex(
                 OperationFailure, "Provided apiStrict:true, but the command "
                                   "count is not in API Version 1"):
             await client.db.command('count', 'sales', query={})
 
-        # Start Versioned API Example 6
+        # Start Stable API Example 6
         # pymongo.errors.OperationFailure: Provided apiStrict:true, but the command count is not in API Version 1, full error: {'ok': 0.0, 'errmsg': 'Provided apiStrict:true, but the command count is not in API Version 1', 'code': 323, 'codeName': 'APIStrictError'}
-        # End Versioned API Example 6
+        # End Stable API Example 6
 
-        # Start Versioned API Example 7
+        # Start Stable API Example 7
         await client.db.sales.count_documents({})
-        # End Versioned API Example 7
+        # End Stable API Example 7
 
-        # Start Versioned API Example 8
+        # Start Stable API Example 8
         # 8
-        # End Versioned API Example 8
+        # End Stable API Example 8
