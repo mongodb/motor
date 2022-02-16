@@ -19,7 +19,7 @@ import socket
 import sys
 import warnings
 from functools import wraps
-from test import SkipTest
+from unittest import SkipTest
 from test.utils import create_user
 from test.version import Version
 
