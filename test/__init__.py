@@ -16,6 +16,7 @@
 
 import logging
 import unittest
+from test.test_environment import CLIENT_PEM, db_user, env  # noqa: F401
 from unittest import SkipTest
 
 try:
