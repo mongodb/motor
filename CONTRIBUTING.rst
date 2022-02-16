@@ -43,9 +43,9 @@ port 27017:
 Running Linters
 ---------------
 
-PyMongo uses `pre-commit <https://pypi.org/project/pre-commit/>`_
+Motor uses `pre-commit <https://pypi.org/project/pre-commit/>`_
 for managing linting of the codebase.
-``pre-commit`` performs various checks on all files in PyMongo and uses tools
+``pre-commit`` performs various checks on all files in Motor and uses tools
 that help follow a consistent code style within the codebase.
 
 To set up ``pre-commit`` locally, run::
