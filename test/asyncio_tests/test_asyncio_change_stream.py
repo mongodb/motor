@@ -137,7 +137,7 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
 
         # New change stream with resume token.
         await coll.insert_one({"_id": 23})
-        change = await next(coll.watch(resume_after=change["_id"]))
+        change = await coll.watch(resume_after=change["_id"]).next()  # noqa: B305
         self.assertEqual(change["fullDocument"], {"_id": 23})
 
     @env.require_version_min(4, 2)
