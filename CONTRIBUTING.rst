@@ -55,7 +55,7 @@ To set up ``pre-commit`` locally, run::
 
 To run ``pre-commit`` manually, run::
 
-    > tox -e lint
+    > tox -e py3-lint
 
 General Guidelines
 ------------------
