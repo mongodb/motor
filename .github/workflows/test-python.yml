@@ -35,7 +35,6 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'setup.py'
       - name: Start MongoDB with Custom Options
-        if: ${{ startsWith(runner.os, 'macOS') }}
         run: |
           mkdir data
           mongod --fork --dbpath=$(pwd)/data --logpath=$PWD/mongo.log --setParameter enableTestCommands=1
