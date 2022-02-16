@@ -16,6 +16,8 @@ recursive-include doc *.bat
 recursive-include synchro *.py
 
 exclude .readthedocs.yaml
+exclude .git-blame-ignore-revs
+exclude .pre-commit-config.yaml
 exclude release.sh
 exclude ez_setup.py
 exclude RELEASE.rst
