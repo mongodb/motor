@@ -18,15 +18,14 @@ import asyncio
 import copy
 import threading
 import time
+from test import SkipTest, env
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.py35utils import wait_until
+from test.utils import get_async_test_timeout
 
 from pymongo.errors import InvalidOperation, OperationFailure
 
 from motor.frameworks.asyncio import max_workers
-
-from test import SkipTest, env
-from test.asyncio_tests import asyncio_test, AsyncIOTestCase
-from test.py35utils import wait_until
-from test.utils import get_async_test_timeout
 
 
 class TestAsyncIOChangeStream(AsyncIOTestCase):
@@ -39,7 +38,7 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
 
         # Ensure the collection exists.
         env.sync_cx.motor_test.test_collection.delete_many({})
-        env.sync_cx.motor_test.test_collection.insert_one({'_id': 1})
+        env.sync_cx.motor_test.test_collection.insert_one({"_id": 1})
 
     def wait_and_insert(self, change_stream, n=1):
         # The start time of the change stream is nondeterministic. Wait
@@ -94,35 +93,34 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         self.assertIsNone(doc)
 
         # Insert a change and ensure we see it via try_next.
-        idoc = {'_id': 1, 'data': 'abc'}
+        idoc = {"_id": 1, "data": "abc"}
         self.wait_and_insert(change_stream, [idoc])
         while change_stream.alive:
             change_doc = await change_stream.try_next()
             if change_doc is not None:
                 break
-        self.assertEqual(change_doc['fullDocument'], idoc)
+        self.assertEqual(change_doc["fullDocument"], idoc)
 
     @env.require_version_min(4, 0, 7)
     @asyncio_test
     async def test_async_try_next_updates_resume_token(self):
-        change_stream = self.collection.watch(
-            [{"$match": {"fullDocument.a": 10}}])
+        change_stream = self.collection.watch([{"$match": {"fullDocument.a": 10}}])
 
         # Get empty change, check non-empty resume token.
         _ = await change_stream.try_next()
         self.assertIsNotNone(change_stream.resume_token)
 
         # Insert some record that don't match the change stream filter.
-        self.wait_and_insert(change_stream, [{'a': 19}, {'a': 20}])
+        self.wait_and_insert(change_stream, [{"a": 19}, {"a": 20}])
 
         # Ensure we see a new resume token even though we see no changes.
         initial_resume_token = copy.copy(change_stream.resume_token)
+
         async def token_change():
             _ = await change_stream.try_next()
             return change_stream.resume_token != initial_resume_token
 
-        await wait_until(token_change, "see a new resume token",
-                         timeout=get_async_test_timeout())
+        await wait_until(token_change, "see a new resume token", timeout=get_async_test_timeout())
 
     @asyncio_test
     async def test_watch(self):
@@ -138,9 +136,9 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         change = await change_stream.next()
 
         # New change stream with resume token.
-        await coll.insert_one({'_id': 23})
-        change = await coll.watch(resume_after=change['_id']).next()
-        self.assertEqual(change['fullDocument'], {'_id': 23})
+        await coll.insert_one({"_id": 23})
+        change = await coll.watch(resume_after=change["_id"]).next()
+        self.assertEqual(change["fullDocument"], {"_id": 23})
 
     @env.require_version_min(4, 2)
     @asyncio_test
@@ -149,8 +147,7 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         await self.collection.insert_one({})
 
         # Create change stream before invalidate event.
-        change_stream = self.collection.watch(
-            [{'$match': {'operationType': 'invalidate'}}])
+        change_stream = self.collection.watch([{"$match": {"operationType": "invalidate"}}])
         _ = await change_stream.try_next()
 
         # Generate invalidate event and store corresponding resume token.
@@ -163,11 +160,11 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         resume_token = change_stream.resume_token
 
         # Recreate change stream and observe from invalidate event.
-        doc = {'_id': 'startAfterTest'}
+        doc = {"_id": "startAfterTest"}
         await self.collection.insert_one(doc)
         change_stream = self.collection.watch(start_after=resume_token)
         change = await change_stream.next()
-        self.assertEqual(doc, change['fullDocument'])
+        self.assertEqual(doc, change["fullDocument"])
 
     @asyncio_test
     async def test_close(self):
@@ -187,7 +184,7 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
     @asyncio_test
     async def test_missing_id(self):
         coll = self.collection
-        change_stream = coll.watch([{'$project': {'_id': 0}}])
+        change_stream = coll.watch([{"$project": {"_id": 0}}])
         future = change_stream.next()
         self.wait_and_insert(change_stream)
         with self.assertRaises((InvalidOperation, OperationFailure)):
@@ -219,13 +216,12 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
     @asyncio_test
     async def test_async_with_creates_cursor(self):
         coll = self.collection
-        await coll.insert_one({'_id': 1})
+        await coll.insert_one({"_id": 1})
         async with coll.watch() as stream:
-            self.assertEqual([{'_id': 1}],
-                             await coll.find().to_list(None))
-            await coll.insert_one({'_id': 2})
+            self.assertEqual([{"_id": 1}], await coll.find().to_list(None))
+            await coll.insert_one({"_id": 2})
             doc = await stream.next()
-            self.assertEqual({'_id': 2}, doc['fullDocument'])
+            self.assertEqual({"_id": 2}, doc["fullDocument"])
 
     @asyncio_test
     async def test_with_statement(self):
@@ -286,12 +282,14 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         streams = [self.collection.watch() for _ in range(max_workers)]
         tasks = [stream.next() for stream in streams]
         try:
+
             async def find_insert():
                 # Wait for all change streams to be created
                 while not all(stream.delegate for stream in streams):
-                    await asyncio.sleep(.1)
+                    await asyncio.sleep(0.1)
                 await self.collection.find_one()
                 await self.collection.insert_one({})
+
             tasks.extend([find_insert() for _ in range(10)])
             await asyncio.gather(*tasks)
         finally:

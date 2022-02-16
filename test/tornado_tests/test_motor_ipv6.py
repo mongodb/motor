@@ -14,41 +14,42 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+import test
 import unittest
+from test import SkipTest
+from test.test_environment import connected, db_password, db_user, env
+from test.tornado_tests import MotorTest
 
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from tornado.testing import gen_test
 
 import motor
-import test
-from test import SkipTest
-from test.test_environment import connected, db_user, db_password, env
-from test.tornado_tests import MotorTest
 
 
 class MotorIPv6Test(MotorTest):
     @gen_test
     async def test_ipv6(self):
-        assert env.host in ('localhost', '127.0.0.1'), (
-            "This unittest isn't written to test IPv6 with host %s" %
-            repr(env.host))
+        assert env.host in (
+            "localhost",
+            "127.0.0.1",
+        ), "This unittest isn't written to test IPv6 with host %s" % repr(env.host)
 
         try:
-            connected(MongoClient("[::1]",
-                                  username=db_user,
-                                  password=db_password,
-                                  serverSelectionTimeoutMS=100))
+            connected(
+                MongoClient(
+                    "[::1]", username=db_user, password=db_password, serverSelectionTimeoutMS=100
+                )
+            )
         except ConnectionFailure:
             # Either mongod was started without --ipv6
             # or the OS doesn't support it (or both).
             raise SkipTest("No IPV6")
 
         if test.env.auth:
-            cx_string = 'mongodb://%s:%s@[::1]:%d' % (
-                db_user, db_password, env.port)
+            cx_string = "mongodb://%s:%s@[::1]:%d" % (db_user, db_password, env.port)
         else:
-            cx_string = 'mongodb://[::1]:%d' % env.port
+            cx_string = "mongodb://[::1]:%d" % env.port
 
         cx = motor.MotorClient(cx_string, io_loop=self.io_loop)
         collection = cx.motor_test.test_collection
@@ -56,5 +57,5 @@ class MotorIPv6Test(MotorTest):
         self.assertTrue((await collection.find_one({"dummy": "object"})))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

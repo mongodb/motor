@@ -19,13 +19,13 @@ See "Frameworks" in the Developer Guide.
 
 import functools
 import os
-import tornado.process
 import warnings
-
 from concurrent.futures import ThreadPoolExecutor
-from tornado import concurrent, gen, ioloop, version as tornado_version
-from tornado.gen import chain_future, coroutine  # For framework interface.
 
+import tornado.process
+from tornado import concurrent, gen, ioloop
+from tornado import version as tornado_version
+from tornado.gen import chain_future, coroutine  # For framework interface.
 
 try:
     import contextvars
@@ -33,7 +33,7 @@ except ImportError:
     contextvars = None
 
 
-CLASS_PREFIX = ''
+CLASS_PREFIX = ""
 
 
 def get_event_loop():
@@ -46,16 +46,15 @@ def is_event_loop(loop):
 
 def check_event_loop(loop):
     if not is_event_loop(loop):
-        raise TypeError(
-            "io_loop must be instance of IOLoop, not %r" % loop)
+        raise TypeError("io_loop must be instance of IOLoop, not %r" % loop)
 
 
 def get_future(loop):
     return concurrent.Future()
 
 
-if 'MOTOR_MAX_WORKERS' in os.environ:
-    max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
+if "MOTOR_MAX_WORKERS" in os.environ:
+    max_workers = int(os.environ["MOTOR_MAX_WORKERS"])
 else:
     max_workers = tornado.process.cpu_count() * 5
 
@@ -67,8 +66,7 @@ def run_on_executor(loop, fn, *args, **kwargs):
         context = contextvars.copy_context()
         fn = functools.partial(context.run, fn)
 
-    return loop.run_in_executor(
-        _EXECUTOR, functools.partial(fn, *args, **kwargs))
+    return loop.run_in_executor(_EXECUTOR, functools.partial(fn, *args, **kwargs))
 
 
 def chain_return_value(future, loop, return_value):
@@ -114,6 +112,7 @@ def pymongo_class_wrapper(f, pymongo_class):
 
     See WrapAsync.
     """
+
     @functools.wraps(f)
     async def _wrapper(self, *args, **kwargs):
         result = await f(self, *args, **kwargs)
@@ -130,10 +129,12 @@ def pymongo_class_wrapper(f, pymongo_class):
 
 def yieldable(future):
     warnings.warn(
-        "The yieldable function is deprecated and will be removed in "
-        "Motor 3.0", DeprecationWarning, stacklevel=2)
+        "The yieldable function is deprecated and will be removed in " "Motor 3.0",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return future
 
 
 def platform_info():
-    return 'Tornado %s' % (tornado_version,)
+    return "Tornado %s" % (tornado_version,)

@@ -20,27 +20,30 @@ import traceback
 import unittest
 import warnings
 from functools import partial
+from test.asyncio_tests import (
+    AsyncIOMockServerTestCase,
+    AsyncIOTestCase,
+    asyncio_test,
+    get_command_line,
+    server_is_mongos,
+)
+from test.py35utils import wait_until
+from test.test_environment import env
+from test.utils import (
+    FailPoint,
+    TestListener,
+    get_async_test_timeout,
+    get_primary_pool,
+    one,
+    safe_get,
+)
 from unittest import SkipTest
 
 import bson
 from pymongo import CursorType
-from pymongo.errors import InvalidOperation, ExecutionTimeout
-from pymongo.errors import OperationFailure
+from pymongo.errors import ExecutionTimeout, InvalidOperation, OperationFailure
 
 from motor import motor_asyncio
-from test.utils import (one,
-                        FailPoint,
-                        get_async_test_timeout,
-                        get_primary_pool,
-                        safe_get,
-                        TestListener)
-from test.asyncio_tests import (asyncio_test,
-                                AsyncIOTestCase,
-                                AsyncIOMockServerTestCase,
-                                server_is_mongos,
-                                get_command_line)
-from test.py35utils import wait_until
-from test.test_environment import env
 
 
 class TestAsyncIOCursor(AsyncIOMockServerTestCase):
@@ -53,22 +56,20 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     async def test_count(self):
         await self.make_test_data()
         coll = self.collection
-        self.assertEqual(
-            100,
-            (await coll.count_documents({'_id': {'$gt': 99}})))
+        self.assertEqual(100, (await coll.count_documents({"_id": {"$gt": 99}})))
 
     @asyncio_test
     async def test_fetch_next(self):
         await self.make_test_data()
         coll = self.collection
         # 200 results, only including _id field, sorted by _id.
-        cursor = coll.find({}, {'_id': 1}).sort('_id').batch_size(75)
+        cursor = coll.find({}, {"_id": 1}).sort("_id").batch_size(75)
 
         self.assertEqual(None, cursor.cursor_id)
         self.assertEqual(None, cursor.next_object())  # Haven't fetched yet.
         i = 0
-        while (await cursor.fetch_next):
-            self.assertEqual({'_id': i}, cursor.next_object())
+        while await cursor.fetch_next:
+            self.assertEqual({"_id": i}, cursor.next_object())
             i += 1
             # With batch_size 75 and 200 results, cursor should be exhausted on
             # the server by third fetch.
@@ -82,7 +83,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(0, cursor.cursor_id)
         self.assertEqual(200, i)
 
-    @unittest.skipIf('PyPy' in sys.version, "PyPy")
+    @unittest.skipIf("PyPy" in sys.version, "PyPy")
     @asyncio_test
     async def test_fetch_next_delete(self):
         client, server = self.client_server(auto_ismaster=True)
@@ -90,15 +91,11 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         cursor = client.test.coll.find()
         self.fetch_next(cursor)
         request = await self.run_thread(server.receives, "find", "coll")
-        request.replies({"cursor": {
-            "id": 123,
-            "ns": "db.coll",
-            "firstBatch": [{"_id": 1}]}})
+        request.replies({"cursor": {"id": 123, "ns": "db.coll", "firstBatch": [{"_id": 1}]}})
 
         # Decref the cursor and clear from the event loop.
         del cursor
-        request = await self.run_thread(
-            server.receives, "killCursors", "coll")
+        request = await self.run_thread(server.receives, "killCursors", "coll")
 
         request.ok()
 
@@ -106,7 +103,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     async def test_fetch_next_without_results(self):
         coll = self.collection
         # Nothing matches this query.
-        cursor = coll.find({'foo': 'bar'})
+        cursor = coll.find({"foo": "bar"})
         self.assertEqual(None, cursor.next_object())
         self.assertEqual(False, (await cursor.fetch_next))
         self.assertEqual(None, cursor.next_object())
@@ -147,7 +144,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     @asyncio_test(timeout=30)
     async def test_each(self):
         await self.make_test_data()
-        cursor = self.collection.find({}, {'_id': 1}).sort('_id')
+        cursor = self.collection.find({}, {"_id": 1}).sort("_id")
         future = self.loop.create_future()
         results = []
 
@@ -163,7 +160,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
         cursor.each(callback)
         await future
-        expected = [{'_id': i} for i in range(200)]
+        expected = [{"_id": i} for i in range(200)]
         self.assertEqual(expected, results)
 
     @asyncio_test
@@ -176,16 +173,16 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             await cursor.to_list(-1)
 
         with self.assertRaises(TypeError):
-            await cursor.to_list('foo')
+            await cursor.to_list("foo")
 
     @asyncio_test
     async def test_to_list_with_length(self):
         await self.make_test_data()
         coll = self.collection
-        cursor = coll.find().sort('_id')
+        cursor = coll.find().sort("_id")
 
         def expected(start, stop):
-            return [{'_id': i} for i in range(start, stop)]
+            return [{"_id": i} for i in range(start, stop)]
 
         self.assertEqual(expected(0, 10), (await cursor.to_list(10)))
         self.assertEqual(expected(10, 100), (await cursor.to_list(90)))
@@ -211,10 +208,10 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     async def test_to_list_multiple_getMores(self):
         await self.make_test_data()
         coll = self.collection
-        cursor = coll.find(batch_size=5).sort('_id')
+        cursor = coll.find(batch_size=5).sort("_id")
 
         def expected(start, stop):
-            return [{'_id': i} for i in range(start, stop)]
+            return [{"_id": i} for i in range(start, stop)]
 
         # 2 batches (find+getMore):
         self.assertEqual(expected(0, 10), (await cursor.to_list(10)))
@@ -224,7 +221,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(expected(33, 200), (await cursor.to_list(167)))
         # Nothing left.
         self.assertEqual([], (await cursor.to_list(100)))
-        
+
         await cursor.close()
 
     @asyncio_test
@@ -240,17 +237,20 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             _, _, tb = sys.exc_info()
 
             # The call tree should include PyMongo code we ran on a thread.
-            formatted = '\n'.join(traceback.format_tb(tb))
-            self.assertTrue('_unpack_response' in formatted
-                            or '_check_command_response' in formatted)
+            formatted = "\n".join(traceback.format_tb(tb))
+            self.assertTrue(
+                "_unpack_response" in formatted or "_check_command_response" in formatted
+            )
 
     async def _test_cancelled_error(self, coro):
         await self.make_test_data()
         # Cause an error on a getMore after the cursor.to_list task is
         # cancelled.
-        fp = {'configureFailPoint': 'failCommand',
-              'data': {'failCommands': ['getMore'], 'errorCode': 96},
-              'mode': {'times': 1}}
+        fp = {
+            "configureFailPoint": "failCommand",
+            "data": {"failCommands": ["getMore"], "errorCode": 96},
+            "mode": {"times": 1},
+        }
         async with FailPoint(self.cx, fp):
             cleanup, task = coro(self.collection)
             task.cancel()
@@ -258,7 +258,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
                 await task
             await cleanup()
             # Yield for some time to allow pending Cursor callbacks to run.
-            await asyncio.sleep(.5)
+            await asyncio.sleep(0.5)
 
     @env.require_version_min(4, 2)  # failCommand
     @asyncio_test
@@ -268,6 +268,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         def to_list(collection):
             cursor = collection.find(batch_size=2)
             return cursor.close, cursor.to_list(None)
+
         await self._test_cancelled_error(to_list)
 
     @env.require_version_min(4, 2)  # failCommand
@@ -276,6 +277,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         def fetch_next(collection):
             cursor = collection.find(batch_size=2)
             return cursor.close, cursor.fetch_next
+
         await self._test_cancelled_error(fetch_next)
 
     @env.require_version_min(4, 2)  # failCommand
@@ -284,6 +286,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         def fetch_next(collection):
             cursor = collection.aggregate([], batchSize=2)
             return cursor.close, cursor.fetch_next
+
         await self._test_cancelled_error(fetch_next)
 
     @asyncio_test
@@ -313,10 +316,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         future = self.fetch_next(cursor)
         self.assertTrue(cursor.alive)
         request = await self.run_thread(server.receives, "find", "coll")
-        request.replies({"cursor": {
-            "id": 123,
-            "ns": "db.coll",
-            "firstBatch": [{"_id": 1}]}})
+        request.replies({"cursor": {"id": 123, "ns": "db.coll", "firstBatch": [{"_id": 1}]}})
 
         self.assertTrue((await future))
         self.assertEqual(123, cursor.cursor_id)
@@ -324,8 +324,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         future = asyncio.ensure_future(cursor.close())
 
         # No reply to OP_KILLCURSORS.
-        request = await self.run_thread(
-            server.receives, "killCursors", "coll")
+        request = await self.run_thread(server.receives, "killCursors", "coll")
 
         request.ok()
         await future
@@ -333,7 +332,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         # Cursor reports it's alive because it has buffered data, even though
         # it's killed on the server.
         self.assertTrue(cursor.alive)
-        self.assertEqual({'_id': 1}, cursor.next_object())
+        self.assertEqual({"_id": 1}, cursor.next_object())
         self.assertFalse((await cursor.fetch_next))
         self.assertFalse(cursor.alive)
 
@@ -377,8 +376,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         cursor = collection.find()
         cursor.each(cancel)
         await future
-        self.assertEqual((await collection.count_documents({})),
-                         len(results))
+        self.assertEqual((await collection.count_documents({})), len(results))
 
     @asyncio_test
     async def test_rewind(self):
@@ -386,26 +384,26 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         cursor = self.collection.find().limit(2)
 
         count = 0
-        while (await cursor.fetch_next):
+        while await cursor.fetch_next:
             cursor.next_object()
             count += 1
         self.assertEqual(2, count)
 
         cursor.rewind()
         count = 0
-        while (await cursor.fetch_next):
+        while await cursor.fetch_next:
             cursor.next_object()
             count += 1
         self.assertEqual(2, count)
 
         cursor.rewind()
         count = 0
-        while (await cursor.fetch_next):
+        while await cursor.fetch_next:
             cursor.next_object()
             break
 
         cursor.rewind()
-        while (await cursor.fetch_next):
+        while await cursor.fetch_next:
             cursor.next_object()
             count += 1
 
@@ -420,10 +418,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
         future = self.fetch_next(cursor)
         request = await self.run_thread(server.receives, "find", "coll")
-        request.replies({"cursor": {
-            "id": 123,
-            "ns": "db.coll",
-            "firstBatch": [{"_id": 1}]}})
+        request.replies({"cursor": {"id": 123, "ns": "db.coll", "firstBatch": [{"_id": 1}]}})
         await future  # Complete the first fetch.
 
         # Dereference the cursor.
@@ -432,16 +427,14 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         # Let the event loop iterate once more to clear its references to
         # callbacks, allowing the cursor to be freed.
         await asyncio.sleep(0)
-        request = await self.run_thread(
-            server.receives, "killCursors", "coll")
+        request = await self.run_thread(server.receives, "killCursors", "coll")
 
         request.ok()
 
     @asyncio_test
     async def test_exhaust(self):
-        if (await server_is_mongos(self.cx)):
-            self.assertRaises(InvalidOperation,
-                              self.db.test.find, cursor_type=CursorType.EXHAUST)
+        if await server_is_mongos(self.cx):
+            self.assertRaises(InvalidOperation, self.db.test.find, cursor_type=CursorType.EXHAUST)
             return
 
         self.assertRaises(ValueError, self.db.test.find, cursor_type=5)
@@ -471,26 +464,21 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertTrue(has_next)
         self.assertEqual(0, len(socks))
 
-        while (await cur.fetch_next):
+        while await cur.fetch_next:
             cur.next_object()
 
         self.assertEqual(1, len(socks))
 
         # Same as previous but with to_list instead of next_object.
-        docs = await client[self.db.name].test.find(
-            cursor_type=CursorType.EXHAUST).to_list(
-            None)
+        docs = await client[self.db.name].test.find(cursor_type=CursorType.EXHAUST).to_list(None)
         self.assertEqual(1, len(socks))
-        self.assertEqual(
-            (await self.db.test.count_documents({})),
-            len(docs))
+        self.assertEqual((await self.db.test.count_documents({})), len(docs))
 
         # If the Cursor instance is discarded before being
         # completely iterated we have to close and
         # discard the socket.
         sock = one(socks)
-        cur = client[self.db.name].test.find(
-            cursor_type=CursorType.EXHAUST).batch_size(1)
+        cur = client[self.db.name].test.find(cursor_type=CursorType.EXHAUST).batch_size(1)
         await cur.fetch_next
         self.assertTrue(cur.next_object())
         # Run at least one getMore to initiate the OP_MSG exhaust protocol.
@@ -498,7 +486,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             await cur.fetch_next
             self.assertTrue(cur.next_object())
         self.assertEqual(0, len(socks))
-        if 'PyPy' in sys.version:
+        if "PyPy" in sys.version:
             # Don't wait for GC or use gc.collect(), it's unreliable.
             await cur.close()
 
@@ -507,8 +495,9 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         async def sock_closed():
             return sock not in socks and sock.closed
 
-        await wait_until(sock_closed, "close exhaust cursor socket",
-                         timeout=get_async_test_timeout())
+        await wait_until(
+            sock_closed, "close exhaust cursor socket", timeout=get_async_test_timeout()
+        )
 
         # The exhaust cursor's socket was discarded, although another may
         # already have been opened to send OP_KILLCURSORS.
@@ -535,39 +524,39 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         cx = self.asyncio_client(event_listeners=[listener])
         c = cx.motor_test.collection
         await c.delete_many({})
-        await c.insert_many({'_id': i} for i in range(3))
+        await c.insert_many({"_id": i} for i in range(3))
 
         # Two ways of setting batchSize.
-        cursor0 = c.aggregate([{'$sort': {'_id': 1}}]).batch_size(2)
-        cursor1 = c.aggregate([{'$sort': {'_id': 1}}], batchSize=2)
+        cursor0 = c.aggregate([{"$sort": {"_id": 1}}]).batch_size(2)
+        cursor1 = c.aggregate([{"$sort": {"_id": 1}}], batchSize=2)
         for cursor in cursor0, cursor1:
             lst = []
-            while (await cursor.fetch_next):
+            while await cursor.fetch_next:
                 lst.append(cursor.next_object())
 
-            self.assertEqual(lst, [{'_id': 0}, {'_id': 1}, {'_id': 2}])
-            aggregate = listener.first_command_started('aggregate')
-            self.assertEqual(aggregate.command['cursor']['batchSize'], 2)
-            getMore = listener.first_command_started('getMore')
-            self.assertEqual(getMore.command['batchSize'], 2)
+            self.assertEqual(lst, [{"_id": 0}, {"_id": 1}, {"_id": 2}])
+            aggregate = listener.first_command_started("aggregate")
+            self.assertEqual(aggregate.command["cursor"]["batchSize"], 2)
+            getMore = listener.first_command_started("getMore")
+            self.assertEqual(getMore.command["batchSize"], 2)
 
     @asyncio_test
     async def test_raw_batches(self):
         c = self.collection
         await c.delete_many({})
-        await c.insert_many({'_id': i} for i in range(4))
+        await c.insert_many({"_id": i} for i in range(4))
 
         find = partial(c.find_raw_batches, {})
-        agg = partial(c.aggregate_raw_batches, [{'$sort': {'_id': 1}}])
+        agg = partial(c.aggregate_raw_batches, [{"$sort": {"_id": 1}}])
 
         for method in find, agg:
             cursor = method().batch_size(2)
             await cursor.fetch_next
             batch = cursor.next_object()
-            self.assertEqual([{'_id': 0}, {'_id': 1}], bson.decode_all(batch))
+            self.assertEqual([{"_id": 0}, {"_id": 1}], bson.decode_all(batch))
 
             lst = await method().batch_size(2).to_list(length=1)
-            self.assertEqual([{'_id': 0}, {'_id': 1}], bson.decode_all(lst[0]))
+            self.assertEqual([{"_id": 0}, {"_id": 1}], bson.decode_all(lst[0]))
 
 
 class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
@@ -580,23 +569,19 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
         super().tearDown()
 
     async def maybe_skip(self):
-        if (await server_is_mongos(self.cx)):
+        if await server_is_mongos(self.cx):
             raise SkipTest("mongos has no maxTimeAlwaysTimeOut fail point")
 
         cmdline = await get_command_line(self.cx)
-        if '1' != safe_get(cmdline, 'parsed.setParameter.enableTestCommands'):
-            if 'enableTestCommands=1' not in cmdline['argv']:
+        if "1" != safe_get(cmdline, "parsed.setParameter.enableTestCommands"):
+            if "enableTestCommands=1" not in cmdline["argv"]:
                 raise SkipTest("testing maxTimeMS requires failpoints")
 
     async def enable_timeout(self):
-        await self.cx.admin.command("configureFailPoint",
-                                         "maxTimeAlwaysTimeOut",
-                                         mode="alwaysOn")
+        await self.cx.admin.command("configureFailPoint", "maxTimeAlwaysTimeOut", mode="alwaysOn")
 
     async def disable_timeout(self):
-        await self.cx.admin.command("configureFailPoint",
-                                         "maxTimeAlwaysTimeOut",
-                                         mode="off")
+        await self.cx.admin.command("configureFailPoint", "maxTimeAlwaysTimeOut", mode="off")
 
     @asyncio_test
     async def test_max_time_ms_query(self):
@@ -626,7 +611,7 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
             # Test getmore timeout.
             await self.enable_timeout()
             with self.assertRaises(ExecutionTimeout):
-                while (await cursor.fetch_next):
+                while await cursor.fetch_next:
                     cursor.next_object()
 
             await cursor.close()
@@ -704,5 +689,5 @@ class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
                 pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

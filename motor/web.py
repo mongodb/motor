@@ -20,13 +20,12 @@ import hashlib
 import mimetypes
 import time
 
+import gridfs
 import tornado.web
 from tornado import gen
 
-import gridfs
 import motor
 from motor.motor_gridfs import _hash_gridout
-
 
 # TODO: this class is not a drop-in replacement for StaticFileHandler.
 #   StaticFileHandler provides class method make_static_url, which appends
@@ -53,7 +52,8 @@ class GridFSHandler(tornado.web.RequestHandler):
     a GridFS file requires a quick check of the file's ``uploadDate`` in
     MongoDB. Override :meth:`get_cache_time` in a subclass to customize this.
     """
-    def initialize(self, database, root_collection='fs'):
+
+    def initialize(self, database, root_collection="fs"):
         self.database = database
         self.root_collection = root_collection
 
@@ -107,7 +107,7 @@ class GridFSHandler(tornado.web.RequestHandler):
 
         # Get the hash for the GridFS file.
         checksum = _hash_gridout(gridout)
-    
+
         self.set_header("Etag", '"%s"' % checksum)
 
         mime_type = gridout.content_type
@@ -123,8 +123,9 @@ class GridFSHandler(tornado.web.RequestHandler):
         cache_time = self.get_cache_time(path, modified, mime_type)
 
         if cache_time > 0:
-            self.set_header("Expires", datetime.datetime.utcnow() +
-                                       datetime.timedelta(seconds=cache_time))
+            self.set_header(
+                "Expires", datetime.datetime.utcnow() + datetime.timedelta(seconds=cache_time)
+            )
             self.set_header("Cache-Control", "max-age=" + str(cache_time))
         else:
             self.set_header("Cache-Control", "public")
@@ -139,9 +140,9 @@ class GridFSHandler(tornado.web.RequestHandler):
 
             # If our MotorClient is tz-aware, assume the naive ims_value is in
             # its time zone.
-            if_since = datetime.datetime.fromtimestamp(
-                time.mktime(date_tuple)
-            ).replace(tzinfo=modified.tzinfo)
+            if_since = datetime.datetime.fromtimestamp(time.mktime(date_tuple)).replace(
+                tzinfo=modified.tzinfo
+            )
 
             if if_since >= modified:
                 self.set_status(304)

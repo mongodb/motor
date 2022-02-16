@@ -25,29 +25,31 @@ import pymongo.common
 import pymongo.database
 import pymongo.errors
 import pymongo.mongo_client
-
 from pymongo.change_stream import ChangeStream
 from pymongo.client_session import ClientSession
 from pymongo.collection import Collection
 from pymongo.command_cursor import CommandCursor, RawBatchCommandCursor
-from pymongo.cursor import Cursor, RawBatchCursor, _QUERY_OPTIONS
+from pymongo.cursor import _QUERY_OPTIONS, Cursor, RawBatchCursor
 from pymongo.database import Database
 from pymongo.driver_info import DriverInfo
 from pymongo.encryption import ClientEncryption
 
-from . import version as motor_version
-from .metaprogramming import (AsyncCommand,
-                              AsyncRead,
-                              AsyncWrite,
-                              coroutine_annotation,
-                              create_class_with_framework,
-                              DelegateMethod,
-                              MotorCursorChainingMethod,
-                              ReadOnlyProperty,
-                              unwrap_args_session,
-                              unwrap_kwargs_session)
-from .motor_common import callback_type_error
 from motor.docstrings import *
+
+from . import version as motor_version
+from .metaprogramming import (
+    AsyncCommand,
+    AsyncRead,
+    AsyncWrite,
+    DelegateMethod,
+    MotorCursorChainingMethod,
+    ReadOnlyProperty,
+    coroutine_annotation,
+    create_class_with_framework,
+    unwrap_args_session,
+    unwrap_kwargs_session,
+)
+from .motor_common import callback_type_error
 
 HAS_SSL = True
 try:
@@ -65,8 +67,7 @@ _WITH_TRANSACTION_RETRY_TIME_LIMIT = 120
 
 def _within_time_limit(start_time):
     """Are we within the with_transaction retry limit?"""
-    return (time.monotonic() - start_time <
-            _WITH_TRANSACTION_RETRY_TIME_LIMIT)
+    return time.monotonic() - start_time < _WITH_TRANSACTION_RETRY_TIME_LIMIT
 
 
 def _max_time_expired_error(exc):
@@ -76,9 +77,11 @@ def _max_time_expired_error(exc):
 
 class AgnosticBase(object):
     def __eq__(self, other):
-        if (isinstance(other, self.__class__)
-                and hasattr(self, 'delegate')
-                and hasattr(other, 'delegate')):
+        if (
+            isinstance(other, self.__class__)
+            and hasattr(self, "delegate")
+            and hasattr(other, "delegate")
+        ):
             return self.delegate == other.delegate
         return NotImplemented
 
@@ -86,41 +89,41 @@ class AgnosticBase(object):
         self.delegate = delegate
 
     def __repr__(self):
-        return '%s(%r)' % (self.__class__.__name__, self.delegate)
+        return "%s(%r)" % (self.__class__.__name__, self.delegate)
 
 
 class AgnosticBaseProperties(AgnosticBase):
-    codec_options   = ReadOnlyProperty()
+    codec_options = ReadOnlyProperty()
     read_preference = ReadOnlyProperty()
-    read_concern    = ReadOnlyProperty()
-    write_concern   = ReadOnlyProperty()
+    read_concern = ReadOnlyProperty()
+    write_concern = ReadOnlyProperty()
 
 
 class AgnosticClient(AgnosticBaseProperties):
-    __motor_class_name__ = 'MotorClient'
+    __motor_class_name__ = "MotorClient"
     __delegate_class__ = pymongo.mongo_client.MongoClient
 
-    address                  = ReadOnlyProperty()
-    arbiters                 = ReadOnlyProperty()
-    close                    = DelegateMethod()
-    __hash__                 = DelegateMethod()
-    drop_database            = AsyncCommand().unwrap('MotorDatabase')
-    options                  = ReadOnlyProperty()
-    get_database             = DelegateMethod(doc=get_database_doc).wrap(Database)
-    get_default_database     = DelegateMethod(doc=get_default_database_doc).wrap(Database)
-    HOST                     = ReadOnlyProperty()
-    is_mongos                = ReadOnlyProperty()
-    is_primary               = ReadOnlyProperty()
-    list_databases           = AsyncRead().wrap(CommandCursor)
-    list_database_names      = AsyncRead()
-    nodes                    = ReadOnlyProperty()
-    PORT                     = ReadOnlyProperty()
-    primary                  = ReadOnlyProperty()
-    read_concern             = ReadOnlyProperty()
-    secondaries              = ReadOnlyProperty()
-    server_info              = AsyncRead()
-    topology_description     = ReadOnlyProperty()
-    start_session            = AsyncCommand(doc=start_session_doc).wrap(ClientSession)
+    address = ReadOnlyProperty()
+    arbiters = ReadOnlyProperty()
+    close = DelegateMethod()
+    __hash__ = DelegateMethod()
+    drop_database = AsyncCommand().unwrap("MotorDatabase")
+    options = ReadOnlyProperty()
+    get_database = DelegateMethod(doc=get_database_doc).wrap(Database)
+    get_default_database = DelegateMethod(doc=get_default_database_doc).wrap(Database)
+    HOST = ReadOnlyProperty()
+    is_mongos = ReadOnlyProperty()
+    is_primary = ReadOnlyProperty()
+    list_databases = AsyncRead().wrap(CommandCursor)
+    list_database_names = AsyncRead()
+    nodes = ReadOnlyProperty()
+    PORT = ReadOnlyProperty()
+    primary = ReadOnlyProperty()
+    read_concern = ReadOnlyProperty()
+    secondaries = ReadOnlyProperty()
+    server_info = AsyncRead()
+    topology_description = ReadOnlyProperty()
+    start_session = AsyncCommand(doc=start_session_doc).wrap(ClientSession)
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -132,16 +135,16 @@ class AgnosticClient(AgnosticBaseProperties):
           - `io_loop` (optional): Special event loop
             instance to use instead of default.
         """
-        if 'io_loop' in kwargs:
-            io_loop = kwargs.pop('io_loop')
+        if "io_loop" in kwargs:
+            io_loop = kwargs.pop("io_loop")
             self._framework.check_event_loop(io_loop)
         else:
             io_loop = self._framework.get_event_loop()
 
-        kwargs.setdefault('connect', False)
+        kwargs.setdefault("connect", False)
         kwargs.setdefault(
-            'driver',
-            DriverInfo('Motor', motor_version, self._framework.platform_info()))
+            "driver", DriverInfo("Motor", motor_version, self._framework.platform_info())
+        )
 
         delegate = self.__delegate_class__(*args, **kwargs)
         super().__init__(delegate)
@@ -150,9 +153,18 @@ class AgnosticClient(AgnosticBaseProperties):
     def get_io_loop(self):
         return self.io_loop
 
-    def watch(self, pipeline=None, full_document=None, resume_after=None,
-              max_await_time_ms=None, batch_size=None, collation=None,
-              start_at_operation_time=None, session=None, start_after=None):
+    def watch(
+        self,
+        pipeline=None,
+        full_document=None,
+        resume_after=None,
+        max_await_time_ms=None,
+        batch_size=None,
+        collation=None,
+        start_at_operation_time=None,
+        session=None,
+        start_after=None,
+    ):
         """Watch changes on this cluster.
 
         Returns a :class:`~MotorChangeStream` cursor which iterates over changes
@@ -204,54 +216,61 @@ class AgnosticClient(AgnosticBaseProperties):
         .. mongodoc:: changeStreams
         """
         cursor_class = create_class_with_framework(
-            AgnosticChangeStream, self._framework, self.__module__)
+            AgnosticChangeStream, self._framework, self.__module__
+        )
 
         # Latent cursor that will send initial command on first "async for".
-        return cursor_class(self, pipeline, full_document, resume_after,
-                            max_await_time_ms, batch_size, collation,
-                            start_at_operation_time, session, start_after)
+        return cursor_class(
+            self,
+            pipeline,
+            full_document,
+            resume_after,
+            max_await_time_ms,
+            batch_size,
+            collation,
+            start_at_operation_time,
+            session,
+            start_after,
+        )
 
     def __getattr__(self, name):
-        if name.startswith('_'):
+        if name.startswith("_"):
             raise AttributeError(
                 "%s has no attribute %r. To access the %s"
-                " database, use client['%s']." % (
-                    self.__class__.__name__, name, name, name))
+                " database, use client['%s']." % (self.__class__.__name__, name, name, name)
+            )
 
         return self[name]
 
     def __getitem__(self, name):
-        db_class = create_class_with_framework(
-            AgnosticDatabase, self._framework, self.__module__)
+        db_class = create_class_with_framework(AgnosticDatabase, self._framework, self.__module__)
 
         return db_class(self, name)
 
     def wrap(self, obj):
         if obj.__class__ == Database:
             db_class = create_class_with_framework(
-                AgnosticDatabase,
-                self._framework,
-                self.__module__)
+                AgnosticDatabase, self._framework, self.__module__
+            )
 
             return db_class(self, obj.name, _delegate=obj)
         elif obj.__class__ == CommandCursor:
             command_cursor_class = create_class_with_framework(
-                AgnosticCommandCursor,
-                self._framework,
-                self.__module__)
+                AgnosticCommandCursor, self._framework, self.__module__
+            )
 
             return command_cursor_class(obj, self)
         elif obj.__class__ == ClientSession:
             session_class = create_class_with_framework(
-                AgnosticClientSession,
-                self._framework,
-                self.__module__)
+                AgnosticClientSession, self._framework, self.__module__
+            )
 
             return session_class(obj, self)
 
 
 class _MotorTransactionContext(object):
     """Internal transaction context manager for start_transaction."""
+
     def __init__(self, session):
         self._session = session
 
@@ -284,19 +303,19 @@ class AgnosticClientSession(AgnosticBase):
     .. versionadded:: 2.0
     """
 
-    __motor_class_name__ = 'MotorClientSession'
+    __motor_class_name__ = "MotorClientSession"
     __delegate_class__ = ClientSession
 
-    commit_transaction     = AsyncCommand()
-    abort_transaction      = AsyncCommand()
-    end_session            = AsyncCommand()
-    cluster_time           = ReadOnlyProperty()
-    has_ended              = ReadOnlyProperty()
-    in_transaction         = ReadOnlyProperty()
-    options                = ReadOnlyProperty()
-    operation_time         = ReadOnlyProperty()
-    session_id             = ReadOnlyProperty()
-    advance_cluster_time   = DelegateMethod()
+    commit_transaction = AsyncCommand()
+    abort_transaction = AsyncCommand()
+    end_session = AsyncCommand()
+    cluster_time = ReadOnlyProperty()
+    has_ended = ReadOnlyProperty()
+    in_transaction = ReadOnlyProperty()
+    options = ReadOnlyProperty()
+    operation_time = ReadOnlyProperty()
+    session_id = ReadOnlyProperty()
+    advance_cluster_time = DelegateMethod()
     advance_operation_time = DelegateMethod()
 
     def __init__(self, delegate, motor_client):
@@ -306,9 +325,14 @@ class AgnosticClientSession(AgnosticBase):
     def get_io_loop(self):
         return self._client.get_io_loop()
 
-    async def with_transaction(self, coro, read_concern=None,
-                               write_concern=None, read_preference=None,
-                               max_commit_time_ms=None):
+    async def with_transaction(
+        self,
+        coro,
+        read_concern=None,
+        write_concern=None,
+        read_preference=None,
+        max_commit_time_ms=None,
+    ):
         """Executes an awaitable in a transaction.
 
         This method starts a transaction on this session, awaits ``coro``
@@ -395,16 +419,18 @@ class AgnosticClientSession(AgnosticBase):
         start_time = time.monotonic()
         while True:
             async with self.start_transaction(
-                    read_concern, write_concern, read_preference,
-                    max_commit_time_ms):
+                read_concern, write_concern, read_preference, max_commit_time_ms
+            ):
                 try:
                     ret = await coro(self)
                 except Exception as exc:
                     if self.in_transaction:
                         await self.abort_transaction()
-                    if (isinstance(exc, pymongo.errors.PyMongoError) and
-                            exc.has_error_label("TransientTransactionError")
-                            and _within_time_limit(start_time)):
+                    if (
+                        isinstance(exc, pymongo.errors.PyMongoError)
+                        and exc.has_error_label("TransientTransactionError")
+                        and _within_time_limit(start_time)
+                    ):
                         # Retry the entire transaction.
                         continue
                     raise
@@ -417,14 +443,17 @@ class AgnosticClientSession(AgnosticBase):
                 try:
                     await self.commit_transaction()
                 except pymongo.errors.PyMongoError as exc:
-                    if (exc.has_error_label("UnknownTransactionCommitResult")
-                            and _within_time_limit(start_time)
-                            and not _max_time_expired_error(exc)):
+                    if (
+                        exc.has_error_label("UnknownTransactionCommitResult")
+                        and _within_time_limit(start_time)
+                        and not _max_time_expired_error(exc)
+                    ):
                         # Retry the commit.
                         continue
 
-                    if (exc.has_error_label("TransientTransactionError") and
-                            _within_time_limit(start_time)):
+                    if exc.has_error_label("TransientTransactionError") and _within_time_limit(
+                        start_time
+                    ):
                         # Retry the entire transaction.
                         break
                     raise
@@ -432,8 +461,9 @@ class AgnosticClientSession(AgnosticBase):
                 # Commit succeeded.
                 return ret
 
-    def start_transaction(self, read_concern=None, write_concern=None,
-                          read_preference=None, max_commit_time_ms=None):
+    def start_transaction(
+        self, read_concern=None, write_concern=None, read_preference=None, max_commit_time_ms=None
+    ):
         """Start a multi-statement transaction.
 
         Takes the same arguments as
@@ -450,15 +480,17 @@ class AgnosticClientSession(AgnosticBase):
                   await collection.insert_one({'x': 2}, session=s)
 
         """
-        self.delegate.start_transaction(read_concern=read_concern,
-                                        write_concern=write_concern,
-                                        read_preference=read_preference,
-                                        max_commit_time_ms=max_commit_time_ms)
+        self.delegate.start_transaction(
+            read_concern=read_concern,
+            write_concern=write_concern,
+            read_preference=read_preference,
+            max_commit_time_ms=max_commit_time_ms,
+        )
         return _MotorTransactionContext(self)
 
     @property
     def client(self):
-        """The :class:`~MotorClient` this session was created from. """
+        """The :class:`~MotorClient` this session was created from."""
         return self._client
 
     async def __aenter__(self):
@@ -468,36 +500,36 @@ class AgnosticClientSession(AgnosticBase):
         self.delegate.__exit__(exc_type, exc_val, exc_tb)
 
     def __enter__(self):
-        raise AttributeError("Use Motor sessions like 'async with await"
-                             " client.start_session()', not 'with'")
+        raise AttributeError(
+            "Use Motor sessions like 'async with await" " client.start_session()', not 'with'"
+        )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
 
 class AgnosticDatabase(AgnosticBaseProperties):
-    __motor_class_name__ = 'MotorDatabase'
+    __motor_class_name__ = "MotorDatabase"
     __delegate_class__ = Database
 
-    __hash__              = DelegateMethod()
-    command               = AsyncCommand(doc=cmd_doc)
-    create_collection     = AsyncCommand().wrap(Collection)
-    dereference           = AsyncRead()
-    drop_collection       = AsyncCommand().unwrap('MotorCollection')
-    get_collection        = DelegateMethod().wrap(Collection)
+    __hash__ = DelegateMethod()
+    command = AsyncCommand(doc=cmd_doc)
+    create_collection = AsyncCommand().wrap(Collection)
+    dereference = AsyncRead()
+    drop_collection = AsyncCommand().unwrap("MotorCollection")
+    get_collection = DelegateMethod().wrap(Collection)
     list_collection_names = AsyncRead(doc=list_collection_names_doc)
-    list_collections      = AsyncRead()
-    name                  = ReadOnlyProperty()
-    validate_collection   = AsyncRead().unwrap('MotorCollection')
-    with_options          = DelegateMethod().wrap(Database)
+    list_collections = AsyncRead()
+    name = ReadOnlyProperty()
+    validate_collection = AsyncRead().unwrap("MotorCollection")
+    with_options = DelegateMethod().wrap(Database)
 
-    _async_aggregate = AsyncRead(attr_name='aggregate')
+    _async_aggregate = AsyncRead(attr_name="aggregate")
 
     def __init__(self, client, name, **kwargs):
         self._client = client
-        _delegate = kwargs.get('_delegate')
-        delegate = _delegate if _delegate is not None else Database(
-            client.delegate, name, **kwargs)
+        _delegate = kwargs.get("_delegate")
+        delegate = _delegate if _delegate is not None else Database(client.delegate, name, **kwargs)
 
         super().__init__(delegate)
 
@@ -553,15 +585,26 @@ class AgnosticDatabase(AgnosticBaseProperties):
             https://docs.mongodb.com/manual/reference/command/aggregate
         """
         cursor_class = create_class_with_framework(
-            AgnosticLatentCommandCursor, self._framework, self.__module__)
+            AgnosticLatentCommandCursor, self._framework, self.__module__
+        )
 
         # Latent cursor that will send initial command on first "async for".
-        return cursor_class(self["$cmd.aggregate"], self._async_aggregate,
-                            pipeline, **unwrap_kwargs_session(kwargs))
+        return cursor_class(
+            self["$cmd.aggregate"], self._async_aggregate, pipeline, **unwrap_kwargs_session(kwargs)
+        )
 
-    def watch(self, pipeline=None, full_document=None, resume_after=None,
-              max_await_time_ms=None, batch_size=None, collation=None,
-              start_at_operation_time=None, session=None, start_after=None):
+    def watch(
+        self,
+        pipeline=None,
+        full_document=None,
+        resume_after=None,
+        max_await_time_ms=None,
+        batch_size=None,
+        collation=None,
+        start_at_operation_time=None,
+        session=None,
+        start_after=None,
+    ):
         """Watch changes on this database.
 
         Returns a :class:`~MotorChangeStream` cursor which iterates over changes
@@ -613,12 +656,22 @@ class AgnosticDatabase(AgnosticBaseProperties):
         .. mongodoc:: changeStreams
         """
         cursor_class = create_class_with_framework(
-            AgnosticChangeStream, self._framework, self.__module__)
+            AgnosticChangeStream, self._framework, self.__module__
+        )
 
         # Latent cursor that will send initial command on first "async for".
-        return cursor_class(self, pipeline, full_document, resume_after,
-                            max_await_time_ms, batch_size, collation,
-                            start_at_operation_time, session, start_after)
+        return cursor_class(
+            self,
+            pipeline,
+            full_document,
+            resume_after,
+            max_await_time_ms,
+            batch_size,
+            collation,
+            start_at_operation_time,
+            session,
+            start_after,
+        )
 
     @property
     def client(self):
@@ -626,41 +679,42 @@ class AgnosticDatabase(AgnosticBaseProperties):
         return self._client
 
     def __getattr__(self, name):
-        if name.startswith('_'):
+        if name.startswith("_"):
             raise AttributeError(
                 "%s has no attribute %r. To access the %s"
-                " collection, use database['%s']." % (
-                    self.__class__.__name__, name, name, name))
+                " collection, use database['%s']." % (self.__class__.__name__, name, name, name)
+            )
 
         return self[name]
 
     def __getitem__(self, name):
         collection_class = create_class_with_framework(
-            AgnosticCollection, self._framework, self.__module__)
+            AgnosticCollection, self._framework, self.__module__
+        )
 
         return collection_class(self, name)
 
     def __call__(self, *args, **kwargs):
         database_name = self.delegate.name
         client_class_name = self._client.__class__.__name__
-        if database_name == 'open_sync':
+        if database_name == "open_sync":
             raise TypeError(
                 "%s.open_sync() is unnecessary Motor 0.2, "
-                "see changelog for details." % client_class_name)
+                "see changelog for details." % client_class_name
+            )
 
         raise TypeError(
             "MotorDatabase object is not callable. If you meant to "
             "call the '%s' method on a %s object it is "
-            "failing because no such method exists." % (
-            database_name, client_class_name))
+            "failing because no such method exists." % (database_name, client_class_name)
+        )
 
     def wrap(self, obj):
         if obj.__class__ is Collection:
             # Replace pymongo.collection.Collection with MotorCollection.
             klass = create_class_with_framework(
-                AgnosticCollection,
-                self._framework,
-                self.__module__)
+                AgnosticCollection, self._framework, self.__module__
+            )
             return klass(self, obj.name, _delegate=obj)
         elif obj.__class__ is Database:
             return self.__class__(self._client, obj.name, _delegate=obj)
@@ -672,83 +726,101 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
 
 class AgnosticCollection(AgnosticBaseProperties):
-    __motor_class_name__ = 'MotorCollection'
+    __motor_class_name__ = "MotorCollection"
     __delegate_class__ = Collection
 
-    __hash__                 = DelegateMethod()
-    bulk_write               = AsyncCommand(doc=bulk_write_doc)
-    count_documents          = AsyncRead()
-    create_index             = AsyncCommand()
-    create_indexes           = AsyncCommand(doc=create_indexes_doc)
-    delete_many              = AsyncCommand(doc=delete_many_doc)
-    delete_one               = AsyncCommand(doc=delete_one_doc)
-    distinct                 = AsyncRead()
-    drop                     = AsyncCommand(doc=drop_doc)
-    drop_index               = AsyncCommand()
-    drop_indexes             = AsyncCommand()
+    __hash__ = DelegateMethod()
+    bulk_write = AsyncCommand(doc=bulk_write_doc)
+    count_documents = AsyncRead()
+    create_index = AsyncCommand()
+    create_indexes = AsyncCommand(doc=create_indexes_doc)
+    delete_many = AsyncCommand(doc=delete_many_doc)
+    delete_one = AsyncCommand(doc=delete_one_doc)
+    distinct = AsyncRead()
+    drop = AsyncCommand(doc=drop_doc)
+    drop_index = AsyncCommand()
+    drop_indexes = AsyncCommand()
     estimated_document_count = AsyncCommand()
-    find_one                 = AsyncRead(doc=find_one_doc)
-    find_one_and_delete      = AsyncCommand(doc=find_one_and_delete_doc)
-    find_one_and_replace     = AsyncCommand(doc=find_one_and_replace_doc)
-    find_one_and_update      = AsyncCommand(doc=find_one_and_update_doc)
-    full_name                = ReadOnlyProperty()
-    index_information        = AsyncRead(doc=index_information_doc)
-    insert_many              = AsyncWrite(doc=insert_many_doc)
-    insert_one               = AsyncCommand(doc=insert_one_doc)
-    name                     = ReadOnlyProperty()
-    options                  = AsyncRead()
-    rename                   = AsyncCommand()
-    replace_one              = AsyncCommand(doc=replace_one_doc)
-    update_many              = AsyncCommand(doc=update_many_doc)
-    update_one               = AsyncCommand(doc=update_one_doc)
-    with_options             = DelegateMethod().wrap(Collection)
+    find_one = AsyncRead(doc=find_one_doc)
+    find_one_and_delete = AsyncCommand(doc=find_one_and_delete_doc)
+    find_one_and_replace = AsyncCommand(doc=find_one_and_replace_doc)
+    find_one_and_update = AsyncCommand(doc=find_one_and_update_doc)
+    full_name = ReadOnlyProperty()
+    index_information = AsyncRead(doc=index_information_doc)
+    insert_many = AsyncWrite(doc=insert_many_doc)
+    insert_one = AsyncCommand(doc=insert_one_doc)
+    name = ReadOnlyProperty()
+    options = AsyncRead()
+    rename = AsyncCommand()
+    replace_one = AsyncCommand(doc=replace_one_doc)
+    update_many = AsyncCommand(doc=update_many_doc)
+    update_one = AsyncCommand(doc=update_one_doc)
+    with_options = DelegateMethod().wrap(Collection)
 
-    _async_aggregate             = AsyncRead(attr_name='aggregate')
-    _async_aggregate_raw_batches = AsyncRead(attr_name='aggregate_raw_batches')
-    _async_list_indexes          = AsyncRead(attr_name='list_indexes')
+    _async_aggregate = AsyncRead(attr_name="aggregate")
+    _async_aggregate_raw_batches = AsyncRead(attr_name="aggregate_raw_batches")
+    _async_list_indexes = AsyncRead(attr_name="list_indexes")
 
-    def __init__(self, database, name, codec_options=None,
-                 read_preference=None, write_concern=None, read_concern=None,
-                 _delegate=None):
-        db_class = create_class_with_framework(
-            AgnosticDatabase, self._framework, self.__module__)
+    def __init__(
+        self,
+        database,
+        name,
+        codec_options=None,
+        read_preference=None,
+        write_concern=None,
+        read_concern=None,
+        _delegate=None,
+    ):
+        db_class = create_class_with_framework(AgnosticDatabase, self._framework, self.__module__)
 
         if not isinstance(database, db_class):
-            raise TypeError("First argument to MotorCollection must be "
-                            "MotorDatabase, not %r" % database)
+            raise TypeError(
+                "First argument to MotorCollection must be " "MotorDatabase, not %r" % database
+            )
 
-        delegate = _delegate if _delegate is not None else Collection(
-            database.delegate, name, codec_options=codec_options,
-            read_preference=read_preference, write_concern=write_concern,
-            read_concern=read_concern)
+        delegate = (
+            _delegate
+            if _delegate is not None
+            else Collection(
+                database.delegate,
+                name,
+                codec_options=codec_options,
+                read_preference=read_preference,
+                write_concern=write_concern,
+                read_concern=read_concern,
+            )
+        )
 
         super().__init__(delegate)
         self.database = database
 
     def __getattr__(self, name):
         # Dotted collection name, like "foo.bar".
-        if name.startswith('_'):
+        if name.startswith("_"):
             full_name = "%s.%s" % (self.name, name)
             raise AttributeError(
                 "%s has no attribute %r. To access the %s"
-                " collection, use database['%s']." % (
-                    self.__class__.__name__, name, full_name, full_name))
+                " collection, use database['%s']."
+                % (self.__class__.__name__, name, full_name, full_name)
+            )
 
         return self[name]
 
     def __getitem__(self, name):
         collection_class = create_class_with_framework(
-            AgnosticCollection, self._framework, self.__module__)
+            AgnosticCollection, self._framework, self.__module__
+        )
 
-        return collection_class(self.database, self.name + '.' + name,
-                                _delegate=self.delegate[name])
+        return collection_class(
+            self.database, self.name + "." + name, _delegate=self.delegate[name]
+        )
 
     def __call__(self, *args, **kwargs):
         raise TypeError(
             "MotorCollection object is not callable. If you meant to "
             "call the '%s' method on a MotorCollection object it is "
-            "failing because no such method exists." %
-            self.delegate.name)
+            "failing because no such method exists." % self.delegate.name
+        )
 
     def find(self, *args, **kwargs):
         """Create a :class:`MotorCursor`. Same parameters as for
@@ -760,10 +832,8 @@ class AgnosticCollection(AgnosticBaseProperties):
         ``MotorCursor`` methods such as :meth:`~MotorCursor.to_list`
         perform actual operations.
         """
-        cursor = self.delegate.find(*unwrap_args_session(args),
-                                    **unwrap_kwargs_session(kwargs))
-        cursor_class = create_class_with_framework(
-            AgnosticCursor, self._framework, self.__module__)
+        cursor = self.delegate.find(*unwrap_args_session(args), **unwrap_kwargs_session(kwargs))
+        cursor_class = create_class_with_framework(AgnosticCursor, self._framework, self.__module__)
 
         return cursor_class(cursor, self)
 
@@ -788,10 +858,12 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         .. versionadded:: 2.0
         """
-        cursor = self.delegate.find_raw_batches(*unwrap_args_session(args),
-                                                **unwrap_kwargs_session(kwargs))
+        cursor = self.delegate.find_raw_batches(
+            *unwrap_args_session(args), **unwrap_kwargs_session(kwargs)
+        )
         cursor_class = create_class_with_framework(
-            AgnosticRawBatchCursor, self._framework, self.__module__)
+            AgnosticRawBatchCursor, self._framework, self.__module__
+        )
 
         return cursor_class(cursor, self)
 
@@ -882,11 +954,11 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         """
         cursor_class = create_class_with_framework(
-            AgnosticLatentCommandCursor, self._framework, self.__module__)
+            AgnosticLatentCommandCursor, self._framework, self.__module__
+        )
 
         # Latent cursor that will send initial command on first "async for".
-        return cursor_class(self, self._async_aggregate, pipeline,
-                            **unwrap_kwargs_session(kwargs))
+        return cursor_class(self, self._async_aggregate, pipeline, **unwrap_kwargs_session(kwargs))
 
     def aggregate_raw_batches(self, pipeline, **kwargs):
         """Perform an aggregation and retrieve batches of raw BSON.
@@ -910,15 +982,26 @@ class AgnosticCollection(AgnosticBaseProperties):
         .. versionadded:: 2.0
         """
         cursor_class = create_class_with_framework(
-            AgnosticLatentCommandCursor, self._framework, self.__module__)
+            AgnosticLatentCommandCursor, self._framework, self.__module__
+        )
 
         # Latent cursor that will send initial command on first "async for".
-        return cursor_class(self, self._async_aggregate_raw_batches, pipeline,
-                            **unwrap_kwargs_session(kwargs))
+        return cursor_class(
+            self, self._async_aggregate_raw_batches, pipeline, **unwrap_kwargs_session(kwargs)
+        )
 
-    def watch(self, pipeline=None, full_document=None, resume_after=None,
-              max_await_time_ms=None, batch_size=None, collation=None,
-              start_at_operation_time=None, session=None, start_after=None):
+    def watch(
+        self,
+        pipeline=None,
+        full_document=None,
+        resume_after=None,
+        max_await_time_ms=None,
+        batch_size=None,
+        collation=None,
+        start_at_operation_time=None,
+        session=None,
+        start_after=None,
+    ):
         """Watch changes on this collection.
 
         Performs an aggregation with an implicit initial ``$changeStream``
@@ -1045,12 +1128,22 @@ class AgnosticCollection(AgnosticBaseProperties):
             https://github.com/mongodb/specifications/blob/master/source/change-streams.rst
         """
         cursor_class = create_class_with_framework(
-            AgnosticChangeStream, self._framework, self.__module__)
+            AgnosticChangeStream, self._framework, self.__module__
+        )
 
         # Latent cursor that will send initial command on first "async for".
-        return cursor_class(self, pipeline, full_document, resume_after,
-                            max_await_time_ms, batch_size, collation,
-                            start_at_operation_time, session, start_after)
+        return cursor_class(
+            self,
+            pipeline,
+            full_document,
+            resume_after,
+            max_await_time_ms,
+            batch_size,
+            collation,
+            start_at_operation_time,
+            session,
+            start_after,
+        )
 
     def list_indexes(self, session=None):
         """Get a cursor over the index documents for this collection. ::
@@ -1064,7 +1157,8 @@ class AgnosticCollection(AgnosticBaseProperties):
             SON([('v', 1), ('key', SON([('_id', 1)])), ('name', '_id_')])
         """
         cursor_class = create_class_with_framework(
-            AgnosticLatentCommandCursor, self._framework, self.__module__)
+            AgnosticLatentCommandCursor, self._framework, self.__module__
+        )
 
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, self._async_list_indexes, session=session)
@@ -1077,16 +1171,14 @@ class AgnosticCollection(AgnosticBaseProperties):
             return AgnosticCursor(obj, self)
         elif obj.__class__ is CommandCursor:
             command_cursor_class = create_class_with_framework(
-                AgnosticCommandCursor,
-                self._framework,
-                self.__module__)
+                AgnosticCommandCursor, self._framework, self.__module__
+            )
 
             return command_cursor_class(obj, self)
         elif obj.__class__ is ChangeStream:
             change_stream_class = create_class_with_framework(
-                AgnosticChangeStream,
-                self._framework,
-                self.__module__)
+                AgnosticChangeStream, self._framework, self.__module__
+            )
 
             return change_stream_class(obj, self)
         else:
@@ -1098,12 +1190,13 @@ class AgnosticCollection(AgnosticBaseProperties):
 
 class AgnosticBaseCursor(AgnosticBase):
     """Base class for AgnosticCursor and AgnosticCommandCursor"""
-    _async_close  = AsyncRead(attr_name='close')
-    _refresh      = AsyncRead()
-    address       = ReadOnlyProperty()
-    cursor_id     = ReadOnlyProperty()
-    alive         = ReadOnlyProperty()
-    session       = ReadOnlyProperty()
+
+    _async_close = AsyncRead(attr_name="close")
+    _refresh = AsyncRead()
+    address = ReadOnlyProperty()
+    cursor_id = ReadOnlyProperty()
+    alive = ReadOnlyProperty()
+    session = ReadOnlyProperty()
 
     def __init__(self, cursor, collection):
         """Don't construct a cursor yourself, but acquire one from methods like
@@ -1141,8 +1234,8 @@ class AgnosticBaseCursor(AgnosticBase):
         """Initial query or getMore. Returns a Future."""
         if not self.alive:
             raise pymongo.errors.InvalidOperation(
-                "Can't call get_more() on a MotorCursor that has been"
-                " exhausted or killed.")
+                "Can't call get_more() on a MotorCursor that has been" " exhausted or killed."
+            )
 
         self.started = True
         return self._refresh()
@@ -1202,10 +1295,13 @@ class AgnosticBaseCursor(AgnosticBase):
         .. _`large batches`: https://docs.mongodb.com/manual/tutorial/iterate-a-cursor/#cursor-batches
         .. _`gen.coroutine`: http://tornadoweb.org/en/stable/gen.html
         """
-        warnings.warn("The fetch_next property is deprecated and will be "
-                      "removed in Motor 3.0. Use `async for` to iterate "
-                      "over Cursor objects instead.",
-                      DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            "The fetch_next property is deprecated and will be "
+            "removed in Motor 3.0. Use `async for` to iterate "
+            "over Cursor objects instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
         if not self._buffer_size() and self.alive:
             # Return the Future, which resolves to number of docs fetched or 0.
@@ -1231,10 +1327,13 @@ class AgnosticBaseCursor(AgnosticBase):
         .. versionchanged:: 2.2
            Deprecated.
         """
-        warnings.warn("The next_object method is deprecated and will be "
-                      "removed in Motor 3.0. Use Use `async for` to iterate "
-                      "over Cursor objects instead.",
-                      DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            "The next_object method is deprecated and will be "
+            "removed in Motor 3.0. Use Use `async for` to iterate "
+            "over Cursor objects instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
         if not self._buffer_size():
             return None
@@ -1310,14 +1409,11 @@ class AgnosticBaseCursor(AgnosticBase):
 
         if self.alive and (self.cursor_id or not self.started):
             self._framework.add_future(
-                self.get_io_loop(),
-                self._get_more(),
-                self._each_got_more, callback)
+                self.get_io_loop(), self._get_more(), self._each_got_more, callback
+            )
         else:
             # Complete
-            self._framework.call_soon(
-                self.get_io_loop(),
-                functools.partial(callback, None, None))
+            self._framework.call_soon(self.get_io_loop(), functools.partial(callback, None, None))
 
     @coroutine_annotation
     def to_list(self, length):
@@ -1365,13 +1461,12 @@ class AgnosticBaseCursor(AgnosticBase):
         """
         if length is not None:
             if not isinstance(length, int):
-                raise TypeError('length must be an int, not %r' % length)
+                raise TypeError("length must be an int, not %r" % length)
             elif length < 0:
-                raise ValueError('length must be non-negative')
+                raise ValueError("length must be non-negative")
 
-        if self._query_flags() & _QUERY_OPTIONS['tailable_cursor']:
-            raise pymongo.errors.InvalidOperation(
-                "Can't call to_list on tailable cursor")
+        if self._query_flags() & _QUERY_OPTIONS["tailable_cursor"]:
+            raise pymongo.errors.InvalidOperation("Can't call to_list on tailable cursor")
 
         future = self._framework.get_future(self.get_io_loop())
 
@@ -1380,9 +1475,8 @@ class AgnosticBaseCursor(AgnosticBase):
         else:
             the_list = []
             self._framework.add_future(
-                self.get_io_loop(),
-                self._get_more(),
-                self._to_list, length, the_list, future)
+                self.get_io_loop(), self._get_more(), self._to_list, length, the_list, future
+            )
 
         return future
 
@@ -1404,14 +1498,13 @@ class AgnosticBaseCursor(AgnosticBase):
             for _ in range(n):
                 the_list.append(self._data().popleft())
 
-            reached_length = (length is not None and len(the_list) >= length)
+            reached_length = length is not None and len(the_list) >= length
             if reached_length or not self.alive:
                 future.set_result(the_list)
             else:
                 self._framework.add_future(
-                    self.get_io_loop(),
-                    self._get_more(),
-                    self._to_list, length, the_list, future)
+                    self.get_io_loop(), self._get_more(), self._to_list, length, the_list, future
+                )
         except Exception as exc:
             if not future.done():
                 future.set_exception(exc)
@@ -1450,28 +1543,28 @@ class AgnosticBaseCursor(AgnosticBase):
 
 
 class AgnosticCursor(AgnosticBaseCursor):
-    __motor_class_name__ = 'MotorCursor'
+    __motor_class_name__ = "MotorCursor"
     __delegate_class__ = Cursor
-    address           = ReadOnlyProperty()
-    collation         = MotorCursorChainingMethod()
-    distinct          = AsyncRead()
-    explain           = AsyncRead()
-    add_option        = MotorCursorChainingMethod()
-    remove_option     = MotorCursorChainingMethod()
-    limit             = MotorCursorChainingMethod()
-    skip              = MotorCursorChainingMethod()
-    max_scan          = MotorCursorChainingMethod()
-    sort              = MotorCursorChainingMethod(doc=cursor_sort_doc)
-    hint              = MotorCursorChainingMethod()
-    where             = MotorCursorChainingMethod(doc=where_doc)
+    address = ReadOnlyProperty()
+    collation = MotorCursorChainingMethod()
+    distinct = AsyncRead()
+    explain = AsyncRead()
+    add_option = MotorCursorChainingMethod()
+    remove_option = MotorCursorChainingMethod()
+    limit = MotorCursorChainingMethod()
+    skip = MotorCursorChainingMethod()
+    max_scan = MotorCursorChainingMethod()
+    sort = MotorCursorChainingMethod(doc=cursor_sort_doc)
+    hint = MotorCursorChainingMethod()
+    where = MotorCursorChainingMethod(doc=where_doc)
     max_await_time_ms = MotorCursorChainingMethod()
-    max_time_ms       = MotorCursorChainingMethod()
-    min               = MotorCursorChainingMethod()
-    max               = MotorCursorChainingMethod()
-    comment           = MotorCursorChainingMethod()
-    allow_disk_use    = MotorCursorChainingMethod()
+    max_time_ms = MotorCursorChainingMethod()
+    min = MotorCursorChainingMethod()
+    max = MotorCursorChainingMethod()
+    comment = MotorCursorChainingMethod()
+    allow_disk_use = MotorCursorChainingMethod()
 
-    _Cursor__die  = AsyncRead()
+    _Cursor__die = AsyncRead()
 
     def rewind(self):
         """Rewind this cursor to its unevaluated state."""
@@ -1500,12 +1593,12 @@ class AgnosticCursor(AgnosticBaseCursor):
 
 
 class AgnosticRawBatchCursor(AgnosticCursor):
-    __motor_class_name__ = 'MotorRawBatchCursor'
+    __motor_class_name__ = "MotorRawBatchCursor"
     __delegate_class__ = RawBatchCursor
 
 
 class AgnosticCommandCursor(AgnosticBaseCursor):
-    __motor_class_name__ = 'MotorCommandCursor'
+    __motor_class_name__ = "MotorCommandCursor"
     __delegate_class__ = CommandCursor
 
     _CommandCursor__die = AsyncRead()
@@ -1521,12 +1614,13 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
 
 
 class AgnosticRawBatchCommandCursor(AgnosticCommandCursor):
-    __motor_class_name__ = 'MotorRawBatchCommandCursor'
+    __motor_class_name__ = "MotorRawBatchCommandCursor"
     __delegate_class__ = RawBatchCommandCursor
 
 
 class _LatentCursor(object):
     """Take the place of a PyMongo CommandCursor until aggregate() begins."""
+
     alive = True
     _CommandCursor__data = []
     _CommandCursor__id = None
@@ -1553,7 +1647,7 @@ class _LatentCursor(object):
 
 
 class AgnosticLatentCommandCursor(AgnosticCommandCursor):
-    __motor_class_name__ = 'MotorLatentCommandCursor'
+    __motor_class_name__ = "MotorLatentCommandCursor"
 
     def __init__(self, collection, start, *args, **kwargs):
         # We're being constructed without await, like:
@@ -1570,23 +1664,20 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
         self.kwargs = kwargs
 
     def batch_size(self, batch_size):
-        self.kwargs['batchSize'] = batch_size
+        self.kwargs["batchSize"] = batch_size
         return self
 
     def _get_more(self):
         if not self.started:
             self.started = True
             original_future = self._framework.get_future(self.get_io_loop())
-            future = self.start(
-                *self.args,
-                **self.kwargs)
+            future = self.start(*self.args, **self.kwargs)
 
             self.start = self.args = self.kwargs = None
 
             self._framework.add_future(
-                self.get_io_loop(),
-                future,
-                self._on_started, original_future)
+                self.get_io_loop(), future, self._on_started, original_future
+            )
 
             return original_future
 
@@ -1608,8 +1699,7 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
                 return
             if self.delegate._CommandCursor__data or not self.delegate.alive:
                 # _get_more is complete.
-                original_future.set_result(
-                    len(self.delegate._CommandCursor__data))
+                original_future.set_result(len(self.delegate._CommandCursor__data))
             else:
                 # Send a getMore.
                 future = super()._get_more()
@@ -1625,33 +1715,45 @@ class AgnosticChangeStream(AgnosticBase):
     .. versionadded: 1.2
     .. mongodoc:: changeStreams
     """
-    __delegate_class__ = ChangeStream
-    __motor_class_name__ = 'MotorChangeStream'
 
-    _close = AsyncCommand(attr_name='close')
+    __delegate_class__ = ChangeStream
+    __motor_class_name__ = "MotorChangeStream"
+
+    _close = AsyncCommand(attr_name="close")
 
     resume_token = ReadOnlyProperty()
 
-    def __init__(self, target, pipeline, full_document, resume_after,
-                 max_await_time_ms, batch_size, collation,
-                 start_at_operation_time, session, start_after):
+    def __init__(
+        self,
+        target,
+        pipeline,
+        full_document,
+        resume_after,
+        max_await_time_ms,
+        batch_size,
+        collation,
+        start_at_operation_time,
+        session,
+        start_after,
+    ):
         super().__init__(delegate=None)
         # The "target" object is a client, database, or collection.
         self._target = target
-        self._kwargs = {'pipeline': pipeline,
-                        'full_document': full_document,
-                        'resume_after': resume_after,
-                        'max_await_time_ms': max_await_time_ms,
-                        'batch_size': batch_size,
-                        'collation': collation,
-                        'start_at_operation_time': start_at_operation_time,
-                        'session': session,
-                        'start_after': start_after}
+        self._kwargs = {
+            "pipeline": pipeline,
+            "full_document": full_document,
+            "resume_after": resume_after,
+            "max_await_time_ms": max_await_time_ms,
+            "batch_size": batch_size,
+            "collation": collation,
+            "start_at_operation_time": start_at_operation_time,
+            "session": session,
+            "start_after": start_after,
+        }
 
     def _lazy_init(self):
         if not self.delegate:
-            self.delegate = self._target.delegate.watch(
-                **unwrap_kwargs_session(self._kwargs))
+            self.delegate = self._target.delegate.watch(**unwrap_kwargs_session(self._kwargs))
 
     def _try_next(self):
         # This method is run on a thread.
@@ -1785,10 +1887,11 @@ class AgnosticChangeStream(AgnosticBase):
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
+
 class AgnosticClientEncryption(AgnosticBase):
     """Explicit client-side field level encryption."""
 
-    __motor_class_name__ = 'MotorClientEncryption'
+    __motor_class_name__ = "MotorClientEncryption"
     __delegate_class__ = ClientEncryption
 
     create_data_key = AsyncCommand(doc=create_data_key_doc)
@@ -1796,7 +1899,9 @@ class AgnosticClientEncryption(AgnosticBase):
     decrypt = AsyncCommand()
     close = AsyncCommand(doc=close_doc)
 
-    def __init__(self, kms_providers, key_vault_namespace, key_vault_client, codec_options, io_loop=None):
+    def __init__(
+        self, kms_providers, key_vault_namespace, key_vault_client, codec_options, io_loop=None
+    ):
         """Explicit client-side field level encryption.
 
         Takes the same constructor arguments as
@@ -1811,7 +1916,9 @@ class AgnosticClientEncryption(AgnosticBase):
         else:
             io_loop = self._framework.get_event_loop()
         sync_client = key_vault_client.delegate
-        delegate = self.__delegate_class__(kms_providers, key_vault_namespace, sync_client, codec_options)
+        delegate = self.__delegate_class__(
+            kms_providers, key_vault_namespace, sync_client, codec_options
+        )
         super().__init__(delegate)
         self.io_loop = io_loop
 

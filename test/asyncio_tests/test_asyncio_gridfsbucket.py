@@ -17,13 +17,14 @@
 
 import asyncio
 from io import BytesIO
-
-from gridfs.errors import NoFile
-from pymongo.write_concern import WriteConcern
-from pymongo.read_preferences import ReadPreference
-from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.utils import ignore_deprecations
+
+from gridfs.errors import NoFile
+from pymongo.read_preferences import ReadPreference
+from pymongo.write_concern import WriteConcern
+
+from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 
 
 class TestAsyncIOGridFSBucket(AsyncIOTestCase):
@@ -44,8 +45,7 @@ class TestAsyncIOGridFSBucket(AsyncIOTestCase):
 
     @asyncio_test
     async def test_basic(self):
-        oid = await self.bucket.upload_from_stream("test_filename",
-                                                        b"hello world")
+        oid = await self.bucket.upload_from_stream("test_filename", b"hello world")
         gout = await self.bucket.open_download_stream(oid)
         self.assertEqual(b"hello world", (await gout.read()))
         self.assertEqual(1, (await self.db.fs.files.count_documents({})))
@@ -62,13 +62,13 @@ class TestAsyncIOGridFSBucket(AsyncIOTestCase):
         self.assertEqual(0, (await self.db.fs.chunks.count_documents({})))
 
     def test_init(self):
-        name = 'bucket'
-        wc = WriteConcern(w='majority', wtimeout=1000)
+        name = "bucket"
+        wc = WriteConcern(w="majority", wtimeout=1000)
         rp = ReadPreference.SECONDARY
         size = 8
         bucket = AsyncIOMotorGridFSBucket(
-            self.db, name, chunk_size_bytes=size,
-            write_concern=wc, read_preference=rp)
+            self.db, name, chunk_size_bytes=size, write_concern=wc, read_preference=rp
+        )
         self.assertEqual(name, bucket.collection.name)
         self.assertEqual(wc, bucket.collection.write_concern)
         self.assertEqual(rp, bucket.collection.read_preference)
@@ -78,5 +78,5 @@ class TestAsyncIOGridFSBucket(AsyncIOTestCase):
 
     @ignore_deprecations
     def test_collection_param(self):
-        bucket = AsyncIOMotorGridFSBucket(self.db, collection='collection')
-        self.assertEqual('collection', bucket.collection.name)
+        bucket = AsyncIOMotorGridFSBucket(self.db, collection="collection")
+        self.assertEqual("collection", bucket.collection.name)

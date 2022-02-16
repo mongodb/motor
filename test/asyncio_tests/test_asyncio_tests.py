@@ -15,12 +15,11 @@
 """Test Motor's asyncio test utilities."""
 
 import asyncio
+import concurrent.futures
 import contextlib
 import io
 import os
 import unittest
-import concurrent.futures
-
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 
@@ -75,6 +74,7 @@ class TestAsyncIOTests(unittest.TestCase):
 
     def test_timeout_passed_as_positional(self):
         with self.assertRaises(TypeError):
+
             class _(AsyncIOTestCase):
                 # Should be "timeout=10".
                 @asyncio_test(10)
@@ -85,7 +85,7 @@ class TestAsyncIOTests(unittest.TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(None)
         self.addCleanup(self.loop.close)
-        self.addCleanup(setattr, self, 'loop', None)
+        self.addCleanup(setattr, self, "loop", None)
 
         class Test(AsyncIOTestCase):
             @asyncio_test(timeout=0.01)
@@ -98,24 +98,24 @@ class TestAsyncIOTests(unittest.TestCase):
             async def inner(self):
                 await asyncio.sleep(1)
 
-        with set_environ('ASYNC_TEST_TIMEOUT', '0'):
+        with set_environ("ASYNC_TEST_TIMEOUT", "0"):
             result = run_test_case(Test)
 
         self.assertEqual(1, len(result.errors))
         case, text = result.errors[0]
-        self.assertTrue('TimeoutError' in text)
+        self.assertTrue("TimeoutError" in text)
 
     def test_timeout_environment_variable(self):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(None)
         self.addCleanup(self.loop.close)
-        self.addCleanup(setattr, self, 'loop', None)
+        self.addCleanup(setattr, self, "loop", None)
 
         @asyncio_test
         async def default_timeout(self):
             await asyncio.sleep(0.1)
 
-        with set_environ('ASYNC_TEST_TIMEOUT', '0.2'):
+        with set_environ("ASYNC_TEST_TIMEOUT", "0.2"):
             # No error, sleeps for 0.1 seconds and the timeout is 0.2 seconds.
             default_timeout(self)
 
@@ -123,19 +123,19 @@ class TestAsyncIOTests(unittest.TestCase):
         async def custom_timeout(self):
             await asyncio.sleep(0.2)
 
-        with set_environ('ASYNC_TEST_TIMEOUT', '0'):
+        with set_environ("ASYNC_TEST_TIMEOUT", "0"):
             # No error, default timeout of 5 seconds overrides '0'.
             default_timeout(self)
 
-        with set_environ('ASYNC_TEST_TIMEOUT', '0'):
-            if hasattr(asyncio, 'exceptions'):
+        with set_environ("ASYNC_TEST_TIMEOUT", "0"):
+            if hasattr(asyncio, "exceptions"):
                 with self.assertRaises(asyncio.exceptions.TimeoutError):
                     custom_timeout(self)
             else:
                 with self.assertRaises(concurrent.futures.TimeoutError):
                     custom_timeout(self)
 
-        with set_environ('ASYNC_TEST_TIMEOUT', '1'):
+        with set_environ("ASYNC_TEST_TIMEOUT", "1"):
             # No error, 1-second timeout from environment overrides custom
             # timeout of 0.1 seconds.
             custom_timeout(self)
@@ -150,25 +150,25 @@ class TestAsyncIOTests(unittest.TestCase):
                 await self.inner()
 
             async def inner(self):
-                assert False, 'expected error'
+                assert False, "expected error"
 
         result = run_test_case(Test)
         self.assertEqual(1, len(result.failures))
         case, text = result.failures[0]
-        self.assertFalse('CancelledError' in text)
-        self.assertTrue('AssertionError' in text)
-        self.assertTrue('expected error' in text)
+        self.assertFalse("CancelledError" in text)
+        self.assertTrue("AssertionError" in text)
+        self.assertTrue("expected error" in text)
 
         # The traceback shows where the coroutine raised.
-        self.assertTrue('test_that_fails' in text)
-        self.assertTrue('middle' in text)
-        self.assertTrue('inner' in text)
+        self.assertTrue("test_that_fails" in text)
+        self.assertTrue("middle" in text)
+        self.assertTrue("inner" in text)
 
     def test_undecorated(self):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(None)
         self.addCleanup(self.loop.close)
-        self.addCleanup(setattr, self, 'loop', None)
+        self.addCleanup(setattr, self, "loop", None)
 
         class Test(AsyncIOTestCase):
             async def test_that_should_be_decorated(self):
@@ -177,9 +177,9 @@ class TestAsyncIOTests(unittest.TestCase):
         result = run_test_case(Test)
         self.assertEqual(1, len(result.errors))
         case, text = result.errors[0]
-        self.assertFalse('CancelledError' in text)
-        self.assertTrue('TypeError' in text)
-        self.assertTrue('should be decorated with @asyncio_test' in text)
+        self.assertFalse("CancelledError" in text)
+        self.assertTrue("TypeError" in text)
+        self.assertTrue("should be decorated with @asyncio_test" in text)
 
     def test_other_return(self):
         class Test(AsyncIOTestCase):
@@ -189,8 +189,8 @@ class TestAsyncIOTests(unittest.TestCase):
         result = run_test_case(Test)
         self.assertEqual(len(result.errors), 1)
         case, text = result.errors[0]
-        self.assertIn('Return value from test method ignored', text)
+        self.assertIn("Return value from test method ignored", text)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

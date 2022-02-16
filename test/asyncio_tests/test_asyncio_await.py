@@ -12,15 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import test
 import warnings
+from test import env
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 import bson
 
-from motor.motor_asyncio import (AsyncIOMotorClientSession,
-                                 AsyncIOMotorGridFSBucket)
-import test
-from test import env
-from test.asyncio_tests import asyncio_test, AsyncIOTestCase
+from motor.motor_asyncio import AsyncIOMotorClientSession, AsyncIOMotorGridFSBucket
 
 
 class TestAsyncIOAwait(AsyncIOTestCase):
@@ -29,12 +28,12 @@ class TestAsyncIOAwait(AsyncIOTestCase):
         collection = self.collection
         await collection.delete_many({})
 
-        results = await collection.find().sort('_id').to_list(length=None)
+        results = await collection.find().sort("_id").to_list(length=None)
         self.assertEqual([], results)
 
-        docs = [{'_id': 1}, {'_id': 2}]
+        docs = [{"_id": 1}, {"_id": 2}]
         await collection.insert_many(docs)
-        cursor = collection.find().sort('_id')
+        cursor = collection.find().sort("_id")
         results = await cursor.to_list(length=None)
         self.assertEqual(docs, results)
         results = await cursor.to_list(length=None)
@@ -47,19 +46,19 @@ class TestAsyncIOAwait(AsyncIOTestCase):
 
         for n_docs in 0, 1, 2, 10:
             if n_docs:
-                docs = [{'_id': i} for i in range(n_docs)]
+                docs = [{"_id": i} for i in range(n_docs)]
                 await collection.insert_many(docs)
 
             # Force extra batches to test iteration.
             j = 0
-            async for doc in collection.find().sort('_id').batch_size(3):
-                self.assertEqual(j, doc['_id'])
+            async for doc in collection.find().sort("_id").batch_size(3):
+                self.assertEqual(j, doc["_id"])
                 j += 1
 
             self.assertEqual(j, n_docs)
 
             j = 0
-            raw_cursor = collection.find_raw_batches().sort('_id').batch_size(3)
+            raw_cursor = collection.find_raw_batches().sort("_id").batch_size(3)
             async for batch in raw_cursor:
                 j += len(bson.decode_all(batch))
 
@@ -69,7 +68,7 @@ class TestAsyncIOAwait(AsyncIOTestCase):
     async def test_iter_aggregate(self):
         collection = self.collection
         await collection.delete_many({})
-        pipeline = [{'$sort': {'_id': 1}}]
+        pipeline = [{"$sort": {"_id": 1}}]
 
         # Empty iterator.
         async for _ in collection.aggregate(pipeline):
@@ -77,14 +76,14 @@ class TestAsyncIOAwait(AsyncIOTestCase):
 
         for n_docs in 1, 2, 10:
             if n_docs:
-                docs = [{'_id': i} for i in range(n_docs)]
+                docs = [{"_id": i} for i in range(n_docs)]
                 await collection.insert_many(docs)
 
             # Force extra batches to test iteration.
             j = 0
             cursor = collection.aggregate(pipeline).batch_size(3)
             async for doc in cursor:
-                self.assertEqual(j, doc['_id'])
+                self.assertEqual(j, doc["_id"])
                 j += 1
 
             self.assertEqual(j, n_docs)
@@ -108,27 +107,26 @@ class TestAsyncIOAwait(AsyncIOTestCase):
         await cleanup()
 
         # Empty iterator.
-        async for _ in gfs.find({'_id': 1}):
+        async for _ in gfs.find({"_id": 1}):
             self.fail()
 
-        data = b'data'
+        data = b"data"
 
         for n_files in 1, 2, 10:
             for i in range(n_files):
-                async with gfs.open_upload_stream(filename='filename') as f:
+                async with gfs.open_upload_stream(filename="filename") as f:
                     await f.write(data)
 
             # Force extra batches to test iteration.
             j = 0
-            async for _ in gfs.find({'filename': 'filename'}).batch_size(3):
+            async for _ in gfs.find({"filename": "filename"}).batch_size(3):
                 j += 1
 
             self.assertEqual(j, n_files)
             await cleanup()
 
-        await gfs.upload_from_stream_with_id(
-            1, 'filename', source=data, chunk_size_bytes=1)
-        cursor = gfs.find({'_id': 1})
+        await gfs.upload_from_stream_with_id(1, "filename", source=data, chunk_size_bytes=1)
+        cursor = gfs.find({"_id": 1})
         await cursor.fetch_next
         gout = cursor.next_object()
         chunks = []
@@ -136,7 +134,7 @@ class TestAsyncIOAwait(AsyncIOTestCase):
             chunks.append(chunk)
 
         self.assertEqual(len(chunks), len(data))
-        self.assertEqual(b''.join(chunks), data)
+        self.assertEqual(b"".join(chunks), data)
 
     @asyncio_test
     async def test_stream_to_handler(self):
@@ -144,8 +142,7 @@ class TestAsyncIOAwait(AsyncIOTestCase):
         fs = AsyncIOMotorGridFSBucket(self.db)
         content_length = 1000
         await fs.delete(1)
-        await fs.upload_from_stream_with_id(
-            1, 'filename', source=b'a' * content_length)
+        await fs.upload_from_stream_with_id(1, "filename", source=b"a" * content_length)
         gridout = await fs.open_download_stream(1)
         handler = test.MockRequestHandler()
         await gridout.stream_to_handler(handler)
@@ -166,13 +163,13 @@ class TestAsyncIOAwait(AsyncIOTestCase):
     @asyncio_test
     async def test_list_indexes(self):
         await self.collection.drop()
-        await self.collection.create_index([('x', 1)])
-        await self.collection.create_index([('y', -1)])
+        await self.collection.create_index([("x", 1)])
+        await self.collection.create_index([("y", -1)])
         keys = set()
         async for info in self.collection.list_indexes():
-            keys.add(info['name'])
+            keys.add(info["name"])
 
-        self.assertEqual(keys, {'_id_', 'x_1', 'y_-1'})
+        self.assertEqual(keys, {"_id_", "x_1", "y_-1"})
 
     @env.require_version_min(3, 6)
     @env.require_replica_set

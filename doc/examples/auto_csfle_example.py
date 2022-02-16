@@ -1,17 +1,15 @@
-import os
 import asyncio
+import os
 
-from bson.codec_options import CodecOptions
 from bson import json_util
-
-from motor.motor_asyncio import (AsyncIOMotorClient,
-                                 AsyncIOMotorClientEncryption)
+from bson.codec_options import CodecOptions
 from pymongo.encryption import Algorithm
 from pymongo.encryption_options import AutoEncryptionOpts
 
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorClientEncryption
 
-async def create_json_schema_file(kms_providers, key_vault_namespace,
-                            key_vault_client):
+
+async def create_json_schema_file(kms_providers, key_vault_namespace, key_vault_client):
     client_encryption = AsyncIOMotorClientEncryption(
         kms_providers,
         key_vault_namespace,
@@ -21,31 +19,31 @@ async def create_json_schema_file(kms_providers, key_vault_namespace,
         # on MotorClient, Database, or Collection. We will not be calling
         # encrypt() or decrypt() in this example so we can use any
         # CodecOptions.
-        CodecOptions())
+        CodecOptions(),
+    )
 
     # Create a new data key and json schema for the encryptedField.
     # https://dochub.mongodb.org/core/client-side-field-level-encryption-automatic-encryption-rules
     data_key_id = await client_encryption.create_data_key(
-        'local', key_alt_names=['pymongo_encryption_example_1'])
+        "local", key_alt_names=["pymongo_encryption_example_1"]
+    )
     schema = {
         "properties": {
             "encryptedField": {
                 "encrypt": {
                     "keyId": [data_key_id],
                     "bsonType": "string",
-                    "algorithm":
-                        Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic
+                    "algorithm": Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic,
                 }
             }
         },
-        "bsonType": "object"
+        "bsonType": "object",
     }
     # Use CANONICAL_JSON_OPTIONS so that other drivers and tools will be
     # able to parse the MongoDB extended JSON file.
-    json_schema_string = json_util.dumps(
-        schema, json_options=json_util.CANONICAL_JSON_OPTIONS)
+    json_schema_string = json_util.dumps(schema, json_options=json_util.CANONICAL_JSON_OPTIONS)
 
-    with open('jsonSchema.json', 'w') as file:
+    with open("jsonSchema.json", "w") as file:
         file.write(json_schema_string)
 
 
@@ -70,21 +68,20 @@ async def main():
     # Ensure that two data keys cannot share the same keyAltName.
     await key_vault.drop()
     await key_vault.create_index(
-        "keyAltNames",
-        unique=True,
-        partialFilterExpression={"keyAltNames": {"$exists": True}})
+        "keyAltNames", unique=True, partialFilterExpression={"keyAltNames": {"$exists": True}}
+    )
 
-    await create_json_schema_file(
-        kms_providers, key_vault_namespace, key_vault_client)
+    await create_json_schema_file(kms_providers, key_vault_namespace, key_vault_client)
 
     # Load the JSON Schema and construct the local schema_map option.
-    with open('jsonSchema.json', 'r') as file:
+    with open("jsonSchema.json", "r") as file:
         json_schema_string = file.read()
     json_schema = json_util.loads(json_schema_string)
     schema_map = {encrypted_namespace: json_schema}
 
     auto_encryption_opts = AutoEncryptionOpts(
-        kms_providers, key_vault_namespace, schema_map=schema_map)
+        kms_providers, key_vault_namespace, schema_map=schema_map
+    )
 
     client = AsyncIOMotorClient(auto_encryption_opts=auto_encryption_opts)
     db_name, coll_name = encrypted_namespace.split(".", 1)
@@ -94,10 +91,10 @@ async def main():
 
     await coll.insert_one({"encryptedField": "123456789"})
     decrypted_doc = await coll.find_one()
-    print('Decrypted document: %s' % (decrypted_doc,))
+    print("Decrypted document: %s" % (decrypted_doc,))
     unencrypted_coll = AsyncIOMotorClient()[db_name][coll_name]
     encrypted_doc = await unencrypted_coll.find_one()
-    print('Encrypted document: %s' % (encrypted_doc,))
+    print("Encrypted document: %s" % (encrypted_doc,))
 
 
 if __name__ == "__main__":

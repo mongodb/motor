@@ -19,16 +19,16 @@ import datetime
 import sys
 import traceback
 import unittest
+from test import MockRequestHandler, SkipTest
+from test.tornado_tests import MotorTest
 
 from bson.objectid import ObjectId
 from gridfs.errors import NoFile
+from pymongo.errors import InvalidOperation
 from tornado import gen
 from tornado.testing import gen_test
-from pymongo.errors import InvalidOperation
 
 import motor
-from test import MockRequestHandler, SkipTest
-from test.tornado_tests import MotorTest
 
 
 class MotorGridFileTest(MotorTest):
@@ -44,26 +44,23 @@ class MotorGridFileTest(MotorTest):
 
     @gen_test
     async def test_attributes(self):
-        f = motor.MotorGridIn(
-            self.db.fs,
-            filename="test",
-            foo="bar",
-            content_type="text")
+        f = motor.MotorGridIn(self.db.fs, filename="test", foo="bar", content_type="text")
 
         await f.close()
 
         g = motor.MotorGridOut(self.db.fs, f._id)
         attr_names = (
-            '_id',
-            'filename',
-            'name',
-            'name',
-            'content_type',
-            'length',
-            'chunk_size',
-            'upload_date',
-            'aliases',
-            'metadata')
+            "_id",
+            "filename",
+            "name",
+            "name",
+            "content_type",
+            "length",
+            "chunk_size",
+            "upload_date",
+            "aliases",
+            "metadata",
+        )
 
         for attr_name in attr_names:
             self.assertRaises(InvalidOperation, getattr, g, attr_name)
@@ -75,7 +72,7 @@ class MotorGridFileTest(MotorTest):
     @gen_test
     async def test_iteration(self):
         fs = motor.MotorGridFSBucket(self.db)
-        _id = await fs.upload_from_stream('filename', b'foo')
+        _id = await fs.upload_from_stream("filename", b"foo")
         g = motor.MotorGridOut(self.db.fs, _id)
 
         # Iteration is prohibited.
@@ -102,7 +99,7 @@ class MotorGridFileTest(MotorTest):
 
     @gen_test
     async def test_readchunk(self):
-        in_data = b'a' * 10
+        in_data = b"a" * 10
         f = motor.MotorGridIn(self.db.fs, chunkSize=3)
         await f.write(in_data)
         await f.close()
@@ -130,8 +127,8 @@ class MotorGridFileTest(MotorTest):
             _, _, tb = sys.exc_info()
 
             # The call tree should include PyMongo code we ran on a thread.
-            formatted = '\n'.join(traceback.format_tb(tb))
-            self.assertTrue('_ensure_file' in formatted)
+            formatted = "\n".join(traceback.format_tb(tb))
+            self.assertTrue("_ensure_file" in formatted)
 
     @gen_test
     async def test_alternate_collection(self):
@@ -163,6 +160,7 @@ class MotorGridFileTest(MotorTest):
         # in Motor, have to use set()
         def setter():
             a.filename = "my_file"
+
         self.assertRaises(AttributeError, setter)
 
         # This method of setting attributes works in Motor
@@ -216,9 +214,16 @@ class MotorGridFileTest(MotorTest):
     async def test_grid_in_custom_opts(self):
         self.assertRaises(TypeError, motor.MotorGridIn, "foo")
         a = motor.MotorGridIn(
-            self.db.fs, _id=5, filename="my_file",
-            contentType="text/html", chunkSize=1000, aliases=["foo"],
-            metadata={"foo": 1, "bar": 2}, bar=3, baz="hello")
+            self.db.fs,
+            _id=5,
+            filename="my_file",
+            contentType="text/html",
+            chunkSize=1000,
+            aliases=["foo"],
+            metadata={"foo": 1, "bar": 2},
+            bar=3,
+            baz="hello",
+        )
 
         self.assertEqual(5, a._id)
         self.assertEqual("my_file", a.filename)
@@ -230,11 +235,7 @@ class MotorGridFileTest(MotorTest):
         self.assertEqual("hello", a.baz)
         self.assertRaises(AttributeError, getattr, a, "mike")
 
-        b = motor.MotorGridIn(
-            self.db.fs,
-            content_type="text/html",
-            chunk_size=1000,
-            baz=100)
+        b = motor.MotorGridIn(self.db.fs, content_type="text/html", chunk_size=1000, baz=100)
 
         self.assertEqual("text/html", b.content_type)
         self.assertEqual(1000, b.chunk_size)
@@ -263,9 +264,16 @@ class MotorGridFileTest(MotorTest):
     @gen_test
     async def test_grid_out_custom_opts(self):
         one = motor.MotorGridIn(
-            self.db.fs, _id=5, filename="my_file",
-            contentType="text/html", chunkSize=1000, aliases=["foo"],
-            metadata={"foo": 1, "bar": 2}, bar=3, baz="hello")
+            self.db.fs,
+            _id=5,
+            filename="my_file",
+            contentType="text/html",
+            chunkSize=1000,
+            aliases=["foo"],
+            metadata={"foo": 1, "bar": 2},
+            bar=3,
+            baz="hello",
+        )
 
         await one.write(b"hello world")
         await one.close()
@@ -288,8 +296,7 @@ class MotorGridFileTest(MotorTest):
         await one.close()
 
         file_document = await self.db.fs.files.find_one()
-        two = motor.MotorGridOut(
-            self.db.fs, file_document=file_document)
+        two = motor.MotorGridOut(self.db.fs, file_document=file_document)
 
         self.assertEqual(b"foo bar", (await two.read()))
 
@@ -353,12 +360,13 @@ class MotorGridFileTest(MotorTest):
         fs = motor.MotorGridFSBucket(self.db)
 
         for content_length in (0, 1, 100, 100 * 1000):
-            _id = await fs.upload_from_stream('filename', b'a' * content_length)
+            _id = await fs.upload_from_stream("filename", b"a" * content_length)
             gridout = await fs.open_download_stream(_id)
             handler = MockRequestHandler()
             await gridout.stream_to_handler(handler)
             self.assertEqual(content_length, handler.n_written)
             await fs.delete(_id)
+
 
 if __name__ == "__main__":
     unittest.main()

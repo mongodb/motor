@@ -24,10 +24,8 @@ import functools
 import multiprocessing
 import os
 import warnings
-
 from asyncio import coroutine  # For framework interface.
 from concurrent.futures import ThreadPoolExecutor
-
 
 try:
     import contextvars
@@ -35,7 +33,7 @@ except ImportError:
     contextvars = None
 
 
-CLASS_PREFIX = 'AsyncIO'
+CLASS_PREFIX = "AsyncIO"
 
 
 def get_event_loop():
@@ -49,16 +47,16 @@ def is_event_loop(loop):
 def check_event_loop(loop):
     if not is_event_loop(loop):
         raise TypeError(
-            "io_loop must be instance of asyncio-compatible event loop,"
-            "not %r" % loop)
+            "io_loop must be instance of asyncio-compatible event loop," "not %r" % loop
+        )
 
 
 def get_future(loop):
     return loop.create_future()
 
 
-if 'MOTOR_MAX_WORKERS' in os.environ:
-    max_workers = int(os.environ['MOTOR_MAX_WORKERS'])
+if "MOTOR_MAX_WORKERS" in os.environ:
+    max_workers = int(os.environ["MOTOR_MAX_WORKERS"])
 else:
     max_workers = multiprocessing.cpu_count() * 5
 
@@ -70,8 +68,7 @@ def run_on_executor(loop, fn, *args, **kwargs):
         context = contextvars.copy_context()
         fn = functools.partial(context.run, fn)
 
-    return loop.run_in_executor(
-        _EXECUTOR, functools.partial(fn, *args, **kwargs))
+    return loop.run_in_executor(_EXECUTOR, functools.partial(fn, *args, **kwargs))
 
 
 # Adapted from tornado.gen.
@@ -107,8 +104,7 @@ def chain_return_value(future, loop, return_value):
         else:
             chained.set_result(return_value)
 
-    future.add_done_callback(
-        functools.partial(loop.call_soon_threadsafe, copy))
+    future.add_done_callback(functools.partial(loop.call_soon_threadsafe, copy))
     return chained
 
 
@@ -124,8 +120,7 @@ def call_soon(loop, callback, *args, **kwargs):
 
 
 def add_future(loop, future, callback, *args):
-    future.add_done_callback(
-        functools.partial(loop.call_soon_threadsafe, callback, *args))
+    future.add_done_callback(functools.partial(loop.call_soon_threadsafe, callback, *args))
 
 
 def pymongo_class_wrapper(f, pymongo_class):
@@ -133,6 +128,7 @@ def pymongo_class_wrapper(f, pymongo_class):
 
     See WrapAsync.
     """
+
     @functools.wraps(f)
     async def _wrapper(self, *args, **kwargs):
         result = await f(self, *args, **kwargs)
@@ -149,10 +145,12 @@ def pymongo_class_wrapper(f, pymongo_class):
 
 def yieldable(future):
     warnings.warn(
-        "The yieldable function is deprecated and will be removed in "
-        "Motor 3.0", DeprecationWarning, stacklevel=2)
+        "The yieldable function is deprecated and will be removed in " "Motor 3.0",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return next(iter(future))
 
 
 def platform_info():
-    return 'asyncio'
+    return "asyncio"

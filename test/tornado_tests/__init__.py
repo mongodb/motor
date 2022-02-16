@@ -16,26 +16,26 @@
 
 import concurrent.futures
 import functools
+from test.test_environment import CA_PEM, CLIENT_PEM, env
+from test.version import Version
 from unittest import SkipTest
 
-from mockupdb import MockupDB
 from bson import SON
+from mockupdb import MockupDB
 from tornado import testing
 
 import motor
-from test.test_environment import env, CA_PEM, CLIENT_PEM
-from test.version import Version
 
 
 async def get_command_line(client):
-    command_line = await client.admin.command('getCmdLineOpts')
-    assert command_line['ok'] == 1, "getCmdLineOpts() failed"
+    command_line = await client.admin.command("getCmdLineOpts")
+    assert command_line["ok"] == 1, "getCmdLineOpts() failed"
     return command_line
 
 
 async def server_is_mongos(client):
-    ismaster_response = await client.admin.command('ismaster')
-    return ismaster_response.get('msg') == 'isdbgrid'
+    ismaster_response = await client.admin.command("ismaster")
+    return ismaster_response.get("msg") == "isdbgrid"
 
 
 async def skip_if_mongos(client):
@@ -74,22 +74,22 @@ class MotorTest(testing.AsyncTestCase):
 
     async def make_test_data(self):
         await self.collection.delete_many({})
-        await self.collection.insert_many([{'_id': i} for i in range(200)])
+        await self.collection.insert_many([{"_id": i} for i in range(200)])
 
     make_test_data.__test__ = False
 
     async def set_fail_point(self, client, command_args):
-        cmd = SON([('configureFailPoint', 'failCommand')])
+        cmd = SON([("configureFailPoint", "failCommand")])
         cmd.update(command_args)
         await client.admin.command(cmd)
 
     def get_client_kwargs(self, **kwargs):
         if env.mongod_started_with_ssl:
-            kwargs.setdefault('tlsCAFile', CA_PEM)
-            kwargs.setdefault('tlsCertificateKeyFile', CLIENT_PEM)
+            kwargs.setdefault("tlsCAFile", CA_PEM)
+            kwargs.setdefault("tlsCertificateKeyFile", CLIENT_PEM)
 
-        kwargs.setdefault('tls', env.mongod_started_with_ssl)
-        kwargs.setdefault('io_loop', self.io_loop)
+        kwargs.setdefault("tls", env.mongod_started_with_ssl)
+        kwargs.setdefault("io_loop", self.io_loop)
 
         return kwargs
 
@@ -100,20 +100,14 @@ class MotorTest(testing.AsyncTestCase):
         close the client to avoid file-descriptor problems after AsyncTestCase
         calls self.io_loop.close(all_fds=True).
         """
-        return motor.MotorClient(
-            uri or env.uri,
-            *args,
-            **self.get_client_kwargs(**kwargs))
+        return motor.MotorClient(uri or env.uri, *args, **self.get_client_kwargs(**kwargs))
 
     def motor_rsc(self, uri=None, *args, **kwargs):
         """Get an open MotorClient for replica set.
 
         Ignores self.ssl, you must pass 'ssl' argument.
         """
-        return motor.MotorClient(
-            uri or env.rs_uri,
-            *args,
-            **self.get_client_kwargs(**kwargs))
+        return motor.MotorClient(uri or env.rs_uri, *args, **self.get_client_kwargs(**kwargs))
 
     def tearDown(self):
         env.sync_cx.motor_test.test_collection.delete_many({})
@@ -142,23 +136,22 @@ class MotorMockServerTest(MotorTest):
 
     def client_server(self, *args, **kwargs):
         server = self.server(*args, **kwargs)
-        client = motor.motor_tornado.MotorClient(server.uri,
-                                                 io_loop=self.io_loop)
+        client = motor.motor_tornado.MotorClient(server.uri, io_loop=self.io_loop)
 
         self.addCleanup(client.close)
         return client, server
 
     async def run_thread(self, fn, *args, **kwargs):
-        return await self.io_loop.run_in_executor(
-            None, functools.partial(fn, *args, **kwargs))
+        return await self.io_loop.run_in_executor(None, functools.partial(fn, *args, **kwargs))
 
 
 class AsyncVersion(Version):
     """Version class that can be instantiated with an async client from
     within a coroutine."""
+
     @classmethod
     async def from_client(cls, client):
         info = await client.server_info()
-        if 'versionArray' in info:
-            return cls.from_version_array(info['versionArray'])
-        return cls.from_string(info['version'])
+        if "versionArray" in info:
+            return cls.from_version_array(info["versionArray"])
+        return cls.from_string(info["version"])

@@ -12,28 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import test
 from abc import ABC
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.utils import ignore_deprecations
 
 import pymongo
 from pymongo import WriteConcern
 from pymongo.errors import ConfigurationError
-from pymongo.read_preferences import ReadPreference, Secondary, Nearest
-from motor import motor_asyncio
+from pymongo.read_preferences import Nearest, ReadPreference, Secondary
 
-import test
-from test.asyncio_tests import asyncio_test, AsyncIOTestCase
-from test.utils import ignore_deprecations
+from motor import motor_asyncio
 
 
 class AIOMotorTestBasic(AsyncIOTestCase):
     def test_repr(self):
-        self.assertTrue(repr(self.cx).startswith('AsyncIOMotorClient'))
-        self.assertTrue(repr(self.db).startswith('AsyncIOMotorDatabase'))
-        self.assertTrue(repr(self.collection).startswith(
-            'AsyncIOMotorCollection'))
+        self.assertTrue(repr(self.cx).startswith("AsyncIOMotorClient"))
+        self.assertTrue(repr(self.db).startswith("AsyncIOMotorDatabase"))
+        self.assertTrue(repr(self.collection).startswith("AsyncIOMotorCollection"))
 
         cursor = self.collection.find()
-        self.assertTrue(repr(cursor).startswith('AsyncIOMotorCursor'))
+        self.assertTrue(repr(cursor).startswith("AsyncIOMotorCursor"))
 
     @asyncio_test
     async def test_write_concern(self):
@@ -41,18 +40,18 @@ class AIOMotorTestBasic(AsyncIOTestCase):
         self.assertEqual(WriteConcern(), self.cx.write_concern)
 
         await self.collection.delete_many({})
-        await self.collection.insert_one({'_id': 0})
+        await self.collection.insert_one({"_id": 0})
 
         for wc_opts in [
             {},
-            {'w': 0},
-            {'w': 1},
-            {'wTimeoutMS': 1000},
+            {"w": 0},
+            {"w": 1},
+            {"wTimeoutMS": 1000},
         ]:
             cx = self.asyncio_client(test.env.uri, **wc_opts)
-            wtimeout = wc_opts.pop('wTimeoutMS', None)
+            wtimeout = wc_opts.pop("wTimeoutMS", None)
             if wtimeout:
-                wc_opts['wtimeout'] = wtimeout
+                wc_opts["wtimeout"] = wtimeout
             wc = WriteConcern(**wc_opts)
             self.assertEqual(wc, cx.write_concern)
 
@@ -64,13 +63,13 @@ class AIOMotorTestBasic(AsyncIOTestCase):
 
             if wc.acknowledged:
                 with self.assertRaises(pymongo.errors.DuplicateKeyError):
-                    await collection.insert_one({'_id': 0})
+                    await collection.insert_one({"_id": 0})
             else:
-                await collection.insert_one({'_id': 0})  # No error
+                await collection.insert_one({"_id": 0})  # No error
 
             # No error
             c = collection.with_options(write_concern=WriteConcern(w=0))
-            await c.insert_one({'_id': 0})
+            await c.insert_one({"_id": 0})
             cx.close()
 
     @ignore_deprecations
@@ -82,32 +81,29 @@ class AIOMotorTestBasic(AsyncIOTestCase):
 
         # We can set mode, tags, and latency.
         cx = self.asyncio_client(
-            read_preference=Secondary(tag_sets=[{'foo': 'bar'}]),
-            localThresholdMS=42)
+            read_preference=Secondary(tag_sets=[{"foo": "bar"}]), localThresholdMS=42
+        )
 
         self.assertEqual(ReadPreference.SECONDARY.mode, cx.read_preference.mode)
-        self.assertEqual([{'foo': 'bar'}], cx.read_preference.tag_sets)
+        self.assertEqual([{"foo": "bar"}], cx.read_preference.tag_sets)
         self.assertEqual(42, cx.options.local_threshold_ms)
 
         # Make a MotorCursor and get its PyMongo Cursor
         collection = cx.motor_test.test_collection.with_options(
-            read_preference=Nearest(tag_sets=[{'yay': 'jesse'}]))
+            read_preference=Nearest(tag_sets=[{"yay": "jesse"}])
+        )
 
         motor_cursor = collection.find()
         cursor = motor_cursor.delegate
 
-        self.assertEqual(Nearest(tag_sets=[{'yay': 'jesse'}]),
-                         cursor._read_preference())
+        self.assertEqual(Nearest(tag_sets=[{"yay": "jesse"}]), cursor._read_preference())
 
         cx.close()
 
     def test_underscore(self):
-        self.assertIsInstance(self.cx['_db'],
-                              motor_asyncio.AsyncIOMotorDatabase)
-        self.assertIsInstance(self.db['_collection'],
-                              motor_asyncio.AsyncIOMotorCollection)
-        self.assertIsInstance(self.collection['_collection'],
-                              motor_asyncio.AsyncIOMotorCollection)
+        self.assertIsInstance(self.cx["_db"], motor_asyncio.AsyncIOMotorDatabase)
+        self.assertIsInstance(self.db["_collection"], motor_asyncio.AsyncIOMotorCollection)
+        self.assertIsInstance(self.collection["_collection"], motor_asyncio.AsyncIOMotorCollection)
 
         with self.assertRaises(AttributeError):
             self.cx._db
@@ -119,7 +115,6 @@ class AIOMotorTestBasic(AsyncIOTestCase):
             self.collection._collection
 
     def test_abc(self):
-
         class C(ABC):
             db = self.db
             collection = self.collection
@@ -145,9 +140,9 @@ class AIOMotorTestBasic(AsyncIOTestCase):
         cx = ClientSubclass(test.env.uri, **self.get_client_kwargs())
         self.assertIsInstance(cx, ClientSubclass)
 
-        db = cx['testdb']
+        db = cx["testdb"]
         self.assertIsInstance(db, DatabaseSubclass)
 
-        coll = db['testcoll']
+        coll = db["testcoll"]
         self.assertIsInstance(coll, CollectionSubclass)
         self.assertIsNotNone(await coll.insert_one({}))
