@@ -18,7 +18,6 @@ jobs:
           extra_args: --all-files --hook-stage=manual
 
   build:
-    # supercharge/mongodb-github-action requires containers so we don't test other platforms
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
