@@ -838,7 +838,7 @@ accessible, Motor collections now allow dict-style access, the same as Motor
 clients and databases always have::
 
     # New in Motor 0.6
-    subcollection = collection['_subcollection']    
+    subcollection = collection['_subcollection']
 
 These changes solve problems with iPython code completion and the Python 3
 :class:`ABC` abstract base class.

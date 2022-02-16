@@ -17,4 +17,3 @@ Motor asyncio API
 
 This page describes using Motor with asyncio. For Tornado integration, see
 :doc:`../api-tornado/index`.
-

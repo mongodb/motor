@@ -23,7 +23,7 @@ export GSSAPI_PORT=${SASL_PORT}
 export GSSAPI_PRINCIPAL=${PRINCIPAL}
 
 # Pass needed env variables to the test environment.
-export TOX_TESTENV_PASSENV=*
+export TOX_TESTENV_PASSENV="*"
 
 # --sitepackages allows use of pykerberos without a test dep.
 /opt/python/3.6/bin/python3 -m tox -e "$TOX_ENV" --sitepackages -- -x test.test_auth
