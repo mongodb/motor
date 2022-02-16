@@ -34,10 +34,12 @@ else:
     # at module root. This may change in the future. First get __all__.
     # Make "from motor import *" the same as "from motor.motor_tornado import *"
     # Now some classes that aren't in __all__ but might be expected.
-    from .motor_tornado import *  # noqa: F401,F403
-    from .motor_tornado import MotorCollection  # noqa: F401
-    from .motor_tornado import MotorDatabase  # noqa: F401
-    from .motor_tornado import MotorGridFSBucket  # noqa: F401
-    from .motor_tornado import MotorGridIn  # noqa: F401
-    from .motor_tornado import MotorGridOut  # noqa: F401
-    from .motor_tornado import __all__  # noqa: F401
+    from .motor_tornado import *  # noqa: F403
+    from .motor_tornado import (
+        MotorCollection,
+        MotorDatabase,
+        MotorGridFSBucket,
+        MotorGridIn,
+        MotorGridOut,
+        __all__,
+    )
