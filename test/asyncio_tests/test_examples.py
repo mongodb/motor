@@ -765,18 +765,18 @@ class TestExamples(AsyncIOTestCase):
         try:
             # Start Changestream Example 1
             cursor = db.inventory.watch()
-            document = await next(cursor)
+            document = await cursor.next()
             # End Changestream Example 1
 
             # Start Changestream Example 2
             cursor = db.inventory.watch(full_document="updateLookup")
-            document = await next(cursor)
+            document = await cursor.next()
             # End Changestream Example 2
 
             # Start Changestream Example 3
             resume_token = cursor.resume_token
             cursor = db.inventory.watch(resume_after=resume_token)
-            document = await next(cursor)
+            document = await cursor.next()
             # End Changestream Example 3
 
             # Start Changestream Example 4
@@ -785,7 +785,7 @@ class TestExamples(AsyncIOTestCase):
                 {"$addFields": {"newField": "this is an added field!"}},
             ]
             cursor = db.inventory.watch(pipeline=pipeline)
-            document = await next(cursor)
+            document = await cursor.next()
             # End Changestream Example 4
         finally:
             done = True
@@ -979,7 +979,7 @@ class TestExamples(AsyncIOTestCase):
 
                     # If transient error, retry the whole transaction
                     if exc.has_error_label("TransientTransactionError"):
-                        print("TransientTransactionError, retryingtransaction ...")
+                        print("TransientTransactionError, retryin transaction ...")
                         continue
                     else:
                         raise
