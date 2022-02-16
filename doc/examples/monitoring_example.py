@@ -73,10 +73,11 @@ async def do_insert():
 ioloop.IOLoop.current().run_sync(do_insert)
 # motorclient end
 
+
 # server logger start
 class ServerLogger(monitoring.ServerListener):
     def opened(self, event):
-        logging.info("Server {0.server_address} added to topology " "{0.topology_id}".format(event))
+        logging.info("Server {0.server_address} added to topology {0.topology_id}".format(event))
 
     def description_changed(self, event):
         previous_server_type = event.previous_description.server_type
@@ -90,22 +91,21 @@ class ServerLogger(monitoring.ServerListener):
 
     def closed(self, event):
         logging.warning(
-            "Server {0.server_address} removed from topology " "{0.topology_id}".format(event)
+            "Server {0.server_address} removed from topology {0.topology_id}".format(event)
         )
 
 
 monitoring.register(ServerLogger())
 # server logger end
 
+
 # topology logger start
 class TopologyLogger(monitoring.TopologyListener):
     def opened(self, event):
-        logging.info("Topology with id {0.topology_id} " "opened".format(event))
+        logging.info("Topology with id {0.topology_id} opened".format(event))
 
     def description_changed(self, event):
-        logging.info(
-            "Topology description updated for " "topology id {0.topology_id}".format(event)
-        )
+        logging.info("Topology description updated for topology id {0.topology_id}".format(event))
         previous_topology_type = event.previous_description.topology_type
         new_topology_type = event.new_description.topology_type
         if new_topology_type != previous_topology_type:
@@ -116,16 +116,17 @@ class TopologyLogger(monitoring.TopologyListener):
             )
 
     def closed(self, event):
-        logging.info("Topology with id {0.topology_id} " "closed".format(event))
+        logging.info("Topology with id {0.topology_id} closed".format(event))
 
 
 monitoring.register(TopologyLogger())
 # topology logger end
 
+
 # heartbeat logger start
 class HeartbeatLogger(monitoring.ServerHeartbeatListener):
     def started(self, event):
-        logging.info("Heartbeat sent to server " "{0.connection_id}".format(event))
+        logging.info("Heartbeat sent to server {0.connection_id}".format(event))
 
     def succeeded(self, event):
         logging.info(
@@ -136,7 +137,7 @@ class HeartbeatLogger(monitoring.ServerHeartbeatListener):
 
     def failed(self, event):
         logging.warning(
-            "Heartbeat to server {0.connection_id} " "failed with error {0.reply}".format(event)
+            "Heartbeat to server {0.connection_id} failed with error {0.reply}".format(event)
         )
 
 

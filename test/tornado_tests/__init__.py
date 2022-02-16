@@ -48,16 +48,6 @@ async def remove_all_users(db):
     await db.command({"dropAllUsersFromDatabase": 1})
 
 
-async def skip_if_mongos(client):
-    is_mongos = await server_is_mongos(client)
-    if is_mongos:
-        raise SkipTest("connected to mongos")
-
-
-async def remove_all_users(db):
-    await db.command({"dropAllUsersFromDatabase": 1})
-
-
 class MotorTest(testing.AsyncTestCase):
     longMessage = True  # Used by unittest.TestCase
     ssl = False  # If True, connect with SSL, skip if mongod isn't SSL

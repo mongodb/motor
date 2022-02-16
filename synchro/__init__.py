@@ -19,8 +19,8 @@ PyMongo.
 DO NOT USE THIS MODULE.
 """
 
+import functools
 import inspect
-import time
 import unittest
 
 # Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
@@ -298,21 +298,15 @@ def with_metaclass(metaclass, *bases):
     return type.__new__(_metaclass, str("dummy"), (), {})
 
 
-class Synchro(with_metaclass(SynchroMeta)):
+class Synchro(meta=SynchroMeta):
     """
     Wraps a MotorClient, MotorDatabase, MotorCollection, etc. and
     makes it act like the synchronous pymongo equivalent
     """
 
-    __metaclass__ = SynchroMeta
     __delegate_class__ = None
 
-    def __cmp__(self, other):
-        """Implements == and != on Python 2."""
-        return cmp(self.delegate, other.delegate)
-
     def __eq__(self, other):
-        """Implements == and != on Python 3."""
         if (
             isinstance(other, self.__class__)
             and hasattr(self, "delegate")
@@ -424,7 +418,7 @@ class ClientSession(Synchro):
         self.synchronize(self.delegate.end_session)
 
     def with_transaction(self, *args, **kwargs):
-        raise unittest.SkipTest("MOTOR-606 Synchro does not support " "with_transaction")
+        raise unittest.SkipTest("MOTOR-606 Synchro does not supportwith_transaction")
 
     # For PyMongo tests that access session internals.
     _client = SynchroProperty()
@@ -452,7 +446,7 @@ class Database(Synchro):
 
         assert isinstance(
             self.delegate, motor.MotorDatabase
-        ), "synchro.Database delegate must be MotorDatabase, not " " %s" % repr(self.delegate)
+        ), "synchro.Database delegate must be MotorDatabase, not %s" % repr(self.delegate)
 
     @property
     def client(self):
@@ -489,7 +483,7 @@ class Collection(Synchro):
 
         if not isinstance(self.delegate, motor.MotorCollection):
             raise TypeError(
-                "Expected to get synchro Collection from Database," " got %s" % repr(self.delegate)
+                "Expected to get synchro Collection from Database got %s" % repr(self.delegate)
             )
 
     def __getattr__(self, name):
@@ -618,7 +612,7 @@ class GridOutCursor(Cursor):
         super().__init__(delegate)
 
     def next(self):
-        motor_grid_out = super().next()
+        motor_grid_out = next(super())
         if motor_grid_out:
             return GridOut(self.collection, delegate=motor_grid_out)
 

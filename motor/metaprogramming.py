@@ -17,8 +17,6 @@
 import functools
 import inspect
 
-from pymongo.cursor import Cursor
-
 _class_cache = {}
 
 

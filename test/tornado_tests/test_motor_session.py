@@ -24,7 +24,6 @@ from test.utils import TestListener, session_ids
 
 from pymongo import IndexModel, InsertOne
 from pymongo.errors import InvalidOperation
-from tornado import gen
 from tornado.testing import gen_test
 
 

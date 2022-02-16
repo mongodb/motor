@@ -24,7 +24,7 @@ import functools
 import multiprocessing
 import os
 import warnings
-from asyncio import coroutine  # For framework interface.
+from asyncio import coroutine  # noqa: F401 - For framework interface.
 from concurrent.futures import ThreadPoolExecutor
 
 try:
@@ -46,9 +46,7 @@ def is_event_loop(loop):
 
 def check_event_loop(loop):
     if not is_event_loop(loop):
-        raise TypeError(
-            "io_loop must be instance of asyncio-compatible event loop," "not %r" % loop
-        )
+        raise TypeError("io_loop must be instance of asyncio-compatible event loop, not %r" % loop)
 
 
 def get_future(loop):
@@ -145,7 +143,7 @@ def pymongo_class_wrapper(f, pymongo_class):
 
 def yieldable(future):
     warnings.warn(
-        "The yieldable function is deprecated and will be removed in " "Motor 3.0",
+        "The yieldable function is deprecated and will be removed in  Motor 3.0",
         DeprecationWarning,
         stacklevel=2,
     )

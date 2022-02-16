@@ -15,7 +15,6 @@
 """Framework-agnostic core of Motor, an asynchronous driver for MongoDB."""
 
 import functools
-import sys
 import time
 import warnings
 
@@ -34,7 +33,7 @@ from pymongo.database import Database
 from pymongo.driver_info import DriverInfo
 from pymongo.encryption import ClientEncryption
 
-from motor.docstrings import *
+import motor.docstrings as docstrings
 
 from . import version as motor_version
 from .metaprogramming import (
@@ -109,8 +108,8 @@ class AgnosticClient(AgnosticBaseProperties):
     __hash__ = DelegateMethod()
     drop_database = AsyncCommand().unwrap("MotorDatabase")
     options = ReadOnlyProperty()
-    get_database = DelegateMethod(doc=get_database_doc).wrap(Database)
-    get_default_database = DelegateMethod(doc=get_default_database_doc).wrap(Database)
+    get_database = DelegateMethod(doc=docstrings.get_database_doc).wrap(Database)
+    get_default_database = DelegateMethod(doc=docstrings.get_default_database_doc).wrap(Database)
     HOST = ReadOnlyProperty()
     is_mongos = ReadOnlyProperty()
     is_primary = ReadOnlyProperty()
@@ -123,7 +122,7 @@ class AgnosticClient(AgnosticBaseProperties):
     secondaries = ReadOnlyProperty()
     server_info = AsyncRead()
     topology_description = ReadOnlyProperty()
-    start_session = AsyncCommand(doc=start_session_doc).wrap(ClientSession)
+    start_session = AsyncCommand(doc=docstrings.start_session_doc).wrap(ClientSession)
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -501,7 +500,7 @@ class AgnosticClientSession(AgnosticBase):
 
     def __enter__(self):
         raise AttributeError(
-            "Use Motor sessions like 'async with await" " client.start_session()', not 'with'"
+            "Use Motor sessions like 'async with await client.start_session()', not 'with'"
         )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -513,12 +512,12 @@ class AgnosticDatabase(AgnosticBaseProperties):
     __delegate_class__ = Database
 
     __hash__ = DelegateMethod()
-    command = AsyncCommand(doc=cmd_doc)
+    command = AsyncCommand(doc=docstrings.cmd_doc)
     create_collection = AsyncCommand().wrap(Collection)
     dereference = AsyncRead()
     drop_collection = AsyncCommand().unwrap("MotorCollection")
     get_collection = DelegateMethod().wrap(Collection)
-    list_collection_names = AsyncRead(doc=list_collection_names_doc)
+    list_collection_names = AsyncRead(doc=docstrings.list_collection_names_doc)
     list_collections = AsyncRead()
     name = ReadOnlyProperty()
     validate_collection = AsyncRead().unwrap("MotorCollection")
@@ -730,31 +729,31 @@ class AgnosticCollection(AgnosticBaseProperties):
     __delegate_class__ = Collection
 
     __hash__ = DelegateMethod()
-    bulk_write = AsyncCommand(doc=bulk_write_doc)
+    bulk_write = AsyncCommand(doc=docstrings.bulk_write_doc)
     count_documents = AsyncRead()
     create_index = AsyncCommand()
-    create_indexes = AsyncCommand(doc=create_indexes_doc)
-    delete_many = AsyncCommand(doc=delete_many_doc)
-    delete_one = AsyncCommand(doc=delete_one_doc)
+    create_indexes = AsyncCommand(doc=docstrings.create_indexes_doc)
+    delete_many = AsyncCommand(doc=docstrings.delete_many_doc)
+    delete_one = AsyncCommand(doc=docstrings.delete_one_doc)
     distinct = AsyncRead()
-    drop = AsyncCommand(doc=drop_doc)
+    drop = AsyncCommand(doc=docstrings.drop_doc)
     drop_index = AsyncCommand()
     drop_indexes = AsyncCommand()
     estimated_document_count = AsyncCommand()
-    find_one = AsyncRead(doc=find_one_doc)
-    find_one_and_delete = AsyncCommand(doc=find_one_and_delete_doc)
-    find_one_and_replace = AsyncCommand(doc=find_one_and_replace_doc)
-    find_one_and_update = AsyncCommand(doc=find_one_and_update_doc)
+    find_one = AsyncRead(doc=docstrings.find_one_doc)
+    find_one_and_delete = AsyncCommand(doc=docstrings.find_one_and_delete_doc)
+    find_one_and_replace = AsyncCommand(doc=docstrings.find_one_and_replace_doc)
+    find_one_and_update = AsyncCommand(doc=docstrings.find_one_and_update_doc)
     full_name = ReadOnlyProperty()
-    index_information = AsyncRead(doc=index_information_doc)
-    insert_many = AsyncWrite(doc=insert_many_doc)
-    insert_one = AsyncCommand(doc=insert_one_doc)
+    index_information = AsyncRead(doc=docstrings.index_information_doc)
+    insert_many = AsyncWrite(doc=docstrings.insert_many_doc)
+    insert_one = AsyncCommand(doc=docstrings.insert_one_doc)
     name = ReadOnlyProperty()
     options = AsyncRead()
     rename = AsyncCommand()
-    replace_one = AsyncCommand(doc=replace_one_doc)
-    update_many = AsyncCommand(doc=update_many_doc)
-    update_one = AsyncCommand(doc=update_one_doc)
+    replace_one = AsyncCommand(doc=docstrings.replace_one_doc)
+    update_many = AsyncCommand(doc=docstrings.update_many_doc)
+    update_one = AsyncCommand(doc=docstrings.update_one_doc)
     with_options = DelegateMethod().wrap(Collection)
 
     _async_aggregate = AsyncRead(attr_name="aggregate")
@@ -775,7 +774,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         if not isinstance(database, db_class):
             raise TypeError(
-                "First argument to MotorCollection must be " "MotorDatabase, not %r" % database
+                "First argument to MotorCollection must be MotorDatabase, not %r" % database
             )
 
         delegate = (
@@ -1234,7 +1233,7 @@ class AgnosticBaseCursor(AgnosticBase):
         """Initial query or getMore. Returns a Future."""
         if not self.alive:
             raise pymongo.errors.InvalidOperation(
-                "Can't call get_more() on a MotorCursor that has been" " exhausted or killed."
+                "Can't call get_more() on a MotorCursor that has been exhausted or killed."
             )
 
         self.started = True
@@ -1488,7 +1487,6 @@ class AgnosticBaseCursor(AgnosticBase):
             # Return early if the task was cancelled.
             if future.done():
                 return
-            collection = self.collection
 
             if length is None:
                 n = result
@@ -1554,9 +1552,9 @@ class AgnosticCursor(AgnosticBaseCursor):
     limit = MotorCursorChainingMethod()
     skip = MotorCursorChainingMethod()
     max_scan = MotorCursorChainingMethod()
-    sort = MotorCursorChainingMethod(doc=cursor_sort_doc)
+    sort = MotorCursorChainingMethod(doc=docstrings.cursor_sort_doc)
     hint = MotorCursorChainingMethod()
-    where = MotorCursorChainingMethod(doc=where_doc)
+    where = MotorCursorChainingMethod(doc=docstrings.where_doc)
     max_await_time_ms = MotorCursorChainingMethod()
     max_time_ms = MotorCursorChainingMethod()
     min = MotorCursorChainingMethod()
@@ -1894,10 +1892,10 @@ class AgnosticClientEncryption(AgnosticBase):
     __motor_class_name__ = "MotorClientEncryption"
     __delegate_class__ = ClientEncryption
 
-    create_data_key = AsyncCommand(doc=create_data_key_doc)
+    create_data_key = AsyncCommand(doc=docstrings.create_data_key_doc)
     encrypt = AsyncCommand()
     decrypt = AsyncCommand()
-    close = AsyncCommand(doc=close_doc)
+    close = AsyncCommand(doc=docstrings.close_doc)
 
     def __init__(
         self, kms_providers, key_vault_namespace, key_vault_client, codec_options, io_loop=None

@@ -17,7 +17,6 @@
 import asyncio
 import os
 import unittest
-from sys import platform
 from unittest import SkipTest
 
 try:

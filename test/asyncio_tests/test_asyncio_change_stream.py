@@ -133,11 +133,11 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
 
         change_stream = coll.watch()
         self.wait_and_insert(change_stream, 1)
-        change = await change_stream.next()
+        change = await next(change_stream)
 
         # New change stream with resume token.
         await coll.insert_one({"_id": 23})
-        change = await coll.watch(resume_after=change["_id"]).next()
+        change = await next(coll.watch(resume_after=change["_id"]))
         self.assertEqual(change["fullDocument"], {"_id": 23})
 
     @env.require_version_min(4, 2)
@@ -152,7 +152,7 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
 
         # Generate invalidate event and store corresponding resume token.
         await self.collection.drop()
-        _ = await change_stream.next()
+        _ = await next(change_stream)
         # v5.1 requires an extra getMore after an invalidate event to exhaust
         # the cursor.
         self.assertIsNone(await change_stream.try_next())
@@ -163,20 +163,20 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         doc = {"_id": "startAfterTest"}
         await self.collection.insert_one(doc)
         change_stream = self.collection.watch(start_after=resume_token)
-        change = await change_stream.next()
+        change = await next(change_stream)
         self.assertEqual(doc, change["fullDocument"])
 
     @asyncio_test
     async def test_close(self):
         coll = self.collection
         change_stream = coll.watch()
-        future = change_stream.next()
+        future = next(change_stream)
         self.wait_and_insert(change_stream, 1)
         await future
 
         await change_stream.close()
         with self.assertRaises(StopAsyncIteration):
-            await change_stream.next()
+            await next(change_stream)
 
         async for _ in change_stream:
             pass
@@ -185,20 +185,20 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
     async def test_missing_id(self):
         coll = self.collection
         change_stream = coll.watch([{"$project": {"_id": 0}}])
-        future = change_stream.next()
+        future = next(change_stream)
         self.wait_and_insert(change_stream)
         with self.assertRaises((InvalidOperation, OperationFailure)):
             await future
 
         # The cursor should now be closed.
         with self.assertRaises(StopAsyncIteration):
-            await change_stream.next()
+            await next(change_stream)
 
     @asyncio_test
     async def test_unknown_full_document(self):
         coll = self.collection
         change_stream = coll.watch(full_document="unknownFullDocOption")
-        future = change_stream.next()
+        future = next(change_stream)
         self.wait_and_insert(change_stream, 1)
         with self.assertRaises(OperationFailure):
             await future
@@ -220,7 +220,7 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         async with coll.watch() as stream:
             self.assertEqual([{"_id": 1}], await coll.find().to_list(None))
             await coll.insert_one({"_id": 2})
-            doc = await stream.next()
+            doc = await next(stream)
             self.assertEqual({"_id": 2}, doc["fullDocument"])
 
     @asyncio_test
@@ -269,18 +269,18 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
             # Pass MotorSession.
             async with self.collection.watch(session=session) as cs:
                 self.wait_and_insert(cs, 1)
-                _ = await cs.next()
+                _ = await next(cs)
             # Pass PyMongo session directly.
             async with self.collection.watch(session=session.delegate) as cs:
                 self.wait_and_insert(cs, 1)
-                _ = await cs.next()
+                _ = await next(cs)
 
     @asyncio_test(timeout=10)
     async def test_iterate_more_streams_than_workers(self):
         # Create more tasks running ChangeStream.next than there are worker
         # threads, and then ensure that other tasks can still run.
         streams = [self.collection.watch() for _ in range(max_workers)]
-        tasks = [stream.next() for stream in streams]
+        tasks = [next(stream) for stream in streams]
         try:
 
             async def find_insert():

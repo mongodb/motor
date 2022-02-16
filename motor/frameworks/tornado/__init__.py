@@ -23,9 +23,9 @@ import warnings
 from concurrent.futures import ThreadPoolExecutor
 
 import tornado.process
-from tornado import concurrent, gen, ioloop
+from tornado import concurrent, ioloop
 from tornado import version as tornado_version
-from tornado.gen import chain_future, coroutine  # For framework interface.
+from tornado.gen import chain_future, coroutine  # noqa: F401 - For framework interface.
 
 try:
     import contextvars
@@ -129,7 +129,7 @@ def pymongo_class_wrapper(f, pymongo_class):
 
 def yieldable(future):
     warnings.warn(
-        "The yieldable function is deprecated and will be removed in " "Motor 3.0",
+        "The yieldable function is deprecated and will be removed in Motor 3.0",
         DeprecationWarning,
         stacklevel=2,
     )

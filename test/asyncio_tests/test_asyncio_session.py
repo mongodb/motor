@@ -14,7 +14,6 @@
 
 """Test ClientSession support with asyncio."""
 
-import asyncio
 import copy
 import sys
 import unittest

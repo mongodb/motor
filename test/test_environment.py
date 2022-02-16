@@ -17,7 +17,6 @@
 import os
 import socket
 import sys
-import warnings
 from functools import wraps
 from test.utils import create_user
 from test.version import Version

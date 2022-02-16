@@ -15,14 +15,11 @@
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import sys
-import test
 import traceback
 import unittest
-from test import SkipTest
-from test.tornado_tests import MotorTest, skip_if_mongos
+from test.tornado_tests import MotorTest
 from test.utils import ignore_deprecations
 
-import bson
 from bson import CodecOptions
 from bson.binary import JAVA_LEGACY
 from pymongo import ReadPreference, WriteConcern
@@ -30,7 +27,6 @@ from pymongo.errors import BulkWriteError, DuplicateKeyError, OperationFailure
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import Secondary
 from tornado import gen
-from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import motor

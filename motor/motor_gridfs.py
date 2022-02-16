@@ -23,12 +23,10 @@ import pymongo.errors
 from gridfs import DEFAULT_CHUNK_SIZE, grid_file
 
 from motor.core import AgnosticCollection, AgnosticCursor, AgnosticDatabase
-from motor.docstrings import *
 from motor.metaprogramming import (
     AsyncCommand,
     AsyncRead,
     DelegateMethod,
-    MotorCursorChainingMethod,
     ReadOnlyProperty,
     coroutine_annotation,
     create_class_with_framework,
@@ -143,7 +141,7 @@ class AgnosticGridOut(object):
     def __getattr__(self, item):
         if not self.delegate._file:
             raise pymongo.errors.InvalidOperation(
-                "You must call MotorGridOut.open() before accessing " "the %s property" % item
+                "You must call MotorGridOut.open() before accessing the %s property" % item
             )
 
         return getattr(self.delegate, item)
@@ -294,7 +292,7 @@ Metadata set on the file appears as attributes on a
 
         if not isinstance(root_collection, collection_class):
             raise TypeError(
-                "First argument to MotorGridIn must be " "MotorCollection, not %r" % root_collection
+                "First argument to MotorGridIn must be MotorCollection, not %r" % root_collection
             )
 
         self.io_loop = root_collection.get_io_loop()
@@ -375,7 +373,7 @@ class AgnosticGridFSBucket(object):
         # Preserve backwards compatibility of "collection" parameter
         if collection is not None:
             warnings.warn(
-                'the "collection" parameter is deprecated, use ' '"bucket_name" instead',
+                'the "collection" parameter is deprecated, use "bucket_name" instead',
                 DeprecationWarning,
                 stacklevel=2,
             )

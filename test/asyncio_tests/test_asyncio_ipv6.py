@@ -30,7 +30,7 @@ class MotorIPv6Test(AsyncIOTestCase):
         assert env.host in (
             "localhost",
             "127.0.0.1",
-        ), "This unittest isn't written to test IPv6 " "with host %s" % repr(env.host)
+        ), "This unittest isn't written to test IPv6 with host %s" % repr(env.host)
 
         try:
             connected(

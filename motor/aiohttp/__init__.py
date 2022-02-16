@@ -165,7 +165,7 @@ class AIOHTTPGridFS:
     ):
         if not isinstance(database, AsyncIOMotorDatabase):
             raise TypeError(
-                "First argument to AIOHTTPGridFS must be " "AsyncIOMotorDatabase, not %r" % database
+                "First argument to AIOHTTPGridFS must be AsyncIOMotorDatabase, not %r" % database
             )
 
         self._database = database

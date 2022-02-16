@@ -16,13 +16,11 @@
 
 import test
 from abc import ABC
-from test import SkipTest
 from test.tornado_tests import MotorTest
 from test.utils import ignore_deprecations
 
 import pymongo
 from pymongo import WriteConcern
-from pymongo.errors import ConfigurationError
 from pymongo.read_preferences import Nearest, ReadPreference, Secondary
 from tornado.testing import gen_test
 

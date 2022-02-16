@@ -17,7 +17,7 @@
 import unittest
 import uuid
 from test import env
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test, skip_if_mongos
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 from bson.binary import JAVA_LEGACY, STANDARD, UUID_SUBTYPE, Binary
 from bson.codec_options import CodecOptions
@@ -32,7 +32,7 @@ KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
 OPTS = CodecOptions(uuid_representation=STANDARD)
 
 try:
-    import pymongocrypt
+    import pymongocrypt  # noqa: F401
 
     _HAVE_PYMONGOCRYPT = True
 except ImportError:

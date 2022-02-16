@@ -765,18 +765,18 @@ class TestExamples(AsyncIOTestCase):
         try:
             # Start Changestream Example 1
             cursor = db.inventory.watch()
-            document = await cursor.next()
+            document = await next(cursor)
             # End Changestream Example 1
 
             # Start Changestream Example 2
             cursor = db.inventory.watch(full_document="updateLookup")
-            document = await cursor.next()
+            document = await next(cursor)
             # End Changestream Example 2
 
             # Start Changestream Example 3
             resume_token = cursor.resume_token
             cursor = db.inventory.watch(resume_after=resume_token)
-            document = await cursor.next()
+            document = await next(cursor)
             # End Changestream Example 3
 
             # Start Changestream Example 4
@@ -785,7 +785,7 @@ class TestExamples(AsyncIOTestCase):
                 {"$addFields": {"newField": "this is an added field!"}},
             ]
             cursor = db.inventory.watch(pipeline=pipeline)
-            document = await cursor.next()
+            document = await next(cursor)
             # End Changestream Example 4
         finally:
             done = True
@@ -950,9 +950,7 @@ class TestExamples(AsyncIOTestCase):
                     except (ConnectionFailure, OperationFailure) as exc:
                         # Can retry commit
                         if exc.has_error_label("UnknownTransactionCommitResult"):
-                            print(
-                                "UnknownTransactionCommitResult, retrying " "commit operation ..."
-                            )
+                            print("UnknownTransactionCommitResult, retrying commit operation ...")
                             continue
                         else:
                             print("Error during commit ...")
@@ -977,11 +975,11 @@ class TestExamples(AsyncIOTestCase):
                     await txn_coro(session)  # performs transaction
                     break
                 except (ConnectionFailure, OperationFailure) as exc:
-                    print("Transaction aborted. Caught exception during " "transaction.")
+                    print("Transaction aborted. Caught exception during transaction.")
 
                     # If transient error, retry the whole transaction
                     if exc.has_error_label("TransientTransactionError"):
-                        print("TransientTransactionError, retrying" "transaction ...")
+                        print("TransientTransactionError, retryingtransaction ...")
                         continue
                     else:
                         raise
@@ -1009,7 +1007,7 @@ class TestExamples(AsyncIOTestCase):
                 except (ConnectionFailure, OperationFailure) as exc:
                     # Can retry commit
                     if exc.has_error_label("UnknownTransactionCommitResult"):
-                        print("UnknownTransactionCommitResult, retrying " "commit operation ...")
+                        print("UnknownTransactionCommitResult, retrying commit operation ...")
                         continue
                     else:
                         print("Error during commit ...")
@@ -1046,7 +1044,7 @@ class TestExamples(AsyncIOTestCase):
                 except (ConnectionFailure, OperationFailure) as exc:
                     # If transient error, retry the whole transaction
                     if exc.has_error_label("TransientTransactionError"):
-                        print("TransientTransactionError, retrying " "transaction ...")
+                        print("TransientTransactionError, retrying transaction ...")
                         continue
                     else:
                         raise
@@ -1061,7 +1059,7 @@ class TestExamples(AsyncIOTestCase):
                 except (ConnectionFailure, OperationFailure) as exc:
                     # Can retry commit
                     if exc.has_error_label("UnknownTransactionCommitResult"):
-                        print("UnknownTransactionCommitResult, retrying " "commit operation ...")
+                        print("UnknownTransactionCommitResult, retrying commit operation ...")
                         continue
                     else:
                         print("Error during commit ...")
@@ -1287,7 +1285,7 @@ class TestExamples(AsyncIOTestCase):
 
         with self.assertRaisesRegex(
             OperationFailure,
-            "Provided apiStrict:true, but the command " "count is not in API Version 1",
+            "Provided apiStrict:true, but the command count is not in API Version 1",
         ):
             await client.db.command("count", "sales", query={})
 

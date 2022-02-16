@@ -24,7 +24,6 @@ from bson.binary import JAVA_LEGACY
 from pymongo import ReadPreference, WriteConcern
 from pymongo.errors import CollectionInvalid, OperationFailure
 from pymongo.read_preferences import Secondary
-from tornado import gen
 from tornado.testing import gen_test
 
 import motor

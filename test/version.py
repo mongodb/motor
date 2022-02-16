@@ -24,11 +24,11 @@ class Version(tuple):
 
     @classmethod
     def _padded(cls, iter, length, padding=0):
-        l = list(iter)
-        if len(l) < length:
-            for _ in range(length - len(l)):
-                l.append(padding)
-        return l
+        as_list = list(iter)
+        if len(as_list) < length:
+            for _ in range(length - len(as_list)):
+                as_list.append(padding)
+        return as_list
 
     @classmethod
     def from_string(cls, version_string):

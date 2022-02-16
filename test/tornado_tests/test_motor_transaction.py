@@ -12,28 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import collections
-import os
-import re
 from test.utils import TestListener
-from test.version import Version
 
-from bson import json_util
-from bson.json_util import JSONOptions
 from pymongo.read_concern import ReadConcern
-from pymongo.results import (
-    BulkWriteResult,
-    DeleteResult,
-    InsertManyResult,
-    InsertOneResult,
-    UpdateResult,
-)
-
-from motor.motor_tornado import (
-    MotorCommandCursor,
-    MotorCursor,
-    MotorLatentCommandCursor,
-)
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 

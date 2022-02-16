@@ -51,7 +51,7 @@ async def main():
     )
 
     # Create a new data key for the encryptedField.
-    data_key_id = await client_encryption.create_data_key(
+    _ = await client_encryption.create_data_key(
         "local", key_alt_names=["pymongo_encryption_example_4"]
     )
 

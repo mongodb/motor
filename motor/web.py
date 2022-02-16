@@ -16,13 +16,11 @@
 
 import datetime
 import email.utils
-import hashlib
 import mimetypes
 import time
 
 import gridfs
 import tornado.web
-from tornado import gen
 
 import motor
 from motor.motor_gridfs import _hash_gridout

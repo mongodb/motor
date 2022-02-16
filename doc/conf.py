@@ -9,9 +9,9 @@ import sys
 
 sys.path[0:0] = [os.path.abspath("..")]
 
-from pymongo import version as pymongo_version
+from pymongo import version as pymongo_version  # noqa: E402
 
-import motor
+import motor  # noqa: E402
 
 # -- General configuration -----------------------------------------------------
 
