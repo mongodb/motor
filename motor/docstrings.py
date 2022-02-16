@@ -374,7 +374,7 @@ this Motor collection instance.
    Added session parameter.
 """
 
-find_one_and_delete_doc = """Finds a single document and deletes it, returning 
+find_one_and_delete_doc = """Finds a single document and deletes it, returning
 the document.
 
 If we have a collection with 2 documents like ``{'x': 1}``, then this code
@@ -532,7 +532,7 @@ the document before the update was applied::
           {'_id': 665}, {'$inc': {'count': 1}, '$set': {'done': True}}))
 
 This outputs::
-  
+
   {'_id': 665, 'done': False, 'count': 25}}
 
 To return the updated version of the document instead, use the
@@ -855,12 +855,12 @@ Say our collection has 3 documents::
   {'x': 1, '_id': 0}
   {'x': 1, '_id': 1}
   {'x': 1, '_id': 2}
-  
+
 We can add 3 to each "x" field::
 
   async def add_3_to_x():
     result = await db.test.update_many({'x': 1}, {'$inc': {'x': 3}})
-    print('matched %d, modified %d' % 
+    print('matched %d, modified %d' %
           (result.matched_count, result.modified_count))
 
     print('collection:')
@@ -1076,24 +1076,24 @@ to initialize it, or an ``async with`` statement.
           # the doc we just inserted, even reading from a secondary.
           async for doc in secondary.find(session=s):
               print(doc)
-              
+
       # Run a multi-document transaction:
       async with await client.start_session() as s:
           # Note, start_transaction doesn't require "await".
           async with s.start_transaction():
               await collection.delete_one({'x': 1}, session=s)
               await collection.insert_one({'x': 2}, session=s)
-          
+
           # Exiting the "with s.start_transaction()" block while throwing an
           # exception automatically aborts the transaction, exiting the block
           # normally automatically commits it.
 
-          # You can run additional transactions in the same session, so long as 
+          # You can run additional transactions in the same session, so long as
           # you run them one at a time.
           async with s.start_transaction():
               await collection.insert_one({'x': 3}, session=s)
               await collection.insert_many({'x': {'$gte': 2}},
-                                           {'$inc': {'x': 1}}, 
+                                           {'$inc': {'x': 1}},
                                            session=s)
 
 
@@ -1144,12 +1144,12 @@ Only the last call to :meth:`where` applied to a
 
 create_data_key_doc = """Create and insert a new data key into the key vault collection.
 
-Takes the same arguments as 
+Takes the same arguments as
 :class:`pymongo.encryption.ClientEncryption.create_data_key`,
 with only the following slight difference using async syntax.
 The following example shows creating and referring to a data
 key by alternate name::
-   
+
     await client_encryption.create_data_key("local", keyAltNames=["name1"])
     # reference the key with the alternate name
     await client_encryption.encrypt("457-55-5462", keyAltName="name1",

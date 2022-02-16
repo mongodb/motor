@@ -6,7 +6,7 @@ Tornado Change Stream Example
 .. currentmodule:: motor.motor_tornado
 
 Watch a collection for changes with :meth:`MotorCollection.watch` and display
-each change notification on a web page using web sockets. 
+each change notification on a web page using web sockets.
 
 Instructions
 ------------

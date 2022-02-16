@@ -1,8 +1,23 @@
 include README.rst
 include LICENSE
+include tox.ini
+include doc/Makefile
+include doc/examples/tornado_change_stream_templates/index.html
 recursive-include doc *.rst
 recursive-include doc *.py
+recursive-include doc *.png
 recursive-include test *.py
+recursive-include test *.pem
 recursive-include doc *.conf
 recursive-include doc *.css
 recursive-include doc *.js
+recursive-include doc *.txt
+recursive-include doc *.bat
+recursive-include synchro *.py
+
+exclude .readthedocs.yaml
+exclude release.sh
+exclude ez_setup.py
+exclude RELEASE.rst
+exclude CONTRIBUTING.rst
+exclude .evergreen/*

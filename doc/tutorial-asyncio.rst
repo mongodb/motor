@@ -457,4 +457,3 @@ Learning to use the MongoDB driver is just the beginning, of course. For
 in-depth instruction in MongoDB itself, see `The MongoDB Manual`_.
 
 .. _The MongoDB Manual: http://docs.mongodb.org/manual/
-
