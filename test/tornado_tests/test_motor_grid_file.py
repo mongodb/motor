@@ -19,13 +19,12 @@ import datetime
 import sys
 import traceback
 import unittest
-from test import MockRequestHandler, SkipTest
+from test import MockRequestHandler
 from test.tornado_tests import MotorTest
 
 from bson.objectid import ObjectId
 from gridfs.errors import NoFile
 from pymongo.errors import InvalidOperation
-from tornado import gen
 from tornado.testing import gen_test
 
 import motor

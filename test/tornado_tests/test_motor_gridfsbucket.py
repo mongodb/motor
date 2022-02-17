@@ -19,7 +19,6 @@ from io import BytesIO
 from test.tornado_tests import MotorTest
 
 from gridfs.errors import NoFile
-from tornado import gen
 from tornado.testing import gen_test
 
 import motor

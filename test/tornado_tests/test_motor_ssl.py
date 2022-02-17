@@ -19,13 +19,6 @@ try:
 except ImportError:
     ssl = None
 
-try:
-    # Python 2.
-    from urllib import quote_plus
-except ImportError:
-    # Python 3.
-    from urllib.parse import quote_plus
-
 import test
 from test import SkipTest
 from test.test_environment import CA_PEM, CLIENT_PEM, env

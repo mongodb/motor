@@ -15,7 +15,6 @@
 
 """Test AsyncIOMotorGridFSBucket."""
 
-import asyncio
 from io import BytesIO
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.utils import ignore_deprecations

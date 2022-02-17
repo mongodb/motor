@@ -34,7 +34,7 @@ else:
     # at module root. This may change in the future. First get __all__.
     # Make "from motor import *" the same as "from motor.motor_tornado import *"
     # Now some classes that aren't in __all__ but might be expected.
-    from .motor_tornado import *
+    from .motor_tornado import *  # noqa: F403
     from .motor_tornado import (
         MotorCollection,
         MotorDatabase,

@@ -54,10 +54,10 @@ def _install(archive_filename, install_args=()):
     """Install Setuptools."""
     with archive_context(archive_filename):
         # installing
-        log.warn("Installing Setuptools")
+        log.warning("Installing Setuptools")
         if not _python_cmd("setup.py", "install", *install_args):
-            log.warn("Something went wrong during the installation.")
-            log.warn("See the error message above.")
+            log.warning("Something went wrong during the installation.")
+            log.warning("See the error message above.")
             # exitcode will be 2
             return 2
 
@@ -66,10 +66,10 @@ def _build_egg(egg, archive_filename, to_dir):
     """Build Setuptools egg."""
     with archive_context(archive_filename):
         # building an egg
-        log.warn("Building a Setuptools egg in %s", to_dir)
+        log.warning("Building a Setuptools egg in %s", to_dir)
         _python_cmd("setup.py", "-q", "bdist_egg", "--dist-dir", to_dir)
     # returning the result
-    log.warn(egg)
+    log.warning(egg)
     if not os.path.exists(egg):
         raise IOError("Could not build the egg.")
 
@@ -99,7 +99,7 @@ def archive_context(filename):
     The unzipped target is cleaned up after.
     """
     tmpdir = tempfile.mkdtemp()
-    log.warn("Extracting in %s", tmpdir)
+    log.warning("Extracting in %s", tmpdir)
     old_wd = os.getcwd()
     try:
         os.chdir(tmpdir)
@@ -109,7 +109,7 @@ def archive_context(filename):
         # going in the directory
         subdir = os.path.join(tmpdir, os.listdir(tmpdir)[0])
         os.chdir(subdir)
-        log.warn("Now working in %s", subdir)
+        log.warning("Now working in %s", subdir)
         yield
 
     finally:
@@ -350,7 +350,7 @@ def download_setuptools(
     url = download_base + zip_name
     saveto = os.path.join(to_dir, zip_name)
     if not os.path.exists(saveto):  # Avoid repeated downloads
-        log.warn("Downloading %s", url)
+        log.warning("Downloading %s", url)
         downloader = downloader_factory()
         downloader(url, saveto)
     return os.path.realpath(saveto)

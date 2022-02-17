@@ -19,7 +19,7 @@ import datetime
 import sys
 import traceback
 import unittest
-from test import MockRequestHandler, SkipTest
+from test import MockRequestHandler
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 from bson.objectid import ObjectId

@@ -17,7 +17,6 @@
 import asyncio
 import datetime
 import email
-import hashlib
 import logging
 import test
 import time

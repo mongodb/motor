@@ -27,9 +27,8 @@ import pymongo.mongo_client
 from bson import CodecOptions
 from mockupdb import OpQuery
 from pymongo import CursorType, ReadPreference, WriteConcern
-from pymongo.errors import ConfigurationError, ConnectionFailure, OperationFailure
+from pymongo.errors import ConnectionFailure, OperationFailure
 from tornado import gen
-from tornado.concurrent import Future
 from tornado.testing import gen_test
 
 import motor

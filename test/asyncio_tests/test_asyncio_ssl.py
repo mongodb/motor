@@ -16,7 +16,6 @@
 
 import asyncio
 import gc
-import ssl
 import test
 import unittest
 from test.asyncio_tests import asyncio_test
@@ -41,7 +40,7 @@ class TestAsyncIOSSL(unittest.TestCase):
     def setUp(self):
         if not test.env.server_is_resolvable:
             raise SkipTest(
-                "No hosts entry for 'server'. Cannot validate " "hostname in the certificate"
+                "No hosts entry for 'server'. Cannot validate hostname in the certificate"
             )
 
         asyncio.set_event_loop(None)

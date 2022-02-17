@@ -16,13 +16,11 @@
 
 import asyncio
 import sys
-import test
 import traceback
 import unittest
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test, skip_if_mongos
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.utils import ignore_deprecations
 
-import bson
 from bson import CodecOptions
 from bson.binary import JAVA_LEGACY
 from pymongo import ReadPreference, WriteConcern
@@ -30,8 +28,7 @@ from pymongo.errors import BulkWriteError, DuplicateKeyError, OperationFailure
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import Secondary
 
-from motor import motor_asyncio
-from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorCommandCursor
+from motor.motor_asyncio import AsyncIOMotorCollection
 
 
 class TestAsyncIOCollection(AsyncIOTestCase):

@@ -52,7 +52,7 @@ class _TestMethodWrapper(object):
             # RuntimeWarning: coroutine 'test_foo' was never awaited
             task = ensure_future(result)
             task.cancel()
-            raise TypeError("Generator test methods should be decorated with " "@asyncio_test")
+            raise TypeError("Generator test methods should be decorated with @asyncio_test")
         elif result is not None:
             raise ValueError("Return value from test method ignored: %r" % result)
 
@@ -207,7 +207,7 @@ def asyncio_test(func=None, timeout=None):
             task = ensure_future(coro, loop=self.loop)
             try:
                 self.loop.run_until_complete(task)
-            except:
+            except BaseException:
                 if coro_exc:
                     # Raise the error thrown in on_timeout, with only the
                     # traceback from the coroutine itself, not from

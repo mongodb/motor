@@ -16,7 +16,6 @@
 
 import datetime
 import email
-import hashlib
 import re
 import test
 import time

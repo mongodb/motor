@@ -113,7 +113,7 @@ class TestAsyncIOAwait(AsyncIOTestCase):
         data = b"data"
 
         for n_files in 1, 2, 10:
-            for i in range(n_files):
+            for _ in range(n_files):
                 async with gfs.open_upload_stream(filename="filename") as f:
                     await f.write(data)
 

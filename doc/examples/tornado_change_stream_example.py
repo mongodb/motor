@@ -59,8 +59,8 @@ class ChangesHandler(tornado.websocket.WebSocketHandler):
         for waiter in cls.waiters:
             try:
                 waiter.write_message(change_json)
-            except Exception:
-                logging.error("Error sending message", exc_info=True)
+            except Exception as exc:
+                logging.exception(exc)
 
     @classmethod
     def on_change(cls, change):
