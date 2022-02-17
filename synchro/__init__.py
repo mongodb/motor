@@ -602,7 +602,7 @@ class GridOutCursor(Cursor):
         super().__init__(delegate)
 
     def next(self):
-        motor_grid_out = next(super())
+        motor_grid_out = super().next()
         if motor_grid_out:
             return GridOut(self.collection, delegate=motor_grid_out)
 
