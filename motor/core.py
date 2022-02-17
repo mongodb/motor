@@ -33,8 +33,7 @@ from pymongo.database import Database
 from pymongo.driver_info import DriverInfo
 from pymongo.encryption import ClientEncryption
 
-import motor.docstrings as docstrings
-
+from . import docstrings
 from . import version as motor_version
 from .metaprogramming import (
     AsyncCommand,

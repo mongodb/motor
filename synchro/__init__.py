@@ -288,16 +288,6 @@ class SynchroMeta(type):
         return new_class
 
 
-def with_metaclass(metaclass, *bases):
-    """Python 2/3 compatible metaclass helper."""
-
-    class _metaclass(metaclass):
-        def __new__(mcls, name, _bases, attrs):
-            return metaclass(name, bases, attrs)
-
-    return type.__new__(_metaclass, str("dummy"), (), {})
-
-
 class Synchro(meta=SynchroMeta):
     """
     Wraps a MotorClient, MotorDatabase, MotorCollection, etc. and
@@ -418,7 +408,7 @@ class ClientSession(Synchro):
         self.synchronize(self.delegate.end_session)
 
     def with_transaction(self, *args, **kwargs):
-        raise unittest.SkipTest("MOTOR-606 Synchro does not supportwith_transaction")
+        raise unittest.SkipTest("MOTOR-606 Synchro does not support with_transaction")
 
     # For PyMongo tests that access session internals.
     _client = SynchroProperty()

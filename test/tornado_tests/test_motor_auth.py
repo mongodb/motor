@@ -70,7 +70,7 @@ class MotorAuthTest(MotorTest):
                     await client.scramtestdb.collection.insert_one({})
 
         # No mechanism specified, always works.
-        for user, _mechanism, _should_work in [
+        for user, _, _ in [
             ("sha1", None, True),
             ("sha256", None, False),
             ("both", None, True),
