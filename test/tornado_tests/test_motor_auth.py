@@ -70,11 +70,7 @@ class MotorAuthTest(MotorTest):
                     await client.scramtestdb.collection.insert_one({})
 
         # No mechanism specified, always works.
-        for user, _, _ in [
-            ("sha1", None, True),
-            ("sha256", None, False),
-            ("both", None, True),
-        ]:
+        for user in ("sha1", "sha256", "both"):
             client = self.motor_client(username=user, password="pwd", authsource="scramtestdb")
 
             await client.scramtestdb.collection.insert_one({})
