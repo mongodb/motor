@@ -288,7 +288,7 @@ class SynchroMeta(type):
         return new_class
 
 
-class Synchro(meta=SynchroMeta):
+class Synchro(metaclass=SynchroMeta):
     """
     Wraps a MotorClient, MotorDatabase, MotorCollection, etc. and
     makes it act like the synchronous pymongo equivalent
