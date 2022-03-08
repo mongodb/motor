@@ -43,6 +43,7 @@ extras_require = {
     "zstd": ["pymongo[zstd]" + pymongo_ver],
     "aws": ["pymongo[aws]" + pymongo_ver],
     "srv": ["pymongo[srv]" + pymongo_ver],
+    "gssapi": ["pymongo[gssapi]" + pymongo_ver],
 }
 
 tests_require = ["mockupdb>=1.4.0"]
