@@ -103,37 +103,37 @@ asyncio. It requires:
 
 Optional dependencies:
 
-Motor supports same optional dependencies as PyMongo. Required dependencies can be installed 
+Motor supports same optional dependencies as PyMongo. Required dependencies can be installed
 along with Motor.
 
-GSSAPI authentication requires pymongo[gssapi]. The correct
+GSSAPI authentication requires ``gssapi`` extra dependency. The correct
 dependency can be installed automatically along with Motor::
 
   $ pip install "motor[gssapi]"
 
 similarly,
 
-MONGODB-AWS authentication requires pymongo[aws]::
+MONGODB-AWS authentication requires ``aws`` extra dependency::
 
   $ pip install "motor[aws]"
 
-Support for mongodb+srv:// URIs requires pymongo[srv]::
+Support for mongodb+srv:// URIs requires ``srv`` extra dependency::
 
   $ pip install "motor[srv]"
 
-OCSP requires pymongo[ocsp]::
+OCSP requires ``ocsp`` extra dependency::
 
   $ pip install "motor[ocsp]"
 
-Wire protocol compression with snappy requires pymongo[snappy]::
+Wire protocol compression with snappy requires ``snappy`` extra dependency::
 
   $ pip install "motor[snappy]"
 
-Wire protocol compression with zstandard requires pymongo[zstd]::
+Wire protocol compression with zstandard requires ``zstd`` extra dependency::
 
   $ pip install "motor[zstd]"
 
-Client-Side Field Level Encryption requires pymongo[encryption]::
+Client-Side Field Level Encryption requires ``encryption`` extra dependency::
 
   $ pip install "motor[encryption]"
 

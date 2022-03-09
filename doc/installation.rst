@@ -24,40 +24,40 @@ asyncio. It requires:
 
 Optional dependencies:
 
-Motor supports same optional dependencies as PyMongo. Required dependencies can be installed 
+Motor supports same optional dependencies as PyMongo. Required dependencies can be installed
 along with Motor.
 
-GSSAPI authentication requires pymongo[gssapi]. The correct
+GSSAPI authentication requires ``gssapi`` extra dependency. The correct
 dependency can be installed automatically along with Motor::
 
   $ pip install "motor[gssapi]"
 
-similarly, 
+similarly,
 
-`MONGODB-AWS <https://pymongo.readthedocs.io/en/stable/examples/authentication.html#mongodb-aws>`_ 
-authentication requires pymongo[aws]::
+`MONGODB-AWS <https://pymongo.readthedocs.io/en/stable/examples/authentication.html#mongodb-aws>`_
+authentication requires ``aws`` extra dependency::
 
   $ pip install "motor[aws]"
 
-Support for mongodb+srv:// URIs requires pymongo[srv]::
+Support for mongodb+srv:// URIs requires ``srv`` extra dependency::
 
   $ pip install "motor[srv]"
 
-`OCSP <https://pymongo.readthedocs.io/en/stable/examples/tls.html#ocsp>`_ requires pymongo[ocsp]::
+`OCSP <https://pymongo.readthedocs.io/en/stable/examples/tls.html#ocsp>`_ requires ``ocsp`` extra dependency::
 
   $ pip install "motor[ocsp]"
 
-Wire protocol compression with snappy requires pymongo[snappy]::
+Wire protocol compression with snappy requires ``snappy`` extra dependency::
 
   $ pip install "motor[snappy]"
 
-Wire protocol compression with zstandard requires pymongo[zstd]::
+Wire protocol compression with zstandard requires ``zstd`` extra dependency::
 
   $ pip install "motor[zstd]"
 
-`Client-Side Field Level Encryption 
-<https://pymongo.readthedocs.io/en/stable/examples/encryption.html#client-side-field-level-encryption>`_ 
-requires pymongo[encryption]::
+`Client-Side Field Level Encryption
+<https://pymongo.readthedocs.io/en/stable/examples/encryption.html#client-side-field-level-encryption>`_
+requires ``encryption`` extra dependency::
 
   $ pip install "motor[encryption]"
 
