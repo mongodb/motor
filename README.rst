@@ -101,6 +101,47 @@ asyncio. It requires:
 * PyMongo_ >=3.12,<4
 * Python 3.5+
 
+Optional dependencies:
+
+Motor supports same optional dependencies as PyMongo. Required dependencies can be installed
+along with Motor.
+
+GSSAPI authentication requires ``gssapi`` extra dependency. The correct
+dependency can be installed automatically along with Motor::
+
+  $ pip install "motor[gssapi]"
+
+similarly,
+
+MONGODB-AWS authentication requires ``aws`` extra dependency::
+
+  $ pip install "motor[aws]"
+
+Support for mongodb+srv:// URIs requires ``srv`` extra dependency::
+
+  $ pip install "motor[srv]"
+
+OCSP requires ``ocsp`` extra dependency::
+
+  $ pip install "motor[ocsp]"
+
+Wire protocol compression with snappy requires ``snappy`` extra dependency::
+
+  $ pip install "motor[snappy]"
+
+Wire protocol compression with zstandard requires ``zstd`` extra dependency::
+
+  $ pip install "motor[zstd]"
+
+Client-Side Field Level Encryption requires ``encryption`` extra dependency::
+
+  $ pip install "motor[encryption]"
+
+You can install all dependencies automatically with the following
+command::
+
+  $ pip install "motor[gssapi,aws,ocsp,snappy,srv,zstd,encryption]"
+
 See `requirements <https://motor.readthedocs.io/en/stable/requirements.html>`_
 for details about compatibility.
 

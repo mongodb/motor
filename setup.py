@@ -34,7 +34,15 @@ pymongo_ver = ">=3.12,<4"
 
 install_requires = ["pymongo" + pymongo_ver]
 
-extras_require = {'encryption': ["pymongo[encryption]" + pymongo_ver]}
+extras_require = {
+    "encryption": ["pymongo[encryption]" + pymongo_ver],
+    "ocsp": ["pymongo[ocsp]" + pymongo_ver],
+    "snappy": ["pymongo[snappy]" + pymongo_ver],
+    "zstd": ["pymongo[zstd]" + pymongo_ver],
+    "aws": ["pymongo[aws]" + pymongo_ver],
+    "srv": ["pymongo[srv]" + pymongo_ver],
+    "gssapi": ["pymongo[gssapi]" + pymongo_ver],
+}
 
 tests_require = ['mockupdb>=1.4.0']
 
