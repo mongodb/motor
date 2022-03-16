@@ -94,7 +94,7 @@ functions:
             # If this was a patch build, doing a fresh clone would not actually test the patch
             cp -R ${PROJECT_DIRECTORY}/ $DRIVERS_TOOLS
           else
-            git clone git://github.com/mongodb-labs/drivers-evergreen-tools.git $DRIVERS_TOOLS
+            git clone https://github.com/mongodb-labs/drivers-evergreen-tools.git $DRIVERS_TOOLS
           fi
           echo "{ \"releases\": { \"default\": \"$MONGODB_BINARIES\" }}" > $MONGO_ORCHESTRATION_HOME/orchestration.config
 
@@ -854,6 +854,18 @@ axes:
           TOX_ENV: "synchro37"
           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
 
+  - id: tox-env-ubuntu
+    display_name: "Tox Env Ubuntu"
+    values:
+      - id: "tornado6-py310"
+        variables:
+           TOX_ENV: "tornado6-py310"
+           PYTHON_BINARY: "/opt/python/3.10/bin/python3"
+      - id: "asyncio-py310"
+        variables:
+           TOX_ENV: "asyncio-py310"
+           PYTHON_BINARY: "/opt/python/3.10/bin/python3"
+
   # Test Python 3.6 only on Mac.
   - id: tox-env-osx
     display_name: "Tox Env OSX"
@@ -898,6 +910,11 @@ axes:
       - id: "amazon1-2018"
         display_name: "Linux"
         run_on: "amazon1-2018-test"
+        variables:
+           TOX_BINARY: "/opt/python/3.6/bin/tox"
+      - id: "ubuntu-20"
+        display_name: "Ubuntu"
+        run_on: "ubuntu2004-small"
         variables:
            TOX_BINARY: "/opt/python/3.6/bin/tox"
       - id: "win"
@@ -947,6 +964,17 @@ buildvariants:
      - ".3.6"
      - ".3.4"
      - ".3.2"
+
+- matrix_name: "test-ubuntu"
+  display_name: "${os}-${tox-env-ubuntu}-${ssl}"
+  matrix_spec:
+    os: "ubuntu-20"
+    tox-env-ubuntu: "*"
+    ssl: "*"
+  tasks:
+     - ".latest"
+     - ".5.0"
+     - ".4.4"
 
 - matrix_name: "test-win"
   display_name: "${os}-${tox-env-win}-${ssl}"

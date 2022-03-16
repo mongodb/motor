@@ -17,6 +17,7 @@ Programming Language :: Python :: 3.6
 Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
+Programming Language :: Python :: 3.10
 Operating System :: MacOS :: MacOS X
 Operating System :: Unix
 Operating System :: Microsoft :: Windows
@@ -143,7 +144,7 @@ packages = ['motor', 'motor.frameworks', 'motor.frameworks.tornado',
 
 
 setup(name='motor',
-      version='2.5.1',
+      version='2.5.2.dev0',
       packages=packages,
       description=description,
       long_description=long_description,
