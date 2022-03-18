@@ -16,6 +16,7 @@
 
 import asyncio
 import datetime
+import unittest
 from io import StringIO
 from unittest.mock import patch
 
@@ -1139,6 +1140,7 @@ class TestExamples(AsyncIOTestCase):
             uri, server_api=ServerApi("1", deprecation_errors=True))
         # End Versioned API Example 4
 
+    @unittest.skip("MOTOR-908 count has been added to API version 1")
     @env.require_version_min(4, 7)
     # Only run on RS until https://jira.mongodb.org/browse/SERVER-58785 is resolved.
     @env.require_replica_set
