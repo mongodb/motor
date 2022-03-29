@@ -63,6 +63,16 @@ and a `source distribution <https://packaging.python.org/guides/distributing-pac
 
      $ python3 -m twine upload dist/*
 
-#. Trigger a build of the docs on https://readthedocs.org/.
+#. Make sure the new version appears on https://motor.readthedocs.io/. If the
+    new version does not show up automatically, trigger a rebuild of "latest":
+    https://readthedocs.org/projects/motor/builds/
 
-#. Announce!
+#. Bump the version number to <next version>.dev0 in setup.py/__init__.py,
+    commit, push.
+
+#. Publish the release version in Jira.
+
+#. Announce the release on:
+    https://developer.mongodb.com/community/forums/c/community/release-notes/
+
+#. Create a GitHub Release for the tag using https://github.com/mongodb/motor/releases/new.  The title should be "Motor X.Y.Z", and the description should contain a link to the release notes on the the community forum, e.g. "Release notes: mongodb.com/community/forums/t/motor-2-5-1-released/120313."
