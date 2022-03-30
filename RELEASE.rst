@@ -73,7 +73,7 @@ and a `source distribution <https://packaging.python.org/guides/distributing-pac
 #. Publish the release version in Jira.
 
 #. Announce the release on:
-    https://developer.mongodb.com/community/forums/c/community/release-notes/
+   https://www.mongodb.com/community/forums/c/announcements/driver-releases
 
 #. Create a GitHub Release for the tag using https://github.com/mongodb/motor/releases/new.
    The title should be "Motor X.Y.Z", and the description should contain a
