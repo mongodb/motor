@@ -250,7 +250,7 @@ Metadata set on the file appears as attributes on a
         :meth:`~motor.MotorGridFSBucket.open_upload_stream`.
 
         Any of the file level options specified in the `GridFS Spec
-        <http://dochub.mongodb.org/core/gridfs>`_ may be passed as
+        <https://www.mongodb.com/docs/manual/core/gridfs/>`_ may be passed as
         keyword arguments. Any additional keyword arguments will be
         set as additional fields on the file document. Valid keyword
         arguments include:

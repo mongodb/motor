@@ -43,3 +43,6 @@ jobs:
       - name: Run tests
         run: |
           tox
+      - name: Run docs
+        run: |
+          tox -e py3-sphinx

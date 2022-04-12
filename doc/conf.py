@@ -76,6 +76,8 @@ pygments_style = "sphinx"
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []
 
+linkcheck_ignore = [r"http://localhost:\d+"]
+
 # -- Options for extensions ----------------------------------------------------
 autoclass_content = "init"
 

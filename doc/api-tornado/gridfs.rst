@@ -3,7 +3,7 @@ Motor GridFS Classes
 
 .. currentmodule:: motor.motor_tornado
 
-Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
+Store blobs of data in `GridFS <https://www.mongodb.com/docs/manual/core/gridfs/>`_.
 
 .. seealso:: :ref:`Differences between PyMongo's and Motor's GridFS APIs
   <gridfs-differences>`.

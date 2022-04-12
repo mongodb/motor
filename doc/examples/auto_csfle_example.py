@@ -23,7 +23,7 @@ async def create_json_schema_file(kms_providers, key_vault_namespace, key_vault_
     )
 
     # Create a new data key and json schema for the encryptedField.
-    # https://dochub.mongodb.org/core/client-side-field-level-encryption-automatic-encryption-rules
+    # https://www.mongodb.com/docs/manual/reference/security-client-side-automatic-json-schema/
     data_key_id = await client_encryption.create_data_key(
         "local", key_alt_names=["pymongo_encryption_example_1"]
     )
