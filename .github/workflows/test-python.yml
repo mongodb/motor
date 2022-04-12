@@ -45,4 +45,6 @@ jobs:
           tox
       - name: Run docs
         run: |
-          tox -e py3-sphinx
+          tox -e py3-sphinx-docs
+          tox -e py3-sphinx-doctest
+          tox -e py3-sphinx-linkcheck
