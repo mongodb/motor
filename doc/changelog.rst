@@ -189,7 +189,7 @@ Deprecations:
   Applications should use ``async for`` to iterate over cursors instead.
 - Deprecated the :meth:`~motor.motor_asyncio.AsyncIOMotorClient.fsync`
   method. Applications should run the
-  `fsync command <https://docs.mongodb.com/manual/reference/command/fsync/>`_
+  `fsync command <https://mongodb.com/docs/manual/reference/command/fsync/>`_
   directly with :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.command`
   instead.
 
@@ -289,10 +289,10 @@ deleted. Manage user accounts with four database commands: createUser_,
 usersInfo_, updateUser_, and dropUser_. You can run any database command with
 the :meth:`MotorDatabase.command` method.
 
-.. _createUser: https://docs.mongodb.com/manual/reference/command/createUser/
-.. _usersInfo: https://docs.mongodb.com/manual/reference/command/usersInfo/
-.. _updateUser: https://docs.mongodb.com/manual/reference/command/updateUser/
-.. _dropUser: https://docs.mongodb.com/manual/reference/command/createUser/
+.. _createUser: https://mongodb.com/docs/manual/reference/command/createUser/
+.. _usersInfo: https://mongodb.com/docs/manual/reference/command/usersInfo/
+.. _updateUser: https://mongodb.com/docs/manual/reference/command/updateUser/
+.. _dropUser: https://mongodb.com/docs/manual/reference/command/createUser/
 
 The deprecated GridFS classes ``MotorGridFS`` and ``AsyncIOMotorGridFS`` are
 deleted in favor of :class:`~motor.motor_tornado.MotorGridFSBucket` and
@@ -475,7 +475,7 @@ Motor 1.0
 Motor now depends on PyMongo 3.3 and later. The move from PyMongo 2 to 3 brings
 a large number of API changes, read the `the PyMongo 3 changelog`_ carefully.
 
-.. _the PyMongo 3 changelog: http://api.mongodb.com/python/current/changelog.html#changes-in-version-3-0
+.. _the PyMongo 3 changelog: https://pymongo.readthedocs.io/en/stable/changelog.html#changes-in-version-3-0
 
 :class:`MotorReplicaSetClient` is removed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -975,7 +975,7 @@ Then instead, write::
 
 The negative limit ensures the server closes the cursor after one result,
 saving Motor the work of closing it. See `cursor.limit
-<http://docs.mongodb.org/v3.0/reference/method/cursor.limit/>`_.
+<https://mongodb.com/docs/v3.0/reference/method/cursor.limit/>`_.
 
 SSL hostname validation error
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1012,7 +1012,7 @@ therefore inheriting
 and
 `PyMongo 2.8's bug fixes <https://jira.mongodb.org/browse/PYTHON/fixforversion/14223>`_
 and `features
-<http://api.mongodb.org/python/current/changelog.html#changes-in-version-2-8>`_.
+<https://pymongo.readthedocs.io/en/stable/changelog.html#changes-in-version-2-8>`_.
 
 Fixes `a connection-pool timeout when waitQueueMultipleMS is set
 <https://jira.mongodb.org/browse/MOTOR-62>`_ and `two bugs in replica set
@@ -1023,12 +1023,10 @@ used it, see `MOTOR-56 <https://jira.mongodb.org/browse/MOTOR-56>`_.
 You can still use the :meth:`MotorDatabase.command` method directly.
 The only scenario not supported is copying a database from one host to
 another, if the remote host requires authentication.
-For this, use PyMongo's `copy_database`_ method, or, since PyMongo's
+For this, use PyMongo's ``copy_database`` method, or, since PyMongo's
 ``copy_database`` will be removed in a future release too, use the mongo shell.
 
-.. _copy_database: http://api.mongodb.org/python/current/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient.copy_database
-
-.. seealso:: `The "copydb" command <http://docs.mongodb.org/manual/reference/command/copydb/>`_.
+.. seealso:: `The "copydb" command <https://mongodb.com/docs/manual/reference/command/copydb/>`_.
 
 Motor 0.3.3
 -----------
@@ -1301,7 +1299,7 @@ returns a Future instead of accepting a callback.
 .. _Greenlet: http://pypi.python.org/pypi/greenlet/
 .. _asynchronous resolver interface: http://www.tornadoweb.org/en/stable/netutil.html#tornado.netutil.Resolver
 .. _pycares: https://pypi.python.org/pypi/pycares
-.. _fsyncLock: http://docs.mongodb.org/manual/reference/method/db.fsyncLock/
+.. _fsyncLock: https://mongodb.com/docs/manual/reference/method/db.fsyncLock/
 
 New Features
 ~~~~~~~~~~~~
@@ -1320,7 +1318,7 @@ PyMongo 2.6 and 2.7:
   with :meth:`~MotorCursor.max_time_ms`.
 * A new :meth:`MotorGridFS.find` method for querying GridFS.
 
-.. _authentication examples: http://api.mongodb.org/python/current/examples/authentication.html
+.. _authentication examples: https://pymongo.readthedocs.io/en/stable/examples/authentication.html
 
 Bugfixes
 ~~~~~~~~

@@ -14,7 +14,7 @@ Building the docs requires `sphinx`_.
 
 .. _PyMongo: https://pypi.python.org/pypi/pymongo/
 
-.. _sphinx: http://sphinx.pocoo.org/
+.. _sphinx: https://www.sphinx-doc.org/
 
 .. _compatibility-matrix:
 
@@ -83,7 +83,7 @@ Use `the PyMongo compatibility matrix`_ to determine what MongoDB version is
 supported by PyMongo. Use the compatibility matrix above to determine what
 MongoDB version Motor supports.
 
-.. _the PyMongo compatibility matrix: https://docs.mongodb.com/drivers/pymongo#mongodb-compatibility
+.. _the PyMongo compatibility matrix: https://mongodb.com/docs/drivers/pymongo#mongodb-compatibility
 
 Motor and Tornado
 `````````````````

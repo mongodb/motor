@@ -107,8 +107,8 @@ For example, to list all non-system collections::
   - `filter` (optional):  A query document to filter the list of
     collections returned from the listCollections command.
   - `**kwargs` (optional): Optional parameters of the
-    `listCollections command
-    <https://docs.mongodb.com/manual/reference/command/listCollections/>`_
+    `listCollections
+    <https://www.mongodb.com/docs/manual/reference/command/listCollections/>`_ comand.
     can be passed as keyword arguments to this method. The supported
     options differ by server version.
 
@@ -768,7 +768,7 @@ Returns a Future.
    mapReduce on a secondary use the :meth:`inline_map_reduce`
    method instead.
 
-.. _map reduce command: http://docs.mongodb.org/manual/reference/command/mapReduce/
+.. _map reduce command: https://mongodb.com/docs/manual/reference/command/mapReduce/
 
 .. mongodoc:: mapreduce
 
@@ -1138,8 +1138,8 @@ Only the last call to :meth:`where` applied to a
 :Parameters:
   - `code`: JavaScript expression to use as a filter
 
-.. _$expr: https://docs.mongodb.com/manual/reference/operator/query/expr/
-.. _$where: https://docs.mongodb.com/manual/reference/operator/query/where/
+.. _$expr: https://mongodb.com/docs/manual/reference/operator/query/expr/
+.. _$where: https://mongodb.com/docs/manual/reference/operator/query/where/
 """
 
 create_data_key_doc = """Create and insert a new data key into the key vault collection.

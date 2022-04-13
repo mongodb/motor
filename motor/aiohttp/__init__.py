@@ -152,7 +152,7 @@ class AIOHTTPGridFS:
       - `get_cache_time`: Optional override for :func:`get_cache_time`
       - `set_extra_headers`: Optional override for :func:`set_extra_headers`
 
-    .. _GridFS: https://docs.mongodb.com/manual/core/gridfs/
+    .. _GridFS: https://www.mongodb.com/docs/manual/core/gridfs/
     """
 
     def __init__(
