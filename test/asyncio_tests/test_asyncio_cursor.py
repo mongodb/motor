@@ -27,7 +27,6 @@ from test.asyncio_tests import (
     get_command_line,
     server_is_mongos,
 )
-from test.py35utils import wait_until
 from test.test_environment import env
 from test.utils import (
     FailPoint,
@@ -36,6 +35,7 @@ from test.utils import (
     get_primary_pool,
     one,
     safe_get,
+    wait_until,
 )
 from unittest import SkipTest
 
