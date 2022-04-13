@@ -43,6 +43,3 @@ jobs:
       - name: Run tests
         run: |
           tox
-      - name: Run a single test suite with warnings as errors
-        run: |
-          tox -e py3-warnings

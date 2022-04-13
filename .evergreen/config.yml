@@ -768,10 +768,6 @@ axes:
            TOX_ENV: "py3-pymongo-latest"
            # Use 3.6 for now until 3.7 is on all Evergreen distros.
            PYTHON_BINARY: "/opt/python/3.6/bin/python3"
-      - id: "py3-warnings"
-        variables:
-           TOX_ENV: "py3-warnings"
-           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
       - id: "synchro37"
         variables:
           TOX_ENV: "synchro37"
@@ -787,10 +783,6 @@ axes:
       - id: "asyncio-py310"
         variables:
            TOX_ENV: "asyncio-py310"
-           PYTHON_BINARY: "/opt/python/3.10/bin/python3"
-      - id: "py3-warnings"
-        variables:
-           TOX_ENV: "py3-warnings"
            PYTHON_BINARY: "/opt/python/3.10/bin/python3"
 
   # Test Python 3.6 only on Mac.
