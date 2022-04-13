@@ -137,7 +137,7 @@ class AgnosticClient(AgnosticBaseProperties):
             io_loop = kwargs.pop("io_loop")
             self._framework.check_event_loop(io_loop)
         else:
-            io_loop = self._framework.get_event_loop()
+            io_loop = None
 
         kwargs.setdefault("connect", False)
         kwargs.setdefault(
@@ -146,7 +146,13 @@ class AgnosticClient(AgnosticBaseProperties):
 
         delegate = self.__delegate_class__(*args, **kwargs)
         super().__init__(delegate)
-        self.io_loop = io_loop
+        self._io_loop = io_loop
+
+    @property
+    def io_loop(self):
+        if self._io_loop is None:
+            self._io_loop = self._framework.get_event_loop()
+        return self._io_loop
 
     def get_io_loop(self):
         return self.io_loop
@@ -1042,22 +1048,13 @@ class AgnosticCollection(AgnosticBaseProperties):
                       change_stream.close()
 
           # asyncio
-          from asyncio import get_event_loop
-
-          def main():
-              loop = get_event_loop()
-              task = loop.create_task(watch_collection)
-
-              try:
-                  loop.run_forever()
-              except KeyboardInterrupt:
+          try:
+              asyncio.run(watch_collection)
+          except KeyboardInterrupt:
                   pass
-              finally:
-                  if change_stream is not None:
-                      change_stream.close()
-
-                  # Prevent "Task was destroyed but it is pending!"
-                  loop.run_until_complete(task)
+          finally:
+              if change_stream is not None:
+                  change_stream.close()
 
         The :class:`~MotorChangeStream` async iterable blocks
         until the next change document is returned or an error is raised. If

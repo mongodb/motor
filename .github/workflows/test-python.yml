@@ -43,3 +43,6 @@ jobs:
       - name: Run tests
         run: |
           tox
+      - name: Run a single test suite with warnings as errors
+        run: |
+          PYTHONWARNINGS=error python setup.py test -s test.asyncio_tests.test_asyncio_change_stream

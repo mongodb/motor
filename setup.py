@@ -1,6 +1,12 @@
 import sys
-from distutils.cmd import Command
-from distutils.errors import DistutilsOptionError
+
+if sys.version_info[:2] < (3, 10):
+    from distutils.cmd import Command
+    from distutils.errors import DistutilsOptionError as OptionError
+else:
+    from setuptools import Command
+    from setuptools.errors import OptionError
+
 
 from setuptools import setup
 
@@ -71,7 +77,7 @@ class test(Command):
         if self.test_suite is None and self.test_module is None:
             self.test_module = "test"
         elif self.test_module is not None and self.test_suite is not None:
-            raise DistutilsOptionError("You may specify a module or suite, but not both")
+            raise OptionError("You may specify a module or suite, but not both")
 
     def run(self):
         # Installing required packages, running egg_info and build_ext are

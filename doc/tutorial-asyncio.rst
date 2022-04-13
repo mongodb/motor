@@ -144,8 +144,7 @@ store a document in MongoDB, call :meth:`~AsyncIOMotorCollection.insert_one` in 
   ...
   >>>
   >>> import asyncio
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_insert())
+  >>> asyncio.run(do_insert())
   result ObjectId('...')
 
 .. mongodoc:: insert
@@ -166,8 +165,7 @@ Insert documents in large batches with :meth:`~AsyncIOMotorCollection.insert_man
   ...         [{'i': i} for i in range(2000)])
   ...     print('inserted %d docs' % (len(result.inserted_ids),))
   ...
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_insert())
+  >>> asyncio.run(do_insert())
   inserted 2000 docs
 
 Getting a Single Document With `find_one`
@@ -183,8 +181,7 @@ less than 1:
   ...     document = await db.test_collection.find_one({'i': {'$lt': 1}})
   ...     pprint.pprint(document)
   ...
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_find_one())
+  >>> asyncio.run(do_find_one())
   {'_id': ObjectId('...'), 'i': 0}
 
 The result is a dictionary matching the one that we inserted previously.
@@ -211,8 +208,7 @@ To find all documents with "i" less than 5:
   ...     for document in await cursor.to_list(length=100):
   ...         pprint.pprint(document)
   ...
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_find())
+  >>> asyncio.run(do_find())
   {'_id': ObjectId('...'), 'i': 0}
   {'_id': ObjectId('...'), 'i': 1}
   {'_id': ObjectId('...'), 'i': 2}
@@ -234,8 +230,7 @@ You can handle one document at a time in an ``async for`` loop:
   ...     async for document in c.find({'i': {'$lt': 2}}):
   ...         pprint.pprint(document)
   ...
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_find())
+  >>> asyncio.run(do_find())
   {'_id': ObjectId('...'), 'i': 0}
   {'_id': ObjectId('...'), 'i': 1}
 
@@ -250,8 +245,7 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
   ...     async for document in cursor:
   ...         pprint.pprint(document)
   ...
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_find())
+  >>> asyncio.run(do_find())
   {'_id': ObjectId('...'), 'i': 2}
   {'_id': ObjectId('...'), 'i': 1}
 
@@ -274,8 +268,7 @@ that match a query:
   ...     n = await db.test_collection.count_documents({'i': {'$gt': 1000}})
   ...     print('%s documents where i > 1000' % n)
   ...
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_count())
+  >>> asyncio.run(do_count())
   2000 documents in collection
   999 documents where i > 1000
 
@@ -299,8 +292,7 @@ replacement document. The query follows the same syntax as for :meth:`find` or
   ...     new_document = await coll.find_one({'_id': _id})
   ...     print('document is now %s' % pprint.pformat(new_document))
   ...
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_replace())
+  >>> asyncio.run(do_replace())
   found document: {'_id': ObjectId('...'), 'i': 50}
   replaced 1 document
   document is now {'_id': ObjectId('...'), 'key': 'value'}
@@ -322,8 +314,7 @@ operator to set "key" to "value":
   ...     new_document = await coll.find_one({'i': 51})
   ...     print('document is now %s' % pprint.pformat(new_document))
   ...
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_update())
+  >>> asyncio.run(do_update())
   updated 1 document
   document is now {'_id': ObjectId('...'), 'i': 51, 'key': 'value'}
 
@@ -353,8 +344,7 @@ Deleting Documents
   ...     result = await db.test_collection.delete_many({'i': {'$gte': 1000}})
   ...     print('%s documents after' % (await coll.count_documents({})))
   ...
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(do_delete_many())
+  >>> asyncio.run(do_delete_many())
   2000 documents before calling delete_many()
   1000 documents after
 
@@ -373,8 +363,7 @@ the :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.command` method on
   ...     response = await db.command(SON([("distinct", "test_collection"),
   ...                                      ("key", "i")]))
   ...
-  >>> loop = asyncio.get_event_loop()
-  >>> loop.run_until_complete(use_distinct_command())
+  >>> asyncio.run(use_distinct_command())
 
 Since the order of command parameters matters, don't use a Python dict to pass
 the command's parameters. Instead, make a habit of using :class:`bson.SON`,

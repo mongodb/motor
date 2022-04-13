@@ -37,7 +37,10 @@ CLASS_PREFIX = "AsyncIO"
 
 
 def get_event_loop():
-    return asyncio.get_event_loop()
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.get_event_loop_policy().get_event_loop()
 
 
 def is_event_loop(loop):
