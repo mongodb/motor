@@ -138,6 +138,7 @@ class AgnosticClient(AgnosticBaseProperties):
             self._framework.check_event_loop(io_loop)
         else:
             io_loop = None
+        self._io_loop = io_loop
 
         kwargs.setdefault("connect", False)
         kwargs.setdefault(
@@ -146,7 +147,6 @@ class AgnosticClient(AgnosticBaseProperties):
 
         delegate = self.__delegate_class__(*args, **kwargs)
         super().__init__(delegate)
-        self._io_loop = io_loop
 
     @property
     def io_loop(self):
