@@ -3,7 +3,7 @@ Motor GridFS Classes
 
 .. currentmodule:: motor.motor_tornado
 
-Store blobs of data in `GridFS <https://www.mongodb.com/docs/manual/core/gridfs/>`_.
+Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
 
 .. seealso:: :ref:`Differences between PyMongo's and Motor's GridFS APIs
   <gridfs-differences>`.
@@ -26,7 +26,7 @@ Store blobs of data in `GridFS <https://www.mongodb.com/docs/manual/core/gridfs/
     - `chunk_size_bytes` (optional): The chunk size in bytes. Defaults
       to 255KB.
     - `write_concern` (optional): The
-      :class:`~pymongo.write_concern.WriteConcern` to use. If ``None``
+    :class:`~pymongo.write_concern.WriteConcern` to use. If ``None``
       (the default) db.write_concern is used.
     - `read_preference` (optional): The read preference to use. If
       ``None`` (the default) db.read_preference is used.

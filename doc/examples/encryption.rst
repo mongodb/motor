@@ -6,9 +6,9 @@ Client-Side Field Level Encryption
 Starting in MongoDB 4.2, client-side field level encryption allows an application
 to encrypt specific data fields in addition to pre-existing MongoDB
 encryption features such as `Encryption at Rest
-<https://www.mongodb.com/docs/manual/core/security-encryption-at-rest/>`_ and
+<https://dochub.mongodb.org/core/security-encryption-at-rest>`_ and
 `TLS/SSL (Transport Encryption)
-<https://www.mongodb.com/docs/manual/core/security-transport-encryption/>`_.
+<https://dochub.mongodb.org/core/security-tls-transport-encryption>`_.
 
 With field level encryption, applications can encrypt fields in documents
 *prior* to transmitting data over the wire to the server. Client-side field
@@ -39,7 +39,7 @@ mongocryptd
 
 The ``mongocryptd`` binary is required for automatic client-side encryption
 and is included as a component in the `MongoDB Enterprise Server package
-<https://www.mongodb.com/docs/manual/administration/install-enterprise/>`_. For more
+<https://dochub.mongodb.org/core/install-mongodb-enterprise>`_. For more
 information on this binary, see the `PyMongo documentation on mongocryptd
 <https://pymongo.readthedocs.io/en/stable/examples/encryption.html>`_.
 
@@ -65,7 +65,7 @@ Providing Local Automatic Encryption Rules
 The following example shows how to specify automatic encryption rules via the
 ``schema_map`` option. The automatic encryption rules are expressed using a
 `strict subset of the JSON Schema syntax
-<https://www.mongodb.com/docs/manual/reference/security-client-side-automatic-json-schema/>`_.
+<https://dochub.mongodb.org/core/client-side-field-level-encryption-automatic-encryption-rules>`_.
 
 Supplying a ``schema_map`` provides more security than relying on
 JSON Schemas obtained from the server. It protects against a
@@ -94,7 +94,7 @@ encryption using
 :class:`~motor.motor_asyncio.AsyncIOMotorClientEncryption` to create a new encryption
 data key and create a collection with the
 `Automatic Encryption JSON Schema Syntax
-<https://www.mongodb.com/docs/manual/reference/security-client-side-automatic-json-schema/>`_.
+<https://dochub.mongodb.org/core/client-side-field-level-encryption-automatic-encryption-rules>`_.
 
 .. literalinclude:: server_fle_enforcement_example.py
   :language: python3

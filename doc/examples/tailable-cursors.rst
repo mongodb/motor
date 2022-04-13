@@ -42,4 +42,4 @@ of a replica set member:
                 # collection for more than 1 second).
                 await sleep(1)
 
-.. seealso:: `Tailable cursors <https://mongodb.com/docs/manual/tutorial/create-tailable-cursor/>`_
+.. seealso:: `Tailable cursors <http://docs.mongodb.org/manual/tutorial/create-tailable-cursor/>`_
