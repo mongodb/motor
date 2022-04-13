@@ -26,7 +26,7 @@ Store blobs of data in `GridFS <http://dochub.mongodb.org/core/gridfs>`_.
     - `chunk_size_bytes` (optional): The chunk size in bytes. Defaults
       to 255KB.
     - `write_concern` (optional): The
-    :class:`~pymongo.write_concern.WriteConcern` to use. If ``None``
+      :class:`~pymongo.write_concern.WriteConcern` to use. If ``None``
       (the default) db.write_concern is used.
     - `read_preference` (optional): The read preference to use. If
       ``None`` (the default) db.read_preference is used.
