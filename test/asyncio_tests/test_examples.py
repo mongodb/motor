@@ -1396,7 +1396,9 @@ class TestExamples(AsyncIOTestCase):
         client = collection.database.client
         async with await client.start_session(snapshot=True) as s:
             try:
-                collection.aggregate([], session=s)
+                cursor = collection.aggregate([], session=s)
+                async for _ in cursor:
+                    pass
                 return True
             except OperationFailure as e:
                 # Retry them as the server demands...
