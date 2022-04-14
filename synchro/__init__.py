@@ -65,6 +65,7 @@ from pymongo.encryption import _MONGOCRYPTD_TIMEOUT_MS, _Encrypter
 from pymongo.encryption_options import *
 from pymongo.encryption_options import _HAVE_PYMONGOCRYPT
 from pymongo.errors import *
+from pymongo.event_loggers import *
 from pymongo.helpers import _check_command_response
 from pymongo.message import (
     _COMMAND_OVERHEAD,
@@ -368,12 +369,15 @@ class MongoClient(Synchro):
 
     # For PyMongo tests that access client internals.
     _MongoClient__all_credentials = SynchroProperty()
+    _MongoClient__kill_cursors_queue = SynchroProperty()
     _MongoClient__options = SynchroProperty()
     _cache_credentials = SynchroProperty()
     _close_cursor_now = SynchroProperty()
     _get_topology = SynchroProperty()
     _topology = SynchroProperty()
     _kill_cursors_executor = SynchroProperty()
+    _topology_settings = SynchroProperty()
+    _process_periodic_tasks = SynchroProperty()
 
 
 class _SynchroTransactionContext(Synchro):

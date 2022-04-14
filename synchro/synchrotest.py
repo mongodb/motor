@@ -50,6 +50,8 @@ excluded_modules = [
     "test.test_session",
     # Deprecated in PyMongo, removed in Motor 2.0.
     "test.test_gridfs",
+    # Skip mypy tests.
+    "test.test_mypy",
 ]
 
 
