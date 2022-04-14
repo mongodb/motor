@@ -135,7 +135,7 @@ As in PyMongo, Motor represents MongoDB documents with Python dictionaries. To
 store a document in MongoDB, call :meth:`~AsyncIOMotorCollection.insert_one` in an
 ``await`` expression:
 
-.. doctest:: before-inserting-2000-docs
+.. doctest:: inserting-one-doc
 
   >>> async def do_insert():
   ...     document = {'key': 'value'}
@@ -149,7 +149,7 @@ store a document in MongoDB, call :meth:`~AsyncIOMotorCollection.insert_one` in 
 
 .. mongodoc:: insert
 
-.. doctest:: before-inserting-2000-docs
+.. doctest:: inserting-one-doc
   :hide:
 
   >>> # Clean up from previous insert
