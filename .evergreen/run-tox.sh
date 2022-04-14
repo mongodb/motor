@@ -5,7 +5,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # Supported/used environment variables:
 #       AUTH                    Set to enable authentication. Defaults to "noauth"
 #       SSL                     Set to enable SSL. Defaults to "nossl"
-#       TOX_ENV                 Tox environment name, e.g. "tornado4-py36"
+#       TOX_ENV                 Tox environment name, e.g. "tornado5-py37"
 #       TOX_BINARY              Path to tox executable
 #       INSTALL_TOX             Whether to install tox in a virtualenv
 #       PYTHON_BINARY           Path to python
