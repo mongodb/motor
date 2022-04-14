@@ -1329,19 +1329,15 @@ class TestExamples(AsyncIOTestCase):
         db = client.pets
         async with await client.start_session(snapshot=True) as s:
             adoptablePetsCount = 0
-            cursor = db.cats.aggregate(
+            docs = await db.cats.aggregate(
                 [{"$match": {"adoptable": True}}, {"$count": "adoptableCatsCount"}], session=s
-            )
-            async for doc in cursor:
-                adoptablePetsCount = doc["adoptableCatsCount"]
-                break
+            ).to_list(None)
+            adoptablePetsCount = docs[0]["adoptableCatsCount"]
 
-            cursor = db.dogs.aggregate(
+            docs = await db.dogs.aggregate(
                 [{"$match": {"adoptable": True}}, {"$count": "adoptableDogsCount"}], session=s
-            )
-            async for doc in cursor:
-                adoptablePetsCount += doc["adoptableDogsCount"]
-                break
+            ).to_list(None)
+            adoptablePetsCount += docs[0]["adoptableDogsCount"]
 
         print(adoptablePetsCount)
 
@@ -1357,8 +1353,7 @@ class TestExamples(AsyncIOTestCase):
         # Start Snapshot Query Example 2
         db = client.retail
         async with await client.start_session(snapshot=True) as s:
-            total = 0
-            cursor = db.sales.aggregate(
+            docs = await db.sales.aggregate(
                 [
                     {
                         "$match": {
@@ -1379,10 +1374,8 @@ class TestExamples(AsyncIOTestCase):
                     {"$count": "totalDailySales"},
                 ],
                 session=s,
-            )
-            async for doc in cursor:
-                total = doc["totalDailySales"]
-                break
+            ).to_list(None)
+            total = docs[0]["totalDailySales"]
 
             print(total)
 
@@ -1396,9 +1389,7 @@ class TestExamples(AsyncIOTestCase):
         client = collection.database.client
         async with await client.start_session(snapshot=True) as s:
             try:
-                cursor = collection.aggregate([], session=s)
-                async for _ in cursor:
-                    pass
+                await collection.aggregate([], session=s).to_list(None)
                 return True
             except OperationFailure as e:
                 # Retry them as the server demands...
