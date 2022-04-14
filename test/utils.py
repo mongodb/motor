@@ -129,12 +129,12 @@ def get_async_test_timeout(default=5):
 
 
 async def wait_until(predicate, success_description, timeout=10):
-    """Wait up to 10 seconds (by default) for predicate to be true. The
+    """Copied from PyMongo's test.utils.wait_until.
+
+    Wait up to 10 seconds (by default) for predicate to be true. The
     predicate must be an awaitable.
 
     Returns the predicate's first true value.
-
-    Copied from PyMongo's test.utils.wait_until.
     """
     start = time.time()
     interval = min(float(timeout) / 100, 0.1)
