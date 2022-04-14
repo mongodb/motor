@@ -129,21 +129,12 @@ def get_async_test_timeout(default=5):
 
 
 async def wait_until(predicate, success_description, timeout=10):
-    """Wait up to 10 seconds (by default) for predicate to be true.
-
-    E.g.:
-
-        wait_until(lambda: client.primary == ('a', 1),
-                   'connect to the primary')
-
-    If the lambda-expression isn't true after 10 seconds, we raise
-    AssertionError("Didn't ever connect to the primary").
-    Copied from PyMongo's test.utils.wait_until.
-
-    Wait up to 10 seconds (by default) for predicate to be true. The
+    """Wait up to 10 seconds (by default) for predicate to be true. The
     predicate must be an awaitable.
 
     Returns the predicate's first true value.
+
+    Copied from PyMongo's test.utils.wait_until.
     """
     start = time.time()
     interval = min(float(timeout) / 100, 0.1)
