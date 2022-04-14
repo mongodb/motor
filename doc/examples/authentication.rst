@@ -11,7 +11,7 @@ replica sets or sharded clusters, ``--keyFile``. Create an admin user and
 optionally normal users or read-only users.
 
 .. seealso:: `MongoDB Authentication
-  <http://docs.mongodb.org/manual/tutorial/control-access-to-mongodb-with-authentication/>`_
+  <https://mongodb.com/docs/manual/tutorial/control-access-to-mongodb-with-authentication/>`_
 
 To create an authenticated connection use a `MongoDB connection URI`_::
 
@@ -20,4 +20,4 @@ To create an authenticated connection use a `MongoDB connection URI`_::
 
 Motor logs in to the server on demand, when you first attempt an operation.
 
-.. _MongoDB connection URI: http://docs.mongodb.org/manual/reference/connection-string/
+.. _MongoDB connection URI: https://mongodb.com/docs/manual/reference/connection-string/

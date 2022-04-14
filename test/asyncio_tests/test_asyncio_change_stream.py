@@ -20,8 +20,7 @@ import threading
 import time
 from test import SkipTest, env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from test.py35utils import wait_until
-from test.utils import get_async_test_timeout
+from test.utils import get_async_test_timeout, wait_until
 
 from pymongo.errors import InvalidOperation, OperationFailure
 

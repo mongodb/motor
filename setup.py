@@ -10,8 +10,8 @@ else:
 
 from setuptools import setup
 
-if sys.version_info[:2] < (3, 5):
-    raise Exception("This version of Motor requires Python>=3.5")
+if sys.version_info[:2] < (3, 7):
+    raise Exception("This version of Motor requires Python>=3.7")
 
 classifiers = """\
 Intended Audience :: Developers
@@ -19,8 +19,6 @@ License :: OSI Approved :: Apache Software License
 Development Status :: 5 - Production/Stable
 Natural Language :: English
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.5
-Programming Language :: Python :: 3.6
 Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
@@ -159,7 +157,7 @@ setup(
     author="A. Jesse Jiryu Davis",
     author_email="jesse@mongodb.com",
     url="https://github.com/mongodb/motor/",
-    python_requires=">=3.5.2",
+    python_requires=">=3.7",
     install_requires=install_requires,
     extras_require=extras_require,
     license="http://www.apache.org/licenses/LICENSE-2.0",

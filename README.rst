@@ -82,7 +82,7 @@ Security Vulnerabilities
 
 If you've identified a security vulnerability in a driver or any other
 MongoDB project, please report it according to the `instructions here
-<http://docs.mongodb.org/manual/tutorial/create-a-vulnerability-report>`_.
+<https://mongodb.com/docs/manual/tutorial/create-a-vulnerability-report>`_.
 
 Installation
 ============

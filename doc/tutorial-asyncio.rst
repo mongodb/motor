@@ -42,7 +42,7 @@ Using Python 3.5 or later, do::
 
 This tutorial assumes that a MongoDB instance is running on the
 default host and port. Assuming you have `downloaded and installed
-<http://docs.mongodb.org/manual/installation/>`_ MongoDB, you
+<https://mongodb.com/docs/manual/installation/>`_ MongoDB, you
 can start it like so:
 
 .. code-block:: bash
@@ -51,7 +51,7 @@ can start it like so:
 
 .. _pip: http://www.pip-installer.org/en/latest/installing.html
 
-.. _MongoDB Tutorial: http://docs.mongodb.org/manual/tutorial/getting-started/
+.. _MongoDB Tutorial: https://mongodb.com/docs/manual/tutorial/getting-started/
 
 Object Hierarchy
 ----------------
@@ -97,12 +97,12 @@ Connect to a replica set like:
 
   >>> client = motor.motor_asyncio.AsyncIOMotorClient('mongodb://host1,host2/?replicaSet=my-replicaset-name')
 
-.. _connection URIs: http://docs.mongodb.org/manual/reference/connection-string/
+.. _connection URIs: https://mongodb.com/docs/manual/reference/connection-string/
 
 Getting a Database
 ------------------
 A single instance of MongoDB can support multiple independent
-`databases <http://docs.mongodb.org/manual/reference/glossary/#term-database>`_.
+`databases <https://www.mongodb.com/docs/manual/core/databases-and-collections/>`_.
 From an open client, you can get a reference to a particular database with
 dot-notation or bracket-notation:
 
@@ -116,7 +116,7 @@ Creating a reference to a database does no I/O and does not require an
 
 Getting a Collection
 --------------------
-A `collection <http://docs.mongodb.org/manual/reference/glossary/#term-collection>`_
+A `collection <https://www.mongodb.com/docs/manual/core/databases-and-collections/>`_
 is a group of documents stored in MongoDB, and can be thought of as roughly
 the equivalent of a table in a relational database. Getting a
 collection in Motor works the same as getting a database:
@@ -252,7 +252,7 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
 The cursor does not actually retrieve each document from the server
 individually; it gets documents efficiently in `large batches`_.
 
-.. _`large batches`: https://docs.mongodb.com/manual/tutorial/iterate-a-cursor/#cursor-batches
+.. _`large batches`: https://mongodb.com/docs/manual/tutorial/iterate-a-cursor/#cursor-batches
 
 Counting Documents
 ------------------
@@ -445,4 +445,4 @@ reference to Motor's complete feature set.
 Learning to use the MongoDB driver is just the beginning, of course. For
 in-depth instruction in MongoDB itself, see `The MongoDB Manual`_.
 
-.. _The MongoDB Manual: http://docs.mongodb.org/manual/
+.. _The MongoDB Manual: https://mongodb.com/docs/manual/

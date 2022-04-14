@@ -20,7 +20,6 @@ import unittest
 import warnings
 from functools import partial
 from test import SkipTest, env
-from test.py35utils import wait_until
 from test.tornado_tests import (
     MotorMockServerTest,
     MotorTest,
@@ -33,6 +32,7 @@ from test.utils import (
     get_primary_pool,
     one,
     safe_get,
+    wait_until,
 )
 
 import bson

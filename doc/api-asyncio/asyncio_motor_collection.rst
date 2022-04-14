@@ -120,6 +120,6 @@
 
             await db.test.inline_map_reduce(map, reduce, limit=2)
 
-      .. _map reduce command: http://docs.mongodb.org/manual/reference/command/mapReduce/
+      .. _map reduce command: https://mongodb.com/docs/manual/reference/command/mapReduce/
 
       .. mongodoc:: mapreduce

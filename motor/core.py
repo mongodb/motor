@@ -586,7 +586,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         .. versionadded:: 2.1
 
         .. _aggregate command:
-            https://docs.mongodb.com/manual/reference/command/aggregate
+            https://www.mongodb.com/docs/manual/reference/command/aggregate/
         """
         cursor_class = create_class_with_framework(
             AgnosticLatentCommandCursor, self._framework, self.__module__
@@ -954,7 +954,7 @@ class AgnosticCollection(AgnosticBaseProperties):
            Added cursor support.
 
         .. _aggregate command:
-            http://docs.mongodb.org/manual/applications/aggregation
+            https://mongodb.com/docs/manual/applications/aggregation
 
         """
         cursor_class = create_class_with_framework(
@@ -1120,7 +1120,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         .. mongodoc:: changeStreams
 
         .. _change streams specification:
-            https://github.com/mongodb/specifications/blob/master/source/change-streams.rst
+            https://github.com/mongodb/specifications/blob/master/source/change-streams/change-streams.rst
         """
         cursor_class = create_class_with_framework(
             AgnosticChangeStream, self._framework, self.__module__
@@ -1287,7 +1287,7 @@ class AgnosticBaseCursor(AgnosticBase):
         .. versionchanged:: 2.2
            Deprecated.
 
-        .. _`large batches`: https://docs.mongodb.com/manual/tutorial/iterate-a-cursor/#cursor-batches
+        .. _`large batches`: https://www.mongodb.com/docs/manual/tutorial/iterate-a-cursor/#cursor-batches
         .. _`gen.coroutine`: http://tornadoweb.org/en/stable/gen.html
         """
         warnings.warn(

@@ -18,9 +18,8 @@ import copy
 import threading
 import time
 from test import SkipTest, env
-from test.py35utils import wait_until
 from test.tornado_tests import MotorTest
-from test.utils import get_async_test_timeout
+from test.utils import get_async_test_timeout, wait_until
 
 from pymongo.errors import InvalidOperation, OperationFailure
 from tornado.testing import gen_test
