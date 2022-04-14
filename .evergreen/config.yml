@@ -679,42 +679,18 @@ axes:
   - id: tox-env
     display_name: "Tox Env"
     values:
-      - id: "tornado5-pypy35"
+      - id: "tornado5-pypy37"
         variables:
-           TOX_ENV: "tornado5-pypy35"
-           PYTHON_BINARY: "/opt/python/pypy3.5/bin/pypy3"
-      - id: "tornado5-pypy36"
-        variables:
-           TOX_ENV: "tornado5-pypy36"
-           PYTHON_BINARY: "/opt/python/pypy3.6/bin/pypy3"
-      - id: "tornado5-py35"
-        variables:
-           TOX_ENV: "tornado5-py35"
-           PYTHON_BINARY: "/opt/python/3.5/bin/python3"
-      - id: "tornado5-py36"
-        variables:
-           TOX_ENV: "tornado5-py36"
-           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+           TOX_ENV: "tornado5-pypy37"
+           PYTHON_BINARY: "/opt/python/pypy3.7/bin/pypy3"
       - id: "tornado5-py37"
         variables:
            TOX_ENV: "tornado5-py37"
            PYTHON_BINARY: "/opt/python/3.7/bin/python3"
-      - id: "tornado6-pypy35"
+      - id: "tornado6-pypy37"
         variables:
-          TOX_ENV: "tornado6-pypy35"
-          PYTHON_BINARY: "/opt/python/pypy3.5/bin/pypy3"
-      - id: "tornado6-pypy36"
-        variables:
-          TOX_ENV: "tornado6-pypy36"
-          PYTHON_BINARY: "/opt/python/pypy3.6/bin/pypy3"
-      - id: "tornado6-py35"
-        variables:
-           TOX_ENV: "tornado6-py35"
-           PYTHON_BINARY: "/opt/python/3.5/bin/python3"
-      - id: "tornado6-py36"
-        variables:
-           TOX_ENV: "tornado6-py36"
-           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+          TOX_ENV: "tornado6-pypy37"
+          PYTHON_BINARY: "/opt/python/pypy3.7/bin/pypy3"
       - id: "tornado6-py37"
         variables:
            TOX_ENV: "tornado6-py37"
@@ -727,30 +703,18 @@ axes:
         variables:
            TOX_ENV: "tornado6-py39"
            PYTHON_BINARY: "/opt/python/3.9/bin/python3"
-      - id: "tornado_git-py36"
-        variables:
-           TOX_ENV: "tornado_git-py36"
-           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
       - id: "tornado_git-py37"
         variables:
            TOX_ENV: "tornado_git-py37"
            PYTHON_BINARY: "/opt/python/3.7/bin/python3"
-      - id: "asyncio-pypy35"
+      - id: "tornado_git-py38"
         variables:
-          TOX_ENV: "asyncio-pypy35"
-          PYTHON_BINARY: "/opt/python/pypy3.5/bin/pypy3"
-      - id: "asyncio-pypy36"
+           TOX_ENV: "tornado_git-py38"
+           PYTHON_BINARY: "/opt/python/3.8/bin/python3"
+      - id: "asyncio-pypy37"
         variables:
-          TOX_ENV: "asyncio-pypy36"
-          PYTHON_BINARY: "/opt/python/pypy3.6/bin/pypy3"
-      - id: "asyncio-py35"
-        variables:
-           TOX_ENV: "asyncio-py35"
-           PYTHON_BINARY: "/opt/python/3.5/bin/python3"
-      - id: "asyncio-py36"
-        variables:
-           TOX_ENV: "asyncio-py36"
-           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+          TOX_ENV: "asyncio-pypy37"
+          PYTHON_BINARY: "/opt/python/pypy3.7/bin/pypy3"
       - id: "asyncio-py37"
         variables:
            TOX_ENV: "asyncio-py37"
@@ -766,8 +730,7 @@ axes:
       - id: "py3-pymongo-latest"
         variables:
            TOX_ENV: "py3-pymongo-latest"
-           # Use 3.6 for now until 3.7 is on all Evergreen distros.
-           PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
       - id: "synchro37"
         variables:
           TOX_ENV: "synchro37"
@@ -785,38 +748,34 @@ axes:
            TOX_ENV: "asyncio-py310"
            PYTHON_BINARY: "/opt/python/3.10/bin/python3"
 
-  # Test Python 3.6 only on Mac.
+  # Test Python 3.7 only on Mac.
   - id: tox-env-osx
     display_name: "Tox Env OSX"
     values:
-      - id: "tornado5-py36"
+      - id: "tornado5-py37"
         variables:
-           TOX_ENV: "tornado5-py36"
-           PYTHON_BINARY: "/Library/Frameworks/Python.framework/Versions/3.6/bin/python3"
-      - id: "tornado_git-py36"
+           TOX_ENV: "tornado5-py37"
+           PYTHON_BINARY: "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3"
+      - id: "tornado_git-py37"
         variables:
-           TOX_ENV: "tornado_git-py36"
-           PYTHON_BINARY: "/Library/Frameworks/Python.framework/Versions/3.6/bin/python3"
+           TOX_ENV: "tornado_git-py37"
+           PYTHON_BINARY: "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3"
 
   - id: tox-env-win
     display_name: "Tox Env Windows"
     values:
-      - id: "asyncio-py36"
-        variables:
-          TOX_ENV: "asyncio-py36"
-          PYTHON_BINARY: "c:\\python\\Python36\\python.exe"
       - id: "asyncio-py37"
         variables:
           TOX_ENV: "asyncio-py37"
           PYTHON_BINARY: "c:\\python\\Python37\\python.exe"
-      - id: "tornado6-py36"
-        variables:
-           TOX_ENV: "tornado6-py36"
-           PYTHON_BINARY: "c:\\python\\Python36\\python.exe"
       - id: "tornado6-py37"
         variables:
            TOX_ENV: "tornado6-py37"
            PYTHON_BINARY: "c:\\python\\Python37\\python.exe"
+      - id: "tornado6-py38"
+        variables:
+           TOX_ENV: "tornado6-py38"
+           PYTHON_BINARY: "c:\\python\\Python38\\python.exe"
 
   - id: os
     display_name: "Operating System"
@@ -825,29 +784,29 @@ axes:
         display_name: "RHEL 6.2"
         run_on: "rhel62-small"
         variables:
-           TOX_BINARY: "/opt/python/3.6/bin/tox"
+           TOX_BINARY: "/opt/python/3.7/bin/tox"
       - id: "amazon1-2018"
         display_name: "Linux"
         run_on: "amazon1-2018-test"
         variables:
-           TOX_BINARY: "/opt/python/3.6/bin/tox"
+           TOX_BINARY: "/opt/python/3.7/bin/tox"
       - id: "ubuntu-20"
         display_name: "Ubuntu"
         run_on: "ubuntu2004-small"
         variables:
-           TOX_BINARY: "/opt/python/3.6/bin/tox"
+           TOX_BINARY: "/opt/python/3.7/bin/tox"
       - id: "win"
         display_name: "Windows"
         run_on: "windows-64-vsMulti-small"
         variables:
            INSTALL_TOX: true
-           VIRTUALENV: "/cygdrive/c/python/Python36/python.exe -m virtualenv"
+           VIRTUALENV: "/cygdrive/c/python/Python37/python.exe -m virtualenv"
       - id: "macos-1014"
         display_name: "macOS 10.14"
         run_on: "macos-1014"
         variables:
            INSTALL_TOX: true
-           VIRTUALENV: "/opt/mongodbtoolchain/v2/bin/python3.6 -m virtualenv"
+           VIRTUALENV: "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3 -m venv"
 
 buildvariants:
 
@@ -920,8 +879,8 @@ buildvariants:
      - amazon1-2018-test
   expansions:
      TOX_ENV: "py3-sphinx-docs"
-     TOX_BINARY: "/opt/python/3.6/bin/tox"
-     PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+     TOX_BINARY: "/opt/python/3.7/bin/tox"
+     PYTHON_BINARY: "/opt/python/3.7/bin/python3"
   tasks:
      - name: "docs"
 
@@ -931,7 +890,7 @@ buildvariants:
      - amazon1-2018-test
   expansions:
      TOX_ENV: "py3-sphinx-doctest"
-     TOX_BINARY: "/opt/python/3.6/bin/tox"
-     PYTHON_BINARY: "/opt/python/3.6/bin/python3"
+     TOX_BINARY: "/opt/python/3.7/bin/tox"
+     PYTHON_BINARY: "/opt/python/3.7/bin/python3"
   tasks:
      - name: "doctest"

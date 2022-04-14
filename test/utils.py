@@ -138,6 +138,10 @@ async def wait_until(predicate, success_description, timeout=10):
 
     If the lambda-expression isn't true after 10 seconds, we raise
     AssertionError("Didn't ever connect to the primary").
+    Copied from PyMongo's test.utils.wait_until.
+
+    Wait up to 10 seconds (by default) for predicate to be true. The
+    predicate must be an awaitable.
 
     Returns the predicate's first true value.
     """
