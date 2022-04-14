@@ -806,7 +806,7 @@ axes:
         run_on: "macos-1014"
         variables:
            INSTALL_TOX: true
-           VIRTUALENV: "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3 -m virtualenv"
+           VIRTUALENV: "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3 -m venv"
 
 buildvariants:
 
