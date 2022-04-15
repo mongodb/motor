@@ -178,6 +178,11 @@ excluded_tests = [
     "*.test_discovery_and_monitoring_integration_insert_shutdown_error_Concurrent_shutdown_error_on_insert",
     # Needs synchro.GridFS class, see MOTOR-609.
     "TestTransactions.test_gridfs_does_not_support_transactions",
+    # TODO: skipping for now
+    "*.test_helpers_with_let",
+    # Relies on comment being in the method signatures, which would force use
+    # to rewrite much of AgnosticCollection.
+    "*.test_collection_helpers",
 ]
 
 

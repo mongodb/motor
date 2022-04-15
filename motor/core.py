@@ -105,6 +105,8 @@ class AgnosticClient(AgnosticBaseProperties):
     arbiters = ReadOnlyProperty()
     close = DelegateMethod()
     __hash__ = DelegateMethod()
+    __next__ = DelegateMethod()
+    next = DelegateMethod()
     drop_database = AsyncCommand().unwrap("MotorDatabase")
     options = ReadOnlyProperty()
     get_database = DelegateMethod(doc=docstrings.get_database_doc).wrap(Database)
@@ -728,6 +730,9 @@ class AgnosticCollection(AgnosticBaseProperties):
     __delegate_class__ = Collection
 
     __hash__ = DelegateMethod()
+    __bool__ = DelegateMethod()
+    __next__ = DelegateMethod()
+    next = DelegateMethod()
     bulk_write = AsyncCommand(doc=docstrings.bulk_write_doc)
     count_documents = AsyncRead()
     create_index = AsyncCommand()
@@ -810,7 +815,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         )
 
         return collection_class(
-            self.database, self.name + "." + name, _delegate=self.delegate[name]
+            self.database, self.name + "." + str(name), _delegate=self.delegate[name]
         )
 
     def __call__(self, *args, **kwargs):
@@ -1143,7 +1148,7 @@ class AgnosticCollection(AgnosticBaseProperties):
             start_after,
         )
 
-    def list_indexes(self, session=None):
+    def list_indexes(self, session=None, **kwargs):
         """Get a cursor over the index documents for this collection. ::
 
           async def print_indexes():
@@ -1159,7 +1164,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         )
 
         # Latent cursor that will send initial command on first "async for".
-        return cursor_class(self, self._async_list_indexes, session=session)
+        return cursor_class(self, self._async_list_indexes, session=session, **kwargs)
 
     def wrap(self, obj):
         if obj.__class__ is Collection:

@@ -335,6 +335,8 @@ class MongoClient(Synchro):
     max_pool_size = SynchroProperty()
     start_session = Sync()
     watch = WrapOutgoing()
+    __iter__ = None  # PYTHON-3084
+    __next__ = Sync()
 
     def __init__(self, host=None, port=None, *args, **kwargs):
         # So that TestClient.test_constants and test_types work.
@@ -462,6 +464,9 @@ class Collection(Synchro):
     aggregate_raw_batches = WrapOutgoing()
     list_indexes = WrapOutgoing()
     watch = WrapOutgoing()
+    __bool__ = WrapOutgoing()
+    __iter__ = None  # PYTHON-3084
+    __next__ = Sync()
 
     def __init__(self, database, name, **kwargs):
         if not isinstance(database, Database):
@@ -471,9 +476,9 @@ class Collection(Synchro):
             )
 
         self.database = database
-        self.delegate = kwargs.get("delegate") or motor.MotorCollection(
-            self.database.delegate, name, **kwargs
-        )
+        self.delegate = kwargs.get("delegate")
+        if self.delegate is None:
+            self.delegate = motor.MotorCollection(self.database.delegate, name, **kwargs)
 
         if not isinstance(self.delegate, motor.MotorCollection):
             raise TypeError(
@@ -487,7 +492,7 @@ class Collection(Synchro):
 
     def __getitem__(self, name):
         # Access to collections with dotted names, like db.test['mike']
-        fullname = self.name + "." + name
+        fullname = self.name + "." + str(name)
         return Collection(self.database, fullname, delegate=self.delegate[name])
 
 
