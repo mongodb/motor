@@ -118,7 +118,7 @@ class MotorCoreTestGridFS(MotorTest):
         )
 
     def test_gridin_attrs(self):
-        motor_gridin_only = set(["set"]).union(motor_only)
+        motor_gridin_only = set(["set", "md5"]).union(motor_only)
         gridin_only = set(["md5"])
 
         self.assertEqual(
