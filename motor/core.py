@@ -164,6 +164,7 @@ class AgnosticClient(AgnosticBaseProperties):
         start_at_operation_time=None,
         session=None,
         start_after=None,
+        comment=None,
     ):
         """Watch changes on this cluster.
 
@@ -204,9 +205,14 @@ class AgnosticClient(AgnosticBaseProperties):
           - `start_after` (optional): The same as `resume_after` except that
             `start_after` can resume notifications after an invalidate event.
             This option and `resume_after` are mutually exclusive.
+          - `comment` (optional): A user-provided comment to attach to this
+            command.
 
         :Returns:
           A :class:`~MotorChangeStream`.
+
+        .. versionchanged:: 3.0
+           Added ``comment`` parameter.
 
         .. versionchanged:: 2.1
            Added the ``start_after`` parameter.
@@ -231,6 +237,7 @@ class AgnosticClient(AgnosticBaseProperties):
             start_at_operation_time,
             session,
             start_after,
+            comment,
         )
 
     def __getattr__(self, name):
@@ -607,6 +614,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         start_at_operation_time=None,
         session=None,
         start_after=None,
+        comment=None,
     ):
         """Watch changes on this database.
 
@@ -647,9 +655,14 @@ class AgnosticDatabase(AgnosticBaseProperties):
           - `start_after` (optional): The same as `resume_after` except that
             `start_after` can resume notifications after an invalidate event.
             This option and `resume_after` are mutually exclusive.
+          - `comment` (optional): A user-provided comment to attach to this
+            command.
 
         :Returns:
           A :class:`~MotorChangeStream`.
+
+        .. versionchanged:: 3.0
+           Added ``comment`` parameter.
 
         .. versionchanged:: 2.1
            Added the ``start_after`` parameter.
@@ -674,6 +687,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             start_at_operation_time,
             session,
             start_after,
+            comment,
         )
 
     @property
@@ -1007,6 +1021,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         start_at_operation_time=None,
         session=None,
         start_after=None,
+        comment=None,
     ):
         """Watch changes on this collection.
 
@@ -1117,11 +1132,16 @@ class AgnosticCollection(AgnosticBaseProperties):
           - `start_after` (optional): The same as `resume_after` except that
             `start_after` can resume notifications after an invalidate event.
             This option and `resume_after` are mutually exclusive.
+          - `comment` (optional): A user-provided comment to attach to this
+            command.
 
         :Returns:
           A :class:`~MotorChangeStream`.
 
         See the :ref:`tornado_change_stream_example`.
+
+        .. versionchanged:: 3.0
+           Added ``comment`` parameter.
 
         .. versionchanged:: 2.1
            Added the ``start_after`` parameter.
@@ -1149,6 +1169,7 @@ class AgnosticCollection(AgnosticBaseProperties):
             start_at_operation_time,
             session,
             start_after,
+            comment,
         )
 
     def list_indexes(self, session=None, **kwargs):
@@ -1740,6 +1761,7 @@ class AgnosticChangeStream(AgnosticBase):
         start_at_operation_time,
         session,
         start_after,
+        comment,
     ):
         super().__init__(delegate=None)
         # The "target" object is a client, database, or collection.
@@ -1754,6 +1776,7 @@ class AgnosticChangeStream(AgnosticBase):
             "start_at_operation_time": start_at_operation_time,
             "session": session,
             "start_after": start_after,
+            "comment": comment,
         }
 
     def _lazy_init(self):
