@@ -60,9 +60,9 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install -U pip tox
-      - name: Run docs
+      - name: Run Synchro
         run: |
-          tox -e py37-synchro
+          tox -e synchro37
 
   docs:
     runs-on: ubuntu-latest

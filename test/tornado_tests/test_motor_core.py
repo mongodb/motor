@@ -29,7 +29,7 @@ def attrs(klass):
 
 motor_only = set(["delegate", "get_io_loop", "io_loop", "wrap"])
 
-pymongo_only = set(["next"])
+pymongo_only = set([])
 
 motor_client_only = motor_only.union(["open"])
 
