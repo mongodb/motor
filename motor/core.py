@@ -513,6 +513,9 @@ class AgnosticDatabase(AgnosticBaseProperties):
     __delegate_class__ = Database
 
     __hash__ = DelegateMethod()
+    __bool__ = DelegateMethod()
+    __next__ = DelegateMethod()
+    next = DelegateMethod()
     command = AsyncCommand(doc=docstrings.cmd_doc)
     create_collection = AsyncCommand().wrap(Collection)
     dereference = AsyncRead()

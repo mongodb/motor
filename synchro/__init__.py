@@ -431,14 +431,17 @@ class Database(Synchro):
     get_collection = WrapOutgoing()
     watch = WrapOutgoing()
     aggregate = WrapOutgoing()
+    __bool__ = Sync()
+    __iter__ = None  # PYTHON-3084
+    __next__ = Sync()
 
     def __init__(self, client, name, **kwargs):
         assert isinstance(client, MongoClient), "Expected MongoClient, got %s" % repr(client)
 
         self._client = client
-        self.delegate = kwargs.get("delegate") or motor.MotorDatabase(
-            client.delegate, name, **kwargs
-        )
+        self.delegate = kwargs.get("delegate")
+        if self.delegate is None:
+            self.delegate = motor.MotorDatabase(client.delegate, name, **kwargs)
 
         assert isinstance(
             self.delegate, motor.MotorDatabase
@@ -720,6 +723,7 @@ class GridOut(Synchro):
             "upload_date",
             "aliases",
             "metadata",
+            "md5",
         ):
             raise AttributeError()
 
