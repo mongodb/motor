@@ -36,11 +36,9 @@ import synchro
 
 excluded_modules = [
     # Exclude some PyMongo tests that can't be applied to Synchro.
-    "test.test_cursor_manager",
     "test.test_examples",
     "test.test_threads",
     "test.test_pooling",
-    "test.test_legacy_api",
     "test.test_saslprep",
     # Complex PyMongo-specific mocking.
     "test.test_replica_set_reconfig",
