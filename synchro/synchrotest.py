@@ -72,15 +72,10 @@ excluded_tests = [
     "TestGridfs.test_threaded_writes",
     # Can't do MotorCollection(name, create=True), Motor constructors do no I/O.
     "TestCollection.test_create",
-    # Motor doesn't support PyMongo's syntax, db.system_js['my_func'] = "code",
-    # users should just use system.js as a regular collection.
-    "TestDatabase.test_system_js",
-    "TestDatabase.test_system_js_list",
     # Requires indexing / slicing cursors, which Motor doesn't do, see MOTOR-84.
     "TestCollection.test_min_query",
     "TestCursor.test_clone",
     "TestCursor.test_clone_empty",
-    "TestCursor.test_count_with_limit_and_skip",
     "TestCursor.test_getitem_numeric_index",
     "TestCursor.test_getitem_slice_index",
     "TestCursor.test_tailable",
@@ -107,11 +102,7 @@ excluded_tests = [
     "TestHeartbeatMonitoring.*",
     "TestMongoClientFailover.*",
     "TestMongosLoadBalancing.*",
-    "TestReplicaSetClientInternalIPs.*",
-    "TestReplicaSetClientMaxWriteBatchSize.*",
     "TestSSL.test_system_certs_config_error",
-    # Motor is correct here, it's just unreliable on slow CI servers.
-    "TestReplicaSetClient.test_timeout_does_not_mark_member_down",
     "TestCMAP.test_cmap_wait_queue_timeout_must_aggressively_timeout_threads_enqueued_longer_than_waitQueueTimeoutMS",
     # Accesses PyMongo internals.
     "TestClient.test_close_kills_cursors",
@@ -127,21 +118,10 @@ excluded_tests = [
     "TestGridFile.test_grid_out_cursor_options",
     "TestGridFile.test_survive_cursor_not_found",
     "TestMaxStaleness.test_last_write_date",
-    "TestMaxStaleness.test_last_write_date_absent",
-    "TestReplicaSetClient.test_kill_cursor_explicit_primary",
-    "TestReplicaSetClient.test_kill_cursor_explicit_secondary",
     "TestSelections.test_bool",
-    # Deprecated in PyMongo, removed in Motor 2.0.
-    "TestDatabase.test_collection_names",
-    "TestDatabase.test_errors",
-    "TestDatabase.test_eval",
     "TestCollation.*",
     "TestCollection.test_find_one_and_write_concern",
-    "TestCollection.test_parallel_scan",
-    "TestCollection.test_parallel_scan_max_time_ms",
     "TestCollection.test_write_error_text_handling",
-    "TestClient.test_database_names",
-    "TestCollectionWCustomType.test_find_and_modify_w_custom_type_decoder",
     "TestBinary.test_uuid_queries",
     "TestCursor.test_comment",
     "TestCursor.test_where",
@@ -150,11 +130,9 @@ excluded_tests = [
     "TestSASLPlain.test_sasl_plain_bad_credentials",
     "TestSCRAM.test_scram",
     "TestSCRAMSHA1.test_scram_sha1",
-    "TestThreadedAuth.*",
     # Uses "collection_names", deprecated in PyMongo, removed in Motor 2.0.
     "TestSingleSecondaryOk.test_reads_from_secondary",
     # Slow.
-    "TestDatabase.test_collection_names_single_socket",
     "TestDatabase.test_list_collection_names",
     # MOTOR-425 these tests fail with duplicate key errors.
     "TestClusterChangeStreamsWCustomTypes.*",
