@@ -163,10 +163,12 @@ excluded_tests = [
     "*.test_collection_helpers",
     "*.test_database_helpers",
     "*.test_client_helpers",
-    # Requires kmip server
+    # Requires kmip server.
     "*.test_spec_kmipKMS_Insert_a_document_with_auto_encryption_using_KMIP_KMS_provider",
-    # This test is too slow given all of the wrapping logic
+    # This test is too slow given all of the wrapping logic.
     "*.test_transaction_starts_with_batched_write",
+    # This test is too flaky given all the wrapping logic.
+    "*.test_server_selection_in_window.TestProse.test_load_balancing",
 ]
 
 
