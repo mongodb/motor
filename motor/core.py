@@ -543,7 +543,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
         super().__init__(delegate)
 
-    def aggregate(self, pipeline, **kwargs):
+    def aggregate(self, pipeline, *args, **kwargs):
         """Execute an aggregation pipeline on this database.
 
         Introduced in MongoDB 3.6.
@@ -600,7 +600,11 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(
-            self["$cmd.aggregate"], self._async_aggregate, pipeline, **unwrap_kwargs_session(kwargs)
+            self["$cmd.aggregate"],
+            self._async_aggregate,
+            pipeline,
+            *unwrap_args_session(args),
+            **unwrap_kwargs_session(kwargs)
         )
 
     def watch(
@@ -887,7 +891,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         return cursor_class(cursor, self)
 
-    def aggregate(self, pipeline, **kwargs):
+    def aggregate(self, pipeline, *args, **kwargs):
         """Execute an aggregation pipeline on this collection.
 
         The aggregation can be run on a secondary if the client is connected
@@ -978,7 +982,13 @@ class AgnosticCollection(AgnosticBaseProperties):
         )
 
         # Latent cursor that will send initial command on first "async for".
-        return cursor_class(self, self._async_aggregate, pipeline, **unwrap_kwargs_session(kwargs))
+        return cursor_class(
+            self,
+            self._async_aggregate,
+            pipeline,
+            *unwrap_args_session(args),
+            **unwrap_kwargs_session(kwargs)
+        )
 
     def aggregate_raw_batches(self, pipeline, **kwargs):
         """Perform an aggregation and retrieve batches of raw BSON.
