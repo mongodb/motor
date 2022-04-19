@@ -152,6 +152,7 @@ excluded_tests = [
     "*.test_ignore_stale_connection_errors",
     "*.test_discovery_and_monitoring_integration_find_shutdown_error_Concurrent_shutdown_error_on_find",
     "*.test_discovery_and_monitoring_integration_insert_shutdown_error_Concurrent_shutdown_error_on_insert",
+    "*.test_discovery_and_monitoring_integration_pool_cleared_error_PoolClearedError_does_not_mark_server_unknown",
     # Needs synchro.GridFS class, see MOTOR-609.
     "TestTransactions.test_gridfs_does_not_support_transactions",
     # PYTHON-3228 _tmp_session should validate session input
@@ -159,6 +160,10 @@ excluded_tests = [
     # Relies on comment being in the method signatures, which would force use
     # to rewrite much of AgnosticCollection.
     "*.test_collection_helpers",
+    "*.test_database_helpers",
+    "*.test_client_helpers",
+    # Requires kmip server
+    "*.test_spec_kmipKMS_Insert_a_document_with_auto_encryption_using_KMIP_KMS_provider",
 ]
 
 
