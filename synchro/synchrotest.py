@@ -168,7 +168,7 @@ excluded_tests = [
     # This test is too slow given all of the wrapping logic.
     "*.test_transaction_starts_with_batched_write",
     # This test is too flaky given all the wrapping logic.
-    "*.test_server_selection_in_window.TestProse.test_load_balancing",
+    "TestProse.test_load_balancing",
 ]
 
 
