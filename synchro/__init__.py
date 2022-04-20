@@ -491,7 +491,7 @@ class Collection(Synchro):
 
     def __getitem__(self, name):
         # Access to collections with dotted names, like db.test['mike']
-        fullname = self.name + "." + str(name)
+        fullname = self.name + "." + name
         return Collection(self.database, fullname, delegate=self.delegate[name])
 
 

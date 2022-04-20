@@ -830,7 +830,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         )
 
         return collection_class(
-            self.database, self.name + "." + str(name), _delegate=self.delegate[name]
+            self.database, self.name + "." + name, _delegate=self.delegate[name]
         )
 
     def __call__(self, *args, **kwargs):
