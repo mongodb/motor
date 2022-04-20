@@ -1908,13 +1908,19 @@ class AgnosticClientEncryption(AgnosticBase):
         if io_loop:
             self._framework.check_event_loop(io_loop)
         else:
-            io_loop = self._framework.get_event_loop()
+            io_loop = None
         sync_client = key_vault_client.delegate
         delegate = self.__delegate_class__(
             kms_providers, key_vault_namespace, sync_client, codec_options
         )
         super().__init__(delegate)
-        self.io_loop = io_loop
+        self._io_loop = io_loop
+
+    @property
+    def io_loop(self):
+        if self._io_loop is None:
+            self._io_loop = self._framework.get_event_loop()
+        return self._io_loop
 
     def get_io_loop(self):
         return self.io_loop
