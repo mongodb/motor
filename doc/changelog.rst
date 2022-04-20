@@ -3,6 +3,16 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.0
+---------
+
+Motor 3.0 adds support for PyMongo 4.0+.
+
+
+Breaking Changes
+~~~~~~~~~~~~~~~~
+- Prevent use of :class:`~pymongo.database.Database` and :class:`~pymongo.collection.Collection` in boolean expressions.
+
 Motor 2.5.1
 -----------
 
