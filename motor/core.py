@@ -105,8 +105,6 @@ class AgnosticClient(AgnosticBaseProperties):
     arbiters = ReadOnlyProperty()
     close = DelegateMethod()
     __hash__ = DelegateMethod()
-    __next__ = DelegateMethod()
-    next = DelegateMethod()
     drop_database = AsyncCommand().unwrap("MotorDatabase")
     options = ReadOnlyProperty()
     get_database = DelegateMethod(doc=docstrings.get_database_doc).wrap(Database)
@@ -521,8 +519,6 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
     __hash__ = DelegateMethod()
     __bool__ = DelegateMethod()
-    __next__ = DelegateMethod()
-    next = DelegateMethod()
     command = AsyncCommand(doc=docstrings.cmd_doc)
     create_collection = AsyncCommand().wrap(Collection)
     dereference = AsyncRead()
@@ -752,8 +748,6 @@ class AgnosticCollection(AgnosticBaseProperties):
 
     __hash__ = DelegateMethod()
     __bool__ = DelegateMethod()
-    __next__ = DelegateMethod()
-    next = DelegateMethod()
     bulk_write = AsyncCommand(doc=docstrings.bulk_write_doc)
     count_documents = AsyncRead()
     create_index = AsyncCommand()

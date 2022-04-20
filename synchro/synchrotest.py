@@ -169,6 +169,10 @@ excluded_tests = [
     "*.test_transaction_starts_with_batched_write",
     # This test is too flaky given all the wrapping logic.
     "TestProse.test_load_balancing",
+    # This feature is going away in PyMongo 5
+    "*.test_iteration",
+    # MD5 is deprecated
+    "*.test_md5",
 ]
 
 

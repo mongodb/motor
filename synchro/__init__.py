@@ -432,8 +432,6 @@ class Database(Synchro):
     watch = WrapOutgoing()
     aggregate = WrapOutgoing()
     __bool__ = Sync()
-    __iter__ = None  # PYTHON-3084
-    __next__ = Sync()
 
     def __init__(self, client, name, **kwargs):
         assert isinstance(client, MongoClient), "Expected MongoClient, got %s" % repr(client)
@@ -468,8 +466,6 @@ class Collection(Synchro):
     list_indexes = WrapOutgoing()
     watch = WrapOutgoing()
     __bool__ = WrapOutgoing()
-    __iter__ = None  # PYTHON-3084
-    __next__ = Sync()
 
     def __init__(self, database, name, **kwargs):
         if not isinstance(database, Database):

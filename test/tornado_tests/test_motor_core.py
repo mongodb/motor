@@ -29,7 +29,7 @@ def attrs(klass):
 
 motor_only = set(["delegate", "get_io_loop", "io_loop", "wrap"])
 
-pymongo_only = set([])
+pymongo_only = set(["next"])
 
 motor_client_only = motor_only.union(["open"])
 
@@ -118,7 +118,7 @@ class MotorCoreTestGridFS(MotorTest):
         )
 
     def test_gridin_attrs(self):
-        motor_gridin_only = set(["set", "md5"]).union(motor_only)
+        motor_gridin_only = set(["set"]).union(motor_only)
         gridin_only = set(["md5"])
 
         self.assertEqual(

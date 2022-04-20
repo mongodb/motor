@@ -222,7 +222,6 @@ class AgnosticGridIn(object):
     readable = DelegateMethod()
     seekable = DelegateMethod()
     upload_date = ReadOnlyProperty()
-    md5 = ReadOnlyProperty()
     write = AsyncCommand().unwrap("MotorGridOut")
     writeable = DelegateMethod()
     writelines = AsyncCommand().unwrap("MotorGridOut")
