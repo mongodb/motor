@@ -110,7 +110,7 @@ For example, to list all non-system collections::
     :meth:`~MotorClient.start_session`.
   - `filter` (optional):  A query document to filter the list of
     collections returned from the listCollections command.
-  - `comment` (optional): A user-provided comment to attach to this
+  - `comment` (optional): A user-provided comment to attach to this command.
   - `**kwargs` (optional): Optional parameters of the
     `listCollections
     <https://www.mongodb.com/docs/manual/reference/command/listCollections/>`_ comand.
@@ -280,7 +280,7 @@ kwargs. So ``{filemd5: object_id, root: file_root}`` becomes::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
-  - `comment` (optional): A user-provided comment to attach to this
+  - `comment` (optional): A user-provided comment to attach to this command.
   - `**kwargs` (optional): additional keyword arguments will
     be added to the command document before it is sent
 

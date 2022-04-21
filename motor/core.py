@@ -575,8 +575,6 @@ class AgnosticDatabase(AgnosticBaseProperties):
             fields. Parameters can then be accessed as variables in an
             aggregate expression context (e.g. ``"$$var"``). This option is
             only supported on MongoDB >= 5.0.
-          - `comment` (optional): A user-provided comment to attach to this
-            command.
 
         Returns a :class:`MotorCommandCursor` that can be iterated like a
         cursor from :meth:`find`::
@@ -592,9 +590,6 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
         .. note:: The :attr:`MotorDatabase.write_concern` of this database is
            automatically applied to this operation.
-
-        .. versionchanged:: 3.0
-           Added ``comment`` parameter.
 
         .. versionadded:: 2.1
 
@@ -928,8 +923,6 @@ class AgnosticCollection(AgnosticBaseProperties):
             fields. Parameters can then be accessed as variables in an
             aggregate expression context (e.g. ``"$$var"``). This option is
             only supported on MongoDB >= 5.0.
-          - `comment` (optional): A user-provided comment to attach to this
-            command.
 
         Returns a :class:`MotorCommandCursor` that can be iterated like a
         cursor from :meth:`find`::
@@ -964,9 +957,6 @@ class AgnosticCollection(AgnosticBaseProperties):
                   explain=True)
 
               print(plan)
-
-        .. versionchanged:: 3.0
-           Added ``comment`` parameter.
 
         .. versionchanged:: 2.1
            This collection's read concern is now applied to pipelines
