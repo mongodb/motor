@@ -33,7 +33,7 @@ async def put_gridfile():
                                      metadata={'contentType': 'text',
                                                'compressed': True})
 
-asyncio.get_event_loop().run_until_complete(put_gridfile())
+asyncio.run(put_gridfile())
 
 
 # Add "Content-Encoding: gzip" header for compressed data.
