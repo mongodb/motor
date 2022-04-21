@@ -39,7 +39,7 @@ jobs:
           mongod --fork --dbpath=$(pwd)/data --logpath=$PWD/mongo.log --setParameter enableTestCommands=1
       - name: Install Python dependencies
         run: |
-          python -m pip install -U pip tox tox-gh-actions
+          python -m pip install -U pip tox tox-gh-actions setuptools
       - name: Run tests
         run: |
           tox

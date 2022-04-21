@@ -41,8 +41,7 @@ async def page_handler(request):
 # -- handler-end --
 
 # -- main-start --
-loop = asyncio.get_event_loop()
-db = loop.run_until_complete(setup_db())
+db = asyncio.run(setup_db())
 app = web.Application()
 app["db"] = db
 # Route requests to the page_handler() coroutine.
