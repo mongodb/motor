@@ -98,8 +98,8 @@ Motor works in all the environments officially supported by Tornado or by
 asyncio. It requires:
 
 * Unix (including macOS) or Windows.
-* PyMongo_ >=3.12,<4
-* Python 3.5+
+* PyMongo_ >=4,<5
+* Python 3.7+
 
 Optional dependencies:
 
@@ -155,7 +155,7 @@ Documentation
 
 Motor's documentation is on ReadTheDocs_.
 
-Build the documentation with Python 3.5. Install sphinx_, Tornado_, and aiohttp_,
+Build the documentation with Python 3.7+. Install sphinx_, Tornado_, and aiohttp_,
 and do ``cd doc; make html``.
 
 Testing

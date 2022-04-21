@@ -6,7 +6,7 @@ Changelog
 Motor 3.0
 ---------
 
-Motor 3.0 adds support for PyMongo 4.0+.
+Motor 3.0 requires PyMongo 4.0+ and Python 3.7+.
 
 
 Breaking Changes
