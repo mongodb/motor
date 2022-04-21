@@ -168,6 +168,7 @@ class AgnosticClient(AgnosticBaseProperties):
         start_at_operation_time=None,
         session=None,
         start_after=None,
+        comment=None,
     ):
         """Watch changes on this cluster.
 
@@ -208,9 +209,14 @@ class AgnosticClient(AgnosticBaseProperties):
           - `start_after` (optional): The same as `resume_after` except that
             `start_after` can resume notifications after an invalidate event.
             This option and `resume_after` are mutually exclusive.
+          - `comment` (optional): A user-provided comment to attach to this
+            command.
 
         :Returns:
           A :class:`~MotorChangeStream`.
+
+        .. versionchanged:: 3.0
+           Added ``comment`` parameter.
 
         .. versionchanged:: 2.1
            Added the ``start_after`` parameter.
@@ -235,6 +241,7 @@ class AgnosticClient(AgnosticBaseProperties):
             start_at_operation_time,
             session,
             start_after,
+            comment,
         )
 
     def __getattr__(self, name):
@@ -517,6 +524,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
     __delegate_class__ = Database
 
     __hash__ = DelegateMethod()
+    __bool__ = DelegateMethod()
     command = AsyncCommand(doc=docstrings.cmd_doc)
     create_collection = AsyncCommand().wrap(Collection)
     dereference = AsyncRead()
@@ -537,7 +545,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
         super().__init__(delegate)
 
-    def aggregate(self, pipeline, **kwargs):
+    def aggregate(self, pipeline, *args, **kwargs):
         """Execute an aggregation pipeline on this database.
 
         Introduced in MongoDB 3.6.
@@ -594,7 +602,11 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(
-            self["$cmd.aggregate"], self._async_aggregate, pipeline, **unwrap_kwargs_session(kwargs)
+            self["$cmd.aggregate"],
+            self._async_aggregate,
+            pipeline,
+            *unwrap_args_session(args),
+            **unwrap_kwargs_session(kwargs)
         )
 
     def watch(
@@ -608,6 +620,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         start_at_operation_time=None,
         session=None,
         start_after=None,
+        comment=None,
     ):
         """Watch changes on this database.
 
@@ -648,9 +661,14 @@ class AgnosticDatabase(AgnosticBaseProperties):
           - `start_after` (optional): The same as `resume_after` except that
             `start_after` can resume notifications after an invalidate event.
             This option and `resume_after` are mutually exclusive.
+          - `comment` (optional): A user-provided comment to attach to this
+            command.
 
         :Returns:
           A :class:`~MotorChangeStream`.
+
+        .. versionchanged:: 3.0
+           Added ``comment`` parameter.
 
         .. versionchanged:: 2.1
            Added the ``start_after`` parameter.
@@ -675,6 +693,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             start_at_operation_time,
             session,
             start_after,
+            comment,
         )
 
     @property
@@ -734,6 +753,7 @@ class AgnosticCollection(AgnosticBaseProperties):
     __delegate_class__ = Collection
 
     __hash__ = DelegateMethod()
+    __bool__ = DelegateMethod()
     bulk_write = AsyncCommand(doc=docstrings.bulk_write_doc)
     count_documents = AsyncRead()
     create_index = AsyncCommand()
@@ -871,7 +891,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         return cursor_class(cursor, self)
 
-    def aggregate(self, pipeline, **kwargs):
+    def aggregate(self, pipeline, *args, **kwargs):
         """Execute an aggregation pipeline on this collection.
 
         The aggregation can be run on a secondary if the client is connected
@@ -962,7 +982,13 @@ class AgnosticCollection(AgnosticBaseProperties):
         )
 
         # Latent cursor that will send initial command on first "async for".
-        return cursor_class(self, self._async_aggregate, pipeline, **unwrap_kwargs_session(kwargs))
+        return cursor_class(
+            self,
+            self._async_aggregate,
+            pipeline,
+            *unwrap_args_session(args),
+            **unwrap_kwargs_session(kwargs)
+        )
 
     def aggregate_raw_batches(self, pipeline, **kwargs):
         """Perform an aggregation and retrieve batches of raw BSON.
@@ -1005,6 +1031,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         start_at_operation_time=None,
         session=None,
         start_after=None,
+        comment=None,
     ):
         """Watch changes on this collection.
 
@@ -1106,11 +1133,16 @@ class AgnosticCollection(AgnosticBaseProperties):
           - `start_after` (optional): The same as `resume_after` except that
             `start_after` can resume notifications after an invalidate event.
             This option and `resume_after` are mutually exclusive.
+          - `comment` (optional): A user-provided comment to attach to this
+            command.
 
         :Returns:
           A :class:`~MotorChangeStream`.
 
         See the :ref:`tornado_change_stream_example`.
+
+        .. versionchanged:: 3.0
+           Added ``comment`` parameter.
 
         .. versionchanged:: 2.1
            Added the ``start_after`` parameter.
@@ -1138,9 +1170,10 @@ class AgnosticCollection(AgnosticBaseProperties):
             start_at_operation_time,
             session,
             start_after,
+            comment,
         )
 
-    def list_indexes(self, session=None):
+    def list_indexes(self, session=None, **kwargs):
         """Get a cursor over the index documents for this collection. ::
 
           async def print_indexes():
@@ -1156,7 +1189,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         )
 
         # Latent cursor that will send initial command on first "async for".
-        return cursor_class(self, self._async_list_indexes, session=session)
+        return cursor_class(self, self._async_list_indexes, session=session, **kwargs)
 
     def wrap(self, obj):
         if obj.__class__ is Collection:
@@ -1729,6 +1762,7 @@ class AgnosticChangeStream(AgnosticBase):
         start_at_operation_time,
         session,
         start_after,
+        comment,
     ):
         super().__init__(delegate=None)
         # The "target" object is a client, database, or collection.
@@ -1743,6 +1777,7 @@ class AgnosticChangeStream(AgnosticBase):
             "start_at_operation_time": start_at_operation_time,
             "session": session,
             "start_after": start_after,
+            "comment": comment,
         }
 
     def _lazy_init(self):

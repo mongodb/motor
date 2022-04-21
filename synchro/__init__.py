@@ -65,6 +65,7 @@ from pymongo.encryption import _MONGOCRYPTD_TIMEOUT_MS, _Encrypter
 from pymongo.encryption_options import *
 from pymongo.encryption_options import _HAVE_PYMONGOCRYPT
 from pymongo.errors import *
+from pymongo.event_loggers import *
 from pymongo.helpers import _check_command_response
 from pymongo.message import (
     _COMMAND_OVERHEAD,
@@ -334,6 +335,8 @@ class MongoClient(Synchro):
     max_pool_size = SynchroProperty()
     start_session = Sync()
     watch = WrapOutgoing()
+    __iter__ = None  # PYTHON-3084
+    __next__ = Sync()
 
     def __init__(self, host=None, port=None, *args, **kwargs):
         # So that TestClient.test_constants and test_types work.
@@ -368,12 +371,15 @@ class MongoClient(Synchro):
 
     # For PyMongo tests that access client internals.
     _MongoClient__all_credentials = SynchroProperty()
+    _MongoClient__kill_cursors_queue = SynchroProperty()
     _MongoClient__options = SynchroProperty()
     _cache_credentials = SynchroProperty()
     _close_cursor_now = SynchroProperty()
     _get_topology = SynchroProperty()
     _topology = SynchroProperty()
     _kill_cursors_executor = SynchroProperty()
+    _topology_settings = SynchroProperty()
+    _process_periodic_tasks = SynchroProperty()
 
 
 class _SynchroTransactionContext(Synchro):
@@ -425,14 +431,15 @@ class Database(Synchro):
     get_collection = WrapOutgoing()
     watch = WrapOutgoing()
     aggregate = WrapOutgoing()
+    __bool__ = Sync()
 
     def __init__(self, client, name, **kwargs):
         assert isinstance(client, MongoClient), "Expected MongoClient, got %s" % repr(client)
 
         self._client = client
-        self.delegate = kwargs.get("delegate") or motor.MotorDatabase(
-            client.delegate, name, **kwargs
-        )
+        self.delegate = kwargs.get("delegate")
+        if self.delegate is None:
+            self.delegate = motor.MotorDatabase(client.delegate, name, **kwargs)
 
         assert isinstance(
             self.delegate, motor.MotorDatabase
@@ -458,6 +465,7 @@ class Collection(Synchro):
     aggregate_raw_batches = WrapOutgoing()
     list_indexes = WrapOutgoing()
     watch = WrapOutgoing()
+    __bool__ = WrapOutgoing()
 
     def __init__(self, database, name, **kwargs):
         if not isinstance(database, Database):
@@ -467,9 +475,9 @@ class Collection(Synchro):
             )
 
         self.database = database
-        self.delegate = kwargs.get("delegate") or motor.MotorCollection(
-            self.database.delegate, name, **kwargs
-        )
+        self.delegate = kwargs.get("delegate")
+        if self.delegate is None:
+            self.delegate = motor.MotorCollection(self.database.delegate, name, **kwargs)
 
         if not isinstance(self.delegate, motor.MotorCollection):
             raise TypeError(
@@ -711,6 +719,7 @@ class GridOut(Synchro):
             "upload_date",
             "aliases",
             "metadata",
+            "md5",
         ):
             raise AttributeError()
 
