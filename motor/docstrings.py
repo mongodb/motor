@@ -83,6 +83,10 @@ based only on the URI in a configuration file.
     :class:`~pymongo.read_concern.ReadConcern`. If ``None`` (the
     default) the :attr:`read_concern` of this :class:`MotorClient` is
     used.
+  - `comment` (optional): A user-provided comment to attach to this command.
+
+.. versionchanged:: 1.2
+   Added ``comment`` parameter.
 
 .. versionadded:: 2.1
    Revived this method. Added the ``default``, ``codec_options``,
@@ -106,11 +110,15 @@ For example, to list all non-system collections::
     :meth:`~MotorClient.start_session`.
   - `filter` (optional):  A query document to filter the list of
     collections returned from the listCollections command.
+  - `comment` (optional): A user-provided comment to attach to this
   - `**kwargs` (optional): Optional parameters of the
     `listCollections
     <https://www.mongodb.com/docs/manual/reference/command/listCollections/>`_ comand.
     can be passed as keyword arguments to this method. The supported
     options differ by server version.
+
+.. versionchanged:: 3.0
+   Added the ``comment`` parameter.
 
 .. versionchanged:: 2.1
    Added the ``filter`` and ``**kwargs`` parameters.
@@ -176,6 +184,7 @@ This will print something like::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `comment` (optional): A user-provided comment to attach to this command.
 
 :Returns:
   An instance of :class:`~pymongo.results.BulkWriteResult`.
@@ -184,6 +193,9 @@ This will print something like::
 
 .. note:: `bypass_document_validation` requires server version
   **>= 3.2**
+
+.. versionchanged:: 3.0
+   Added comment parameter.
 
 .. versionchanged:: 1.2
    Added session parameter.
@@ -209,12 +221,15 @@ This prints::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `comment` (optional): A user-provided comment to attach to this command.
   - `**kwargs` (optional): optional arguments to the createIndexes
     command (like maxTimeMS) can be passed as keyword arguments.
 
 The :attr:`~pymongo.collection.Collection.write_concern` of
 this collection is automatically applied to this operation.
 
+.. versionchanged:: 3.0
+   Added comment parameter.
 .. versionchanged:: 1.2
    Added session parameter.
 """
@@ -265,8 +280,12 @@ kwargs. So ``{filemd5: object_id, root: file_root}`` becomes::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `comment` (optional): A user-provided comment to attach to this
   - `**kwargs` (optional): additional keyword arguments will
     be added to the command document before it is sent
+
+.. versionchanged:: 3.0
+   Added comment parameter.
 
 .. versionchanged:: 1.2
    Added session parameter.
@@ -295,10 +314,13 @@ This deletes all matching documents and prints "3".
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `comment` (optional): A user-provided comment to attach to this command.
 
 :Returns:
   - An instance of :class:`~pymongo.results.DeleteResult`.
 
+.. versionchanged:: 3.0
+   Added ``comment`` parameter.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
@@ -326,10 +348,13 @@ This deletes one matching document and prints "1".
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `comment` (optional): A user-provided comment to attach to this command.
 
 :Returns:
   - An instance of :class:`~pymongo.results.DeleteResult`.
 
+.. versionchanged:: 3.0
+   Added ``comment`` parameter.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
@@ -435,6 +460,7 @@ This prints::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `comment` (optional): A user-provided comment to attach to this command.
   - `**kwargs` (optional): additional command arguments can be passed
     as keyword arguments (for example maxTimeMS can be used with
     recent server versions).
@@ -444,6 +470,8 @@ This command uses the :class:`~pymongo.write_concern.WriteConcern` of this
 that using an elevated write concern with this command may be slower compared
 to using the default write concern.
 
+.. versionchanged:: 3.0
+   Added ``comment`` parameter.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
@@ -507,6 +535,7 @@ This will print::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `comment` (optional): A user-provided comment to attach to this command.
   - `**kwargs` (optional): additional command arguments can be passed
     as keyword arguments (for example maxTimeMS can be used with
     recent server versions).
@@ -516,6 +545,8 @@ This command uses the :class:`~pymongo.write_concern.WriteConcern` of this
 that using an elevated write concern with this command may be slower compared
 to using the default write concern.
 
+.. versionchanged:: 3.0
+   Added ``comment`` parameter.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
@@ -625,6 +656,7 @@ This would print::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `comment` (optional): A user-provided comment to attach to this command.
   - `**kwargs` (optional): additional command arguments can be passed
     as keyword arguments (for example maxTimeMS can be used with
     recent server versions).
@@ -635,6 +667,8 @@ This command uses the
 3.2. Note that using an elevated write concern with this command may
 be slower compared to using the default write concern.
 
+.. versionchanged:: 3.0
+   Added ``comment`` parameter.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
@@ -662,6 +696,9 @@ This prints::
   {'_id_': {'key': [('_id', 1)]},
    'x_1': {'unique': True, 'key': [('x', 1)]}}
 
+
+.. versionchanged:: 3.0
+   Added comment parameter.
 .. versionchanged:: 1.2
    Added session parameter.
 """
@@ -689,6 +726,7 @@ This prints something like::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `comment` (optional): A user-provided comment to attach to this command.
 
 :Returns:
   An instance of :class:`~pymongo.results.InsertManyResult`.
@@ -697,6 +735,9 @@ This prints something like::
 
 .. note:: `bypass_document_validation` requires server version
   **>= 3.2**
+
+.. versionchanged:: 3.0
+   Added comment parameter.
 
 .. versionchanged:: 1.2
    Added session parameter.
@@ -722,6 +763,7 @@ This code outputs the new document's ``_id``::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `comment` (optional): A user-provided comment to attach to this command.
 
 :Returns:
   - An instance of :class:`~pymongo.results.InsertOneResult`.
@@ -730,6 +772,9 @@ This code outputs the new document's ``_id``::
 
 .. note:: `bypass_document_validation` requires server version
   **>= 3.2**
+
+.. versionchanged:: 3.0
+   Added comment parameter.
 
 .. versionchanged:: 1.2
    Added session parameter.
@@ -835,6 +880,7 @@ This prints::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `comment` (optional): A user-provided comment to attach to this command.
 
 :Returns:
   - An instance of :class:`~pymongo.results.UpdateResult`.
@@ -842,6 +888,8 @@ This prints::
 .. note:: `bypass_document_validation` requires server version
   **>= 3.2**
 
+.. versionchanged:: 3.0
+   Added ``comment`` parameter.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
@@ -895,6 +943,7 @@ This prints::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `comment` (optional): A user-provided comment to attach to this command.
 
 :Returns:
   - An instance of :class:`~pymongo.results.UpdateResult`.
@@ -902,6 +951,8 @@ This prints::
 .. note:: `bypass_document_validation` requires server version
   **>= 3.2**
 
+.. versionchanged:: 3.0
+   Added ``comment`` parameter.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
@@ -955,6 +1006,7 @@ This prints::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `comment` (optional): A user-provided comment to attach to this command.
 
 :Returns:
   - An instance of :class:`~pymongo.results.UpdateResult`.
@@ -962,6 +1014,8 @@ This prints::
 .. note:: `bypass_document_validation` requires server version
   **>= 3.2**
 
+.. versionchanged:: 3.0
+   Added ``comment`` parameter.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
