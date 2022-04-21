@@ -85,7 +85,7 @@ based only on the URI in a configuration file.
     used.
   - `comment` (optional): A user-provided comment to attach to this command.
 
-.. versionchanged:: 1.2
+.. versionchanged:: 3.0
    Added ``comment`` parameter.
 
 .. versionadded:: 2.1
