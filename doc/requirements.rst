@@ -78,6 +78,8 @@ Motor and MongoDB
 +---------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
 |               | 2.5 |**N**|**N**|**N**|  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |
 +---------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+|               | 3.0 |**N**|**N**|**N**|**N**|**N**|**N**|  Y  |  Y  |  Y  |  Y  |  Y  |
++---------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
 
 There is no relationship between PyMongo and MongoDB version numbers, although
 the numbers happen to be close or equal in recent releases of PyMongo and MongoDB.
@@ -125,12 +127,17 @@ the "async for" protocol implemented in Python 3.5.0 and 3.5.1. Motor continues
 to work with "async for" loops in Python 3.5.2 and later.
 
 Motor 1.2.5 and 1.3.1 add compatibility with Python 3.7, but at the cost of
-dropping Python 3.4.3 and older. Motor 2.2 dropped support for Pythons older
-than 3.5.2. Motor 2.5 deprecates support for Python 3.5.
+dropping Python 3.4.3 and older.
+
+Motor 2.2 dropped support for Pythons older than 3.5.2.
+
+Motor 2.5 deprecated support for Python 3.5.
+
+Motor 3.0 dropped support for Pythons older than 3.7.
 
 +-------------------------------------------------------------------------------------+
 |                   Python Version                                                    |
-+=====================+=====+=====+=====+=====+=====+=======+=======+=====+=====+=====+
++=====================+=====+=====+=====+=======+=======+=====+=====+=====+=====+=====+
 |                     | 2.7 | 3.3 | 3.4 | 3.5.0 | 3.5.2 | 3.6 | 3.7 | 3.8 | 3.9 | 3.10|
 +---------------+-----+-----+-----+-----+-------+-------+-----+-----+-----+-----+-----+
 | Motor Version | 1.0 |  Y  |  Y  |  Y  |  Y    |  Y    |  Y  |**N**|**N**|**N**|**N**|
@@ -153,8 +160,8 @@ than 3.5.2. Motor 2.5 deprecates support for Python 3.5.
 +---------------+-----+-----+-----+-----+-------+-------+-----+-----+-----+-----+-----+
 |               | 2.5 |**N**|**N**|**N**|**N**  |  Y    |  Y  |  Y  |  Y  |  Y  |  Y  |
 +---------------+-----+-----+-----+-----+-------+-------+-----+-----+-----+-----+-----+
-|               | 3.0 |**N**|**N**|**N**|**N**  |**N**|**N**  |  Y  |  Y  |  Y  |  Y  |
-+---------------+-----+-----+-----+-----+-------+-----+-------+-----+-----+-----+-----+
+|               | 3.0 |**N**|**N**|**N**|**N**  |**N**  |**N**|  Y  |  Y  |  Y  |  Y  |
++---------------+-----+-----+-----+-----+-------+-------+-----+-----+-----+-----+-----+
 
 Not Supported
 -------------
