@@ -696,9 +696,9 @@ This prints::
   {'_id_': {'key': [('_id', 1)]},
    'x_1': {'unique': True, 'key': [('x', 1)]}}
 
-
 .. versionchanged:: 3.0
    Added comment parameter.
+
 .. versionchanged:: 1.2
    Added session parameter.
 """
