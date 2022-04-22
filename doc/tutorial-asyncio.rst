@@ -342,6 +342,24 @@ update all of them with :meth:`update_many`::
 Deleting Documents
 ------------------
 
+:meth:`~motor.motor_asyncio.AsyncIOMotorCollection.delete_one` takes a query with the same syntax as
+:meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find`.
+:meth:`delete_one` immediately removes the first returned matching document.
+
+.. doctest:: after-inserting-2000-docs
+
+  >>> async def do_delete_one():
+  ...     coll = db.test_collection
+  ...     n = await coll.count_documents({})
+  ...     print('%s documents before calling delete_one()' % n)
+  ...     result = await db.test_collection.delete_one({'i': {'$gte': 1000}})
+  ...     print('%s documents after' % (await coll.count_documents({})))
+  ...
+  >>> loop = client.get_io_loop()
+  >>> loop.run_until_complete(do_delete_one())
+  2000 documents before calling delete_one()
+  1999 documents after
+
 :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.delete_many` takes a query with the same syntax as
 :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find`.
 :meth:`delete_many` immediately removes all matching documents.
@@ -357,7 +375,7 @@ Deleting Documents
   ...
   >>> loop = client.get_io_loop()
   >>> loop.run_until_complete(do_delete_many())
-  2000 documents before calling delete_many()
+  1999 documents before calling delete_many()
   1000 documents after
 
 .. mongodoc:: remove
