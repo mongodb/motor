@@ -109,10 +109,8 @@ def main():
     try:
         loop.start()
     except KeyboardInterrupt:
-        pass
-    finally:
         if change_stream is not None:
-            change_stream.close()
+            loop.add_callback(change_stream.close)
 
 
 if __name__ == "__main__":
