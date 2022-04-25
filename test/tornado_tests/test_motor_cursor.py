@@ -61,17 +61,16 @@ class MotorCursorTest(MotorMockServerTest):
         self.assertEqual(100, (await coll.count_documents({"_id": {"$gt": 99}})))
 
     @gen_test
-    async def test_fetch_next(self):
+    async def test_iterate(self):
         await self.make_test_data()
         coll = self.collection
         # 200 results, only including _id field, sorted by _id
         cursor = coll.find({}, {"_id": 1}).sort([("_id", pymongo.ASCENDING)]).batch_size(75)
 
         self.assertEqual(None, cursor.cursor_id)
-        self.assertEqual(None, cursor.next_object())  # Haven't fetched yet
         i = 0
-        while await cursor.fetch_next:
-            self.assertEqual({"_id": i}, cursor.next_object())
+        async for item in cursor:
+            self.assertEqual({"_id": i}, item)
             i += 1
             # With batch_size 75 and 200 results, cursor should be exhausted on
             # the server by third fetch
@@ -80,8 +79,7 @@ class MotorCursorTest(MotorMockServerTest):
             else:
                 self.assertEqual(0, cursor.cursor_id)
 
-        self.assertEqual(False, (await cursor.fetch_next))
-        self.assertEqual(None, cursor.next_object())
+        self.assertEqual(False, (await cursor.__next__()))
         self.assertEqual(0, cursor.cursor_id)
         self.assertEqual(200, i)
 
