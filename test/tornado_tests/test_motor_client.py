@@ -172,8 +172,7 @@ class MotorClientTest(MotorTest):
         self.assertIsInstance(cursor, motor.motor_tornado.MotorCommandCursor)
 
         # Make sure the cursor works, by searching for "local" database.
-        while await cursor.fetch_next:
-            info = cursor.next_object()
+        async for info in cursor:
             if info["name"] == self.collection.database.name:
                 break
         else:
@@ -224,13 +223,12 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         sock_info = one(pool.sockets)
         cursor = client.db.collection.find(cursor_type=CursorType.EXHAUST)
 
-        # With Tornado, simply accessing fetch_next starts the fetch.
-        fetch_next = cursor.fetch_next
+        # With Tornado, simply iterating the cursor starts the fetch.
         request = await self.run_thread(server.receives, OpQuery)
         request.fail()
 
         with self.assertRaises(pymongo.errors.OperationFailure):
-            await fetch_next
+            await cursor.__anext__()
 
         self.assertFalse(sock_info.closed)
         self.assertEqual(sock_info, one(pool.sockets))
@@ -256,13 +254,12 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
 
         cursor = client.db.collection.find(cursor_type=CursorType.EXHAUST)
 
-        # With Tornado, simply accessing fetch_next starts the fetch.
-        fetch_next = cursor.fetch_next
+        # With Tornado, simply itererating a cursor starts the fetch.
         request = await self.run_thread(server.receives, OpQuery)
         request.hangs_up()
 
         with self.assertRaises(pymongo.errors.ConnectionFailure):
-            await fetch_next
+            await cursor.__anext__()
 
         self.assertTrue(sock_info.closed)
         del cursor

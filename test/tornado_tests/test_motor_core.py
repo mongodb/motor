@@ -39,9 +39,7 @@ pymongo_database_only = set([]).union(pymongo_only)
 
 pymongo_collection_only = set([]).union(pymongo_only)
 
-motor_cursor_only = set(
-    ["fetch_next", "to_list", "each", "started", "next_object", "closed"]
-).union(motor_only)
+motor_cursor_only = set(["to_list", "each", "started", "closed"]).union(motor_only)
 
 pymongo_cursor_only = set(["retrieved"])
 

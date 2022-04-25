@@ -86,15 +86,15 @@ class MotorCursorTest(MotorMockServerTest):
         self.assertEqual(200, i)
 
     @gen_test
-    async def test_fetch_next_delete(self):
+    async def test_iterate_delete(self):
         if "PyPy" in sys.version:
             raise SkipTest("PyPy")
 
         client, server = self.client_server(auto_ismaster=True)
         cursor = client.test.coll.find()
 
-        # With Tornado, simply accessing fetch_next starts the fetch.
-        cursor.fetch_next
+        # With Tornado, simply accessing the iterator starts the fetch.
+        cursor.__anext__()
         request = await self.run_thread(server.receives, "find", "coll")
         request.replies({"cursor": {"id": 123, "ns": "db.coll", "firstBatch": [{"_id": 1}]}})
 
@@ -105,46 +105,21 @@ class MotorCursorTest(MotorMockServerTest):
         request.ok()
 
     @gen_test
-    async def test_fetch_next_without_results(self):
-        coll = self.collection
-        # Nothing matches this query
-        cursor = coll.find({"foo": "bar"})
-        self.assertEqual(None, cursor.next_object())
-        self.assertEqual(False, (await cursor.fetch_next))
-        self.assertEqual(None, cursor.next_object())
-        # Now cursor knows it's exhausted
-        self.assertEqual(0, cursor.cursor_id)
-
-    @gen_test
-    async def test_fetch_next_is_idempotent(self):
-        # Subsequent calls to fetch_next don't do anything
-        await self.make_test_data()
-        coll = self.collection
-        cursor = coll.find()
-        self.assertEqual(None, cursor.cursor_id)
-        await cursor.fetch_next
-        self.assertTrue(cursor.cursor_id)
-        self.assertEqual(101, cursor._buffer_size())
-        await cursor.fetch_next  # Does nothing
-        self.assertEqual(101, cursor._buffer_size())
-        await cursor.close()
-
-    @gen_test
-    async def test_fetch_next_exception(self):
+    async def test_iterate_exception(self):
         coll = self.collection
         await coll.insert_many([{} for _ in range(10)])
         cursor = coll.find(batch_size=2)
-        await cursor.fetch_next
-        self.assertTrue(cursor.next_object())
+        item = await cursor.__anext__()
+        self.assertTrue(item)
 
         # Not valid on server, causes CursorNotFound.
         cursor.delegate._Cursor__id = bson.int64.Int64(1234)
 
         with self.assertRaises(OperationFailure):
-            await cursor.fetch_next
-            self.assertTrue(cursor.next_object())
-            await cursor.fetch_next
-            self.assertTrue(cursor.next_object())
+            item = await cursor.__anext__()
+            self.assertTrue(item)
+            item = await cursor.__anext__()
+            self.assertTrue(item)
 
     def test_each_callback(self):
         cursor = self.collection.find()
@@ -270,12 +245,13 @@ class MotorCursorTest(MotorMockServerTest):
         collection = client.test.coll
         cursor = collection.find()
 
-        # With Tornado, simply accessing fetch_next starts the fetch.
-        fetch_next = cursor.fetch_next
+        # With Tornado, simply accessing the iterator starts the fetch.
+        fut = cursor.__anext__()
         request = await self.run_thread(server.receives, "find", "coll")
         request.replies({"cursor": {"id": 123, "ns": "db.coll", "firstBatch": [{"_id": 1}]}})
 
-        self.assertTrue((await fetch_next))
+        item = await fut
+        self.assertTrue(item)
 
         async def mock_kill_cursors():
             request = await self.run_thread(server.receives, "killCursors", "coll")
@@ -286,8 +262,8 @@ class MotorCursorTest(MotorMockServerTest):
         # Cursor reports it's alive because it has buffered data, even though
         # it's killed on the server.
         self.assertTrue(cursor.alive)
-        self.assertEqual({"_id": 1}, cursor.next_object())
-        self.assertFalse((await cursor.fetch_next))
+        self.assertEqual({"_id": 1}, item)
+        self.assertFalse((await cursor.__next__()))
         self.assertFalse(cursor.alive)
 
     @gen_test
@@ -338,27 +314,23 @@ class MotorCursorTest(MotorMockServerTest):
         cursor = self.collection.find().limit(2)
 
         count = 0
-        while await cursor.fetch_next:
-            cursor.next_object()
+        async for _ in cursor:
             count += 1
         self.assertEqual(2, count)
 
         cursor.rewind()
         count = 0
-        while await cursor.fetch_next:
-            cursor.next_object()
+        async for _ in cursor:
             count += 1
         self.assertEqual(2, count)
 
         cursor.rewind()
         count = 0
-        while await cursor.fetch_next:
-            cursor.next_object()
+        async for _ in cursor:
             break
 
         cursor.rewind()
-        while await cursor.fetch_next:
-            cursor.next_object()
+        async for _ in cursor:
             count += 1
 
         self.assertEqual(2, count)
@@ -372,7 +344,7 @@ class MotorCursorTest(MotorMockServerTest):
         client, server = self.client_server(auto_ismaster=True)
         cursor = client.test.coll.find()
 
-        future = cursor.fetch_next
+        future = cursor.__anext__()
         request = await self.run_thread(server.receives, "find", "coll")
         request.replies({"cursor": {"id": 123, "ns": "db.coll", "firstBatch": [{"_id": 1}]}})
         await future  # Complete the first fetch.
@@ -412,12 +384,12 @@ class MotorCursorTest(MotorMockServerTest):
 
         # Make sure the socket is returned after exhaustion.
         cur = client[self.db.name].test.find(cursor_type=CursorType.EXHAUST)
-        has_next = await cur.fetch_next
-        self.assertTrue(has_next)
+        item = await cur.__anext__()
+        self.assertTrue(item is not None)
         self.assertEqual(0, len(socks))
 
-        while await cur.fetch_next:
-            cur.next_object()
+        async for _ in cur:
+            pass
 
         self.assertEqual(1, len(socks))
 
@@ -431,12 +403,12 @@ class MotorCursorTest(MotorMockServerTest):
         # discard the socket.
         sock = one(socks)
         cur = client[self.db.name].test.find(cursor_type=CursorType.EXHAUST).batch_size(1)
-        await cur.fetch_next
-        self.assertTrue(cur.next_object())
+        item = await cur.__anext__()
+        self.assertTrue(item)
         # Run at least one getMore to initiate the OP_MSG exhaust protocol.
         if env.version.at_least(4, 2):
-            await cur.fetch_next
-            self.assertTrue(cur.next_object())
+            item = await cur.__anext__()
+            self.assertTrue(item)
         self.assertEqual(0, len(socks))
         if "PyPy" in sys.version:
             # Don't wait for GC or use gc.collect(), it's unreliable.
@@ -467,7 +439,7 @@ class MotorCursorTest(MotorMockServerTest):
         # MOTOR-67 Killed cursor with docs batched is "alive", don't kill again.
         await self.make_test_data()  # Ensure multiple batches.
         cursor = self.collection.find()
-        await cursor.fetch_next
+        await cursor.__anext__()
         await cursor.close()  # Killed but still "alive": has a batch.
         self.cx.close()
 
@@ -489,8 +461,8 @@ class MotorCursorTest(MotorMockServerTest):
         cursor1 = c.aggregate([{"$sort": {"_id": 1}}], batchSize=2)
         for cursor in cursor0, cursor1:
             lst = []
-            while await cursor.fetch_next:
-                lst.append(cursor.next_object())
+            async for item in cursor:
+                lst.append(item)
 
             self.assertEqual(lst, [{"_id": 0}, {"_id": 1}, {"_id": 2}])
             aggregate = listener.first_command_started("aggregate")
@@ -509,7 +481,7 @@ class MotorCursorTest(MotorMockServerTest):
 
         for method in find, agg:
             cursor = method().batch_size(2)
-            await cursor.fetch_next
+            await cursor.__anext__()
             batch = cursor.next_object()
             self.assertEqual([{"_id": 0}, {"_id": 1}], bson.decode_all(batch))
 
@@ -547,7 +519,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
         await self.enable_timeout()
         cursor = self.collection.find().max_time_ms(100000)
         with self.assertRaises(ExecutionTimeout):
-            await cursor.fetch_next
+            await cursor.__anext__()
 
         cursor = self.collection.find().max_time_ms(100000)
         with self.assertRaises(ExecutionTimeout):
@@ -563,22 +535,20 @@ class MotorCursorMaxTimeMSTest(MotorTest):
         try:
             # Send initial query.
             cursor = self.collection.find().max_time_ms(100000)
-            await cursor.fetch_next
-            cursor.next_object()
+            await cursor.__anext__()
 
             # Test getmore timeout.
             await self.enable_timeout()
             with self.assertRaises(ExecutionTimeout):
-                while await cursor.fetch_next:
-                    cursor.next_object()
+                async for _ in cursor:
+                    pass
 
             await cursor.close()
 
             # Send another initial query.
             await self.disable_timeout()
             cursor = self.collection.find().max_time_ms(100000)
-            await cursor.fetch_next
-            cursor.next_object()
+            await cursor.__anext__()
 
             # Test getmore timeout.
             await self.enable_timeout()
@@ -617,8 +587,7 @@ class MotorCursorMaxTimeMSTest(MotorTest):
         try:
             # Send initial query.
             cursor = self.collection.find().max_time_ms(100000)
-            await cursor.fetch_next
-            cursor.next_object()
+            await cursor.__anext__()
 
             future = Future()
 
