@@ -42,6 +42,13 @@ class AgnosticGridOutCursor(AgnosticCursor):
 
     def next_object(self):
         """**DEPRECATED** - Get next GridOut object from cursor."""
+        warnings.warn(
+            "The next_object method is deprecated and may be "
+            "removed in a future major release.  Use `async for` to iterate "
+            "over Cursor objects instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         grid_out = super().next_object()
         if grid_out:
             grid_out_class = create_class_with_framework(

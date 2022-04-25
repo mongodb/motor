@@ -1324,8 +1324,8 @@ class AgnosticBaseCursor(AgnosticBase):
         .. _`gen.coroutine`: http://tornadoweb.org/en/stable/gen.html
         """
         warnings.warn(
-            "The fetch_next property is deprecated and will be "
-            "removed in Motor 3.0. Use `async for` to iterate "
+            "The fetch_next property is deprecated and may be "
+            "removed in a future major release. Use `async for` to iterate "
             "over Cursor objects instead.",
             DeprecationWarning,
             stacklevel=2,
@@ -1348,16 +1348,16 @@ class AgnosticBaseCursor(AgnosticBase):
         """**DEPRECATED** - Get a document from the most recently fetched
         batch, or ``None``. See :attr:`fetch_next`.
 
-        The :meth:`next_object` method is deprecated and will be removed
-        in Motor 3.0. Use `async for` to elegantly iterate over
+        The :meth:`next_object` method is deprecated and may be removed
+        in a future major release. Use `async for` to elegantly iterate over
         :class:`MotorCursor` objects instead.
 
         .. versionchanged:: 2.2
            Deprecated.
         """
         warnings.warn(
-            "The next_object method is deprecated and will be "
-            "removed in Motor 3.0. Use Use `async for` to iterate "
+            "The next_object method is deprecated and may be "
+            "removed in a future major release.  Use `async for` to iterate "
             "over Cursor objects instead.",
             DeprecationWarning,
             stacklevel=2,
