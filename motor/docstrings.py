@@ -201,6 +201,86 @@ This will print something like::
    Added session parameter.
 """
 
+create_index_doc = """Creates an index on this collection.
+
+  Takes either a single key or a list of (key, direction) pairs.
+  The key(s) must be an instance of :class:`basestring`
+  (:class:`str` in python 3), and the direction(s) must be one of
+  (:data:`~pymongo.ASCENDING`, :data:`~pymongo.DESCENDING`,
+  :data:`~pymongo.GEO2D`, :data:`~pymongo.GEOHAYSTACK`,
+  :data:`~pymongo.GEOSPHERE`, :data:`~pymongo.HASHED`,
+  :data:`~pymongo.TEXT`).
+
+  To create a single key ascending index on the key ``'mike'`` we just
+  use a string argument::
+
+    await my_collection.create_index("mike")
+
+  For a compound index on ``'mike'`` descending and ``'eliot'``
+  ascending we need to use a list of tuples::
+
+    await my_collection.create_index([("mike", pymongo.DESCENDING),
+                                      ("eliot", pymongo.ASCENDING)])
+
+  All optional index creation parameters should be passed as
+  keyword arguments to this method. For example::
+
+    await my_collection.create_index([("mike", pymongo.DESCENDING)],
+                                     background=True)
+
+  Valid options include, but are not limited to:
+
+    - `name`: custom name to use for this index - if none is
+      given, a name will be generated.
+    - `unique`: if ``True`` creates a uniqueness constraint on the index.
+    - `background`: if ``True`` this index should be created in the
+      background.
+    - `sparse`: if ``True``, omit from the index any documents that lack
+      the indexed field.
+    - `bucketSize`: for use with geoHaystack indexes.
+      Number of documents to group together within a certain proximity
+      to a given longitude and latitude.
+    - `min`: minimum value for keys in a :data:`~pymongo.GEO2D`
+      index.
+    - `max`: maximum value for keys in a :data:`~pymongo.GEO2D`
+      index.
+    - `expireAfterSeconds`: <int> Used to create an expiring (TTL)
+      collection. MongoDB will automatically delete documents from
+      this collection after <int> seconds. The indexed field must
+      be a UTC datetime or the data will not expire.
+    - `partialFilterExpression`: A document that specifies a filter for
+      a partial index.
+    - `collation` (optional): An instance of
+      :class:`~pymongo.collation.Collation`.
+
+  See the MongoDB documentation for a full list of supported options by
+  server version.
+
+  .. warning:: `dropDups` is not supported by MongoDB 3.0 or newer. The
+    option is silently ignored by the server and unique index builds
+    using the option will fail if a duplicate value is detected.
+
+  .. note:: `partialFilterExpression` requires server version **>= 3.2**
+
+  .. note:: The :attr:`~pymongo.collection.Collection.write_concern` of
+     this collection is automatically applied to this operation.
+
+  :Parameters:
+    - `keys`: a single key or a list of (key, direction)
+      pairs specifying the index to create.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
+    - `comment` (optional): A user-provided comment to attach to this command.
+    - `**kwargs` (optional): any additional index creation
+      options (see the above list) should be passed as keyword
+      arguments
+
+  Returns a Future.
+
+  .. mongodoc:: indexes
+"""
+
 create_indexes_doc = """Create one or more indexes on this collection::
 
   from pymongo import IndexModel, ASCENDING, DESCENDING
@@ -1250,4 +1330,313 @@ Note that using this class in a with-statement will automatically call
     async with AsyncIOMotorClientEncryption(...) as client_encryption:
         encrypted = await client_encryption.encrypt(value, ...)
         decrypted = await client_encryption.decrypt(encrypted)
+"""
+
+gridfs_delete_doc = """Delete a file's metadata and data chunks from a GridFS bucket::
+
+      async def delete():
+          my_db = AsyncIOMotorClient().test
+          fs = AsyncIOMotorGridFSBucket(my_db)
+          # Get _id of file to delete
+          file_id = await fs.upload_from_stream("test_file",
+                                                b"data I want to store!")
+          await fs.delete(file_id)
+
+  Raises :exc:`~gridfs.errors.NoFile` if no file with file_id exists.
+
+  :Parameters:
+    - `file_id`: The _id of the file to be deleted.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
+"""
+
+gridfs_download_to_stream_doc = """Downloads the contents of the stored file specified by file_id and
+  writes the contents to `destination`::
+
+      async def download():
+          my_db = AsyncIOMotorClient().test
+          fs = AsyncIOMotorGridFSBucket(my_db)
+          # Get _id of file to read
+          file_id = await fs.upload_from_stream("test_file",
+                                                b"data I want to store!")
+          # Get file to write to
+          file = open('myfile','wb+')
+          await fs.download_to_stream(file_id, file)
+          file.seek(0)
+          contents = file.read()
+
+  Raises :exc:`~gridfs.errors.NoFile` if no file with file_id exists.
+
+  :Parameters:
+    - `file_id`: The _id of the file to be downloaded.
+    - `destination`: a file-like object implementing :meth:`write`.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
+"""
+
+gridfs_download_to_stream_by_name_doc = """      Write the contents of `filename` (with optional `revision`) to
+  `destination`.
+
+  For example::
+
+      async def download_by_name():
+          my_db = AsyncIOMotorClient().test
+          fs = AsyncIOMotorGridFSBucket(my_db)
+          # Get file to write to
+          file = open('myfile','wb')
+          await fs.download_to_stream_by_name("test_file", file)
+
+  Raises :exc:`~gridfs.errors.NoFile` if no such version of
+  that file exists.
+
+  Raises :exc:`~ValueError` if `filename` is not a string.
+
+  :Parameters:
+    - `filename`: The name of the file to read from.
+    - `destination`: A file-like object that implements :meth:`write`.
+    - `revision` (optional): Which revision (documents with the same
+      filename and different uploadDate) of the file to retrieve.
+      Defaults to -1 (the most recent revision).
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
+
+  :Note: Revision numbers are defined as follows:
+
+    - 0 = the original stored file
+    - 1 = the first revision
+    - 2 = the second revision
+    - etc...
+    - -2 = the second most recent revision
+    - -1 = the most recent revision
+"""
+
+gridfs_open_download_stream_doc = """Opens a stream to read the contents of the stored file specified by file_id::
+
+      async def download_stream():
+          my_db = AsyncIOMotorClient().test
+          fs = AsyncIOMotorGridFSBucket(my_db)
+          # get _id of file to read.
+          file_id = await fs.upload_from_stream("test_file",
+                                                b"data I want to store!")
+          grid_out = await fs.open_download_stream(file_id)
+          contents = await grid_out.read()
+
+  Raises :exc:`~gridfs.errors.NoFile` if no file with file_id exists.
+
+  :Parameters:
+    - `file_id`: The _id of the file to be downloaded.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
+
+  Returns a :class:`AsyncIOMotorGridOut`.
+"""
+
+gridfs_open_download_stream_by_name_doc = """Opens a stream to read the contents of `filename` and optional `revision`::
+
+      async def download_by_name():
+          my_db = AsyncIOMotorClient().test
+          fs = AsyncIOMotorGridFSBucket(my_db)
+          # get _id of file to read.
+          file_id = await fs.upload_from_stream("test_file",
+                                                b"data I want to store!")
+          grid_out = await fs.open_download_stream_by_name(file_id)
+          contents = await grid_out.read()
+
+  Raises :exc:`~gridfs.errors.NoFile` if no such version of
+  that file exists.
+
+  Raises :exc:`~ValueError` filename is not a string.
+
+  :Parameters:
+    - `filename`: The name of the file to read from.
+    - `revision` (optional): Which revision (documents with the same
+      filename and different uploadDate) of the file to retrieve.
+      Defaults to -1 (the most recent revision).
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
+
+  Returns a :class:`AsyncIOMotorGridOut`.
+
+  :Note: Revision numbers are defined as follows:
+
+    - 0 = the original stored file
+    - 1 = the first revision
+    - 2 = the second revision
+    - etc...
+    - -2 = the second most recent revision
+    - -1 = the most recent revision
+"""
+
+
+gridfs_open_upload_stream_doc = """Opens a stream for writing.
+
+  Specify the filename, and add any additional information in the metadata
+  field of the file document or modify the chunk size::
+
+      async def upload():
+          my_db = AsyncIOMotorClient().test
+          fs = AsyncIOMotorGridFSBucket(my_db)
+          grid_in = fs.open_upload_stream(
+              "test_file", metadata={"contentType": "text/plain"})
+
+          await grid_in.write(b"data I want to store!")
+          await grid_in.close()  # uploaded on close
+
+  Returns an instance of :class:`AsyncIOMotorGridIn`.
+
+  Raises :exc:`~gridfs.errors.NoFile` if no such version of
+  that file exists.
+  Raises :exc:`~ValueError` if `filename` is not a string.
+
+  In a native coroutine, the "async with" statement calls
+  :meth:`~AsyncIOMotorGridIn.close` automatically::
+
+      async def upload():
+          my_db = AsyncIOMotorClient().test
+          fs = AsyncIOMotorGridFSBucket(my_db)
+          async with await fs.open_upload_stream(
+              "test_file", metadata={"contentType": "text/plain"}) as gridin:
+              await gridin.write(b'First part\\n')
+              await gridin.write(b'Second part')
+
+  :Parameters:
+    - `filename`: The name of the file to upload.
+    - `chunk_size_bytes` (options): The number of bytes per chunk of this
+      file. Defaults to the chunk_size_bytes in :class:`AsyncIOMotorGridFSBucket`.
+    - `metadata` (optional): User data for the 'metadata' field of the
+      files collection document. If not provided the metadata field will
+      be omitted from the files collection document.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
+"""
+
+gridfs_open_upload_stream_with_id_doc = """Opens a stream for writing.
+
+  Specify the filed_id and filename, and add any additional information in
+  the metadata field of the file document, or modify the chunk size::
+
+      async def upload():
+          my_db = AsyncIOMotorClient().test
+          fs = AsyncIOMotorGridFSBucket(my_db)
+          grid_in = fs.open_upload_stream_with_id(
+              ObjectId(), "test_file",
+              metadata={"contentType": "text/plain"})
+
+          await grid_in.write(b"data I want to store!")
+          await grid_in.close()  # uploaded on close
+
+  Returns an instance of :class:`AsyncIOMotorGridIn`.
+
+  Raises :exc:`~gridfs.errors.NoFile` if no such version of
+  that file exists.
+  Raises :exc:`~ValueError` if `filename` is not a string.
+
+  :Parameters:
+    - `file_id`: The id to use for this file. The id must not have
+      already been used for another file.
+    - `filename`: The name of the file to upload.
+    - `chunk_size_bytes` (options): The number of bytes per chunk of this
+      file. Defaults to the chunk_size_bytes in :class:`AsyncIOMotorGridFSBucket`.
+    - `metadata` (optional): User data for the 'metadata' field of the
+      files collection document. If not provided the metadata field will
+      be omitted from the files collection document.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
+"""
+
+gridfs_rename_doc = """Renames the stored file with the specified file_id.
+
+  For example::
+
+
+      async def rename():
+          my_db = AsyncIOMotorClient().test
+          fs = AsyncIOMotorGridFSBucket(my_db)
+          # get _id of file to read.
+          file_id = await fs.upload_from_stream("test_file",
+                                                b"data I want to store!")
+
+          await fs.rename(file_id, "new_test_name")
+
+  Raises :exc:`~gridfs.errors.NoFile` if no file with file_id exists.
+
+  :Parameters:
+    - `file_id`: The _id of the file to be renamed.
+    - `new_filename`: The new name of the file.
+"""
+
+gridfs_upload_from_stream_doc = """Uploads a user file to a GridFS bucket.
+
+  Reads the contents of the user file from `source` and uploads
+  it to the file `filename`. Source can be a string or file-like object.
+  For example::
+
+      async def upload_from_stream():
+          my_db = AsyncIOMotorClient().test
+          fs = AsyncIOMotorGridFSBucket(my_db)
+          file_id = await fs.upload_from_stream(
+              "test_file",
+              b"data I want to store!",
+              metadata={"contentType": "text/plain"})
+
+  Raises :exc:`~gridfs.errors.NoFile` if no such version of
+  that file exists.
+  Raises :exc:`~ValueError` if `filename` is not a string.
+
+  :Parameters:
+    - `filename`: The name of the file to upload.
+    - `source`: The source stream of the content to be uploaded. Must be
+      a file-like object that implements :meth:`read` or a string.
+    - `chunk_size_bytes` (options): The number of bytes per chunk of this
+      file. Defaults to the chunk_size_bytes of :class:`AsyncIOMotorGridFSBucket`.
+    - `metadata` (optional): User data for the 'metadata' field of the
+      files collection document. If not provided the metadata field will
+      be omitted from the files collection document.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
+
+  Returns the _id of the uploaded file.
+"""
+
+gridfs_upload_from_stream_with_id_doc = """Uploads a user file to a GridFS bucket with a custom file id.
+
+  Reads the contents of the user file from `source` and uploads
+  it to the file `filename`. Source can be a string or file-like object.
+  For example::
+
+      async def upload_from_stream_with_id():
+          my_db = AsyncIOMotorClient().test
+          fs = AsyncIOMotorGridFSBucket(my_db)
+          file_id = await fs.upload_from_stream_with_id(
+              ObjectId(),
+              "test_file",
+              b"data I want to store!",
+              metadata={"contentType": "text/plain"})
+
+  Raises :exc:`~gridfs.errors.NoFile` if no such version of
+  that file exists.
+  Raises :exc:`~ValueError` if `filename` is not a string.
+
+  :Parameters:
+    - `file_id`: The id to use for this file. The id must not have
+      already been used for another file.
+    - `filename`: The name of the file to upload.
+    - `source`: The source stream of the content to be uploaded. Must be
+      a file-like object that implements :meth:`read` or a string.
+    - `chunk_size_bytes` (options): The number of bytes per chunk of this
+      file. Defaults to the chunk_size_bytes of :class:`AsyncIOMotorGridFSBucket`.
+    - `metadata` (optional): User data for the 'metadata' field of the
+      files collection document. If not provided the metadata field will
+      be omitted from the files collection document.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
 """
