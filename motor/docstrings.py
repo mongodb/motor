@@ -314,13 +314,17 @@ This deletes all matching documents and prints "3".
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `let` (optional): Map of parameter names and values. Values must be
+    constant or closed expressions that do not reference document
+    fields. Parameters can then be accessed as variables in an
+    aggregate expression context (e.g. "$$var").
   - `comment` (optional): A user-provided comment to attach to this command.
 
 :Returns:
   - An instance of :class:`~pymongo.results.DeleteResult`.
 
 .. versionchanged:: 3.0
-   Added ``comment`` parameter.
+   Added ``let`` and ``comment`` parameters.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
@@ -348,13 +352,17 @@ This deletes one matching document and prints "1".
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `let` (optional): Map of parameter names and values. Values must be
+    constant or closed expressions that do not reference document
+    fields. Parameters can then be accessed as variables in an
+    aggregate expression context (e.g. "$$var").
   - `comment` (optional): A user-provided comment to attach to this command.
 
 :Returns:
   - An instance of :class:`~pymongo.results.DeleteResult`.
 
 .. versionchanged:: 3.0
-   Added ``comment`` parameter.
+   Added ``let`` and ``comment`` parameters.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
@@ -460,6 +468,10 @@ This prints::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `let` (optional): Map of parameter names and values. Values must be
+    constant or closed expressions that do not reference document
+    fields. Parameters can then be accessed as variables in an
+    aggregate expression context (e.g. "$$var").
   - `comment` (optional): A user-provided comment to attach to this command.
   - `**kwargs` (optional): additional command arguments can be passed
     as keyword arguments (for example maxTimeMS can be used with
@@ -471,7 +483,7 @@ that using an elevated write concern with this command may be slower compared
 to using the default write concern.
 
 .. versionchanged:: 3.0
-   Added ``comment`` parameter.
+   Added ``let`` and ``comment`` parameters.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
@@ -535,6 +547,10 @@ This will print::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `let` (optional): Map of parameter names and values. Values must be
+    constant or closed expressions that do not reference document
+    fields. Parameters can then be accessed as variables in an
+    aggregate expression context (e.g. "$$var").
   - `comment` (optional): A user-provided comment to attach to this command.
   - `**kwargs` (optional): additional command arguments can be passed
     as keyword arguments (for example maxTimeMS can be used with
@@ -546,7 +562,7 @@ that using an elevated write concern with this command may be slower compared
 to using the default write concern.
 
 .. versionchanged:: 3.0
-   Added ``comment`` parameter.
+   Added ``let`` and ``comment`` parameters.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
@@ -656,6 +672,10 @@ This would print::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `let` (optional): Map of parameter names and values. Values must be
+    constant or closed expressions that do not reference document
+    fields. Parameters can then be accessed as variables in an
+    aggregate expression context (e.g. "$$var").
   - `comment` (optional): A user-provided comment to attach to this command.
   - `**kwargs` (optional): additional command arguments can be passed
     as keyword arguments (for example maxTimeMS can be used with
@@ -668,7 +688,7 @@ This command uses the
 be slower compared to using the default write concern.
 
 .. versionchanged:: 3.0
-   Added ``comment`` parameter.
+   Added ``let`` and ``comment`` parameters.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
@@ -880,6 +900,10 @@ This prints::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `let` (optional): Map of parameter names and values. Values must be
+    constant or closed expressions that do not reference document
+    fields. Parameters can then be accessed as variables in an
+    aggregate expression context (e.g. "$$var").
   - `comment` (optional): A user-provided comment to attach to this command.
 
 :Returns:
@@ -889,7 +913,7 @@ This prints::
   **>= 3.2**
 
 .. versionchanged:: 3.0
-   Added ``comment`` parameter.
+   Added ``let`` and ``comment`` parameters.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
@@ -943,6 +967,10 @@ This prints::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `let` (optional): Map of parameter names and values. Values must be
+    constant or closed expressions that do not reference document
+    fields. Parameters can then be accessed as variables in an
+    aggregate expression context (e.g. "$$var").
   - `comment` (optional): A user-provided comment to attach to this command.
 
 :Returns:
@@ -952,7 +980,7 @@ This prints::
   **>= 3.2**
 
 .. versionchanged:: 3.0
-   Added ``comment`` parameter.
+   Added ``let`` and ``comment`` parameters.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
@@ -1006,6 +1034,10 @@ This prints::
   - `session` (optional): a
     :class:`~pymongo.client_session.ClientSession`, created with
     :meth:`~MotorClient.start_session`.
+  - `let` (optional): Map of parameter names and values. Values must be
+    constant or closed expressions that do not reference document
+    fields. Parameters can then be accessed as variables in an
+    aggregate expression context (e.g. "$$var").
   - `comment` (optional): A user-provided comment to attach to this command.
 
 :Returns:
@@ -1015,7 +1047,7 @@ This prints::
   **>= 3.2**
 
 .. versionchanged:: 3.0
-   Added ``comment`` parameter.
+   Added ``let`` and ``comment`` parameters.
 .. versionchanged:: 2.2
    Added ``hint`` parameter.
 .. versionchanged:: 1.2
