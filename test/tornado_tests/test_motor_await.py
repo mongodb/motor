@@ -133,7 +133,7 @@ class MotorTestAwait(MotorTest):
 
         await gfs.upload_from_stream_with_id(1, "filename", source=data, chunk_size_bytes=1)
         cursor = gfs.find({"_id": 1})
-        gout = await cursor.__anext__()
+        gout = await cursor.next()
         chunks = []
         async for chunk in gout:
             chunks.append(chunk)

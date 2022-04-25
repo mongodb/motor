@@ -228,7 +228,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         request.fail()
 
         with self.assertRaises(pymongo.errors.OperationFailure):
-            await cursor.__anext__()
+            await cursor.next()
 
         self.assertFalse(sock_info.closed)
         self.assertEqual(sock_info, one(pool.sockets))
@@ -259,7 +259,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         request.hangs_up()
 
         with self.assertRaises(pymongo.errors.ConnectionFailure):
-            await cursor.__anext__()
+            await cursor.next()
 
         self.assertTrue(sock_info.closed)
         del cursor

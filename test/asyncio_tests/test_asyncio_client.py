@@ -201,8 +201,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
         cursor = await self.cx.list_databases()
         self.assertIsInstance(cursor, motor_asyncio.AsyncIOMotorCommandCursor)
 
-        while await cursor.fetch_next:
-            info = cursor.next_object()
+        async for info in cursor:
             if info["name"] == self.collection.database.name:
                 break
         else:

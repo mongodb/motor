@@ -12,6 +12,15 @@ Motor 3.0 requires PyMongo 4.0+ and Python 3.7+.
 Breaking Changes
 ~~~~~~~~~~~~~~~~
 - Prevent use of :class:`~pymongo.database.Database` and :class:`~pymongo.collection.Collection` in boolean expressions.
+- Removed deprecated ``AsyncIOMotorCursor`` method
+  :meth:`~motor.motor_asyncio.AsyncIOMotorCursor.next_object` and
+  property :attr:`~motor.motor_asyncio.AsyncIOMotorCursor.fetch_next`.
+  Applications should use ``async for`` to iterate over cursors instead.
+- Removed deprecatd ``AgnosticGridOutCursor`` method :meth:`~motor.motor_asyncio.AgnosticGridOutCursor.next_object`.
+- Removed deprecated parameter ``collection`` from class:`motor.motor_asyncio.AsyncIOMotorGridFSBucket` constructor.  Use ``bucket_name``
+instead.
+- Removed use of deprecated ``yieldable`` function for framework implementations.
+
 
 Motor 2.5.1
 -----------

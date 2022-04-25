@@ -154,12 +154,6 @@ class AsyncIOMockServerTestCase(AsyncIOTestCase):
     def run_thread(self, fn, *args, **kwargs):
         return self.loop.run_in_executor(None, functools.partial(fn, *args, **kwargs))
 
-    def fetch_next(self, cursor):
-        async def fetch_next():
-            return await cursor.fetch_next
-
-        return ensure_future(fetch_next())
-
 
 # TODO: Spin off to a PyPI package.
 def asyncio_test(func=None, timeout=None):

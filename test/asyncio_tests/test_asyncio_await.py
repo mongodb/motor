@@ -127,10 +127,13 @@ class TestAsyncIOAwait(AsyncIOTestCase):
 
         await gfs.upload_from_stream_with_id(1, "filename", source=data, chunk_size_bytes=1)
         cursor = gfs.find({"_id": 1})
-        await cursor.fetch_next
-        gout = cursor.next_object()
+        gout = await cursor.next()
+
         chunks = []
-        async for chunk in gout:
+        while 1:
+            chunk = gout.readchunk()
+            if not chunk:
+                break
             chunks.append(chunk)
 
         self.assertEqual(len(chunks), len(data))

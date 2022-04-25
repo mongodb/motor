@@ -17,7 +17,6 @@
 
 from io import BytesIO
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from test.utils import ignore_deprecations
 
 from gridfs.errors import NoFile
 from pymongo.read_preferences import ReadPreference
@@ -74,8 +73,3 @@ class TestAsyncIOGridFSBucket(AsyncIOTestCase):
         self.assertEqual(wc, bucket.delegate._chunks.write_concern)
         self.assertEqual(rp, bucket.delegate._chunks.read_preference)
         self.assertEqual(size, bucket.delegate._chunk_size_bytes)
-
-    @ignore_deprecations
-    def test_collection_param(self):
-        bucket = AsyncIOMotorGridFSBucket(self.db, collection="collection")
-        self.assertEqual("collection", bucket.collection.name)
