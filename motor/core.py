@@ -1074,10 +1074,10 @@ class AgnosticCollection(AgnosticBaseProperties):
 
           # asyncio
           try:
-             asyncio.run(watch_collection())
+              asyncio.run(watch_collection())
           except KeyboardInterrupt:
-             if change_stream is not None:
-                asyncio.run(change_stream.close())
+              if change_stream is not None:
+                  asyncio.run(change_stream.close())
 
 
         The :class:`~MotorChangeStream` async iterable blocks
