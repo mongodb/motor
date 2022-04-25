@@ -267,7 +267,11 @@ create_index_doc = """Creates an index on this collection.
 
   :Parameters:
     - `keys`: a single key or a list of (key, direction)
-      pairs specifying the index to create
+      pairs specifying the index to create.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
+    - `comment` (optional): A user-provided comment to attach to this command.
     - `**kwargs` (optional): any additional index creation
       options (see the above list) should be passed as keyword
       arguments
@@ -1309,7 +1313,10 @@ gridfs_delete_doc = """Delete a file's metadata and data chunks from a GridFS bu
   Raises :exc:`~gridfs.errors.NoFile` if no file with file_id exists.
 
   :Parameters:
-    - `file_id`: The _id of the file to be deleted
+    - `file_id`: The _id of the file to be deleted.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
 """
 
 gridfs_download_to_stream_doc = """Downloads the contents of the stored file specified by file_id and
@@ -1332,6 +1339,9 @@ gridfs_download_to_stream_doc = """Downloads the contents of the stored file spe
   :Parameters:
     - `file_id`: The _id of the file to be downloaded.
     - `destination`: a file-like object implementing :meth:`write`.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
 """
 
 gridfs_download_to_stream_by_name_doc = """      Write the contents of `filename` (with optional `revision`) to
@@ -1357,6 +1367,9 @@ gridfs_download_to_stream_by_name_doc = """      Write the contents of `filename
     - `revision` (optional): Which revision (documents with the same
       filename and different uploadDate) of the file to retrieve.
       Defaults to -1 (the most recent revision).
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
 
   :Note: Revision numbers are defined as follows:
 
@@ -1383,6 +1396,9 @@ gridfs_open_download_stream_doc = """Opens a stream to read the contents of the 
 
   :Parameters:
     - `file_id`: The _id of the file to be downloaded.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
 
   Returns a :class:`AsyncIOMotorGridOut`.
 """
@@ -1408,6 +1424,9 @@ gridfs_open_download_stream_by_name_doc = """Opens a stream to read the contents
     - `revision` (optional): Which revision (documents with the same
       filename and different uploadDate) of the file to retrieve.
       Defaults to -1 (the most recent revision).
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
 
   Returns a :class:`AsyncIOMotorGridOut`.
 
@@ -1460,6 +1479,9 @@ gridfs_open_upload_stream_doc = """Opens a stream for writing.
     - `metadata` (optional): User data for the 'metadata' field of the
       files collection document. If not provided the metadata field will
       be omitted from the files collection document.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
 """
 
 gridfs_open_upload_stream_with_id_doc = """Opens a stream for writing.
@@ -1492,6 +1514,9 @@ gridfs_open_upload_stream_with_id_doc = """Opens a stream for writing.
     - `metadata` (optional): User data for the 'metadata' field of the
       files collection document. If not provided the metadata field will
       be omitted from the files collection document.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
 """
 
 gridfs_rename_doc = """Renames the stored file with the specified file_id.
@@ -1542,6 +1567,9 @@ gridfs_upload_from_stream_doc = """Uploads a user file to a GridFS bucket.
     - `metadata` (optional): User data for the 'metadata' field of the
       files collection document. If not provided the metadata field will
       be omitted from the files collection document.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
 
   Returns the _id of the uploaded file.
 """
@@ -1576,4 +1604,7 @@ gridfs_upload_from_stream_with_id_doc = """Uploads a user file to a GridFS bucke
     - `metadata` (optional): User data for the 'metadata' field of the
       files collection document. If not provided the metadata field will
       be omitted from the files collection document.
+    - `session` (optional): a
+      :class:`~pymongo.client_session.ClientSession`, created with
+      :meth:`~MotorClient.start_session`.
 """
