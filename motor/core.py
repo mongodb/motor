@@ -1073,15 +1073,12 @@ class AgnosticCollection(AgnosticBaseProperties):
                       loop.add_callback(change_stream.close)
 
           # asyncio
-          async def main():
-              task = asyncio.create_task(watch_collection)
-              try:
-                  await task
-              except KeyboardInterrupt:
-                  task.cancel()
+          try:
+             asyncio.run(watch_collection())
+          except KeyboardInterrupt:
+             if change_stream is not None:
+                asyncio.run(change_stream.close())
 
-
-          asyncio.run(main())
 
         The :class:`~MotorChangeStream` async iterable blocks
         until the next change document is returned or an error is raised. If
