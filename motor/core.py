@@ -16,7 +16,6 @@
 
 import functools
 import time
-import warnings
 
 import pymongo
 import pymongo.auth
@@ -1267,105 +1266,6 @@ class AgnosticBaseCursor(AgnosticBase):
 
         self.started = True
         return self._refresh()
-
-    @property
-    @coroutine_annotation
-    def fetch_next(self):
-        """**DEPRECATED** - A Future used with `gen.coroutine`_ to
-        asynchronously retrieve the next document in the result set,
-        fetching a batch of documents from the server if necessary.
-        Resolves to ``False`` if there are no more documents, otherwise
-        :meth:`next_object` is guaranteed to return a document:
-
-        .. doctest:: fetch_next
-           :hide:
-
-           >>> _ = MongoClient().test.test_collection.delete_many({})
-           >>> collection = MotorClient().test.test_collection
-
-        .. attention:: The :attr:`fetch_next` property is deprecated and will
-           be removed in Motor 3.0. Use `async for` to iterate elegantly and
-           efficiently over :class:`MotorCursor` objects instead.:
-
-           .. doctest:: fetch_next
-
-              >>> async def f():
-              ...     await collection.drop()
-              ...     await collection.insert_many([{'_id': i} for i in range(5)])
-              ...     async for doc in collection.find():
-              ...         sys.stdout.write(str(doc['_id']) + ', ')
-              ...     print('done')
-              ...
-              >>> IOLoop.current().run_sync(f)
-              0, 1, 2, 3, 4, done
-
-        While it appears that fetch_next retrieves each document from
-        the server individually, the cursor actually fetches documents
-        efficiently in `large batches`_. Example usage:
-
-        .. doctest:: fetch_next
-
-           >>> async def f():
-           ...     await collection.drop()
-           ...     await collection.insert_many([{'_id': i} for i in range(5)])
-           ...     cursor = collection.find().sort([('_id', 1)])
-           ...     while (await cursor.fetch_next):
-           ...         doc = cursor.next_object()
-           ...         sys.stdout.write(str(doc['_id']) + ', ')
-           ...     print('done')
-           ...
-           >>> IOLoop.current().run_sync(f)
-           0, 1, 2, 3, 4, done
-
-        .. versionchanged:: 2.2
-           Deprecated.
-
-        .. _`large batches`: https://www.mongodb.com/docs/manual/tutorial/iterate-a-cursor/#cursor-batches
-        .. _`gen.coroutine`: http://tornadoweb.org/en/stable/gen.html
-        """
-        warnings.warn(
-            "The fetch_next property is deprecated and will be "
-            "removed in Motor 3.0. Use `async for` to iterate "
-            "over Cursor objects instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        if not self._buffer_size() and self.alive:
-            # Return the Future, which resolves to number of docs fetched or 0.
-            return self._get_more()
-        elif self._buffer_size():
-            future = self._framework.get_future(self.get_io_loop())
-            future.set_result(True)
-            return future
-        else:
-            # Dead
-            future = self._framework.get_future(self.get_io_loop())
-            future.set_result(False)
-            return future
-
-    def next_object(self):
-        """**DEPRECATED** - Get a document from the most recently fetched
-        batch, or ``None``. See :attr:`fetch_next`.
-
-        The :meth:`next_object` method is deprecated and will be removed
-        in Motor 3.0. Use `async for` to elegantly iterate over
-        :class:`MotorCursor` objects instead.
-
-        .. versionchanged:: 2.2
-           Deprecated.
-        """
-        warnings.warn(
-            "The next_object method is deprecated and will be "
-            "removed in Motor 3.0. Use Use `async for` to iterate "
-            "over Cursor objects instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        if not self._buffer_size():
-            return None
-        return next(self.delegate)
 
     def each(self, callback):
         """Iterates over all the documents for this cursor.

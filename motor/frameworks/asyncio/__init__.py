@@ -23,7 +23,6 @@ import asyncio.tasks
 import functools
 import multiprocessing
 import os
-import warnings
 from asyncio import coroutine  # noqa: F401 - For framework interface.
 from concurrent.futures import ThreadPoolExecutor
 
@@ -143,15 +142,6 @@ def pymongo_class_wrapper(f, pymongo_class):
             return result
 
     return _wrapper
-
-
-def yieldable(future):
-    warnings.warn(
-        "The yieldable function is deprecated and will be removed in  Motor 3.0",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return next(iter(future))
 
 
 def platform_info():

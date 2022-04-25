@@ -19,7 +19,6 @@ See "Frameworks" in the Developer Guide.
 
 import functools
 import os
-import warnings
 from concurrent.futures import ThreadPoolExecutor
 
 import tornado.process
@@ -125,15 +124,6 @@ def pymongo_class_wrapper(f, pymongo_class):
             return result
 
     return _wrapper
-
-
-def yieldable(future):
-    warnings.warn(
-        "The yieldable function is deprecated and will be removed in Motor 3.0",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return future
 
 
 def platform_info():

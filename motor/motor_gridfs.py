@@ -15,7 +15,6 @@
 """GridFS implementation for Motor, an asynchronous driver for MongoDB."""
 
 import hashlib
-import warnings
 
 import gridfs
 import pymongo
@@ -39,19 +38,6 @@ class AgnosticGridOutCursor(AgnosticCursor):
 
     # PyMongo's GridOutCursor inherits __die from Cursor.
     _Cursor__die = AsyncCommand()
-
-    def next_object(self):
-        """**DEPRECATED** - Get next GridOut object from cursor."""
-        grid_out = super().next_object()
-        if grid_out:
-            grid_out_class = create_class_with_framework(
-                AgnosticGridOut, self._framework, self.__module__
-            )
-
-            return grid_out_class(self.collection, delegate=grid_out)
-        else:
-            # Exhausted.
-            return None
 
 
 class MotorGridOutProperty(ReadOnlyProperty):
@@ -334,7 +320,6 @@ class AgnosticGridFSBucket(object):
         chunk_size_bytes=DEFAULT_CHUNK_SIZE,
         write_concern=None,
         read_preference=None,
-        collection=None,
     ):
         """Create a handle to a GridFS bucket.
 
@@ -355,12 +340,10 @@ class AgnosticGridFSBucket(object):
             (the default) db.write_concern is used.
           - `read_preference` (optional): The read preference to use. If
             ``None`` (the default) db.read_preference is used.
-          - `collection` (optional): Deprecated, an alias for `bucket_name`
-            that exists solely to provide backwards compatibility.
 
         .. versionchanged:: 3.0
            Removed support for the `disable_md5` parameter (to match the
-           GridFSBucket class in PyMongo).
+           GridFSBucket class in PyMongo).  Removed support for the ``collection`` parameter.
         .. versionchanged:: 2.1
            Added support for the `bucket_name`, `chunk_size_bytes`,
            `write_concern`, and `read_preference` parameters.
@@ -370,14 +353,6 @@ class AgnosticGridFSBucket(object):
 
         .. mongodoc:: gridfs
         """
-        # Preserve backwards compatibility of "collection" parameter
-        if collection is not None:
-            warnings.warn(
-                'the "collection" parameter is deprecated, use "bucket_name" instead',
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            bucket_name = collection
 
         db_class = create_class_with_framework(AgnosticDatabase, self._framework, self.__module__)
 
@@ -433,8 +408,7 @@ class AgnosticGridFSBucket(object):
         For example::
 
           cursor = bucket.find({"filename": "lisa.txt"}, no_cursor_timeout=True)
-          while (await cursor.fetch_next):
-              grid_out = cursor.next_object()
+          async for grid_out in cursor:
               data = await grid_out.read()
 
         This iterates through all versions of "lisa.txt" stored in GridFS.
