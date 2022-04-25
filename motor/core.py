@@ -756,7 +756,7 @@ class AgnosticCollection(AgnosticBaseProperties):
     __bool__ = DelegateMethod()
     bulk_write = AsyncCommand(doc=docstrings.bulk_write_doc)
     count_documents = AsyncRead()
-    create_index = AsyncCommand()
+    create_index = AsyncCommand(doc=docstrings.create_index_doc)
     create_indexes = AsyncCommand(doc=docstrings.create_indexes_doc)
     delete_many = AsyncCommand(doc=docstrings.delete_many_doc)
     delete_one = AsyncCommand(doc=docstrings.delete_one_doc)
