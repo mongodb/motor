@@ -1066,7 +1066,7 @@ class AgnosticCollection(AgnosticBaseProperties):
               loop = IOLoop.current()
               # Start watching collection for changes.
             try:
-                loop.run_sync(lambda: watch(collection))
+                loop.run_sync(watch_collection)
             except KeyboardInterrupt:
                 if change_stream:
                    loop.run_sync(change_stream.close)
