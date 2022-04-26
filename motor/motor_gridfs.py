@@ -43,6 +43,7 @@ class AgnosticGridOutCursor(AgnosticCursor):
 
     def next_object(self):
         """**DEPRECATED** - Get next GridOut object from cursor."""
+        # Note: the super() call will raise a warning for the deprecation.
         grid_out = super().next_object()
         if grid_out:
             grid_out_class = create_class_with_framework(
