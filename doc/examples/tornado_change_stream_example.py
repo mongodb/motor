@@ -108,7 +108,7 @@ def main():
     app.listen(options.port)
     loop = tornado.ioloop.IOLoop.current()
 
-    # Start watching collection for changes
+    # Start watching collection for changes.
     try:
         loop.run_sync(lambda: watch(collection))
     except KeyboardInterrupt:
