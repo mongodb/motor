@@ -147,6 +147,7 @@ MotorClient.event_listeners and other configuration option helpers are removed
 ..............................................................................
 
 The following client configuration option helpers are removed:
+
 - :attr:`~motor.motor_tornado.MotorClient.event_listeners`.
 - :attr:`~motor.motor_tornado.MotorClient.max_pool_size`.
 - :attr:`~motor.motor_tornado.MotorClient.min_pool_size`.
@@ -295,7 +296,7 @@ instead. For more guidance on this migration see:
 
 
 MotorCollection.reindex is removed
-.............................
+..................................
 
 Removed :meth:`motor.motor_tornado.MotorCollection.reindex`. Run the
 `reIndex command`_ directly instead. Code like this::

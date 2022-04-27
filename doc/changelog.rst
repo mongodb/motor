@@ -93,7 +93,7 @@ Breaking Changes
   encryption support.
 
 Notable improvements
-....................
+~~~~~~~~~~~~~~~~~~~~
 
 - Enhanced connection pooling to create connections more efficiently and
   avoid connection storms.
@@ -132,7 +132,7 @@ Notable improvements
   conform to the behavior of :meth:`io.IOBase.seek`.
 
 Issues Resolved
-...............
+~~~~~~~~~~~~~~~
 
 See the `Motor 3.0 release notes in JIRA`_ for the list of resolved issues
 in this release.
