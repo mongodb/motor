@@ -44,7 +44,7 @@ Warnings can also be changed to errors::
   python -Wd -Werror <your application>
 
 Note that there are some deprecation warnings raised by Motor itself for
-APIs that are deprecated but not yet removed, like :meth:`~motor.motor_tornado.MotorCusor.fetch_next`.
+APIs that are deprecated but not yet removed, like :meth:`~motor.motor_tornado.MotorCursor.fetch_next`.
 
 MotorClient
 -----------
@@ -118,17 +118,6 @@ Removed :meth:`~motor.motor_tornado.MotorClient.unlock`. Run the
      await client.admin.command('fsyncUnlock')
 
 .. _fsyncUnlock command: https://mongodb.com/docs/manual/reference/command/fsyncUnlock/
-
-MotorClient.is_locked is removed
-................................
-
-Removed :attr:`~motor.motor_tornado.MotorClient.is_locked`. Run the
-`currentOp command`_ directly with
-:meth:`~motor.motor_tornado.MotorDatabase.command` instead. For example::
-
-    is_locked = await client.admin.command('currentOp').get('fsyncLock')
-
-.. _currentOp command: https://mongodb.com/docs/manual/reference/command/currentOp/
 
 
 MotorClient.max_bson_size/max_message_size/max_write_batch_size are removed
@@ -304,13 +293,29 @@ instead. For more guidance on this migration see:
 
 .. _mapReduce command: https://mongodb.com/docs/manual/reference/command/mapReduce/
 
+
+MotorCollection.reindex is removed
+.............................
+
+Removed :meth:`motor.motor_tornado.MotorCollection.reindex`. Run the
+`reIndex command`_ directly instead. Code like this::
+
+  >>> result = await database.my_collection.reindex()
+
+can be changed to this::
+
+  >>> result = await database.command('reIndex', 'my_collection')
+
+.. _reIndex command: https://mongodb.com/docs/manual/reference/command/reIndex/
+
+
 The modifiers parameter is removed
 ..................................
 
 Removed the ``modifiers`` parameter from
-:meth:`~`~motor.motor_tornado.MotorCollection.find`,
-:meth:`~`~motor.motor_tornado.MotorCollection.find_one`,
-:meth:`~`~motor.motor_tornado.MotorCollection.find_raw_batches`, and
+:meth:`~motor.motor_tornado.MotorCollection.find`,
+:meth:`~motor.motor_tornado.MotorCollection.find_one`,
+:meth:`~motor.motor_tornado.MotorCollection.find_raw_batches`, and
 :meth:`~motor.motor_tornado.MotorCursor`. Pass the options directly to the method
 instead. Code like this::
 
@@ -341,7 +346,7 @@ The hint parameter is required with min/max
 ...........................................
 
 The ``hint`` option is now required when using ``min`` or ``max`` queries
-with :meth:`~`~motor.motor_tornado.MotorCollection.find` to ensure the query utilizes
+with :meth:`~motor.motor_tornado.MotorCollection.find` to ensure the query utilizes
 the correct index. For example, code like this::
 
   cursor = await coll.find({}, min={'x', min_value})
@@ -352,7 +357,7 @@ can be changed to this::
 
 MotorCollection.__bool__ raises NotImplementedError
 ...................................................
-:class:`~`~motor.motor_tornado.MotorCollection` now raises an error upon evaluating
+:class:`~motor.motor_tornado.MotorCollection` now raises an error upon evaluating
 as a Boolean. Code like this::
 
   if collection:
@@ -366,8 +371,8 @@ You must now explicitly compare with None.
 MotorCollection.find returns entire document with empty projection
 ..................................................................
 Empty projections (eg {} or []) for
-:meth:`~`~motor.motor_tornado.MotorCollection.find`, and
-:meth:`~`~motor.motor_tornado.MotorCollection.find_one`
+:meth:`~motor.motor_tornado.MotorCollection.find`, and
+:meth:`~motor.motor_tornado.MotorCollection.find_one`
 are passed to the server as-is rather than the previous behavior which
 substituted in a projection of ``{"_id": 1}``. This means that an empty
 projection will now return the entire document, not just the ``"_id"`` field.

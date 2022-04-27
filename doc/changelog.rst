@@ -7,89 +7,137 @@ Motor 3.0
 ---------
 
 Motor 3.0 adds support for PyMongo 4.0+.  It inherits a number
-of breaking API changes from PyMongo 4.0.
+of improvemnts and breaking API changes from PyMongo 4.0+.
+See :doc:`migrate-to-motor-3` for more information.
 
 Breaking Changes
 ~~~~~~~~~~~~~~~~
 - Requires PyMongo 4.0+.
 - Removed support for Python 3.5 and 3.6. Python 3.7+ is now required.
 - Removed the ``socketKeepAlive`` keyword argument to
-  :class:`~motor.MotorClient`.
-- Removed :meth:`motor.MotorClient.fsync`,
-  :meth:`motor.MotorClient.unlock`, and
-  :attr:`motor.MotorClient.is_locked`.
-- Removed :attr:`motor.MotorClient.max_bson_size`.
-- Removed :attr:`motor.MotorClient.max_message_size`.
-- Removed :attr:`motor.MotorClient.max_write_batch_size`.
-- Removed :attr:`motor.MotorClient.event_listeners`.
-- Removed :attr:`motor.MotorClient.max_pool_size`.
-- Removed :attr:`motor.MotorClient.max_idle_time_ms`.
-- Removed :attr:`motor.MotorClient.local_threshold_ms`.
-- Removed :attr:`motor.MotorClient.server_selection_timeout`.
-- Removed :attr:`motor.MotorClient.retry_writes`.
-- Removed :attr:`motor.MotorClient.retry_reads`.
+  :class:`~motor.motor_tornado.MotorClient`.
+- Removed :meth:`motor.motor_tornado.MotorClient.fsync`,
+  :meth:`motor.motor_tornado.MotorClient.unlock`, and
+  :attr:`motor.motor_tornado.MotorClient.is_locked`.
+- Removed :attr:`motor.motor_tornado.MotorClient.max_bson_size`.
+- Removed :attr:`motor.motor_tornado.MotorClient.max_message_size`.
+- Removed :attr:`motor.motor_tornado.MotorClient.max_write_batch_size`.
+- Removed :attr:`motor.motor_tornado.MotorClient.event_listeners`.
+- Removed :attr:`motor.motor_tornado.MotorClient.max_pool_size`.
+- Removed :attr:`motor.motor_tornado.MotorClient.max_idle_time_ms`.
+- Removed :attr:`motor.motor_tornado.MotorClient.local_threshold_ms`.
+- Removed :attr:`motor.motor_tornado.MotorClient.server_selection_timeout`.
+- Removed :attr:`motor.motor_tornado.MotorClient.retry_writes`.
+- Removed :attr:`motor.motor_tornado.MotorClient.retry_reads`.
 - Removed support for database profiler helpers
-  :meth:`~motor.MotorDatabase.profiling_level`,
-  :meth:`~motor.MotorDatabase.set_profiling_level`,
-  and :meth:`~motor.MotorDatabase.profiling_info`. Instead, users
+  :meth:`~motor.motor_tornado.MotorDatabase.profiling_level`,
+  :meth:`~motor.motor_tornado.MotorDatabase.set_profiling_level`,
+  and :meth:`~motor.motor_tornado.MotorDatabase.profiling_info`. Instead, users
   should run the profile command with the
-  :meth:`~motor.MotorDatabase.command` helper directly.
+  :meth:`~motor.motor_tornado.MotorDatabase.command` helper directly.
 - Removed :attr:`pymongo.OFF`, :attr:`pymongo.SLOW_ONLY`, and
   :attr:`pymongo.ALL`.
-- Removed :meth:`motor.MotorCollection.map_reduce` and
-  :meth:`motor.MotorCollection.inline_map_reduce`.
+- Removed :meth:`motor.motor_tornado.MotorCollection.map_reduce` and
+  :meth:`motor.motor_tornado.MotorCollection.inline_map_reduce`.
 - Removed the ``useCursor`` option for
-  :meth:`~motor.MotorCollection.aggregate`.
+  :meth:`~motor.motor_tornado.MotorCollection.aggregate`.
 - Removed :mod:`pymongo.son_manipulator`,
-  :meth:`motor.MotorDatabase.add_son_manipulator`,
-  :attr:`motor.MotorDatabase.outgoing_copying_manipulators`,
-  :attr:`motor.MotorDatabase.outgoing_manipulators`,
-  :attr:`motor.MotorDatabase.incoming_copying_manipulators`, and
-  :attr:`motor.MotorDatabase.incoming_manipulators`.
+  :meth:`motor.motor_tornado.MotorDatabase.add_son_manipulator`,
+  :attr:`motor.motor_tornado.MotorDatabase.outgoing_copying_manipulators`,
+  :attr:`motor.motor_tornado.MotorDatabase.outgoing_manipulators`,
+  :attr:`motor.motor_tornado.MotorDatabase.incoming_copying_manipulators`, and
+  :attr:`motor.motor_tornado.MotorDatabase.incoming_manipulators`.
 - Removed the ``manipulate`` and ``modifiers`` parameters from
-  :meth:`~motor.MotorCollection.find`,
-  :meth:`~motor.MotorCollection.find_one`,
-  :meth:`~motor.MotorCollection.find_raw_batches`, and
-  :meth:`~motor.MotorCursor`.
-- ``directConnection`` URI option and keyword argument to :class:`~motor.MotorClient`
+  :meth:`~motor.motor_tornado.MotorCollection.find`,
+  :meth:`~motor.motor_tornado.MotorCollection.find_one`,
+  :meth:`~motor.motor_tornado.MotorCollection.find_raw_batches`, and
+  :meth:`~motor.motor_tornado.MotorCursor`.
+- ``directConnection`` URI option and keyword argument to :class:`~motor.motor_tornado.MotorClient`
   defaults to ``False`` instead of ``None``, allowing for the automatic
   discovery of replica sets. This means that if you
   want a direct connection to a single server you must pass
   ``directConnection=True`` as a URI option or keyword argument.
 - The ``hint`` option is now required when using ``min`` or ``max`` queries
-  with :meth:`~motor.MotorCollection.find`.
+  with :meth:`~motor.motor_tornado.MotorCollection.find`.
 - When providing a "mongodb+srv://" URI to
-  :class:`~motor.MotorClient` constructor you can now use the
+  :class:`~motor.motor_tornado.MotorClient` constructor you can now use the
   ``srvServiceName`` URI option to specify your own SRV service name.
-- :class:`~motor.MotorCollection` and :class:`~motor.MotorDatabase`
+- :class:`~motor.motor_tornado.MotorCollection` and :class:`motor.motor_tornado.MotorDatabase`
   now raises an error upon evaluating as a Boolean, please use the
   syntax ``if collection is not None:`` or ``if database is not None:`` as
   opposed to
   the previous syntax which was simply ``if collection:`` or ``if database:``.
   You must now explicitly compare with None.
-- :class:`~motor.MotorClient` cannot execute any operations
+- :class:`~motor.motor_tornado.MotorClient` cannot execute any operations
   after being closed. The previous behavior would simply reconnect. However,
   now you must create a new instance.
 - Empty projections (eg {} or []) for
-  :meth:`~motor.MotorCollection.find`, and
-  :meth:`~motor.MotorCollection.find_one`
+  :meth:`~motor.motor_tornado.MotorCollection.find`, and
+  :meth:`~motor.motor_tornado.MotorCollection.find_one`
   are passed to the server as-is rather than the previous behavior which
   substituted in a projection of ``{"_id": 1}``. This means that an empty
   projection will now return the entire document, not just the ``"_id"`` field.
-- :class:`~motor.MotorClient` now raises a
+- :class:`~motor.motor_tornado.MotorClient` now raises a
   :exc:`~pymongo.errors.ConfigurationError` when more than one URI is passed
   into the ``hosts`` argument.
-- :class:`~motor.MotorClient`` now raises an
+- :class:`~motor.motor_tornado.MotorClient`` now raises an
   :exc:`~pymongo.errors.InvalidURI` exception
   when it encounters unescaped percent signs in username and password when
   parsing MongoDB URIs.
-- Comparing two :class:`~motor.MotorClient` instances now
+- Comparing two :class:`~motor.motor_tornado.MotorClient` instances now
   uses a set of immutable properties rather than
-  :attr:`~motor.MotorClient.address` which can change.
+  :attr:`~motor.motor_tornado.MotorClient.address` which can change.
 - Removed the `disable_md5` parameter for :class:`~gridfs.GridFSBucket` and
   :class:`~gridfs.GridFS`. See :ref:`removed-gridfs-checksum` for details.
 - PyMongoCrypt 1.2.0 or later is now required for client side field level
   encryption support.
+
+Notable improvements
+....................
+
+- Enhanced connection pooling to create connections more efficiently and
+  avoid connection storms.
+- Added the ``maxConnecting`` URI and
+  :class:`~motor.motor_tornado.MotorClient` keyword argument.
+- :class:`~motor.motor_tornado.MotorClient` now accepts a URI and keyword
+  argument `srvMaxHosts` that limits the number of mongos-like hosts a client
+  will connect to. More specifically, when a mongodb+srv:// connection string
+  resolves to more than `srvMaxHosts` number of hosts, the client will randomly
+  choose a `srvMaxHosts` sized subset of hosts.
+- Added :attr:`motor.motor_tornado.MotorClient.options` for read-only access
+  to a client's configuration options.
+- Added support for the ``comment`` parameter to all helpers. For example see
+  :meth:`~motor.motor_tornado.MotorCollection.insert_one`.
+- Added support for the ``let`` parameter to
+  :meth:`~motor.motor_tornado.MotorCollection.update_one`,
+  :meth:`~motor.motor_tornado.MotorCollection.update_many`,
+  :meth:`~motor.motor_tornado.MotorCollection.delete_one`,
+  :meth:`~motor.motor_tornado.MotorCollection.delete_many`,
+  :meth:`~motor.motor_tornado.MotorCollection.replace_one`,
+  :meth:`~motor.motor_tornado.MotorCollection.aggregate`,
+  :meth:`~motor.motor_tornado.MotorCollection.find_one_and_delete`,
+  :meth:`~motor.motor_tornado.MotorCollection.find_one_and_replace`,
+  :meth:`~motor.motor_tornado.MotorCollection.find_one_and_update`,
+  :meth:`~motor.motor_tornado.MotorCollection.find`,
+  :meth:`~motor.motor_tornado.MotorCollection.find_one`,
+  and :meth:`~motor.motor_tornado.MotorCollection.bulk_write`.
+  ``let`` is a map of parameter names and values.
+  Parameters can then be accessed as variables in an aggregate expression
+  context.
+- :meth:`~motor.motor_tornado.MotorCollection.aggregate` now supports
+  $merge and $out executing on secondaries on MongoDB >=5.0.
+  aggregate() now always obeys the collection's :attr:`read_preference` on
+  MongoDB >= 5.0.
+- :meth:`gridfs.grid_file.GridOut.seek` now returns the new position in the file, to
+  conform to the behavior of :meth:`io.IOBase.seek`.
+
+Issues Resolved
+...............
+
+See the `Motor 3.0 release notes in JIRA`_ for the list of resolved issues
+in this release.
+
+.. _Motor 3.0 release notes in JIRA: https://jira.mongodb.org/secure/ReleaseNote.jspa?projectId=11182&version=29710
 
 Motor 2.5.1
 -----------
@@ -1201,7 +1249,7 @@ If it's important to test that MongoDB is available before continuing
 your application's startup, use ``IOLoop.run_sync``::
 
     loop = tornado.ioloop.IOLoop.current()
-    client = motor.MotorClient(host, port)
+    client = motor.motor_tornado.MotorClient(host, port)
     try:
         loop.run_sync(client.open)
     except pymongo.errors.ConnectionFailure:
