@@ -5,9 +5,9 @@ Motor 3.0 Migration Guide
 
 Motor 3.0 brings a number of changes to Motor 2.0's API. The major version is
 required in order to bring support for PyMongo 4.0+.
-Since this is the first major version number in almost four years, it removes some APIs that have been deprecated in the time since Motor 2.0.
+To add compatibility with PyMongo 4, several methods were removed, as detailed below.
 Some of the underlying behaviors and method arguments have changed in PyMongo
-4.0 as well.  We highlight some of them below.
+4.0 as well.
 
 Follow this guide to migrate an existing application that had used Motor 2.x.
 
@@ -22,13 +22,13 @@ Upgrade to Motor 2.5
 
 The first step in migrating to Motor 3.0 is to upgrade to at least Motor 2.5.
 If your project has a
-requirements.txt file, add the line::
+``requirements.txt`` file, add the line::
 
   motor >= 2.5, < 3.0
 
 Python 3.7+
 -----------
-Motor 3.0 drops support for Python 3.5 and 3.6. Users who wish to upgrade to 2.x must first upgrade to Python 3.7+.
+Motor 3.0 drops support for Python 3.5 and 3.6. Users who wish to upgrade to 3.x must first upgrade to Python 3.7+.
 
 Enable Deprecation Warnings
 ---------------------------
@@ -44,7 +44,7 @@ Warnings can also be changed to errors::
   python -Wd -Werror <your application>
 
 Note that there are some deprecation warnings raised by Motor itself for
-APIs that are deprecated but not yet removed, like :meth:`~motor.MotorCollection.fetch_next`.
+APIs that are deprecated but not yet removed, like :meth:`~motor.motor_tornado.MotorCusor.fetch_next`.
 
 MotorClient
 -----------
@@ -100,33 +100,33 @@ replaced as noted in the 'Migration Notes' column.
 MotorClient.fsync is removed
 ............................
 
-Removed :meth:`~motor.MotorClient.fsync`. Run the
-`fsync command`_ directly with :meth:`~motor.MotorDatabase.command`
+Removed :meth:`~motor.motor_tornado.MotorClient.fsync`. Run the
+`fsync command`_ directly with :meth:`~motor.motor_tornado.MotorDatabase.command`
 instead. For example::
 
-    client.admin.command('fsync', lock=True)
+    await client.admin.command('fsync', lock=True)
 
 .. _fsync command: https://mongodb.com/docs/manual/reference/command/fsync/
 
 MotorClient.unlock is removed
 .............................
 
-Removed :meth:`~motor.MotorClient.unlock`. Run the
+Removed :meth:`~motor.motor_tornado.MotorClient.unlock`. Run the
 `fsyncUnlock command`_ directly with
-:meth:`~motor.MotorDatabase.command` instead. For example::
+:meth:`~motor.motor_tornado.MotorDatabase.command` instead. For example::
 
-     client.admin.command('fsyncUnlock')
+     await client.admin.command('fsyncUnlock')
 
 .. _fsyncUnlock command: https://mongodb.com/docs/manual/reference/command/fsyncUnlock/
 
 MotorClient.is_locked is removed
 ................................
 
-Removed :attr:`~motor.MotorClient.is_locked`. Run the
+Removed :attr:`~motor.motor_tornado.MotorClient.is_locked`. Run the
 `currentOp command`_ directly with
-:meth:`~motor.MotorDatabase.command` instead. For example::
+:meth:`~motor.motor_tornado.MotorDatabase.command` instead. For example::
 
-    is_locked = client.admin.command('currentOp').get('fsyncLock')
+    is_locked = await client.admin.command('currentOp').get('fsyncLock')
 
 .. _currentOp command: https://mongodb.com/docs/manual/reference/command/currentOp/
 
@@ -134,9 +134,9 @@ Removed :attr:`~motor.MotorClient.is_locked`. Run the
 MotorClient.max_bson_size/max_message_size/max_write_batch_size are removed
 ...........................................................................
 
-Removed :attr:`~motor.MotorClient.max_bson_size`,
-:attr:`~motor.MotorClient.max_message_size`, and
-:attr:`~motor.MotorClient.max_write_batch_size`. These helpers
+Removed :attr:`~motor.motor_tornado.MotorClient.max_bson_size`,
+:attr:`~motor.motor_tornado.MotorClient.max_message_size`, and
+:attr:`~motor.motor_tornado.MotorClient.max_write_batch_size`. These helpers
 were incorrect when in ``loadBalanced=true mode`` and ambiguous in clusters
 with mixed versions. Use the `hello command`_ to get the authoritative
 value from the remote server instead. Code like this::
@@ -147,7 +147,7 @@ value from the remote server instead. Code like this::
 
 can be changed to this::
 
-    doc = client.admin.command('hello')
+    doc = await client.admin.command('hello')
     max_bson_size = doc['maxBsonObjectSize']
     max_message_size = doc['maxMessageSizeBytes']
     max_write_batch_size = doc['maxWriteBatchSize']
@@ -158,17 +158,17 @@ MotorClient.event_listeners and other configuration option helpers are removed
 ..............................................................................
 
 The following client configuration option helpers are removed:
-- :attr:`~motor.MotorClient.event_listeners`.
-- :attr:`~motor.MotorClient.max_pool_size`.
-- :attr:`~motor.MotorClient.min_pool_size`.
-- :attr:`~motor.MotorClient.max_idle_time_ms`.
-- :attr:`~motor.MotorClient.local_threshold_ms`.
-- :attr:`~motor.MotorClient.server_selection_timeout`.
-- :attr:`~motor.MotorClient.retry_writes`.
-- :attr:`~motor.MotorClient.retry_reads`.
+- :attr:`~motor.motor_tornado.MotorClient.event_listeners`.
+- :attr:`~motor.motor_tornado.MotorClient.max_pool_size`.
+- :attr:`~motor.motor_tornado.MotorClient.min_pool_size`.
+- :attr:`~motor.motor_tornado.MotorClient.max_idle_time_ms`.
+- :attr:`~motor.motor_tornado.MotorClient.local_threshold_ms`.
+- :attr:`~motor.motor_tornado.MotorClient.server_selection_timeout`.
+- :attr:`~motor.motor_tornado.MotorClient.retry_writes`.
+- :attr:`~motor.motor_tornado.MotorClient.retry_reads`.
 
 These helpers have been replaced by
-:attr:`~motor.MotorClient.options`. Code like this::
+:attr:`~motor.motor_tornado.MotorClient.options`. Code like this::
 
     client.event_listeners
     client.local_threshold_ms
@@ -196,20 +196,20 @@ decodes datetime as naive by default.
 MotorClient cannot execute operations after ``close()``
 .......................................................
 
-:class:`~motor.MotorClient` cannot execute any operations
+:class:`~motor.motor_tornado.MotorClient` cannot execute any operations
 after being closed. The previous behavior would simply reconnect. However,
 now you must create a new instance.
 
 MotorClient raises exception when given more than one URI
 .........................................................
 
-:class:`~motor.MotorClient` now raises a :exc:`~pymongo.errors.ConfigurationError`
+:class:`~motor.motor_tornado.MotorClient` now raises a :exc:`~pymongo.errors.ConfigurationError`
 when more than one URI is passed into the ``hosts`` argument.
 
 MotorClient raises exception when given unescaped percent sign in login info
 ............................................................................
 
-:class:`~motor.MotorClient` now raises an
+:class:`~motor.motor_tornado.MotorClient` now raises an
 :exc:`~pymongo.errors.InvalidURI` exception
 when it encounters unescaped percent signs in username and password.
 
@@ -219,8 +219,8 @@ Database
 MotorDatabase.current_op is removed
 ...................................
 
-Removed :meth:`~motor.MotorDatabase.current_op`. Use
-:meth:`~motor.MotorDatabase.aggregate` instead with the
+Removed :meth:`~motor.motor_tornado.MotorDatabase.current_op`. Use
+:meth:`~motor.motor_tornado.MotorDatabase.aggregate` instead with the
 `$currentOp aggregation pipeline stage`_. Code like
 this::
 
@@ -228,21 +228,21 @@ this::
 
 can be changed to this::
 
-    ops = list(client.admin.aggregate([{'$currentOp': {}}]))
+    ops = await client.admin.aggregate([{'$currentOp': {}}]).to_list()
 
 .. _$currentOp aggregation pipeline stage: https://mongodb.com/docs/manual/reference/operator/aggregation/currentOp/
 
 MotorDatabase.profiling_level is removed
 ........................................
 
-Removed :meth:`~motor.MotorDatabase.profiling_level` which was deprecated in
+Removed :meth:`~motor.motor_tornado.MotorDatabase.profiling_level` which was deprecated in
 PyMongo 3.12. Use the `profile command`_ instead. Code like this::
 
   level = db.profiling_level()
 
 Can be changed to this::
 
-  profile = db.command('profile', -1)
+  profile = await db.command('profile', -1)
   level = profile['was']
 
 .. _profile command: https://mongodb.com/docs/manual/reference/command/profile/
@@ -250,32 +250,32 @@ Can be changed to this::
 MotorDatabase.set_profiling_level is removed
 ............................................
 
-Removed :meth:`~motor.MotorDatabase.set_profiling_level` which was deprecated in
+Removed :meth:`~motor.motor_tornado.MotorDatabase.set_profiling_level` which was deprecated in
 PyMongo 3.12. Use the `profile command`_ instead. Code like this::
 
   db.set_profiling_level(pymongo.ALL, filter={'op': 'query'})
 
 Can be changed to this::
 
-  res = db.command('profile', 2, filter={'op': 'query'})
+  res = await db.command('profile', 2, filter={'op': 'query'})
 
 MotorDatabase.profiling_info is removed
 .......................................
 
-Removed :meth:`~motor.MotorDatabase.profiling_info` which was deprecated in
+Removed :meth:`~motor.motor_tornado.MotorDatabase.profiling_info` which was deprecated in
 PyMongo 3.12. Query the `'system.profile' collection`_ instead. Code like this::
 
   profiling_info = db.profiling_info()
 
 Can be changed to this::
 
-  profiling_info = list(db['system.profile'].find())
+  profiling_info = await db['system.profile'].find().to_list()
 
 .. _'system.profile' collection: https://mongodb.com/docs/manual/reference/database-profiler/
 
 MotorDatabase.__bool__ raises NotImplementedError
 .................................................
-:class:`~motor.MotorDatabase` now raises an error upon evaluating as a
+:class:`~motor.motor_tornado.MotorDatabase` now raises an error upon evaluating as a
 Boolean. Code like this::
 
   if database:
@@ -293,10 +293,10 @@ MotorCollection
 MotorCollection.map_reduce and MotorCollection.inline_map_reduce are removed
 ............................................................................
 
-Removed :meth:`~motor.MotorCollection.map_reduce` and
-:meth:`~motor.MotorCollection.inline_map_reduce`.
-Migrate to :meth:`~motor.MotorCollection.aggregate` or run the
-`mapReduce command`_ directly with :meth:`~motor.MotorDatabase.command`
+Removed :meth:`~motor.motor_tornado.MotorCollection.map_reduce` and
+:meth:`~motor.motor_tornado.MotorCollection.inline_map_reduce`.
+Migrate to :meth:`~motor.motor_tornado.MotorCollection.aggregate` or run the
+`mapReduce command`_ directly with :meth:`~motor.motor_tornado.MotorDatabase.command`
 instead. For more guidance on this migration see:
 
 - https://mongodb.com/docs/manual/reference/map-reduce-to-aggregation-pipeline/
@@ -308,13 +308,13 @@ The modifiers parameter is removed
 ..................................
 
 Removed the ``modifiers`` parameter from
-:meth:`~`~motor.MotorCollection.find`,
-:meth:`~`~motor.MotorCollection.find_one`,
-:meth:`~`~motor.MotorCollection.find_raw_batches`, and
-:meth:`~motor.MotorCursor`. Pass the options directly to the method
+:meth:`~`~motor.motor_tornado.MotorCollection.find`,
+:meth:`~`~motor.motor_tornado.MotorCollection.find_one`,
+:meth:`~`~motor.motor_tornado.MotorCollection.find_raw_batches`, and
+:meth:`~motor.motor_tornado.MotorCursor`. Pass the options directly to the method
 instead. Code like this::
 
-  cursor = coll.find({}, modifiers={
+  cursor = await coll.find({}, modifiers={
       "$comment": "comment",
       "$hint": {"_id": 1},
       "$min": {"_id": 0},
@@ -326,7 +326,7 @@ instead. Code like this::
 
 can be changed to this::
 
-  cursor = coll.find(
+  cursor = await coll.find(
       {},
       comment="comment",
       hint={"_id": 1},
@@ -341,18 +341,18 @@ The hint parameter is required with min/max
 ...........................................
 
 The ``hint`` option is now required when using ``min`` or ``max`` queries
-with :meth:`~`~motor.MotorCollection.find` to ensure the query utilizes
+with :meth:`~`~motor.motor_tornado.MotorCollection.find` to ensure the query utilizes
 the correct index. For example, code like this::
 
-  cursor = coll.find({}, min={'x', min_value})
+  cursor = await coll.find({}, min={'x', min_value})
 
 can be changed to this::
 
-  cursor = coll.find({}, min={'x', min_value}, hint=[('x', ASCENDING)])
+  cursor = await coll.find({}, min={'x', min_value}, hint=[('x', ASCENDING)])
 
 MotorCollection.__bool__ raises NotImplementedError
 ...................................................
-:class:`~`~motor.MotorCollection` now raises an error upon evaluating
+:class:`~`~motor.motor_tornado.MotorCollection` now raises an error upon evaluating
 as a Boolean. Code like this::
 
   if collection:
@@ -366,18 +366,18 @@ You must now explicitly compare with None.
 MotorCollection.find returns entire document with empty projection
 ..................................................................
 Empty projections (eg {} or []) for
-:meth:`~`~motor.MotorCollection.find`, and
-:meth:`~`~motor.MotorCollection.find_one`
+:meth:`~`~motor.motor_tornado.MotorCollection.find`, and
+:meth:`~`~motor.motor_tornado.MotorCollection.find_one`
 are passed to the server as-is rather than the previous behavior which
 substituted in a projection of ``{"_id": 1}``. This means that an empty
 projection will now return the entire document, not just the ``"_id"`` field.
 To ensure that behavior remains consistent, code like this::
 
-  coll.find({}, projection={})
+  await coll.find({}, projection={})
 
 Can be changed to this::
 
-  coll.find({}, projection={"_id":1})
+  await coll.find({}, projection={"_id":1})
 
 
 SONManipulator is removed
@@ -392,9 +392,9 @@ Motor 3.0 removed :meth:`motor.MotorDatabase.add_son_manipulator`,
 :attr:`motor.MotorDatabase.incoming_manipulators`.
 
 Removed the ``manipulate`` parameter from
-:meth:`~motor.MotorCollection.find`,
-:meth:`~motor.MotorCollection.find_one`, and
-:meth:`~motor.MotorCursor`.
+:meth:`~motor.motor_tornado.MotorCollection.find`,
+:meth:`~motor.motor_tornado.MotorCollection.find_one`, and
+:meth:`~motor.motor_tornado.MotorCursor`.
 
 The :class:`pymongo.son_manipulator.SONManipulator` API has limitations as a
 technique for transforming your data and was deprecated in PyMongo 3.0.
@@ -416,8 +416,8 @@ GridFS changes
 disable_md5 parameter is removed
 ................................
 
-Removed the `disable_md5` option for :class:`~motor.gridfs.MotorGridFSBucket` and
-:class:`~motor.gridfs.MotorGridFS`. GridFS no longer generates checksums.
+Removed the `disable_md5` option for :class:`~motor.motor_tornado.gridfs.MotorGridFSBucket` and
+:class:`~motor.motor_tornado.gridfs.MotorGridFS`. GridFS no longer generates checksums.
 Applications that desire a file digest should implement it outside GridFS
 and store it with other file metadata. For example::
 
@@ -442,7 +442,7 @@ Encoding a UUID raises an error by default
 
 The default uuid_representation for :class:`~bson.codec_options.CodecOptions`,
 :class:`~bson.json_util.JSONOptions`, and
-:class:`~motor.MotorClient` has been changed from
+:class:`~motor.motor_tornado.MotorClient` has been changed from
 :data:`bson.binary.UuidRepresentation.PYTHON_LEGACY` to
 :data:`bson.binary.UuidRepresentation.UNSPECIFIED`. Attempting to encode a
 :class:`uuid.UUID` instance to BSON or JSON now produces an error by default.
