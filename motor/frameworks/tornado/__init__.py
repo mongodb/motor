@@ -129,7 +129,7 @@ def pymongo_class_wrapper(f, pymongo_class):
 
 def yieldable(future):
     warnings.warn(
-        "The yieldable function is deprecated and will be removed in Motor 3.0",
+        "The yieldable function is deprecated and may be removed in a future major release.",
         DeprecationWarning,
         stacklevel=2,
     )

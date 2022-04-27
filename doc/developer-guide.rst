@@ -45,7 +45,7 @@ See the ``frameworks/tornado`` and ``frameworks/asyncio`` modules.
    list above are not used internally in Motor. Instead of being removed
    from the codebase, they have been left in a deprecated state to avoid
    breaking any libraries built on top of Motor. These deprecated functions
-   will be removed in Motor 3.0.
+   may be removed in a future major release.
 
 A framework-specific class, like ``MotorClient`` for Tornado or
 ``AsyncIOMotorClient`` for asyncio, is created by the

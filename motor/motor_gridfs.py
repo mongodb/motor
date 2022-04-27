@@ -22,6 +22,7 @@ import pymongo
 import pymongo.errors
 from gridfs import DEFAULT_CHUNK_SIZE, grid_file
 
+from motor import docstrings
 from motor.core import AgnosticCollection, AgnosticCursor, AgnosticDatabase
 from motor.metaprogramming import (
     AsyncCommand,
@@ -42,6 +43,7 @@ class AgnosticGridOutCursor(AgnosticCursor):
 
     def next_object(self):
         """**DEPRECATED** - Get next GridOut object from cursor."""
+        # Note: the super() call will raise a warning for the deprecation.
         grid_out = super().next_object()
         if grid_out:
             grid_out_class = create_class_with_framework(
@@ -316,16 +318,24 @@ class AgnosticGridFSBucket(object):
     __motor_class_name__ = "MotorGridFSBucket"
     __delegate_class__ = gridfs.GridFSBucket
 
-    delete = AsyncCommand()
-    download_to_stream = AsyncCommand()
-    download_to_stream_by_name = AsyncCommand()
-    open_download_stream = AsyncCommand().wrap(gridfs.GridOut)
-    open_download_stream_by_name = AsyncCommand().wrap(gridfs.GridOut)
-    open_upload_stream = DelegateMethod().wrap(gridfs.GridIn)
-    open_upload_stream_with_id = DelegateMethod().wrap(gridfs.GridIn)
-    rename = AsyncCommand()
-    upload_from_stream = AsyncCommand()
-    upload_from_stream_with_id = AsyncCommand()
+    delete = AsyncCommand(doc=docstrings.gridfs_delete_doc)
+    download_to_stream = AsyncCommand(doc=docstrings.gridfs_download_to_stream_doc)
+    download_to_stream_by_name = AsyncCommand(doc=docstrings.gridfs_download_to_stream_by_name_doc)
+    open_download_stream = AsyncCommand(doc=docstrings.gridfs_open_download_stream_doc).wrap(
+        gridfs.GridOut
+    )
+    open_download_stream_by_name = AsyncCommand(
+        doc=docstrings.gridfs_open_download_stream_by_name_doc
+    ).wrap(gridfs.GridOut)
+    open_upload_stream = DelegateMethod(doc=docstrings.gridfs_open_upload_stream_doc).wrap(
+        gridfs.GridIn
+    )
+    open_upload_stream_with_id = DelegateMethod(
+        doc=docstrings.gridfs_open_upload_stream_with_id_doc
+    ).wrap(gridfs.GridIn)
+    rename = AsyncCommand(doc=docstrings.gridfs_rename_doc)
+    upload_from_stream = AsyncCommand(doc=docstrings.gridfs_upload_from_stream_doc)
+    upload_from_stream_with_id = AsyncCommand(doc=docstrings.gridfs_upload_from_stream_with_id_doc)
 
     def __init__(
         self,
