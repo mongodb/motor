@@ -85,6 +85,7 @@ Contents
    examples/index
    changelog
    migrate-to-motor-2
+   migrate-to-motor-3
    developer-guide
    contributors
 

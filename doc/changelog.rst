@@ -6,12 +6,90 @@ Changelog
 Motor 3.0
 ---------
 
-Motor 3.0 requires PyMongo 4.0+ and Python 3.7+.
-
+Motor 3.0 adds support for PyMongo 4.0+.  It inherits a number
+of breaking API changes from PyMongo 4.0.
 
 Breaking Changes
 ~~~~~~~~~~~~~~~~
-- Prevent use of :class:`~pymongo.database.Database` and :class:`~pymongo.collection.Collection` in boolean expressions.
+- Requires PyMongo 4.0+.
+- Removed support for Python 3.5 and 3.6. Python 3.7+ is now required.
+- Removed the ``socketKeepAlive`` keyword argument to
+  :class:`~motor.MotorClient`.
+- Removed :meth:`motor.MotorClient.fsync`,
+  :meth:`motor.MotorClient.unlock`, and
+  :attr:`motor.MotorClient.is_locked`.
+- Removed :attr:`motor.MotorClient.max_bson_size`.
+- Removed :attr:`motor.MotorClient.max_message_size`.
+- Removed :attr:`motor.MotorClient.max_write_batch_size`.
+- Removed :attr:`motor.MotorClient.event_listeners`.
+- Removed :attr:`motor.MotorClient.max_pool_size`.
+- Removed :attr:`motor.MotorClient.max_idle_time_ms`.
+- Removed :attr:`motor.MotorClient.local_threshold_ms`.
+- Removed :attr:`motor.MotorClient.server_selection_timeout`.
+- Removed :attr:`motor.MotorClient.retry_writes`.
+- Removed :attr:`motor.MotorClient.retry_reads`.
+- Removed support for database profiler helpers
+  :meth:`~motor.MotorDatabase.profiling_level`,
+  :meth:`~motor.MotorDatabase.set_profiling_level`,
+  and :meth:`~motor.MotorDatabase.profiling_info`. Instead, users
+  should run the profile command with the
+  :meth:`~motor.MotorDatabase.command` helper directly.
+- Removed :attr:`pymongo.OFF`, :attr:`pymongo.SLOW_ONLY`, and
+  :attr:`pymongo.ALL`.
+- Removed :meth:`motor.MotorCollection.map_reduce` and
+  :meth:`motor.MotorCollection.inline_map_reduce`.
+- Removed the ``useCursor`` option for
+  :meth:`~motor.MotorCollection.aggregate`.
+- Removed :mod:`pymongo.son_manipulator`,
+  :meth:`motor.MotorDatabase.add_son_manipulator`,
+  :attr:`motor.MotorDatabase.outgoing_copying_manipulators`,
+  :attr:`motor.MotorDatabase.outgoing_manipulators`,
+  :attr:`motor.MotorDatabase.incoming_copying_manipulators`, and
+  :attr:`motor.MotorDatabase.incoming_manipulators`.
+- Removed the ``manipulate`` and ``modifiers`` parameters from
+  :meth:`~motor.MotorCollection.find`,
+  :meth:`~motor.MotorCollection.find_one`,
+  :meth:`~motor.MotorCollection.find_raw_batches`, and
+  :meth:`~motor.MotorCursor`.
+- ``directConnection`` URI option and keyword argument to :class:`~motor.MotorClient`
+  defaults to ``False`` instead of ``None``, allowing for the automatic
+  discovery of replica sets. This means that if you
+  want a direct connection to a single server you must pass
+  ``directConnection=True`` as a URI option or keyword argument.
+- The ``hint`` option is now required when using ``min`` or ``max`` queries
+  with :meth:`~motor.MotorCollection.find`.
+- When providing a "mongodb+srv://" URI to
+  :class:`~motor.MotorClient` constructor you can now use the
+  ``srvServiceName`` URI option to specify your own SRV service name.
+- :class:`~motor.MotorCollection` and :class:`~motor.MotorDatabase`
+  now raises an error upon evaluating as a Boolean, please use the
+  syntax ``if collection is not None:`` or ``if database is not None:`` as
+  opposed to
+  the previous syntax which was simply ``if collection:`` or ``if database:``.
+  You must now explicitly compare with None.
+- :class:`~motor.MotorClient` cannot execute any operations
+  after being closed. The previous behavior would simply reconnect. However,
+  now you must create a new instance.
+- Empty projections (eg {} or []) for
+  :meth:`~motor.MotorCollection.find`, and
+  :meth:`~motor.MotorCollection.find_one`
+  are passed to the server as-is rather than the previous behavior which
+  substituted in a projection of ``{"_id": 1}``. This means that an empty
+  projection will now return the entire document, not just the ``"_id"`` field.
+- :class:`~motor.MotorClient` now raises a
+  :exc:`~pymongo.errors.ConfigurationError` when more than one URI is passed
+  into the ``hosts`` argument.
+- :class:`~motor.MotorClient`` now raises an
+  :exc:`~pymongo.errors.InvalidURI` exception
+  when it encounters unescaped percent signs in username and password when
+  parsing MongoDB URIs.
+- Comparing two :class:`~motor.MotorClient` instances now
+  uses a set of immutable properties rather than
+  :attr:`~motor.MotorClient.address` which can change.
+- Removed the `disable_md5` parameter for :class:`~gridfs.GridFSBucket` and
+  :class:`~gridfs.GridFS`. See :ref:`removed-gridfs-checksum` for details.
+- PyMongoCrypt 1.2.0 or later is now required for client side field level
+  encryption support.
 
 Motor 2.5.1
 -----------
