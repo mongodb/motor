@@ -14,7 +14,7 @@
 
 """Motor, an asynchronous driver for MongoDB."""
 
-version_tuple = (2, 5, 2, "dev0")
+version_tuple = (3, 0, 0, "0")
 
 
 def get_version_string():
