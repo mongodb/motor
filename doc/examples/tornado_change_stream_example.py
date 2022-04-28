@@ -68,7 +68,10 @@ class ChangesHandler(tornado.websocket.WebSocketHandler):
 
         # Each change notification has a binary _id. Use it to make an HTML
         # element id, then remove it.
-        html_id = urlsafe_b64encode(change["_id"]["_data"]).decode().rstrip("=")
+        data = change["_id"]["_data"]
+        if not isinstance(data, bytes):
+            data = data.encode("utf-8")
+        html_id = urlsafe_b64encode(data).decode().rstrip("=")
         change.pop("_id")
         change["html"] = '<div id="change-%s"><pre>%s</pre></div>' % (
             html_id,
@@ -104,15 +107,13 @@ def main():
     app = Application()
     app.listen(options.port)
     loop = tornado.ioloop.IOLoop.current()
+
     # Start watching collection for changes.
-    loop.add_callback(watch, collection)
     try:
-        loop.start()
+        loop.run_sync(lambda: watch(collection))
     except KeyboardInterrupt:
-        pass
-    finally:
-        if change_stream is not None:
-            change_stream.close()
+        if change_stream:
+            loop.run_sync(change_stream.close)
 
 
 if __name__ == "__main__":

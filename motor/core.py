@@ -1065,23 +1065,17 @@ class AgnosticCollection(AgnosticBaseProperties):
           def main():
               loop = IOLoop.current()
               # Start watching collection for changes.
-              loop.add_callback(watch_collection)
-              try:
-                  loop.start()
-              except KeyboardInterrupt:
-                  pass
-              finally:
-                  if change_stream is not None:
-                      change_stream.close()
+            try:
+                loop.run_sync(watch_collection)
+            except KeyboardInterrupt:
+                if change_stream:
+                   loop.run_sync(change_stream.close)
 
           # asyncio
           try:
-              asyncio.run(watch_collection)
+              asyncio.run(watch_collection())
           except KeyboardInterrupt:
-                  pass
-          finally:
-              if change_stream is not None:
-                  change_stream.close()
+              pass
 
         The :class:`~MotorChangeStream` async iterable blocks
         until the next change document is returned or an error is raised. If
