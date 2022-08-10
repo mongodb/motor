@@ -31,15 +31,6 @@ except ImportError:
     tornado = None
 else:
     # For backwards compatibility with Motor 0.4, export Motor's Tornado classes
-    # at module root. This may change in the future. First get __all__.
-    # Make "from motor import *" the same as "from motor.motor_tornado import *"
-    # Now some classes that aren't in __all__ but might be expected.
+    # at module root. This may change in the future.
     from .motor_tornado import *  # noqa: F403
-    from .motor_tornado import (
-        MotorCollection,
-        MotorDatabase,
-        MotorGridFSBucket,
-        MotorGridIn,
-        MotorGridOut,
-        __all__,
-    )
+    from .motor_tornado import __all__
