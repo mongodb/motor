@@ -894,6 +894,7 @@ buildvariants:
     ssl: "*"
   tasks:
      - ".latest"
+     - ".6.0"
 
 - matrix_name: "enterprise-auth"
   display_name: "Enterprise Auth-${tox-env}"

@@ -18,6 +18,8 @@ import asyncio
 import copy
 import threading
 import time
+import unittest
+
 from test import SkipTest, env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.utils import get_async_test_timeout, wait_until
@@ -181,6 +183,7 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
             pass
 
     @asyncio_test
+    @unittest.skip("Failing due to: https://jira.mongodb.org/browse/PYTHON-3389.")
     async def test_missing_id(self):
         coll = self.collection
         change_stream = coll.watch([{"$project": {"_id": 0}}])
@@ -188,7 +191,8 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         self.wait_and_insert(change_stream)
         with self.assertRaises((InvalidOperation, OperationFailure)):
             await future
-
+        with self.assertRaises(OperationFailure):
+            await change_stream.next()
         # The cursor should now be closed.
         with self.assertRaises(StopAsyncIteration):
             await change_stream.next()
