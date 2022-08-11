@@ -775,18 +775,18 @@ axes:
            TOX_ENV: "asyncio-py310"
            PYTHON_BINARY: "/opt/python/3.10/bin/python3"
 
-  # Test Python 3.7 only on Mac.
+  # Test Python 3.8 only on Mac.
   - id: tox-env-osx
     display_name: "Tox Env OSX"
     values:
-      - id: "tornado5-py37"
+      - id: "tornado5-py38"
         variables:
-           TOX_ENV: "tornado5-py37"
-           PYTHON_BINARY: "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3"
-      - id: "tornado_git-py37"
+           TOX_ENV: "tornado5-py38"
+           PYTHON_BINARY: "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
+      - id: "tornado_git-py38"
         variables:
-           TOX_ENV: "tornado_git-py37"
-           PYTHON_BINARY: "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3"
+           TOX_ENV: "tornado_git-py38"
+           PYTHON_BINARY: "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
 
   - id: tox-env-win
     display_name: "Tox Env Windows"
@@ -833,7 +833,7 @@ axes:
         run_on: "macos-1100"
         variables:
            INSTALL_TOX: true
-           VIRTUALENV: "/Library/Frameworks/Python.framework/Versions/3.7/bin/python3 -m venv"
+           VIRTUALENV: "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3 -m venv"
 
 buildvariants:
 
