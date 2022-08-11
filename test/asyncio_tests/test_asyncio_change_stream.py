@@ -190,8 +190,7 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
         self.wait_and_insert(change_stream)
         with self.assertRaises((InvalidOperation, OperationFailure)):
             await future
-        with self.assertRaises(OperationFailure):
-            await change_stream.next()
+
         # The cursor should now be closed.
         with self.assertRaises(StopAsyncIteration):
             await change_stream.next()

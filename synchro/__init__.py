@@ -52,6 +52,7 @@ from pymongo import (
     write_concern,
 )
 
+# Added for API compat with pymongo.
 try:
     from pymongo import _csot
 except ImportError:
