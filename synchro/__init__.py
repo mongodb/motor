@@ -51,6 +51,7 @@ from pymongo import (
     ssl_support,
     write_concern,
 )
+
 try:
     from pymongo import _csot
 except ImportError:
