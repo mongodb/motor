@@ -51,6 +51,12 @@ from pymongo import (
     ssl_support,
     write_concern,
 )
+
+# Added for API compat with pymongo.
+try:
+    from pymongo import _csot
+except ImportError:
+    pass
 from pymongo.auth import *
 from pymongo.auth import _build_credentials_tuple, _password_digest
 from pymongo.client_session import TransactionOptions, _TxnState

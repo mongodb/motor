@@ -17,6 +17,7 @@
 import copy
 import threading
 import time
+import unittest
 from test import SkipTest, env
 from test.tornado_tests import MotorTest
 from test.utils import get_async_test_timeout, wait_until
@@ -168,6 +169,7 @@ class MotorChangeStreamTest(MotorTest):
             pass
 
     @gen_test
+    @unittest.skip("Failing due to: https://jira.mongodb.org/browse/PYTHON-3389.")
     async def test_missing_id(self):
         coll = self.collection
         change_stream = coll.watch([{"$project": {"_id": 0}}])
