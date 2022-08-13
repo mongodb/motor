@@ -558,6 +558,29 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             lst = await method().batch_size(2).to_list(length=1)
             self.assertEqual([{"_id": 0}, {"_id": 1}], bson.decode_all(lst[0]))
 
+    @asyncio_test
+    async def test_context_manager(self):
+        coll = self.collection
+        await coll.insert_many({"_id": i} for i in range(10))
+
+        find = partial(coll.find, {})
+        agg = partial(coll.aggregate, [{"$sort": {"_id": 1}}])
+        find_raw_batches = partial(coll.find_raw_batches, {})
+        agg_raw_batches = partial(coll.aggregate_raw_batches, [{"$sort": {"_id": 1}}])
+        for method in find, agg, find_raw_batches, agg_raw_batches:
+            contract_cursor = method().batch_size(2)
+            async with method().batch_size(2) as cursor:
+                self.assertFalse(cursor.started, "Cursor shouldn't start immediately")
+                await cursor.fetch_next
+                record = cursor.next_object()
+                self.assertEqual({"_id": 0}, bson.decode_all(record)[0] if type(record) is bytes else record)
+                self.assertTrue(cursor.started)
+                self.assertFalse(cursor.closed)
+            self.assertFalse(contract_cursor.closed)
+            self.assertTrue(cursor.closed)
+            await contract_cursor.close()
+            self.assertTrue(contract_cursor.closed)
+
 
 class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
     def setUp(self):
