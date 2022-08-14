@@ -568,18 +568,19 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         find_raw_batches = partial(coll.find_raw_batches, {})
         agg_raw_batches = partial(coll.aggregate_raw_batches, [{"$sort": {"_id": 1}}])
         for method in find, agg, find_raw_batches, agg_raw_batches:
-            contract_cursor = method().batch_size(2)
+            contrast_cursor = method().batch_size(2)
             async with method().batch_size(2) as cursor:
                 self.assertFalse(cursor.started, "Cursor shouldn't start immediately")
-                await cursor.fetch_next
-                record = cursor.next_object()
+                with self.assertWarns(DeprecationWarning):
+                    await cursor.fetch_next
+                    record = cursor.next_object()
                 self.assertEqual({"_id": 0}, bson.decode_all(record)[0] if type(record) is bytes else record)
                 self.assertTrue(cursor.started)
                 self.assertFalse(cursor.closed)
-            self.assertFalse(contract_cursor.closed)
+            self.assertFalse(contrast_cursor.closed)
             self.assertTrue(cursor.closed)
-            await contract_cursor.close()
-            self.assertTrue(contract_cursor.closed)
+            await contrast_cursor.close()
+            self.assertTrue(contrast_cursor.closed)
 
 
 class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
