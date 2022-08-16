@@ -812,9 +812,9 @@ axes:
         run_on: "rhel62-small"
         variables:
            TOX_BINARY: "/opt/python/3.7/bin/tox"
-      - id: "amazon1-2018"
-        display_name: "Linux"
-        run_on: "amazon1-2018-test"
+      - id: "ubuntu-18"
+        display_name: "Ubuntu 18.04"
+        run_on: "ubuntu1804-small"
         variables:
            TOX_BINARY: "/opt/python/3.7/bin/tox"
       - id: "ubuntu-20"
@@ -841,7 +841,7 @@ buildvariants:
 - matrix_name: "main"
   display_name: "${os}-${tox-env}-${ssl}"
   matrix_spec:
-    os: "amazon1-2018"
+    os: "ubuntu-18"
     tox-env: "*"
     ssl: "*"
   exclude_spec:
