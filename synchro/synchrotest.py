@@ -173,6 +173,8 @@ excluded_tests = [
     "*.test_iteration",
     # MD5 is deprecated
     "*.test_md5",
+    # Causes a deadlock
+    "TestFork.test_topology_reset",
 ]
 
 

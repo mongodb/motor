@@ -1922,6 +1922,15 @@ class AgnosticClientEncryption(AgnosticBase):
     decrypt = AsyncCommand()
     close = AsyncCommand(doc=docstrings.close_doc)
 
+    # Key Management API
+    rewrap_many_data_key = AsyncCommand()
+    delete_key = AsyncCommand()
+    get_key = AsyncCommand()
+    get_keys = AsyncCommand()
+    add_key_alt_name = AsyncCommand()
+    get_key_by_alt_name = AsyncCommand()
+    remove_key_alt_name = AsyncCommand()
+
     def __init__(
         self, kms_providers, key_vault_namespace, key_vault_client, codec_options, io_loop=None
     ):
