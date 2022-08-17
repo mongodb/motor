@@ -308,7 +308,10 @@ Metadata set on the file appears as attributes on a
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.close()
+        if exc_type is None:
+            await self.close()
+        else:
+            object.__setattr__(self, "_closed", True)
 
     def get_io_loop(self):
         return self.io_loop
