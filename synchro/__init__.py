@@ -646,7 +646,7 @@ class GridFSBucket(Synchro):
 
 class GridIn(Synchro):
     __delegate_class__ = motor.MotorGridIn
-    _chunk_number = SynchroProperty("_chunk_number")
+    _chunk_number = SynchroProperty()
 
     def __init__(self, collection, **kwargs):
         """Can be created with collection and kwargs like a PyMongo GridIn,
