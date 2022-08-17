@@ -574,7 +574,9 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
                 with self.assertWarns(DeprecationWarning):
                     await cursor.fetch_next
                     record = cursor.next_object()
-                self.assertEqual({"_id": 0}, bson.decode_all(record)[0] if type(record) is bytes else record)
+                self.assertEqual(
+                    {"_id": 0}, bson.decode_all(record)[0] if type(record) is bytes else record
+                )
                 self.assertTrue(cursor.started)
                 self.assertFalse(cursor.closed)
             self.assertFalse(contrast_cursor.closed)
