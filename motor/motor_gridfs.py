@@ -227,7 +227,6 @@ class AgnosticGridIn(object):
     write = AsyncCommand().unwrap("MotorGridOut")
     writeable = DelegateMethod()
     writelines = AsyncCommand().unwrap("MotorGridOut")
-    _chunk_number = ReadOnlyProperty("_chunk_number")
     set = AsyncCommand(
         attr_name="__setattr__",
         doc="""
