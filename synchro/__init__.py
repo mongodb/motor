@@ -34,6 +34,8 @@ from gridfs.grid_file import (
     DEFAULT_CHUNK_SIZE,
     _clear_entity_type_registry,
 )
+
+# Work around circular imports.
 from pymongo import *
 from pymongo import (
     GEOSPHERE,
@@ -44,7 +46,10 @@ from pymongo import (
     compression_support,
     encryption_options,
     errors,
+    event_loggers,
+    message,
     operations,
+    read_preferences,
     saslprep,
     server_selectors,
     server_type,
@@ -73,6 +78,7 @@ from pymongo.encryption_options import _HAVE_PYMONGOCRYPT
 from pymongo.errors import *
 from pymongo.event_loggers import *
 from pymongo.helpers import _check_command_response
+from pymongo.lock import _create_lock
 from pymongo.message import (
     _COMMAND_OVERHEAD,
     _CursorAddress,
@@ -647,6 +653,7 @@ class GridFSBucket(Synchro):
 class GridIn(Synchro):
     __delegate_class__ = motor.MotorGridIn
     _chunk_number = SynchroProperty()
+    _closed = SynchroProperty()
 
     def __init__(self, collection, **kwargs):
         """Can be created with collection and kwargs like a PyMongo GridIn,
@@ -668,7 +675,11 @@ class GridIn(Synchro):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
+        if exc_type is None:
+            self.close()
+        else:
+            object.__setattr__(self, "_closed", True)
+        return False
 
 
 class SynchroGridOutProperty(object):

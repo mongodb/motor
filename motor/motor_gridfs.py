@@ -312,6 +312,7 @@ Metadata set on the file appears as attributes on a
             await self.close()
         else:
             object.__setattr__(self, "_closed", True)
+        return False
 
     def get_io_loop(self):
         return self.io_loop
