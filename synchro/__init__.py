@@ -675,7 +675,7 @@ class GridIn(Synchro):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        return self.synchronize(self.delegate.__aexit__)()
+        return self.synchronize(self.delegate.__aexit__)(exc_type, exc_val, exc_tb)
 
 
 class SynchroGridOutProperty(object):
