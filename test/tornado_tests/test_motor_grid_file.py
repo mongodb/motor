@@ -366,6 +366,16 @@ class MotorGridFileTest(MotorTest):
             self.assertEqual(content_length, handler.n_written)
             await fs.delete(_id)
 
+    @gen_test
+    async def test_exception_closed(self):
+        contents = b"Imagine this is some important data..."
+        with self.assertRaises(ConnectionError):
+            async with motor.MotorGridIn(self.db.fs, _id="foo", bar="baz") as infile:
+                infile.write(contents)
+                raise ConnectionError("Test exception")
+
+        self.assertTrue(infile.closed)
+
 
 if __name__ == "__main__":
     unittest.main()
