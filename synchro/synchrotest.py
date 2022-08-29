@@ -150,9 +150,6 @@ excluded_tests = [
     "*.test_aggregate_cursor_blocks",
     # Can't run these tests because they use threads.
     "*.test_ignore_stale_connection_errors",
-    "*.test_discovery_and_monitoring_integration_find_shutdown_error_Concurrent_shutdown_error_on_find",
-    "*.test_discovery_and_monitoring_integration_insert_shutdown_error_Concurrent_shutdown_error_on_insert",
-    "*.test_discovery_and_monitoring_integration_pool_cleared_error_PoolClearedError_does_not_mark_server_unknown",
     "*.test_pool_paused_error_is_retryable",
     # Needs synchro.GridFS class, see MOTOR-609.
     "TestTransactions.test_gridfs_does_not_support_transactions",
@@ -163,8 +160,6 @@ excluded_tests = [
     "*.test_collection_helpers",
     "*.test_database_helpers",
     "*.test_client_helpers",
-    # Requires kmip server.
-    "*.test_spec_kmipKMS_Insert_a_document_with_auto_encryption_using_KMIP_KMS_provider",
     # This test is too slow given all of the wrapping logic.
     "*.test_transaction_starts_with_batched_write",
     # This test is too flaky given all the wrapping logic.
@@ -173,8 +168,10 @@ excluded_tests = [
     "*.test_iteration",
     # MD5 is deprecated
     "*.test_md5",
-    # Causes a deadlock
-    "TestFork.test_topology_reset",
+    # Causes a deadlock.
+    "TestFork.*",
+    # Also causes a deadlock
+    "TestClientSimple.test_fork",
 ]
 
 

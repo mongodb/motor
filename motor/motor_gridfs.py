@@ -227,6 +227,7 @@ class AgnosticGridIn(object):
     write = AsyncCommand().unwrap("MotorGridOut")
     writeable = DelegateMethod()
     writelines = AsyncCommand().unwrap("MotorGridOut")
+    _exit = AsyncCommand("__exit__")
     set = AsyncCommand(
         attr_name="__setattr__",
         doc="""
@@ -308,7 +309,7 @@ Metadata set on the file appears as attributes on a
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.close()
+        await self._exit(exc_type, exc_val, exc_tb)
 
     def get_io_loop(self):
         return self.io_loop

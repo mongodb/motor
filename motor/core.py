@@ -1252,6 +1252,13 @@ class AgnosticBaseCursor(AgnosticBase):
 
     __anext__ = next
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self.delegate:
+            await self.close()
+
     def _get_more(self):
         """Initial query or getMore. Returns a Future."""
         if not self.alive:
