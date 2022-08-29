@@ -675,11 +675,7 @@ class GridIn(Synchro):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is None:
-            self.close()
-        else:
-            object.__setattr__(self, "_closed", True)
-        return False
+        return self.synchronize(self.delegate.__aexit__)()
 
 
 class SynchroGridOutProperty(object):
