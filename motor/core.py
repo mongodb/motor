@@ -169,6 +169,7 @@ class AgnosticClient(AgnosticBaseProperties):
         session=None,
         start_after=None,
         comment=None,
+        full_document_before_change=None,
     ):
         """Watch changes on this cluster.
 
@@ -211,9 +212,14 @@ class AgnosticClient(AgnosticBaseProperties):
             This option and `resume_after` are mutually exclusive.
           - `comment` (optional): A user-provided comment to attach to this
             command.
+          - `full_document_before_change`: Allowed values: `whenAvailable` and `required`. Change events
+             may now result in a `fullDocumentBeforeChange` response field.
 
         :Returns:
           A :class:`~MotorChangeStream`.
+
+        .. versionchanged:: 3.1
+           Added ``full_document_before_change`` parameter.
 
         .. versionchanged:: 3.0
            Added ``comment`` parameter.
@@ -242,6 +248,7 @@ class AgnosticClient(AgnosticBaseProperties):
             session,
             start_after,
             comment,
+            full_document_before_change,
         )
 
     def __getattr__(self, name):
@@ -621,6 +628,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         session=None,
         start_after=None,
         comment=None,
+        full_document_before_change=None,
     ):
         """Watch changes on this database.
 
@@ -663,9 +671,14 @@ class AgnosticDatabase(AgnosticBaseProperties):
             This option and `resume_after` are mutually exclusive.
           - `comment` (optional): A user-provided comment to attach to this
             command.
+          - `full_document_before_change`: Allowed values: `whenAvailable` and `required`. Change events
+             may now result in a `fullDocumentBeforeChange` response field.
 
         :Returns:
           A :class:`~MotorChangeStream`.
+
+        .. versionchanged:: 3.1
+           Added ``full_document_before_change`` parameter.
 
         .. versionchanged:: 3.0
            Added ``comment`` parameter.
@@ -694,6 +707,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             session,
             start_after,
             comment,
+            full_document_before_change,
         )
 
     @property
@@ -1032,6 +1046,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         session=None,
         start_after=None,
         comment=None,
+        full_document_before_change=None,
     ):
         """Watch changes on this collection.
 
@@ -1129,11 +1144,16 @@ class AgnosticCollection(AgnosticBaseProperties):
             This option and `resume_after` are mutually exclusive.
           - `comment` (optional): A user-provided comment to attach to this
             command.
+          - `full_document_before_change`: Allowed values: `whenAvailable` and `required`. Change events
+             may now result in a `fullDocumentBeforeChange` response field.
 
         :Returns:
           A :class:`~MotorChangeStream`.
 
         See the :ref:`tornado_change_stream_example`.
+
+        .. versionchanged:: 3.1
+           Added ``full_document_before_change`` parameter.
 
         .. versionchanged:: 3.0
            Added ``comment`` parameter.
@@ -1165,6 +1185,7 @@ class AgnosticCollection(AgnosticBaseProperties):
             session,
             start_after,
             comment,
+            full_document_before_change,
         )
 
     def list_indexes(self, session=None, **kwargs):
@@ -1764,6 +1785,7 @@ class AgnosticChangeStream(AgnosticBase):
         session,
         start_after,
         comment,
+        full_document_before_change,
     ):
         super().__init__(delegate=None)
         # The "target" object is a client, database, or collection.
@@ -1779,6 +1801,7 @@ class AgnosticChangeStream(AgnosticBase):
             "session": session,
             "start_after": start_after,
             "comment": comment,
+            "full_document_before_change": full_document_before_change,
         }
 
     def _lazy_init(self):
