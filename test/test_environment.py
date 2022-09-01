@@ -52,6 +52,12 @@ except ImportError:
     HAVE_AIOHTTP = False
     aiohttp = None
 
+HAVE_PYMONGOCRYPT = True
+try:
+    import pymongocrypt  # noqa: F401
+except ImportError:
+    HAVE_PYMONGOCRYPT = False
+
 
 # Copied from PyMongo.
 def partition_node(node):
@@ -294,6 +300,7 @@ class TestEnvironment(object):
         def make_wrapper(f):
             @wraps(f)
             def wrap(*args, **kwargs):
+                assert self.initialized
                 if condition():
                     return f(*args, **kwargs)
                 raise SkipTest(msg)
@@ -340,6 +347,14 @@ class TestEnvironment(object):
         *Might* because this does not test the FCV.
         """
         return self.require(self.supports_transactions, "Transactions are not supported", func=func)
+
+    def require_csfle(self, func):
+        """Run a test only if the deployment supports CSFLE."""
+        return self.require(
+            lambda: HAVE_PYMONGOCRYPT and self.version >= Version(4, 2),
+            "CSFLE requires pymongocrypt and MongoDB >=4.2",
+            func=func,
+        )
 
     def create_user(self, dbname, user, pwd=None, roles=None, **kwargs):
         kwargs["writeConcern"] = {"w": self.w}
