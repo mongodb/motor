@@ -31,20 +31,11 @@ KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
 
 OPTS = CodecOptions(uuid_representation=STANDARD)
 
-try:
-    import pymongocrypt  # noqa: F401
 
-    _HAVE_PYMONGOCRYPT = True
-except ImportError:
-    _HAVE_PYMONGOCRYPT = False
-
-
-@env.require_version_min(4, 2, -1)
 class TestExplicitSimple(AsyncIOTestCase):
+    @env.require_csfle
     def setUp(self):
         super().setUp()
-        if not _HAVE_PYMONGOCRYPT:
-            self.fail("PyMongoCrypt is a required dependency")
 
     def assertEncrypted(self, val):
         self.assertIsInstance(val, Binary)
@@ -142,7 +133,6 @@ class TestExplicitSimple(AsyncIOTestCase):
         client_encryption_legacy = AsyncIOMotorClientEncryption(
             KMS_PROVIDERS, "keyvault.datakeys", client, opts
         )
-        # self.addCleanup(client_encryption_legacy.close)
 
         # Create the encrypted field's data key.
         key_id = await client_encryption_legacy.create_data_key("local")
@@ -168,9 +158,13 @@ class TestExplicitSimple(AsyncIOTestCase):
         # Test that codec_options is applied during encryption.
         self.assertNotEqual(encrypted_standard, encrypted_legacy)
         # Test that codec_options is applied during decryption.
-        self.assertEqual(await client_encryption_legacy.decrypt(encrypted_standard), value)
+        self.assertEqual(
+            await client_encryption_legacy.decrypt(encrypted_standard),
+            Binary.from_uuid(value, uuid_representation=STANDARD),
+        )
         self.assertNotEqual(await client_encryption.decrypt(encrypted_legacy), value)
 
+        await client_encryption_legacy.close()
         await client_encryption.close()
 
     @asyncio_test
