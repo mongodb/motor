@@ -584,6 +584,18 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             await contrast_cursor.close()
             self.assertTrue(contrast_cursor.closed)
 
+    @asyncio_test
+    async def test_generate_keys(self):
+        c = self.collection
+        KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
+
+        async with motor_asyncio.AsyncIOMotorClientEncryption(
+            KMS_PROVIDERS, "keyvault.datakeys", c, bson.codec_options.CodecOptions()
+        ) as client_encryption:
+            self.assertIsInstance(
+                await client_encryption.get_keys(), motor_asyncio.AsyncIOMotorCursor
+            )
+
 
 class TestAsyncIOCursorMaxTimeMS(AsyncIOTestCase):
     def setUp(self):
