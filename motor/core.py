@@ -1962,7 +1962,13 @@ class AgnosticClientEncryption(AgnosticBase):
     remove_key_alt_name = AsyncCommand()
 
     def __init__(
-        self, kms_providers, key_vault_namespace, key_vault_client, codec_options, io_loop=None
+        self,
+        kms_providers,
+        key_vault_namespace,
+        key_vault_client,
+        codec_options,
+        kms_tls_options=None,
+        io_loop=None,
     ):
         """Explicit client-side field level encryption.
 
@@ -1979,7 +1985,7 @@ class AgnosticClientEncryption(AgnosticBase):
             io_loop = None
         sync_client = key_vault_client.delegate
         delegate = self.__delegate_class__(
-            kms_providers, key_vault_namespace, sync_client, codec_options
+            kms_providers, key_vault_namespace, sync_client, codec_options, kms_tls_options
         )
         super().__init__(delegate)
         self._io_loop = io_loop

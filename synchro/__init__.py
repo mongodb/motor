@@ -768,9 +768,20 @@ class AutoEncryptionOpts(encryption_options.AutoEncryptionOpts):
 class ClientEncryption(Synchro):
     __delegate_class__ = motor.MotorClientEncryption
 
-    def __init__(self, kms_providers, key_vault_namespace, key_vault_client, codec_options):
+    def __init__(
+        self,
+        kms_providers,
+        key_vault_namespace,
+        key_vault_client,
+        codec_options,
+        kms_tls_options=None,
+    ):
         self.delegate = motor.MotorClientEncryption(
-            kms_providers, key_vault_namespace, key_vault_client.delegate, codec_options
+            kms_providers,
+            key_vault_namespace,
+            key_vault_client.delegate,
+            codec_options,
+            kms_tls_options,
         )
 
     def __enter__(self):
