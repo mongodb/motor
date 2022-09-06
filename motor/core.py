@@ -1956,7 +1956,6 @@ class AgnosticClientEncryption(AgnosticBase):
     rewrap_many_data_key = AsyncCommand()
     delete_key = AsyncCommand()
     get_key = AsyncCommand()
-    get_keys = AsyncCommand()
     add_key_alt_name = AsyncCommand()
     get_key_by_alt_name = AsyncCommand()
     remove_key_alt_name = AsyncCommand()
@@ -2011,3 +2010,9 @@ class AgnosticClientEncryption(AgnosticBase):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+    async def get_keys(self, *args, **kwargs):
+        cursor = self.delegate.get_keys(*unwrap_args_session(args), **unwrap_kwargs_session(kwargs))
+        cursor_class = create_class_with_framework(AgnosticCursor, self._framework, self.__module__)
+
+        return cursor_class(cursor, self)
