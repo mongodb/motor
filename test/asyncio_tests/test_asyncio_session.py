@@ -104,7 +104,7 @@ class TestAsyncIOSession(AsyncIOTestCase):
 
         await self._test_ops(client, *ops)
 
-    @asyncio_test(timeout=30)
+    @asyncio_test(timeout=60)
     async def test_collection(self):
         listener = TestListener()
         client = self.asyncio_client(event_listeners=[listener])
