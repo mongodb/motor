@@ -2011,8 +2011,6 @@ class AgnosticClientEncryption(AgnosticBase):
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
-    async def get_keys(self, *args, **kwargs):
-        cursor = self.delegate.get_keys(*unwrap_args_session(args), **unwrap_kwargs_session(kwargs))
+    async def get_keys(self):
         cursor_class = create_class_with_framework(AgnosticCursor, self._framework, self.__module__)
-
-        return cursor_class(cursor, self)
+        return cursor_class(self.delegate.get_keys(), self)

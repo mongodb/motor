@@ -170,8 +170,10 @@ excluded_tests = [
     "*.test_md5",
     # Causes a deadlock.
     "TestFork.*",
-    # Also causes a deadlock
+    # Also causes a deadlock.
     "TestClientSimple.test_fork",
+    # This method is picked up as nose despite not being a unittest.
+    "TestRewrapWithSeparateClientEncryption.run_test",
 ]
 
 

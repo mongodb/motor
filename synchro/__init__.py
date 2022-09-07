@@ -62,6 +62,7 @@ try:
     from pymongo import _csot
 except ImportError:
     pass
+from bson.binary import UuidRepresentation
 from pymongo.auth import *
 from pymongo.auth import _build_credentials_tuple, _password_digest
 from pymongo.client_session import TransactionOptions, _TxnState
@@ -780,7 +781,7 @@ class ClientEncryption(Synchro):
             kms_providers,
             key_vault_namespace,
             key_vault_client.delegate,
-            codec_options,
+            codec_options.with_options(uuid_representation=UuidRepresentation.UNSPECIFIED),
             kms_tls_options,
         )
 
