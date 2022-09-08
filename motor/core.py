@@ -1966,8 +1966,8 @@ class AgnosticClientEncryption(AgnosticBase):
         key_vault_namespace,
         key_vault_client,
         codec_options,
-        kms_tls_options=None,
         io_loop=None,
+        kms_tls_options=None,
     ):
         """Explicit client-side field level encryption.
 
