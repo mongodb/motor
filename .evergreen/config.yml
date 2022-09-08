@@ -390,7 +390,13 @@ functions:
         working_dir: "src"
         script: |
           ${PREPARE_SHELL}
-
+          # Disable xtrace (just in case it was accidentally set).
+          set +x
+          . ./fle_creds.sh
+          rm -f ./fle_creds.sh
+          set -x
+          export LIBMONGOCRYPT_URL="${libmongocrypt_url}"
+          export TEST_ENCRYPTION=1
           PYTHON_BINARY="${PYTHON_BINARY}" \
           TOX_BINARY="${TOX_BINARY}" \
           TOX_ENV="${TOX_ENV}" \

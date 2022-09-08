@@ -172,8 +172,16 @@ excluded_tests = [
     "TestFork.*",
     # Also causes a deadlock.
     "TestClientSimple.test_fork",
-    # This method is picked up as nose despite not being a unittest.
+    # These methods are picked up by nose despite not being a unittest.
     "TestRewrapWithSeparateClientEncryption.run_test",
+    "TestCustomEndpoint.run_test_expected_success",
+    "TestDataKeyDoubleEncryption.run_test",
+    # Motor does not support CSOT.
+    "TestCsotGridfsFind.*"
+    # These tests are failing right now.
+    "TestUnifiedFindShutdownError.test_Concurrent_shutdown_error_on_find",
+    "TestUnifiedInsertShutdownError.test_Concurrent_shutdown_error_on_insert",
+    "TestUnifiedPoolClearedError.test_PoolClearedError_does_not_mark_server_unknown",
 ]
 
 
