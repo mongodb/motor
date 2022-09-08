@@ -177,7 +177,7 @@ excluded_tests = [
     "TestCustomEndpoint.run_test_expected_success",
     "TestDataKeyDoubleEncryption.run_test",
     # Motor does not support CSOT.
-    "TestCsotGridfsFind.*"
+    "TestCsotGridfsFind.*",
     # These tests are failing right now.
     "TestUnifiedFindShutdownError.test_Concurrent_shutdown_error_on_find",
     "TestUnifiedInsertShutdownError.test_Concurrent_shutdown_error_on_insert",
