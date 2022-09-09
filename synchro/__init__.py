@@ -781,7 +781,7 @@ class ClientEncryption(Synchro):
             key_vault_namespace,
             key_vault_client.delegate,
             codec_options,
-            kms_tls_options,
+            kms_tls_options=kms_tls_options,
         )
 
     def __enter__(self):
