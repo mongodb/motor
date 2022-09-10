@@ -12,4 +12,5 @@ setup.cfg
 doc/_build/
 .idea/
 xunit-results
+xunit-synchro-results
 .eggs

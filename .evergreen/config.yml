@@ -328,13 +328,75 @@ functions:
           sh ${DRIVERS_TOOLS}/.evergreen/stop-orchestration.sh
 
   "run tox":
+    # If testing FLE, start the KMS mock servers, first create the virtualenv.
+    - command: shell.exec
+      params:
+        script: |
+          ${PREPARE_SHELL}
+          cd ${DRIVERS_TOOLS}/.evergreen/csfle
+          . ./activate_venv.sh
+    # Run in the background so the mock servers don't block the EVG task.
+    - command: shell.exec
+      params:
+        background: true
+        script: |
+          ${PREPARE_SHELL}
+          cd ${DRIVERS_TOOLS}/.evergreen/csfle
+          . ./activate_venv.sh
+          # The -u options forces the stdout and stderr streams to be unbuffered.
+          # TMPDIR is required to avoid "AF_UNIX path too long" errors.
+          TMPDIR="$(dirname $DRIVERS_TOOLS)" python -u kms_kmip_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem  --port 5698 &
+          python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 8000 &
+          python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 8001 &
+          python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8002 --require_client_cert &
+    # Wait up to 10 seconds for the KMIP server to start.
+    - command: shell.exec
+      params:
+        script: |
+          ${PREPARE_SHELL}
+          cd ${DRIVERS_TOOLS}/.evergreen/csfle
+          . ./activate_venv.sh
+          for i in $(seq 1 1 10); do
+             sleep 1
+             if python -u kms_kmip_client.py; then
+                echo 'KMS KMIP server started!'
+                exit 0
+             fi
+          done
+          echo 'Failed to start KMIP server!'
+          exit 1
+    - command: shell.exec
+      type: test
+      params:
+        silent: true
+        working_dir: "src"
+        script: |
+          cat <<EOT > fle_creds.sh
+          export FLE_AWS_KEY="${fle_aws_key}"
+          export FLE_AWS_SECRET="${fle_aws_secret}"
+          export FLE_AZURE_CLIENTID="${fle_azure_clientid}"
+          export FLE_AZURE_TENANTID="${fle_azure_tenantid}"
+          export FLE_AZURE_CLIENTSECRET="${fle_azure_clientsecret}"
+          export FLE_GCP_EMAIL="${fle_gcp_email}"
+          export FLE_GCP_PRIVATEKEY="${fle_gcp_privatekey}"
+          # Needed for generating temporary aws credentials.
+          export AWS_ACCESS_KEY_ID="${fle_aws_key}"
+          export AWS_SECRET_ACCESS_KEY="${fle_aws_secret}"
+          export AWS_DEFAULT_REGION=us-east-1
+          EOT
     - command: shell.exec
       type: test
       params:
         working_dir: "src"
         script: |
           ${PREPARE_SHELL}
-
+          # Disable xtrace (just in case it was accidentally set).
+          set +x
+          . ./fle_creds.sh
+          rm -f ./fle_creds.sh
+          set -x
+          export LIBMONGOCRYPT_URL="${libmongocrypt_url}"
+          export TEST_ENCRYPTION=1
           PYTHON_BINARY="${PYTHON_BINARY}" \
           TOX_BINARY="${TOX_BINARY}" \
           TOX_ENV="${TOX_ENV}" \
