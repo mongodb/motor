@@ -25,18 +25,16 @@ from test.utils import wait_until
 from unittest.mock import patch
 
 import pymongo
-
-# from bson import Binary
-# from bson.codec_options import CodecOptions
+from bson import Binary
+from bson.codec_options import CodecOptions
 from pymongo import WriteConcern
-
-# from pymongo.encryption_options import AutoEncryptionOpts
+from pymongo.encryption_options import AutoEncryptionOpts
 from pymongo.errors import ConnectionFailure, OperationFailure
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
 from pymongo.server_api import ServerApi
 
-# from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorClientEncryption
+from motor.motor_asyncio import AsyncIOMotorClientEncryption
 
 
 async def count(cursor):
@@ -1412,96 +1410,96 @@ LOCAL_MASTER_KEY = base64.b64decode(
 )
 
 
-# class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
+class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
 
-#     # Queryable Encryption is not supported on Standalone topology.
+    # Queryable Encryption is not supported on Standalone topology.
 
-#     @env.require_version_min(6, 0)
-#     @asyncio_test
-#     @env.require_replica_set
-#     async def test_queryable_encryption(self):
-#         client = self.cx
+    @env.require_version_min(6, 0)
+    @asyncio_test
+    @env.require_replica_set
+    async def test_queryable_encryption(self):
+        client = self.cx
 
-#         # MongoClient to use in testing that handles auth/tls/etc,
-#         # and cleanup.
-#         def MongoClient(**kwargs):
-#             c = self.asyncio_client(**kwargs)
-#             self.addCleanup(c.close)
-#             return c
+        # MongoClient to use in testing that handles auth/tls/etc,
+        # and cleanup.
+        def MongoClient(**kwargs):
+            c = self.asyncio_client(**kwargs)
+            self.addCleanup(c.close)
+            return c
 
-#         # Drop data from prior test runs.
-#         await client.keyvault.datakeys.drop()
-#         await client.drop_database("docs_examples")
+        # Drop data from prior test runs.
+        await client.keyvault.datakeys.drop()
+        await client.drop_database("docs_examples")
 
-#         kms_providers_map = {"local": {"key": LOCAL_MASTER_KEY}}
+        kms_providers_map = {"local": {"key": LOCAL_MASTER_KEY}}
 
-#         # Create two data keys.
-#         key_vault_client = MongoClient()
-#         await key_vault_client.admin.command("ping")
-#         client_encryption = AsyncIOMotorClientEncryption(
-#             kms_providers_map, "keyvault.datakeys", key_vault_client, CodecOptions()
-#         )
-#         key1_id = await client_encryption.create_data_key("local")
-#         key2_id = await client_encryption.create_data_key("local")
+        # Create two data keys.
+        key_vault_client = MongoClient()
+        await key_vault_client.admin.command("ping")
+        client_encryption = AsyncIOMotorClientEncryption(
+            kms_providers_map, "keyvault.datakeys", key_vault_client, CodecOptions()
+        )
+        key1_id = await client_encryption.create_data_key("local")
+        key2_id = await client_encryption.create_data_key("local")
 
-#         # Create an encryptedFieldsMap.
-#         encrypted_fields_map = {
-#             "docs_examples.encrypted": {
-#                 "fields": [
-#                     {
-#                         "path": "encrypted_indexed",
-#                         "bsonType": "string",
-#                         "keyId": key1_id,
-#                         "queries": [
-#                             {
-#                                 "queryType": "equality",
-#                             },
-#                         ],
-#                     },
-#                     {
-#                         "path": "encrypted_unindexed",
-#                         "bsonType": "string",
-#                         "keyId": key2_id,
-#                     },
-#                 ],
-#             },
-#         }
+        # Create an encryptedFieldsMap.
+        encrypted_fields_map = {
+            "docs_examples.encrypted": {
+                "fields": [
+                    {
+                        "path": "encrypted_indexed",
+                        "bsonType": "string",
+                        "keyId": key1_id,
+                        "queries": [
+                            {
+                                "queryType": "equality",
+                            },
+                        ],
+                    },
+                    {
+                        "path": "encrypted_unindexed",
+                        "bsonType": "string",
+                        "keyId": key2_id,
+                    },
+                ],
+            },
+        }
 
-#         # Create an Queryable Encryption collection.
-#         opts = AutoEncryptionOpts(
-#             kms_providers_map, "keyvault.datakeys", encrypted_fields_map=encrypted_fields_map
-#         )
-#         encrypted_client = AsyncIOMotorClient(auto_encryption_opts=opts)
+        # Create an Queryable Encryption collection.
+        opts = AutoEncryptionOpts(
+            kms_providers_map, "keyvault.datakeys", encrypted_fields_map=encrypted_fields_map
+        )
+        encrypted_client = MongoClient(auto_encryption_opts=opts)
 
-#         # Create a Queryable Encryption collection "docs_examples.encrypted".
-#         # Because docs_examples.encrypted is in encrypted_fields_map, it is
-#         # created with Queryable Encryption support.
-#         db = encrypted_client.docs_examples
-#         encrypted_coll = await db.create_collection("encrypted")
+        # Create a Queryable Encryption collection "docs_examples.encrypted".
+        # Because docs_examples.encrypted is in encrypted_fields_map, it is
+        # created with Queryable Encryption support.
+        db = encrypted_client.docs_examples
+        encrypted_coll = await db.create_collection("encrypted")
 
-#         # Auto encrypt an insert and find.
+        # Auto encrypt an insert and find.
 
-#         # Encrypt an insert.
-#         await encrypted_coll.insert_one(
-#             {
-#                 "_id": 1,
-#                 "encrypted_indexed": "indexed_value",
-#                 "encrypted_unindexed": "unindexed_value",
-#             }
-#         )
+        # Encrypt an insert.
+        await encrypted_coll.insert_one(
+            {
+                "_id": 1,
+                "encrypted_indexed": "indexed_value",
+                "encrypted_unindexed": "unindexed_value",
+            }
+        )
 
-#         # Encrypt a find.
-#         res = await encrypted_coll.find_one({"encrypted_indexed": "indexed_value"})
-#         assert res is not None
-#         assert res["encrypted_indexed"] == "indexed_value"
-#         assert res["encrypted_unindexed"] == "unindexed_value"
+        # Encrypt a find.
+        res = await encrypted_coll.find_one({"encrypted_indexed": "indexed_value"})
+        assert res is not None
+        assert res["encrypted_indexed"] == "indexed_value"
+        assert res["encrypted_unindexed"] == "unindexed_value"
 
-#         # Find documents without decryption.
-#         unencrypted_client = MongoClient()
-#         unencrypted_coll = unencrypted_client.docs_examples.encrypted
-#         res = await unencrypted_coll.find_one({"_id": 1})
-#         assert res is not None
-#         assert isinstance(res["encrypted_indexed"], Binary)
-#         assert isinstance(res["encrypted_unindexed"], Binary)
+        # Find documents without decryption.
+        unencrypted_client = MongoClient()
+        unencrypted_coll = unencrypted_client.docs_examples.encrypted
+        res = await unencrypted_coll.find_one({"_id": 1})
+        assert res is not None
+        assert isinstance(res["encrypted_indexed"], Binary)
+        assert isinstance(res["encrypted_unindexed"], Binary)
 
-#         await client_encryption.close()
+        await client_encryption.close()
