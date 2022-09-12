@@ -15,6 +15,7 @@
 """MongoDB documentation examples with Motor and asyncio."""
 
 import asyncio
+import base64
 import datetime
 import unittest
 from io import StringIO
@@ -23,13 +24,17 @@ from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.utils import wait_until
 from unittest.mock import patch
 
-from bson import Binary
 import pymongo
+from bson import Binary
+from bson.codec_options import CodecOptions
 from pymongo import WriteConcern
+from pymongo.encryption_options import AutoEncryptionOpts
 from pymongo.errors import ConnectionFailure, OperationFailure
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference
 from pymongo.server_api import ServerApi
+
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorClientEncryption
 
 
 async def count(cursor):
@@ -1399,11 +1404,6 @@ class TestExamples(AsyncIOTestCase):
                 raise
 
 
-import base64
-from bson.codec_options import CodecOptions
-from motor.motor_asyncio import AsyncIOMotorClientEncryption, AsyncIOMotorClient
-from pymongo.encryption_options import AutoEncryptionOpts
-
 LOCAL_MASTER_KEY = base64.b64decode(
     b"Mng0NCt4ZHVUYUJCa1kxNkVyNUR1QURhZ2h2UzR2d2RrZzh0cFBwM3R6NmdWMDFBMUN3YkQ"
     b"5aXRRMkhGRGdQV09wOGVNYUMxT2k3NjZKelhaQmRCZGJkTXVyZG9uSjFk"
@@ -1424,7 +1424,7 @@ class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
         # and cleanup.
         def MongoClient(**kwargs):
             c = self.asyncio_client(**kwargs)
-            self.addCleanup(c.close)
+            # self.addCleanup(c.close)
             return c
 
         # Drop data from prior test runs.
@@ -1435,7 +1435,7 @@ class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
 
         # Create two data keys.
         key_vault_client = MongoClient()
-        await key_vault_client.admin.command('ping')
+        await key_vault_client.admin.command("ping")
         client_encryption = AsyncIOMotorClientEncryption(
             kms_providers_map, "keyvault.datakeys", key_vault_client, CodecOptions()
         )
@@ -1502,4 +1502,4 @@ class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
         assert isinstance(res["encrypted_indexed"], Binary)
         assert isinstance(res["encrypted_unindexed"], Binary)
 
-        await client_encryption.close()
+        # await client_encryption.close()
