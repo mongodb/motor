@@ -134,6 +134,7 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         self.loop.stop()
         self.loop.run_forever()
         self.loop.close()
+        asyncio.set_event_loop(asyncio.new_event_loop())
         gc.collect()
 
 
