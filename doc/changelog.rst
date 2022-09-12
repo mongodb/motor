@@ -9,6 +9,16 @@ Motor 3.1
 Motor 3.1 adds support for the Queryable Encryption beta with MongoDB 6.0.
 Note that backwards-breaking changes may be made before the final release.
 
+The new Queryable Encryption changes that are in beta are:
+
+- The `encrypted_fields` argument to the
+  :class:`~motor.motor_tornado.MotorCollection` constructor, and the
+  :meth:`~motor.motor_tornado.MotorDatabase.create_collection`
+  and :meth:`~motor.motor_tornado.MotorDatabase.drop_collection` methods.
+- The `query_type` and `contention_factor` arguments to
+  :meth:`motor.motor_asyncio.AsyncIOMotorClientEncryption.encrypt` and
+  :meth:`motor.motor_tornado.MotorClientEncryption.encrypt`.
+
 
 Motor 3.0
 ---------
