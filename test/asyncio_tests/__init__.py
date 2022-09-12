@@ -83,7 +83,6 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         super().setUp()
 
         # Ensure that the event loop is passed explicitly in Motor.
-        self._prev_event_loop = asyncio.get_event_loop()
         asyncio.set_event_loop(None)
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
@@ -135,7 +134,7 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         self.loop.stop()
         self.loop.run_forever()
         self.loop.close()
-        asyncio.set_event_loop(self._prev_event_loop)
+        asyncio.set_event_loop(asyncio.new_event_loop())
         gc.collect()
 
 
