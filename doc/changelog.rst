@@ -3,6 +3,13 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.1
+---------
+
+Motor 3.1 adds support for the Queryable Encryption beta with MongoDB 6.0.
+Note that backwards-breaking changes may be made before the final release.
+
+
 Motor 3.0
 ---------
 
