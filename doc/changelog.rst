@@ -6,8 +6,25 @@ Changelog
 Motor 3.1
 ---------
 
-Motor 3.1 adds support for the Queryable Encryption beta with MongoDB 6.0.
+Motor 3.1 adds support for PyMongo 4.2+ and the Queryable Encryption beta
+with MongoDB 6.0.
 Note that backwards-breaking changes may be made before the final release.
+
+New features:
+
+- Support for MongoDB 6.0.
+- Added the following key management APIs to :class:`~motor.core.MotorClientEncryption`:
+  :meth:`~motor.core.MotorClientEncryption.get_key`
+  :meth:`~motor.core.MotorClientEncryption.get_keys`
+  :meth:`~motor.core.MotorClientEncryption.delete_key`
+  :meth:`~motor.core.MotorClientEncryption.add_key_alt_name`
+  :meth:`~motor.core.MotorClientEncryption.get_key_by_alt_name`
+  :meth:`~motor.core.MotorClientEncryption.remove_key_alt_name`
+  :meth:`~motor.core.MotorClientEncryption.rewrap_many_data_key`
+- Change streams support for user-facing PIT pre- and post-images using
+  the new ``full_document_before_change`` argument to
+  :meth:`~motor.core.MotorClient.watch` and :meth:`~motor.core.MotorCollection.watch`.
+- Allow cursor to be used in async with-statement.
 
 The new Queryable Encryption changes that are in beta are:
 
@@ -19,6 +36,13 @@ The new Queryable Encryption changes that are in beta are:
   :meth:`motor.motor_asyncio.AsyncIOMotorClientEncryption.encrypt` and
   :meth:`motor.motor_tornado.MotorClientEncryption.encrypt`.
 
+Issues Resolved
+~~~~~~~~~~~~~~~
+
+See the `Motor 3.1 release notes in JIRA`_ for the list of resolved issues
+in this release.
+
+.. _Motor 3.1 release notes in JIRA: https://jira.mongodb.org/secure/ReleaseNote.jspa?projectId=11182&version=33421
 
 Motor 3.0
 ---------
