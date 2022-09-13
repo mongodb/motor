@@ -6,8 +6,23 @@ Changelog
 Motor 3.1
 ---------
 
-Motor 3.1 adds support for the Queryable Encryption beta with MongoDB 6.0.
+Motor 3.1 adds support for PyMongo 4.2+ and the Queryable Encryption beta
+with MongoDB 6.0.
 Note that backwards-breaking changes may be made before the final release.
+
+New features:
+
+- Support for MongoDB 6.0.
+- Added the following key management APIs to :class:`~motor.core.MotorClientEncryption`:
+  :meth:`~motor.core.MotorClientEncryptio.get_key`
+  :meth:`~motor.core.MotorClientEncryptio.get_keys`
+  :meth:`~motor.core.MotorClientEncryptio.delete_key`
+  :meth:`~motor.core.MotorClientEncryptio.add_key_alt_name`
+  :meth:`~motor.core.MotorClientEncryptio.get_key_by_alt_name`
+  :meth:`~motor.core.MotorClientEncryptio.remove_key_alt_name`
+  :meth:`~motor.core.MotorClientEncryptio.rewrap_many_data_key`
+- Change streams support for user-facing PIT pre- and post-images.
+- Allow cursor to be used in async with-statement.
 
 The new Queryable Encryption changes that are in beta are:
 
