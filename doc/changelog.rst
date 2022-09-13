@@ -22,7 +22,8 @@ New features:
   :meth:`~motor.core.MotorClientEncryption.remove_key_alt_name`
   :meth:`~motor.core.MotorClientEncryption.rewrap_many_data_key`
 - Change streams support for user-facing PIT pre- and post-images using
-the new ``full_document_before_change`` argument to :meth:`~motor.core.MotorClient.watch` and :meth:`~motor.core.MotorCollection.watch`.
+  the new ``full_document_before_change`` argument to
+  :meth:`~motor.core.MotorClient.watch` and :meth:`~motor.core.MotorCollection.watch`.
 - Allow cursor to be used in async with-statement.
 
 The new Queryable Encryption changes that are in beta are:
