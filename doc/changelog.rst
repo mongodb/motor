@@ -6,8 +6,8 @@ Changelog
 Motor 3.1.1
 -----------
 
-Motor 3.3.1 adds support for Python 3.11 and fixes a bug that caused an
-``ImportError`` that version.
+Motor 3.1.1 adds support for Python 3.11 and fixes a bug that caused an
+``ImportError`` in Python 3.11.0.
 
 
 Motor 3.1

@@ -854,7 +854,7 @@ axes:
       - id: "py3-pymongo-latest"
         variables:
            TOX_ENV: "py3-pymongo-latest"
-           PYTHON_BINARY: "/opt/python/3.10/bin/python3"
+           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
       - id: "synchro37"
         variables:
           TOX_ENV: "synchro37"
