@@ -14,14 +14,8 @@
 
 """Motor, an asynchronous driver for MongoDB."""
 
-version_tuple = (3, 1, 2, ".dev0")
+from ._version import get_version_string, version, version_tuple  # noqa
 
-
-def get_version_string():
-    return ".".join(map(str, version_tuple))
-
-
-version = get_version_string()
 """Current version of Motor."""
 
 

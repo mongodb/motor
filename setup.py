@@ -149,9 +149,15 @@ packages = [
 ]
 
 
+version_ns = {}
+with open("motor/_version.py") as fp:
+    exec(fp.read(), version_ns)
+version = version_ns["version"]
+
+
 setup(
     name="motor",
-    version="3.1.2.dev0",
+    version=version,
     packages=packages,
     description=description,
     long_description=long_description,
