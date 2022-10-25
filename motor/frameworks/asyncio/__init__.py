@@ -24,13 +24,22 @@ import functools
 import multiprocessing
 import os
 import warnings
-from asyncio import coroutine, get_event_loop  # noqa: F401 - For framework interface.
+from asyncio import get_event_loop  # noqa: F401 - For framework interface.
 from concurrent.futures import ThreadPoolExecutor
 
 try:
     import contextvars
 except ImportError:
     contextvars = None
+
+try:
+    from asyncio import coroutine
+except ImportError:
+
+    def coroutine():
+        raise RuntimeError(
+            "The coroutine decorator was removed in Python 3.11.  Use 'async def' instead"
+        )
 
 
 CLASS_PREFIX = "AsyncIO"
