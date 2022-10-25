@@ -819,6 +819,10 @@ axes:
         variables:
            TOX_ENV: "tornado6-py39"
            PYTHON_BINARY: "/opt/python/3.9/bin/python3"
+      - id: "tornado6-py310"
+        variables:
+           TOX_ENV: "tornado6-py310"
+           PYTHON_BINARY: "/opt/python/3.10/bin/python3"
       - id: "tornado_git-py37"
         variables:
            TOX_ENV: "tornado_git-py37"
@@ -843,10 +847,14 @@ axes:
         variables:
            TOX_ENV: "asyncio-py39"
            PYTHON_BINARY: "/opt/python/3.9/bin/python3"
+      - id: "asyncio-py310"
+        variables:
+           TOX_ENV: "asyncio-py310"
+           PYTHON_BINARY: "/opt/python/3.10/bin/python3"
       - id: "py3-pymongo-latest"
         variables:
            TOX_ENV: "py3-pymongo-latest"
-           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+           PYTHON_BINARY: "/opt/python/3.10/bin/python3"
       - id: "synchro37"
         variables:
           TOX_ENV: "synchro37"
@@ -855,14 +863,14 @@ axes:
   - id: tox-env-ubuntu
     display_name: "Tox Env Ubuntu"
     values:
-      - id: "tornado6-py310"
+      - id: "tornado6-py311"
         variables:
-           TOX_ENV: "tornado6-py310"
-           PYTHON_BINARY: "/opt/python/3.10/bin/python3"
-      - id: "asyncio-py310"
+           TOX_ENV: "tornado6-py311"
+           PYTHON_BINARY: "/opt/python/3.11/bin/python3"
+      - id: "asyncio-py311"
         variables:
-           TOX_ENV: "asyncio-py310"
-           PYTHON_BINARY: "/opt/python/3.10/bin/python3"
+           TOX_ENV: "asyncio-py311"
+           PYTHON_BINARY: "/opt/python/3.11/bin/python3"
 
   # Test Python 3.8 only on Mac.
   - id: tox-env-osx
