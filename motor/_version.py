@@ -17,11 +17,10 @@
 version_tuple = (3, 1, 2, ".dev0")
 
 
-def get_version_string():
-    ver_str = ".".join(map(str, version_tuple[:3]))
-    if len(version_tuple) == 4:
-        ver_str += version_tuple[3]
-    return ver_str
+def get_version_string() -> str:
+    if isinstance(version_tuple[-1], str):
+        return ".".join(map(str, version_tuple[:-1])) + version_tuple[-1]
+    return ".".join(map(str, version_tuple))
 
 
 version = get_version_string()
