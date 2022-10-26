@@ -1,4 +1,4 @@
-# Copyright 2011-present MongoDB, Inc.
+# Copyright 2022-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Motor, an asynchronous driver for MongoDB."""
+"""Version-related data for motor."""
 
-from ._version import get_version_string, version, version_tuple  # noqa
-
-"""Current version of Motor."""
+version_tuple = (3, 1, 2, ".dev0")
 
 
-try:
-    import tornado
-except ImportError:
-    tornado = None
-else:
-    # For backwards compatibility with Motor 0.4, export Motor's Tornado classes
-    # at module root. This may change in the future.
-    from .motor_tornado import *  # noqa: F403
-    from .motor_tornado import __all__
+def get_version_string() -> str:
+    if isinstance(version_tuple[-1], str):
+        return ".".join(map(str, version_tuple[:-1])) + version_tuple[-1]
+    return ".".join(map(str, version_tuple))
+
+
+version = get_version_string()
