@@ -1513,7 +1513,7 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
 
         from motor import MotorClient
 
-        client = MotorClient(host=os.environ["MONGODB_URI"])
+        client = MotorClient(host=os.environ.get("MONGODB_URI", "localhost"))
 
         async def async_handler(event, context):
             return await client.db.command("ping")
@@ -1531,7 +1531,7 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
         from motor import MotorClient
 
         client = MotorClient(
-            host=os.environ["MONGODB_URI"],
+            host=os.environ.get("MONGODB_URI", "localhost"),
             authSource="$external",
             authMechanism="MONGODB-AWS",
         )
