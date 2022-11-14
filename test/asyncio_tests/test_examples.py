@@ -1503,3 +1503,43 @@ class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
         assert isinstance(res["encrypted_unindexed"], Binary)
 
         await client_encryption.close()
+
+
+class MotorAWSLambdaExamples(AsyncIOTestCase):
+    @asyncio_test
+    async def test_shared_client(self):
+        # Start AWS Lambda Example 1
+        import os
+
+        from motor import MotorClient
+
+        client = MotorClient(host=os.environ["MONGODB_URI"])
+
+        async def async_handler(event, context):
+            return await client.db.command("ping")
+
+        def lambda_handler(event, context):
+            return asyncio.run(async_handler(event, context))
+
+        # End AWS Lambda Example 1
+
+    @asyncio_test
+    async def test_IAM_auth(self):
+        # Start AWS Lambda Example 2
+        import os
+
+        from motor import MotorClient
+
+        client = MotorClient(
+            host=os.environ["MONGODB_URI"],
+            authSource="$external",
+            authMechanism="MONGODB-AWS",
+        )
+
+        async def async_handler(event, context):
+            return await client.db.command("ping")
+
+        def lambda_handler(event, context):
+            return asyncio.run(async_handler(event, context))
+
+        # End AWS Lambda Example 2
