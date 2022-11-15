@@ -19,6 +19,7 @@ import base64
 import datetime
 import unittest
 from io import StringIO
+from os import environ
 from test import env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.utils import wait_until
@@ -1508,12 +1509,13 @@ class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
 class MotorAWSLambdaExamples(AsyncIOTestCase):
     @asyncio_test
     async def test_shared_client(self):
+        environ.setdefault("MONGODB_URI", "localhost")
         # Start AWS Lambda Example 1
         import os
 
-        from motor import MotorClient
+        from motor.motor_asyncio import AsyncIOMotorClient
 
-        client = MotorClient(host=os.environ.get("MONGODB_URI", "localhost"))
+        client = AsyncIOMotorClient(host=os.environ.get("MONGODB_URI", "localhost"))
 
         async def async_handler(event, context):
             return await client.db.command("ping")
@@ -1523,15 +1525,17 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
 
         # End AWS Lambda Example 1
 
+    @unittest.skip
     @asyncio_test
     async def test_IAM_auth(self):
+        environ.setdefault("MONGODB_URI", "localhost")
         # Start AWS Lambda Example 2
         import os
 
-        from motor import MotorClient
+        from motor.motor_asyncio import AsyncIOMotorClient
 
-        client = MotorClient(
-            host=os.environ.get("MONGODB_URI", "localhost"),
+        client = AsyncIOMotorClient(
+            host=os.environ["MONGODB_URI"],
             authSource="$external",
             authMechanism="MONGODB-AWS",
         )
