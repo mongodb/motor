@@ -1511,24 +1511,27 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
     async def test_shared_client(self):
         environ.setdefault("MONGODB_URI", "localhost")
         # Start AWS Lambda Example 1
+        import asyncio
         import os
 
         from motor.motor_asyncio import AsyncIOMotorClient
 
-        client = AsyncIOMotorClient(host=os.environ.get("MONGODB_URI", "localhost"))
+        event_loop = asyncio.get_event_loop()
+        client = AsyncIOMotorClient(host=os.environ["MONGODB_URI"])
 
         async def async_handler(event, context):
             return await client.db.command("ping")
 
         def lambda_handler(event, context):
-            return asyncio.run(async_handler(event, context))
+            return asyncio.get_event_loop().run_until_complete(async_handler(event, context))
 
         # End AWS Lambda Example 1
 
-    async def test_IAM_auth(self):
+    def test_IAM_auth(self):
         raise unittest.skip("This test needs to be run with valid IAM credentials.")
         environ.setdefault("MONGODB_URI", "localhost")
         # Start AWS Lambda Example 2
+        import asyncio
         import os
 
         from motor.motor_asyncio import AsyncIOMotorClient
@@ -1543,6 +1546,6 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
             return await client.db.command("ping")
 
         def lambda_handler(event, context):
-            return asyncio.run(async_handler(event, context))
+            return asyncio.get_event_loop().run_until_complete(async_handler(event, context))
 
         # End AWS Lambda Example 2
