@@ -1527,8 +1527,8 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
 
         # End AWS Lambda Example 1
 
+    @unittest.skip("This test needs to be run with valid IAM credentials.")
     def test_IAM_auth(self):
-        raise unittest.skip("This test needs to be run with valid IAM credentials.")
         environ.setdefault("MONGODB_URI", "localhost")
         # Start AWS Lambda Example 2
         import asyncio
