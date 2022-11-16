@@ -1526,7 +1526,6 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
         # End AWS Lambda Example 1
 
     @unittest.skip
-    @asyncio_test
     async def test_IAM_auth(self):
         environ.setdefault("MONGODB_URI", "localhost")
         # Start AWS Lambda Example 2
