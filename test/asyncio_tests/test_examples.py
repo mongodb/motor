@@ -1516,14 +1516,15 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
 
         from motor.motor_asyncio import AsyncIOMotorClient
 
-        event_loop = asyncio.get_event_loop()
+        event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(event_loop)
         client = AsyncIOMotorClient(host=os.environ["MONGODB_URI"])
 
         async def async_handler(event, context):
             return await client.db.command("ping")
 
         def lambda_handler(event, context):
-            return asyncio.get_event_loop().run_until_complete(async_handler(event, context))
+            return event_loop.run_until_complete(async_handler(event, context))
 
         # End AWS Lambda Example 1
 
@@ -1536,6 +1537,8 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
 
         from motor.motor_asyncio import AsyncIOMotorClient
 
+        event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(event_loop)
         client = AsyncIOMotorClient(
             host=os.environ["MONGODB_URI"],
             authSource="$external",
@@ -1546,6 +1549,6 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
             return await client.db.command("ping")
 
         def lambda_handler(event, context):
-            return asyncio.get_event_loop().run_until_complete(async_handler(event, context))
+            return event_loop.run_until_complete(async_handler(event, context))
 
         # End AWS Lambda Example 2
