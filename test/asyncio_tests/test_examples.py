@@ -1527,6 +1527,14 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
             return event_loop.run_until_complete(async_handler(event, context))
 
         # End AWS Lambda Example 1
+        lambda_handler("event", {})
+        lambda_handler("event", {})
+        lambda_handler("event", {})
+        from threading import Thread
+
+        t = Thread(target=lambda_handler, args=("event", {}))
+        t.start()
+        t.join()
 
     @unittest.skip("This test needs to be run with valid IAM credentials.")
     def test_IAM_auth(self):
