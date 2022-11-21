@@ -19,9 +19,11 @@ import base64
 import datetime
 import unittest
 from io import StringIO
+from os import environ
 from test import env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.utils import wait_until
+from threading import Thread
 from unittest.mock import patch
 
 import pymongo
@@ -1503,3 +1505,55 @@ class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
         assert isinstance(res["encrypted_unindexed"], Binary)
 
         await client_encryption.close()
+
+
+class MotorAWSLambdaExamples(AsyncIOTestCase):
+    def test_shared_client(self):
+        environ.setdefault("MONGODB_URI", "localhost")
+        # Start AWS Lambda Example 1
+        import asyncio
+        import os
+
+        from motor.motor_asyncio import AsyncIOMotorClient
+
+        event_loop = asyncio.new_event_loop()
+        client = AsyncIOMotorClient(host=os.environ["MONGODB_URI"])
+
+        async def async_handler(event, context):
+            return await client.db.command("ping")
+
+        def lambda_handler(event, context):
+            return event_loop.run_until_complete(async_handler(event, context))
+
+        # End AWS Lambda Example 1
+        lambda_handler("event", {})
+        lambda_handler("event", {})
+        lambda_handler("event", {})
+        t = Thread(target=lambda_handler, args=("event", {}))
+        t.start()
+        t.join()
+
+    @unittest.skip("This test needs to be run with valid IAM credentials.")
+    def test_IAM_auth(self):
+        environ.setdefault("MONGODB_URI", "localhost")
+        # Start AWS Lambda Example 2
+        import asyncio
+        import os
+
+        from motor.motor_asyncio import AsyncIOMotorClient
+
+        event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(event_loop)
+        client = AsyncIOMotorClient(
+            host=os.environ["MONGODB_URI"],
+            authSource="$external",
+            authMechanism="MONGODB-AWS",
+        )
+
+        async def async_handler(event, context):
+            return await client.db.command("ping")
+
+        def lambda_handler(event, context):
+            return event_loop.run_until_complete(async_handler(event, context))
+
+        # End AWS Lambda Example 2
