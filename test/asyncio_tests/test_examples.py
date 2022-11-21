@@ -23,6 +23,7 @@ from os import environ
 from test import env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.utils import wait_until
+from threading import Thread
 from unittest.mock import patch
 
 import pymongo
@@ -1530,8 +1531,6 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
         lambda_handler("event", {})
         lambda_handler("event", {})
         lambda_handler("event", {})
-        from threading import Thread
-
         t = Thread(target=lambda_handler, args=("event", {}))
         t.start()
         t.join()
