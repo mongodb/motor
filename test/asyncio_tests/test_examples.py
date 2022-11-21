@@ -17,7 +17,6 @@
 import asyncio
 import base64
 import datetime
-import threading
 import unittest
 from io import StringIO
 from os import environ
@@ -1531,9 +1530,6 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
         lambda_handler("event", {})
         lambda_handler("event", {})
         lambda_handler("event", {})
-        t = threading.Thread(target=lambda_handler, args=("event", {}))
-        t.start()
-        t.join()
 
     @unittest.skip("This test needs to be run with valid IAM credentials.")
     def test_IAM_auth(self):
