@@ -23,6 +23,7 @@ from os import environ
 from test import env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.utils import wait_until
+from threading import Thread
 from unittest.mock import patch
 
 import pymongo
@@ -1507,8 +1508,7 @@ class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
 
 
 class MotorAWSLambdaExamples(AsyncIOTestCase):
-    @asyncio_test
-    async def test_shared_client(self):
+    def test_shared_client(self):
         environ.setdefault("MONGODB_URI", "localhost")
         # Start AWS Lambda Example 1
         import asyncio
@@ -1517,7 +1517,6 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
         from motor.motor_asyncio import AsyncIOMotorClient
 
         event_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(event_loop)
         client = AsyncIOMotorClient(host=os.environ["MONGODB_URI"])
 
         async def async_handler(event, context):
@@ -1530,6 +1529,9 @@ class MotorAWSLambdaExamples(AsyncIOTestCase):
         lambda_handler("event", {})
         lambda_handler("event", {})
         lambda_handler("event", {})
+        t = Thread(target=lambda_handler, args=("event", {}))
+        t.start()
+        t.join()
 
     @unittest.skip("This test needs to be run with valid IAM credentials.")
     def test_IAM_auth(self):
