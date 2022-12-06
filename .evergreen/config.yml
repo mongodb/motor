@@ -823,10 +823,6 @@ axes:
         variables:
            TOX_ENV: "tornado6-py310"
            PYTHON_BINARY: "/opt/python/3.10/bin/python3"
-      - id: "tornado_git-py37"
-        variables:
-           TOX_ENV: "tornado_git-py37"
-           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
       - id: "tornado_git-py38"
         variables:
            TOX_ENV: "tornado_git-py38"
