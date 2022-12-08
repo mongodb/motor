@@ -1509,7 +1509,7 @@ class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
 
 
 class MotorAWSLambdaExamples(AsyncIOTestCase):
-    @unittest.skipIf(HAVE_SSL)
+    @unittest.skipIf(HAVE_SSL, "Doesn't work with SSL")
     def test_shared_client(self):
         environ.setdefault("MONGODB_URI", "localhost?tls=true")
         # Start AWS Lambda Example 1

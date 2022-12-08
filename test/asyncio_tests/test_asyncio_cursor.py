@@ -261,6 +261,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             await asyncio.sleep(0.5)
 
     @env.require_version_min(4, 2)  # failCommand
+    @env.requi
     @asyncio_test
     async def test_cancelled_error_to_list(self):
         # Note: We intentionally don't use "async def" here to avoid wrapping
