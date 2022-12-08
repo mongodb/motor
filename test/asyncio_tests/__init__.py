@@ -96,7 +96,7 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         self.collection = self.db.test_collection
         self.have_fail_command = False
         try:
-            self.db.command(
+            self.cx.admin.command(
                 {
                     "configureFailPoint": "failCommand",
                     "mode": "off",
