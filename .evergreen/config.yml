@@ -809,8 +809,8 @@ axes:
           PYTHON_BINARY: "/opt/python/pypy3.7/bin/pypy3"
       - id: "tornado6-py37"
         variables:
-          TOX_ENV: "tornado6-py37"
-          PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+           TOX_ENV: "tornado6-py37"
+           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
       - id: "tornado6-py38"
         variables:
            TOX_ENV: "tornado6-py38"
