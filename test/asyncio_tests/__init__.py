@@ -25,7 +25,6 @@ from test.test_environment import CA_PEM, CLIENT_PEM, env
 from test.utils import get_async_test_timeout
 from unittest import SkipTest
 
-import pymongo.errors
 from mockupdb import MockupDB
 
 from motor import motor_asyncio
@@ -94,17 +93,6 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         self.cx = self.asyncio_client()
         self.db = self.cx.motor_test
         self.collection = self.db.test_collection
-        self.have_fail_command = False
-        try:
-            self.cx.admin.command(
-                {
-                    "configureFailPoint": "failCommand",
-                    "mode": "off",
-                }
-            )
-            self.have_fail_command = True
-        except pymongo.errors.OperationFailure:
-            pass
 
         self.loop.run_until_complete(self.collection.drop())
 
