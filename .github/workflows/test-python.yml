@@ -55,10 +55,10 @@ jobs:
           python-version: 3.7
           cache: 'pip'
           cache-dependency-path: 'setup.py'
-      - name: Start MongoDB with Custom Options
-        run: |
-          mkdir data
-          mongod --fork --dbpath=$(pwd)/data --logpath=$PWD/mongo.log --setParameter enableTestCommands=1
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.8.0
+        with:
+          mongodb-version: 6.0
       - name: Install Python dependencies
         run: |
           python -m pip install -U pip tox
