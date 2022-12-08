@@ -22,6 +22,7 @@ from io import StringIO
 from os import environ
 from test import env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.test_environment import HAVE_SSL
 from test.utils import wait_until
 from threading import Thread
 from unittest.mock import patch
@@ -1508,14 +1509,16 @@ class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
 
 
 class MotorAWSLambdaExamples(AsyncIOTestCase):
+    @unittest.skipIf(HAVE_SSL)
     def test_shared_client(self):
-        environ.setdefault("MONGODB_URI", "localhost")
+        environ.setdefault("MONGODB_URI", "localhost?tls=true")
         # Start AWS Lambda Example 1
         import asyncio
         import os
 
         from motor.motor_asyncio import AsyncIOMotorClient
 
+        kwargs = {"host": os.environ["MONGODB_URI"]}
         event_loop = asyncio.new_event_loop()
         client = AsyncIOMotorClient(host=os.environ["MONGODB_URI"])
 
