@@ -101,7 +101,7 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
             kwargs.setdefault("tlsCertificateKeyFile", CLIENT_PEM)
 
         kwargs.setdefault("tls", env.mongod_started_with_ssl)
-        if kwargs.pop("io_loop", -1) is None:
+        if not kwargs.pop("io_loop", None):
             kwargs.setdefault("io_loop", self.loop)
 
         return kwargs
