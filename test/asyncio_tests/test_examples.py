@@ -17,7 +17,6 @@
 import asyncio
 import base64
 import datetime
-import functools
 import unittest
 from io import StringIO
 from os import environ
@@ -1509,17 +1508,6 @@ class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
 
 
 class MotorAWSLambdaExamples(AsyncIOTestCase):
-    def client_wrapper(self, func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            from test.test_environment import CA_PEM, CLIENT_PEM
-
-            kwargs.setdefault("tlsCAFile", CA_PEM)
-            kwargs.setdefault("tlsCertificateKeyFile", CLIENT_PEM)
-            func(*args, **kwargs)
-
-        return wrapper
-
     def test_shared_client(self):
         from motor.motor_asyncio import AsyncIOMotorClient
 
