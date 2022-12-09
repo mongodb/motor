@@ -17,6 +17,7 @@
 import asyncio
 import base64
 import datetime
+import functools
 import unittest
 from io import StringIO
 from os import environ
@@ -1508,13 +1509,27 @@ class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
 
 
 class MotorAWSLambdaExamples(AsyncIOTestCase):
+    def client_wrapper(self, func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            from test.test_environment import CA_PEM, CLIENT_PEM
+
+            kwargs.setdefault("tlsCAFile", CA_PEM)
+            kwargs.setdefault("tlsCertificateKeyFile", CLIENT_PEM)
+            func(*args, **kwargs)
+
+        return wrapper
+
     def test_shared_client(self):
+        from motor.motor_asyncio import AsyncIOMotorClient
+
         environ.setdefault("MONGODB_URI", "localhost")
+        AsyncIOMotorClient = lambda *args, **kwargs: self.asyncio_client(
+            *args, **kwargs, **{"io_loop": asyncio.new_event_loop()}
+        )
         # Start AWS Lambda Example 1
         import asyncio
         import os
-
-        from motor.motor_asyncio import AsyncIOMotorClient
 
         event_loop = asyncio.new_event_loop()
         client = AsyncIOMotorClient(host=os.environ["MONGODB_URI"])

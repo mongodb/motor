@@ -101,7 +101,8 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
             kwargs.setdefault("tlsCertificateKeyFile", CLIENT_PEM)
 
         kwargs.setdefault("tls", env.mongod_started_with_ssl)
-        kwargs.setdefault("io_loop", self.loop)
+        if kwargs.pop("io_loop", -1) is None:
+            kwargs.setdefault("io_loop", self.loop)
 
         return kwargs
 
@@ -111,7 +112,7 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         Ignores self.ssl, you must pass 'ssl' argument.
         """
         return motor_asyncio.AsyncIOMotorClient(
-            uri or env.uri, *args, **self.get_client_kwargs(**kwargs)
+            kwargs.pop("host", None) or uri or env.uri, *args, **self.get_client_kwargs(**kwargs)
         )
 
     def asyncio_rsc(self, uri=None, *args, **kwargs):
