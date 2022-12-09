@@ -93,7 +93,6 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         self.cx = self.asyncio_client()
         self.db = self.cx.motor_test
         self.collection = self.db.test_collection
-
         self.loop.run_until_complete(self.collection.drop())
 
     def get_client_kwargs(self, **kwargs):
