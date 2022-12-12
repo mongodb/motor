@@ -1509,12 +1509,8 @@ class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
 
 class MotorAWSLambdaExamples(AsyncIOTestCase):
     def test_shared_client(self):
-        from motor.motor_asyncio import AsyncIOMotorClient
-
         environ.setdefault("MONGODB_URI", "localhost")
-        AsyncIOMotorClient = lambda *args, **kwargs: self.asyncio_client(
-            *args, **kwargs, **{"io_loop": asyncio.new_event_loop()}
-        )
+        AsyncIOMotorClient = lambda *args, **kwargs: self.asyncio_client(*args, **kwargs)
         # Start AWS Lambda Example 1
         import asyncio
         import os

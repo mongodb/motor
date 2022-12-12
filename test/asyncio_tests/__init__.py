@@ -95,24 +95,31 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         self.collection = self.db.test_collection
         self.loop.run_until_complete(self.collection.drop())
 
-    def get_client_kwargs(self, **kwargs):
+    def _get_ssl_kwargs(self, **kwargs):
         if env.mongod_started_with_ssl:
             kwargs.setdefault("tlsCAFile", CA_PEM)
             kwargs.setdefault("tlsCertificateKeyFile", CLIENT_PEM)
-
         kwargs.setdefault("tls", env.mongod_started_with_ssl)
-        if not kwargs.pop("io_loop", None):
-            kwargs.setdefault("io_loop", self.loop)
-
         return kwargs
+
+    def _get_io_loop_kwargs(self, **kwargs):
+        kwargs.setdefault("io_loop", self.loop)
+        return kwargs
+
+    def get_client_kwargs(self, **kwargs):
+        return self._get_io_loop_kwargs(**self._get_ssl_kwargs(**kwargs))
 
     def asyncio_client(self, uri=None, *args, **kwargs):
         """Get an AsyncIOMotorClient.
 
         Ignores self.ssl, you must pass 'ssl' argument.
         """
+        if kwargs.get("host", None):
+            kwargs = self._get_ssl_kwargs(**kwargs)
+        else:
+            kwargs = self.get_client_kwargs(**kwargs)
         return motor_asyncio.AsyncIOMotorClient(
-            kwargs.pop("host", None) or uri or env.uri, *args, **self.get_client_kwargs(**kwargs)
+            kwargs.pop("host", None) or uri or env.uri, *args, **kwargs
         )
 
     def asyncio_rsc(self, uri=None, *args, **kwargs):
