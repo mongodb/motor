@@ -106,20 +106,20 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         kwargs.setdefault("io_loop", self.loop)
         return kwargs
 
-    def get_client_kwargs(self, **kwargs):
-        return self._get_io_loop_kwargs(**self._get_ssl_kwargs(**kwargs))
+    def get_client_kwargs(self, set_loop=True, **kwargs):
+        if set_loop:
+            kwargs = self._get_io_loop_kwargs(**kwargs)
+        return self._get_ssl_kwargs(**kwargs)
 
-    def asyncio_client(self, uri=None, *args, **kwargs):
+    def asyncio_client(self, uri=None, *args, set_loop=True, **kwargs):
         """Get an AsyncIOMotorClient.
 
         Ignores self.ssl, you must pass 'ssl' argument.
         """
-        if kwargs.get("host", None):
-            kwargs = self._get_ssl_kwargs(**kwargs)
-        else:
-            kwargs = self.get_client_kwargs(**kwargs)
         return motor_asyncio.AsyncIOMotorClient(
-            kwargs.pop("host", None) or uri or env.uri, *args, **kwargs
+            kwargs.pop("host", None) or uri or env.uri,
+            *args,
+            **self.get_client_kwargs(**kwargs, set_loop=set_loop)
         )
 
     def asyncio_rsc(self, uri=None, *args, **kwargs):
