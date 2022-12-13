@@ -21,7 +21,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-20.04]
         python-version: ["3.7", "3.11"]
       fail-fast: false
     name: CPython ${{ matrix.python-version }}-${{ matrix.os }}
@@ -45,7 +45,7 @@ jobs:
           tox
 
   docs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
