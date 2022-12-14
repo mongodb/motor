@@ -54,6 +54,7 @@ from pymongo import (
     saslprep,
     server_selectors,
     server_type,
+    srv_resolver,
     ssl_support,
     write_concern,
 )
