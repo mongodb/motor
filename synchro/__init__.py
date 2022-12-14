@@ -105,7 +105,7 @@ from pymongo.saslprep import *
 from pymongo.server import *
 from pymongo.server_selectors import *
 from pymongo.settings import *
-from pymongo.srv_resolver import *
+from pymongo.srv_resolver import _resolve
 from pymongo.ssl_support import *
 from pymongo.topology import *
 from pymongo.topology_description import *
