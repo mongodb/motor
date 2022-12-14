@@ -22,6 +22,7 @@ DO NOT USE THIS MODULE.
 import functools
 import inspect
 import unittest
+from typing import Generic, TypeVar
 
 # Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
 # importing * won't pick up underscore-prefixed attrs.
@@ -338,7 +339,10 @@ class Synchro(metaclass=SynchroMeta):
         return synchronized_method
 
 
-class MongoClient(Synchro):
+_T = TypeVar("_T")
+
+
+class MongoClient(Synchro, Generic[_T]):
     __delegate_class__ = motor.MotorClient
     HOST = "localhost"
     PORT = 27017
