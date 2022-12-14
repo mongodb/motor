@@ -334,6 +334,7 @@ if __name__ == "__main__":
         "pymongo.encryption_options",
         "pymongo.mongo_client",
         "pymongo.database",
+        "pymongo.srv_resolver",
         "gridfs",
         "gridfs.grid_file",
     ]:
