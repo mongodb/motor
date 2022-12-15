@@ -172,6 +172,8 @@ excluded_tests = [
     "TestFork.*",
     # Also causes a deadlock.
     "TestClientSimple.test_fork",
+    # This method requires credentials.
+    "TestOnDemandAWSCredentials.test_02_success",
     # These methods are picked up by nose despite not being a unittest.
     "TestRewrapWithSeparateClientEncryption.run_test",
     "TestCustomEndpoint.run_test_expected_success",
@@ -334,6 +336,7 @@ if __name__ == "__main__":
         "pymongo.encryption_options",
         "pymongo.mongo_client",
         "pymongo.database",
+        "pymongo.srv_resolver",
         "gridfs",
         "gridfs.grid_file",
     ]:
