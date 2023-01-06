@@ -170,6 +170,7 @@ class AgnosticClient(AgnosticBaseProperties):
         start_after=None,
         comment=None,
         full_document_before_change=None,
+        show_expanded_events=None,
     ):
         """Watch changes on this cluster.
 
@@ -214,9 +215,13 @@ class AgnosticClient(AgnosticBaseProperties):
             command.
           - `full_document_before_change`: Allowed values: `whenAvailable` and `required`. Change events
              may now result in a `fullDocumentBeforeChange` response field.
+          - `show_expanded_events` (optional): Include expanded events such as DDL events like `dropIndexes`.
 
         :Returns:
           A :class:`~MotorChangeStream`.
+
+        .. versionchanged:: 3.2
+           Added ``show_expanded_events`` parameter.
 
         .. versionchanged:: 3.1
            Added ``full_document_before_change`` parameter.
@@ -249,6 +254,7 @@ class AgnosticClient(AgnosticBaseProperties):
             start_after,
             comment,
             full_document_before_change,
+            show_expanded_events,
         )
 
     def __getattr__(self, name):
@@ -629,6 +635,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         start_after=None,
         comment=None,
         full_document_before_change=None,
+        show_expanded_events=None,
     ):
         """Watch changes on this database.
 
@@ -673,9 +680,13 @@ class AgnosticDatabase(AgnosticBaseProperties):
             command.
           - `full_document_before_change`: Allowed values: `whenAvailable` and `required`. Change events
              may now result in a `fullDocumentBeforeChange` response field.
+          - `show_expanded_events` (optional): Include expanded events such as DDL events like `dropIndexes`.
 
         :Returns:
           A :class:`~MotorChangeStream`.
+
+        .. versionchanged:: 3.2
+           Added ``show_expanded_events`` parameter.
 
         .. versionchanged:: 3.1
            Added ``full_document_before_change`` parameter.
@@ -708,6 +719,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             start_after,
             comment,
             full_document_before_change,
+            show_expanded_events,
         )
 
     @property
@@ -1047,6 +1059,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         start_after=None,
         comment=None,
         full_document_before_change=None,
+        show_expanded_events=None,
     ):
         """Watch changes on this collection.
 
@@ -1146,11 +1159,15 @@ class AgnosticCollection(AgnosticBaseProperties):
             command.
           - `full_document_before_change`: Allowed values: `whenAvailable` and `required`. Change events
              may now result in a `fullDocumentBeforeChange` response field.
+          - `show_expanded_events` (optional): Include expanded events such as DDL events like `dropIndexes`.
 
         :Returns:
           A :class:`~MotorChangeStream`.
 
         See the :ref:`tornado_change_stream_example`.
+
+        .. versionchanged:: 3.2
+           Added ``show_expanded_events`` parameter.
 
         .. versionchanged:: 3.1
            Added ``full_document_before_change`` parameter.
@@ -1186,6 +1203,7 @@ class AgnosticCollection(AgnosticBaseProperties):
             start_after,
             comment,
             full_document_before_change,
+            show_expanded_events,
         )
 
     def list_indexes(self, session=None, **kwargs):
@@ -1786,6 +1804,7 @@ class AgnosticChangeStream(AgnosticBase):
         start_after,
         comment,
         full_document_before_change,
+        show_expanded_events,
     ):
         super().__init__(delegate=None)
         # The "target" object is a client, database, or collection.
@@ -1802,6 +1821,7 @@ class AgnosticChangeStream(AgnosticBase):
             "start_after": start_after,
             "comment": comment,
             "full_document_before_change": full_document_before_change,
+            "show_expanded_events": show_expanded_events,
         }
 
     def _lazy_init(self):
