@@ -3,6 +3,11 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.2.0
+-----------
+
+Motor 3.2 adds support for Queryable Encryption helper :meth:`~motor.core.MotorClientEncryption.create_encrypted_collection`.
+
 Motor 3.1.1
 -----------
 
