@@ -6,7 +6,8 @@ Changelog
 Motor 3.2.0
 -----------
 
-Motor 3.2 adds support for Queryable Encryption helper :meth:`~motor.core.MotorClientEncryption.create_encrypted_collection`.
+Motor 3.2 adds support for Queryable Encryption helper :meth:`~motor.core.MotorClientEncryption.create_encrypted_collection`,
+part of the Queryable Encryption beta. Backwards-breaking changes may be made before the final release.
 
 Motor 3.1.1
 -----------
