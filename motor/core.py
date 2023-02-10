@@ -2039,5 +2039,5 @@ class AgnosticClientEncryption(AgnosticBase):
         collection_class = create_class_with_framework(
             AgnosticCollection, self._framework, self.__module__
         )
-        coll, ef = self.delegate.create_encrypted_collection(*args, **kwargs)
+        coll, ef = await self.delegate.create_encrypted_collection(*args, **kwargs)
         return collection_class(coll.database, coll.name, delegate=coll), dict(ef)
