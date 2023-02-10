@@ -116,7 +116,8 @@ def pymongo_class_wrapper(f, pymongo_class):
     @functools.wraps(f)
     async def _wrapper(self, *args, **kwargs):
         result = await f(self, *args, **kwargs)
-
+        if pymongo_class == tuple:
+            return self.wrap(result[0])
         # Don't call isinstance(), not checking subclasses.
         if result.__class__ == pymongo_class:
             # Delegate to the current object to wrap the result.

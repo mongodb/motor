@@ -1979,7 +1979,6 @@ class AgnosticClientEncryption(AgnosticBase):
     add_key_alt_name = AsyncCommand()
     get_key_by_alt_name = AsyncCommand()
     remove_key_alt_name = AsyncCommand()
-    create_encrypted_collection = AsyncCommand()
 
     def __init__(
         self,
@@ -2035,3 +2034,10 @@ class AgnosticClientEncryption(AgnosticBase):
     async def get_keys(self):
         cursor_class = create_class_with_framework(AgnosticCursor, self._framework, self.__module__)
         return cursor_class(self.delegate.get_keys(), self)
+
+    async def create_encrypted_collection(self, *args, **kwargs):
+        collection_class = create_class_with_framework(
+            AgnosticCollection, self._framework, self.__module__
+        )
+        coll, ef = self.delegate.create_encrypted_collection(*args, **kwargs)
+        return collection_class(coll.database, coll.name, delegate=coll), dict(ef)

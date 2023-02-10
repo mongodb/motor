@@ -64,6 +64,7 @@ try:
     from pymongo import _csot
 except ImportError:
     pass
+from pymongo import client_session
 from pymongo.auth import *
 from pymongo.auth import _build_credentials_tuple, _password_digest
 from pymongo.client_session import TransactionOptions, _TxnState
@@ -798,3 +799,7 @@ class ClientEncryption(Synchro):
 
     def get_keys(self):
         return Cursor(self.synchronize(self.delegate.get_keys)())
+
+    def create_encrypted_collection(self, *args, **kwargs):
+        coll, ef = self.synchronize(self.delegate.create_encrypted_collection(*args, **kwargs))
+        return Collection(coll), dict(ef)
