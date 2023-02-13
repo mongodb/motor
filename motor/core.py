@@ -807,6 +807,7 @@ class AgnosticCollection(AgnosticBaseProperties):
     update_one = AsyncCommand(doc=docstrings.update_one_doc)
     with_options = DelegateMethod().wrap(Collection)
 
+    # These two methods are for API compatibility.
     def _write_concern_for(self, *args, **kwargs):
         return self.delegate._write_concern_for(*args, **kwargs)
 
