@@ -775,6 +775,8 @@ class AutoEncryptionOpts(encryption_options.AutoEncryptionOpts):
 class ClientEncryption(Synchro):
     __delegate_class__ = motor.MotorClientEncryption
 
+    create_encrypted_collection = Sync("create_encrypted_collection")
+
     def __init__(
         self,
         kms_providers,
@@ -799,7 +801,3 @@ class ClientEncryption(Synchro):
 
     def get_keys(self):
         return Cursor(self.synchronize(self.delegate.get_keys)())
-
-    def create_encrypted_collection(self, *args, **kwargs):
-        coll, ef = self.synchronize(self.delegate.create_encrypted_collection(*args, **kwargs))
-        return Collection(coll), dict(ef)

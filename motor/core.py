@@ -2035,9 +2035,23 @@ class AgnosticClientEncryption(AgnosticBase):
         cursor_class = create_class_with_framework(AgnosticCursor, self._framework, self.__module__)
         return cursor_class(self.delegate.get_keys(), self)
 
+    def _lazy_init(self, kwargs):
+        if not self.delegate:
+            self.delegate = self.delegate.watch(
+                **unwrap_kwargs_session(kwargs, endswith="ClientEncryption")
+            )
+
+    def _create_encrypted_collection(self, *args, **kwargs):
+        # This method is run on a thread.
+        self._lazy_init(kwargs)
+        return self.delegate.create_encrypted_collection(*args, **kwargs)
+
     async def create_encrypted_collection(self, *args, **kwargs):
         collection_class = create_class_with_framework(
             AgnosticCollection, self._framework, self.__module__
         )
-        coll, ef = self.delegate.create_encrypted_collection(*args, **kwargs)
+        loop = self.get_io_loop()
+        coll, ef = await self._framework.run_on_executor(
+            loop, lambda: self._create_encrypted_collection(*args, **kwargs)
+        )
         return collection_class(coll.database, coll.name, delegate=coll), dict(ef)
