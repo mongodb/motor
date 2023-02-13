@@ -2038,7 +2038,7 @@ class AgnosticClientEncryption(AgnosticBase):
     def _lazy_init(self, kwargs):
         if not self.delegate:
             self.delegate = self.delegate.watch(
-                **unwrap_kwargs_session(kwargs, endswith="ClientEncryption")
+                **unwrap_kwargs_session(kwargs, endswith="MotorClientEncryption")
             )
 
     def _create_encrypted_collection(self, *args, **kwargs):
@@ -2052,6 +2052,10 @@ class AgnosticClientEncryption(AgnosticBase):
         )
         loop = self.get_io_loop()
         coll, ef = await self._framework.run_on_executor(
-            loop, lambda: self._create_encrypted_collection(*args, **kwargs)
+            loop, self._create_encrypted_collection, *args, **kwargs
         )
-        return collection_class(coll.database, coll.name, delegate=coll), dict(ef)
+        try:
+            coll = await coll
+        except Exception as exc:
+            raise pymongo.errors.EncryptedCollectionError(exc, ef) from exc
+        return collection_class(coll.database, coll.name or ""), dict(ef)
