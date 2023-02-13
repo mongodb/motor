@@ -184,7 +184,7 @@ excluded_tests = [
     "TestUnifiedFindShutdownError.test_Concurrent_shutdown_error_on_find",
     "TestUnifiedInsertShutdownError.test_Concurrent_shutdown_error_on_insert",
     "TestUnifiedPoolClearedError.test_PoolClearedError_does_not_mark_server_unknown",
-    # These tests require synchronous method calls.
+    # This test requires synchronous method calls.
     "TestAutomaticDecryptionKeys.test_01_simple_create",
 ]
 
