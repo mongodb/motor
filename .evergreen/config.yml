@@ -79,6 +79,7 @@ functions:
               export PATH="$MONGODB_BINARIES:$HOME/.cargo/bin:$PATH"
               export PROJECT="${project}"
               export ASYNC_TEST_TIMEOUT=30
+              export CARGO_NET_GIT_FETCH_WITH_CLI=true
            EOT
            # See what we've done
            cat expansion.yml
