@@ -75,8 +75,8 @@ functions:
               export PATH="$MONGODB_BINARIES:/home/admin/.cargo/bin:$PATH"
               echo "HI HI HI"
               ls /home/
-              ls /home/admin
-              ls /home/admin/.cargo
+              ls /home/ubuntu
+              ls /home/ubuntu/.cargo
               export PROJECT="${project}"
               export ASYNC_TEST_TIMEOUT=30
            EOT
