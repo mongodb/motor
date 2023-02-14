@@ -51,6 +51,12 @@ functions:
               export PROJECT_DIRECTORY=$(cygpath -m $PROJECT_DIRECTORY)
            fi
 
+           # Installation of cryptography requires a rust compiler on some machines
+           curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path
+           echo "export CARGO_NET_GIT_FETCH_WITH_CLI=true" >> ~/.cargo/env
+           . ~/.cargo/env
+           rustup toolchain install nightly -c rustc
+
            export MONGO_ORCHESTRATION_HOME="$DRIVERS_TOOLS/.evergreen/orchestration"
            export MONGODB_BINARIES="$DRIVERS_TOOLS/mongodb/bin"
            export UPLOAD_BUCKET="${project}"
@@ -71,13 +77,7 @@ functions:
               export UPLOAD_BUCKET="$UPLOAD_BUCKET"
               export PROJECT_DIRECTORY="$PROJECT_DIRECTORY"
               export TMPDIR="$MONGO_ORCHESTRATION_HOME/db"
-              # Installation of cryptography requires a rust compiler on some machines
-              curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path
-              echo "export CARGO_NET_GIT_FETCH_WITH_CLI=true" >> ~/.cargo/env
-              . ~/.cargo/env
-              rustup toolchain install nightly -c rustc
               export PATH="$MONGODB_BINARIES:$HOME/.cargo/bin:$PATH"
-
               export PROJECT="${project}"
               export ASYNC_TEST_TIMEOUT=30
            EOT
