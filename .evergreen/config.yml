@@ -54,7 +54,7 @@ functions:
            # Installation of cryptography requires a rust compiler on some machines
            curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path
            echo "export CARGO_NET_GIT_FETCH_WITH_CLI=true" >> ~/.cargo/env
-           . ~/.cargo/env
+           . ~/.cargo/env || true
            rustup toolchain install nightly -c rustc
 
            export MONGO_ORCHESTRATION_HOME="$DRIVERS_TOOLS/.evergreen/orchestration"
