@@ -97,9 +97,9 @@ def unwrap_args_session(args):
     )
 
 
-def unwrap_kwargs_session(kwargs, endswith="MotorClientSession"):
+def unwrap_kwargs_session(kwargs):
     return {
-        key: (obj.delegate if obj.__class__.__name__.endswith(endswith) else obj)
+        key: (obj.delegate if obj.__class__.__name__.endswith("MotorClientSession") else obj)
         for key, obj in kwargs.items()
     }
 
