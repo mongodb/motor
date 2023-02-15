@@ -807,13 +807,6 @@ class AgnosticCollection(AgnosticBaseProperties):
     update_one = AsyncCommand(doc=docstrings.update_one_doc)
     with_options = DelegateMethod().wrap(Collection)
 
-    # These two methods are for API compatibility.
-    def _write_concern_for(self, *args, **kwargs):
-        return self.delegate._write_concern_for(*args, **kwargs)
-
-    def _insert_one(self, *args, **kwargs):
-        return self.delegate._insert_one(*args, **kwargs)
-
     _async_aggregate = AsyncRead(attr_name="aggregate")
     _async_aggregate_raw_batches = AsyncRead(attr_name="aggregate_raw_batches")
     _async_list_indexes = AsyncRead(attr_name="list_indexes")
@@ -2074,4 +2067,4 @@ class AgnosticClientEncryption(AgnosticBase):
             coll.database.name,
             _delegate=coll.database,
         )
-        return collection_class(db_class, coll.name or "", _delegate=coll), dict(ef)
+        return collection_class(db_class, coll.name, _delegate=coll), dict(ef)
