@@ -2060,6 +2060,7 @@ class AgnosticClientEncryption(AgnosticBase):
         raised if the collection already exists.
 
         :Parameters:
+          - `database`: the database in which to create a collection
           - `name`: the name of the collection to create
           - `encrypted_fields` (dict): **(BETA)** Document that describes the encrypted fields for
             Queryable Encryption. For example::
@@ -2097,7 +2098,7 @@ class AgnosticClientEncryption(AgnosticBase):
         :Raises:
           - :class:`~pymongo.errors.EncryptedCollectionError`: When either data-key creation or creating the collection fails.
 
-        .. versionadded:: 4.4
+        .. versionadded:: 3.2
 
         .. _create collection command:
             https://mongodb.com/docs/manual/reference/command/create
@@ -2105,9 +2106,6 @@ class AgnosticClientEncryption(AgnosticBase):
         """
         collection_class = create_class_with_framework(
             AgnosticCollection, self._framework, self.__module__
-        )
-        database_class = create_class_with_framework(
-            AgnosticDatabase, self._framework, self.__module__
         )
         loop = self.get_io_loop()
         coll, ef = await self._framework.run_on_executor(
@@ -2120,10 +2118,4 @@ class AgnosticClientEncryption(AgnosticBase):
             master_key=master_key,
             **kwargs,
         )
-        cl_class = create_class_with_framework(AgnosticClient, self._framework, self.__module__)
-        db_class = database_class(
-            cl_class(**coll.database.client.options._options),
-            coll.database.name,
-            _delegate=coll.database,
-        )
-        return collection_class(db_class, coll.name, _delegate=coll), dict(ef)
+        return collection_class(database, coll.name, _delegate=coll), ef
