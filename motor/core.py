@@ -619,7 +619,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             self._async_aggregate,
             pipeline,
             *unwrap_args_session(args),
-            **unwrap_kwargs_session(kwargs)
+            **unwrap_kwargs_session(kwargs),
         )
 
     def watch(
@@ -1020,7 +1020,7 @@ class AgnosticCollection(AgnosticBaseProperties):
             self._async_aggregate,
             pipeline,
             *unwrap_args_session(args),
-            **unwrap_kwargs_session(kwargs)
+            **unwrap_kwargs_session(kwargs),
         )
 
     def aggregate_raw_batches(self, pipeline, **kwargs):
@@ -2042,27 +2042,36 @@ class AgnosticClientEncryption(AgnosticBase):
         cursor_class = create_class_with_framework(AgnosticCursor, self._framework, self.__module__)
         return cursor_class(self.delegate.get_keys(), self)
 
-    def _lazy_init(self, kwargs):
-        if not self.delegate:
-            self.delegate = self.delegate.watch(
-                **unwrap_kwargs_session(kwargs, endswith="MotorClientEncryption")
-            )
-
-    def _create_encrypted_collection(self, *args, **kwargs):
-        # This method is run on a thread.
-        self._lazy_init(kwargs)
-        return self.delegate.create_encrypted_collection(*args, **kwargs)
-
-    async def create_encrypted_collection(self, *args, **kwargs):
+    async def create_encrypted_collection(
+        self,
+        database,
+        name,
+        encrypted_fields,
+        kms_provider=None,
+        master_key=None,
+        **kwargs,
+    ):
         collection_class = create_class_with_framework(
             AgnosticCollection, self._framework, self.__module__
         )
+        database_class = create_class_with_framework(
+            AgnosticDatabase, self._framework, self.__module__
+        )
         loop = self.get_io_loop()
         coll, ef = await self._framework.run_on_executor(
-            loop, self._create_encrypted_collection, *args, **kwargs
+            loop,
+            self.delegate.create_encrypted_collection,
+            database=database.delegate,
+            name=name,
+            encrypted_fields=encrypted_fields,
+            kms_provider=kms_provider,
+            master_key=master_key,
+            **kwargs,
         )
-        try:
-            coll = await coll
-        except Exception as exc:
-            raise pymongo.errors.EncryptedCollectionError(exc, ef) from exc
-        return collection_class(coll.database, coll.name or "", _delegate=coll), dict(ef)
+        cl_class = create_class_with_framework(AgnosticClient, self._framework, self.__module__)
+        db_class = database_class(
+            cl_class(**coll.database.client.options._options),
+            coll.database.name,
+            _delegate=coll.database,
+        )
+        return collection_class(db_class, coll.name or "", _delegate=coll), dict(ef)
