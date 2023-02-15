@@ -2044,6 +2044,65 @@ class AgnosticClientEncryption(AgnosticBase):
         master_key=None,
         **kwargs,
     ):
+        """Create a collection with encryptedFields.
+
+        .. note:: Support for Queryable Encryption is in beta.
+           Backwards-breaking changes may be made before the final release.
+
+        .. warning::
+            This function does not update the encryptedFieldsMap in the client's
+            AutoEncryptionOpts, thus the user must create a new client after calling this function with
+            the encryptedFields returned.
+
+        Normally collection creation is automatic. This method should
+        only be used to specify options on
+        creation. :class:`~pymongo.errors.EncryptionError` will be
+        raised if the collection already exists.
+
+        :Parameters:
+          - `name`: the name of the collection to create
+          - `encrypted_fields` (dict): **(BETA)** Document that describes the encrypted fields for
+            Queryable Encryption. For example::
+
+              {
+                "escCollection": "enxcol_.encryptedCollection.esc",
+                "eccCollection": "enxcol_.encryptedCollection.ecc",
+                "ecocCollection": "enxcol_.encryptedCollection.ecoc",
+                "fields": [
+                    {
+                        "path": "firstName",
+                        "keyId": Binary.from_uuid(UUID('00000000-0000-0000-0000-000000000000')),
+                        "bsonType": "string",
+                        "queries": {"queryType": "equality"}
+                    },
+                    {
+                        "path": "ssn",
+                        "keyId": Binary.from_uuid(UUID('04104104-1041-0410-4104-104104104104')),
+                        "bsonType": "string"
+                    }
+                  ]
+              }
+
+            The "keyId" may be set to ``None`` to auto-generate the data keys.
+          - `kms_provider` (optional): the KMS provider to be used
+          - `master_key` (optional): Identifies a KMS-specific key used to encrypt the
+            new data key. If the kmsProvider is "local" the `master_key` is
+            not applicable and may be omitted.
+          - `**kwargs` (optional): additional keyword arguments are the same as "create_collection".
+
+        All optional `create collection command`_ parameters should be passed
+        as keyword arguments to this method.
+        See the documentation for :meth:`~pymongo.database.Database.create_collection` for all valid options.
+
+        :Raises:
+          - :class:`~pymongo.errors.EncryptedCollectionError`: When either data-key creation or creating the collection fails.
+
+        .. versionadded:: 4.4
+
+        .. _create collection command:
+            https://mongodb.com/docs/manual/reference/command/create
+
+        """
         collection_class = create_class_with_framework(
             AgnosticCollection, self._framework, self.__module__
         )
