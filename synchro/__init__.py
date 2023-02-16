@@ -775,7 +775,7 @@ class AutoEncryptionOpts(encryption_options.AutoEncryptionOpts):
 class ClientEncryption(Synchro):
     __delegate_class__ = motor.MotorClientEncryption
 
-    create_encrypted_collection = Sync("create_encrypted_collection")
+    _enc_col = Sync("create_encrypted_collection")
 
     def __init__(
         self,
@@ -801,3 +801,24 @@ class ClientEncryption(Synchro):
 
     def get_keys(self):
         return Cursor(self.synchronize(self.delegate.get_keys)())
+
+    def create_encrypted_collection(
+        self,
+        database,
+        name,
+        encrypted_fields,
+        kms_provider=None,
+        master_key=None,
+        **kwargs,
+    ):
+        coll, ef = self.synchronize(self.delegate.create_encrypted_collection)(
+            database=database.delegate,
+            name=name,
+            encrypted_fields=encrypted_fields,
+            kms_provider=kms_provider,
+            master_key=master_key,
+            **kwargs,
+        )
+        client = MongoClient(delegate=coll.database.client)
+        database = Database(client, coll.database.name)
+        return Collection(database, coll.name, delegate=coll), ef
