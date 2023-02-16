@@ -819,6 +819,4 @@ class ClientEncryption(Synchro):
             master_key=master_key,
             **kwargs,
         )
-        client = MongoClient(delegate=coll.database.client)
-        database = Database(client, coll.database.name)
         return Collection(database, coll.name, delegate=coll), ef
