@@ -278,7 +278,7 @@ class MotorCollectionTest(MotorTest):
             )
             with self.assertRaises(pymongo.errors.WriteError) as exc:
                 coll.insert_one({"ssn": "123-45-6789"})
-            self.addCleanup(self.db.drop_collection, "testing5", encrypted_fields=ef)
+            self.addCleanup(self.db.drop_collection, "testing1", encrypted_fields=ef)
             self.assertEqual(exc.exception.code, 121)
 
 
