@@ -64,6 +64,7 @@ try:
     from pymongo import _csot
 except ImportError:
     pass
+from pymongo import client_session
 from pymongo.auth import *
 from pymongo.auth import _build_credentials_tuple, _password_digest
 from pymongo.client_session import TransactionOptions, _TxnState
@@ -774,6 +775,8 @@ class AutoEncryptionOpts(encryption_options.AutoEncryptionOpts):
 class ClientEncryption(Synchro):
     __delegate_class__ = motor.MotorClientEncryption
 
+    _enc_col = Sync("create_encrypted_collection")
+
     def __init__(
         self,
         kms_providers,
@@ -798,3 +801,22 @@ class ClientEncryption(Synchro):
 
     def get_keys(self):
         return Cursor(self.synchronize(self.delegate.get_keys)())
+
+    def create_encrypted_collection(
+        self,
+        database,
+        name,
+        encrypted_fields,
+        kms_provider=None,
+        master_key=None,
+        **kwargs,
+    ):
+        coll, ef = self.synchronize(self.delegate.create_encrypted_collection)(
+            database=database.delegate,
+            name=name,
+            encrypted_fields=encrypted_fields,
+            kms_provider=kms_provider,
+            master_key=master_key,
+            **kwargs,
+        )
+        return Collection(database, coll.name, delegate=coll), ef

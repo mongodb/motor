@@ -20,6 +20,7 @@ import unittest
 from test.tornado_tests import MotorTest
 from test.utils import ignore_deprecations
 
+import pymongo.errors
 from bson import CodecOptions
 from bson.binary import JAVA_LEGACY
 from pymongo import ReadPreference, WriteConcern
@@ -260,6 +261,27 @@ class MotorCollectionTest(MotorTest):
             self.assertEqual(read_concern, c.read_concern)
             self.assertEqual(read_preference, c.read_preference)
             self.assertEqual(codec_options, c.codec_options)
+
+    @gen_test
+    async def test_async_create_encrypted_collection(self):
+        if pymongo.version_tuple < (4, 4, 0):
+            raise unittest.SkipTest("Requires PyMongo 4.4+")
+        c = self.collection
+        KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
+        self.cx.drop_database("db")
+        async with motor.MotorClientEncryption(
+            KMS_PROVIDERS, "keyvault.datakeys", c, CodecOptions()
+        ) as client_encryption:
+            coll, ef = await client_encryption.create_encrypted_collection(
+                database=self.db,
+                name="testing1",
+                encrypted_fields={"fields": [{"path": "ssn", "bsonType": "string", "keyId": None}]},
+                kms_provider="local",
+            )
+            with self.assertRaises(pymongo.errors.WriteError) as exc:
+                coll.insert_one({"ssn": "123-45-6789"})
+            self.addCleanup(self.db.drop_collection, "testing1", encrypted_fields=ef)
+            self.assertEqual(exc.exception.code, 121)
 
 
 if __name__ == "__main__":
