@@ -776,6 +776,7 @@ class ClientEncryption(Synchro):
     __delegate_class__ = motor.MotorClientEncryption
 
     _enc_col = Sync("create_encrypted_collection")
+    encrypt_expression = Sync("encrypt_expression")
 
     def __init__(
         self,
