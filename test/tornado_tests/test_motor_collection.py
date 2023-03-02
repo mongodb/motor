@@ -17,6 +17,7 @@
 import sys
 import traceback
 import unittest
+from test.test_environment import env
 from test.tornado_tests import MotorTest
 from test.utils import ignore_deprecations
 
@@ -265,6 +266,7 @@ class MotorCollectionTest(MotorTest):
             self.assertEqual(codec_options, c.codec_options)
 
     @gen_test
+    @env.require_version_min(6, 2, -1, -1)
     async def test_async_create_encrypted_collection(self):
         if pymongo.version_tuple < (4, 4, 0):
             raise unittest.SkipTest("Requires PyMongo 4.4+")

@@ -149,6 +149,8 @@ class Async(MotorAttributeFactory):
 
     def create_attribute(self, cls, attr_name):
         name = self.attr_name or attr_name
+        if name == "encrypt_expression":
+            return
         method = getattr(cls.__delegate_class__, name)
         return asynchronize(
             framework=cls._framework,
