@@ -293,7 +293,6 @@ class MotorCollectionTest(MotorTest):
     async def test_async_encrypt_expression(self):
         if pymongo.version_tuple < (4, 4, 0):
             raise unittest.SkipTest("Requires PyMongo 4.4+")
-
         c = self.collection
         KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
         self.cx.drop_database("db")
