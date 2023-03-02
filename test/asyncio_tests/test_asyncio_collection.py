@@ -284,7 +284,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
                 kms_provider="local",
             )
             with self.assertRaises(pymongo.errors.WriteError) as exc:
-                await coll.insert_one({"ssn": "123-45-6789"})
+                coll.insert_one({"ssn": "123-45-6789"})
             self.addCleanup(self.db.drop_collection, "testing1", encrypted_fields=ef)
             self.assertEqual(exc.exception.code, 121)
 
