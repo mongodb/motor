@@ -149,13 +149,7 @@ class Async(MotorAttributeFactory):
 
     def create_attribute(self, cls, attr_name):
         name = self.attr_name or attr_name
-        try:
-            method = getattr(cls.__delegate_class__, name)
-        except AttributeError as exc:
-            if name in ["encrypt_expression"]:
-                return
-            else:
-                raise exc
+        method = getattr(cls.__delegate_class__, name)
         return asynchronize(
             framework=cls._framework,
             sync_method=method,

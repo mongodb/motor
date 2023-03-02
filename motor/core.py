@@ -1979,7 +1979,8 @@ class AgnosticClientEncryption(AgnosticBase):
     add_key_alt_name = AsyncCommand()
     get_key_by_alt_name = AsyncCommand()
     remove_key_alt_name = AsyncCommand()
-    encrypt_expression = AsyncCommand()
+    if hasattr(ClientEncryption, "encrypt_expression"):
+        encrypt_expression = AsyncCommand()
 
     def __init__(
         self,
