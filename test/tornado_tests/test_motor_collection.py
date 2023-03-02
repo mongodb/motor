@@ -267,8 +267,8 @@ class MotorCollectionTest(MotorTest):
             self.assertEqual(read_preference, c.read_preference)
             self.assertEqual(codec_options, c.codec_options)
 
-    @gen_test
     @env.require_version_min(6, 2, -1, -1)
+    @gen_test
     async def test_async_create_encrypted_collection(self):
         if pymongo.version_tuple < (4, 4, 0):
             raise unittest.SkipTest("Requires PyMongo 4.4+")
