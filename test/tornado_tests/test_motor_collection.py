@@ -26,7 +26,6 @@ from bson import CodecOptions
 from bson.binary import JAVA_LEGACY
 from pymongo import ReadPreference, WriteConcern
 from pymongo.encryption import Algorithm, QueryType
-from pymongo.encryption_options import RangeOpts
 from pymongo.errors import BulkWriteError, DuplicateKeyError, OperationFailure
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import Secondary
@@ -35,6 +34,9 @@ from tornado.testing import gen_test
 
 import motor
 import motor.motor_tornado
+
+if pymongo.version_tuple >= (4, 4, 0):
+    from pymongo.encryption_options import RangeOpts
 
 
 class MotorCollectionTest(MotorTest):
@@ -291,6 +293,7 @@ class MotorCollectionTest(MotorTest):
     async def test_async_encrypt_expression(self):
         if pymongo.version_tuple < (4, 4, 0):
             raise unittest.SkipTest("Requires PyMongo 4.4+")
+
         c = self.collection
         KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
         self.cx.drop_database("db")
