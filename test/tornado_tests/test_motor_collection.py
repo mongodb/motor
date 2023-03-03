@@ -287,8 +287,8 @@ class MotorCollectionTest(MotorTest):
             )
             with self.assertRaises(pymongo.errors.WriteError) as exc:
                 await coll.insert_one({"ssn": "123-45-6789"})
-            self.addCleanup(self.db.drop_collection, "testing1", encrypted_fields=ef)
             self.assertEqual(exc.exception.code, 121)
+            await self.db.drop_collection("testing1", encrypted_fields=ef)
 
     @gen_test
     async def test_async_encrypt_expression(self):
