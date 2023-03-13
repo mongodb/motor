@@ -24,7 +24,7 @@ from pymongo import WriteConcern
 from pymongo.read_preferences import Nearest, ReadPreference, Secondary
 
 from motor import motor_asyncio
-from motor.frameworks import tornado
+from motor.frameworks import asyncio
 
 
 class AIOMotorTestBasic(AsyncIOTestCase):
@@ -154,11 +154,11 @@ class ExecutorForkTest(AsyncIOTestCase):
     @asyncio_test()
     async def test_executor_reset(self):
         parent_conn, child_conn = Pipe()
-        init_exec = id(tornado._EXECUTOR)
+        init_exec = id(asyncio._EXECUTOR)
         lock_pid = os.fork()
 
         if lock_pid == 0:  # Child
-            exec_id = id(tornado._EXECUTOR)
+            exec_id = id(asyncio._EXECUTOR)
             child_conn.send(exec_id)
             child_conn.send(
                 (
@@ -168,7 +168,7 @@ class ExecutorForkTest(AsyncIOTestCase):
             )
             os._exit(0)
         else:  # Parent
-            self.assertEqual(init_exec, id(tornado._EXECUTOR))
+            self.assertEqual(init_exec, id(asyncio._EXECUTOR))
             child_exec = parent_conn.recv()
             self.assertIsNot(child_exec, init_exec)
             passed, msg = parent_conn.recv()
