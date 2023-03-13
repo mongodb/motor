@@ -61,6 +61,19 @@ else:
 _EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
 
 
+def _reset_global_executor():
+    """Re-initialize the global ThreadPoolExecutor"""
+    global _EXECUTOR
+    _EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
+
+
+if hasattr(os, "register_at_fork"):
+    # This will run in the same thread as the fork was called.
+    # If we fork in a critical region on the same thread, it should break.
+    # This is fine since we would never call fork directly from a critical region.
+    os.register_at_fork(after_in_child=_reset_global_executor)
+
+
 def run_on_executor(loop, fn, *args, **kwargs):
     if contextvars:
         context = contextvars.copy_context()

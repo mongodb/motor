@@ -13,9 +13,10 @@
 # limitations under the License.
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
-
+import os
 import test
 from abc import ABC
+from multiprocessing import Pipe
 from test.tornado_tests import MotorTest
 from test.utils import ignore_deprecations
 
@@ -25,6 +26,7 @@ from pymongo.read_preferences import Nearest, ReadPreference, Secondary
 from tornado.testing import gen_test
 
 import motor
+from motor.frameworks import tornado
 
 
 class MotorTestBasic(MotorTest):
@@ -146,3 +148,28 @@ class MotorTestBasic(MotorTest):
         coll = db["testcoll"]
         self.assertIsInstance(coll, CollectionSubclass)
         self.assertIsNotNone(await coll.insert_one({}))
+
+
+class ExecutorForkTest(MotorTest):
+    @gen_test()
+    async def test_executor_reset(self):
+        parent_conn, child_conn = Pipe()
+        init_exec = id(tornado._EXECUTOR)
+        lock_pid = os.fork()
+
+        if lock_pid == 0:  # Child
+            exec_id = id(tornado._EXECUTOR)
+            child_conn.send(exec_id)
+            child_conn.send(
+                (
+                    init_exec != exec_id,
+                    "_EXECUTOR was not reinitialized",
+                )
+            )
+            os._exit(0)
+        else:  # Parent
+            self.assertEqual(init_exec, id(tornado._EXECUTOR))
+            child_exec = parent_conn.recv()
+            self.assertIsNot(child_exec, init_exec)
+            passed, msg = parent_conn.recv()
+            self.assertTrue(passed, msg)
