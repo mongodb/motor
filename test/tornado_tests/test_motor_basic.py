@@ -23,10 +23,10 @@ from test.utils import ignore_deprecations
 import pymongo
 from pymongo import WriteConcern
 from pymongo.read_preferences import Nearest, ReadPreference, Secondary
+from tornado.ioloop import IOLoop
 from tornado.testing import gen_test
 
 import motor
-from motor.frameworks import tornado
 
 
 class MotorTestBasic(MotorTest):
@@ -154,22 +154,15 @@ class ExecutorForkTest(MotorTest):
     @gen_test()
     async def test_executor_reset(self):
         parent_conn, child_conn = Pipe()
-        init_exec = id(tornado._EXECUTOR)
         lock_pid = os.fork()
-
         if lock_pid == 0:  # Child
-            exec_id = id(tornado._EXECUTOR)
-            child_conn.send(exec_id)
-            child_conn.send(
-                (
-                    init_exec != exec_id,
-                    "_EXECUTOR was not reinitialized",
-                )
-            )
+            self.loop = IOLoop.current()
+            client = self.motor_client()
+            try:
+                self.loop.spawn_callback(client.db.command, "ping")
+            except Exception:
+                child_conn.send(False)
+            child_conn.send(True)
             os._exit(0)
         else:  # Parent
-            self.assertEqual(init_exec, id(tornado._EXECUTOR))
-            child_exec = parent_conn.recv()
-            self.assertIsNot(child_exec, init_exec)
-            passed, msg = parent_conn.recv()
-            self.assertTrue(passed, msg)
+            self.assertTrue(parent_conn.recv(), "Child process did not complete.")

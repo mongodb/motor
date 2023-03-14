@@ -15,6 +15,7 @@
 import os
 import test
 from abc import ABC
+from asyncio import new_event_loop, set_event_loop
 from multiprocessing import Pipe
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.utils import ignore_deprecations
@@ -24,7 +25,6 @@ from pymongo import WriteConcern
 from pymongo.read_preferences import Nearest, ReadPreference, Secondary
 
 from motor import motor_asyncio
-from motor.frameworks import asyncio
 
 
 class AIOMotorTestBasic(AsyncIOTestCase):
@@ -154,22 +154,16 @@ class ExecutorForkTest(AsyncIOTestCase):
     @asyncio_test()
     async def test_executor_reset(self):
         parent_conn, child_conn = Pipe()
-        init_exec = id(asyncio._EXECUTOR)
         lock_pid = os.fork()
-
         if lock_pid == 0:  # Child
-            exec_id = id(asyncio._EXECUTOR)
-            child_conn.send(exec_id)
-            child_conn.send(
-                (
-                    init_exec != exec_id,
-                    "_EXECUTOR was not reinitialized",
-                )
-            )
+            set_event_loop(None)
+            self.loop = new_event_loop()
+            client = self.asyncio_client()
+            try:
+                self.loop.run_until_complete(client.db.command("ping"))
+            except Exception:
+                child_conn.send(False)
+            child_conn.send(True)
             os._exit(0)
         else:  # Parent
-            self.assertEqual(init_exec, id(asyncio._EXECUTOR))
-            child_exec = parent_conn.recv()
-            self.assertIsNot(child_exec, init_exec)
-            passed, msg = parent_conn.recv()
-            self.assertTrue(passed, msg)
+            self.assertTrue(parent_conn.recv(), "Child process did not complete.")

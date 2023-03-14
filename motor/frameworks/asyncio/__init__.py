@@ -73,9 +73,7 @@ def _reset_global_executor():
 
 
 if hasattr(os, "register_at_fork"):
-    # This will run in the same thread as the fork was called.
-    # If we fork in a critical region on the same thread, it should break.
-    # This is fine since we would never call fork directly from a critical region.
+    # We need this to make sure that creating new clients in threads doesn't deadlock.
     os.register_at_fork(after_in_child=_reset_global_executor)
 
 
