@@ -37,6 +37,7 @@ async def page_handler(request):
 
     return web.Response(body=document["body"].encode(), content_type="text/html")
 
+
 # -- handler-end --
 
 # -- main-start --
