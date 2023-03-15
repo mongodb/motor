@@ -19,16 +19,22 @@ import sys
 import traceback
 import unittest
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.test_environment import env
 from test.utils import ignore_deprecations
 
+import pymongo
 from bson import CodecOptions
 from bson.binary import JAVA_LEGACY
 from pymongo import ReadPreference, WriteConcern
+from pymongo.encryption import Algorithm, QueryType
 from pymongo.errors import BulkWriteError, DuplicateKeyError, OperationFailure
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import Secondary
 
-from motor.motor_asyncio import AsyncIOMotorCollection
+from motor.motor_asyncio import AsyncIOMotorClientEncryption, AsyncIOMotorCollection
+
+if pymongo.version_tuple >= (4, 4, 0):
+    from pymongo.encryption_options import RangeOpts
 
 
 class TestAsyncIOCollection(AsyncIOTestCase):
@@ -259,6 +265,79 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             self.assertEqual(read_concern, c.read_concern)
             self.assertEqual(read_preference, c.read_preference)
             self.assertEqual(codec_options, c.codec_options)
+
+    @env.require_version_min(6, 2, -1, -1)
+    @asyncio_test
+    async def test_async_create_encrypted_collection(self):
+        if pymongo.version_tuple < (4, 4, 0):
+            raise unittest.SkipTest("Requires PyMongo 4.4+")
+        c = self.collection
+        KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
+        self.cx.drop_database("db")
+        async with AsyncIOMotorClientEncryption(
+            KMS_PROVIDERS, "keyvault.datakeys", c, CodecOptions()
+        ) as client_encryption:
+            coll, ef = await client_encryption.create_encrypted_collection(
+                database=self.db,
+                name="testing1",
+                encrypted_fields={"fields": [{"path": "ssn", "bsonType": "string", "keyId": None}]},
+                kms_provider="local",
+            )
+            with self.assertRaises(pymongo.errors.WriteError) as exc:
+                await coll.insert_one({"ssn": "123-45-6789"})
+            self.assertEqual(exc.exception.code, 121)
+            await self.db.drop_collection("testing1", encrypted_fields=ef)
+
+    @asyncio_test
+    async def test_async_encrypt_expression(self):
+        if pymongo.version_tuple < (4, 4, 0):
+            raise unittest.SkipTest("Requires PyMongo 4.4+")
+        c = self.collection
+        KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
+        self.cx.drop_database("db")
+        async with AsyncIOMotorClientEncryption(
+            KMS_PROVIDERS, "keyvault.datakeys", c, CodecOptions()
+        ) as client_encryption:
+            data_key = await client_encryption.create_data_key(
+                "local", key_alt_names=["pymongo_encryption_example_1"]
+            )
+            name = "DoubleNoPrecision"
+            range_opts = RangeOpts(sparsity=1)
+            for i in [6.0, 30.0, 200.0]:
+                insert_payload = await client_encryption.encrypt(
+                    float(i),
+                    key_id=data_key,
+                    algorithm=Algorithm.RANGEPREVIEW,
+                    contention_factor=0,
+                    range_opts=range_opts,
+                )
+                self.collection.insert_one(
+                    {
+                        f"encrypted{name}": insert_payload,
+                    }
+                )
+                self.assertEqual(await client_encryption.decrypt(insert_payload), i)
+
+            find_payload = await client_encryption.encrypt_expression(
+                expression={
+                    "$and": [
+                        {f"encrypted{name}": {"$gte": 6.0}},
+                        {f"encrypted{name}": {"$lte": 200.0}},
+                    ]
+                },
+                key_id=data_key,
+                algorithm=Algorithm.RANGEPREVIEW,
+                query_type=QueryType.RANGEPREVIEW,
+                contention_factor=0,
+                range_opts=range_opts,
+            )
+
+            sorted_find = sorted(
+                await self.collection.explicit_encryption.find(find_payload).to_list(3),
+                key=lambda x: x["_id"],
+            )
+            for elem, expected in zip(sorted_find, [6.0, 30.0, 200.0]):
+                self.assertEqual(elem[f"encrypted{name}"], expected)
 
 
 if __name__ == "__main__":
