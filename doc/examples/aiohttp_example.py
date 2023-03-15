@@ -53,6 +53,6 @@ def main():
     app = init_connection()
     web.run_app(app)
 
-if __name__=='__main__':
+if __name__== "__main__":
     main()
 # -- main-end --
