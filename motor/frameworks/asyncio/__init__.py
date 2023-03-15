@@ -73,7 +73,7 @@ def _reset_global_executor():
 
 
 if hasattr(os, "register_at_fork"):
-    # We need this to make sure that creating new clients in threads doesn't deadlock.
+    # We need this to make sure that creating new clients in subprocesses doesn't deadlock.
     os.register_at_fork(after_in_child=_reset_global_executor)
 
 
