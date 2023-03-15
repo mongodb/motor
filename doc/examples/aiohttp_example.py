@@ -1,7 +1,5 @@
 # These comments let tutorial-asyncio.rst include this code in sections.
 # -- setup-start --
-import asyncio
-
 from aiohttp import web
 
 from motor.motor_asyncio import AsyncIOMotorClient
