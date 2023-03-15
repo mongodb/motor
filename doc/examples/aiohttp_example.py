@@ -49,9 +49,11 @@ async def init_connection():
     app.router.add_get("/pages/{page_name}", page_handler)
     return app
 
+
 def main():
     app = init_connection()
     web.run_app(app)
+
 
 if __name__ == "__main__":
     main()
