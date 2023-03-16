@@ -881,14 +881,14 @@ axes:
   - id: tox-env-osx
     display_name: "Tox Env OSX"
     values:
-      - id: "tornado5-py38"
+      - id: "tornado5"
         variables:
-           TOX_ENV: "tornado5-py38"
-           PYTHON_BINARY: "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
-      - id: "tornado_git-py38"
+           TOX_ENV: "tornado5"
+           EXTRA_PATH: "/Library/Frameworks/Python.framework/Versions/3.8/bin/"
+      - id: "tornado_git"
         variables:
-           TOX_ENV: "tornado_git-py38"
-           PYTHON_BINARY: "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
+           TOX_ENV: "tornado_git"
+           EXTRA_PATH: "/Library/Frameworks/Python.framework/Versions/3.8/bin/"
 
   - id: tox-env-win
     display_name: "Tox Env Windows"
@@ -904,7 +904,7 @@ axes:
       - id: "tornado6"
         variables:
            TOX_ENV: "tornado6"
-           PYTHON_BINARY: "c:\\python\\Python38"
+           EXTRA_PATH: "c:\\python\\Python38"
 
   - id: os
     display_name: "Operating System"
