@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import test
 from abc import ABC
+from asyncio import new_event_loop, set_event_loop
+from multiprocessing import Pipe
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.utils import ignore_deprecations
 
@@ -145,3 +148,22 @@ class AIOMotorTestBasic(AsyncIOTestCase):
         coll = db["testcoll"]
         self.assertIsInstance(coll, CollectionSubclass)
         self.assertIsNotNone(await coll.insert_one({}))
+
+
+class ExecutorForkTest(AsyncIOTestCase):
+    @asyncio_test()
+    async def test_executor_reset(self):
+        parent_conn, child_conn = Pipe()
+        lock_pid = os.fork()
+        if lock_pid == 0:  # Child
+            set_event_loop(None)
+            self.loop = new_event_loop()
+            client = self.asyncio_client()
+            try:
+                self.loop.run_until_complete(client.db.command("ping"))
+            except Exception:
+                child_conn.send(False)
+            child_conn.send(True)
+            os._exit(0)
+        else:  # Parent
+            self.assertTrue(parent_conn.recv(), "Child process did not complete.")
