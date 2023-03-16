@@ -61,6 +61,17 @@ else:
 _EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
 
 
+def _reset_global_executor():
+    """Re-initialize the global ThreadPoolExecutor"""
+    global _EXECUTOR
+    _EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
+
+
+if hasattr(os, "register_at_fork"):
+    # We need this to make sure that creating new clients in subprocesses doesn't deadlock.
+    os.register_at_fork(after_in_child=_reset_global_executor)
+
+
 def run_on_executor(loop, fn, *args, **kwargs):
     if contextvars:
         context = contextvars.copy_context()

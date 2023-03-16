@@ -13,15 +13,17 @@
 # limitations under the License.
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
-
+import os
 import test
 from abc import ABC
+from multiprocessing import Pipe
 from test.tornado_tests import MotorTest
 from test.utils import ignore_deprecations
 
 import pymongo
 from pymongo import WriteConcern
 from pymongo.read_preferences import Nearest, ReadPreference, Secondary
+from tornado.ioloop import IOLoop
 from tornado.testing import gen_test
 
 import motor
@@ -146,3 +148,21 @@ class MotorTestBasic(MotorTest):
         coll = db["testcoll"]
         self.assertIsInstance(coll, CollectionSubclass)
         self.assertIsNotNone(await coll.insert_one({}))
+
+
+class ExecutorForkTest(MotorTest):
+    @gen_test()
+    async def test_executor_reset(self):
+        parent_conn, child_conn = Pipe()
+        lock_pid = os.fork()
+        if lock_pid == 0:  # Child
+            self.loop = IOLoop.current()
+            client = self.motor_client()
+            try:
+                self.loop.spawn_callback(client.db.command, "ping")
+            except Exception:
+                child_conn.send(False)
+            child_conn.send(True)
+            os._exit(0)
+        else:  # Parent
+            self.assertTrue(parent_conn.recv(), "Child process did not complete.")
