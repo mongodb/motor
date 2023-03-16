@@ -403,6 +403,9 @@ functions:
           set -x
           export LIBMONGOCRYPT_URL="${libmongocrypt_url}"
           export TEST_ENCRYPTION=1
+          if [ -n "${EXTRA_PATH}" ]; then
+            export PATH="${EXTRA_PATH}:$PATH"
+          fi
           PYTHON_BINARY="${PYTHON_BINARY}" \
           TOX_BINARY="${TOX_BINARY}" \
           TOX_ENV="${TOX_ENV}" \
@@ -890,18 +893,18 @@ axes:
   - id: tox-env-win
     display_name: "Tox Env Windows"
     values:
-      - id: "asyncio-py37"
+      - id: "asyncio"
         variables:
-          TOX_ENV: "asyncio-py37"
-          PYTHON_BINARY: "c:\\python\\Python37\\python.exe"
-      - id: "tornado6-py37"
+          TOX_ENV: "asyncio"
+          EXTRA_PATH: "c:\\python\\Python37"
+      - id: "tornado6"
         variables:
-           TOX_ENV: "tornado6-py37"
-           PYTHON_BINARY: "c:\\python\\Python37\\python.exe"
-      - id: "tornado6-py38"
+           TOX_ENV: "tornado6"
+           EXTRA_PATH: "c:\\python\\Python37"
+      - id: "tornado6"
         variables:
-           TOX_ENV: "tornado6-py38"
-           PYTHON_BINARY: "c:\\python\\Python38\\python.exe"
+           TOX_ENV: "tornado6"
+           PYTHON_BINARY: "c:\\python\\Python38"
 
   - id: os
     display_name: "Operating System"
