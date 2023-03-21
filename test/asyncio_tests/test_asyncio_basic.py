@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import sys
 import test
 import unittest
 from abc import ABC
@@ -152,7 +151,7 @@ class AIOMotorTestBasic(AsyncIOTestCase):
 
 
 class ExecutorForkTest(AsyncIOTestCase):
-    @unittest.skipIf(sys.platform == "win32", "This test requires fork")
+    @unittest.skipUnless(hasattr(os, "fork"), "This test requires fork")
     @asyncio_test()
     async def test_executor_reset(self):
         parent_conn, child_conn = Pipe()
