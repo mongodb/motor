@@ -14,7 +14,9 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 import os
+import sys
 import test
+import unittest
 from abc import ABC
 from multiprocessing import Pipe
 from test.tornado_tests import MotorTest
@@ -151,6 +153,7 @@ class MotorTestBasic(MotorTest):
 
 
 class ExecutorForkTest(MotorTest):
+    @unittest.skipIf(sys.platform == "win32", "This test requires fork")
     @gen_test()
     async def test_executor_reset(self):
         parent_conn, child_conn = Pipe()
