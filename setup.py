@@ -151,7 +151,7 @@ packages = [
 
 setup(
     name="motor",
-    version="3.1.1",
+    version="3.1.2",
     packages=packages,
     description=description,
     long_description=long_description,

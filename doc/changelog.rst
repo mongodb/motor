@@ -3,6 +3,13 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+
+Motor 3.1.2
+-----------
+
+Motor 3.1.2 fixes a bug when using Motor with ``multiprocessing``.
+
+
 Motor 3.1.1
 -----------
 
