@@ -335,6 +335,10 @@ class TestEnvironment(object):
             "Server version must be at most %s" % str(other_version),
         )
 
+    def require_no_standalone(self, func):
+        """Run a test only if the client is not connected to a standalone."""
+        return self.require(lambda: not self.is_standalone, "Connected to a standalone", func=func)
+
     def require_replica_set(self, func):
         """Run a test only if the client is connected to a replica set."""
         return self.require(
