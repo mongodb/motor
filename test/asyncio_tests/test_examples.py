@@ -1397,8 +1397,9 @@ class TestExamples(AsyncIOTestCase):
         client = collection.database.client
         async with await client.start_session(snapshot=True) as s:
             try:
-                await collection.aggregate([], session=s).to_list(None)
-                return True
+                if await collection.find_one():
+                    return True
+                return False
             except OperationFailure as e:
                 # Retry them as the server demands...
                 if e.code == 246:  # SnapshotUnavailable
@@ -1417,6 +1418,7 @@ class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
     # Queryable Encryption is not supported on Standalone topology.
 
     @env.require_version_min(6, 0)
+    @env.require_version_max(6, 9)  # TODO remove in MOTOR-1100
     @asyncio_test
     @env.require_replica_set
     async def test_queryable_encryption(self):
