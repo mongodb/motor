@@ -127,6 +127,7 @@ excluded_tests = [
     "TestCursor.test_comment",
     "TestCursor.test_where",
     "TestGridfs.test_gridfs_find",
+    "TestKmsTLSOptions.test_05_tlsDisableOCSPEndpointCheck_is_permitted",
     # Tests that use "authenticate" or "logoout", removed in Motor 2.0.
     "TestSASLPlain.test_sasl_plain_bad_credentials",
     "TestSCRAM.test_scram",
