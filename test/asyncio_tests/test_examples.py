@@ -1397,7 +1397,7 @@ class TestExamples(AsyncIOTestCase):
         client = collection.database.client
         async with await client.start_session(snapshot=True) as s:
             try:
-                if await collection.find_one():
+                if await collection.find_one(session=s):
                     return True
                 return False
             except OperationFailure as e:

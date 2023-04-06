@@ -50,6 +50,7 @@ excluded_modules = [
     "test.test_gridfs",
     # Skip mypy tests.
     "test.test_mypy",
+    "test.test_typing",
 ]
 
 
