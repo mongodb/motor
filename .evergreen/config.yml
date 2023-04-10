@@ -913,12 +913,14 @@ axes:
         display_name: "RHEL 8.4"
         run_on: "rhel84-small"
         variables:
-           TOX_BINARY: "/opt/python/3.7/bin/tox"
+           INSTALL_TOX: true
+           VIRTUALENV: "/opt/python/3.7/bin/python -m virtualenv"
       - id: "ubuntu-20"
         display_name: "Ubuntu 20.04"
         run_on: "ubuntu2004-small"
         variables:
-           TOX_BINARY: "/opt/python/3.7/bin/tox"
+           INSTALL_TOX: true
+           VIRTUALENV: "/opt/python/3.7/bin/python -m virtualenv"
       - id: "win"
         display_name: "Windows"
         run_on: "windows-64-vsMulti-small"
