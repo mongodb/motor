@@ -414,7 +414,7 @@ functions:
           AUTH="${AUTH}" \
           SSL="${SSL}" \
           CERT_DIR="${DRIVERS_TOOLS}/.evergreen/x509gen" \
-          sh ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
+          bash ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
 
   "run enterprise auth tests":
     - command: shell.exec
