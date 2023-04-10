@@ -909,18 +909,13 @@ axes:
   - id: os
     display_name: "Operating System"
     values:
-      - id: "rhel"
-        display_name: "RHEL 6.2"
-        run_on: "rhel62-small"
-        variables:
-           TOX_BINARY: "/opt/python/3.7/bin/tox"
-      - id: "ubuntu-18"
-        display_name: "Ubuntu 18.04"
-        run_on: "ubuntu1804-small"
+      - id: "rhel84"
+        display_name: "RHEL 8.4"
+        run_on: "rhel84-small"
         variables:
            TOX_BINARY: "/opt/python/3.7/bin/tox"
       - id: "ubuntu-20"
-        display_name: "Ubuntu"
+        display_name: "Ubuntu 20.04"
         run_on: "ubuntu2004-small"
         variables:
            TOX_BINARY: "/opt/python/3.7/bin/tox"
@@ -943,7 +938,7 @@ buildvariants:
 - matrix_name: "main"
   display_name: "${os}-${tox-env}-${ssl}"
   matrix_spec:
-    os: "ubuntu-18"
+    os: "rhel84"
     tox-env: "*"
     ssl: "*"
   exclude_spec:
@@ -1006,14 +1001,14 @@ buildvariants:
   display_name: "Enterprise Auth-${tox-env}"
   matrix_spec: {"tox-env": ["synchro37"], ssl: "ssl"}
   run_on:
-     - ubuntu-18
+     - ubuntu-20
   tasks:
      - name: "test-enterprise-auth"
 
 - name: "docs"
   display_name: "Docs - Build"
   run_on:
-     - ubuntu-18
+     - ubuntu-20
   expansions:
      TOX_ENV: "py3-sphinx-docs"
      TOX_BINARY: "/opt/python/3.7/bin/tox"
@@ -1024,7 +1019,7 @@ buildvariants:
 - name: "doctests"
   display_name: "Docs - Test"
   run_on:
-     - ubuntu-18
+     - ubuntu-20
   expansions:
      TOX_ENV: "py3-sphinx-doctest"
      TOX_BINARY: "/opt/python/3.7/bin/tox"
