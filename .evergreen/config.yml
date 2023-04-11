@@ -1003,14 +1003,14 @@ buildvariants:
   display_name: "Enterprise Auth-${tox-env}"
   matrix_spec: {"tox-env": ["synchro37"], ssl: "ssl"}
   run_on:
-     - ubuntu-20
+     - "ubuntu2004-small"
   tasks:
      - name: "test-enterprise-auth"
 
 - name: "docs"
   display_name: "Docs - Build"
   run_on:
-     - ubuntu-20
+     - "ubuntu2004-small"
   expansions:
      TOX_ENV: "py3-sphinx-docs"
      TOX_BINARY: "/opt/python/3.7/bin/tox"
@@ -1021,7 +1021,7 @@ buildvariants:
 - name: "doctests"
   display_name: "Docs - Test"
   run_on:
-     - ubuntu-20
+     - "ubuntu2004-small"
   expansions:
      TOX_ENV: "py3-sphinx-doctest"
      TOX_BINARY: "/opt/python/3.7/bin/tox"
