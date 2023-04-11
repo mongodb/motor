@@ -1013,8 +1013,8 @@ buildvariants:
      - "ubuntu2004-small"
   expansions:
      TOX_ENV: "py3-sphinx-docs"
-     TOX_BINARY: "/opt/python/3.7/bin/tox"
-     PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+     INSTALL_TOX: true
+     VIRTUALENV: "/opt/python/3.7/bin/python3 -m virtualenv"
   tasks:
      - name: "docs"
 
@@ -1024,7 +1024,7 @@ buildvariants:
      - "ubuntu2004-small"
   expansions:
      TOX_ENV: "py3-sphinx-doctest"
-     TOX_BINARY: "/opt/python/3.7/bin/tox"
-     PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+     INSTALL_TOX: true
+     VIRTUALENV: "/opt/python/3.7/bin/python3 -m virtualenv"
   tasks:
      - name: "doctest"
