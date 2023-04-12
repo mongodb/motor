@@ -414,7 +414,7 @@ functions:
           AUTH="${AUTH}" \
           SSL="${SSL}" \
           CERT_DIR="${DRIVERS_TOOLS}/.evergreen/x509gen" \
-          sh ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
+          bash ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
 
   "run enterprise auth tests":
     - command: shell.exec
@@ -909,21 +909,18 @@ axes:
   - id: os
     display_name: "Operating System"
     values:
-      - id: "rhel"
-        display_name: "RHEL 6.2"
-        run_on: "rhel62-small"
+      - id: "rhel84"
+        display_name: "RHEL 8.4"
+        run_on: "rhel84-small"
         variables:
-           TOX_BINARY: "/opt/python/3.7/bin/tox"
-      - id: "ubuntu-18"
-        display_name: "Ubuntu 18.04"
-        run_on: "ubuntu1804-small"
-        variables:
-           TOX_BINARY: "/opt/python/3.7/bin/tox"
+           INSTALL_TOX: true
+           VIRTUALENV: "/opt/python/3.7/bin/python3 -m virtualenv"
       - id: "ubuntu-20"
-        display_name: "Ubuntu"
+        display_name: "Ubuntu 20.04"
         run_on: "ubuntu2004-small"
         variables:
-           TOX_BINARY: "/opt/python/3.7/bin/tox"
+           INSTALL_TOX: true
+           VIRTUALENV: "/opt/python/3.7/bin/python3 -m virtualenv"
       - id: "win"
         display_name: "Windows"
         run_on: "windows-64-vsMulti-small"
@@ -943,7 +940,7 @@ buildvariants:
 - matrix_name: "main"
   display_name: "${os}-${tox-env}-${ssl}"
   matrix_spec:
-    os: "ubuntu-18"
+    os: "rhel84"
     tox-env: "*"
     ssl: "*"
   exclude_spec:
@@ -1006,17 +1003,18 @@ buildvariants:
   display_name: "Enterprise Auth-${tox-env}"
   matrix_spec: {"tox-env": ["synchro37"], ssl: "ssl"}
   run_on:
-     - ubuntu-18
+     - "ubuntu2004-small"
   tasks:
      - name: "test-enterprise-auth"
 
 - name: "docs"
   display_name: "Docs - Build"
   run_on:
-     - ubuntu-18
+     - "ubuntu2004-small"
   expansions:
      TOX_ENV: "py3-sphinx-docs"
-     TOX_BINARY: "/opt/python/3.7/bin/tox"
+     INSTALL_TOX: true
+     VIRTUALENV: "/opt/python/3.7/bin/python3 -m virtualenv"
      PYTHON_BINARY: "/opt/python/3.7/bin/python3"
   tasks:
      - name: "docs"
@@ -1024,10 +1022,11 @@ buildvariants:
 - name: "doctests"
   display_name: "Docs - Test"
   run_on:
-     - ubuntu-18
+     - "ubuntu2004-small"
   expansions:
      TOX_ENV: "py3-sphinx-doctest"
-     TOX_BINARY: "/opt/python/3.7/bin/tox"
+     INSTALL_TOX: true
+     VIRTUALENV: "/opt/python/3.7/bin/python3 -m virtualenv"
      PYTHON_BINARY: "/opt/python/3.7/bin/python3"
   tasks:
      - name: "doctest"
