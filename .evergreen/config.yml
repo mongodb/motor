@@ -1015,6 +1015,7 @@ buildvariants:
      TOX_ENV: "py3-sphinx-docs"
      INSTALL_TOX: true
      VIRTUALENV: "/opt/python/3.7/bin/python3 -m virtualenv"
+     PYTHON_BINARY: "/opt/python/3.7/bin/python3"
   tasks:
      - name: "docs"
 
@@ -1026,5 +1027,6 @@ buildvariants:
      TOX_ENV: "py3-sphinx-doctest"
      INSTALL_TOX: true
      VIRTUALENV: "/opt/python/3.7/bin/python3 -m virtualenv"
+     PYTHON_BINARY: "/opt/python/3.7/bin/python3"
   tasks:
      - name: "doctest"
