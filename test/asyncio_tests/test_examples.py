@@ -903,7 +903,7 @@ class TestExamples(AsyncIOTestCase):
         # End runCommand Example 1
 
         # Start runCommand Example 2
-        stats = await db.command("collStats", "restaurants")
+        count = await db.command("count", "restaurants")
         # End runCommand Example 2
 
     @asyncio_test
