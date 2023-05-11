@@ -1417,8 +1417,7 @@ class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
 
     # Queryable Encryption is not supported on Standalone topology.
 
-    @env.require_version_min(6, 0)
-    @env.require_version_max(6, 9)  # TODO remove in MOTOR-1100
+    @env.require_version_min(7, 0, -1)
     @asyncio_test
     @env.require_replica_set
     async def test_queryable_encryption(self):
