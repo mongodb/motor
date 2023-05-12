@@ -268,7 +268,7 @@ class SynchroNosePlugin(Plugin):
             method_matches = (
                 method.__name__ == method_name
                 or method_name == "*"
-                or re.match(method_name, method.__name__)
+                or re.match(f"^{method_name}$", method.__name__)
             )
 
             if suite_matches and method_matches:
