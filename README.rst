@@ -37,8 +37,7 @@ Support / Feedback
 For issues with, questions about, or feedback for PyMongo, please look into
 our `support channels <https://support.mongodb.com/welcome>`_. Please
 do not email any of the Motor developers directly with issues or
-questions - you're more likely to get an answer on the `MongoDB Community
-Forums <https://developer.mongodb.com/community/forums/tag/motor-driver>`_.
+questions - you're more likely to get an answer on the `StackOverflow <https://stackoverflow.com/questions/tagged/mongodb>`_ (using a "mongodb" tag).
 
 Bugs / Feature Requests
 =======================
@@ -157,6 +156,12 @@ Motor's documentation is on ReadTheDocs_.
 
 Build the documentation with Python 3.7+. Install sphinx_, Tornado_, and aiohttp_,
 and do ``cd doc; make html``.
+
+Learning Resources
+==================
+
+MongoDB Learn - `Python courses <https://learn.mongodb.com/catalog?labels=%5B%22Language%22%5D&values=%5B%22Python%22%5D>`_.
+`Python Articles on Developer Center <https://www.mongodb.com/developer/languages/python/>`_.
 
 Testing
 =======
