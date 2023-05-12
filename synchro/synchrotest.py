@@ -22,6 +22,7 @@ of a larger test suite.
 import importlib
 import importlib.abc
 import importlib.machinery
+import re
 import sys
 
 import nose
@@ -185,6 +186,8 @@ excluded_tests = [
     "TestUnifiedFindShutdownError.test_Concurrent_shutdown_error_on_find",
     "TestUnifiedInsertShutdownError.test_Concurrent_shutdown_error_on_insert",
     "TestUnifiedPoolClearedError.test_PoolClearedError_does_not_mark_server_unknown",
+    # These tests have hard-coded values that differ from motor.
+    "TestClient.test_handshake.*",
 ]
 
 
@@ -258,11 +261,15 @@ class SynchroNosePlugin(Plugin):
             classname = method.__self__.__class__.__name__
 
             # Should we exclude this method's whole TestCase?
-            suite_name, method_name = excluded_name.split(".")
+            suite_name, _, method_name = excluded_name.partition(".")
             suite_matches = suite_name in [classname, "*"]
 
             # Should we exclude this particular method?
-            method_matches = method.__name__ == method_name or method_name == "*"
+            method_matches = (
+                method.__name__ == method_name
+                or method_name == "*"
+                or re.match(f"^{method_name}$", method.__name__)
+            )
 
             if suite_matches and method_matches:
                 excluded_tests_matched.add(excluded_name)
