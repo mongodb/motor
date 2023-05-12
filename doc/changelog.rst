@@ -6,6 +6,7 @@ Changelog
 Motor 3.2.0
 -----------
 
+- Add support for MongoDB 7.0.
 - Motor 3.2 adds support for Queryable Encryption helpers :meth:`~motor.core.MotorClientEncryption.create_encrypted_collection` and
   :meth:`~motor.core.MotorClientEncryption.encrypt_expression`, which are part of the Queryable Encryption beta.
   Backwards-breaking changes may be made before the final release.
