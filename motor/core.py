@@ -2069,7 +2069,6 @@ class AgnosticClientEncryption(AgnosticBase):
 
               {
                 "escCollection": "enxcol_.encryptedCollection.esc",
-                "eccCollection": "enxcol_.encryptedCollection.ecc",
                 "ecocCollection": "enxcol_.encryptedCollection.ecoc",
                 "fields": [
                     {
