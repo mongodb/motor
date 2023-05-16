@@ -2048,9 +2048,6 @@ class AgnosticClientEncryption(AgnosticBase):
     ):
         """Create a collection with encryptedFields.
 
-        .. note:: Support for Queryable Encryption is in beta.
-           Backwards-breaking changes may be made before the final release.
-
         .. warning::
             This function does not update the encryptedFieldsMap in the client's
             AutoEncryptionOpts, thus the user must create a new client after calling this function with
@@ -2064,7 +2061,7 @@ class AgnosticClientEncryption(AgnosticBase):
         :Parameters:
           - `database`: the database in which to create a collection
           - `name`: the name of the collection to create
-          - `encrypted_fields` (dict): **(BETA)** Document that describes the encrypted fields for
+          - `encrypted_fields` (dict): Document that describes the encrypted fields for
             Queryable Encryption. For example::
 
               {
