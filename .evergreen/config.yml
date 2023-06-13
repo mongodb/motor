@@ -905,7 +905,7 @@ axes:
     values:
       - id: "tornado6-py39"
         variables:
-           TOX_ENV: "tornado6-py9"
+           TOX_ENV: "tornado6-py39"
            PYTHON_BINARY: "/opt/python/3.9/bin/python3"
       - id: "asyncio-py39"
         variables:
