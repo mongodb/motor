@@ -834,7 +834,7 @@ axes:
       - id: "tornado5-pypy37"
         variables:
            TOX_ENV: "tornado5-pypy37"
-           PYTHON_BINARY: "/opt/python/pypy3.8/bin/pypy3"
+           PYTHON_BINARY: "/opt/python/pypy3.7/bin/pypy3"
       - id: "tornado5-py37"
         variables:
            TOX_ENV: "tornado5-py37"
@@ -842,7 +842,7 @@ axes:
       - id: "tornado6-pypy37"
         variables:
           TOX_ENV: "tornado6-pypy37"
-          PYTHON_BINARY: "/opt/python/pypy3.8/bin/pypy3"
+          PYTHON_BINARY: "/opt/python/pypy3.7/bin/pypy3"
       - id: "tornado6-py37"
         variables:
            TOX_ENV: "tornado6-py37"
@@ -870,7 +870,7 @@ axes:
       - id: "asyncio-pypy37"
         variables:
           TOX_ENV: "asyncio-pypy37"
-          PYTHON_BINARY: "/opt/python/pypy3.8/bin/pypy3"
+          PYTHON_BINARY: "/opt/python/pypy3.7/bin/pypy3"
       - id: "asyncio-py37"
         variables:
            TOX_ENV: "asyncio-py37"
