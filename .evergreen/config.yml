@@ -892,8 +892,8 @@ axes:
           TOX_ENV: "synchro37"
           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
 
-  - id: tox-env-linux
-    display_name: "Tox Env Linux"
+  - id: tox-env-rhel7
+    display_name: "Tox Env RHEL7"
     values:
       - id: "tornado6-py311"
         variables:
