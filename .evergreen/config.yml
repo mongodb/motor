@@ -829,20 +829,20 @@ axes:
            AUTH: "noauth"
 
   - id: tox-env
-    display_name: "Tox Env"
+    display_name: "Tox Env RHEL8"
     values:
-      - id: "tornado5-pypy37"
+      - id: "tornado5-pypy38"
         variables:
-           TOX_ENV: "tornado5-pypy37"
-           PYTHON_BINARY: "/opt/python/pypy3.7/bin/pypy3"
+           TOX_ENV: "tornado5-pypy38"
+           PYTHON_BINARY: "/opt/python/pypy3.8/bin/pypy3"
       - id: "tornado5-py37"
         variables:
            TOX_ENV: "tornado5-py37"
            PYTHON_BINARY: "/opt/python/3.7/bin/python3"
-      - id: "tornado6-pypy37"
+      - id: "tornado6-pypy38"
         variables:
-          TOX_ENV: "tornado6-pypy37"
-          PYTHON_BINARY: "/opt/python/pypy3.7/bin/pypy3"
+          TOX_ENV: "tornado6-pypy38"
+          PYTHON_BINARY: "/opt/python/pypy3.8/bin/pypy3"
       - id: "tornado6-py37"
         variables:
            TOX_ENV: "tornado6-py37"
@@ -859,14 +859,18 @@ axes:
         variables:
            TOX_ENV: "tornado6-py310"
            PYTHON_BINARY: "/opt/python/3.10/bin/python3"
+      - id: "tornado6-py311"
+        variables:
+           TOX_ENV: "tornado6-py311"
+           PYTHON_BINARY: "/opt/python/3.11/bin/python3"
       - id: "tornado_git-py38"
         variables:
            TOX_ENV: "tornado_git-py38"
            PYTHON_BINARY: "/opt/python/3.8/bin/python3"
-      - id: "asyncio-pypy37"
+      - id: "asyncio-pypy38"
         variables:
-          TOX_ENV: "asyncio-pypy37"
-          PYTHON_BINARY: "/opt/python/pypy3.7/bin/pypy3"
+          TOX_ENV: "asyncio-pypy38"
+          PYTHON_BINARY: "/opt/python/pypy3.8/bin/pypy3"
       - id: "asyncio-py37"
         variables:
            TOX_ENV: "asyncio-py37"
@@ -883,6 +887,10 @@ axes:
         variables:
            TOX_ENV: "asyncio-py310"
            PYTHON_BINARY: "/opt/python/3.10/bin/python3"
+      - id: "asyncio-py311"
+        variables:
+           TOX_ENV: "asyncio-py311"
+           PYTHON_BINARY: "/opt/python/3.11/bin/python3"
       - id: "py3-pymongo-latest"
         variables:
            TOX_ENV: "py3-pymongo-latest"
@@ -895,14 +903,14 @@ axes:
   - id: tox-env-rhel7
     display_name: "Tox Env RHEL7"
     values:
-      - id: "tornado6-py311"
+      - id: "tornado6-py39"
         variables:
-           TOX_ENV: "tornado6-py311"
-           PYTHON_BINARY: "/opt/python/3.11/bin/python3"
-      - id: "asyncio-py311"
+           TOX_ENV: "tornado6-py9"
+           PYTHON_BINARY: "/opt/python/3.9/bin/python3"
+      - id: "asyncio-py39"
         variables:
-           TOX_ENV: "asyncio-py311"
-           PYTHON_BINARY: "/opt/python/3.11/bin/python3"
+           TOX_ENV: "asyncio-py39"
+           PYTHON_BINARY: "/opt/python/3.9/bin/python3"
 
   # Test Python 3.8 only on Mac.
   - id: tox-env-osx
