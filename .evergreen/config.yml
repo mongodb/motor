@@ -892,8 +892,8 @@ axes:
           TOX_ENV: "synchro37"
           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
 
-  - id: tox-env-ubuntu
-    display_name: "Tox Env Ubuntu"
+  - id: tox-env-linux
+    display_name: "Tox Env Linux"
     values:
       - id: "tornado6-py311"
         variables:
@@ -942,9 +942,9 @@ axes:
         variables:
            INSTALL_TOX: true
            VIRTUALENV: "/opt/python/3.7/bin/python3 -m virtualenv"
-      - id: "ubuntu-20"
-        display_name: "Ubuntu 20.04"
-        run_on: "ubuntu2004-small"
+      - id: "rhel76"
+        display_name: "RHEL 7.6"
+        run_on: "rhel76-small"
         variables:
            INSTALL_TOX: true
            VIRTUALENV: "/opt/python/3.7/bin/python3 -m virtualenv"
@@ -987,11 +987,11 @@ buildvariants:
      - ".4.0"
      - ".3.6"
 
-- matrix_name: "test-ubuntu"
-  display_name: "${os}-${tox-env-ubuntu}-${ssl}"
+- matrix_name: "test-rhel7"
+  display_name: "${os}-${tox-env-rhel7}-${ssl}"
   matrix_spec:
-    os: "ubuntu-20"
-    tox-env-ubuntu: "*"
+    os: "rhel76"
+    tox-env-rhel7: "*"
     ssl: "*"
   tasks:
      - ".rapid"
@@ -1034,14 +1034,14 @@ buildvariants:
   display_name: "Enterprise Auth-${tox-env}"
   matrix_spec: {"tox-env": ["synchro37"], ssl: "ssl"}
   run_on:
-     - "ubuntu2004-small"
+     - "rhel84-small"
   tasks:
      - name: "test-enterprise-auth"
 
 - name: "docs"
   display_name: "Docs - Build"
   run_on:
-     - "ubuntu2004-small"
+     - "rhel84-small"
   expansions:
      TOX_ENV: "py3-sphinx-docs"
      INSTALL_TOX: true
@@ -1053,7 +1053,7 @@ buildvariants:
 - name: "doctests"
   display_name: "Docs - Test"
   run_on:
-     - "ubuntu2004-small"
+     - "rhel84-small"
   expansions:
      TOX_ENV: "py3-sphinx-doctest"
      INSTALL_TOX: true
