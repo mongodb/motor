@@ -831,17 +831,17 @@ axes:
   - id: tox-env
     display_name: "Tox Env RHEL8"
     values:
-      - id: "tornado5-pypy38"
+      - id: "tornado5-pypy37"
         variables:
-           TOX_ENV: "tornado5-pypy38"
+           TOX_ENV: "tornado5-pypy37"
            PYTHON_BINARY: "/opt/python/pypy3.8/bin/pypy3"
       - id: "tornado5-py37"
         variables:
            TOX_ENV: "tornado5-py37"
            PYTHON_BINARY: "/opt/python/3.7/bin/python3"
-      - id: "tornado6-pypy38"
+      - id: "tornado6-pypy37"
         variables:
-          TOX_ENV: "tornado6-pypy38"
+          TOX_ENV: "tornado6-pypy37"
           PYTHON_BINARY: "/opt/python/pypy3.8/bin/pypy3"
       - id: "tornado6-py37"
         variables:
@@ -867,9 +867,9 @@ axes:
         variables:
            TOX_ENV: "tornado_git-py38"
            PYTHON_BINARY: "/opt/python/3.8/bin/python3"
-      - id: "asyncio-pypy38"
+      - id: "asyncio-pypy37"
         variables:
-          TOX_ENV: "asyncio-pypy38"
+          TOX_ENV: "asyncio-pypy37"
           PYTHON_BINARY: "/opt/python/pypy3.8/bin/pypy3"
       - id: "asyncio-py37"
         variables:
