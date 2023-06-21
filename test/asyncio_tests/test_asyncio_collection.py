@@ -266,7 +266,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             self.assertEqual(read_preference, c.read_preference)
             self.assertEqual(codec_options, c.codec_options)
 
-    @env.require_version_min(6, 2, -1, -1)
+    @env.require_version_min(7, 0, -1, -1)
     @env.require_no_standalone
     @asyncio_test
     async def test_async_create_encrypted_collection(self):
