@@ -6,14 +6,14 @@ Changelog
 Motor 3.2.0
 -----------
 
-- Add support for MongoDB 7.0.
-- Motor 3.2 adds support for Queryable Encryption helpers :meth:`~motor.core.MotorClientEncryption.create_encrypted_collection` and
+- Add support for MongoDB 7.0 and PyMongo 4.4+.
+- Add support for Queryable Encryption helpers :meth:`~motor.core.MotorClientEncryption.create_encrypted_collection` and
   :meth:`~motor.core.MotorClientEncryption.encrypt_expression`.
   Backwards-breaking changes may be made before the final release.
 - pymongocrypt 1.6.0 or later is now required for Client Side Field Level
   Encryption (CSFLE) and Queryable Encryption (QE) support. MongoDB Server 7.0
   introduced a backwards breaking change to the QE protocol. Users taking
-  advantage of the QE must now upgrade to MongoDB 7.0+ and Motor 4.4+.
+  advantage of the QE must now upgrade to MongoDB 7.0+ and Motor 3.2+.
 
 Motor 3.1.1
 -----------
