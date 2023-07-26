@@ -122,11 +122,15 @@ class test(Command):
         runner_kwargs = dict(verbosity=2, failfast=self.failfast)
 
         if self.xunit_output:
-            runner_kwargs["output"] = self.xunit_output
-            from xmlrunner import XMLTestRunner
+            try:
+                from xmlrunner import XMLTestRunner
+            except ImportError:
+                self.xunit_output = False
+            else:
+                runner_kwargs["output"] = self.xunit_output
+                runner_class = XMLTestRunner
 
-            runner_class = XMLTestRunner
-        else:
+        if not self.xunit_output:
             import unittest
 
             runner_class = unittest.TextTestRunner
