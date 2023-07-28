@@ -23,7 +23,6 @@ import pymongo.auth
 import pymongo.common
 import pymongo.database
 import pymongo.errors
-import pymongo.mongo_client
 from pymongo.change_stream import ChangeStream
 from pymongo.client_session import ClientSession
 from pymongo.collection import Collection
@@ -99,7 +98,7 @@ class AgnosticBaseProperties(AgnosticBase):
 
 class AgnosticClient(AgnosticBaseProperties):
     __motor_class_name__ = "MotorClient"
-    __delegate_class__ = pymongo.mongo_client.MongoClient
+    __delegate_class__ = pymongo.MongoClient
 
     address = ReadOnlyProperty()
     arbiters = ReadOnlyProperty()
@@ -127,7 +126,7 @@ class AgnosticClient(AgnosticBaseProperties):
         """Create a new connection to a single MongoDB instance at *host:port*.
 
         Takes the same constructor arguments as
-        :class:`~pymongo.mongo_client.MongoClient`, as well as:
+        :class:`~pymongo.MongoClient`, as well as:
 
         :Parameters:
           - `io_loop` (optional): Special event loop

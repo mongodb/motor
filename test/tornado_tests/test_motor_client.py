@@ -23,7 +23,6 @@ from test.tornado_tests import MotorMockServerTest, MotorTest, remove_all_users
 from test.utils import get_primary_pool, one
 
 import pymongo
-import pymongo.mongo_client
 from bson import CodecOptions
 from mockupdb import OpQuery
 from pymongo import CursorType, ReadPreference, WriteConcern
@@ -83,7 +82,7 @@ class MotorClientTest(MotorTest):
             motor.MotorClient(test.env.uri, io_loop="foo")
 
     def test_database_named_delegate(self):
-        self.assertTrue(isinstance(self.cx.delegate, pymongo.mongo_client.MongoClient))
+        self.assertTrue(isinstance(self.cx.delegate, pymongo.MongoClient))
         self.assertTrue(isinstance(self.cx["delegate"], motor.MotorDatabase))
 
     @gen_test
