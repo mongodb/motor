@@ -116,7 +116,7 @@ In Motor, however, no exception is raised. The query simply has no results:
     async def f():
         cursor = db.collection.find()[100]
 
-        # Iterates zero or one times.
+        # Iterates zero or one time.
         async for doc in cursor:
             print(doc)
 
