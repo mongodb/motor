@@ -85,5 +85,5 @@ See also:
 * The `monitoring_example.py`_ example file in the Motor repository
 
 .. _Command Monitoring: https://github.com/mongodb/specifications/blob/master/source/command-logging-and-monitoring/command-logging-and-monitoring.rst
-.. _Topology Monitoring: https://github.com/mongodb/specifications/blob/master/source/server-discovery-and-monitoring/server-discovery-and-monitoring-monitoring.rst
+.. _Topology Monitoring: https://github.com/mongodb/specifications/blob/master/source/server-discovery-and-monitoring/server-discovery-and-monitoring-logging-and-monitoring.rst
 .. _monitoring_example.py: https://github.com/mongodb/motor/blob/master/doc/examples/monitoring_example.py
