@@ -449,6 +449,7 @@ class Database(Synchro):
 
     get_collection = WrapOutgoing()
     watch = WrapOutgoing()
+    cursor_command = WrapOutgoing()
     aggregate = WrapOutgoing()
     __bool__ = Sync()
 
