@@ -16,8 +16,9 @@
 
 import functools
 import inspect
+from typing import Any, Dict
 
-_class_cache = {}
+_class_cache: Dict[Any, Any] = {}
 
 
 def asynchronize(framework, sync_method, doc=None, wrap_class=None, unwrap_class=None):
