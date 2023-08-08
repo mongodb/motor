@@ -793,7 +793,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         kwargs["max_await_time_ms"] = max_await_time_ms
 
         # Latent cursor that will send initial command on first "async for".
-        return cursor_class(command, value, **kwargs)
+        return cursor_class(self, command, value, **kwargs)
 
     @property
     def client(self):
