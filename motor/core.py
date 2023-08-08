@@ -722,6 +722,79 @@ class AgnosticDatabase(AgnosticBaseProperties):
             show_expanded_events,
         )
 
+    def cursor_command(
+        self,
+        command,
+        value,
+        read_preference=None,
+        codec_options=None,
+        session=None,
+        comment=None,
+        max_await_time_ms=None,
+        **kwargs,
+    ):
+        """Issue a MongoDB command and parse the response as a cursor.
+
+        If the response from the server does not include a cursor field, an error will be thrown.
+
+        Otherwise, behaves identically to issuing a normal MongoDB command.
+
+        :Parameters:
+          - `command`: document representing the command to be issued,
+            or the name of the command (for simple commands only).
+
+            .. note:: the order of keys in the `command` document is
+               significant (the "verb" must come first), so commands
+               which require multiple keys (e.g. `findandmodify`)
+               should use an instance of :class:`~bson.son.SON` or
+               a string and kwargs instead of a Python `dict`.
+
+          - `value` (optional): value to use for the command verb when
+            `command` is passed as a string
+          - `read_preference` (optional): The read preference for this
+            operation. See :mod:`~pymongo.read_preferences` for options.
+            If the provided `session` is in a transaction, defaults to the
+            read preference configured for the transaction.
+            Otherwise, defaults to
+            :attr:`~pymongo.read_preferences.ReadPreference.PRIMARY`.
+          - `codec_options`: A :class:`~bson.codec_options.CodecOptions`
+            instance.
+          - `session` (optional): A
+            :class:`~pymongo.client_session.ClientSession`.
+          - `comment` (optional): A user-provided comment to attach to future getMores for this
+            command.
+          - `max_await_time_ms` (optional): The number of ms to wait for more data on future getMores for this command.
+          - `**kwargs` (optional): additional keyword arguments will
+            be added to the command document before it is sent
+
+        .. note:: :meth:`command` does **not** obey this Database's
+           :attr:`read_preference` or :attr:`codec_options`. You must use the
+           ``read_preference`` and ``codec_options`` parameters instead.
+
+        .. note:: :meth:`command` does **not** apply any custom TypeDecoders
+           when decoding the command response.
+
+        .. note:: If this client has been configured to use MongoDB Stable
+           API (see :ref:`versioned-api-ref`), then :meth:`command` will
+           automatically add API versioning options to the given command.
+           Explicitly adding API versioning options in the command and
+           declaring an API version on the client is not supported.
+
+        .. seealso:: The MongoDB documentation on `commands <https://dochub.mongodb.org/core/commands>`_.
+        """
+        cursor_class = create_class_with_framework(
+            AgnosticCommandCursor, self._framework, self.__module__
+        )
+
+        kwargs["read_preference"] = read_preference
+        kwargs["codec_options"] = codec_options
+        kwargs["session"] = session
+        kwargs["comment"] = comment
+        kwargs["max_await_time_ms"] = max_await_time_ms
+
+        # Latent cursor that will send initial command on first "async for".
+        return cursor_class(command, value, **kwargs)
+
     @property
     def client(self):
         """This MotorDatabase's :class:`MotorClient`."""
