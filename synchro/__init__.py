@@ -96,7 +96,7 @@ from pymongo.operations import *
 from pymongo.periodic_executor import *
 from pymongo.periodic_executor import _EXECUTORS
 from pymongo.pool import *
-from pymongo.pool import _METADATA, Pool, SocketInfo, _PoolClosedError
+from pymongo.pool import _METADATA, Connection, Pool, _PoolClosedError
 from pymongo.read_concern import *
 from pymongo.read_preferences import *
 from pymongo.read_preferences import _ServerMode
@@ -483,6 +483,7 @@ class Collection(Synchro):
     aggregate = WrapOutgoing()
     aggregate_raw_batches = WrapOutgoing()
     list_indexes = WrapOutgoing()
+    list_search_indexes = WrapOutgoing()
     watch = WrapOutgoing()
     __bool__ = WrapOutgoing()
 
