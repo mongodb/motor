@@ -620,6 +620,8 @@ class Cursor(Synchro):
 class CommandCursor(Cursor):
     __delegate_class__ = motor.motor_tornado.MotorCommandCursor
 
+    try_next = Sync("try_next")
+
 
 class GridOutCursor(Cursor):
     __delegate_class__ = motor.motor_tornado.MotorGridOutCursor
