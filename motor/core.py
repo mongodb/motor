@@ -1761,6 +1761,10 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
 
     _CommandCursor__die = AsyncRead()
 
+    def _lazy_init(self):
+        if not self.delegate:
+            self.delegate = self._target.delegate.watch(**unwrap_kwargs_session(self._kwargs))
+
     def _try_next(self):
         # This method is run on a thread.
         self._lazy_init()
