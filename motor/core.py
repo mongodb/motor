@@ -861,15 +861,12 @@ class AgnosticCollection(AgnosticBaseProperties):
     count_documents = AsyncRead()
     create_index = AsyncCommand(doc=docstrings.create_index_doc)
     create_indexes = AsyncCommand(doc=docstrings.create_indexes_doc)
-    create_search_index = AsyncCommand()
-    create_search_indexes = AsyncCommand()
     delete_many = AsyncCommand(doc=docstrings.delete_many_doc)
     delete_one = AsyncCommand(doc=docstrings.delete_one_doc)
     distinct = AsyncRead()
     drop = AsyncCommand(doc=docstrings.drop_doc)
     drop_index = AsyncCommand()
     drop_indexes = AsyncCommand()
-    drop_search_index = AsyncCommand()
     estimated_document_count = AsyncCommand()
     find_one = AsyncRead(doc=docstrings.find_one_doc)
     find_one_and_delete = AsyncCommand(doc=docstrings.find_one_and_delete_doc)
@@ -885,13 +882,19 @@ class AgnosticCollection(AgnosticBaseProperties):
     replace_one = AsyncCommand(doc=docstrings.replace_one_doc)
     update_many = AsyncCommand(doc=docstrings.update_many_doc)
     update_one = AsyncCommand(doc=docstrings.update_one_doc)
-    update_search_index = AsyncCommand()
+
     with_options = DelegateMethod().wrap(Collection)
+
+    if hasattr(Collection, "create_search_index"):
+        create_search_index = AsyncCommand()
+        create_search_indexes = AsyncCommand()
+        drop_search_index = AsyncCommand()
+        update_search_index = AsyncCommand()
+        _async_list_search_indexes = AsyncRead(attr_name="list_search_indexes")
 
     _async_aggregate = AsyncRead(attr_name="aggregate")
     _async_aggregate_raw_batches = AsyncRead(attr_name="aggregate_raw_batches")
     _async_list_indexes = AsyncRead(attr_name="list_indexes")
-    _async_list_search_indexes = AsyncRead(attr_name="list_search_indexes")
 
     def __init__(
         self,
