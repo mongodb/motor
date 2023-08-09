@@ -725,7 +725,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
     def cursor_command(
         self,
         command,
-        value,
+        value=1,
         read_preference=None,
         codec_options=None,
         session=None,
@@ -793,7 +793,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         kwargs["max_await_time_ms"] = max_await_time_ms
 
         # Latent cursor that will send initial command on first "async for".
-        return cursor_class(self, command, value, **kwargs)
+        return cursor_class(command, value, **kwargs)
 
     @property
     def client(self):
@@ -1756,6 +1756,24 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
     __delegate_class__ = CommandCursor
 
     _CommandCursor__die = AsyncRead()
+
+    async def try_next(self):
+        """Advance the cursor without blocking indefinitely.
+
+        This method returns the next document without waiting
+        indefinitely for data.
+
+        If no document is cached locally then this method runs a single
+        getMore command. If the getMore yields any documents, the next
+        document is returned, otherwise, if the getMore returns no documents
+        (because there is no additional data) then ``None`` is returned.
+
+        :Returns:
+          The next document or ``None`` when no document is available
+          after running a single getMore or when the cursor is closed.
+        """
+        loop = self.get_io_loop()
+        return await self._framework.run_on_executor(loop, self._try_next)
 
     def _query_flags(self):
         return 0
