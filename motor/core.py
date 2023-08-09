@@ -1761,6 +1761,11 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
 
     _CommandCursor__die = AsyncRead()
 
+    def _try_next(self):
+        # This method is run on a thread.
+        self._lazy_init()
+        return self.delegate.try_next()
+
     async def try_next(self):
         """Advance the cursor without blocking indefinitely.
 
