@@ -782,18 +782,20 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
         .. seealso:: The MongoDB documentation on `commands <https://dochub.mongodb.org/core/commands>`_.
         """
-        cursor_class = create_class_with_framework(
-            AgnosticCommandCursor, self._framework, self.__module__
-        )
-
+        args = (command,)
+        kwargs["value"] = value
         kwargs["read_preference"] = read_preference
         kwargs["codec_options"] = codec_options
         kwargs["session"] = session
         kwargs["comment"] = comment
         kwargs["max_await_time_ms"] = max_await_time_ms
 
-        # Latent cursor that will send initial command on first "async for".
-        return cursor_class(command, value, **kwargs)
+        cursor = self.delegate.find(*unwrap_args_session(args), **unwrap_kwargs_session(kwargs))
+        cursor_class = create_class_with_framework(
+            AgnosticCommandCursor, self._framework, self.__module__
+        )
+
+        return cursor_class(cursor, self)
 
     @property
     def client(self):
