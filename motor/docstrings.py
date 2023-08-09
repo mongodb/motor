@@ -314,7 +314,6 @@ this collection is automatically applied to this operation.
    Added session parameter.
 """
 
-
 cmd_doc = """Issue a MongoDB command.
 
 Send command ``command`` to the database and return the
