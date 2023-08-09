@@ -790,7 +790,9 @@ class AgnosticDatabase(AgnosticBaseProperties):
         kwargs["comment"] = comment
         kwargs["max_await_time_ms"] = max_await_time_ms
 
-        cursor = self.delegate.find(*unwrap_args_session(args), **unwrap_kwargs_session(kwargs))
+        cursor = self.delegate.cursor_command(
+            *unwrap_args_session(args), **unwrap_kwargs_session(kwargs)
+        )
         cursor_class = create_class_with_framework(
             AgnosticCommandCursor, self._framework, self.__module__
         )
