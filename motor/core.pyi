@@ -1,6 +1,5 @@
 from typing import (
     Any,
-    Awaitable,
     Callable,
     Collection,
     Coroutine,
@@ -24,7 +23,7 @@ import pymongo.common
 import pymongo.database
 import pymongo.errors
 import pymongo.mongo_client
-from bson import Binary, CodecOptions, DBRef, Timestamp
+from bson import Binary, Code, CodecOptions, DBRef, Timestamp
 from bson.raw_bson import RawBSONDocument
 from pymongo import IndexModel, ReadPreference, WriteConcern
 from pymongo.change_stream import ChangeStream
@@ -35,6 +34,7 @@ from pymongo.command_cursor import CommandCursor, RawBatchCommandCursor
 from pymongo.cursor import Cursor, RawBatchCursor, _Hint, _Sort
 from pymongo.database import Database
 from pymongo.encryption import ClientEncryption, RewrapManyDataKeyResult
+from pymongo.encryption_options import RangeOpts
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import _ServerMode
 from pymongo.results import (
@@ -52,8 +52,6 @@ from pymongo.typings import (
     _DocumentTypeArg,
     _Pipeline,
 )
-
-from .metaprogramming import AsyncCommand, AsyncRead, DelegateMethod, ReadOnlyProperty
 
 _WITH_TRANSACTION_RETRY_TIME_LIMIT: int
 
@@ -77,7 +75,7 @@ class AgnosticBaseProperties(AgnosticBase):
 
 class AgnosticClient(AgnosticBaseProperties):
     __motor_class_name__: str
-    __delegate_class__: pymongo.mongo_client.MongoClient
+    __delegate_class__: Type[pymongo.MongoClient]
 
     def address(self) -> Optional[Tuple[str, int]]: ...
     def arbiters(self) -> Set[Tuple[str, int]]: ...
@@ -85,8 +83,8 @@ class AgnosticClient(AgnosticBaseProperties):
     def __hash__(self) -> int: ...
     def drop_database(
         self,
-        name_or_database: Union[str, Database[_DocumentTypeArg]],
-        session: Optional[ClientSession] = None,
+        name_or_database: Union[str, AgnosticDatabase],
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
     ) -> None: ...
     def options(self) -> ClientOptions: ...
@@ -113,13 +111,13 @@ class AgnosticClient(AgnosticBaseProperties):
     def is_primary(self) -> bool: ...
     def list_databases(
         self,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
     ) -> CommandCursor[Dict[str, Any]]: ...
     def list_database_names(
         self,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
     ) -> List[str]: ...
     def nodes(self) -> FrozenSet[_Address]: ...
@@ -127,7 +125,7 @@ class AgnosticClient(AgnosticBaseProperties):
     def primary(self) -> Optional[Tuple[str, int]]: ...
     read_concern: ReadConcern
     def secondaries(self) -> Set[Tuple[str, int]]: ...
-    def server_info(self, session: Optional[ClientSession] = None) -> Dict[str, Any]: ...
+    def server_info(self, session: Optional[AgnosticClientSession] = None) -> Dict[str, Any]: ...
     def topology_description(self) -> TopologyDescription: ...
     def start_session(
         self,
@@ -152,12 +150,12 @@ class AgnosticClient(AgnosticBaseProperties):
         batch_size: Optional[int] = None,
         collation: Optional[_CollationIn] = None,
         start_at_operation_time: Optional[Timestamp] = None,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         start_after: Optional[Mapping[str, Any]] = None,
         comment: Optional[str] = None,
         full_document_before_change: Optional[str] = None,
         show_expanded_events: Optional[bool] = None,
-    ) -> ChangeStream[_DocumentType]: ...
+    ) -> AgnosticChangeStream: ...
     def __getattr__(self, name: str) -> Any: ...
     def __getitem__(self, name: str) -> Any: ...
     def wrap(self, obj: Any) -> Any: ...
@@ -171,7 +169,7 @@ class _MotorTransactionContext:
 
 class AgnosticClientSession(AgnosticBase):
     __motor_class_name__: str
-    __delegate_class__: ClientSession
+    __delegate_class__: Type[ClientSession]
 
     async def commit_transaction(self) -> None: ...
     async def abort_transaction(self) -> None: ...
@@ -210,7 +208,7 @@ class AgnosticClientSession(AgnosticBase):
 
 class AgnosticDatabase(AgnosticBaseProperties):
     __motor_class_name__: str
-    __delegate_class__: Database
+    __delegate_class__: Type[Database]
 
     def __hash__(self) -> int: ...
     def __bool__(self) -> int: ...
@@ -222,7 +220,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         allowable_errors: Optional[Sequence[Union[str, int]]] = None,
         read_preference: Optional[_ServerMode] = None,
         codec_options: Optional[CodecOptions[_CodecDocumentType]] = None,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
     ) -> Union[Dict[str, Any], _CodecDocumentType]: ...
@@ -233,21 +231,21 @@ class AgnosticDatabase(AgnosticBaseProperties):
         read_preference: Optional[_ServerMode] = None,
         write_concern: Optional[WriteConcern] = None,
         read_concern: Optional[ReadConcern] = None,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         check_exists: Optional[bool] = True,
         **kwargs: Any,
-    ) -> Collection[_DocumentType]: ...
+    ) -> AgnosticCollection: ...
     async def dereference(
         self,
         dbref: DBRef,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
     ) -> Optional[_DocumentType]: ...
     async def drop_collection(
         self,
-        name_or_collection: Union[str, Collection[_DocumentTypeArg]],
-        session: Optional[ClientSession] = None,
+        name_or_collection: Union[str, AgnosticCollection],
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         encrypted_fields: Optional[Mapping[str, Any]] = None,
     ) -> Dict[str, Any]: ...
@@ -258,17 +256,17 @@ class AgnosticDatabase(AgnosticBaseProperties):
         read_preference: Optional[_ServerMode] = None,
         write_concern: Optional[WriteConcern] = None,
         read_concern: Optional[ReadConcern] = None,
-    ) -> Collection[_DocumentType]: ...
+    ) -> AgnosticCollection: ...
     async def list_collection_names(
         self,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         filter: Optional[Mapping[str, Any]] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
     ) -> List[str]: ...
     async def list_collections(
         self,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         filter: Optional[Mapping[str, Any]] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
@@ -276,10 +274,10 @@ class AgnosticDatabase(AgnosticBaseProperties):
     def name(self) -> str: ...
     async def validate_collection(
         self,
-        name_or_collection: Union[str, Collection[_DocumentTypeArg]],
+        name_or_collection: Union[str, AgnosticCollection],
         scandata: bool = False,
         full: bool = False,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         background: Optional[bool] = None,
         comment: Optional[Any] = None,
     ) -> Dict[str, Any]: ...
@@ -289,13 +287,11 @@ class AgnosticDatabase(AgnosticBaseProperties):
         read_preference: Optional[_ServerMode] = None,
         write_concern: Optional[WriteConcern] = None,
         read_concern: Optional[ReadConcern] = None,
-    ) -> Database[_DocumentType]: ...
+    ) -> AgnosticDatabase: ...
     async def _async_aggregate(
-        self, pipeline: _Pipeline, session: Optional[ClientSession] = None, **kwargs: Any
+        self, pipeline: _Pipeline, session: Optional[AgnosticClientSession] = None, **kwargs: Any
     ) -> AgnosticCommandCursor: ...
-    def __init__(
-        self, client: pymongo.MongoClient[_DocumentType], name: str, **kwargs: Any
-    ) -> None: ...
+    def __init__(self, client: AgnosticClient, name: str, **kwargs: Any) -> None: ...
     def aggregate(
         self, pipeline: _Pipeline, *args: Any, **kwargs: Any
     ) -> AgnosticLatentCommandCursor: ...
@@ -308,14 +304,14 @@ class AgnosticDatabase(AgnosticBaseProperties):
         batch_size: Optional[int] = None,
         collation: Optional[_CollationIn] = None,
         start_at_operation_time: Optional[Timestamp] = None,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         start_after: Optional[Mapping[str, Any]] = None,
         comment: Optional[Any] = None,
         full_document_before_change: Optional[str] = None,
         show_expanded_events: Optional[bool] = None,
     ) -> AgnosticChangeStream: ...
     @property
-    def client(self) -> pymongo.MongoClient[_DocumentType]: ...
+    def client(self) -> AgnosticClient: ...
     def __getattr__(self, name: str) -> Any: ...
     def __getitem__(self, name: str) -> AgnosticCollection: ...
     def __call__(self, *args: Any, **kwargs: Any) -> None: ...
@@ -324,35 +320,37 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
 class AgnosticCollection(AgnosticBaseProperties):
     __motor_class_name__: str
-    __delegate_class__: Any
+    __delegate_class__: Type[Collection]
 
+    def __hash__(self) -> int: ...
+    def __bool__(self) -> bool: ...
     async def bulk_write(
         self,
         requests: Sequence[_WriteOp[_DocumentType]],
         ordered: bool = True,
         bypass_document_validation: bool = False,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         let: Optional[Mapping] = None,
     ) -> BulkWriteResult: ...
     async def count_documents(
         self,
         filter: Mapping[str, Any],
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
     ) -> int: ...
     async def create_index(
         self,
         keys: _IndexKeyHint,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
     ) -> str: ...
     async def create_indexes(
         self,
         indexes: Sequence[IndexModel],
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
     ) -> List[str]: ...
@@ -361,7 +359,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         filter: Mapping[str, Any],
         collation: Optional[_CollationIn] = None,
         hint: Optional[_IndexKeyHint] = None,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         let: Optional[Mapping[str, Any]] = None,
         comment: Optional[Any] = None,
     ) -> DeleteResult: ...
@@ -370,7 +368,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         filter: Mapping[str, Any],
         collation: Optional[_CollationIn] = None,
         hint: Optional[_IndexKeyHint] = None,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         let: Optional[Mapping[str, Any]] = None,
         comment: Optional[Any] = None,
     ) -> DeleteResult: ...
@@ -378,26 +376,26 @@ class AgnosticCollection(AgnosticBaseProperties):
         self,
         key: str,
         filter: Optional[Mapping[str, Any]] = None,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
     ) -> List[Any]: ...
     async def drop(
         self,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         encrypted_fields: Optional[Mapping[str, Any]] = None,
     ) -> None: ...
     async def drop_index(
         self,
         index_or_name: _IndexKeyHint,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
     ) -> None: ...
     async def drop_indexes(
         self,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
     ) -> None: ...
@@ -413,7 +411,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         projection: Optional[Union[Mapping[str, Any], Iterable[str]]] = None,
         sort: Optional[_IndexList] = None,
         hint: Optional[_IndexKeyHint] = None,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         let: Optional[Mapping[str, Any]] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
@@ -427,7 +425,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         upsert: bool = False,
         return_document: bool = ReturnDocument.BEFORE,
         hint: Optional[_IndexKeyHint] = None,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         let: Optional[Mapping[str, Any]] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
@@ -442,36 +440,38 @@ class AgnosticCollection(AgnosticBaseProperties):
         return_document: bool = ReturnDocument.BEFORE,
         array_filters: Optional[Sequence[Mapping[str, Any]]] = None,
         hint: Optional[_IndexKeyHint] = None,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         let: Optional[Mapping[str, Any]] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
     ) -> _DocumentType: ...
+    def full_name(self) -> str: ...
     async def index_information(
-        self, session: Optional[ClientSession] = None, comment: Optional[Any] = None
+        self, session: Optional[AgnosticClientSession] = None, comment: Optional[Any] = None
     ) -> MutableMapping[str, Any]: ...
     async def insert_many(
         self,
         documents: Iterable[Union[_DocumentType, RawBSONDocument]],
         ordered: bool = True,
         bypass_document_validation: bool = False,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
     ) -> InsertManyResult: ...
     async def insert_one(
         self,
         document: Union[_DocumentType, RawBSONDocument],
         bypass_document_validation: bool = False,
-        session: Union[Optional[ClientSession], Optional[AgnosticClientSession]] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
     ) -> InsertOneResult: ...
+    def name(self) -> str: ...
     async def options(
-        self, session: Optional[ClientSession] = None, comment: Optional[Any] = None
+        self, session: Optional[AgnosticClientSession] = None, comment: Optional[Any] = None
     ) -> MutableMapping[str, Any]: ...
     async def rename(
         self,
         new_name: str,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
     ) -> MutableMapping[str, Any]: ...
@@ -483,7 +483,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         bypass_document_validation: bool = False,
         collation: Optional[_CollationIn] = None,
         hint: Optional[_IndexKeyHint] = None,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         let: Optional[Mapping[str, Any]] = None,
         comment: Optional[Any] = None,
     ) -> UpdateResult: ...
@@ -496,7 +496,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         bypass_document_validation: Optional[bool] = None,
         collation: Optional[_CollationIn] = None,
         hint: Optional[_IndexKeyHint] = None,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         let: Optional[Mapping[str, Any]] = None,
         comment: Optional[Any] = None,
     ) -> UpdateResult: ...
@@ -509,11 +509,11 @@ class AgnosticCollection(AgnosticBaseProperties):
         collation: Optional[_CollationIn] = None,
         array_filters: Optional[Sequence[Mapping[str, Any]]] = None,
         hint: Optional[_IndexKeyHint] = None,
-        session: Union[Optional[ClientSession], Optional[AgnosticClientSession]] = None,
+        session: Union[Optional[AgnosticClientSession], Optional[AgnosticClientSession]] = None,
         let: Optional[Mapping[str, Any]] = None,
         comment: Optional[Any] = None,
     ) -> UpdateResult: ...
-    async def with_options(
+    def with_options(
         self,
         codec_options: Optional[CodecOptions] = None,
         read_preference: Optional[ReadPreference] = None,
@@ -551,35 +551,34 @@ class AgnosticCollection(AgnosticBaseProperties):
         batch_size: Optional[int] = None,
         collation: Optional[_CollationIn] = None,
         start_at_operation_time: Optional[Timestamp] = None,
-        session: Optional[ClientSession] = None,
+        session: Optional[AgnosticClientSession] = None,
         start_after: Optional[Mapping[str, Any]] = None,
         comment: Optional[Any] = None,
         full_document_before_change: Optional[str] = None,
         show_expanded_events: Optional[bool] = None,
     ) -> Any: ...
     def list_indexes(
-        self, session: Optional[ClientSession] = None, **kwargs: Any
+        self, session: Optional[AgnosticClientSession] = None, **kwargs: Any
     ) -> AgnosticCommandCursor: ...
     def wrap(self, obj: Any) -> Any: ...
     def get_io_loop(self) -> Any: ...
 
 class AgnosticBaseCursor(AgnosticBase):
-    _async_close: Any
-    _refresh: Any
-    address: Optional[_Address]
-    cursor_id: Optional[int]
-    alive: bool
-    session: Optional[ClientSession]
-
     def __init__(
-        self, cursor: Union[Cursor, CommandCursor, _LatentCursor], collection: Collection
+        self, cursor: Union[Cursor, CommandCursor, _LatentCursor], collection: AgnosticCollection
     ) -> None: ...
+    def address(self) -> Optional[_Address]: ...
+    def cursor_id(self) -> Optional[int]: ...
+    def alive(self) -> bool: ...
+    def session(self) -> Optional[AgnosticClientSession]: ...
+    async def _async_close(self) -> None: ...
+    async def _refresh(self) -> int: ...
     def __aiter__(self) -> Any: ...
     async def next(self) -> _DocumentType: ...
     __anext__ = next
     async def __aenter__(self) -> Any: ...
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Any: ...
-    def _get_more(self) -> Mapping[str, Any]: ...
+    def _get_more(self) -> int: ...
     @property
     def fetch_next(self) -> Any: ...
     def next_object(self) -> Any: ...
@@ -588,35 +587,35 @@ class AgnosticBaseCursor(AgnosticBase):
     def to_list(self, length: int) -> List: ...
     def _to_list(self, length: int, the_list: List, future: Any, get_more_result: Any) -> None: ...
     def get_io_loop(self) -> Any: ...
-    async def close(self) -> None: ...
     def batch_size(self, batch_size: int) -> AgnosticBaseCursor: ...
     def _buffer_size(self) -> int: ...
     def _query_flags(self) -> Optional[int]: ...
     def _data(self) -> None: ...
     def _killed(self) -> None: ...
+    async def close(self) -> None: ...
 
 class AgnosticCursor(AgnosticBaseCursor):
     __motor_class_name__: str
-    __delegate_class__: Cursor
-    address: Optional[_Address]
-    collation: _CollationIn
-    distinct: List
-    explain: Mapping[str, Any]
-    add_option: Cursor[Mapping[str, Any]]
-    remove_option: Cursor[Mapping[str, Any]]
-    limit: int
-    skip: int
-    max_scan: Optional[int]
-    sort: Optional[_Sort]
-    hint: Optional[_Hint]
-    where: Any
-    max_await_time_ms: Optional[int]
-    max_time_ms: Optional[int]
-    min: Optional[_Sort]
-    max: Optional[_Sort]
-    comment: Optional[Any]
-    allow_disk_use: Optional[bool]
-
+    __delegate_class__: Type[Cursor]
+    def collation(self, collation: Optional[_CollationIn]) -> AgnosticCursor: ...
+    async def distinct(self, key: str) -> List: ...
+    async def explain(self) -> _DocumentType: ...
+    def add_option(self, mask: int) -> AgnosticCursor: ...
+    def remove_option(self, mask: int) -> AgnosticCursor: ...
+    def limit(self, limit: int) -> AgnosticCursor: ...
+    def skip(self, skip: int) -> AgnosticCursor: ...
+    def max_scan(self, max_scan: Optional[int]) -> AgnosticCursor: ...
+    def sort(
+        self, key_or_list: _Hint, direction: Optional[Union[int, str]] = None
+    ) -> AgnosticCursor: ...
+    def hint(self, index: Optional[_Hint]) -> AgnosticCursor: ...
+    def where(self, code: Union[str, Code]) -> AgnosticCursor: ...
+    def max_await_time_ms(self, max_await_time_ms: Optional[int]) -> AgnosticCursor: ...
+    def max_time_ms(self, max_time_ms: Optional[int]) -> AgnosticCursor: ...
+    def min(self, spec: _Sort) -> AgnosticCursor: ...
+    def max(self, spec: _Sort) -> AgnosticCursor: ...
+    def comment(self, comment: Any) -> AgnosticCursor: ...
+    def allow_disk_use(self, allow_disk_use: bool) -> AgnosticCursor: ...
     def rewind(self) -> AgnosticCursor: ...
     def clone(self) -> AgnosticCursor: ...
     def __copy__(self) -> AgnosticCursor: ...
@@ -627,11 +626,11 @@ class AgnosticCursor(AgnosticBaseCursor):
 
 class AgnosticRawBatchCursor(AgnosticCursor):
     __motor_class_name__: str
-    __delegate_class__: RawBatchCursor
+    __delegate_class__: Type[RawBatchCursor]
 
 class AgnosticCommandCursor(AgnosticBaseCursor):
     __motor_class_name__: str
-    __delegate_class__: CommandCursor
+    __delegate_class__: Type[CommandCursor]
 
     def _query_flags(self) -> int: ...
     def _data(self) -> Any: ...
@@ -639,39 +638,26 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
 
 class AgnosticRawBatchCommandCursor(AgnosticCommandCursor):
     __motor_class_name__: str
-    __delegate_class__: RawBatchCommandCursor
+    __delegate_class__: Type[RawBatchCommandCursor]
 
 class _LatentCursor:
-    alive: bool
-    _CommandCursor__data: List
-    _CommandCursor__id: None
-    _CommandCursor__killed: bool
-    _CommandCursor__sock_mgr: None
-    _CommandCursor__session: None
-    _CommandCursor__explicit_session: None
-    cursor_id: None
-
-    def __init__(self, collection: Any): ...
+    def __init__(self, collection: AgnosticCollection): ...
     def _CommandCursor__end_session(self, *args: Any, **kwargs: Any) -> None: ...
     def _CommandCursor__die(self, *args: Any, **kwargs: Any) -> None: ...
     def clone(self) -> _LatentCursor: ...
-    def rewind(self): ...
+    def rewind(self) -> _LatentCursor: ...
 
 class AgnosticLatentCommandCursor(AgnosticCommandCursor):
     __motor_class_name__: str
-
-    def __init__(self, collection: Any, start: Any, *args: Any, **kwargs: Any): ...
-    def batch_size(self, batch_size: int) -> AgnosticLatentCommandCursor: ...
-    def _get_more(self): ...
+    def __init__(self, collection: AgnosticCollection, start: Any, *args: Any, **kwargs: Any): ...
     def _on_started(self, original_future: Any, future: Any) -> None: ...
 
 class AgnosticChangeStream(AgnosticBase):
-    __delegate_class__: ChangeStream
     __motor_class_name__: str
+    __delegate_class__: Type[ChangeStream]
 
-    _close: AsyncCommand
-    resume_token: Optional[Mapping[str, Any]]
-
+    async def _close(self) -> None: ...
+    def resume_token(self) -> Optional[Mapping[str, Any]]: ...
     def __init__(
         self,
         target: Union[
@@ -684,51 +670,80 @@ class AgnosticChangeStream(AgnosticBase):
         batch_size: Optional[int],
         collation: Optional[_CollationIn],
         start_at_operation_time: Optional[Timestamp],
-        session: Optional[ClientSession],
+        session: Optional[AgnosticClientSession],
         start_after: Optional[Mapping[str, Any]],
         comment: Optional[Any] = None,
         full_document_before_change: Optional[str] = None,
         show_expanded_events: Optional[bool] = None,
     ): ...
-    def _lazy_init(self): ...
-    def _try_next(self): ...
-    @property
+    def _lazy_init(self) -> None: ...
+    def _try_next(self) -> Optional[_DocumentType]: ...
     def alive(self) -> bool: ...
     async def next(self) -> _DocumentType: ...
     async def try_next(self) -> Optional[_DocumentType]: ...
-    async def close(self): ...
+    async def close(self) -> None: ...
     def __aiter__(self) -> AgnosticChangeStream: ...
     __anext__ = next
     async def __aenter__(self) -> AgnosticChangeStream: ...
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...
-    def get_io_loop(self): ...
-    def __enter__(self): ...
+    def get_io_loop(self) -> Any: ...
+    def __enter__(self) -> None: ...
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...
 
 class AgnosticClientEncryption(AgnosticBase):
     __motor_class_name__: str
-    __delegate_class__: ClientEncryption
-    create_data_key: Awaitable[Binary]
-    encrypt: Awaitable[Binary]
-    decrypt: Awaitable[Binary]
-    close: Awaitable[None]
-    rewrap_many_data_key: Awaitable[RewrapManyDataKeyResult]
-    delete_key: Awaitable[DeleteResult]
-    get_key: Awaitable[Optional[RawBSONDocument]]
-    add_key_alt_name: Awaitable[Any]
-    get_key_by_alt_name: Awaitable[Optional[RawBSONDocument]]
-    remove_key_alt_name: Awaitable[Optional[RawBSONDocument]]
-    encrypt_expression: Optional[Awaitable[RawBSONDocument]]
-
+    __delegate_class__: Type[ClientEncryption]
     def __init__(
         self,
         kms_providers: Mapping[str, Any],
         key_vault_namespace: str,
-        key_vault_client: pymongo.MongoClient,
+        key_vault_client: AgnosticClient,
         codec_options: CodecOptions,
         io_loop: Optional[Any] = None,
         kms_tls_options: Optional[Mapping[str, Any]] = None,
     ): ...
+    async def create_data_key(
+        self,
+        kms_provider: str,
+        master_key: Optional[Mapping[str, Any]] = None,
+        key_alt_names: Optional[Sequence[str]] = None,
+        key_material: Optional[bytes] = None,
+    ) -> Binary: ...
+    async def encrypt(
+        self,
+        value: Any,
+        algorithm: str,
+        key_id: Optional[Binary] = None,
+        key_alt_name: Optional[str] = None,
+        query_type: Optional[str] = None,
+        contention_factor: Optional[int] = None,
+        range_opts: Optional[RangeOpts] = None,
+    ) -> Binary: ...
+    async def decrypt(self, value: Binary) -> Any: ...
+    async def close(self) -> None: ...
+    async def rewrap_many_data_key(
+        self,
+        filter: Mapping[str, Any],
+        provider: Optional[str] = None,
+        master_key: Optional[Mapping[str, Any]] = None,
+    ) -> RewrapManyDataKeyResult: ...
+    async def delete_key(self, id: Binary) -> DeleteResult: ...
+    async def get_key(self, id: Binary) -> Optional[RawBSONDocument]: ...
+    async def add_key_alt_name(self, id: Binary, key_alt_name: str) -> Any: ...
+    async def get_key_by_alt_name(self, key_alt_name: str) -> Optional[RawBSONDocument]: ...
+    async def remove_key_alt_name(
+        self, id: Binary, key_alt_name: str
+    ) -> Optional[RawBSONDocument]: ...
+    async def encrypt_expression(
+        self,
+        expression: Mapping[str, Any],
+        algorithm: str,
+        key_id: Optional[Binary] = None,
+        key_alt_name: Optional[str] = None,
+        query_type: Optional[str] = None,
+        contention_factor: Optional[int] = None,
+        range_opts: Optional[RangeOpts] = None,
+    ) -> RawBSONDocument: ...
     @property
     def io_loop(self) -> Any: ...
     def get_io_loop(self) -> Any: ...
@@ -745,4 +760,4 @@ class AgnosticClientEncryption(AgnosticBase):
         kms_provider: Optional[str] = None,
         master_key: Optional[Mapping[str, Any]] = None,
         **kwargs: Any,
-    ) -> Tuple[Collection[_DocumentType], Mapping[str, Any]]: ...
+    ) -> Tuple[AgnosticCollection, Mapping[str, Any]]: ...

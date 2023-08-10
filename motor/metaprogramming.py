@@ -16,12 +16,12 @@
 
 import functools
 import inspect
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 _class_cache: Dict[Any, Any] = {}
 
 
-def asynchronize(framework, sync_method, doc=None, wrap_class=None, unwrap_class=None):
+def asynchronize(framework, sync_method: Callable, doc=None, wrap_class=None, unwrap_class=None):
     """Decorate `sync_method` so it returns a Future.
 
     The method runs on a thread and resolves the Future when it completes.

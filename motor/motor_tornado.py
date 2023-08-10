@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Tornado support for Motor, an asynchronous driver for MongoDB."""
+from typing import TypeVar
 
 from . import core, motor_gridfs
 from .frameworks import tornado as tornado_framework
@@ -33,8 +34,10 @@ __all__ = [
     "MotorClientEncryption",
 ]
 
+T = TypeVar("T")
 
-def create_motor_class(cls):
+
+def create_motor_class(cls: T) -> T:
     return create_class_with_framework(cls, tornado_framework, "motor.motor_tornado")
 
 
