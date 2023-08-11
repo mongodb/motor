@@ -201,6 +201,7 @@ class MotorClientTimeoutTest(MotorMockServerTest):
 
 
 def get_conns(pool):
+    # TODO: MOTOR-1169
     if hasattr(pool, "conns"):
         return pool.conns
     return pool.sockets

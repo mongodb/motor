@@ -885,6 +885,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
     with_options = DelegateMethod().wrap(Collection)
 
+    # TODO: MOTOR-1169
     if hasattr(Collection, "create_search_index"):
         create_search_index = AsyncCommand()
         create_search_indexes = AsyncCommand()

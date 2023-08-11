@@ -108,7 +108,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
         # IncompleteReadError
         pool = get_primary_pool(cx)
 
-        # TODO: Remove workaround after PyMongo 4.5 is released
+        # TODO: MOTOR-1169
         if hasattr(pool, "conns"):
             conn = pool.conns.pop()
             conn.conn.close()

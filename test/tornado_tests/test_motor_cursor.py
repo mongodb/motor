@@ -408,7 +408,7 @@ class MotorCursorTest(MotorMockServerTest):
         client = self.motor_client(maxPoolSize=1)
         # Ensure a pool.
         await client.db.collection.find_one()
-        # TODO
+        # TODO: MOTOR-1169
         pool = get_primary_pool(client)
         if hasattr(pool, "conns"):
             conns = pool.conns
