@@ -722,7 +722,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             show_expanded_events,
         )
 
-    def cursor_command(
+    def _cursor_command(
         self,
         command,
         value=1,
@@ -798,6 +798,10 @@ class AgnosticDatabase(AgnosticBaseProperties):
         )
 
         return cursor_class(cursor, self)
+
+    # TODO: MOTOR-1169
+    if hasattr(Collection, "cursor_command"):
+        cursor_command = _cursor_command
 
     @property
     def client(self):
@@ -1310,7 +1314,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, self._async_list_indexes, session=session, **kwargs)
 
-    def list_search_indexes(self, session=None, **kwargs):
+    def _list_search_indexes(self, session=None, **kwargs):
         """Return a cursor over search indexes for the current collection."""
         cursor_class = create_class_with_framework(
             AgnosticLatentCommandCursor, self._framework, self.__module__
@@ -1318,6 +1322,10 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, self._async_list_search_indexes, session=session, **kwargs)
+
+    # TODO: MOTOR-1169
+    if hasattr(Collection, "list_search_indexes"):
+        list_search_indexes = _list_search_indexes
 
     def wrap(self, obj):
         if obj.__class__ is Collection:
@@ -1774,7 +1782,7 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
         self._lazy_init()
         return self.delegate.try_next()
 
-    async def try_next(self):
+    async def __try_next(self):
         """Advance the cursor without blocking indefinitely.
 
         This method returns the next document without waiting
@@ -1791,6 +1799,10 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
         """
         loop = self.get_io_loop()
         return await self._framework.run_on_executor(loop, self._try_next)
+
+    # TODO: MOTOR-1169
+    if hasattr(CommandCursor, "try_next"):
+        try_next = __try_next
 
     def _query_flags(self):
         return 0
