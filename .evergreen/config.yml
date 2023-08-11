@@ -424,7 +424,7 @@ functions:
         working_dir: "src"
         script: |
           # DO NOT ECHO WITH XTRACE (which PREPARE_SHELL does)
-
+          set -ex
           CLIENT_PEM=${DRIVERS_TOOLS}/.evergreen/x509gen/client.pem \
           CA_PEM=${DRIVERS_TOOLS}/.evergreen/x509gen/ca.pem \
           PYTHON_BINARY=${PYTHON_BINARY} \
@@ -916,6 +916,10 @@ axes:
         variables:
            TOX_ENV: "test"
            EXTRA_PATH: "c:\\python\\Python311"
+      - id: "test-py312"
+        variables:
+           TOX_ENV: "test"
+           EXTRA_PATH: "c:\\python\\Python312"
 
   - id: os
     display_name: "Operating System"
