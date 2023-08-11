@@ -942,7 +942,7 @@ buildvariants:
     # TODO: synchro needs PyMongo's updated SSL test certs,
     # which may require Motor test suite changes.
     - os: "*"
-      tox-env: ["synchro"]
+      tox-env: ["synchro-py37", "synchro-py312"]
       ssl: "ssl"
   tasks:
      - ".rapid"
