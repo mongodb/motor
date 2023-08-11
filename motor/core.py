@@ -800,7 +800,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         return cursor_class(cursor, self)
 
     # TODO: MOTOR-1169
-    if hasattr(Collection, "cursor_command"):
+    if hasattr(Database, "cursor_command"):
         cursor_command = _cursor_command
 
     @property
