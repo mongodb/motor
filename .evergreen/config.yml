@@ -420,12 +420,10 @@ functions:
     - command: shell.exec
       type: test
       params:
-        #silent: true
+        silent: true
         working_dir: "src"
         script: |
           # DO NOT ECHO WITH XTRACE (which PREPARE_SHELL does)
-          set -ex
-          echo "here I am"
           CLIENT_PEM=${DRIVERS_TOOLS}/.evergreen/x509gen/client.pem \
           CA_PEM=${DRIVERS_TOOLS}/.evergreen/x509gen/ca.pem \
           PYTHON_BINARY=${PYTHON_BINARY} \

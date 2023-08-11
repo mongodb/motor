@@ -3,8 +3,6 @@
 # Don't trace to avoid secrets showing up in the logs
 set -o errexit
 
-set -eux  # TODO REMOVE
-
 echo "Running enterprise authentication tests"
 
 export DB_USER="bob"
