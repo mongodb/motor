@@ -221,7 +221,9 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         client = motor.MotorClient(server.uri, maxPoolSize=1)
         await client.admin.command("ismaster")
         pool = get_primary_pool(client)
-        conn = one(pool.conns)
+        # TODO
+        conns = getattr(pool, "conns", pool.sockets)
+        conn = one(conns)
         cursor = client.db.collection.find(cursor_type=CursorType.EXHAUST)
 
         # With Tornado, simply accessing fetch_next starts the fetch.
@@ -233,7 +235,9 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
             await fetch_next
 
         self.assertFalse(conn.closed)
-        self.assertEqual(conn, one(pool.conns))
+        # TODO
+        conns = getattr(pool, "conns", pool.sockets)
+        self.assertEqual(conn, one(conns))
 
     @gen_test
     async def test_exhaust_query_server_error_standalone(self):
@@ -252,7 +256,9 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         await client.admin.command("ismaster")
         pool = get_primary_pool(client)
         pool._check_interval_seconds = None  # Never check.
-        conn = one(pool.conns)
+        # TODO
+        conns = getattr(pool, "conns", pool.sockets)
+        conn = one(conns)
 
         cursor = client.db.collection.find(cursor_type=CursorType.EXHAUST)
 
@@ -266,7 +272,9 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
 
         self.assertTrue(conn.closed)
         del cursor
-        self.assertNotIn(conn, pool.conns)
+        # TODO
+        conns = getattr(pool, "conns", pool.sockets)
+        self.assertNotIn(conn, conns)
 
     @gen_test
     async def test_exhaust_query_network_error_standalone(self):

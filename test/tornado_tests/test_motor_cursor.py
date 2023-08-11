@@ -408,7 +408,9 @@ class MotorCursorTest(MotorMockServerTest):
         client = self.motor_client(maxPoolSize=1)
         # Ensure a pool.
         await client.db.collection.find_one()
-        conns = get_primary_pool(client).conns
+        # TODO
+        pool = get_primary_pool(client)
+        conns = getattr(pool, "conns", pool.sockets)
 
         # Make sure the socket is returned after exhaustion.
         cur = client[self.db.name].test.find(cursor_type=CursorType.EXHAUST)

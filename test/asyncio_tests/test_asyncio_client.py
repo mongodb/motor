@@ -107,9 +107,16 @@ class TestAsyncIOClient(AsyncIOTestCase):
         # lost, as result we should have AutoReconnect instead of
         # IncompleteReadError
         pool = get_primary_pool(cx)
-        conn = pool.conns.pop()
-        conn.conn.close()
-        pool.conns.appendleft(conn)
+
+        # TODO: Remove workaround after PyMongo 4.5 is released
+        if hasattr(pool, "conns"):
+            conn = pool.conns.pop()
+            conn.conn.close()
+            pool.conns.appendleft(conn)
+        else:
+            socket = pool.sockets.pop()
+            socket.socket.close()
+            pool.sockets.appendleft(socket)
 
         with self.assertRaises(pymongo.errors.AutoReconnect):
             await cx.motor_test.test_collection.find_one()
