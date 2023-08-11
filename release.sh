@@ -13,7 +13,7 @@ rm -rf build
 rm -rf dist
 
 # Install deps
-python3 -m pip install build twine
+python3 -m pip install build
 
 # Build the source dist and wheel
 python3 -m build .

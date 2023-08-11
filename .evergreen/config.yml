@@ -831,6 +831,10 @@ axes:
   - id: tox-env
     display_name: "Tox Env RHEL8"
     values:
+      - id: "test-pypy38"
+        variables:
+           TOX_ENV: "test"
+           PYTHON_BINARY: "/opt/python/pypy3.8/bin/python3"
       - id: "test-py37"
         variables:
            TOX_ENV: "test"
