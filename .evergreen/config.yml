@@ -799,7 +799,7 @@ tasks:
       commands:
         - func: "run tox"
           vars:
-             TOX_ENV: py3-sphinx-docs
+             TOX_ENV: docs
 
     - name: "doctest"
       commands:
@@ -809,7 +809,7 @@ tasks:
             TOPOLOGY: "server"
         - func: "run tox"
           vars:
-             TOX_ENV: py3-sphinx-doctest
+             TOX_ENV: doctest
 
 # }}}
 
@@ -831,127 +831,87 @@ axes:
   - id: tox-env
     display_name: "Tox Env RHEL8"
     values:
-      - id: "tornado5-pypy37"
+      - id: "test-py37"
         variables:
-           TOX_ENV: "tornado5-pypy37"
-           PYTHON_BINARY: "/opt/python/pypy3.7/bin/pypy3"
-      - id: "tornado5-py37"
-        variables:
-           TOX_ENV: "tornado5-py37"
+           TOX_ENV: "test"
            PYTHON_BINARY: "/opt/python/3.7/bin/python3"
-      - id: "tornado6-pypy37"
+      - id: "test-py37"
         variables:
-          TOX_ENV: "tornado6-pypy37"
-          PYTHON_BINARY: "/opt/python/pypy3.7/bin/pypy3"
-      - id: "tornado6-py37"
-        variables:
-           TOX_ENV: "tornado6-py37"
+           TOX_ENV: "test"
            PYTHON_BINARY: "/opt/python/3.7/bin/python3"
-      - id: "tornado6-py38"
+      - id: "test-py38"
         variables:
-           TOX_ENV: "tornado6-py38"
+           TOX_ENV: "test"
            PYTHON_BINARY: "/opt/python/3.8/bin/python3"
-      - id: "tornado6-py39"
+      - id: "test-py39"
         variables:
-           TOX_ENV: "tornado6-py39"
+           TOX_ENV: "test"
            PYTHON_BINARY: "/opt/python/3.9/bin/python3"
-      - id: "tornado6-py310"
+      - id: "test-py310"
         variables:
-           TOX_ENV: "tornado6-py310"
+           TOX_ENV: "test"
            PYTHON_BINARY: "/opt/python/3.10/bin/python3"
-      - id: "tornado6-py311"
+      - id: "test-py311"
         variables:
-           TOX_ENV: "tornado6-py311"
+           TOX_ENV: "test"
            PYTHON_BINARY: "/opt/python/3.11/bin/python3"
-      - id: "tornado6-py312"
+      - id: "test-py312"
         variables:
-           TOX_ENV: "tornado6-py312"
+           TOX_ENV: "test"
            PYTHON_BINARY: "/opt/python/3.12/bin/python3"
-      - id: "tornado_git-py38"
+      - id: "test-pymongo-latest"
         variables:
-           TOX_ENV: "tornado_git-py38"
-           PYTHON_BINARY: "/opt/python/3.8/bin/python3"
-      - id: "asyncio-pypy37"
-        variables:
-          TOX_ENV: "asyncio-pypy37"
-          PYTHON_BINARY: "/opt/python/pypy3.7/bin/pypy3"
-      - id: "asyncio-py37"
-        variables:
-           TOX_ENV: "asyncio-py37"
+           TOX_ENV: "test-pymongo-latest"
            PYTHON_BINARY: "/opt/python/3.7/bin/python3"
-      - id: "asyncio-py38"
+      - id: "synchro-py37"
         variables:
-           TOX_ENV: "asyncio-py38"
-           PYTHON_BINARY: "/opt/python/3.8/bin/python3"
-      - id: "asyncio-py39"
-        variables:
-           TOX_ENV: "asyncio-py39"
-           PYTHON_BINARY: "/opt/python/3.9/bin/python3"
-      - id: "asyncio-py310"
-        variables:
-           TOX_ENV: "asyncio-py310"
-           PYTHON_BINARY: "/opt/python/3.10/bin/python3"
-      - id: "asyncio-py311"
-        variables:
-           TOX_ENV: "asyncio-py311"
-           PYTHON_BINARY: "/opt/python/3.11/bin/python3"
-      - id: "asyncio-py312"
-        variables:
-           TOX_ENV: "asyncio-py312"
-           PYTHON_BINARY: "/opt/python/3.12/bin/python3"
-      - id: "py3-pymongo-latest"
-        variables:
-           TOX_ENV: "py3-pymongo-latest"
-           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
-      - id: "synchro37"
-        variables:
-          TOX_ENV: "synchro37"
+          TOX_ENV: "synchro"
           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
-      - id: "synchro312"
+      - id: "synchro-py312"
         variables:
-          TOX_ENV: "synchro312"
+          TOX_ENV: "synchro"
           PYTHON_BINARY: "/opt/python/3.12/bin/python3"
 
   - id: tox-env-rhel7
     display_name: "Tox Env RHEL7"
     values:
-      - id: "tornado6-py39"
+      - id: "test"
         variables:
-           TOX_ENV: "tornado6-py39"
-           PYTHON_BINARY: "/opt/python/3.9/bin/python3"
-      - id: "asyncio-py39"
-        variables:
-           TOX_ENV: "asyncio-py39"
+           TOX_ENV: "test"
            PYTHON_BINARY: "/opt/python/3.9/bin/python3"
 
   # Test Python 3.8 only on Mac.
   - id: tox-env-osx
     display_name: "Tox Env OSX"
     values:
-      - id: "tornado5"
+      - id: "test"
         variables:
-           TOX_ENV: "tornado5"
-           EXTRA_PATH: "/Library/Frameworks/Python.framework/Versions/3.8/bin/"
-      - id: "tornado_git"
-        variables:
-           TOX_ENV: "tornado_git"
+           TOX_ENV: "test"
            EXTRA_PATH: "/Library/Frameworks/Python.framework/Versions/3.8/bin/"
 
   - id: tox-env-win
     display_name: "Tox Env Windows"
     values:
-      - id: "asyncio"
+      - id: "test-py37"
         variables:
-          TOX_ENV: "asyncio"
+          TOX_ENV: "test"
           EXTRA_PATH: "c:\\python\\Python37"
-      - id: "tornado6"
+      - id: "test-py38"
         variables:
-           TOX_ENV: "tornado6"
-           EXTRA_PATH: "c:\\python\\Python37"
-      - id: "tornado6"
-        variables:
-           TOX_ENV: "tornado6"
+           TOX_ENV: "test"
            EXTRA_PATH: "c:\\python\\Python38"
+      - id: "test-py39"
+        variables:
+           TOX_ENV: "test"
+           EXTRA_PATH: "c:\\python\\Python39"
+      - id: "test-py310"
+        variables:
+           TOX_ENV: "test"
+           EXTRA_PATH: "c:\\python\\Python310"
+      - id: "test-py311"
+        variables:
+           TOX_ENV: "test"
+           EXTRA_PATH: "c:\\python\\Python311"
 
   - id: os
     display_name: "Operating System"
@@ -959,27 +919,15 @@ axes:
       - id: "rhel84"
         display_name: "RHEL 8.4"
         run_on: "rhel84-small"
-        variables:
-           INSTALL_TOX: true
-           VIRTUALENV: "/opt/python/3.7/bin/python3 -m virtualenv"
       - id: "rhel76"
         display_name: "RHEL 7.6"
         run_on: "rhel76-small"
-        variables:
-           INSTALL_TOX: true
-           VIRTUALENV: "/opt/python/3.7/bin/python3 -m virtualenv"
       - id: "win"
         display_name: "Windows"
         run_on: "windows-64-vsMulti-small"
-        variables:
-           INSTALL_TOX: true
-           VIRTUALENV: "/cygdrive/c/python/Python37/python.exe -m virtualenv"
       - id: "macos-1100"
         display_name: "macOS 11.00"
         run_on: "macos-1100"
-        variables:
-           INSTALL_TOX: true
-           VIRTUALENV: "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3 -m venv"
 
 buildvariants:
 
@@ -994,7 +942,7 @@ buildvariants:
     # TODO: synchro needs PyMongo's updated SSL test certs,
     # which may require Motor test suite changes.
     - os: "*"
-      tox-env: ["synchro37", "synchro312"]
+      tox-env: ["synchro"]
       ssl: "ssl"
   tasks:
      - ".rapid"
@@ -1052,7 +1000,7 @@ buildvariants:
 
 - matrix_name: "enterprise-auth"
   display_name: "Enterprise Auth-${tox-env}"
-  matrix_spec: {"tox-env": ["synchro37", "synchro312"], ssl: "ssl"}
+  matrix_spec: {"tox-env": ["synchro"], ssl: "ssl"}
   run_on:
      - "rhel84-small"
   tasks:
@@ -1063,9 +1011,7 @@ buildvariants:
   run_on:
      - "rhel84-small"
   expansions:
-     TOX_ENV: "py3-sphinx-docs"
-     INSTALL_TOX: true
-     VIRTUALENV: "/opt/python/3.7/bin/python3 -m virtualenv"
+     TOX_ENV: "docs"
      PYTHON_BINARY: "/opt/python/3.7/bin/python3"
   tasks:
      - name: "docs"
@@ -1075,9 +1021,7 @@ buildvariants:
   run_on:
      - "rhel84-small"
   expansions:
-     TOX_ENV: "py3-sphinx-doctest"
-     INSTALL_TOX: true
-     VIRTUALENV: "/opt/python/3.7/bin/python3 -m virtualenv"
+     TOX_ENV: "doctest"
      PYTHON_BINARY: "/opt/python/3.7/bin/python3"
   tasks:
      - name: "doctest"

@@ -1,6 +1,8 @@
 include README.rst
 include LICENSE
 include tox.ini
+include pytest.ini
+include pyproject.toml
 include doc/Makefile
 include doc/examples/tornado_change_stream_templates/index.html
 recursive-include doc *.rst
@@ -19,7 +21,6 @@ exclude .readthedocs.yaml
 exclude .git-blame-ignore-revs
 exclude .pre-commit-config.yaml
 exclude release.sh
-exclude ez_setup.py
 exclude RELEASE.rst
 exclude CONTRIBUTING.rst
 exclude .evergreen/*

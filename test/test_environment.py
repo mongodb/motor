@@ -104,6 +104,8 @@ def is_server_resolvable():
 
 
 class TestEnvironment(object):
+    __test__ = False
+
     def __init__(self):
         self.initialized = False
         self.host = None
@@ -369,3 +371,4 @@ class TestEnvironment(object):
 
 
 env = TestEnvironment()
+env.setup()

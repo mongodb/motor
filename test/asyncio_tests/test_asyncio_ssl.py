@@ -47,6 +47,8 @@ class TestAsyncIOSSL(unittest.TestCase):
         self.loop = asyncio.new_event_loop()
 
     def tearDown(self):
+        if not hasattr(self, "loop"):
+            return
         self.loop.stop()
         self.loop.run_forever()
         self.loop.close()

@@ -191,7 +191,7 @@ class TestTransactionsConvenientAPI(MotorTest):
         self.assertEqual(
             listener.started_command_names(), ["insert", "commitTransaction", "commitTransaction"]
         )
-        self.set_fail_point(client, {"configureFailPoint": "failCommand", "mode": "off"})
+        await self.set_fail_point(client, {"configureFailPoint": "failCommand", "mode": "off"})
 
 
 if __name__ == "__main__":

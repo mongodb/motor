@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "motor"
+dynamic = ["version"]
+description = "Non-blocking MongoDB driver for Tornado or asyncio"
+readme = "README.rst"
+license = { file = "LICENSE" }
+requires-python = ">=3.7"
+authors = [
+    { name = "A. Jesse Jiryu Davis", email = "jesse@mongodb.com" },
+]
+keywords = [
+    "asyncio",
+    "bson",
+    "gridfs",
+    "mongo",
+    "mongodb",
+    "motor",
+    "pymongo",
+    "tornado",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: Unix",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "pymongo>=4.4,<5",
+]
+
+[project.optional-dependencies]
+aws = [
+    "pymongo[aws]>=4.4,<5",
+]
+encryption = [
+    "pymongo[encryption]>=4.4,<5",
+]
+gssapi = [
+    "pymongo[gssapi]>=4.4,<5",
+]
+ocsp = [
+    "pymongo[ocsp]>=4.4,<5",
+]
+snappy = [
+    "pymongo[snappy]>=4.4,<5",
+]
+srv = [
+    "pymongo[srv]>=4.4,<5",
+]
+test = [
+    "pytest", "mockupdb", "tornado"
+]
+zstd = [
+    "pymongo[zstd]>=4.4,<5",
+]
+
+[project.urls]
+Homepage = "https://github.com/mongodb/motor/"
+
+[tool.setuptools.dynamic]
+version = {attr = "motor._version.version"}
+
+[tool.setuptools.packages.find]
+include = ["motor"]

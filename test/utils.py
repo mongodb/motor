@@ -72,6 +72,8 @@ def get_primary_pool(client):
 
 # Ignore auth commands like saslStart, so we can assert lsid is in all commands.
 class TestListener(monitoring.CommandListener):
+    __test__ = False
+
     def __init__(self):
         self.results = defaultdict(list)
 
