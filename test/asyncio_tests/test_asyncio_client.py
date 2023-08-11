@@ -115,7 +115,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
             pool.conns.appendleft(conn)
         else:
             socket = pool.sockets.pop()
-            socket.socket.close()
+            socket.sock.close()
             pool.sockets.appendleft(socket)
 
         with self.assertRaises(pymongo.errors.AutoReconnect):
