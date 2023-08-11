@@ -1000,7 +1000,7 @@ buildvariants:
 
 - matrix_name: "enterprise-auth"
   display_name: "Enterprise Auth-${tox-env}"
-  matrix_spec: {"tox-env": ["synchro"], ssl: "ssl"}
+  matrix_spec: {"tox-env": ["synchro-py37", "synchro-py312"], ssl: "ssl"}
   run_on:
      - "rhel84-small"
   tasks:
