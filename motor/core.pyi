@@ -1,5 +1,22 @@
+# Copyright 2011-present MongoDB, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Framework-agnostic type stubs for Motor, an asynchronous driver for MongoDB."""
+
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Collection,
     Coroutine,
@@ -81,7 +98,7 @@ class AgnosticClient(AgnosticBaseProperties):
     def arbiters(self) -> Set[Tuple[str, int]]: ...
     def close(self) -> None: ...
     def __hash__(self) -> int: ...
-    def drop_database(
+    async def drop_database(
         self,
         name_or_database: Union[str, AgnosticDatabase],
         session: Optional[AgnosticClientSession] = None,
@@ -109,13 +126,13 @@ class AgnosticClient(AgnosticBaseProperties):
 
     def is_mongos(self) -> bool: ...
     def is_primary(self) -> bool: ...
-    def list_databases(
+    async def list_databases(
         self,
         session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
-    ) -> CommandCursor[Dict[str, Any]]: ...
-    def list_database_names(
+    ) -> AgnosticCommandCursor: ...
+    async def list_database_names(
         self,
         session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
@@ -125,14 +142,16 @@ class AgnosticClient(AgnosticBaseProperties):
     def primary(self) -> Optional[Tuple[str, int]]: ...
     read_concern: ReadConcern
     def secondaries(self) -> Set[Tuple[str, int]]: ...
-    def server_info(self, session: Optional[AgnosticClientSession] = None) -> Dict[str, Any]: ...
+    async def server_info(
+        self, session: Optional[AgnosticClientSession] = None
+    ) -> Dict[str, Any]: ...
     def topology_description(self) -> TopologyDescription: ...
-    def start_session(
+    async def start_session(
         self,
         causal_consistency: Optional[bool] = None,
         default_transaction_options: Optional[TransactionOptions] = None,
         snapshot: Optional[bool] = False,
-    ) -> Coroutine[None, None, AgnosticClientSession]: ...
+    ) -> AgnosticClientSession: ...
 
     _io_loop: Optional[Any]
     _framework: Any
@@ -186,7 +205,7 @@ class AgnosticClientSession(AgnosticBase):
     def get_io_loop(self) -> Any: ...
     async def with_transaction(
         self,
-        coro: Coroutine,
+        coro: Callable[..., Coroutine[Any, Any, Any]],
         read_concern: Optional[ReadConcern] = None,
         write_concern: Optional[WriteConcern] = None,
         read_preference: Optional[_ServerMode] = None,

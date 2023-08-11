@@ -1,6 +1,7 @@
 include README.rst
 include LICENSE
 include tox.ini
+include mypy.ini
 include doc/Makefile
 include doc/examples/tornado_change_stream_templates/index.html
 recursive-include doc *.rst
@@ -14,6 +15,7 @@ recursive-include doc *.js
 recursive-include doc *.txt
 recursive-include doc *.bat
 recursive-include synchro *.py
+recursive-include motor *.pyi
 
 exclude .readthedocs.yaml
 exclude .git-blame-ignore-revs
