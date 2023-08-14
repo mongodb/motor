@@ -86,4 +86,4 @@ jobs:
           python -m pip install -U pip tox
       - name: Run mypy
         run: |
-          tox -m typecheck-mypy
+          tox -e typecheck-mypy
