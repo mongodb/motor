@@ -235,6 +235,7 @@ class TestDocumentType(AsyncIOTestCase):
         # This should fail because _id is not included in our TypedDict definition.
         assert out["_id"]  # type:ignore[typeddict-item]
 
+
 class TestCommandDocumentType(AsyncIOTestCase):
     @only_type_check
     async def test_default(self) -> None:
