@@ -1778,7 +1778,7 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
 
     _CommandCursor__die = AsyncRead()
 
-    async def __try_next(self):
+    async def _try_next(self):
         """Advance the cursor without blocking indefinitely.
 
         This method returns the next document without waiting
@@ -1802,7 +1802,7 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
 
     # TODO: MOTOR-1169
     if hasattr(CommandCursor, "try_next"):
-        try_next = __try_next
+        try_next = _try_next
 
     def _query_flags(self):
         return 0

@@ -167,7 +167,7 @@ class MotorDatabaseTest(MotorTest):
     @gen_test
     async def test_cursor_command(self):
         db = self.db
-        if not hasattr(db, "cursor_command"):
+        if not hasattr(pymongo.database.Database, "cursor_command"):
             raise SkipTest("MOTOR-1169")
         db.test.drop()
 
