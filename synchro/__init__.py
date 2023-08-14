@@ -449,7 +449,6 @@ class Database(Synchro):
 
     get_collection = WrapOutgoing()
     watch = WrapOutgoing()
-    cursor_command = WrapOutgoing(Sync("cursor_command"))
     aggregate = WrapOutgoing()
     __bool__ = Sync()
 
@@ -468,6 +467,14 @@ class Database(Synchro):
     @property
     def client(self):
         return self._client
+
+    def cursor_command(self, *args, **kwargs):
+        cursor = self.synchronize(self.delegate.cursor_command)(*args, **kwargs)
+        cmd_cursor = CommandCursor(cursor)
+        # Send the initial command as PyMongo expects.
+        if not cursor.started:
+            cmd_cursor.synchronize(cursor._get_more)()
+        return cmd_cursor
 
     def __getattr__(self, name):
         return Collection(self, name, delegate=getattr(self.delegate, name))
