@@ -164,6 +164,19 @@ class MotorDatabaseTest(MotorTest):
         self.assertEqual(db.codec_options, db2.codec_options)
         self.assertEqual(db.write_concern, db2.write_concern)
 
+    @gen_test
+    async def test_cursor_command(self):
+        db = self.db
+        db.test.drop()
+
+        docs = [{"_id": i, "doc": i} for i in range(3)]
+        db.test.insert_many(docs)
+
+        cursor = await db.cursor_command("find", "test")
+        for i in range(3):
+            item = await cursor.try_next()
+            self.assertEqual(item, docs[i])
+
 
 if __name__ == "__main__":
     unittest.main()

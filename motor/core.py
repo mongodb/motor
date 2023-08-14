@@ -722,7 +722,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             show_expanded_events,
         )
 
-    def _cursor_command(
+    async def _cursor_command(
         self,
         command,
         value=1,
@@ -790,9 +790,14 @@ class AgnosticDatabase(AgnosticBaseProperties):
         kwargs["comment"] = comment
         kwargs["max_await_time_ms"] = max_await_time_ms
 
-        cursor = self.delegate.cursor_command(
-            *unwrap_args_session(args), **unwrap_kwargs_session(kwargs)
-        )
+        def inner():
+            return self.delegate.cursor_command(
+                *unwrap_args_session(args), **unwrap_kwargs_session(kwargs)
+            )
+
+        loop = self.get_io_loop()
+        cursor = await self._framework.run_on_executor(loop, inner)
+
         cursor_class = create_class_with_framework(
             AgnosticCommandCursor, self._framework, self.__module__
         )
@@ -1773,15 +1778,6 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
 
     _CommandCursor__die = AsyncRead()
 
-    def _lazy_init(self):
-        if not self.delegate:
-            self.delegate = self._target.delegate.watch(**unwrap_kwargs_session(self._kwargs))
-
-    def _try_next(self):
-        # This method is run on a thread.
-        self._lazy_init()
-        return self.delegate.try_next()
-
     async def __try_next(self):
         """Advance the cursor without blocking indefinitely.
 
@@ -1797,8 +1793,12 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
           The next document or ``None`` when no document is available
           after running a single getMore or when the cursor is closed.
         """
+
+        def inner():
+            return self.delegate.try_next()
+
         loop = self.get_io_loop()
-        return await self._framework.run_on_executor(loop, self._try_next)
+        return await self._framework.run_on_executor(loop, inner)
 
     # TODO: MOTOR-1169
     if hasattr(CommandCursor, "try_next"):
