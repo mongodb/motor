@@ -161,10 +161,10 @@ class TestAsyncIODatabase(AsyncIOTestCase):
         db = self.db
         if not hasattr(pymongo.database.Database, "cursor_command"):
             raise SkipTest("MOTOR-1169")
-        db.test.drop()
+        await db.test.drop()
 
         docs = [{"_id": i, "doc": i} for i in range(3)]
-        db.test.insert_many(docs)
+        await db.test.insert_many(docs)
 
         cursor = await db.cursor_command("find", "test")
         for i in range(3):

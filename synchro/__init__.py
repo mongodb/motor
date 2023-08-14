@@ -449,7 +449,6 @@ class Database(Synchro):
 
     get_collection = WrapOutgoing()
     watch = WrapOutgoing()
-    cursor_command = WrapOutgoing()
     aggregate = WrapOutgoing()
     __bool__ = Sync()
 
@@ -468,6 +467,10 @@ class Database(Synchro):
     @property
     def client(self):
         return self._client
+
+    def cursor_command(self, *args, **kwargs):
+        cursor = self.synchronize(self.delegate.cursor_command)(*args, **kwargs)
+        return CommandCursor(cursor)
 
     def __getattr__(self, name):
         return Collection(self, name, delegate=getattr(self.delegate, name))
