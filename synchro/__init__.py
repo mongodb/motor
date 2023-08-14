@@ -469,8 +469,7 @@ class Database(Synchro):
         return self._client
 
     def cursor_command(self, *args, **kwargs):
-        cursor = self.synchronize(self.delegate.cursor_command)(*args, **kwargs)
-        return CommandCursor(cursor)
+        return wrap_synchro(self.synchronize(self.delegate.cursor_command)(*args, **kwargs))
 
     def __getattr__(self, name):
         return Collection(self, name, delegate=getattr(self.delegate, name))
