@@ -1,4 +1,4 @@
-# Copyright 2011-present MongoDB, Inc.
+# Copyright 2023-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    overload,
 )
 
 import pymongo.common
@@ -231,6 +232,32 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
     def __hash__(self) -> int: ...
     def __bool__(self) -> int: ...
+    @overload
+    async def command(
+        self,
+        command: Union[str, MutableMapping[str, Any]],
+        value: Any = 1,
+        check: bool = True,
+        allowable_errors: Optional[Sequence[Union[str, int]]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        codec_options: None = None,
+        session: Optional[AgnosticClientSession] = None,
+        comment: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]: ...
+    @overload
+    async def command(
+        self,
+        command: Union[str, MutableMapping[str, Any]],
+        value: Any = 1,
+        check: bool = True,
+        allowable_errors: Optional[Sequence[Union[str, int]]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        codec_options: CodecOptions[_CodecDocumentType] = ...,
+        session: Optional[AgnosticClientSession] = None,
+        comment: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> _CodecDocumentType: ...
     async def command(
         self,
         command: Union[str, MutableMapping[str, Any]],

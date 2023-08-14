@@ -1,4 +1,4 @@
-# Copyright 2020-present MongoDB, Inc.
+# Copyright 2023-present MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import os
 import sys
 import unittest
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from typing import TYPE_CHECKING, Any, AsyncIterable, Dict, List, Union
+from typing import TYPE_CHECKING, Any, AsyncIterable, Dict, Iterable, List, Union
 
 from bson import CodecOptions
 from bson.raw_bson import RawBSONDocument
@@ -66,6 +66,12 @@ sys.path[0:0] = [""]
 TEST_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "mypy_fails")
 
 
+def get_tests() -> Iterable[str]:
+    for dirpath, _, filenames in os.walk(TEST_PATH):
+        for filename in filenames:
+            yield os.path.join(dirpath, filename)
+
+
 def only_type_check(func):
     def inner(*args, **kwargs):
         if not TYPE_CHECKING:
@@ -73,6 +79,19 @@ def only_type_check(func):
         func(*args, **kwargs)
 
     return inner
+
+
+# class TestMypyFails(unittest.TestCase):
+#     def ensure_mypy_fails(self, filename: str) -> None:
+#         if api is None:
+#             raise unittest.SkipTest("Mypy is not installed")
+#         stdout, stderr, exit_status = api.run([filename])
+#         self.assertTrue(exit_status, msg=stdout)
+#
+#     def test_mypy_failures(self) -> None:
+#         for filename in get_tests():
+#             with self.subTest(filename=filename):
+#                 self.ensure_mypy_fails(filename)
 
 
 class TestMotor(AsyncIOTestCase):
