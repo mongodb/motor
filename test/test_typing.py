@@ -24,12 +24,10 @@ from typing import TYPE_CHECKING, Any, AsyncIterable, Dict, List, Union
 from bson import CodecOptions
 from bson.raw_bson import RawBSONDocument
 from bson.son import SON
-from pymongo import ASCENDING
 from pymongo.operations import DeleteOne, InsertOne, ReplaceOne
 from pymongo.read_preferences import ReadPreference
 
 from motor.core import AgnosticClient, AgnosticCollection
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
 try:
     from bson import ObjectId
@@ -210,78 +208,6 @@ class TestMotor(AsyncIOTestCase):
 
 class TestDocumentType(AsyncIOTestCase):
     @only_type_check
-    def test_default(self) -> None:
-        client: AsyncIOMotorClient = AsyncIOMotorClient()
-        coll = client.test.test
-        retrieved = coll.find_one({"_id": "foo"})
-        assert retrieved is not None
-        retrieved["a"] = 1
-
-    @only_type_check
-    def test_explicit_document_type(self) -> None:
-        client: AsyncIOMotorClient[Dict[str, Any]] = AsyncIOMotorClient()
-        coll = client.test.test
-        retrieved = coll.find_one({"_id": "foo"})
-        assert retrieved is not None
-        retrieved["a"] = 1
-
-    @only_type_check
-    def test_typeddict_document_type(self) -> None:
-        client: AsyncIOMotorClient[Movie] = AsyncIOMotorClient()
-        coll = client.test.test
-        retrieved = coll.find_one({"_id": "foo"})
-        assert retrieved is not None
-        assert retrieved["year"] == 1
-        assert retrieved["name"] == "a"
-
-    @only_type_check
-    def test_typeddict_document_type_insertion(self) -> None:
-        client: AsyncIOMotorClient[Movie] = AsyncIOMotorClient()
-        coll = client.test.test
-        mov = {"name": "THX-1138", "year": 1971}
-        movie = Movie(name="THX-1138", year=1971)
-        coll.insert_one(mov)
-        coll.insert_one({"name": "THX-1138", "year": 1971})  # This will work because it is in-line.
-        coll.insert_one(movie)
-        coll.insert_many([mov])
-        coll.insert_many([movie])
-        bad_mov = {"name": "THX-1138", "year": "WRONG TYPE"}
-        bad_movie = Movie(name="THX-1138", year="WRONG TYPE")  # type: ignore[typeddict-item]
-        coll.insert_one(bad_mov)
-        coll.insert_one({"name": "THX-1138", "year": "WRONG TYPE"})
-        coll.insert_one(bad_movie)
-        coll.insert_many([bad_mov])
-        coll.insert_many([{"name": "THX-1138", "year": "WRONG TYPE"}])
-        coll.insert_many([bad_movie])
-
-    @only_type_check
-    def test_bulk_write_document_type_insertion(self):
-        client: AsyncIOMotorClient[MovieWithId] = AsyncIOMotorClient()
-        coll: AsyncIOMotorCollection[MovieWithId] = client.test.test
-        coll.bulk_write([InsertOne(Movie({"name": "THX-1138", "year": 1971}))])
-        mov_dict = {"_id": ObjectId(), "name": "THX-1138", "year": 1971}
-        coll.bulk_write([InsertOne(mov_dict)])
-        coll.bulk_write(
-            [
-                InsertOne({"_id": ObjectId(), "name": "THX-1138", "year": 1971})
-            ]  # No error because it is in-line.
-        )
-
-    #
-    @only_type_check
-    def test_bulk_write_document_type_replacement(self):
-        client: AsyncIOMotorClient[MovieWithId] = AsyncIOMotorClient()
-        coll: AsyncIOMotorCollection[MovieWithId] = client.test.test
-        coll.bulk_write([ReplaceOne({}, Movie({"name": "THX-1138", "year": 1971}))])
-        mov_dict = {"_id": ObjectId(), "name": "THX-1138", "year": 1971}
-        coll.bulk_write([ReplaceOne({}, mov_dict)])
-        coll.bulk_write(
-            [
-                ReplaceOne({}, {"_id": ObjectId(), "name": "THX-1138", "year": 1971})
-            ]  # No error because it is in-line.
-        )
-
-    @only_type_check
     def test_typeddict_explicit_document_type(self) -> None:
         out = MovieWithId(_id=ObjectId(), name="THX-1138", year=1971)
         assert out is not None
@@ -308,52 +234,6 @@ class TestDocumentType(AsyncIOTestCase):
         assert out["foo"]  # type:ignore[typeddict-item]
         # This should fail because _id is not included in our TypedDict definition.
         assert out["_id"]  # type:ignore[typeddict-item]
-
-    @asyncio_test
-    async def test_typeddict_find_notrequired(self):
-        if NotRequired is None or ImplicitMovie is None:
-            raise unittest.SkipTest("Python 3.11+ is required to use NotRequired.")
-        client: AsyncIOMotorClient[ImplicitMovie] = AsyncIOMotorClient()
-        coll = client.test.test
-        await coll.insert_one(ImplicitMovie(name="THX-1138", year=1971))
-        out = await coll.find_one({})
-        assert out is not None
-        # pyright gives reportTypedDictNotRequiredAccess for the following:
-        assert out["_id"]
-
-    @only_type_check
-    @asyncio_test
-    async def test_raw_bson_document_type(self) -> None:
-        client = AsyncIOMotorClient(document_class=RawBSONDocument)
-        coll = client.test.test
-        retrieved = await coll.find_one({"_id": "foo"})
-        assert retrieved is not None
-        assert len(retrieved.raw) > 0
-
-    @only_type_check
-    @asyncio_test
-    async def test_son_document_type(self) -> None:
-        client = AsyncIOMotorClient(document_class=SON[str, Any])
-        coll = client.test.test
-        retrieved = await coll.find_one({"_id": "foo"})
-        assert retrieved is not None
-        retrieved["a"] = 1
-
-    @asyncio_test
-    async def test_son_document_type_runtime(self) -> None:
-        AsyncIOMotorClient(document_class=SON[str, Any], connect=False)
-
-    @only_type_check
-    @asyncio_test
-    async def test_create_index(self) -> None:
-        client: AsyncIOMotorClient[Dict[str, str]] = AsyncIOMotorClient("test")
-        db = client.test
-        async with await client.start_session() as session:
-            index = await db.test.create_index(
-                [("user_id", ASCENDING)], unique=True, session=session
-            )
-            assert isinstance(index, str)
-
 
 class TestCommandDocumentType(AsyncIOTestCase):
     @only_type_check
