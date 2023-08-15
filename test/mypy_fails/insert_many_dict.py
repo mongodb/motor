@@ -1,12 +1,11 @@
 import asyncio
 
-from motor.core import AgnosticClient, AgnosticCollection
+from motor.core import AgnosticClient
 
 
 async def _main():
     client: AgnosticClient = AgnosticClient()
-    coll: AgnosticCollection = client.test.test
-    await coll.insert_many(
+    await client.test.test.insert_many(
         {"a": 1}
     )  # error: Dict entry 0 has incompatible type "str": "int"; expected "Mapping[str, Any]": "int"
 

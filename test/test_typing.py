@@ -81,17 +81,17 @@ def only_type_check(func):
     return inner
 
 
-# class TestMypyFails(unittest.TestCase):
-#     def ensure_mypy_fails(self, filename: str) -> None:
-#         if api is None:
-#             raise unittest.SkipTest("Mypy is not installed")
-#         stdout, stderr, exit_status = api.run([filename])
-#         self.assertTrue(exit_status, msg=stdout)
-#
-#     def test_mypy_failures(self) -> None:
-#         for filename in get_tests():
-#             with self.subTest(filename=filename):
-#                 self.ensure_mypy_fails(filename)
+class TestMypyFails(unittest.TestCase):
+    def ensure_mypy_fails(self, filename: str) -> None:
+        if api is None:
+            raise unittest.SkipTest("Mypy is not installed")
+        stdout, stderr, exit_status = api.run([filename])
+        self.assertTrue(exit_status, msg=stdout)
+
+    def test_mypy_failures(self) -> None:
+        for filename in get_tests():
+            with self.subTest(filename=filename):
+                self.ensure_mypy_fails(filename)
 
 
 class TestMotor(AsyncIOTestCase):
@@ -170,7 +170,7 @@ class TestMotor(AsyncIOTestCase):
     @asyncio_test
     async def test_list_collections(self) -> None:
         cursor = await self.cx.test.list_collections()
-        value = cursor.next()
+        value = await cursor.next()
         value.items()
 
     @asyncio_test
@@ -281,7 +281,9 @@ class TestCommandDocumentType(AsyncIOTestCase):
     async def test_raw_bson_document_type(self) -> None:
         client: AgnosticClient = AgnosticClient()
         codec_options = CodecOptions(RawBSONDocument)
-        result = await client.admin.command("ping", codec_options=codec_options)
+        result: RawBSONDocument = await client.admin.command(
+            "ping", codec_options=codec_options
+        )  # Fix once @overload for command works
         assert len(result.raw) > 0
 
     @only_type_check
