@@ -16,6 +16,7 @@ recursive-include doc *.txt
 recursive-include doc *.bat
 recursive-include synchro *.py
 recursive-include motor *.pyi
+recursive-include motor *.typed
 
 exclude .readthedocs.yaml
 exclude .git-blame-ignore-revs

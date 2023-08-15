@@ -30,6 +30,7 @@ Operating System :: Microsoft :: Windows
 Programming Language :: Python
 Programming Language :: Python :: Implementation :: CPython
 Programming Language :: Python :: Implementation :: PyPy
+Typing :: Typed
 """
 
 description = "Non-blocking MongoDB driver for Tornado or asyncio"
