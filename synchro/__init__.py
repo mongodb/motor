@@ -469,6 +469,9 @@ class Database(Synchro):
         return self._client
 
     def cursor_command(self, *args, **kwargs):
+        if "session" in kwargs:
+            # Workaround for validation added in PYTHON-3228.
+            kwargs["session"] = kwargs["session"].delegate
         cursor = self.synchronize(self.delegate.cursor_command)(*args, **kwargs)
         cmd_cursor = CommandCursor(cursor)
         # Send the initial command as PyMongo expects.
