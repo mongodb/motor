@@ -760,7 +760,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
           - `codec_options`: A :class:`~bson.codec_options.CodecOptions`
             instance.
           - `session` (optional): A
-            :class:`~pymongo.client_session.ClientSession`.
+            :class:`MotorClientSession`.
           - `comment` (optional): A user-provided comment to attach to future getMores for this
             command.
           - `max_await_time_ms` (optional): The number of ms to wait for more data on future getMores for this command.
