@@ -473,11 +473,7 @@ class Database(Synchro):
             # Workaround for validation added in PYTHON-3228.
             kwargs["session"] = kwargs["session"].delegate
         cursor = self.synchronize(self.delegate.cursor_command)(*args, **kwargs)
-        cmd_cursor = CommandCursor(cursor)
-        # Send the initial command as PyMongo expects.
-        if not cursor.started:
-            cmd_cursor.synchronize(cursor._get_more)()
-        return cmd_cursor
+        return CommandCursor(cursor)
 
     def __getattr__(self, name):
         return Collection(self, name, delegate=getattr(self.delegate, name))
