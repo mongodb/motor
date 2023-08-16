@@ -456,28 +456,33 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         # Ensure a pool.
         await client.db.collection.find_one()
 
-        socks = get_primary_pool(client).sockets
+        # TODO: MOTOR-1169
+        pool = get_primary_pool(client)
+        if hasattr(pool, "conns"):
+            conns = pool.conns
+        else:
+            conns = pool.sockets
 
         # Make sure the socket is returned after exhaustion.
         cur = client[self.db.name].test.find(cursor_type=CursorType.EXHAUST)
         has_next = await cur.fetch_next
         self.assertTrue(has_next)
-        self.assertEqual(0, len(socks))
+        self.assertEqual(0, len(conns))
 
         while await cur.fetch_next:
             cur.next_object()
 
-        self.assertEqual(1, len(socks))
+        self.assertEqual(1, len(conns))
 
         # Same as previous but with to_list instead of next_object.
         docs = await client[self.db.name].test.find(cursor_type=CursorType.EXHAUST).to_list(None)
-        self.assertEqual(1, len(socks))
+        self.assertEqual(1, len(conns))
         self.assertEqual((await self.db.test.count_documents({})), len(docs))
 
         # If the Cursor instance is discarded before being
         # completely iterated we have to close and
         # discard the socket.
-        sock = one(socks)
+        conn = one(conns)
         cur = client[self.db.name].test.find(cursor_type=CursorType.EXHAUST).batch_size(1)
         await cur.fetch_next
         self.assertTrue(cur.next_object())
@@ -485,24 +490,24 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         if env.version.at_least(4, 2):
             await cur.fetch_next
             self.assertTrue(cur.next_object())
-        self.assertEqual(0, len(socks))
+        self.assertEqual(0, len(conns))
         if "PyPy" in sys.version:
             # Don't wait for GC or use gc.collect(), it's unreliable.
             await cur.close()
 
         del cur
 
-        async def sock_closed():
-            return sock not in socks and sock.closed
+        async def conn_closed():
+            return conn not in conns and conn.closed
 
         await wait_until(
-            sock_closed, "close exhaust cursor socket", timeout=get_async_test_timeout()
+            conn_closed, "close exhaust cursor socket", timeout=get_async_test_timeout()
         )
 
         # The exhaust cursor's socket was discarded, although another may
         # already have been opened to send OP_KILLCURSORS.
-        self.assertNotIn(sock, socks)
-        self.assertTrue(sock.closed)
+        self.assertNotIn(conn, conns)
+        self.assertTrue(conn.closed)
 
     @asyncio_test
     async def test_close_with_docs_in_batch(self):

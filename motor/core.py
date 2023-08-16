@@ -722,6 +722,92 @@ class AgnosticDatabase(AgnosticBaseProperties):
             show_expanded_events,
         )
 
+    async def _cursor_command(
+        self,
+        command,
+        value=1,
+        read_preference=None,
+        codec_options=None,
+        session=None,
+        comment=None,
+        max_await_time_ms=None,
+        **kwargs,
+    ):
+        """Issue a MongoDB command and parse the response as a cursor.
+
+        If the response from the server does not include a cursor field, an error will be thrown.
+
+        Otherwise, behaves identically to issuing a normal MongoDB command.
+
+        :Parameters:
+          - `command`: document representing the command to be issued,
+            or the name of the command (for simple commands only).
+
+            .. note:: the order of keys in the `command` document is
+               significant (the "verb" must come first), so commands
+               which require multiple keys (e.g. `findandmodify`)
+               should use an instance of :class:`~bson.son.SON` or
+               a string and kwargs instead of a Python `dict`.
+
+          - `value` (optional): value to use for the command verb when
+            `command` is passed as a string
+          - `read_preference` (optional): The read preference for this
+            operation. See :mod:`~pymongo.read_preferences` for options.
+            If the provided `session` is in a transaction, defaults to the
+            read preference configured for the transaction.
+            Otherwise, defaults to
+            :attr:`~pymongo.read_preferences.ReadPreference.PRIMARY`.
+          - `codec_options`: A :class:`~bson.codec_options.CodecOptions`
+            instance.
+          - `session` (optional): A
+            :class:`MotorClientSession`.
+          - `comment` (optional): A user-provided comment to attach to future getMores for this
+            command.
+          - `max_await_time_ms` (optional): The number of ms to wait for more data on future getMores for this command.
+          - `**kwargs` (optional): additional keyword arguments will
+            be added to the command document before it is sent
+
+        .. note:: :meth:`command` does **not** obey this Database's
+           :attr:`read_preference` or :attr:`codec_options`. You must use the
+           ``read_preference`` and ``codec_options`` parameters instead.
+
+        .. note:: :meth:`command` does **not** apply any custom TypeDecoders
+           when decoding the command response.
+
+        .. note:: If this client has been configured to use MongoDB Stable
+           API (see :ref:`versioned-api-ref`), then :meth:`command` will
+           automatically add API versioning options to the given command.
+           Explicitly adding API versioning options in the command and
+           declaring an API version on the client is not supported.
+
+        .. seealso:: The MongoDB documentation on `commands <https://dochub.mongodb.org/core/commands>`_.
+        """
+        args = (command,)
+        kwargs["value"] = value
+        kwargs["read_preference"] = read_preference
+        kwargs["codec_options"] = codec_options
+        kwargs["session"] = session
+        kwargs["comment"] = comment
+        kwargs["max_await_time_ms"] = max_await_time_ms
+
+        def inner():
+            return self.delegate.cursor_command(
+                *unwrap_args_session(args), **unwrap_kwargs_session(kwargs)
+            )
+
+        loop = self.get_io_loop()
+        cursor = await self._framework.run_on_executor(loop, inner)
+
+        cursor_class = create_class_with_framework(
+            AgnosticCommandCursor, self._framework, self.__module__
+        )
+
+        return cursor_class(cursor, self)
+
+    # TODO: MOTOR-1169
+    if hasattr(Database, "cursor_command"):
+        cursor_command = _cursor_command
+
     @property
     def client(self):
         """This MotorDatabase's :class:`MotorClient`."""
@@ -805,7 +891,16 @@ class AgnosticCollection(AgnosticBaseProperties):
     replace_one = AsyncCommand(doc=docstrings.replace_one_doc)
     update_many = AsyncCommand(doc=docstrings.update_many_doc)
     update_one = AsyncCommand(doc=docstrings.update_one_doc)
+
     with_options = DelegateMethod().wrap(Collection)
+
+    # TODO: MOTOR-1169
+    if hasattr(Collection, "create_search_index"):
+        create_search_index = AsyncCommand()
+        create_search_indexes = AsyncCommand()
+        drop_search_index = AsyncCommand()
+        update_search_index = AsyncCommand()
+        _async_list_search_indexes = AsyncRead(attr_name="list_search_indexes")
 
     _async_aggregate = AsyncRead(attr_name="aggregate")
     _async_aggregate_raw_batches = AsyncRead(attr_name="aggregate_raw_batches")
@@ -1223,6 +1318,19 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, self._async_list_indexes, session=session, **kwargs)
+
+    def _list_search_indexes(self, session=None, **kwargs):
+        """Return a cursor over search indexes for the current collection."""
+        cursor_class = create_class_with_framework(
+            AgnosticLatentCommandCursor, self._framework, self.__module__
+        )
+
+        # Latent cursor that will send initial command on first "async for".
+        return cursor_class(self, self._async_list_search_indexes, session=session, **kwargs)
+
+    # TODO: MOTOR-1169
+    if hasattr(Collection, "list_search_indexes"):
+        list_search_indexes = _list_search_indexes
 
     def wrap(self, obj):
         if obj.__class__ is Collection:
@@ -1669,6 +1777,32 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
     __delegate_class__ = CommandCursor
 
     _CommandCursor__die = AsyncRead()
+
+    async def _try_next(self):
+        """Advance the cursor without blocking indefinitely.
+
+        This method returns the next document without waiting
+        indefinitely for data.
+
+        If no document is cached locally then this method runs a single
+        getMore command. If the getMore yields any documents, the next
+        document is returned, otherwise, if the getMore returns no documents
+        (because there is no additional data) then ``None`` is returned.
+
+        :Returns:
+          The next document or ``None`` when no document is available
+          after running a single getMore or when the cursor is closed.
+        """
+
+        def inner():
+            return self.delegate.try_next()
+
+        loop = self.get_io_loop()
+        return await self._framework.run_on_executor(loop, inner)
+
+    # TODO: MOTOR-1169
+    if hasattr(CommandCursor, "try_next"):
+        try_next = _try_next
 
     def _query_flags(self):
         return 0
