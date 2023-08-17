@@ -73,6 +73,11 @@ from pymongo.typings import (
     _Pipeline,
 )
 
+try:
+    from pymongo import SearchIndexModel
+except ImportError:
+    SearchIndexModel = Any
+
 _WITH_TRANSACTION_RETRY_TIME_LIMIT: int
 
 _CodecDocumentType = TypeVar("_CodecDocumentType", bound=Mapping[str, Any])
@@ -562,16 +567,14 @@ class AgnosticCollection(AgnosticBaseProperties):
     ) -> AgnosticCommandCursor: ...
     async def create_search_index(
         self,
-        model: Union[
-            Mapping[str, Any], Any
-        ],  # TODO: Replace with Union[Mapping[str, Any], SearchIndexModel]
+        model: Union[Mapping[str, SearchIndexModel], Any],
         session: Optional[AgnosticClientSession] = None,
         comment: Any = None,
         **kwargs: Any,
     ) -> str: ...
     async def create_search_indexes(
         self,
-        models: List[Any],  # TODO: Replace with List[SearchIndexModel]
+        models: List[SearchIndexModel],
         session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
