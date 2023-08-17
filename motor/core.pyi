@@ -234,6 +234,17 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
     def __hash__(self) -> int: ...
     def __bool__(self) -> int: ...
+    async def cursor_command(
+        self,
+        command: Union[str, MutableMapping[str, Any]],
+        value: Any = 1,
+        read_preference: Optional[_ServerMode] = None,
+        codec_options: Optional[CodecOptions[_CodecDocumentType]] = None,
+        session: Optional[AgnosticClientSession] = None,
+        comment: Optional[Any] = None,
+        max_await_time_ms: Optional[int] = None,
+        **kwargs: Any,
+    ) -> AgnosticCommandCursor: ...
     async def command(
         self,
         command: Union[str, MutableMapping[str, Any]],
@@ -542,6 +553,44 @@ class AgnosticCollection(AgnosticBaseProperties):
         write_concern: Optional[WriteConcern] = None,
         read_concern: Optional[ReadConcern] = None,
     ) -> Collection[Mapping[str, Any]]: ...
+    async def list_search_indexes(
+        self,
+        name: Optional[str] = None,
+        session: Optional[AgnosticClientSession] = None,
+        comment: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> AgnosticCommandCursor: ...
+    async def create_search_index(
+        self,
+        model: Union[
+            Mapping[str, Any], Any
+        ],  # TODO: Replace with Union[Mapping[str, Any], SearchIndexModel]
+        session: Optional[AgnosticClientSession] = None,
+        comment: Any = None,
+        **kwargs: Any,
+    ) -> str: ...
+    async def create_search_indexes(
+        self,
+        models: List[Any],  # TODO: Replace with List[SearchIndexModel]
+        session: Optional[AgnosticClientSession] = None,
+        comment: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> List[str]: ...
+    async def drop_search_index(
+        self,
+        name: str,
+        session: Optional[AgnosticClientSession] = None,
+        comment: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None: ...
+    async def update_search_index(
+        self,
+        name: str,
+        definition: Mapping[str, Any],
+        session: Optional[AgnosticClientSession] = None,
+        comment: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None: ...
     def __init__(
         self,
         database: Database[_DocumentType],

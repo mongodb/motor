@@ -539,6 +539,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
     __hash__ = DelegateMethod()
     __bool__ = DelegateMethod()
     command = AsyncCommand(doc=docstrings.cmd_doc)
+    cursor_command = AsyncCommand()
     create_collection = AsyncCommand().wrap(Collection)
     dereference = AsyncRead()
     drop_collection = AsyncCommand().unwrap("MotorCollection")
@@ -899,6 +900,11 @@ class AgnosticCollection(AgnosticBaseProperties):
     update_one = AsyncCommand(doc=docstrings.update_one_doc)
 
     with_options = DelegateMethod().wrap(Collection)
+    list_search_indexes = AsyncCommand()
+    create_search_index = AsyncCommand()
+    create_search_indexes = AsyncCommand()
+    drop_search_index = AsyncCommand()
+    update_search_index = AsyncCommand()
 
     # TODO: MOTOR-1169
     if hasattr(Collection, "create_search_index"):
