@@ -138,7 +138,7 @@ class test(Command):
             runner_class = unittest.TextTestRunner
 
         runner = runner_class(**runner_kwargs)
-        if not os.environ["SKIP_ENV_SETUP"]:
+        if "SKIP_ENV_SETUP" not in os.environ:
             env.setup()
         if not self.tornado_warnings:
             suppress_tornado_warnings()

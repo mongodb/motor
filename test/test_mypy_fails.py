@@ -5,7 +5,7 @@ from typing import Iterable
 
 try:
     from mypy import api
-except ImportError as e:
+except ImportError:
     api = None
 
 sys.path[0:0] = [""]
