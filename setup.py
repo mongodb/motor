@@ -1,3 +1,4 @@
+import os
 import sys
 
 if sys.version_info[:2] < (3, 10):
@@ -137,7 +138,8 @@ class test(Command):
             runner_class = unittest.TextTestRunner
 
         runner = runner_class(**runner_kwargs)
-        env.setup()
+        if not os.environ["SKIP_ENV_SETUP"]:
+            env.setup()
         if not self.tornado_warnings:
             suppress_tornado_warnings()
 
