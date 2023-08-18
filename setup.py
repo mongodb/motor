@@ -1,3 +1,4 @@
+import os
 import sys
 
 if sys.version_info[:2] < (3, 10):
@@ -30,6 +31,7 @@ Operating System :: Microsoft :: Windows
 Programming Language :: Python
 Programming Language :: Python :: Implementation :: CPython
 Programming Language :: Python :: Implementation :: PyPy
+Typing :: Typed
 """
 
 description = "Non-blocking MongoDB driver for Tornado or asyncio"
@@ -136,7 +138,8 @@ class test(Command):
             runner_class = unittest.TextTestRunner
 
         runner = runner_class(**runner_kwargs)
-        env.setup()
+        if "SKIP_ENV_SETUP" not in os.environ:
+            env.setup()
         if not self.tornado_warnings:
             suppress_tornado_warnings()
 

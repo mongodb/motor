@@ -544,7 +544,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
     drop_collection = AsyncCommand().unwrap("MotorCollection")
     get_collection = DelegateMethod().wrap(Collection)
     list_collection_names = AsyncRead(doc=docstrings.list_collection_names_doc)
-    list_collections = AsyncRead()
+    list_collections = AsyncRead().wrap(CommandCursor)
     name = ReadOnlyProperty()
     validate_collection = AsyncRead().unwrap("MotorCollection")
     with_options = DelegateMethod().wrap(Database)
@@ -853,6 +853,12 @@ class AgnosticDatabase(AgnosticBaseProperties):
             return klass(self, obj.name, _delegate=obj)
         elif obj.__class__ is Database:
             return self.__class__(self._client, obj.name, _delegate=obj)
+        elif obj.__class__ is CommandCursor:
+            command_cursor_class = create_class_with_framework(
+                AgnosticCommandCursor, self._framework, self.__module__
+            )
+
+            return command_cursor_class(obj, self)
         else:
             return obj
 
