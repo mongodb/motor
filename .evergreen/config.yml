@@ -417,7 +417,7 @@ functions:
     - command: shell.exec
       type: test
       params:
-        silent: true
+        #silent: true
         working_dir: "src"
         script: |
           # DO NOT ECHO WITH XTRACE (which PREPARE_SHELL does)
@@ -887,7 +887,7 @@ axes:
       - id: "test"
         variables:
            TOX_ENV: "test"
-           PYTHON_BINARY: "/Library/Frameworks/Python.framework/Versions/3.8/bin/Python37"
+           PYTHON_BINARY: "/Library/Frameworks/Python.framework/Versions/3.8/bin/python3"
 
   - id: tox-env-win
     display_name: "Tox Env Windows"
