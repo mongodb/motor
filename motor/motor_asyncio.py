@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Asyncio support for Motor, an asynchronous driver for MongoDB."""
+from typing import TypeVar
 
 from . import core, motor_gridfs
 from .frameworks import asyncio as asyncio_framework
@@ -33,8 +34,10 @@ __all__ = [
     "AsyncIOMotorClientEncryption",
 ]
 
+T = TypeVar("T")
 
-def create_asyncio_class(cls):
+
+def create_asyncio_class(cls: T) -> T:
     return create_class_with_framework(cls, asyncio_framework, "motor.motor_asyncio")
 
 

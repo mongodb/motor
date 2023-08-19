@@ -3,6 +3,7 @@ include LICENSE
 include tox.ini
 include pytest.ini
 include pyproject.toml
+include mypy.ini
 include doc/Makefile
 include doc/examples/tornado_change_stream_templates/index.html
 recursive-include doc *.rst
@@ -16,6 +17,8 @@ recursive-include doc *.js
 recursive-include doc *.txt
 recursive-include doc *.bat
 recursive-include synchro *.py
+recursive-include motor *.pyi
+recursive-include motor *.typed
 
 exclude .readthedocs.yaml
 exclude .git-blame-ignore-revs

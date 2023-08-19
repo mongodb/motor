@@ -96,7 +96,7 @@ from pymongo.operations import *
 from pymongo.periodic_executor import *
 from pymongo.periodic_executor import _EXECUTORS
 from pymongo.pool import *
-from pymongo.pool import _METADATA, Pool, SocketInfo, _PoolClosedError
+from pymongo.pool import _METADATA, Connection, Pool, _PoolClosedError
 from pymongo.read_concern import *
 from pymongo.read_preferences import *
 from pymongo.read_preferences import _ServerMode
@@ -468,6 +468,13 @@ class Database(Synchro):
     def client(self):
         return self._client
 
+    def cursor_command(self, *args, **kwargs):
+        if "session" in kwargs:
+            # Workaround for validation added in PYTHON-3228.
+            kwargs["session"] = kwargs["session"].delegate
+        cursor = self.synchronize(self.delegate.cursor_command)(*args, **kwargs)
+        return CommandCursor(cursor)
+
     def __getattr__(self, name):
         return Collection(self, name, delegate=getattr(self.delegate, name))
 
@@ -483,6 +490,11 @@ class Collection(Synchro):
     aggregate = WrapOutgoing()
     aggregate_raw_batches = WrapOutgoing()
     list_indexes = WrapOutgoing()
+    create_search_index = WrapOutgoing()
+    create_search_indexes = WrapOutgoing()
+    drop_search_index = WrapOutgoing()
+    list_search_indexes = WrapOutgoing()
+    update_search_index = WrapOutgoing()
     watch = WrapOutgoing()
     __bool__ = WrapOutgoing()
 
@@ -617,6 +629,8 @@ class Cursor(Synchro):
 
 class CommandCursor(Cursor):
     __delegate_class__ = motor.motor_tornado.MotorCommandCursor
+
+    try_next = Sync("try_next")
 
 
 class GridOutCursor(Cursor):

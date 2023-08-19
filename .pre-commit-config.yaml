@@ -20,14 +20,14 @@ repos:
   rev: 22.3.0
   hooks:
   - id: black
-    files: \.py$
+    files: \.(py|pyi)$
     args: [--line-length=100]
 
 - repo: https://github.com/PyCQA/isort
   rev: 5.12.0
   hooks:
   - id: isort
-    files: \.py$
+    files: \.(py|pyi)$
     args: [--profile=black]
 
 - repo: https://github.com/pycqa/flake8
