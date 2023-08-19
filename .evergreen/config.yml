@@ -401,6 +401,9 @@ functions:
           . ./fle_creds.sh
           rm -f ./fle_creds.sh
           set -x
+          if [ -n "${EXTRA_PATH}" ]; then
+            export PATH="${EXTRA_PATH}:$PATH"
+          fi
           export LIBMONGOCRYPT_URL="${libmongocrypt_url}"
           export TEST_ENCRYPTION=1
           PYTHON_BINARY="${PYTHON_BINARY}" \
@@ -895,27 +898,27 @@ axes:
       - id: "test-py37"
         variables:
           TOX_ENV: "test"
-          PYTHON_BINARY: "/cygdrive/c/python37/python.exe"
+          EXTRA_PATH: "c:\\python\\Python37"
       - id: "test-py38"
         variables:
            TOX_ENV: "test"
-           PYTHON_BINARY: "/cygdrive/c/python38/python.exe"
+           PEXTRA_PATH: "c:\\python\\Python39"
       - id: "test-py39"
         variables:
            TOX_ENV: "test"
-           PYTHON_BINARY: "/cygdrive/c/python39/python.exe"
+           EXTRA_PATH: "c:\\python\\Python39"
       - id: "test-py310"
         variables:
            TOX_ENV: "test"
-           PYTHON_BINARY: "/cygdrive/c/python310/python.exe"
+           EXTRA_PATH: "c:\\python\\Python310"
       - id: "test-py311"
         variables:
            TOX_ENV: "test"
-           PYTHON_BINARY: "/cygdrive/c/python311/python.exe"
+           EXTRA_PATH: "c:\\python\\Python311"
       - id: "test-py312"
         variables:
            TOX_ENV: "test"
-           PYTHON_BINARY: "/cygdrive/c/python312/python.exe"
+           EXTRA_PATH: "c:\\python\\Python312"
 
   - id: os
     display_name: "Operating System"

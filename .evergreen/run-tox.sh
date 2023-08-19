@@ -10,6 +10,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 AUTH=${AUTH:-noauth}
 SSL=${SSL:-nossl}
+PYTHON_BINARY=${PYTHON_BINARY:-python3}
 
 if [ "$AUTH" != "noauth" ]; then
     export DB_USER="bob"
