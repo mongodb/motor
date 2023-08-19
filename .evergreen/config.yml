@@ -417,7 +417,7 @@ functions:
     - command: shell.exec
       type: test
       params:
-        #silent: true
+        silent: true
         working_dir: "src"
         script: |
           # DO NOT ECHO WITH XTRACE (which PREPARE_SHELL does)
