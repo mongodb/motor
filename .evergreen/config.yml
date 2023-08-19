@@ -1,6 +1,7 @@
 ########################################
 # Evergreen Template for MongoDB Drivers
 ########################################
+unset_function_vars: true
 
 # When a task that used to pass starts to fail
 # Go through all versions that may have been skipped to detect
