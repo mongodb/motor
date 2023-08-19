@@ -895,27 +895,27 @@ axes:
       - id: "test-py37"
         variables:
           TOX_ENV: "test"
-          PYTHON_BINARY: "c:\\python\\Python37\\python.exe"
+          PYTHON_BINARY: "c:/python/Python37/python.exe"
       - id: "test-py38"
         variables:
            TOX_ENV: "test"
-           PYTHON_BINARY: "c:\\python\\Python39\\python.exe"
+           PYTHON_BINARY: "c:/python/Python39/python.exe"
       - id: "test-py39"
         variables:
            TOX_ENV: "test"
-           PYTHON_BINARY: "c:\\python\\Python39\\python.exe"
+           PYTHON_BINARY: "c:/python/Python39/python.exe"
       - id: "test-py310"
         variables:
            TOX_ENV: "test"
-           PYTHON_BINARY: "c:\\python\\Python310\\python.exe"
+           PYTHON_BINARY: "c:/python/Python310/python.exe"
       - id: "test-py311"
         variables:
            TOX_ENV: "test"
-           PYTHON_BINARY: "c:\\python\\Python311\\python.exe"
+           PYTHON_BINARY: "c:/python/Python311/python.exe"
       - id: "test-py312"
         variables:
            TOX_ENV: "test"
-           PYTHON_BINARY: "c:\\python\\Python312\\python.exe"
+           PYTHON_BINARY: "c:/python/Python312/python.exe"
 
   - id: os
     display_name: "Operating System"
