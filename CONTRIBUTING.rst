@@ -29,14 +29,14 @@ Control how the tests connect to MongoDB with these environment variables:
 
 Install `tox`_ and run it from the command line in the repository directory.
 You will need a variety of Python interpreters installed. For a minimal test,
-ensure you have Python 3.9, and run::
+ensure you have your desired Python version on your path, and run::
 
-  > tox -e asyncio-py39
+  > tox -m test
 
-The doctests pass with Python 3.7 and a MongoDB 5.0 instance running on
+The doctests pass with Python 3.7+ and a MongoDB 5.0 instance running on
 port 27017:
 
-  > tox -e py3-sphinx-doctest
+  > tox -m doctest
 
 .. _tox: https://testrun.org/tox/
 
@@ -55,7 +55,7 @@ To set up ``pre-commit`` locally, run::
 
 To run ``pre-commit`` manually, run::
 
-    > tox -e lint
+    > tox -m lint
 
 General Guidelines
 ------------------

@@ -1325,14 +1325,14 @@ class AgnosticCollection(AgnosticBaseProperties):
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, self._async_list_indexes, session=session, **kwargs)
 
-    def _list_search_indexes(self, session=None, **kwargs):
+    def _list_search_indexes(self, *args, **kwargs):
         """Return a cursor over search indexes for the current collection."""
         cursor_class = create_class_with_framework(
             AgnosticLatentCommandCursor, self._framework, self.__module__
         )
 
         # Latent cursor that will send initial command on first "async for".
-        return cursor_class(self, self._async_list_search_indexes, session=session, **kwargs)
+        return cursor_class(self, self._async_list_search_indexes, *args, **kwargs)
 
     # TODO: MOTOR-1169
     if hasattr(Collection, "list_search_indexes"):
