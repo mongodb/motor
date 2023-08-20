@@ -211,7 +211,6 @@ class SynchroNosePlugin(Plugin):
     def wantModule(self, module):
         # Depending on PYTHONPATH, Motor's direct tests may be imported - don't
         # run them now.
-        return module.__name__.startswith("test.test_index")
         if module.__name__.startswith("test.test_motor_"):
             return False
 
