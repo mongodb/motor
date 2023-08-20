@@ -489,6 +489,7 @@ class Collection(Synchro):
     find_raw_batches = WrapOutgoing()
     aggregate = WrapOutgoing()
     aggregate_raw_batches = WrapOutgoing()
+    list_indexes = WrapOutgoing()
     list_search_indexes = WrapOutgoing()
     watch = WrapOutgoing()
     __bool__ = WrapOutgoing()
