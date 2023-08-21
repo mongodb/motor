@@ -27,10 +27,6 @@ if [ "$SSL" != "nossl" ]; then
 fi
 
 
-# TODO: Remove as part of MOTOR-1163
-export AIOHTTP_NO_EXTENSIONS=1
-
-
 # Usage:
 # createvirtualenv /path/to/python /output/path/for/venv
 # * param1: Python binary to use for the virtualenv
