@@ -373,4 +373,3 @@ class TestEnvironment(object):
 env = TestEnvironment()
 if "SKIP_ENV_SETUP" not in os.environ:
     env.setup()
-env.setup()

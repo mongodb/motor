@@ -19,7 +19,9 @@ recursive-include doc *.bat
 recursive-include synchro *.py
 recursive-include motor *.pyi
 recursive-include motor *.typed
+recursive-include motor *.py
 
+exclude .flake8
 exclude .readthedocs.yaml
 exclude .git-blame-ignore-revs
 exclude .pre-commit-config.yaml
