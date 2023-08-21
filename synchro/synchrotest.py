@@ -240,6 +240,7 @@ class SynchroNosePlugin(Plugin):
             "create_operation_test",
             "create_selection_tests",
             "generate_test_classes",
+            "run_test_cases",
         ):
             return False
 
