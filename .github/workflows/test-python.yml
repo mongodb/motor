@@ -4,6 +4,14 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash -eux {0}
+
 jobs:
 
   build:
@@ -11,7 +19,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-20.04]
-        python-version: ["3.7", "3.11"]
+        python-version: ["3.7", "3.12"]
       fail-fast: false
     name: CPython ${{ matrix.python-version }}-${{ matrix.os }}
     steps:
@@ -63,10 +71,15 @@ jobs:
         run: |
           python -m pip install -U pip tox
       - name: Run docs
+        run: tox -m docs
+      - name: Run linkcheck
+        run: tox -m linkcheck
+      - name: Start MongoDB with Custom Options
         run: |
-          tox -m docs
-          tox -m doctest
-          tox -m linkcheck
+          mkdir data
+          mongod --fork --dbpath=$(pwd)/data --logpath=$PWD/mongo.log --setParameter enableTestCommands=1
+      - name: Run doctest
+        run: tox -m doctest
 
   release:
     runs-on: macos-latest
@@ -89,7 +102,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.7', '3.11']
+        python-version: ['3.7', '3.12']
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
