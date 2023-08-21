@@ -16,7 +16,7 @@ jobs:
 
   build:
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 5
+    timeout-minutes: 10
     strategy:
       matrix:
         os: [ubuntu-20.04]
