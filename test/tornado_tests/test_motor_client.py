@@ -200,13 +200,6 @@ class MotorClientTimeoutTest(MotorMockServerTest):
         client.close()
 
 
-def get_conns(pool):
-    # TODO: MOTOR-1169
-    if hasattr(pool, "conns"):
-        return pool.conns
-    return pool.sockets
-
-
 class MotorClientExhaustCursorTest(MotorMockServerTest):
     def primary_server(self):
         primary = self.server()
@@ -228,7 +221,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         client = motor.MotorClient(server.uri, maxPoolSize=1)
         await client.admin.command("ismaster")
         pool = get_primary_pool(client)
-        conns = get_conns(pool)
+        conns = pool.conns
         conn = one(conns)
         cursor = client.db.collection.find(cursor_type=CursorType.EXHAUST)
 
@@ -241,7 +234,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
             await fetch_next
 
         self.assertFalse(conn.closed)
-        conns = get_conns(pool)
+        conns = pool.conns
         self.assertEqual(conn, one(conns))
 
     @gen_test
@@ -261,7 +254,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         await client.admin.command("ismaster")
         pool = get_primary_pool(client)
         pool._check_interval_seconds = None  # Never check.
-        conns = get_conns(pool)
+        conns = pool.conns
         conn = one(conns)
 
         cursor = client.db.collection.find(cursor_type=CursorType.EXHAUST)
@@ -276,7 +269,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
 
         self.assertTrue(conn.closed)
         del cursor
-        conns = get_conns(pool)
+        conns = pool.conns
         self.assertNotIn(conn, conns)
 
     @gen_test

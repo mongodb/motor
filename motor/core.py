@@ -722,7 +722,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             show_expanded_events,
         )
 
-    async def _cursor_command(
+    async def cursor_command(
         self,
         command,
         value=1,
@@ -804,10 +804,6 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
         return cursor_class(cursor, self)
 
-    # TODO: MOTOR-1169
-    if hasattr(Database, "cursor_command"):
-        cursor_command = _cursor_command
-
     @property
     def client(self):
         """This MotorDatabase's :class:`MotorClient`."""
@@ -876,11 +872,14 @@ class AgnosticCollection(AgnosticBaseProperties):
     count_documents = AsyncRead()
     create_index = AsyncCommand(doc=docstrings.create_index_doc)
     create_indexes = AsyncCommand(doc=docstrings.create_indexes_doc)
+    create_search_index = AsyncCommand()
+    create_search_indexes = AsyncCommand()
     delete_many = AsyncCommand(doc=docstrings.delete_many_doc)
     delete_one = AsyncCommand(doc=docstrings.delete_one_doc)
     distinct = AsyncRead()
     drop = AsyncCommand(doc=docstrings.drop_doc)
     drop_index = AsyncCommand()
+    drop_search_index = AsyncCommand()
     drop_indexes = AsyncCommand()
     estimated_document_count = AsyncCommand()
     find_one = AsyncRead(doc=docstrings.find_one_doc)
@@ -897,20 +896,13 @@ class AgnosticCollection(AgnosticBaseProperties):
     replace_one = AsyncCommand(doc=docstrings.replace_one_doc)
     update_many = AsyncCommand(doc=docstrings.update_many_doc)
     update_one = AsyncCommand(doc=docstrings.update_one_doc)
-
+    update_search_index = AsyncCommand()
     with_options = DelegateMethod().wrap(Collection)
-
-    # TODO: MOTOR-1169
-    if hasattr(Collection, "create_search_index"):
-        create_search_index = AsyncCommand()
-        create_search_indexes = AsyncCommand()
-        drop_search_index = AsyncCommand()
-        update_search_index = AsyncCommand()
-        _async_list_search_indexes = AsyncRead(attr_name="list_search_indexes")
 
     _async_aggregate = AsyncRead(attr_name="aggregate")
     _async_aggregate_raw_batches = AsyncRead(attr_name="aggregate_raw_batches")
     _async_list_indexes = AsyncRead(attr_name="list_indexes")
+    _async_list_search_indexes = AsyncRead(attr_name="list_search_indexes")
 
     def __init__(
         self,
@@ -1325,7 +1317,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, self._async_list_indexes, session=session, **kwargs)
 
-    def _list_search_indexes(self, *args, **kwargs):
+    def list_search_indexes(self, *args, **kwargs):
         """Return a cursor over search indexes for the current collection."""
         cursor_class = create_class_with_framework(
             AgnosticLatentCommandCursor, self._framework, self.__module__
@@ -1333,10 +1325,6 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(self, self._async_list_search_indexes, *args, **kwargs)
-
-    # TODO: MOTOR-1169
-    if hasattr(Collection, "list_search_indexes"):
-        list_search_indexes = _list_search_indexes
 
     def wrap(self, obj):
         if obj.__class__ is Collection:
@@ -1784,7 +1772,7 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
 
     _CommandCursor__die = AsyncRead()
 
-    async def _try_next(self):
+    async def try_next(self):
         """Advance the cursor without blocking indefinitely.
 
         This method returns the next document without waiting
@@ -1805,10 +1793,6 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
 
         loop = self.get_io_loop()
         return await self._framework.run_on_executor(loop, inner)
-
-    # TODO: MOTOR-1169
-    if hasattr(CommandCursor, "try_next"):
-        try_next = _try_next
 
     def _query_flags(self):
         return 0
