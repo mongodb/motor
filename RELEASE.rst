@@ -32,9 +32,9 @@ and a `source distribution <https://packaging.python.org/guides/distributing-pac
 #. Add release notes to `doc/changelog.rst`. Generally just summarize/clarify
    the git log, but you might add some more long form notes for big changes.
 
-#. Search and replace the `devN` version number w/ the new version number (see
+#. Replace the `devN` version number w/ the new version number (see
    note above in `Versioning`_). Make sure version number is updated in
-   `setup.py` and `motor/__init__.py`. Commit the change and tag the release.
+   ``motor/_version.py``. Commit the change and tag the release.
    Immediately bump the version number to `dev0` in a new commit::
 
      $ # Bump to release version number
@@ -67,7 +67,7 @@ and a `source distribution <https://packaging.python.org/guides/distributing-pac
    new version does not show up automatically, trigger a rebuild of "latest":
    https://readthedocs.org/projects/motor/builds/
 
-#. Bump the version number to <next version>.dev0 in setup.py/__init__.py,
+#. Bump the version number to <next version>.dev0 in motor/_version.py,
    commit, push.
 
 #. Publish the release version in Jira.

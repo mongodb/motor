@@ -4,55 +4,34 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash -eux {0}
+
 jobs:
-
-  pre-commit:
-    name: pre-commit
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-      - uses: pre-commit/action@v2.0.0
-        with:
-          extra_args: --all-files --hook-stage=manual
 
   build:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     strategy:
       matrix:
         os: [ubuntu-20.04]
-        python-version: ["3.7", "3.11"]
+        python-version: ["3.7", "3.12"]
       fail-fast: false
     name: CPython ${{ matrix.python-version }}-${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-          cache-dependency-path: 'setup.py'
-      - name: Start MongoDB with Custom Options
-        run: |
-          mkdir data
-          mongod --fork --dbpath=$(pwd)/data --logpath=$PWD/mongo.log --setParameter enableTestCommands=1
-      - name: Install Python dependencies
-        run: |
-          python -m pip install -U pip tox tox-gh-actions setuptools
-      - name: Run tests
-        run: |
-          tox
-
-  docs:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: 3.7
-          cache: 'pip'
-          cache-dependency-path: 'setup.py'
+          cache-dependency-path: 'pyproject.toml'
+          allow-prereleases: true
       - name: Start MongoDB with Custom Options
         run: |
           mkdir data
@@ -60,30 +39,85 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install -U pip tox
-      - name: Run docs
+      - name: Run tests
         run: |
-          tox -e py3-sphinx-docs
-          tox -e py3-sphinx-doctest
-          tox -e py3-sphinx-linkcheck
+          tox -m test
+
+  lint:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.8
+          cache: 'pip'
+          cache-dependency-path: 'pyproject.toml'
+      - name: Install Python dependencies
+        run: |
+          python -m pip install -U pip tox
+      - name: Run linters
+        run: |
+          tox -m lint-manual
+          tox -m manifest
+
+  docs:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.7
+          cache: 'pip'
+          cache-dependency-path: 'pyproject.toml'
+      - name: Install Python dependencies
+        run: |
+          python -m pip install -U pip tox
+      - name: Run docs
+        run: tox -m docs
+      - name: Run linkcheck
+        run: tox -m linkcheck
+      - name: Start MongoDB with Custom Options
+        run: |
+          mkdir data
+          mongod --fork --dbpath=$(pwd)/data --logpath=$PWD/mongo.log --setParameter enableTestCommands=1
+      - name: Run doctest
+        run: tox -m doctest
+
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.7
+          cache: 'pip'
+          cache-dependency-path: 'pyproject.toml'
+      - name: Install Python dependencies
+        run: |
+          python -m pip install -U pip
+      - name: Run the release script
+        run: |
+          bash release.sh
 
   typing:
     name: Typing Tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.7', '3.11']
+        python-version: ['3.7', '3.12']
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-          cache-dependency-path: 'setup.py'
+          cache-dependency-path: 'pyproject.toml'
+          allow-prereleases: true
       - name: Install dependencies
         run: |
           python -m pip install -U pip tox
       - name: Run mypy
         run: |
-          tox -e typecheck-mypy
+          tox -m typecheck-mypy

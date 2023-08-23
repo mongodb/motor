@@ -490,11 +490,7 @@ class Collection(Synchro):
     aggregate = WrapOutgoing()
     aggregate_raw_batches = WrapOutgoing()
     list_indexes = WrapOutgoing()
-    create_search_index = WrapOutgoing()
-    create_search_indexes = WrapOutgoing()
-    drop_search_index = WrapOutgoing()
     list_search_indexes = WrapOutgoing()
-    update_search_index = WrapOutgoing()
     watch = WrapOutgoing()
     __bool__ = WrapOutgoing()
 

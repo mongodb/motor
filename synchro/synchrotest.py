@@ -188,6 +188,8 @@ excluded_tests = [
     "TestUnifiedPoolClearedError.test_PoolClearedError_does_not_mark_server_unknown",
     # These tests have hard-coded values that differ from motor.
     "TestClient.test_handshake.*",
+    # This test is not a valid unittest target.
+    "TestRangeQueryProse.run_test_cases",
 ]
 
 

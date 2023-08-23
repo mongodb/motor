@@ -101,7 +101,8 @@ class MotorTest(testing.AsyncTestCase):
 
     def tearDown(self):
         env.sync_cx.motor_test.test_collection.delete_many({})
-        self.cx.close()
+        if hasattr(self, "cx"):
+            self.cx.close()
         super().tearDown()
 
 

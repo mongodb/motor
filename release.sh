@@ -8,22 +8,15 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
-# Only build distributions with Python 3.5.2 or later.
-python3 -c "import sys; exit(sys.version_info < (3, 5, 2))"
-if [ $? -ne 0 ]; then
-  echo "ERROR: Run this script with Python 3.5.2 or later."
-  exit 1
-fi
-
 # Cleanup destinations
 rm -rf build
 rm -rf dist
 
-# Build the source dist first
-python3 setup.py sdist
+# Install deps
+python3 -m pip install build
 
-# Build the wheel
-python3 setup.py bdist_wheel
+# Build the source dist and wheel
+python3 -m build .
 
 # Cleanup
 rm -rf build

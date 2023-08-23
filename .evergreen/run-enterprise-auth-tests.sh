@@ -26,4 +26,4 @@ export GSSAPI_PRINCIPAL=${PRINCIPAL}
 export TOX_TESTENV_PASSENV="*"
 
 # --sitepackages allows use of pykerberos without a test dep.
-/opt/python/3.7/bin/python3 -m tox -e "$TOX_ENV" --sitepackages -- -x test.test_auth
+/opt/python/3.7/bin/python3 -m tox -m "$TOX_ENV" --sitepackages -- -x test.test_auth

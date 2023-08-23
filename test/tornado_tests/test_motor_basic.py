@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
+import asyncio
 import os
 import test
 import unittest
@@ -158,6 +159,7 @@ class ExecutorForkTest(MotorTest):
         parent_conn, child_conn = Pipe()
         lock_pid = os.fork()
         if lock_pid == 0:  # Child
+            asyncio.set_event_loop(asyncio.new_event_loop())
             self.loop = IOLoop.current()
             client = self.motor_client()
             try:
