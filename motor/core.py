@@ -2093,6 +2093,7 @@ class AgnosticClientEncryption(AgnosticBase):
 
     create_data_key = AsyncCommand(doc=docstrings.create_data_key_doc)
     encrypt = AsyncCommand()
+    encrypt_expression = AsyncCommand()
     decrypt = AsyncCommand()
     close = AsyncCommand(doc=docstrings.close_doc)
 
@@ -2103,8 +2104,6 @@ class AgnosticClientEncryption(AgnosticBase):
     add_key_alt_name = AsyncCommand()
     get_key_by_alt_name = AsyncCommand()
     remove_key_alt_name = AsyncCommand()
-    if hasattr(ClientEncryption, "encrypt_expression"):
-        encrypt_expression = AsyncCommand()
 
     def __init__(
         self,
