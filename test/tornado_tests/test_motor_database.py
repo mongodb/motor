@@ -15,7 +15,7 @@
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import unittest
-from test import SkipTest, env
+from test import env
 from test.tornado_tests import MotorTest
 
 import pymongo.database
@@ -167,8 +167,6 @@ class MotorDatabaseTest(MotorTest):
     @gen_test
     async def test_cursor_command(self):
         db = self.db
-        if not hasattr(pymongo.database.Database, "cursor_command"):
-            raise SkipTest("MOTOR-1169")
         await db.test.drop()
 
         docs = [{"_id": i, "doc": i} for i in range(3)]

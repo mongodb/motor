@@ -15,7 +15,7 @@
 """Test AsyncIOMotorDatabase."""
 
 import unittest
-from test import SkipTest, env
+from test import env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 import pymongo.database
@@ -159,8 +159,6 @@ class TestAsyncIODatabase(AsyncIOTestCase):
     @asyncio_test
     async def test_cursor_command(self):
         db = self.db
-        if not hasattr(pymongo.database.Database, "cursor_command"):
-            raise SkipTest("MOTOR-1169")
         await db.test.drop()
 
         docs = [{"_id": i, "doc": i} for i in range(3)]

@@ -271,8 +271,6 @@ class MotorCollectionTest(MotorTest):
     @env.require_no_standalone
     @gen_test
     async def test_async_create_encrypted_collection(self):
-        if pymongo.version_tuple < (4, 4, 0):
-            raise unittest.SkipTest("Requires PyMongo 4.4+")
         await self.db.drop_collection("test_collection")
         c = self.collection
         KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
@@ -293,8 +291,6 @@ class MotorCollectionTest(MotorTest):
 
     @gen_test
     async def test_async_encrypt_expression(self):
-        if pymongo.version_tuple < (4, 4, 0):
-            raise unittest.SkipTest("Requires PyMongo 4.4+")
         c = self.collection
         KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
         self.cx.drop_database("db")

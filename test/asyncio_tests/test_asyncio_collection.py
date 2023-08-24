@@ -270,8 +270,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
     @env.require_no_standalone
     @asyncio_test
     async def test_async_create_encrypted_collection(self):
-        if pymongo.version_tuple < (4, 4, 0):
-            raise unittest.SkipTest("Requires PyMongo 4.4+")
         c = self.collection
         KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
         self.cx.drop_database("db")
@@ -291,8 +289,6 @@ class TestAsyncIOCollection(AsyncIOTestCase):
 
     @asyncio_test
     async def test_async_encrypt_expression(self):
-        if pymongo.version_tuple < (4, 4, 0):
-            raise unittest.SkipTest("Requires PyMongo 4.4+")
         c = self.collection
         KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
         self.cx.drop_database("db")

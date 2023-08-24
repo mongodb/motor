@@ -3,6 +3,22 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.3.0
+-----------
+
+- Add support for PyMongo 4.4+.
+- Add support for Python 3.12.
+- Add inline type hints for public APIs.
+- Added new helper methods for Atlas Search Index (requires MongoDB Server 7.0+):
+  :meth:`~motor.motor_tornado.MotorCollection.list_search_indexes`,
+  :meth:`~motor.motor_tornado.MotorCollection.create_search_index`,
+  :meth:`~motor.motor_tornado.MotorCollection.create_search_indexes`,
+  :meth:`~motor.motor_tornado.MotorCollection.drop_search_index`,
+  :meth:`~motor.motor_tornado.MotorCollection.update_search_index`
+- Added :meth:`~motor.motor_tornado.MotorDatabase.cursor_command`
+  and :meth:`~motor.motor_tornado.MotorCommandCursor.try_next` to support
+  executing an arbitrary command that returns a cursor.
+
 Motor 3.2.0
 -----------
 
