@@ -6,12 +6,10 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       AUTH                    Set to enable authentication. Defaults to "noauth"
 #       SSL                     Set to enable SSL. Defaults to "nossl"
 #       TOX_ENV                 Tox environment name, e.g. "synchro", required.
-#       ARGS                    Extra args to pass to tox after "tox -m <foo> --"
 #       PYTHON_BINARY           Path to python, required.
 
 AUTH=${AUTH:-noauth}
 SSL=${SSL:-nossl}
-ARGS="$*"
 
 if [ -z $PYTHON_BINARY ]; then
     echo "PYTHON_BINARY is undefined!"
@@ -66,21 +64,16 @@ createvirtualenv () {
 }
 
 
-if [ "$TOX_ENV" == "synchro" ]; then
-    ARGS="$ARGS --check-exclude-patterns "
-fi
-
-
 if $PYTHON_BINARY -m tox --version; then
     run_tox() {
-      $PYTHON_BINARY -m tox -m $TOX_ENV -- "$ARGS"
+      $PYTHON_BINARY -m tox -m $TOX_ENV "$@"
     }
 else # No toolchain present, set up virtualenv before installing tox
     createvirtualenv "$PYTHON_BINARY" toxenv
     trap "deactivate; rm -rf toxenv" EXIT HUP
     python -m pip install tox
     run_tox() {
-      python -m tox -m $TOX_ENV -- "$ARGS"
+      python -m tox -m $TOX_ENV "$@"
     }
 fi
 

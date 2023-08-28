@@ -328,12 +328,6 @@ if __name__ == "__main__":
     ]:
         sys.modules.pop(n)
 
-    if "--check-exclude-patterns" in sys.argv:
-        check_exclude_patterns = True
-        sys.argv.remove("--check-exclude-patterns")
-    else:
-        check_exclude_patterns = False
-
     # Prep the xUnit report dir.
     root = Path(__file__).absolute().parent.parent
     xunit_dir = root / "xunit-results"
@@ -352,7 +346,7 @@ if __name__ == "__main__":
     target = Path(sys.argv[1]) / "xunit-results"
     shutil.copy(target / "TEST-results.xml", xunit_dir / "TEST-results.xml")
 
-    if check_exclude_patterns:
+    if os.environ.get("CHECK_EXCLUDE_PATTERNS"):
         unused_module_pats = set(excluded_modules) - excluded_modules_matched
         assert not unused_module_pats, "Unused module patterns: %s" % (unused_module_pats,)
 
