@@ -25,7 +25,9 @@ import importlib.abc
 import importlib.machinery
 import os
 import re
+import shutil
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -51,9 +53,6 @@ excluded_modules = [
     "test.test_default_exports",
     # Motor does not support CSOT.
     "test.test_csot",
-    # TOOD: remove before merging.
-    "test.test_encryption",
-    "test.test_auth",
 ]
 
 
@@ -335,12 +334,23 @@ if __name__ == "__main__":
     else:
         check_exclude_patterns = False
 
+    # Prep the xUnit report dir.
+    root = Path(__file__).absolute().parent.parent
+    xunit_dir = root / "xunit-results"
+    if xunit_dir.exists():
+        shutil.rmtree(xunit_dir)
+
     # Run the tests from the pymongo target dir with our custom plugin.
     os.chdir(sys.argv[1])
     code = pytest.main(sys.argv[2:], plugins=[SynchroPytestPlugin()])
 
-    if not code != 0:
+    if code != 0:
         sys.exit(code)
+
+    # Copy over the xUnit report.
+    xunit_dir.mkdir()
+    target = Path(sys.argv[1]) / "xunit-results"
+    shutil.copy(target / "TEST-results.xml", xunit_dir / "TEST-results.xml")
 
     if check_exclude_patterns:
         unused_module_pats = set(excluded_modules) - excluded_modules_matched
