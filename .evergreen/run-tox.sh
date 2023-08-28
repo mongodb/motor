@@ -67,7 +67,7 @@ createvirtualenv () {
 
 
 if [ "$TOX_ENV" == "synchro" ]; then
-    ARGS="$ARGS --check-exclude-patterns"
+    ARGS="$ARGS --check-exclude-patterns "
 fi
 
 
