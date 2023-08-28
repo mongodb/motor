@@ -306,19 +306,6 @@ def want_method(method, classname):
 
 
 if __name__ == "__main__":
-    try:
-        # Enable the fault handler to dump the traceback of each running
-        # thread
-        # after a segfault.
-        import faulthandler
-
-        faulthandler.enable()
-        # Dump the tracebacks of all threads after 25 minutes.
-        if hasattr(faulthandler, "dump_traceback_later"):
-            faulthandler.dump_traceback_later(25 * 60)
-    except ImportError:
-        pass
-
     # Monkey-patch all pymongo's unittests so they think Synchro is the
     # real PyMongo.
     sys.meta_path[0:0] = [SynchroModuleFinder()]
@@ -350,10 +337,10 @@ if __name__ == "__main__":
 
     # Run the tests from the pymongo target dir with our custom plugin.
     os.chdir(sys.argv[1])
-    success = pytest.main(sys.argv[2:], plugins=[SynchroPytestPlugin()])
+    code = pytest.main(sys.argv[2:], plugins=[SynchroPytestPlugin()])
 
-    if not success:
-        sys.exit(1)
+    if not code != 0:
+        sys.exit(code)
 
     if check_exclude_patterns:
         unused_module_pats = set(excluded_modules) - excluded_modules_matched
