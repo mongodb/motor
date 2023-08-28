@@ -19,6 +19,7 @@ This program monkey-patches sys.modules, so run it alone, rather than as part
 of a larger test suite.
 """
 
+import fnmatch
 import importlib
 import importlib.abc
 import importlib.machinery
@@ -32,23 +33,32 @@ import synchro
 
 excluded_modules = [
     # Exclude some PyMongo tests that can't be applied to Synchro.
-    "test_examples.py",
-    "test_threads.py",
-    "test_pooling.py",
-    "test_saslprep.py",
+    "test.test_examples",
+    "test.test_threads",
+    "test.test_pooling",
+    "test.test_saslprep",
     # Complex PyMongo-specific mocking.
-    "test_replica_set_reconfig.py",
+    "test.test_replica_set_reconfig",
     # Accesses PyMongo internals.
-    "test_retryable_writes.py",
+    "test.test_retryable_writes",
     # Accesses PyMongo internals. Tested directly in Motor.
-    "test_session.py",
+    "test.test_session",
     # Deprecated in PyMongo, removed in Motor 2.0.
-    "test_gridfs.py",
+    "test.test_gridfs",
     # Skip mypy/typing tests.
-    "test_typing.py",
+    "test.test_typing",
+    # Relies of specifics of __all__
+    "test.test_default_exports",
+    # Motor does not support CSOT.
+    "test.test_csot",
+    # TOOD: remove before merging.
+    "test.test_encryption",
+    "test.test_auth",
 ]
 
 
+# Patterns consist of the TestClass.test_method
+# You can use * for any portion of the class or method pattern
 excluded_tests = [
     # Motor's reprs aren't the same as PyMongo's.
     "*.test_repr",
@@ -175,14 +185,12 @@ excluded_tests = [
     "TestRewrapWithSeparateClientEncryption.run_test",
     "TestCustomEndpoint.run_test_expected_success",
     "TestDataKeyDoubleEncryption.run_test",
-    # Motor does not support CSOT.
-    "TestCsotGridfsFind.*",
     # These tests are failing right now.
     "TestUnifiedFindShutdownError.test_Concurrent_shutdown_error_on_find",
     "TestUnifiedInsertShutdownError.test_Concurrent_shutdown_error_on_insert",
     "TestUnifiedPoolClearedError.test_PoolClearedError_does_not_mark_server_unknown",
     # These tests have hard-coded values that differ from motor.
-    "TestClient.test_handshake.*",
+    "TestClient.test_handshake*",
     # This test is not a valid unittest target.
     "TestRangeQueryProse.run_test_cases",
 ]
@@ -190,6 +198,17 @@ excluded_tests = [
 
 excluded_modules_matched = set()
 excluded_tests_matched = set()
+
+# Valide the exclude lists.
+for item in excluded_modules:
+    if not re.match(r"^test\.[a-zA-Z_]+$", item):
+        raise ValueError(f"Improper excluded module {item}")
+for item in excluded_tests:
+    cls_pattern, _, mod_pattern = item.partition(".")
+    if cls_pattern != "*" and not re.match(r"^[a-zA-Z\d]+$", cls_pattern):
+        raise ValueError(f"Ill-formatted excluded test: {item}")
+    if mod_pattern != "*" and not re.match(r"^[a-zA-Z\d_\*]+$", mod_pattern):
+        raise ValueError(f"Ill-formatted excluded test: {item}")
 
 
 class SynchroModuleFinder(importlib.abc.MetaPathFinder):
@@ -231,14 +250,14 @@ class SynchroPytestPlugin:
     def pytest_collection_modifyitems(self, session, config, items):
         for item in items[:]:
             if not want_module(item.module):
-                items.remove(item)
+                item.addSkip("", reason="Synchro excluded module")
                 continue
             fn = item.function
             if item.parent == item.module:
                 if not want_function(fn):
-                    items.remove(item)
+                    item.addSkip("", reason="Synchro excluded function")
             elif not want_method(fn, item.parent.name):
-                items.remove(item)
+                item.addSkip("", reason="Synchro excluded method")
 
 
 def want_module(module):
@@ -271,18 +290,14 @@ def want_function(fn):
 
 def want_method(method, classname):
     for excluded_name in excluded_tests:
-
         # Should we exclude this method's whole TestCase?
-        suite_name, _, method_name = excluded_name.partition(".")
-        suite_matches = suite_name in [classname, "*"]
+        cls_pattern, _, method_pattern = excluded_name.partition(".")
+        suite_matches = fnmatch.fnmatch(classname, cls_pattern)
 
         # Should we exclude this particular method?
-        method_matches = (
-            method.__name__ == method_name
-            or method_name == "*"
-            or re.match(f"^{method_name}$", method.__name__)
+        method_matches = method.__name__ == method_pattern or fnmatch.fnmatch(
+            method.__name__, method_pattern
         )
-
         if suite_matches and method_matches:
             excluded_tests_matched.add(excluded_name)
             return False
