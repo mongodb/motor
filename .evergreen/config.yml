@@ -404,9 +404,8 @@ functions:
           export LIBMONGOCRYPT_URL="${libmongocrypt_url}"
           export TEST_ENCRYPTION=1
           PYTHON_BINARY="${PYTHON_BINARY}" \
-          TOX_BINARY="${TOX_BINARY}" \
           TOX_ENV="${TOX_ENV}" \
-          INSTALL_TOX="${INSTALL_TOX}" \
+          CHECK_EXCLUDE_PATTERNS=1 \
           VIRTUALENV="${VIRTUALENV}" \
           AUTH="${AUTH}" \
           SSL="${SSL}" \
@@ -417,10 +416,10 @@ functions:
     - command: shell.exec
       type: test
       params:
-        silent: true
         working_dir: "src"
         script: |
           # DO NOT ECHO WITH XTRACE (which PREPARE_SHELL does)
+          set +x
           CLIENT_PEM=${DRIVERS_TOOLS}/.evergreen/x509gen/client.pem \
           CA_PEM=${DRIVERS_TOOLS}/.evergreen/x509gen/ca.pem \
           PYTHON_BINARY=${PYTHON_BINARY} \
