@@ -71,12 +71,13 @@ functions:
               export UPLOAD_BUCKET="$UPLOAD_BUCKET"
               export PROJECT_DIRECTORY="$PROJECT_DIRECTORY"
               export TMPDIR="$MONGO_ORCHESTRATION_HOME/db"
-              export PATH="$MONGODB_BINARIES:$HOME/.cargo/bin:$PATH"
+              export PATH="$MONGODB_BINARIES:$PATH"
               export PROJECT="${project}"
               export ASYNC_TEST_TIMEOUT=30
               export PIP_QUIET=1
-              export CARGO_NET_GIT_FETCH_WITH_CLI=true
            EOT
+           # See what we've done.
+           cat expansion.yml
 
     # Load the expansion file to make an evergreen variable with the current unique version
     - command: expansions.update
