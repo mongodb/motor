@@ -35,7 +35,7 @@ functions:
       params:
         working_dir: "src"
         script: |
-          set -o xtrace
+           set -o xtrace
            # Get the current unique version of this checkout
            if [ "${is_patch}" = "true" ]; then
               CURRENT_VERSION=$(git describe)-patch-${version_id}
