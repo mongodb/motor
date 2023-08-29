@@ -26,4 +26,4 @@ export GSSAPI_PRINCIPAL=${PRINCIPAL}
 # Pass needed env variables to the test environment.
 export TOX_ENV="enterprise-synchro"
 
-bash ${PROJECT_DIRECTORY}./evergreen/run-tox.sh
+bash ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
