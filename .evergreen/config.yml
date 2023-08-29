@@ -51,11 +51,6 @@ functions:
               export PROJECT_DIRECTORY=$(cygpath -m $PROJECT_DIRECTORY)
            fi
 
-           # Installation of cryptography requires a rust compiler on some machines
-           curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path
-           export PATH="$HOME/.cargo/bin:$PATH"
-           rustup toolchain install nightly -c rustc
-
            export MONGO_ORCHESTRATION_HOME="$DRIVERS_TOOLS/.evergreen/orchestration"
            export MONGODB_BINARIES="$DRIVERS_TOOLS/mongodb/bin"
            export UPLOAD_BUCKET="${project}"
@@ -69,7 +64,6 @@ functions:
            PROJECT_DIRECTORY: "$PROJECT_DIRECTORY"
            PREPARE_SHELL: |
               set -o errexit
-              set -o xtrace
               export DRIVERS_TOOLS="$DRIVERS_TOOLS"
               export MONGO_ORCHESTRATION_HOME="$MONGO_ORCHESTRATION_HOME"
               export MONGODB_BINARIES="$MONGODB_BINARIES"
@@ -81,8 +75,6 @@ functions:
               export ASYNC_TEST_TIMEOUT=30
               export CARGO_NET_GIT_FETCH_WITH_CLI=true
            EOT
-           # See what we've done
-           cat expansion.yml
 
     # Load the expansion file to make an evergreen variable with the current unique version
     - command: expansions.update
@@ -320,7 +312,12 @@ functions:
       params:
         script: |
           ${PREPARE_SHELL}
-          MONGODB_VERSION=${VERSION} TOPOLOGY=${TOPOLOGY} AUTH=${AUTH} SSL=${SSL} STORAGE_ENGINE=${STORAGE_ENGINE} sh ${DRIVERS_TOOLS}/.evergreen/run-orchestration.sh
+          MONGODB_VERSION=${VERSION} \
+            TOPOLOGY=${TOPOLOGY} \
+            AUTH=${AUTH} \
+            SSL=${SSL} \
+            STORAGE_ENGINE=${STORAGE_ENGINE} \
+            bash ${DRIVERS_TOOLS}/.evergreen/run-orchestration.sh
     # run-orchestration generates expansion file with the MONGODB_URI for the cluster
     - command: expansions.update
       params:
@@ -331,7 +328,7 @@ functions:
       params:
         script: |
           ${PREPARE_SHELL}
-          sh ${DRIVERS_TOOLS}/.evergreen/stop-orchestration.sh
+          bash ${DRIVERS_TOOLS}/.evergreen/stop-orchestration.sh
 
   "run tox":
     # If testing FLE, start the KMS mock servers, first create the virtualenv.
@@ -340,7 +337,7 @@ functions:
         script: |
           ${PREPARE_SHELL}
           cd ${DRIVERS_TOOLS}/.evergreen/csfle
-          . ./activate_venv.sh
+          . ./activate-kmstlsvenv.sh
     # Run in the background so the mock servers don't block the EVG task.
     - command: shell.exec
       params:
@@ -348,7 +345,7 @@ functions:
         script: |
           ${PREPARE_SHELL}
           cd ${DRIVERS_TOOLS}/.evergreen/csfle
-          . ./activate_venv.sh
+          . ./activate-kmstlsvenv.sh
           # The -u options forces the stdout and stderr streams to be unbuffered.
           # TMPDIR is required to avoid "AF_UNIX path too long" errors.
           TMPDIR="$(dirname $DRIVERS_TOOLS)" python -u kms_kmip_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem  --port 5698 &
@@ -361,7 +358,7 @@ functions:
         script: |
           ${PREPARE_SHELL}
           cd ${DRIVERS_TOOLS}/.evergreen/csfle
-          . ./activate_venv.sh
+          . ./activate-kmstlsvenv.sh
           for i in $(seq 1 1 10); do
              sleep 1
              if python -u kms_kmip_client.py; then
@@ -401,17 +398,17 @@ functions:
           . ./fle_creds.sh
           rm -f ./fle_creds.sh
           set -x
-          export LIBMONGOCRYPT_URL="${libmongocrypt_url}"
-          export TEST_ENCRYPTION=1
-          PYTHON_BINARY="${PYTHON_BINARY}" \
-          TOX_BINARY="${TOX_BINARY}" \
-          TOX_ENV="${TOX_ENV}" \
-          INSTALL_TOX="${INSTALL_TOX}" \
-          VIRTUALENV="${VIRTUALENV}" \
-          AUTH="${AUTH}" \
-          SSL="${SSL}" \
-          CERT_DIR="${DRIVERS_TOOLS}/.evergreen/x509gen" \
-          bash ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
+          LIBMONGOCRYPT_URL="${libmongocrypt_url}" \
+            TEST_ENCRYPTION=1 \
+            PYTHON_BINARY="${PYTHON_BINARY}" \
+            TOX_BINARY="${TOX_BINARY}" \
+            TOX_ENV="${TOX_ENV}" \
+            INSTALL_TOX="${INSTALL_TOX}" \
+            VIRTUALENV="${VIRTUALENV}" \
+            AUTH="${AUTH}" \
+            SSL="${SSL}" \
+            CERT_DIR="${DRIVERS_TOOLS}/.evergreen/x509gen" \
+            bash ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
 
   "run enterprise auth tests":
     - command: shell.exec
@@ -420,21 +417,21 @@ functions:
         silent: true
         working_dir: "src"
         script: |
-          # DO NOT ECHO WITH XTRACE (which PREPARE_SHELL does)
+          set +x  # disable xtrace
           CLIENT_PEM=${DRIVERS_TOOLS}/.evergreen/x509gen/client.pem \
-          CA_PEM=${DRIVERS_TOOLS}/.evergreen/x509gen/ca.pem \
-          PYTHON_BINARY=${PYTHON_BINARY} \
-          TOX_ENV=${TOX_ENV} \
-          SASL_HOST=${sasl_host} \
-          SASL_PORT=${sasl_port} \
-          SASL_USER=${sasl_user} \
-          SASL_PASS=${sasl_pass} \
-          SASL_DB=${sasl_db} \
-          PRINCIPAL=${principal} \
-          GSSAPI_DB=${gssapi_db} \
-          KEYTAB_BASE64=${keytab_base64} \
-          PROJECT_DIRECTORY=${PROJECT_DIRECTORY} \
-          sh ${PROJECT_DIRECTORY}/.evergreen/run-enterprise-auth-tests.sh
+            CA_PEM=${DRIVERS_TOOLS}/.evergreen/x509gen/ca.pem \
+            PYTHON_BINARY=${PYTHON_BINARY} \
+            TOX_ENV=${TOX_ENV} \
+            SASL_HOST=${sasl_host} \
+            SASL_PORT=${sasl_port} \
+            SASL_USER=${sasl_user} \
+            SASL_PASS=${sasl_pass} \
+            SASL_DB=${sasl_db} \
+            PRINCIPAL=${principal} \
+            GSSAPI_DB=${gssapi_db} \
+            KEYTAB_BASE64=${keytab_base64} \
+            PROJECT_DIRECTORY=${PROJECT_DIRECTORY} \
+            bash ${PROJECT_DIRECTORY}/.evergreen/run-enterprise-auth-tests.sh
 
   "cleanup":
     - command: shell.exec

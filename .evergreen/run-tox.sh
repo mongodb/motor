@@ -54,8 +54,8 @@ createvirtualenv () {
         . $VENVPATH/bin/activate
     fi
 
-    python -m pip install --upgrade pip
-    python -m pip install --upgrade setuptools wheel tox
+    python -m pip install -q --upgrade pip
+    python -m pip install -q --upgrade setuptools wheel tox
 }
 
 
