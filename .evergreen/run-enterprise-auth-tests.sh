@@ -2,6 +2,7 @@
 
 # Don't trace to avoid secrets showing up in the logs
 set -o errexit
+set +x
 
 echo "Running enterprise authentication tests"
 
