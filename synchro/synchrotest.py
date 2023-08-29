@@ -19,19 +19,17 @@ This program monkey-patches sys.modules, so run it alone, rather than as part
 of a larger test suite.
 """
 
+import fnmatch
 import importlib
 import importlib.abc
 import importlib.machinery
+import os
 import re
+import shutil
 import sys
+from pathlib import Path
 
-import nose
-from nose.config import Config
-from nose.plugins import Plugin
-from nose.plugins.manager import PluginManager
-from nose.plugins.skip import Skip
-from nose.plugins.xunit import Xunit
-from nose.selector import Selector
+import pytest
 
 import synchro
 
@@ -51,9 +49,15 @@ excluded_modules = [
     "test.test_gridfs",
     # Skip mypy/typing tests.
     "test.test_typing",
+    # Relies of specifics of __all__
+    "test.test_default_exports",
+    # Motor does not support CSOT.
+    "test.test_csot",
 ]
 
 
+# Patterns consist of the TestClass.test_method
+# You can use * for any portion of the class or method pattern
 excluded_tests = [
     # Motor's reprs aren't the same as PyMongo's.
     "*.test_repr",
@@ -180,14 +184,12 @@ excluded_tests = [
     "TestRewrapWithSeparateClientEncryption.run_test",
     "TestCustomEndpoint.run_test_expected_success",
     "TestDataKeyDoubleEncryption.run_test",
-    # Motor does not support CSOT.
-    "TestCsotGridfsFind.*",
     # These tests are failing right now.
     "TestUnifiedFindShutdownError.test_Concurrent_shutdown_error_on_find",
     "TestUnifiedInsertShutdownError.test_Concurrent_shutdown_error_on_insert",
     "TestUnifiedPoolClearedError.test_PoolClearedError_does_not_mark_server_unknown",
     # These tests have hard-coded values that differ from motor.
-    "TestClient.test_handshake.*",
+    "TestClient.test_handshake*",
     # This test is not a valid unittest target.
     "TestRangeQueryProse.run_test_cases",
 ]
@@ -196,88 +198,16 @@ excluded_tests = [
 excluded_modules_matched = set()
 excluded_tests_matched = set()
 
-
-class SynchroNosePlugin(Plugin):
-    name = "synchro"
-
-    def __init__(self, *args, **kwargs):
-        # We need a standard Nose selector in order to filter out methods that
-        # don't match TestSuite.test_*
-        self.selector = Selector(config=None)
-        super().__init__(*args, **kwargs)
-
-    def configure(self, options, conf):
-        super().configure(options, conf)
-        self.enabled = True
-
-    def wantModule(self, module):
-        # Depending on PYTHONPATH, Motor's direct tests may be imported - don't
-        # run them now.
-        if module.__name__.startswith("test.test_motor_"):
-            return False
-
-        for module_name in excluded_modules:
-            if module_name.endswith("*"):
-                if module.__name__.startswith(module_name.rstrip("*")):
-                    # E.g., test_motor_cursor matches "test_motor_*".
-                    excluded_modules_matched.add(module_name)
-                    return False
-
-            elif module.__name__ == module_name:
-                excluded_modules_matched.add(module_name)
-                return False
-
-        return True
-
-    def wantFunction(self, fn):
-        # PyMongo's test generators run at import time; tell Nose not to run
-        # them as unittests.
-        if fn.__name__ in (
-            "test_cases",
-            "create_spec_test",
-            "create_test",
-            "create_tests",
-            "create_connection_string_test",
-            "create_document_test",
-            "create_operation_test",
-            "create_selection_tests",
-            "generate_test_classes",
-        ):
-            return False
-
-    def wantClass(self, cls):
-        # PyMongo's test generator classes run at import time; tell Nose not
-        # to run them as unittests.
-        if cls.__name__ in ("TestCreator",):
-            return False
-
-    def wantMethod(self, method):
-        # Run standard Nose checks on name, like "does it start with test_"?
-        if not self.selector.matches(method.__name__):
-            return False
-
-        if method.__name__ in ("run_test_ops", "maybe_skip_test"):
-            return False
-
-        for excluded_name in excluded_tests:
-            classname = method.__self__.__class__.__name__
-
-            # Should we exclude this method's whole TestCase?
-            suite_name, _, method_name = excluded_name.partition(".")
-            suite_matches = suite_name in [classname, "*"]
-
-            # Should we exclude this particular method?
-            method_matches = (
-                method.__name__ == method_name
-                or method_name == "*"
-                or re.match(f"^{method_name}$", method.__name__)
-            )
-
-            if suite_matches and method_matches:
-                excluded_tests_matched.add(excluded_name)
-                return False
-
-        return True
+# Valide the exclude lists.
+for item in excluded_modules:
+    if not re.match(r"^test\.[a-zA-Z_]+$", item):
+        raise ValueError(f"Improper excluded module {item}")
+for item in excluded_tests:
+    cls_pattern, _, mod_pattern = item.partition(".")
+    if cls_pattern != "*" and not re.match(r"^[a-zA-Z\d]+$", cls_pattern):
+        raise ValueError(f"Ill-formatted excluded test: {item}")
+    if mod_pattern != "*" and not re.match(r"^[a-zA-Z\d_\*]+$", mod_pattern):
+        raise ValueError(f"Ill-formatted excluded test: {item}")
 
 
 class SynchroModuleFinder(importlib.abc.MetaPathFinder):
@@ -315,20 +245,66 @@ class SynchroModuleLoader(importlib.abc.Loader):
         return None
 
 
+class SynchroPytestPlugin:
+    def pytest_collection_modifyitems(self, session, config, items):
+        for item in items[:]:
+            if not want_module(item.module):
+                item.addSkip("", reason="Synchro excluded module")
+                continue
+            fn = item.function
+            if item.parent == item.module:
+                if not want_function(fn):
+                    item.addSkip("", reason="Synchro excluded function")
+            elif not want_method(fn, item.parent.name):
+                item.addSkip("", reason="Synchro excluded method")
+
+
+def want_module(module):
+    # Depending on PYTHONPATH, Motor's direct tests may be imported - don't
+    # run them now.
+    if module.__name__.startswith("test.test_motor_"):
+        return False
+
+    for module_name in excluded_modules:
+        if module_name.endswith("*"):
+            if module.__name__.startswith(module_name.rstrip("*")):
+                # E.g., test_motor_cursor matches "test_motor_*".
+                excluded_modules_matched.add(module_name)
+                return False
+
+        elif module.__name__ == module_name:
+            excluded_modules_matched.add(module_name)
+            return False
+
+    return True
+
+
+def want_function(fn):
+    # PyMongo's test generators run at import time; tell pytest not to run
+    # them as unittests.
+    if fn.__name__ in ("test_cases",):
+        return False
+    return True
+
+
+def want_method(method, classname):
+    for excluded_name in excluded_tests:
+        # Should we exclude this method's whole TestCase?
+        cls_pattern, _, method_pattern = excluded_name.partition(".")
+        suite_matches = fnmatch.fnmatch(classname, cls_pattern)
+
+        # Should we exclude this particular method?
+        method_matches = method.__name__ == method_pattern or fnmatch.fnmatch(
+            method.__name__, method_pattern
+        )
+        if suite_matches and method_matches:
+            excluded_tests_matched.add(excluded_name)
+            return False
+
+    return True
+
+
 if __name__ == "__main__":
-    try:
-        # Enable the fault handler to dump the traceback of each running
-        # thread
-        # after a segfault.
-        import faulthandler
-
-        faulthandler.enable()
-        # Dump the tracebacks of all threads after 25 minutes.
-        if hasattr(faulthandler, "dump_traceback_later"):
-            faulthandler.dump_traceback_later(25 * 60)
-    except ImportError:
-        pass
-
     # Monkey-patch all pymongo's unittests so they think Synchro is the
     # real PyMongo.
     sys.meta_path[0:0] = [SynchroModuleFinder()]
@@ -352,20 +328,25 @@ if __name__ == "__main__":
     ]:
         sys.modules.pop(n)
 
-    if "--check-exclude-patterns" in sys.argv:
-        check_exclude_patterns = True
-        sys.argv.remove("--check-exclude-patterns")
-    else:
-        check_exclude_patterns = False
+    # Prep the xUnit report dir.
+    root = Path(__file__).absolute().parent.parent
+    xunit_dir = root / "xunit-results"
+    if xunit_dir.exists():
+        shutil.rmtree(xunit_dir)
 
-    success = nose.run(
-        config=Config(plugins=PluginManager()), addplugins=[SynchroNosePlugin(), Skip(), Xunit()]
-    )
+    # Run the tests from the pymongo target dir with our custom plugin.
+    os.chdir(sys.argv[1])
+    code = pytest.main(sys.argv[2:], plugins=[SynchroPytestPlugin()])
 
-    if not success:
-        sys.exit(1)
+    if code != 0:
+        sys.exit(code)
 
-    if check_exclude_patterns:
+    # Copy over the xUnit report.
+    xunit_dir.mkdir()
+    target = Path(sys.argv[1]) / "xunit-results"
+    shutil.copy(target / "TEST-results.xml", xunit_dir / "TEST-results.xml")
+
+    if os.environ.get("CHECK_EXCLUDE_PATTERNS"):
         unused_module_pats = set(excluded_modules) - excluded_modules_matched
         assert not unused_module_pats, "Unused module patterns: %s" % (unused_module_pats,)
 

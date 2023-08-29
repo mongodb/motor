@@ -5,14 +5,19 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # Supported/used environment variables:
 #       AUTH                    Set to enable authentication. Defaults to "noauth"
 #       SSL                     Set to enable SSL. Defaults to "nossl"
-#       TOX_ENV                 Tox environment name, e.g. "tornado5-py37"
-#       PYTHON_BINARY           Path to python
+#       TOX_ENV                 Tox environment name, e.g. "synchro", required.
+#       PYTHON_BINARY           Path to python, required.
 
 AUTH=${AUTH:-noauth}
 SSL=${SSL:-nossl}
 
 if [ -z $PYTHON_BINARY ]; then
     echo "PYTHON_BINARY is undefined!"
+    exit 1
+fi
+
+if [ -z $TOX_ENV ]; then
+    echo "TOX_ENV is undefined!"
     exit 1
 fi
 

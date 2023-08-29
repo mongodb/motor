@@ -404,10 +404,9 @@ functions:
           LIBMONGOCRYPT_URL="${libmongocrypt_url}" \
             TEST_ENCRYPTION=1 \
             PYTHON_BINARY="${PYTHON_BINARY}" \
-            TOX_BINARY="${TOX_BINARY}" \
             TOX_ENV="${TOX_ENV}" \
-            INSTALL_TOX="${INSTALL_TOX}" \
             VIRTUALENV="${VIRTUALENV}" \
+            CHECK_EXCLUDE_PATTERNS=1 \
             AUTH="${AUTH}" \
             SSL="${SSL}" \
             CERT_DIR="${DRIVERS_TOOLS}/.evergreen/x509gen" \
@@ -417,7 +416,6 @@ functions:
     - command: shell.exec
       type: test
       params:
-        silent: true
         working_dir: "src"
         script: |
           set +x  # disable xtrace
