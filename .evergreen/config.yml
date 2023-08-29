@@ -35,6 +35,7 @@ functions:
       params:
         working_dir: "src"
         script: |
+          set -o xtrace
            # Get the current unique version of this checkout
            if [ "${is_patch}" = "true" ]; then
               CURRENT_VERSION=$(git describe)-patch-${version_id}
@@ -73,6 +74,7 @@ functions:
               export PATH="$MONGODB_BINARIES:$HOME/.cargo/bin:$PATH"
               export PROJECT="${project}"
               export ASYNC_TEST_TIMEOUT=30
+              export PIP_QUIET=1
               export CARGO_NET_GIT_FETCH_WITH_CLI=true
            EOT
 
