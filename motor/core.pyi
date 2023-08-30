@@ -15,8 +15,8 @@
 """Framework-agnostic type stubs for Motor, an asynchronous driver for MongoDB."""
 
 from __future__ import annotations
-from asyncio import Future
 
+from asyncio import Future
 from typing import (
     Any,
     Awaitable,
