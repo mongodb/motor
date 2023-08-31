@@ -17,7 +17,7 @@ sample client code that uses Motor typings.
 """
 import unittest
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from typing import TYPE_CHECKING, Any, AsyncIterable, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 from bson import CodecOptions
 from bson.raw_bson import RawBSONDocument
@@ -80,13 +80,10 @@ class TestMotor(AsyncIOTestCase):
             self.assertEqual(result2.inserted_id, result.inserted_id)
 
     @asyncio_test
-    async def test_cursor_iterable(self) -> None:
-        async def to_list(iterable: AsyncIterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
-            return [gen async for gen in iterable]
-
+    async def test_cursor_to_list(self) -> None:
         await self.collection.insert_one({})
         cursor = self.collection.find()
-        docs = await to_list(cursor)
+        docs = await cursor.to_list(None)
         self.assertTrue(docs)
 
     @only_type_check
