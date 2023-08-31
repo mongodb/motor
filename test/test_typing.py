@@ -83,7 +83,7 @@ class TestMotor(AsyncIOTestCase):
     async def test_cursor_to_list(self) -> None:
         await self.collection.insert_one({})
         cursor = self.collection.find()
-        docs = await cursor.to_list()
+        docs = await cursor.to_list(None)
         self.assertTrue(docs)
 
     @only_type_check
