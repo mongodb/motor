@@ -17,7 +17,7 @@ sample client code that uses Motor typings.
 """
 import unittest
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from typing import TYPE_CHECKING, Any, AsyncIterable, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 from bson import CodecOptions
 from bson.raw_bson import RawBSONDocument
