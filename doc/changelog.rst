@@ -3,6 +3,10 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.3.1
+-----------
+- Fix a bug in the type hint for :meth:`MotorCursor.to_list`.
+
 Motor 3.3.0
 -----------
 
