@@ -14,7 +14,7 @@
 
 """Version-related data for motor."""
 
-version_tuple = (3, 3, 0)
+version_tuple = (3, 3, 1)
 
 
 def get_version_string() -> str:
