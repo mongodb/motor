@@ -41,7 +41,7 @@ jobs:
           python -m pip install -U pip tox
       - name: Run tests
         run: |
-          tox -m test
+          tox -e test
 
   lint:
     runs-on: ubuntu-20.04
@@ -57,8 +57,8 @@ jobs:
           python -m pip install -U pip tox
       - name: Run linters
         run: |
-          tox -m lint-manual
-          tox -m manifest
+          tox -e lint-manual
+          tox -e manifest
 
   docs:
     runs-on: ubuntu-20.04
@@ -73,15 +73,15 @@ jobs:
         run: |
           python -m pip install -U pip tox
       - name: Run docs
-        run: tox -m docs
+        run: tox -e docs
       - name: Run linkcheck
-        run: tox -m linkcheck
+        run: tox -e linkcheck
       - name: Start MongoDB with Custom Options
         run: |
           mkdir data
           mongod --fork --dbpath=$(pwd)/data --logpath=$PWD/mongo.log --setParameter enableTestCommands=1
       - name: Run doctest
-        run: tox -m doctest
+        run: tox -e doctest
 
   release:
     runs-on: macos-latest
@@ -120,4 +120,4 @@ jobs:
           python -m pip install -U pip tox
       - name: Run mypy
         run: |
-          tox -m typecheck-mypy
+          tox -e typecheck-mypy

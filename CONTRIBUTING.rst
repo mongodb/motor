@@ -31,12 +31,12 @@ Install `tox`_ and run it from the command line in the repository directory.
 You will need a variety of Python interpreters installed. For a minimal test,
 ensure you have your desired Python version on your path, and run::
 
-  > tox -m test
+  > tox -e test
 
 The doctests pass with Python 3.7+ and a MongoDB 5.0 instance running on
 port 27017:
 
-  > tox -m doctest
+  > tox -e doctest
 
 .. _tox: https://testrun.org/tox/
 
@@ -55,7 +55,7 @@ To set up ``pre-commit`` locally, run::
 
 To run ``pre-commit`` manually, run::
 
-    > tox -m lint
+    > tox -e lint
 
 General Guidelines
 ------------------
