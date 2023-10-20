@@ -109,28 +109,17 @@ select = [
   "EXE",         # flake8-executable
 ]
 extend-ignore = [
-#   "PLR",    # Design related pylint codes
-#   "E501",   # Line too long
-#   "PT004",  # Use underscore for non-returning fixture (use usefixture instead)
   "ARG001", # Unused function argument
   "UP007",  # Use `X | Y` for type annotation
   "EM101",  # Exception must not use a string literal, assign to variable first
   "EM102",  # Exception must not use an f-string literal, assign to variable first
   "G004",   # Logging statement uses f-string"
   "PLR",    # Too many arguments to function call, etc.
-#   "UP006",  # Use `type` instead of `Type` for type annotation"
   "SIM108", # Use ternary operator"
-#   "PTH123", # `open()` should be replaced by `Path.open()`"
-#   "SIM102", # Use a single `if` statement instead of nested `if` statements
   "SIM105", # Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
   "ARG002", # Unused method argument:
   "S101",   # Use of `assert` detected
-#   "SIM114", # Combine `if` branches using logical `or` operator
-#   "PGH003", # Use specific rule codes when ignoring type issues
   "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
-#   "EM103",  # Exception must not use a `.format()` string directly, assign to variable first
-#   "C408",   # Unnecessary `dict` call (rewrite as a literal)
-#   "SIM117", # Use a single `with` statement with multiple contexts instead of nested `with` statements
 ]
 unfixable = [
   "RUF100", # Unused noqa
