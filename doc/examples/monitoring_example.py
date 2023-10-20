@@ -27,25 +27,25 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 class CommandLogger(monitoring.CommandListener):
     def started(self, event):
         logging.info(
-            "Command {0.command_name} with request id "
-            "{0.request_id} started on server "
-            "{0.connection_id}".format(event)
+            f"Command {event.command_name} with request id "
+            f"{event.request_id} started on server "
+            f"{event.connection_id}"
         )
 
     def succeeded(self, event):
         logging.info(
-            "Command {0.command_name} with request id "
-            "{0.request_id} on server {0.connection_id} "
-            "succeeded in {0.duration_micros} "
-            "microseconds".format(event)
+            f"Command {event.command_name} with request id "
+            f"{event.request_id} on server {event.connection_id} "
+            f"succeeded in {event.duration_micros} "
+            "microseconds"
         )
 
     def failed(self, event):
         logging.info(
-            "Command {0.command_name} with request id "
-            "{0.request_id} on server {0.connection_id} "
-            "failed in {0.duration_micros} "
-            "microseconds".format(event)
+            f"Command {event.command_name} with request id "
+            f"{event.request_id} on server {event.connection_id} "
+            f"failed in {event.duration_micros} "
+            "microseconds"
         )
 
 
@@ -77,22 +77,20 @@ ioloop.IOLoop.current().run_sync(do_insert)
 # server logger start
 class ServerLogger(monitoring.ServerListener):
     def opened(self, event):
-        logging.info("Server {0.server_address} added to topology {0.topology_id}".format(event))
+        logging.info(f"Server {event.server_address} added to topology {event.topology_id}")
 
     def description_changed(self, event):
         previous_server_type = event.previous_description.server_type
         new_server_type = event.new_description.server_type
         if new_server_type != previous_server_type:
             logging.info(
-                "Server {0.server_address} changed type from "
-                "{0.previous_description.server_type_name} to "
-                "{0.new_description.server_type_name}".format(event)
+                f"Server {event.server_address} changed type from "
+                f"{event.previous_description.server_type_name} to "
+                f"{event.new_description.server_type_name}"
             )
 
     def closed(self, event):
-        logging.warning(
-            "Server {0.server_address} removed from topology {0.topology_id}".format(event)
-        )
+        logging.warning(f"Server {event.server_address} removed from topology {event.topology_id}")
 
 
 monitoring.register(ServerLogger())
@@ -102,21 +100,21 @@ monitoring.register(ServerLogger())
 # topology logger start
 class TopologyLogger(monitoring.TopologyListener):
     def opened(self, event):
-        logging.info("Topology with id {0.topology_id} opened".format(event))
+        logging.info(f"Topology with id {event.topology_id} opened")
 
     def description_changed(self, event):
-        logging.info("Topology description updated for topology id {0.topology_id}".format(event))
+        logging.info(f"Topology description updated for topology id {event.topology_id}")
         previous_topology_type = event.previous_description.topology_type
         new_topology_type = event.new_description.topology_type
         if new_topology_type != previous_topology_type:
             logging.info(
-                "Topology {0.topology_id} changed type from "
-                "{0.previous_description.topology_type_name} to "
-                "{0.new_description.topology_type_name}".format(event)
+                f"Topology {event.topology_id} changed type from "
+                f"{event.previous_description.topology_type_name} to "
+                f"{event.new_description.topology_type_name}"
             )
 
     def closed(self, event):
-        logging.info("Topology with id {0.topology_id} closed".format(event))
+        logging.info(f"Topology with id {event.topology_id} closed")
 
 
 monitoring.register(TopologyLogger())
@@ -126,18 +124,18 @@ monitoring.register(TopologyLogger())
 # heartbeat logger start
 class HeartbeatLogger(monitoring.ServerHeartbeatListener):
     def started(self, event):
-        logging.info("Heartbeat sent to server {0.connection_id}".format(event))
+        logging.info(f"Heartbeat sent to server {event.connection_id}")
 
     def succeeded(self, event):
         logging.info(
-            "Heartbeat to server {0.connection_id} "
+            f"Heartbeat to server {event.connection_id} "
             "succeeded with reply "
-            "{0.reply.document}".format(event)
+            f"{event.reply.document}"
         )
 
     def failed(self, event):
         logging.warning(
-            "Heartbeat to server {0.connection_id} failed with error {0.reply}".format(event)
+            f"Heartbeat to server {event.connection_id} failed with error {event.reply}"
         )
 
 

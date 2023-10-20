@@ -32,7 +32,7 @@ def has_node_of_type(root, klass):
     if isinstance(root, klass):
         return True
 
-    for child in root.children:
+    for child in root.children:  # noqa: SIM110
         if has_node_of_type(child, klass):
             return True
 
@@ -90,7 +90,7 @@ def process_motor_nodes(app, doctree):
                 if desc_content_node.line is None and obj_motor_info["is_pymongo_docstring"]:
                     maybe_warn_about_code_block(name, desc_content_node)
 
-                if obj_motor_info["is_async_method"]:
+                if obj_motor_info["is_async_method"]:  # noqa: SIM102
                     # Might be a handwritten RST with "coroutine" already.
                     if not has_coro_annotation(signature_node):
                         coro_annotation = addnodes.desc_annotation(
@@ -125,9 +125,9 @@ def get_motor_attr(motor_class, name, *defargs):
     attr = safe_getattr(motor_class, name, *defargs)
 
     # Store some info for process_motor_nodes()
-    full_name = "%s.%s.%s" % (motor_class.__module__, motor_class.__name__, name)
+    full_name = f"{motor_class.__module__}.{motor_class.__name__}.{name}"
 
-    full_name_legacy = "motor.%s.%s.%s" % (motor_class.__module__, motor_class.__name__, name)
+    full_name_legacy = f"motor.{motor_class.__module__}.{motor_class.__name__}.{name}"
 
     # These sub-attributes are set in motor.asynchronize()
     has_coroutine_annotation = getattr(attr, "coroutine_annotation", False)

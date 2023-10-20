@@ -73,11 +73,8 @@ class ChangesHandler(tornado.websocket.WebSocketHandler):
             data = data.encode("utf-8")
         html_id = urlsafe_b64encode(data).decode().rstrip("=")
         change.pop("_id")
-        change["html"] = '<div id="change-%s"><pre>%s</pre></div>' % (
-            html_id,
-            tornado.escape.xhtml_escape(pformat(change)),
-        )
-
+        change_pre = tornado.escape.xhtml_escape(pformat(change))
+        change["html"] = f'<div id="change-{html_id}"><pre>{change_pre}</pre></div>'
         change["html_id"] = html_id
         ChangesHandler.send_change(change)
         ChangesHandler.update_cache(change)
@@ -97,7 +94,7 @@ async def watch(collection):
 def main():
     tornado.options.parse_command_line()
     if "." not in options.ns:
-        sys.stderr.write('Invalid ns "%s", must contain a "."' % (options.ns,))
+        sys.stderr.write(f'Invalid ns "{options.ns}", must contain a "."')
         sys.exit(1)
 
     db_name, collection_name = options.ns.split(".", 1)

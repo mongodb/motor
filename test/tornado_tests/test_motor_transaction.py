@@ -29,7 +29,7 @@ from tornado.testing import gen_test
 from motor import core
 
 
-class PatchSessionTimeout(object):
+class PatchSessionTimeout:
     """Patches the client_session's with_transaction timeout for testing."""
 
     def __init__(self, mock_timeout):

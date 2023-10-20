@@ -97,13 +97,13 @@ def is_server_resolvable():
     try:
         socket.gethostbyname("server")
         return True
-    except socket.error:
+    except OSError:
         return False
     finally:
         socket.setdefaulttimeout(socket_timeout)
 
 
-class TestEnvironment(object):
+class TestEnvironment:
     __test__ = False
 
     def __init__(self):

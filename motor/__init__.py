@@ -13,18 +13,17 @@
 # limitations under the License.
 
 """Motor, an asynchronous driver for MongoDB."""
-
-from ._version import get_version_string, version, version_tuple  # noqa
+from ._version import get_version_string, version, version_tuple  # noqa: F401
 
 """Current version of Motor."""
 
 
 try:
-    import tornado  # type: ignore
+    import tornado
 except ImportError:
     tornado = None
 else:
     # For backwards compatibility with Motor 0.4, export Motor's Tornado classes
     # at module root. This may change in the future.
     from .motor_tornado import *  # noqa: F403
-    from .motor_tornado import __all__
+    from .motor_tornado import __all__  # noqa: F401

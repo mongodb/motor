@@ -74,7 +74,7 @@ async def main():
     await create_json_schema_file(kms_providers, key_vault_namespace, key_vault_client)
 
     # Load the JSON Schema and construct the local schema_map option.
-    with open("jsonSchema.json", "r") as file:
+    with open("jsonSchema.json") as file:
         json_schema_string = file.read()
     json_schema = json_util.loads(json_schema_string)
     schema_map = {encrypted_namespace: json_schema}
@@ -91,10 +91,10 @@ async def main():
 
     await coll.insert_one({"encryptedField": "123456789"})
     decrypted_doc = await coll.find_one()
-    print("Decrypted document: %s" % (decrypted_doc,))
+    print(f"Decrypted document: {decrypted_doc}")
     unencrypted_coll = AsyncIOMotorClient()[db_name][coll_name]
     encrypted_doc = await unencrypted_coll.find_one()
-    print("Encrypted document: %s" % (encrypted_doc,))
+    print(f"Encrypted document: {encrypted_doc}")
 
 
 if __name__ == "__main__":

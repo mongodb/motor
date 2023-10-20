@@ -13,6 +13,8 @@
 # limitations under the License.
 
 """Asyncio support for Motor, an asynchronous driver for MongoDB."""
+from __future__ import annotations
+
 from typing import TypeVar
 
 from . import core, motor_gridfs

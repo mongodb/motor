@@ -318,7 +318,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         request = await self.run_thread(server.receives, "find", "coll")
         request.replies({"cursor": {"id": 123, "ns": "db.coll", "firstBatch": [{"_id": 1}]}})
 
-        self.assertTrue((await future))
+        self.assertTrue(await future)
         self.assertEqual(123, cursor.cursor_id)
 
         future = asyncio.ensure_future(cursor.close())
@@ -333,7 +333,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         # it's killed on the server.
         self.assertTrue(cursor.alive)
         self.assertEqual({"_id": 1}, cursor.next_object())
-        self.assertFalse((await cursor.fetch_next))
+        self.assertFalse(await cursor.fetch_next)
         self.assertFalse(cursor.alive)
 
     @asyncio_test
@@ -367,7 +367,6 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
             if error:
                 future.set_exception(error)
             elif result:
-                pass
                 results.append(result)
             else:
                 # Complete

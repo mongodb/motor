@@ -64,9 +64,9 @@ async def main():
     await coll.insert_one({"encryptedField": encrypted_field})
     # Automatically decrypts any encrypted fields.
     doc = await coll.find_one()
-    print("Decrypted document: %s" % (doc,))
+    print(f"Decrypted document: {doc}")
     unencrypted_coll = AsyncIOMotorClient().test.coll
-    print("Encrypted document: %s" % (await unencrypted_coll.find_one(),))
+    print(f"Encrypted document: {await unencrypted_coll.find_one()}")
 
     # Cleanup resources.
     await client_encryption.close()

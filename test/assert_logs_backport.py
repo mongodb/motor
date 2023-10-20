@@ -6,7 +6,7 @@ import logging
 _LoggingWatcher = collections.namedtuple("_LoggingWatcher", ["records", "output"])
 
 
-class _BaseTestCaseContext(object):
+class _BaseTestCaseContext:
     def __init__(self, test_case):
         self.test_case = test_case
 
@@ -70,12 +70,10 @@ class _AssertLogsContext(_BaseTestCaseContext):
             return False
         if len(self.watcher.records) == 0:
             self._raiseFailure(
-                "no logs of level {0} or higher triggered on {1}".format(
-                    self.level_name, self.logger.name
-                )
+                f"no logs of level {self.level_name} or higher triggered on {self.logger.name}"
             )
 
 
-class AssertLogsMixin(object):
+class AssertLogsMixin:
     def assertLogs(self, logger=None, level=None):
         return _AssertLogsContext(self, logger, level)

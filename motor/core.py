@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Framework-agnostic core of Motor, an asynchronous driver for MongoDB."""
-
 import functools
 import time
 import warnings
@@ -73,7 +72,7 @@ def _max_time_expired_error(exc):
     return isinstance(exc, pymongo.errors.OperationFailure) and exc.code == 50
 
 
-class AgnosticBase(object):
+class AgnosticBase:
     def __eq__(self, other):
         if (
             isinstance(other, self.__class__)
@@ -87,7 +86,7 @@ class AgnosticBase(object):
         self.delegate = delegate
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, self.delegate)
+        return f"{self.__class__.__name__}({self.delegate!r})"
 
 
 class AgnosticBaseProperties(AgnosticBase):
@@ -213,9 +212,10 @@ class AgnosticClient(AgnosticBaseProperties):
             This option and `resume_after` are mutually exclusive.
           - `comment` (optional): A user-provided comment to attach to this
             command.
-          - `full_document_before_change`: Allowed values: `whenAvailable` and `required`. Change events
-             may now result in a `fullDocumentBeforeChange` response field.
-          - `show_expanded_events` (optional): Include expanded events such as DDL events like `dropIndexes`.
+          - `full_document_before_change`: Allowed values: `whenAvailable` and `required`. Change
+            events may now result in a `fullDocumentBeforeChange` response field.
+          - `show_expanded_events` (optional): Include expanded events such as DDL events like
+            `dropIndexes`.
 
         :Returns:
           A :class:`~MotorChangeStream`.
@@ -260,8 +260,8 @@ class AgnosticClient(AgnosticBaseProperties):
     def __getattr__(self, name):
         if name.startswith("_"):
             raise AttributeError(
-                "%s has no attribute %r. To access the %s"
-                " database, use client['%s']." % (self.__class__.__name__, name, name, name)
+                f"{self.__class__.__name__} has no attribute {name!r}. To access the {name}"
+                f" database, use client['{name}']."
             )
 
         return self[name]
@@ -292,7 +292,7 @@ class AgnosticClient(AgnosticBaseProperties):
             return session_class(obj, self)
 
 
-class _MotorTransactionContext(object):
+class _MotorTransactionContext:
     """Internal transaction context manager for start_transaction."""
 
     def __init__(self, session):
@@ -678,9 +678,10 @@ class AgnosticDatabase(AgnosticBaseProperties):
             This option and `resume_after` are mutually exclusive.
           - `comment` (optional): A user-provided comment to attach to this
             command.
-          - `full_document_before_change`: Allowed values: `whenAvailable` and `required`. Change events
-             may now result in a `fullDocumentBeforeChange` response field.
-          - `show_expanded_events` (optional): Include expanded events such as DDL events like `dropIndexes`.
+          - `full_document_before_change`: Allowed values: `whenAvailable` and `required`. Change
+             events may now result in a `fullDocumentBeforeChange` response field.
+          - `show_expanded_events` (optional): Include expanded events such as DDL events like
+            `dropIndexes`.
 
         :Returns:
           A :class:`~MotorChangeStream`.
@@ -763,7 +764,8 @@ class AgnosticDatabase(AgnosticBaseProperties):
             :class:`MotorClientSession`.
           - `comment` (optional): A user-provided comment to attach to future getMores for this
             command.
-          - `max_await_time_ms` (optional): The number of ms to wait for more data on future getMores for this command.
+          - `max_await_time_ms` (optional): The number of ms to wait for more data on future
+            getMores for this command.
           - `**kwargs` (optional): additional keyword arguments will
             be added to the command document before it is sent
 
@@ -812,8 +814,8 @@ class AgnosticDatabase(AgnosticBaseProperties):
     def __getattr__(self, name):
         if name.startswith("_"):
             raise AttributeError(
-                "%s has no attribute %r. To access the %s"
-                " collection, use database['%s']." % (self.__class__.__name__, name, name, name)
+                f"{self.__class__.__name__} has no attribute {name!r}. To access the {name}"
+                " collection, use database['{name}']."
             )
 
         return self[name]
@@ -830,14 +832,14 @@ class AgnosticDatabase(AgnosticBaseProperties):
         client_class_name = self._client.__class__.__name__
         if database_name == "open_sync":
             raise TypeError(
-                "%s.open_sync() is unnecessary Motor 0.2, "
-                "see changelog for details." % client_class_name
+                f"{client_class_name}.open_sync() is unnecessary Motor 0.2, "
+                "see changelog for details."
             )
 
         raise TypeError(
             "MotorDatabase object is not callable. If you meant to "
-            "call the '%s' method on a %s object it is "
-            "failing because no such method exists." % (database_name, client_class_name)
+            f"call the '{database_name}' method on a {client_class_name} object it is "
+            "failing because no such method exists."
         )
 
     def wrap(self, obj):
@@ -940,11 +942,10 @@ class AgnosticCollection(AgnosticBaseProperties):
     def __getattr__(self, name):
         # Dotted collection name, like "foo.bar".
         if name.startswith("_"):
-            full_name = "%s.%s" % (self.name, name)
+            full_name = f"{self.name}.{name}"
             raise AttributeError(
-                "%s has no attribute %r. To access the %s"
-                " collection, use database['%s']."
-                % (self.__class__.__name__, name, full_name, full_name)
+                f"{self.__class__.__name__} has no attribute {name!r}. To access the {full_name}"
+                f" collection, use database['{full_name}']."
             )
 
         return self[name]
@@ -1250,9 +1251,10 @@ class AgnosticCollection(AgnosticBaseProperties):
             This option and `resume_after` are mutually exclusive.
           - `comment` (optional): A user-provided comment to attach to this
             command.
-          - `full_document_before_change`: Allowed values: `whenAvailable` and `required`. Change events
-             may now result in a `fullDocumentBeforeChange` response field.
-          - `show_expanded_events` (optional): Include expanded events such as DDL events like `dropIndexes`.
+          - `full_document_before_change`: Allowed values: `whenAvailable` and `required`.
+            Change events may now result in a `fullDocumentBeforeChange` response field.
+          - `show_expanded_events` (optional): Include expanded events such as DDL events
+            like `dropIndexes`.
 
         :Returns:
           A :class:`~MotorChangeStream`.
@@ -1809,7 +1811,7 @@ class AgnosticRawBatchCommandCursor(AgnosticCommandCursor):
     __delegate_class__ = RawBatchCommandCursor
 
 
-class _LatentCursor(object):
+class _LatentCursor:
     """Take the place of a PyMongo CommandCursor until aggregate() begins."""
 
     alive = True
@@ -2151,7 +2153,7 @@ class AgnosticClientEncryption(AgnosticBase):
             await self.close()
 
     def __enter__(self):
-        raise RuntimeError('Use {} in "async with", not "with"'.format(self.__class__.__name__))
+        raise RuntimeError(f'Use {self.__class__.__name__} in "async with", not "with"')
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
@@ -2173,8 +2175,8 @@ class AgnosticClientEncryption(AgnosticBase):
 
         .. warning::
             This function does not update the encryptedFieldsMap in the client's
-            AutoEncryptionOpts, thus the user must create a new client after calling this function with
-            the encryptedFields returned.
+            AutoEncryptionOpts, thus the user must create a new client after calling
+            this function with the encryptedFields returned.
 
         Normally collection creation is automatic. This method should
         only be used to specify options on
@@ -2214,10 +2216,12 @@ class AgnosticClientEncryption(AgnosticBase):
 
         All optional `create collection command`_ parameters should be passed
         as keyword arguments to this method.
-        See the documentation for :meth:`~pymongo.database.Database.create_collection` for all valid options.
+        See the documentation for :meth:`~pymongo.database.Database.create_collection`
+        for all valid options.
 
         :Raises:
-          - :class:`~pymongo.errors.EncryptedCollectionError`: When either data-key creation or creating the collection fails.
+          - :class:`~pymongo.errors.EncryptedCollectionError`: When either data-key creation or
+            creating the collection fails.
 
         .. versionadded:: 3.2
 

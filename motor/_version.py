@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Version-related data for motor."""
-
 version_tuple = (3, 4, 0, ".dev0")
 
 

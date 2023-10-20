@@ -16,8 +16,6 @@
 
 See "Frameworks" in the Developer Guide.
 """
-
-
 import asyncio
 import asyncio.tasks
 import functools
@@ -68,7 +66,7 @@ _EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
 
 def _reset_global_executor():
     """Re-initialize the global ThreadPoolExecutor"""
-    global _EXECUTOR
+    global _EXECUTOR  # noqa: PLW0603
     _EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
 
 

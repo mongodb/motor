@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """GridFS implementation for Motor, an asynchronous driver for MongoDB."""
-
 import hashlib
 import warnings
 
@@ -73,7 +72,7 @@ class MotorGridOutProperty(ReadOnlyProperty):
         return property(fget=fget, doc=doc)
 
 
-class AgnosticGridOut(object):
+class AgnosticGridOut:
     """Class to read data out of GridFS.
 
     MotorGridOut supports the same attributes as PyMongo's
@@ -206,7 +205,7 @@ class AgnosticGridOut(object):
             written += len(chunk)
 
 
-class AgnosticGridIn(object):
+class AgnosticGridIn:
     __motor_class_name__ = "MotorGridIn"
     __delegate_class__ = gridfs.GridIn
 
@@ -315,7 +314,7 @@ Metadata set on the file appears as attributes on a
         return self.io_loop
 
 
-class AgnosticGridFSBucket(object):
+class AgnosticGridFSBucket:
     __motor_class_name__ = "MotorGridFSBucket"
     __delegate_class__ = gridfs.GridFSBucket
 
@@ -394,7 +393,7 @@ class AgnosticGridFSBucket(object):
 
         if not isinstance(database, db_class):
             raise TypeError(
-                "First argument to %s must be  MotorDatabase, not %r" % (self.__class__, database)
+                f"First argument to {self.__class__} must be  MotorDatabase, not {database!r}"
             )
 
         self.io_loop = database.get_io_loop()

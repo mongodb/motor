@@ -31,7 +31,7 @@ except ImportError:
     pass
 
 
-class MockRequestHandler(object):
+class MockRequestHandler:
     """For testing MotorGridOut.stream_to_handler."""
 
     def __init__(self):

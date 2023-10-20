@@ -122,7 +122,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
             await collection.insert_many([{"_id": 1}, {"_id": 2}, {"_id": 3}])  # Already exists
 
         # First insert should have succeeded, but not second or third.
-        self.assertEqual(set([1, 2]), set((await collection.distinct("_id"))))
+        self.assertEqual(set([1, 2]), set(await collection.distinct("_id")))
 
     @asyncio_test
     async def test_delete_one(self):
