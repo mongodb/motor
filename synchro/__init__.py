@@ -194,13 +194,13 @@ def unwrap_synchro(fn):
                 return obj
 
         args = [_unwrap_obj(arg) for arg in args]
-        kwargs = dict([(key, _unwrap_obj(value)) for key, value in kwargs.items()])
+        kwargs = dict([(key, _unwrap_obj(value)) for key, value in kwargs.items()])  # noqa: C404
         return fn(*args, **kwargs)
 
     return _unwrap_synchro
 
 
-class SynchroAttr(object):
+class SynchroAttr:
     # Name can be set by SynchroMeta if Sync() is used directly in class defn.
     def __init__(self, name=None):
         self.name = name
@@ -298,7 +298,7 @@ class SynchroMeta(type):
 
         # Set DelegateProperties' and SynchroProperties' names.
         for name, attr in attrs.items():
-            if isinstance(attr, (MotorAttributeFactory, SynchroAttr)):
+            if isinstance(attr, (MotorAttributeFactory, SynchroAttr)):  # noqa: SIM102
                 if attr.name is None:
                     attr.name = name
 
@@ -646,12 +646,12 @@ class GridOutCursor(Cursor):
     __next__ = next
 
 
-class CursorManager(object):
+class CursorManager:
     # Motor doesn't support cursor managers, just avoid ImportError.
     pass
 
 
-class BulkOperationBuilder(object):
+class BulkOperationBuilder:
     pass
 
 
@@ -695,7 +695,7 @@ class GridIn(Synchro):
         return self.synchronize(self.delegate.__aexit__)(exc_type, exc_val, exc_tb)
 
 
-class SynchroGridOutProperty(object):
+class SynchroGridOutProperty:
     def __init__(self, name):
         self.name = name
 
@@ -777,7 +777,7 @@ class AutoEncryptionOpts(encryption_options.AutoEncryptionOpts):
     def __init__(self, kms_providers, key_vault_namespace, key_vault_client=None, **kwargs):
         if key_vault_client is not None:
             key_vault_client = key_vault_client.delegate.delegate
-        super(AutoEncryptionOpts, self).__init__(
+        super().__init__(
             kms_providers, key_vault_namespace, key_vault_client=key_vault_client, **kwargs
         )
 

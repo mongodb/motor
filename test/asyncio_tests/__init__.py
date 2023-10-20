@@ -30,7 +30,7 @@ from mockupdb import MockupDB
 from motor import motor_asyncio
 
 
-class _TestMethodWrapper(object):
+class _TestMethodWrapper:
     """Wraps a test method to raise an error if it returns a value.
 
     This is mainly used to detect undecorated generators (if a test

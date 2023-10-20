@@ -348,7 +348,7 @@ if __name__ == "__main__":
 
     if os.environ.get("CHECK_EXCLUDE_PATTERNS"):
         unused_module_pats = set(excluded_modules) - excluded_modules_matched
-        assert not unused_module_pats, "Unused module patterns: %s" % (unused_module_pats,)
+        assert not unused_module_pats, "Unused module patterns: {unused_module_pats}"
 
         unused_test_pats = set(excluded_tests) - excluded_tests_matched
-        assert not unused_test_pats, "Unused test patterns: %s" % (unused_test_pats,)
+        assert not unused_test_pats, f"Unused test patterns: {unused_test_pats}"

@@ -126,8 +126,8 @@ class MotorDatabaseTest(MotorTest):
             await db.validate_collection(db.test.doesnotexist)
 
         await db.test.insert_one({"dummy": "object"})
-        self.assertTrue((await db.validate_collection("test")))
-        self.assertTrue((await db.validate_collection(db.test)))
+        self.assertTrue(await db.validate_collection("test"))
+        self.assertTrue(await db.validate_collection(db.test))
 
     def test_get_collection(self):
         codec_options = CodecOptions(tz_aware=True, uuid_representation=JAVA_LEGACY)

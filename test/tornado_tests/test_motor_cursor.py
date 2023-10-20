@@ -275,7 +275,7 @@ class MotorCursorTest(MotorMockServerTest):
         request = await self.run_thread(server.receives, "find", "coll")
         request.replies({"cursor": {"id": 123, "ns": "db.coll", "firstBatch": [{"_id": 1}]}})
 
-        self.assertTrue((await fetch_next))
+        self.assertTrue(await fetch_next)
 
         async def mock_kill_cursors():
             request = await self.run_thread(server.receives, "killCursors", "coll")
@@ -287,7 +287,7 @@ class MotorCursorTest(MotorMockServerTest):
         # it's killed on the server.
         self.assertTrue(cursor.alive)
         self.assertEqual({"_id": 1}, cursor.next_object())
-        self.assertFalse((await cursor.fetch_next))
+        self.assertFalse(await cursor.fetch_next)
         self.assertFalse(cursor.alive)
 
     @gen_test
@@ -321,7 +321,6 @@ class MotorCursorTest(MotorMockServerTest):
             if error:
                 future.set_exception(error)
             elif result:
-                pass
                 results.append(result)
             else:
                 # Complete

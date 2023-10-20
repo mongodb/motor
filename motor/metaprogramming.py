@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Dynamic class-creation for Motor."""
-
 import functools
 import inspect
 from typing import Any, Callable, Dict
@@ -121,7 +120,7 @@ def coroutine_annotation(f):
     return f
 
 
-class MotorAttributeFactory(object):
+class MotorAttributeFactory:
     """Used by Motor classes to mark attributes that delegate in some way to
     PyMongo. At module import time, create_class_with_framework calls
     create_attribute() for each attr to create the final class attribute.

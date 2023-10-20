@@ -19,25 +19,17 @@ from __future__ import annotations
 from asyncio import Future
 from typing import (
     Any,
-    Awaitable,
     Callable,
     Collection,
     Coroutine,
-    Dict,
-    FrozenSet,
     Iterable,
-    List,
     Mapping,
     MutableMapping,
     NoReturn,
     Optional,
     Sequence,
-    Set,
-    Tuple,
-    Type,
     TypeVar,
     Union,
-    overload,
 )
 
 import pymongo.common
@@ -86,7 +78,7 @@ _CodecDocumentType = TypeVar("_CodecDocumentType", bound=Mapping[str, Any])
 def _within_time_limit(start_time: float) -> bool: ...
 def _max_time_expired_error(exc: Exception) -> bool: ...
 
-class AgnosticBase(object):
+class AgnosticBase:
     delegate: Any
 
     def __eq__(self, other: Any) -> bool: ...
@@ -101,10 +93,10 @@ class AgnosticBaseProperties(AgnosticBase):
 
 class AgnosticClient(AgnosticBaseProperties):
     __motor_class_name__: str
-    __delegate_class__: Type[pymongo.MongoClient]
+    __delegate_class__: type[pymongo.MongoClient]
 
-    def address(self) -> Optional[Tuple[str, int]]: ...
-    def arbiters(self) -> Set[Tuple[str, int]]: ...
+    def address(self) -> Optional[tuple[str, int]]: ...
+    def arbiters(self) -> set[tuple[str, int]]: ...
     def close(self) -> None: ...
     def __hash__(self) -> int: ...
     async def drop_database(
@@ -145,15 +137,15 @@ class AgnosticClient(AgnosticBaseProperties):
         self,
         session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
-    ) -> List[str]: ...
-    def nodes(self) -> FrozenSet[_Address]: ...
+    ) -> list[str]: ...
+    def nodes(self) -> frozenset[_Address]: ...
     PORT: int
-    def primary(self) -> Optional[Tuple[str, int]]: ...
+    def primary(self) -> Optional[tuple[str, int]]: ...
     read_concern: ReadConcern
-    def secondaries(self) -> Set[Tuple[str, int]]: ...
+    def secondaries(self) -> set[tuple[str, int]]: ...
     async def server_info(
         self, session: Optional[AgnosticClientSession] = None
-    ) -> Dict[str, Any]: ...
+    ) -> dict[str, Any]: ...
     def topology_description(self) -> TopologyDescription: ...
     async def start_session(
         self,
@@ -197,7 +189,7 @@ class _MotorTransactionContext:
 
 class AgnosticClientSession(AgnosticBase):
     __motor_class_name__: str
-    __delegate_class__: Type[ClientSession]
+    __delegate_class__: type[ClientSession]
 
     async def commit_transaction(self) -> None: ...
     async def abort_transaction(self) -> None: ...
@@ -236,7 +228,7 @@ class AgnosticClientSession(AgnosticBase):
 
 class AgnosticDatabase(AgnosticBaseProperties):
     __motor_class_name__: str
-    __delegate_class__: Type[Database]
+    __delegate_class__: type[Database]
 
     def __hash__(self) -> int: ...
     def __bool__(self) -> int: ...
@@ -262,7 +254,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
-    ) -> Union[Dict[str, Any], _CodecDocumentType]: ...
+    ) -> Union[dict[str, Any], _CodecDocumentType]: ...
     async def create_collection(
         self,
         name: str,
@@ -287,7 +279,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         encrypted_fields: Optional[Mapping[str, Any]] = None,
-    ) -> Dict[str, Any]: ...
+    ) -> dict[str, Any]: ...
     async def get_collection(
         self,
         name: str,
@@ -302,7 +294,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         filter: Optional[Mapping[str, Any]] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
-    ) -> List[str]: ...
+    ) -> list[str]: ...
     async def list_collections(
         self,
         session: Optional[AgnosticClientSession] = None,
@@ -319,7 +311,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         session: Optional[AgnosticClientSession] = None,
         background: Optional[bool] = None,
         comment: Optional[Any] = None,
-    ) -> Dict[str, Any]: ...
+    ) -> dict[str, Any]: ...
     def with_options(
         self,
         codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
@@ -359,7 +351,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
 
 class AgnosticCollection(AgnosticBaseProperties):
     __motor_class_name__: str
-    __delegate_class__: Type[Collection]
+    __delegate_class__: type[Collection]
 
     def __hash__(self) -> int: ...
     def __bool__(self) -> bool: ...
@@ -392,7 +384,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
-    ) -> List[str]: ...
+    ) -> list[str]: ...
     async def delete_many(
         self,
         filter: Mapping[str, Any],
@@ -418,7 +410,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
-    ) -> List[Any]: ...
+    ) -> list[Any]: ...
     async def drop(
         self,
         session: Optional[AgnosticClientSession] = None,
@@ -575,11 +567,11 @@ class AgnosticCollection(AgnosticBaseProperties):
     ) -> str: ...
     async def create_search_indexes(
         self,
-        models: List[SearchIndexModel],
+        models: list[SearchIndexModel],
         session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
-    ) -> List[str]: ...
+    ) -> list[str]: ...
     async def drop_search_index(
         self,
         name: str,
@@ -659,8 +651,8 @@ class AgnosticBaseCursor(AgnosticBase):
     def next_object(self) -> Any: ...
     def each(self, callback: Callable) -> None: ...
     def _each_got_more(self, callback: Callable, future: Any) -> None: ...
-    def to_list(self, length: int) -> Future[List]: ...
-    def _to_list(self, length: int, the_list: List, future: Any, get_more_result: Any) -> None: ...
+    def to_list(self, length: int) -> Future[list]: ...
+    def _to_list(self, length: int, the_list: list, future: Any, get_more_result: Any) -> None: ...
     def get_io_loop(self) -> Any: ...
     def batch_size(self, batch_size: int) -> AgnosticBaseCursor: ...
     def _buffer_size(self) -> int: ...
@@ -671,9 +663,9 @@ class AgnosticBaseCursor(AgnosticBase):
 
 class AgnosticCursor(AgnosticBaseCursor):
     __motor_class_name__: str
-    __delegate_class__: Type[Cursor]
+    __delegate_class__: type[Cursor]
     def collation(self, collation: Optional[_CollationIn]) -> AgnosticCursor: ...
-    async def distinct(self, key: str) -> List: ...
+    async def distinct(self, key: str) -> list: ...
     async def explain(self) -> _DocumentType: ...
     def add_option(self, mask: int) -> AgnosticCursor: ...
     def remove_option(self, mask: int) -> AgnosticCursor: ...
@@ -701,11 +693,11 @@ class AgnosticCursor(AgnosticBaseCursor):
 
 class AgnosticRawBatchCursor(AgnosticCursor):
     __motor_class_name__: str
-    __delegate_class__: Type[RawBatchCursor]
+    __delegate_class__: type[RawBatchCursor]
 
 class AgnosticCommandCursor(AgnosticBaseCursor):
     __motor_class_name__: str
-    __delegate_class__: Type[CommandCursor]
+    __delegate_class__: type[CommandCursor]
 
     def _query_flags(self) -> int: ...
     def _data(self) -> Any: ...
@@ -713,7 +705,7 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
 
 class AgnosticRawBatchCommandCursor(AgnosticCommandCursor):
     __motor_class_name__: str
-    __delegate_class__: Type[RawBatchCommandCursor]
+    __delegate_class__: type[RawBatchCommandCursor]
 
 class _LatentCursor:
     def __init__(self, collection: AgnosticCollection): ...
@@ -729,7 +721,7 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
 
 class AgnosticChangeStream(AgnosticBase):
     __motor_class_name__: str
-    __delegate_class__: Type[ChangeStream]
+    __delegate_class__: type[ChangeStream]
 
     async def _close(self) -> None: ...
     def resume_token(self) -> Optional[Mapping[str, Any]]: ...
@@ -767,7 +759,7 @@ class AgnosticChangeStream(AgnosticBase):
 
 class AgnosticClientEncryption(AgnosticBase):
     __motor_class_name__: str
-    __delegate_class__: Type[ClientEncryption]
+    __delegate_class__: type[ClientEncryption]
     def __init__(
         self,
         kms_providers: Mapping[str, Any],
@@ -835,4 +827,4 @@ class AgnosticClientEncryption(AgnosticBase):
         kms_provider: Optional[str] = None,
         master_key: Optional[Mapping[str, Any]] = None,
         **kwargs: Any,
-    ) -> Tuple[AgnosticCollection, Mapping[str, Any]]: ...
+    ) -> tuple[AgnosticCollection, Mapping[str, Any]]: ...

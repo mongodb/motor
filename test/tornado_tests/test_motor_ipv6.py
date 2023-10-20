@@ -54,7 +54,7 @@ class MotorIPv6Test(MotorTest):
         cx = motor.MotorClient(cx_string, io_loop=self.io_loop)
         collection = cx.motor_test.test_collection
         await collection.insert_one({"dummy": "object"})
-        self.assertTrue((await collection.find_one({"dummy": "object"})))
+        self.assertTrue(await collection.find_one({"dummy": "object"}))
 
 
 if __name__ == "__main__":

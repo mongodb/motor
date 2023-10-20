@@ -16,7 +16,7 @@
 
 import datetime
 import os
-from typing import Any, Iterable, List, Mapping, NoReturn, Optional, Type
+from typing import Any, Iterable, Mapping, NoReturn, Optional
 
 from bson import ObjectId
 from gridfs import DEFAULT_CHUNK_SIZE, GridFSBucket, GridIn, GridOut, GridOutCursor
@@ -40,11 +40,11 @@ class AgnosticGridOutCursor(AgnosticCursor):
     async def _Cursor__die(self, synchronous: bool = False) -> None: ...
     def next_object(self) -> AgnosticGridOutCursor: ...
 
-class AgnosticGridOut(object):
+class AgnosticGridOut:
     __motor_class_name__: str
-    __delegate_class__: Type[GridOut]
+    __delegate_class__: type[GridOut]
     _id: Any
-    aliases: Optional[List[str]]
+    aliases: Optional[list[str]]
     chunk_size: int
     filename: Optional[str]
     name: Optional[str]
@@ -77,9 +77,9 @@ class AgnosticGridOut(object):
     def get_io_loop(self) -> Any: ...
     async def stream_to_handler(self, request_handler: Any) -> None: ...
 
-class AgnosticGridIn(object):
+class AgnosticGridIn:
     __motor_class_name__: str
-    __delegate_class__: Type[GridIn]
+    __delegate_class__: type[GridIn]
     __getattr__: Any
     _id: Any
     filename: str
@@ -111,9 +111,9 @@ class AgnosticGridIn(object):
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...
     def get_io_loop(self) -> Any: ...
 
-class AgnosticGridFSBucket(object):
+class AgnosticGridFSBucket:
     __motor_class_name__: str
-    __delegate_class__: Type[GridFSBucket]
+    __delegate_class__: type[GridFSBucket]
     async def delete(
         self, file_id: Any, session: Optional[AgnosticClientSession] = None
     ) -> None: ...

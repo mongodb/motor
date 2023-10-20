@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Utilities for using Motor with Tornado web applications."""
-
 import datetime
 import email.utils
 import mimetypes
@@ -97,7 +96,7 @@ class GridFSHandler(tornado.web.RequestHandler):
         try:
             gridout = await self.get_gridfs_file(fs, path, self.request)
         except gridfs.NoFile:
-            raise tornado.web.HTTPError(404)
+            raise tornado.web.HTTPError(404) from None
 
         # If-Modified-Since header is only good to the second.
         modified = gridout.upload_date.replace(microsecond=0)
@@ -175,4 +174,3 @@ class GridFSHandler(tornado.web.RequestHandler):
 
     def set_extra_headers(self, path, gridout):
         """For subclass to add extra headers to the response"""
-        pass

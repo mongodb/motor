@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2012-2015 MongoDB, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -107,16 +106,16 @@ class MotorGridFileTest(AsyncIOTestCase):
         g = motor_asyncio.AsyncIOMotorGridOut(self.db.fs, f._id)
 
         # This is starting to look like Lisp.
-        self.assertEqual(3, len((await g.readchunk())))
+        self.assertEqual(3, len(await g.readchunk()))
 
-        self.assertEqual(2, len((await g.read(2))))
-        self.assertEqual(1, len((await g.readchunk())))
+        self.assertEqual(2, len(await g.read(2)))
+        self.assertEqual(1, len(await g.readchunk()))
 
-        self.assertEqual(3, len((await g.read(3))))
+        self.assertEqual(3, len(await g.read(3)))
 
-        self.assertEqual(1, len((await g.readchunk())))
+        self.assertEqual(1, len(await g.readchunk()))
 
-        self.assertEqual(0, len((await g.readchunk())))
+        self.assertEqual(0, len(await g.readchunk()))
 
     @asyncio_test
     async def test_gridout_open_exc_info(self):

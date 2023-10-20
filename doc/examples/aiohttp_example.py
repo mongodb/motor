@@ -31,7 +31,7 @@ async def page_handler(request):
     document = await db.pages.find_one(page_name)
 
     if not document:
-        return web.HTTPNotFound(text="No page named {!r}".format(page_name))
+        return web.HTTPNotFound(text=f"No page named {page_name!r}")
 
     return web.Response(body=document["body"].encode(), content_type="text/html")
 

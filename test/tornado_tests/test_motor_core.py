@@ -57,7 +57,7 @@ class MotorCoreTest(MotorTest):
     @gen_test
     async def test_client_session_attrs(self):
         self.assertEqual(
-            attrs(env.sync_cx.start_session()), attrs((await self.cx.start_session())) - motor_only
+            attrs(env.sync_cx.start_session()), attrs(await self.cx.start_session()) - motor_only
         )
 
     def test_database_attrs(self):

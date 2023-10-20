@@ -1,10 +1,9 @@
 """Gratefully adapted from aiohttp, provides coroutine support to autodoc."""
-
 from sphinx import addnodes
 from sphinx.domains.python import PyFunction, PyMethod
 
 
-class PyCoroutineMixin(object):
+class PyCoroutineMixin:
     def handle_signature(self, sig, signode):
         ret = super().handle_signature(sig, signode)
         signode.insert(0, addnodes.desc_annotation("coroutine ", "coroutine "))

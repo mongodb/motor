@@ -54,11 +54,11 @@ async def main():
     )
     await coll.insert_one({"encryptedField": encrypted_field})
     doc = await coll.find_one()
-    print("Encrypted document: %s" % (doc,))
+    print(f"Encrypted document: {doc}")
 
     # Explicitly decrypt the field:
     doc["encryptedField"] = await client_encryption.decrypt(doc["encryptedField"])
-    print("Decrypted document: %s" % (doc,))
+    print(f"Decrypted document: {doc}")
 
     # Cleanup resources.
     await client_encryption.close()

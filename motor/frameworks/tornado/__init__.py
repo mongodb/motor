@@ -63,7 +63,7 @@ _EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
 
 def _reset_global_executor():
     """Re-initialize the global ThreadPoolExecutor"""
-    global _EXECUTOR
+    global _EXECUTOR  # noqa: PLW0603
     _EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
 
 
@@ -148,4 +148,4 @@ def yieldable(future):
 
 
 def platform_info():
-    return "Tornado %s" % (tornado_version,)
+    return f"Tornado {tornado_version}"

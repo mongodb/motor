@@ -86,14 +86,14 @@ async def main():
 
     await coll.insert_one({"encryptedField": "123456789"})
     decrypted_doc = await coll.find_one()
-    print("Decrypted document: %s" % (decrypted_doc,))
+    print(f"Decrypted document: {decrypted_doc}")
     unencrypted_coll = AsyncIOMotorClient()[db_name][coll_name]
     encrypted_doc = await unencrypted_coll.find_one()
-    print("Encrypted document: %s" % (encrypted_doc,))
+    print(f"Encrypted document: {encrypted_doc}")
     try:
         await unencrypted_coll.insert_one({"encryptedField": "123456789"})
     except OperationFailure as exc:
-        print("Unencrypted insert failed: %s" % (exc.details,))
+        print(f"Unencrypted insert failed: {exc.details}")
 
 
 if __name__ == "__main__":
