@@ -15,9 +15,9 @@
 """Dynamic class-creation for Motor."""
 import functools
 import inspect
-from typing import Any, Callable
+from typing import Any, Callable, Dict
 
-_class_cache: dict[Any, Any] = {}
+_class_cache: Dict[Any, Any] = {}
 
 
 def asynchronize(framework, sync_method: Callable, doc=None, wrap_class=None, unwrap_class=None):
