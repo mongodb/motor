@@ -187,8 +187,8 @@ class AIOHTTPGridFS:
 
         try:
             gridout = await self._get_gridfs_file(self._bucket, filename, request)
-        except gridfs.NoFile:
-            raise aiohttp.web.HTTPNotFound(text=request.path) from None
+        except gridfs.NoFile as e:
+            raise aiohttp.web.HTTPNotFound(text=request.path) from e
 
         resp = aiohttp.web.StreamResponse()
 
