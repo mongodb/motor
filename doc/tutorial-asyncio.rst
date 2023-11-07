@@ -161,7 +161,7 @@ store a document in MongoDB, call :meth:`~AsyncIOMotorCollection.insert_one` in 
 
   >>> # Clean up from previous insert
   >>> pymongo.MongoClient().test_database.test_collection.delete_many({})
-  <pymongo.results.DeleteResult ...>
+  DeleteResult({'n': 1, 'ok': 1.0}, acknowledged=True)
 
 Insert documents in large batches with :meth:`~AsyncIOMotorCollection.insert_many`:
 

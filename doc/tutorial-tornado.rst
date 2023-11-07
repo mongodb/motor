@@ -218,7 +218,7 @@ store a document in MongoDB, call :meth:`~MotorCollection.insert_one` in an
 
   >>> # Clean up from previous insert
   >>> pymongo.MongoClient().test_database.test_collection.delete_many({})
-  <pymongo.results.DeleteResult ...>
+  DeleteResult({'n': 1, 'ok': 1.0}, acknowledged=True)
 
 A typical beginner's mistake with Motor is to insert documents in a loop,
 not waiting for each insert to complete before beginning the next::
@@ -251,7 +251,7 @@ sequence, use ``await``:
 
   >>> # Clean up from previous insert
   >>> pymongo.MongoClient().test_database.test_collection.delete_many({})
-  <pymongo.results.DeleteResult ...>
+  DeleteResult({'n': 2000, 'ok': 1.0}, acknowledged=True)
 
 For better performance, insert documents in large batches with
 :meth:`~MotorCollection.insert_many`:
