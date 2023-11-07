@@ -460,9 +460,9 @@ class Database(Synchro):
         if self.delegate is None:
             self.delegate = motor.MotorDatabase(client.delegate, name, **kwargs)
 
-        assert isinstance(
-            self.delegate, motor.MotorDatabase
-        ), "synchro.Database delegate must be MotorDatabase, not %s" % repr(self.delegate)
+        assert isinstance(self.delegate, motor.MotorDatabase), (
+            "synchro.Database delegate must be MotorDatabase, not %s" % repr(self.delegate)
+        )
 
     @property
     def client(self):

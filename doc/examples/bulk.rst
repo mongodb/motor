@@ -31,9 +31,10 @@ bulk insert operations.
 .. doctest::
 
   >>> async def f():
-  ...     await db.test.insert_many(({'i': i} for i in range(10000)))
+  ...     await db.test.insert_many(({"i": i} for i in range(10000)))
   ...     count = await db.test.count_documents({})
   ...     print("Final count: %d" % count)
+  ...
   >>>
   >>> IOLoop.current().run_sync(f)
   Final count: 10000
@@ -61,14 +62,17 @@ of operations performed.
   >>> from pprint import pprint
   >>> from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
   >>> async def f():
-  ...     result = await db.test.bulk_write([
-  ...     DeleteMany({}),  # Remove all documents from the previous example.
-  ...     InsertOne({'_id': 1}),
-  ...     InsertOne({'_id': 2}),
-  ...     InsertOne({'_id': 3}),
-  ...     UpdateOne({'_id': 1}, {'$set': {'foo': 'bar'}}),
-  ...     UpdateOne({'_id': 4}, {'$inc': {'j': 1}}, upsert=True),
-  ...     ReplaceOne({'j': 1}, {'j': 2})])
+  ...     result = await db.test.bulk_write(
+  ...         [
+  ...             DeleteMany({}),  # Remove all documents from the previous example.
+  ...             InsertOne({"_id": 1}),
+  ...             InsertOne({"_id": 2}),
+  ...             InsertOne({"_id": 3}),
+  ...             UpdateOne({"_id": 1}, {"$set": {"foo": "bar"}}),
+  ...             UpdateOne({"_id": 4}, {"$inc": {"j": 1}}, upsert=True),
+  ...             ReplaceOne({"j": 1}, {"j": 2}),
+  ...         ]
+  ...     )
   ...     pprint(result.bulk_api_result)
   ...
   >>> IOLoop.current().run_sync(f)
@@ -95,9 +99,10 @@ the failure.
   >>> from pymongo.errors import BulkWriteError
   >>> async def f():
   ...     requests = [
-  ...         ReplaceOne({'j': 2}, {'i': 5}),
-  ...         InsertOne({'_id': 4}),  # Violates the unique key constraint on _id.
-  ...         DeleteOne({'i': 5})]
+  ...         ReplaceOne({"j": 2}, {"i": 5}),
+  ...         InsertOne({"_id": 4}),  # Violates the unique key constraint on _id.
+  ...         DeleteOne({"i": 5}),
+  ...     ]
   ...     try:
   ...         await db.test.bulk_write(requests)
   ...     except BulkWriteError as bwe:
@@ -136,10 +141,11 @@ and fourth operations succeed.
 
   >>> async def f():
   ...     requests = [
-  ...         InsertOne({'_id': 1}),
-  ...         DeleteOne({'_id': 2}),
-  ...         InsertOne({'_id': 3}),
-  ...         ReplaceOne({'_id': 4}, {'i': 1})]
+  ...         InsertOne({"_id": 1}),
+  ...         DeleteOne({"_id": 2}),
+  ...         InsertOne({"_id": 3}),
+  ...         ReplaceOne({"_id": 4}, {"i": 1}),
+  ...     ]
   ...     try:
   ...         await db.test.bulk_write(requests, ordered=False)
   ...     except BulkWriteError as bwe:
@@ -181,10 +187,9 @@ after all operations are attempted, regardless of execution order.
 
   >>> from pymongo import WriteConcern
   >>> async def f():
-  ...     coll = db.get_collection(
-  ...         'test', write_concern=WriteConcern(w=4, wtimeout=1))
+  ...     coll = db.get_collection("test", write_concern=WriteConcern(w=4, wtimeout=1))
   ...     try:
-  ...         await coll.bulk_write([InsertOne({'a': i}) for i in range(4)])
+  ...         await coll.bulk_write([InsertOne({"a": i}) for i in range(4)])
   ...     except BulkWriteError as bwe:
   ...         pprint(bwe.details)
   ...

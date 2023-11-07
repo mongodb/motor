@@ -422,7 +422,7 @@ GridFS changes
 disable_md5 parameter is removed
 ................................
 
-Removed the `disable_md5` option for :class:`~motor.motor_tornado.gridfs.MotorGridFSBucket` and
+Removed the ``disable_md5`` option for :class:`~motor.motor_tornado.gridfs.MotorGridFSBucket` and
 :class:`~motor.motor_tornado.gridfs.MotorGridFS`. GridFS no longer generates checksums.
 Applications that desire a file digest should implement it outside GridFS
 and store it with other file metadata. For example::

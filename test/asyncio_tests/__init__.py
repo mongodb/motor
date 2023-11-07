@@ -112,7 +112,7 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         return motor_asyncio.AsyncIOMotorClient(
             kwargs.pop("host", None) or uri or env.uri,
             *args,
-            **self.get_client_kwargs(**kwargs, set_loop=set_loop)
+            **self.get_client_kwargs(**kwargs, set_loop=set_loop),
         )
 
     def asyncio_rsc(self, uri=None, *args, **kwargs):

@@ -40,9 +40,11 @@ class GridFSHandler(tornado.web.RequestHandler):
     .. code-block:: python
 
         db = motor.MotorClient().my_database
-        application = web.Application([
-            (r"/static/(.*)", web.GridFSHandler, {"database": db}),
-        ])
+        application = web.Application(
+            [
+                (r"/static/(.*)", web.GridFSHandler, {"database": db}),
+            ]
+        )
 
     By default, requests' If-Modified-Since headers are honored, but no
     specific cache-control timeout is sent to clients. Thus each request for

@@ -111,7 +111,7 @@ For example, to list all non-system collections::
   - `comment` (optional): A user-provided comment to attach to this command.
   - `**kwargs` (optional): Optional parameters of the
     `listCollections
-    <https://www.mongodb.com/docs/manual/reference/command/listCollections/>`_ comand.
+    <https://www.mongodb.com/docs/manual/reference/command/listCollections/>`_ command.
     can be passed as keyword arguments to this method. The supported
     options differ by server version.
 
@@ -1140,17 +1140,17 @@ Pass a field name and a direction, either
 .. testsetup:: sort
 
   MongoClient().test.test_collection.drop()
-  MongoClient().test.test_collection.insert_many([
-      {'_id': i, 'field1': i % 2, 'field2': i}
-      for i in range(5)])
+  MongoClient().test.test_collection.insert_many(
+      [{"_id": i, "field1": i % 2, "field2": i} for i in range(5)]
+  )
   collection = MotorClient().test.test_collection
 
 .. doctest:: sort
 
   >>> async def f():
-  ...     cursor = collection.find().sort('_id', pymongo.DESCENDING)
+  ...     cursor = collection.find().sort("_id", pymongo.DESCENDING)
   ...     docs = await cursor.to_list(None)
-  ...     print([d['_id'] for d in docs])
+  ...     print([d["_id"] for d in docs])
   ...
   >>> IOLoop.current().run_sync(f)
   [4, 3, 2, 1, 0]
@@ -1160,12 +1160,11 @@ To sort by multiple fields, pass a list of (key, direction) pairs:
 .. doctest:: sort
 
   >>> async def f():
-  ...     cursor = collection.find().sort([
-  ...         ('field1', pymongo.ASCENDING),
-  ...         ('field2', pymongo.DESCENDING)])
-  ...
+  ...     cursor = collection.find().sort(
+  ...         [("field1", pymongo.ASCENDING), ("field2", pymongo.DESCENDING)]
+  ...     )
   ...     docs = await cursor.to_list(None)
-  ...     print([(d['field1'], d['field2']) for d in docs])
+  ...     print([(d["field1"], d["field2"]) for d in docs])
   ...
   >>> IOLoop.current().run_sync(f)
   [(0, 4), (0, 2), (0, 0), (1, 3), (1, 1)]
@@ -1175,24 +1174,23 @@ Text search results can be sorted by relevance:
 .. testsetup:: sort_text
 
   MongoClient().test.test_collection.drop()
-  MongoClient().test.test_collection.insert_many([
-      {'field': 'words'},
-      {'field': 'words about some words'}])
+  MongoClient().test.test_collection.insert_many(
+      [{"field": "words"}, {"field": "words about some words"}]
+  )
 
-  MongoClient().test.test_collection.create_index([('field', 'text')])
+  MongoClient().test.test_collection.create_index([("field", "text")])
   collection = MotorClient().test.test_collection
 
 .. doctest:: sort_text
 
   >>> async def f():
-  ...     cursor = collection.find({
-  ...         '$text': {'$search': 'some words'}},
-  ...         {'score': {'$meta': 'textScore'}})
-  ...
+  ...     cursor = collection.find(
+  ...         {"$text": {"$search": "some words"}}, {"score": {"$meta": "textScore"}}
+  ...     )
   ...     # Sort by 'score' field.
-  ...     cursor.sort([('score', {'$meta': 'textScore'})])
+  ...     cursor.sort([("score", {"$meta": "textScore"})])
   ...     async for doc in cursor:
-  ...         print('%.1f %s' % (doc['score'], doc['field']))
+  ...         print("%.1f %s" % (doc["score"], doc["field"]))
   ...
   >>> IOLoop.current().run_sync(f)
   1.5 words about some words
@@ -1230,11 +1228,10 @@ to initialize it, or an ``async with`` statement.
       # Or, use an "async with" statement to end the session
       # automatically.
       async with await client.start_session() as s:
-          doc = {'_id': ObjectId(), 'x': 1}
+          doc = {"_id": ObjectId(), "x": 1}
           await collection.insert_one(doc, session=s)
 
-          secondary = collection.with_options(
-              read_preference=ReadPreference.SECONDARY)
+          secondary = collection.with_options(read_preference=ReadPreference.SECONDARY)
 
           # Sessions are causally consistent by default, so we can read
           # the doc we just inserted, even reading from a secondary.
@@ -1245,8 +1242,8 @@ to initialize it, or an ``async with`` statement.
       async with await client.start_session() as s:
           # Note, start_transaction doesn't require "await".
           async with s.start_transaction():
-              await collection.delete_one({'x': 1}, session=s)
-              await collection.insert_one({'x': 2}, session=s)
+              await collection.delete_one({"x": 1}, session=s)
+              await collection.insert_one({"x": 2}, session=s)
 
           # Exiting the "with s.start_transaction()" block while throwing an
           # exception automatically aborts the transaction, exiting the block
@@ -1255,10 +1252,10 @@ to initialize it, or an ``async with`` statement.
           # You can run additional transactions in the same session, so long as
           # you run them one at a time.
           async with s.start_transaction():
-              await collection.insert_one({'x': 3}, session=s)
-              await collection.insert_many({'x': {'$gte': 2}},
-                                           {'$inc': {'x': 1}},
-                                           session=s)
+              await collection.insert_one({"x": 3}, session=s)
+              await collection.insert_many(
+                  {"x": {"$gte": 2}}, {"$inc": {"x": 1}}, session=s
+              )
 
 
 Requires MongoDB 3.6.

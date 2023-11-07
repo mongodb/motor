@@ -90,9 +90,9 @@ system_js
 
 PyMongo supports Javascript procedures stored in MongoDB with syntax like:
 
-.. code-block:: python
+.. code-block:: pycon
 
-    >>> db.system_js.my_func = 'function(x) { return x * x; }'
+    >>> db.system_js.my_func = "function(x) { return x * x; }"
     >>> db.system_js.my_func(2)
     4.0
 
@@ -133,17 +133,10 @@ There are two ways to create a capped collection using PyMongo:
 .. code-block:: python
 
     # Typical:
-    db.create_collection(
-        'collection1',
-        capped=True,
-        size=1000)
+    db.create_collection("collection1", capped=True, size=1000)
 
     # Unusual:
-    collection = Collection(
-        db,
-        'collection2',
-        capped=True,
-        size=1000)
+    collection = Collection(db, "collection2", capped=True, size=1000)
 
 Motor can't do I/O in a constructor, so the unusual style is prohibited and
 only the typical style is allowed:
@@ -151,7 +144,4 @@ only the typical style is allowed:
 .. code-block:: python
 
     async def f():
-        await db.create_collection(
-            'collection1',
-            capped=True,
-            size=1000)
+        await db.create_collection("collection1", capped=True, size=1000)
