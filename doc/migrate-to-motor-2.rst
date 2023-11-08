@@ -118,6 +118,7 @@ used callbacks:
       else:
           print(result)
 
+
   collection.find_one({}, callback=callback)
 
 Callbacks have been largely superseded by a Futures API intended for use with
@@ -133,6 +134,7 @@ a parameter:
           print(result)
       except Exception as exc:
           print(exc)
+
 
   future = collection.find_one({})
   future.add_done_callback(callback)
@@ -181,7 +183,7 @@ Or:
 .. code-block:: python3
 
   with client.start_session() as session:
-     doc = client.db.collection.find_one({}, session=session)
+      doc = client.db.collection.find_one({}, session=session)
 
 To support multi-document transactions, in Motor 2.0
 :meth:`MotorClient.start_session` is a coroutine, not a regular method. It must
@@ -203,4 +205,4 @@ Or:
 .. code-block:: python3
 
   async with client.start_session() as session:
-     doc = await client.db.collection.find_one({}, session=session)
+      doc = await client.db.collection.find_one({}, session=session)

@@ -18,7 +18,7 @@ http://localhost:8888
 Open a ``mongo`` shell in the terminal and perform some operations on the
 "test" collection in the "test" database:
 
-.. code-block:: none
+.. code-block:: text
 
   > use test
   switched to db test
@@ -29,7 +29,7 @@ Open a ``mongo`` shell in the terminal and perform some operations on the
 The application receives each change notification and displays it as JSON on
 the web page:
 
-.. code-block:: none
+.. code-block:: text
 
   Changes
 

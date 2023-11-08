@@ -133,9 +133,9 @@ class AIOHTTPGridFS:
         app = aiohttp.web.Application()
 
         # The GridFS URL pattern must have a "{filename}" variable.
-        resource = app.router.add_resource('/fs/{filename}')
-        resource.add_route('GET', gridfs_handler)
-        resource.add_route('HEAD', gridfs_handler)
+        resource = app.router.add_resource("/fs/{filename}")
+        resource.add_route("GET", gridfs_handler)
+        resource.add_route("HEAD", gridfs_handler)
 
         app_handler = app.make_handler()
         server = loop.create_server(app_handler, port=80)
