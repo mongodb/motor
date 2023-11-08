@@ -95,7 +95,7 @@ minversion = "7"
 testpaths = ["test"]
 xfail_strict = true
 log_cli_level = "INFO"
-addops = ["-ra", "--strict-config", "--strict-markers",
+addopts = ["-ra", "--strict-config", "--strict-markers",
     "--maxfail=10", "--durations=5", "--junitxml=xunit-results/TEST-results.xml"]
 faulthandler_timeout = 1500
 filterwarnings = [
