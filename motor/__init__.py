@@ -19,7 +19,7 @@ from ._version import get_version_string, version, version_tuple  # noqa: F401
 
 
 try:
-    import tornado  # type:ignore[import]
+    import tornado
 except ImportError:
     tornado = None
 else:
