@@ -15,7 +15,7 @@
 """Dynamic class-creation for Motor."""
 import functools
 import inspect
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, TypeVar
 
 _class_cache: Dict[Any, Any] = {}
 
@@ -264,7 +264,10 @@ class MotorCursorChainingMethod(MotorAttributeFactory):
         return return_clone
 
 
-def create_class_with_framework(cls, framework, module_name):
+T = TypeVar("T")
+
+
+def create_class_with_framework(cls: T, framework: Any, module_name: str) -> T:
     motor_class_name = framework.CLASS_PREFIX + cls.__motor_class_name__
     cache_key = (cls, motor_class_name, framework)
     cached_class = _class_cache.get(cache_key)

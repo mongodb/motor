@@ -17,7 +17,7 @@ sample client code that uses Motor typings.
 """
 import unittest
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from typing import TYPE_CHECKING, Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, TypeVar, Union, cast
 
 from bson import CodecOptions
 from bson.raw_bson import RawBSONDocument
@@ -53,19 +53,22 @@ except ImportError:
     NotRequired = None  # type: ignore[assignment]
 
 
-def only_type_check(func):
-    def inner(*args, **kwargs):
+FuncT = TypeVar("FuncT", bound=Callable[..., Any])
+
+
+def only_type_check(func: FuncT) -> FuncT:
+    def inner(*args: Any, **kwargs: Any) -> Any:
         if not TYPE_CHECKING:
             raise unittest.SkipTest("Used for Type Checking Only")
         func(*args, **kwargs)
 
-    return inner
+    return cast(FuncT, inner)
 
 
-class TestMotor(AsyncIOTestCase):
+class TestMotor(AsyncIOTestCase):  # type:ignore[misc]
     cx: AgnosticClient
 
-    @asyncio_test
+    @asyncio_test  # type:ignore[misc]
     async def test_insert_find(self) -> None:
         doc = {"my": "doc"}
         coll: AgnosticCollection = self.collection
@@ -79,7 +82,7 @@ class TestMotor(AsyncIOTestCase):
             result2 = await coll2.insert_one(retrieved)
             self.assertEqual(result2.inserted_id, result.inserted_id)
 
-    @asyncio_test
+    @asyncio_test  # type:ignore[misc]
     async def test_cursor_to_list(self) -> None:
         await self.collection.insert_one({})
         cursor = self.collection.find()
@@ -87,7 +90,7 @@ class TestMotor(AsyncIOTestCase):
         self.assertTrue(docs)
 
     @only_type_check
-    @asyncio_test
+    @asyncio_test  # type:ignore[misc]
     async def test_bulk_write(self) -> None:
         await self.collection.insert_one({})
         coll: AgnosticCollection = self.collection
@@ -106,8 +109,8 @@ class TestMotor(AsyncIOTestCase):
 
     # Because ReplaceOne is not generic, type checking is not enforced for ReplaceOne in the first example.
     @only_type_check
-    @asyncio_test
-    async def test_bulk_write_heterogeneous(self):
+    @asyncio_test  # type:ignore[misc]
+    async def test_bulk_write_heterogeneous(self) -> None:
         coll: AgnosticCollection = self.collection
         requests: List[Union[InsertOne[Movie], ReplaceOne, DeleteOne]] = [
             InsertOne(Movie(name="American Graffiti", year=1973)),
@@ -127,24 +130,24 @@ class TestMotor(AsyncIOTestCase):
         result_two = await coll.bulk_write(requests_two)
         self.assertTrue(result_two.acknowledged)
 
-    @asyncio_test
+    @asyncio_test  # type:ignore[misc]
     async def test_command(self) -> None:
         result: Dict = await self.cx.admin.command("ping")
         result.items()
 
-    @asyncio_test
+    @asyncio_test  # type:ignore[misc]
     async def test_list_collections(self) -> None:
         cursor = await self.cx.test.list_collections()
         value = await cursor.next()
         value.items()
 
-    @asyncio_test
+    @asyncio_test  # type:ignore[misc]
     async def test_list_databases(self) -> None:
         cursor = await self.cx.list_databases()
         value = await cursor.next()
         value.items()
 
-    @asyncio_test
+    @asyncio_test  # type:ignore[misc]
     async def test_default_document_type(self) -> None:
         client = self.asyncio_client()
         self.addCleanup(client.close)
@@ -155,7 +158,7 @@ class TestMotor(AsyncIOTestCase):
         assert retrieved is not None
         retrieved["a"] = 1
 
-    @asyncio_test
+    @asyncio_test  # type:ignore[misc]
     async def test_aggregate_pipeline(self) -> None:
         coll3 = self.cx.test.test3
         await coll3.insert_many(
@@ -179,18 +182,18 @@ class TestMotor(AsyncIOTestCase):
         )
         self.assertTrue(len([doc async for doc in result]))
 
-    @asyncio_test
+    @asyncio_test  # type:ignore[misc]
     async def test_with_transaction(self) -> None:
-        async def execute_transaction(session):
+        async def execute_transaction(session: Any) -> None:
             pass
 
         async with await self.cx.start_session() as session:
-            return await session.with_transaction(
+            await session.with_transaction(
                 execute_transaction, read_preference=ReadPreference.PRIMARY
             )
 
 
-class TestDocumentType(AsyncIOTestCase):
+class TestDocumentType(AsyncIOTestCase):  # type:ignore[misc]
     @only_type_check
     def test_typeddict_explicit_document_type(self) -> None:
         out = MovieWithId(_id=ObjectId(), name="THX-1138", year=1971)
@@ -220,7 +223,7 @@ class TestDocumentType(AsyncIOTestCase):
         assert out["_id"]  # type:ignore[typeddict-item]
 
 
-class TestCommandDocumentType(AsyncIOTestCase):
+class TestCommandDocumentType(AsyncIOTestCase):  # type:ignore[misc]
     @only_type_check
     async def test_default(self) -> None:
         client: AgnosticClient = AgnosticClient()

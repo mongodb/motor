@@ -19,7 +19,7 @@ version_tuple = (3, 4, 0, ".dev0")
 def get_version_string() -> str:
     if isinstance(version_tuple[-1], str):
         return ".".join(map(str, version_tuple[:-1])) + version_tuple[-1]
-    return ".".join(map(str, version_tuple))
+    return ".".join(map(str, version_tuple))  # type:ignore[unreachable]
 
 
 version = get_version_string()
