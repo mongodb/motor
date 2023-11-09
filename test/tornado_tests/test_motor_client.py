@@ -27,6 +27,7 @@ import pymongo.mongo_client
 from bson import CodecOptions
 from mockupdb import OpQuery
 from pymongo import CursorType, ReadPreference, WriteConcern
+from pymongo.driver_info import DriverInfo
 from pymongo.errors import ConnectionFailure, OperationFailure
 from tornado import gen
 from tornado.testing import gen_test
@@ -139,7 +140,9 @@ class MotorClientTest(MotorTest):
         await remove_all_users(self.db)
         db = self.db
         try:
-            test.env.create_user(db.name, "mike", "password", roles=["userAdmin", "readWrite"])
+            test.env.create_user(
+                db.name, "mike", "password", roles=["userAdmin", "readWrite"]
+            )
 
             client = self.motor_client("mongodb://u:pass@%s:%d" % (env.host, env.port))
 
@@ -157,7 +160,9 @@ class MotorClientTest(MotorTest):
     def test_get_database(self):
         codec_options = CodecOptions(tz_aware=True)
         write_concern = WriteConcern(w=2, j=True)
-        db = self.cx.get_database("foo", codec_options, ReadPreference.SECONDARY, write_concern)
+        db = self.cx.get_database(
+            "foo", codec_options, ReadPreference.SECONDARY, write_concern
+        )
 
         self.assertTrue(isinstance(db, motor.MotorDatabase))
         self.assertEqual("foo", db.name)
@@ -204,7 +209,9 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
     def primary_server(self):
         primary = self.server()
         hosts = [primary.address_string]
-        primary.autoresponds("ismaster", ismaster=True, setName="rs", hosts=hosts, maxWireVersion=6)
+        primary.autoresponds(
+            "ismaster", ismaster=True, setName="rs", hosts=hosts, maxWireVersion=6
+        )
 
         return primary
 
@@ -285,7 +292,9 @@ class MotorClientHandshakeTest(MotorMockServerTest):
     @gen_test
     async def test_handshake(self):
         server = self.server()
-        client = motor.MotorClient(server.uri, connectTimeoutMS=100, serverSelectionTimeoutMS=100)
+        client = motor.MotorClient(
+            server.uri, connectTimeoutMS=100, serverSelectionTimeoutMS=100
+        )
 
         # Trigger connection.
         future = client.db.command("ping")
@@ -306,6 +315,42 @@ class MotorClientHandshakeTest(MotorMockServerTest):
             await future
         except Exception:
             pass
+
+    @gen_test
+    async def test_driver_info(self):
+        server = self.server()
+        driver_info = DriverInfo(name="Foo", version="1.1.1", platform="FooPlat")
+        client = motor.MotorClient(server.uri, driver=driver_info)
+
+        # Trigger connection.
+        future = client.db.command("ping")
+        ismaster = await self.run_thread(server.receives, "ismaster")
+        meta = ismaster.doc["client"]
+        self.assertEqual(f"PyMongo|Motor|{driver_info.name}", meta["driver"]["name"])
+        self.assertIn(f"Tornado", meta["platform"])
+        self.assertIn(f"|{driver_info.platform}", meta["platform"])
+        self.assertTrue(
+            meta["driver"]["version"].endswith(
+                f"{motor.version}|{driver_info.version}"
+            ),
+            "Version in handshake [%s] doesn't end with MotorVersion|Test version [%s]"
+            % (meta["driver"]["version"], f"{motor.version}|{driver_info.version}"),
+        )
+
+        ismaster.hangs_up()
+        server.stop()
+        client.close()
+        try:
+            await future
+        except Exception:
+            pass
+
+    def test_incorrect_driver_info(self):
+        with self.assertRaises(
+            TypeError,
+            msg="Allowed invalid type parameter str, driver should only be of DriverInfo",
+        ):
+            motor.MotorClient(driver="string")
 
 
 if __name__ == "__main__":

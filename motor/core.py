@@ -107,7 +107,9 @@ class AgnosticClient(AgnosticBaseProperties):
     drop_database = AsyncCommand().unwrap("MotorDatabase")
     options = ReadOnlyProperty()
     get_database = DelegateMethod(doc=docstrings.get_database_doc).wrap(Database)
-    get_default_database = DelegateMethod(doc=docstrings.get_default_database_doc).wrap(Database)
+    get_default_database = DelegateMethod(doc=docstrings.get_default_database_doc).wrap(
+        Database
+    )
     HOST = ReadOnlyProperty()
     is_mongos = ReadOnlyProperty()
     is_primary = ReadOnlyProperty()
@@ -141,14 +143,21 @@ class AgnosticClient(AgnosticBaseProperties):
 
         kwargs.setdefault("connect", False)
 
-        driver_info = DriverInfo("Motor", motor_version, self._framework.platform_info())
+        driver_info = DriverInfo(
+            "Motor", motor_version, self._framework.platform_info()
+        )
 
         if kwargs.get("driver"):
             provided_info = kwargs.get("driver")
+            if not isinstance(provided_info, DriverInfo):
+                raise TypeError(
+                    f"Incorrect type for `driver` {type(provided_info)};"
+                    " expected value of type pymongo.driver_info.DriverInfo"
+                )
             driver_info = DriverInfo(
                 f"{driver_info.name}|{provided_info.name}",
                 f"{driver_info.version}|{provided_info.version}",
-                provided_info.platform or driver_info.platform,
+                f"{driver_info.platform}|{provided_info.platform}",
             )
 
         kwargs["driver"] = driver_info
@@ -276,7 +285,9 @@ class AgnosticClient(AgnosticBaseProperties):
         return self[name]
 
     def __getitem__(self, name):
-        db_class = create_class_with_framework(AgnosticDatabase, self._framework, self.__module__)
+        db_class = create_class_with_framework(
+            AgnosticDatabase, self._framework, self.__module__
+        )
 
         return db_class(self, name)
 
@@ -484,9 +495,9 @@ class AgnosticClientSession(AgnosticBase):
                         # Retry the commit.
                         continue
 
-                    if exc.has_error_label("TransientTransactionError") and _within_time_limit(
-                        start_time
-                    ):
+                    if exc.has_error_label(
+                        "TransientTransactionError"
+                    ) and _within_time_limit(start_time):
                         # Retry the entire transaction.
                         break
                     raise
@@ -495,11 +506,7 @@ class AgnosticClientSession(AgnosticBase):
                 return ret
 
     def start_transaction(
-        self,
-        read_concern=None,
-        write_concern=None,
-        read_preference=None,
-        max_commit_time_ms=None,
+        self, read_concern=None, write_concern=None, read_preference=None, max_commit_time_ms=None
     ):
         """Start a multi-statement transaction.
 
@@ -567,7 +574,11 @@ class AgnosticDatabase(AgnosticBaseProperties):
     def __init__(self, client, name, **kwargs):
         self._client = client
         _delegate = kwargs.get("_delegate")
-        delegate = _delegate if _delegate is not None else Database(client.delegate, name, **kwargs)
+        delegate = (
+            _delegate
+            if _delegate is not None
+            else Database(client.delegate, name, **kwargs)
+        )
 
         super().__init__(delegate)
 
@@ -929,11 +940,14 @@ class AgnosticCollection(AgnosticBaseProperties):
         read_concern=None,
         _delegate=None,
     ):
-        db_class = create_class_with_framework(AgnosticDatabase, self._framework, self.__module__)
+        db_class = create_class_with_framework(
+            AgnosticDatabase, self._framework, self.__module__
+        )
 
         if not isinstance(database, db_class):
             raise TypeError(
-                "First argument to MotorCollection must be MotorDatabase, not %r" % database
+                "First argument to MotorCollection must be MotorDatabase, not %r"
+                % database
             )
 
         delegate = (
@@ -989,8 +1003,12 @@ class AgnosticCollection(AgnosticBaseProperties):
         ``MotorCursor`` methods such as :meth:`~MotorCursor.to_list`
         perform actual operations.
         """
-        cursor = self.delegate.find(*unwrap_args_session(args), **unwrap_kwargs_session(kwargs))
-        cursor_class = create_class_with_framework(AgnosticCursor, self._framework, self.__module__)
+        cursor = self.delegate.find(
+            *unwrap_args_session(args), **unwrap_kwargs_session(kwargs)
+        )
+        cursor_class = create_class_with_framework(
+            AgnosticCursor, self._framework, self.__module__
+        )
 
         return cursor_class(cursor, self)
 
@@ -1150,10 +1168,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
         # Latent cursor that will send initial command on first "async for".
         return cursor_class(
-            self,
-            self._async_aggregate_raw_batches,
-            pipeline,
-            **unwrap_kwargs_session(kwargs),
+            self, self._async_aggregate_raw_batches, pipeline, **unwrap_kwargs_session(kwargs)
         )
 
     def watch(
@@ -1601,7 +1616,9 @@ class AgnosticBaseCursor(AgnosticBase):
             )
         else:
             # Complete
-            self._framework.call_soon(self.get_io_loop(), functools.partial(callback, None, None))
+            self._framework.call_soon(
+                self.get_io_loop(), functools.partial(callback, None, None)
+            )
 
     @coroutine_annotation
     def to_list(self, length):
@@ -1654,7 +1671,9 @@ class AgnosticBaseCursor(AgnosticBase):
                 raise ValueError("length must be non-negative")
 
         if self._query_flags() & _QUERY_OPTIONS["tailable_cursor"]:
-            raise pymongo.errors.InvalidOperation("Can't call to_list on tailable cursor")
+            raise pymongo.errors.InvalidOperation(
+                "Can't call to_list on tailable cursor"
+            )
 
         future = self._framework.get_future(self.get_io_loop())
 
@@ -1663,12 +1682,7 @@ class AgnosticBaseCursor(AgnosticBase):
         else:
             the_list = []
             self._framework.add_future(
-                self.get_io_loop(),
-                self._get_more(),
-                self._to_list,
-                length,
-                the_list,
-                future,
+                self.get_io_loop(), self._get_more(), self._to_list, length, the_list, future,
             )
 
         return future
@@ -1695,12 +1709,7 @@ class AgnosticBaseCursor(AgnosticBase):
                 future.set_result(the_list)
             else:
                 self._framework.add_future(
-                    self.get_io_loop(),
-                    self._get_more(),
-                    self._to_list,
-                    length,
-                    the_list,
-                    future,
+                    self.get_io_loop(), self._get_more(), self._to_list, length, the_list, future
                 )
         except Exception as exc:
             if not future.done():
@@ -1978,7 +1987,9 @@ class AgnosticChangeStream(AgnosticBase):
 
     def _lazy_init(self):
         if not self.delegate:
-            self.delegate = self._target.delegate.watch(**unwrap_kwargs_session(self._kwargs))
+            self.delegate = self._target.delegate.watch(
+                **unwrap_kwargs_session(self._kwargs)
+            )
 
     def _try_next(self):
         # This method is run on a thread.
@@ -2157,11 +2168,7 @@ class AgnosticClientEncryption(AgnosticBase):
             io_loop = None
         sync_client = key_vault_client.delegate
         delegate = self.__delegate_class__(
-            kms_providers,
-            key_vault_namespace,
-            sync_client,
-            codec_options,
-            kms_tls_options,
+            kms_providers, key_vault_namespace, sync_client, codec_options, kms_tls_options
         )
         super().__init__(delegate)
         self._io_loop = io_loop
@@ -2189,7 +2196,9 @@ class AgnosticClientEncryption(AgnosticBase):
         pass
 
     async def get_keys(self):
-        cursor_class = create_class_with_framework(AgnosticCursor, self._framework, self.__module__)
+        cursor_class = create_class_with_framework(
+            AgnosticCursor, self._framework, self.__module__
+        )
         return cursor_class(self.delegate.get_keys(), self)
 
     async def create_encrypted_collection(
