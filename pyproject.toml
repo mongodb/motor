@@ -81,6 +81,37 @@ version = {attr = "motor._version.version"}
 [tool.setuptools.packages.find]
 include = ["motor"]
 
+[tool.mypy]
+python_version = "3.7"
+strict = true
+pretty = true
+show_error_context = true
+show_error_codes = true
+warn_redundant_casts = true
+warn_unreachable = true
+disable_error_code = ["type-arg"]
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+
+[tool.pytest.ini_options]
+minversion = "7"
+testpaths = ["test"]
+xfail_strict = true
+log_cli_level = "INFO"
+addopts = ["-ra", "--strict-config", "--strict-markers",
+    "--maxfail=10", "--durations=5", "--junitxml=xunit-results/TEST-results.xml"]
+faulthandler_timeout = 1500
+filterwarnings = [
+    "error",
+    "ignore:Bare functions are deprecated, use async ones:DeprecationWarning",
+    "ignore:Application.make_handler:DeprecationWarning",
+    "ignore:unclosed <socket.socket:ResourceWarning",
+    "ignore:unclosed event loop:ResourceWarning",
+    "ignore: The fetch_next property is deprecated:DeprecationWarning",
+    "ignore:The next_object method is deprecated:DeprecationWarning",
+    "ignore:unclosed <ssl.SSLSocket:ResourceWarning",
+    "ignore:datetime.datetime.utcfromtimestamp:DeprecationWarning",
+    "ignore:datetime.datetime.utcnow:DeprecationWarning",
+]
 
 [tool.ruff]
 target-version = "py37"
