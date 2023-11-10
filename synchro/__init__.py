@@ -338,7 +338,8 @@ class Synchro(metaclass=SynchroMeta):
             def partial():
                 return async_method(*args, **kwargs)
 
-            with warnings.catch_warnings(action="ignore", category=DeprecationWarning):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
                 loop = IOLoop.current()
             return loop.run_sync(partial)
 
