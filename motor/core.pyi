@@ -50,7 +50,7 @@ from pymongo.cursor import Cursor, RawBatchCursor, _Hint, _Sort
 from pymongo.database import Database
 from pymongo.encryption import ClientEncryption, RewrapManyDataKeyResult
 from pymongo.encryption_options import RangeOpts
-from pymongo.operations import SearchIndexModel, _IndexKeyHint, _IndexList
+from pymongo.operations import _IndexKeyHint, _IndexList
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import _ServerMode
 from pymongo.results import (
@@ -68,6 +68,11 @@ from pymongo.typings import (
     _DocumentTypeArg,
     _Pipeline,
 )
+
+try:
+    from pymongo.operations import SearchIndexModel
+except ImportError:
+    SearchIndexModel = Any
 
 _WITH_TRANSACTION_RETRY_TIME_LIMIT: int
 
