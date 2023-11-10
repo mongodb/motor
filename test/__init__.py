@@ -15,6 +15,7 @@
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 from test.test_environment import CLIENT_PEM, db_user, env  # noqa: F401
+from typing import Any
 from unittest import SkipTest  # noqa: F401
 
 try:
@@ -34,11 +35,11 @@ except ImportError:
 class MockRequestHandler:
     """For testing MotorGridOut.stream_to_handler."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.n_written = 0
 
-    def write(self, data):
+    def write(self, data: Any) -> None:
         self.n_written += len(data)
 
-    def flush(self):
+    def flush(self) -> None:
         pass

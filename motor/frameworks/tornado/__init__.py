@@ -32,6 +32,7 @@ try:
 except ImportError:
     contextvars = None
 
+# mypy: ignore-errors
 
 CLASS_PREFIX = ""
 

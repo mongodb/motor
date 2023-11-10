@@ -17,7 +17,7 @@ sample client code that uses Motor typings.
 """
 import unittest
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, TypeVar, Union, cast
 
 from bson import CodecOptions
 from bson.raw_bson import RawBSONDocument
@@ -65,7 +65,7 @@ def only_type_check(func: FuncT) -> FuncT:
     return cast(FuncT, inner)
 
 
-class TestMotor(AsyncIOTestCase):  # type:ignore[misc]
+class TestMotor(AsyncIOTestCase):
     cx: AgnosticClient
 
     @asyncio_test  # type:ignore[misc]
@@ -84,15 +84,29 @@ class TestMotor(AsyncIOTestCase):  # type:ignore[misc]
 
     @asyncio_test  # type:ignore[misc]
     async def test_cursor_to_list(self) -> None:
-        await self.collection.insert_one({})
+        await self.collection.insert_one({})  # type:ignore[arg-type]
         cursor = self.collection.find()
         docs = await cursor.to_list(None)
         self.assertTrue(docs)
 
+    @asyncio_test  # type:ignore[misc]
+    def test_get_collection(self) -> None:
+        coll = self.db.get_collection("test_collection")
+        self.assertEqual(coll.name, "test_collection")
+
+    @asyncio_test  # type:ignore[misc]
+    async def test_find_one(self) -> None:
+        c: AgnosticClient[Movie] = AgnosticClient()
+        coll = c[self.db.name]["movies"]
+        await coll.insert_one(Movie(name="American Graffiti", year=1973))
+        result = await coll.find_one({})
+        assert result is not None
+        self.assertEqual(result["year"], 1973)
+
     @only_type_check
     @asyncio_test  # type:ignore[misc]
     async def test_bulk_write(self) -> None:
-        await self.collection.insert_one({})
+        await self.collection.insert_one({})  # type:ignore[arg-type]
         coll: AgnosticCollection = self.collection
         requests: List[InsertOne[Movie]] = [InsertOne(Movie(name="American Graffiti", year=1973))]
         result_one = await coll.bulk_write(requests)
@@ -123,7 +137,7 @@ class TestMotor(AsyncIOTestCase):  # type:ignore[misc]
             InsertOne(Movie(name="American Graffiti", year=1973)),
             ReplaceOne(
                 {},
-                {"name": "American Graffiti", "year": "WRONG_TYPE"},
+                {"name": "American Graffiti", "year": "WRONG_TYPE"},  # type:ignore[typeddict-item]
             ),
             DeleteOne({}),
         ]
@@ -138,13 +152,13 @@ class TestMotor(AsyncIOTestCase):  # type:ignore[misc]
     @asyncio_test  # type:ignore[misc]
     async def test_list_collections(self) -> None:
         cursor = await self.cx.test.list_collections()
-        value = await cursor.next()
+        value: Mapping[str, Any] = await cursor.next()
         value.items()
 
     @asyncio_test  # type:ignore[misc]
     async def test_list_databases(self) -> None:
         cursor = await self.cx.list_databases()
-        value = await cursor.next()
+        value: Mapping[str, Any] = await cursor.next()
         value.items()
 
     @asyncio_test  # type:ignore[misc]
@@ -193,14 +207,14 @@ class TestMotor(AsyncIOTestCase):  # type:ignore[misc]
             )
 
 
-class TestDocumentType(AsyncIOTestCase):  # type:ignore[misc]
+class TestDocumentType(AsyncIOTestCase):
     @only_type_check
     def test_typeddict_explicit_document_type(self) -> None:
         out = MovieWithId(_id=ObjectId(), name="THX-1138", year=1971)
         assert out is not None
         # This should fail because the output is a Movie.
         assert out["foo"]  # type:ignore[typeddict-item]
-        assert out["_id"]
+        assert bool(out["_id"])
 
     # This should work the same as the test above, but this time using NotRequired to allow
     # automatic insertion of the _id field by insert_one.
@@ -211,7 +225,7 @@ class TestDocumentType(AsyncIOTestCase):  # type:ignore[misc]
         # This should fail because the output is a Movie.
         assert out["foo"]  # type:ignore[typeddict-item]
         # pyright gives reportTypedDictNotRequiredAccess for the following:
-        assert out["_id"]
+        assert bool(out["_id"])
 
     @only_type_check
     def test_typeddict_empty_document_type(self) -> None:
@@ -223,7 +237,7 @@ class TestDocumentType(AsyncIOTestCase):  # type:ignore[misc]
         assert out["_id"]  # type:ignore[typeddict-item]
 
 
-class TestCommandDocumentType(AsyncIOTestCase):  # type:ignore[misc]
+class TestCommandDocumentType(AsyncIOTestCase):
     @only_type_check
     async def test_default(self) -> None:
         client: AgnosticClient = AgnosticClient()
@@ -249,14 +263,14 @@ class TestCommandDocumentType(AsyncIOTestCase):  # type:ignore[misc]
     async def test_raw_bson_document_type(self) -> None:
         client: AgnosticClient = AgnosticClient()
         codec_options = CodecOptions(RawBSONDocument)
-        result: RawBSONDocument = await client.admin.command(
+        result = await client.admin.command(
             "ping", codec_options=codec_options
         )  # Fix once @overload for command works
         assert len(result.raw) > 0
 
     @only_type_check
     async def test_son_document_type(self) -> None:
-        client = AgnosticClient(document_class=SON[str, Any])
+        client: AgnosticClient[SON[str, Any]] = AgnosticClient(document_class=SON[str, Any])
         codec_options = CodecOptions(SON[str, Any])
         result = await client.admin.command("ping", codec_options=codec_options)
         result["a"] = 1

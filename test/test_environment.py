@@ -24,6 +24,9 @@ from unittest import SkipTest
 
 import pymongo.errors
 
+# mypy: ignore-errors
+
+
 HAVE_SSL = True
 try:
     import ssl

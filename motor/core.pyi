@@ -22,6 +22,7 @@ from typing import (
     Callable,
     Collection,
     Coroutine,
+    Generic,
     Iterable,
     Mapping,
     MutableMapping,
@@ -30,6 +31,7 @@ from typing import (
     Sequence,
     TypeVar,
     Union,
+    overload,
 )
 
 import pymongo.common
@@ -42,12 +44,13 @@ from pymongo import IndexModel, ReadPreference, WriteConcern
 from pymongo.change_stream import ChangeStream
 from pymongo.client_options import ClientOptions
 from pymongo.client_session import _T, ClientSession, SessionOptions, TransactionOptions
-from pymongo.collection import ReturnDocument, _IndexKeyHint, _IndexList, _WriteOp
+from pymongo.collection import ReturnDocument, _WriteOp
 from pymongo.command_cursor import CommandCursor, RawBatchCommandCursor
 from pymongo.cursor import Cursor, RawBatchCursor, _Hint, _Sort
 from pymongo.database import Database
 from pymongo.encryption import ClientEncryption, RewrapManyDataKeyResult
 from pymongo.encryption_options import RangeOpts
+from pymongo.operations import SearchIndexModel, _IndexKeyHint, _IndexList
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import _ServerMode
 from pymongo.results import (
@@ -66,11 +69,6 @@ from pymongo.typings import (
     _Pipeline,
 )
 
-try:
-    from pymongo import SearchIndexModel
-except ImportError:
-    SearchIndexModel = Any
-
 _WITH_TRANSACTION_RETRY_TIME_LIMIT: int
 
 _CodecDocumentType = TypeVar("_CodecDocumentType", bound=Mapping[str, Any])
@@ -85,15 +83,15 @@ class AgnosticBase:
     def __init__(self, delegate: Any) -> None: ...
     def __repr__(self) -> str: ...
 
-class AgnosticBaseProperties(AgnosticBase):
-    codec_options: CodecOptions
+class AgnosticBaseProperties(AgnosticBase, Generic[_DocumentType]):
+    codec_options: CodecOptions[_DocumentType]
     read_preference: _ServerMode
     read_concern: ReadConcern
     write_concern: WriteConcern
 
-class AgnosticClient(AgnosticBaseProperties):
+class AgnosticClient(AgnosticBaseProperties[_DocumentType]):
     __motor_class_name__: str
-    __delegate_class__: type[pymongo.MongoClient]
+    __delegate_class__: type[pymongo.MongoClient[_DocumentType]]
 
     def address(self) -> Optional[tuple[str, int]]: ...
     def arbiters(self) -> set[tuple[str, int]]: ...
@@ -226,9 +224,9 @@ class AgnosticClientSession(AgnosticBase):
     def __enter__(self) -> None: ...
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...
 
-class AgnosticDatabase(AgnosticBaseProperties):
+class AgnosticDatabase(AgnosticBaseProperties[_DocumentType]):
     __motor_class_name__: str
-    __delegate_class__: type[Database]
+    __delegate_class__: type[Database[_DocumentType]]
 
     def __hash__(self) -> int: ...
     def __bool__(self) -> int: ...
@@ -243,6 +241,33 @@ class AgnosticDatabase(AgnosticBaseProperties):
         max_await_time_ms: Optional[int] = None,
         **kwargs: Any,
     ) -> AgnosticCommandCursor: ...
+    @overload
+    async def command(
+        self,
+        command: Union[str, MutableMapping[str, Any]],
+        value: Any = ...,
+        check: bool = ...,
+        allowable_errors: Optional[Sequence[Union[str, int]]] = ...,
+        read_preference: Optional[_ServerMode] = ...,
+        codec_options: None = ...,
+        session: Optional[AgnosticClientSession] = ...,
+        comment: Optional[Any] = ...,
+        **kwargs: Any,
+    ) -> dict[str, Any]: ...
+    @overload
+    async def command(
+        self,
+        command: Union[str, MutableMapping[str, Any]],
+        value: Any = 1,
+        check: bool = True,
+        allowable_errors: Optional[Sequence[Union[str, int]]] = None,
+        read_preference: Optional[_ServerMode] = None,
+        codec_options: CodecOptions[_CodecDocumentType] = ...,
+        session: Optional[AgnosticClientSession] = None,
+        comment: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> _CodecDocumentType: ...
+    @overload
     async def command(
         self,
         command: Union[str, MutableMapping[str, Any]],
@@ -280,7 +305,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         comment: Optional[Any] = None,
         encrypted_fields: Optional[Mapping[str, Any]] = None,
     ) -> dict[str, Any]: ...
-    async def get_collection(
+    def get_collection(
         self,
         name: str,
         codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
@@ -302,6 +327,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
         comment: Optional[Any] = None,
         **kwargs: Any,
     ) -> AgnosticCommandCursor: ...
+    @property
     def name(self) -> str: ...
     async def validate_collection(
         self,
@@ -349,9 +375,9 @@ class AgnosticDatabase(AgnosticBaseProperties):
     def wrap(self, obj: Any) -> Any: ...
     def get_io_loop(self) -> Any: ...
 
-class AgnosticCollection(AgnosticBaseProperties):
+class AgnosticCollection(AgnosticBaseProperties[_DocumentType]):
     __motor_class_name__: str
-    __delegate_class__: type[Collection]
+    __delegate_class__: type[Collection[_DocumentType]]
 
     def __hash__(self) -> int: ...
     def __bool__(self) -> bool: ...
@@ -495,6 +521,7 @@ class AgnosticCollection(AgnosticBaseProperties):
         session: Optional[AgnosticClientSession] = None,
         comment: Optional[Any] = None,
     ) -> InsertOneResult: ...
+    @property
     def name(self) -> str: ...
     async def options(
         self, session: Optional[AgnosticClientSession] = None, comment: Optional[Any] = None
@@ -651,8 +678,10 @@ class AgnosticBaseCursor(AgnosticBase):
     def next_object(self) -> Any: ...
     def each(self, callback: Callable) -> None: ...
     def _each_got_more(self, callback: Callable, future: Any) -> None: ...
-    def to_list(self, length: int) -> Future[list]: ...
-    def _to_list(self, length: int, the_list: list, future: Any, get_more_result: Any) -> None: ...
+    def to_list(self, length: Optional[int]) -> Future[list]: ...
+    def _to_list(
+        self, length: Optional[int], the_list: list, future: Any, get_more_result: Any
+    ) -> None: ...
     def get_io_loop(self) -> Any: ...
     def batch_size(self, batch_size: int) -> AgnosticBaseCursor: ...
     def _buffer_size(self) -> int: ...
