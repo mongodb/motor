@@ -72,7 +72,7 @@ from pymongo.typings import (
 try:
     from pymongo.operations import SearchIndexModel
 except ImportError:
-    SearchIndexModel = Any
+    SearchIndexModel = Any  # type:ignore[misc,assignment]
 
 _WITH_TRANSACTION_RETRY_TIME_LIMIT: int
 

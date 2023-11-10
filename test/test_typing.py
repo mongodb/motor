@@ -84,19 +84,19 @@ class TestMotor(AsyncIOTestCase):
 
     @asyncio_test  # type:ignore[misc]
     async def test_cursor_to_list(self) -> None:
-        await self.collection.insert_one({})  # type:ignore[arg-type]
+        await self.collection.insert_one({})
         cursor = self.collection.find()
         docs = await cursor.to_list(None)
         self.assertTrue(docs)
 
     @asyncio_test  # type:ignore[misc]
-    def test_get_collection(self) -> None:
+    async def test_get_collection(self) -> None:
         coll = self.db.get_collection("test_collection")
         self.assertEqual(coll.name, "test_collection")
 
     @asyncio_test  # type:ignore[misc]
     async def test_find_one(self) -> None:
-        c: AgnosticClient[Movie] = AgnosticClient()
+        c: AgnosticClient[Movie] = self.asyncio_client()
         coll = c[self.db.name]["movies"]
         await coll.insert_one(Movie(name="American Graffiti", year=1973))
         result = await coll.find_one({})
@@ -106,7 +106,7 @@ class TestMotor(AsyncIOTestCase):
     @only_type_check
     @asyncio_test  # type:ignore[misc]
     async def test_bulk_write(self) -> None:
-        await self.collection.insert_one({})  # type:ignore[arg-type]
+        await self.collection.insert_one({})
         coll: AgnosticCollection = self.collection
         requests: List[InsertOne[Movie]] = [InsertOne(Movie(name="American Graffiti", year=1973))]
         result_one = await coll.bulk_write(requests)
