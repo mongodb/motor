@@ -150,10 +150,12 @@ class AgnosticClient(AgnosticBaseProperties):
                     f"Incorrect type for `driver` {type(provided_info)};"
                     " expected value of type pymongo.driver_info.DriverInfo"
                 )
+            added_version = f"|{provided_info.version}" if provided_info.version else ""
+            added_platform = f"|{provided_info.platform}" if provided_info.platform else ""
             driver_info = DriverInfo(
                 f"{driver_info.name}|{provided_info.name}",
-                f"{driver_info.version}|{provided_info.version}",
-                f"{driver_info.platform}|{provided_info.platform}",
+                f"{driver_info.version}{added_version}",
+                f"{driver_info.platform}{added_platform}",
             )
 
         kwargs["driver"] = driver_info

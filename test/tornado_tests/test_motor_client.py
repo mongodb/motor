@@ -316,8 +316,8 @@ class MotorClientHandshakeTest(MotorMockServerTest):
 
         # Trigger connection.
         future = client.db.command("ping")
-        ismaster = await self.run_thread(server.receives, "ismaster")
-        meta = ismaster.doc["client"]
+        handshake = await self.run_thread(server.receives, "ismaster")
+        meta = handshake.doc["client"]
         self.assertEqual(f"PyMongo|Motor|{driver_info.name}", meta["driver"]["name"])
         self.assertIn("Tornado", meta["platform"])
         self.assertIn(f"|{driver_info.platform}", meta["platform"])
@@ -327,7 +327,7 @@ class MotorClientHandshakeTest(MotorMockServerTest):
             % (meta["driver"]["version"], f"{motor.version}|{driver_info.version}"),
         )
 
-        ismaster.hangs_up()
+        handshake.ok()
         server.stop()
         client.close()
         try:
