@@ -21,7 +21,7 @@ from ._version import get_version_string, version, version_tuple  # noqa: F401
 try:
     import tornado
 except ImportError:
-    tornado = None
+    tornado = None  # type:ignore[assignment]
 else:
     # For backwards compatibility with Motor 0.4, export Motor's Tornado classes
     # at module root. This may change in the future.

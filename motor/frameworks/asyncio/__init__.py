@@ -25,6 +25,8 @@ import warnings
 from asyncio import get_event_loop  # noqa: F401 - For framework interface.
 from concurrent.futures import ThreadPoolExecutor
 
+# mypy: ignore-errors
+
 try:
     import contextvars
 except ImportError:

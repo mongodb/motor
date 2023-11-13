@@ -19,6 +19,8 @@ from typing import Any, Callable, Dict, TypeVar
 
 _class_cache: Dict[Any, Any] = {}
 
+# mypy: ignore-errors
+
 
 def asynchronize(framework, sync_method: Callable, doc=None, wrap_class=None, unwrap_class=None):
     """Decorate `sync_method` so it returns a Future.

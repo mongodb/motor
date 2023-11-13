@@ -25,6 +25,8 @@ import os
 import time
 import warnings
 
+# mypy: ignore-errors
+
 
 def one(s):
     """Get one element of a set"""
