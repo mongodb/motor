@@ -71,7 +71,7 @@ excluded_tests = [
     "*.test_interrupt_signal",
     "TestSCRAM.test_scram_threaded",
     "TestGSSAPI.test_gssapi_threaded",
-    "TestCursor.test_concurrent_close",
+    "*.test_concurrent_close",
     # These are in test_gridfs_bucket.
     "TestGridfs.test_threaded_reads",
     "TestGridfs.test_threaded_writes",

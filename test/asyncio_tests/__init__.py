@@ -28,6 +28,9 @@ from unittest import SkipTest
 from mockupdb import MockupDB
 
 from motor import motor_asyncio
+from motor.core import AgnosticClient
+
+# mypy: ignore-errors
 
 
 class _TestMethodWrapper:
@@ -104,7 +107,7 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         kwargs.setdefault("tls", env.mongod_started_with_ssl)
         return kwargs
 
-    def asyncio_client(self, uri=None, *args, set_loop=True, **kwargs):
+    def asyncio_client(self, uri=None, *args, set_loop=True, **kwargs) -> AgnosticClient:
         """Get an AsyncIOMotorClient.
 
         Ignores self.ssl, you must pass 'ssl' argument.

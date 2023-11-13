@@ -66,7 +66,7 @@ srv = [
     "pymongo[srv]>=4.5,<5",
 ]
 test = [
-    "pytest>=7", "mockupdb", "tornado>=5", "aiohttp==3.8.5", "motor[encryption]"
+    "pytest>=7", "mockupdb", "tornado>=5", "aiohttp<3.8.6", "motor[encryption]"
 ]
 zstd = [
     "pymongo[zstd]>=4.5,<5",

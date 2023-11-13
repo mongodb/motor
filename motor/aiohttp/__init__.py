@@ -28,6 +28,8 @@ import gridfs
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorGridFSBucket
 from motor.motor_gridfs import _hash_gridout
 
+# mypy: disable-error-code="no-untyped-def,no-untyped-call"
+
 
 def get_gridfs_file(bucket, filename, request):
     """Override to choose a GridFS file to serve at a URL.

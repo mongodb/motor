@@ -14,6 +14,8 @@
 
 """Some tools for running tests based on MongoDB server version."""
 
+# mypy: ignore-errors
+
 
 class Version(tuple):
     """Copied from PyMongo's test.version submodule."""

@@ -24,6 +24,8 @@ import tornado.web
 import motor
 from motor.motor_gridfs import _hash_gridout
 
+# mypy: disable-error-code="no-untyped-def,no-untyped-call"
+
 # TODO: this class is not a drop-in replacement for StaticFileHandler.
 #   StaticFileHandler provides class method make_static_url, which appends
 #   an checksum of the static file's contents. Templates thus can do

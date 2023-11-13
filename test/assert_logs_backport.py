@@ -3,6 +3,8 @@
 import collections
 import logging
 
+# mypy: ignore-errors
+
 _LoggingWatcher = collections.namedtuple("_LoggingWatcher", ["records", "output"])
 
 
