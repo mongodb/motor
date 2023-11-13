@@ -116,7 +116,6 @@ class MotorReplicaSetTestBase(MotorTest):
 
 
 class MotorMockServerTest(MotorTest):
-
     executor = concurrent.futures.ThreadPoolExecutor(1)
 
     def server(self, *args, **kwargs):

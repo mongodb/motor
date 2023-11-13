@@ -222,21 +222,19 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         client = motor.MotorClient(server.uri, maxPoolSize=1)
         await client.admin.command("ismaster")
         pool = get_primary_pool(client)
-        conns = pool.conns
-        conn = one(conns)
+        conn = one(pool.conns)
         cursor = client.db.collection.find(cursor_type=CursorType.EXHAUST)
 
         # With Tornado, simply accessing fetch_next starts the fetch.
         fetch_next = cursor.fetch_next
         request = await self.run_thread(server.receives, OpQuery)
-        request.fail()
+        request.fail(code=1)
 
         with self.assertRaises(pymongo.errors.OperationFailure):
             await fetch_next
 
         self.assertFalse(conn.closed)
-        conns = pool.conns
-        self.assertEqual(conn, one(conns))
+        self.assertEqual(conn, one(pool.conns))
 
     @gen_test
     async def test_exhaust_query_server_error_standalone(self):

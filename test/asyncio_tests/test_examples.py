@@ -1414,7 +1414,6 @@ LOCAL_MASTER_KEY = base64.b64decode(
 
 
 class TestQueryableEncryptionDocsExample(AsyncIOTestCase):
-
     # Queryable Encryption is not supported on Standalone topology.
 
     @env.require_version_min(7, 0, -1)

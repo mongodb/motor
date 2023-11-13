@@ -198,7 +198,7 @@ excluded_tests = [
 excluded_modules_matched = set()
 excluded_tests_matched = set()
 
-# Valide the exclude lists.
+# Validate the exclude lists.
 for item in excluded_modules:
     if not re.match(r"^test\.[a-zA-Z_]+$", item):
         raise ValueError(f"Improper excluded module {item}")

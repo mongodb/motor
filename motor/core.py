@@ -337,8 +337,8 @@ class AgnosticClientSession(AgnosticBase):
 
       async with await client.start_session() as s:
           async with s.start_transaction():
-              await collection.delete_one({'x': 1}, session=s)
-              await collection.insert_one({'x': 2}, session=s)
+              await collection.delete_one({"x": 1}, session=s)
+              await collection.insert_one({"x": 2}, session=s)
 
     .. versionadded:: 2.0
     """
@@ -404,7 +404,7 @@ class AgnosticClientSession(AgnosticBase):
         In the event of an exception, ``with_transaction`` may retry the commit
         or the entire transaction, therefore ``coro`` may be awaited
         multiple times by a single call to ``with_transaction``. Developers
-        should be mindful of this possiblity when writing a ``coro`` that
+        should be mindful of this possibility when writing a ``coro`` that
         modifies application state or has any other side-effects.
         Note that even when the ``coro`` is invoked multiple times,
         ``with_transaction`` ensures that the transaction will be committed
@@ -516,8 +516,8 @@ class AgnosticClientSession(AgnosticBase):
           # Use "await" for start_session, but not for start_transaction.
           async with await client.start_session() as s:
               async with s.start_transaction():
-                  await collection.delete_one({'x': 1}, session=s)
-                  await collection.insert_one({'x': 2}, session=s)
+                  await collection.delete_one({"x": 1}, session=s)
+                  await collection.insert_one({"x": 2}, session=s)
 
         """
         self.delegate.start_transaction(
@@ -1187,6 +1187,7 @@ class AgnosticCollection(AgnosticBaseProperties):
 
           change_stream = None
 
+
           async def watch_collection():
               global change_stream
 
@@ -1197,17 +1198,20 @@ class AgnosticCollection(AgnosticBaseProperties):
                   async for change in change_stream:
                       print(change)
 
+
           # Tornado
           from tornado.ioloop import IOLoop
+
 
           def main():
               loop = IOLoop.current()
               # Start watching collection for changes.
-            try:
-                loop.run_sync(watch_collection)
-            except KeyboardInterrupt:
-                if change_stream:
-                   loop.run_sync(change_stream.close)
+              try:
+                  loop.run_sync(watch_collection)
+              except KeyboardInterrupt:
+                  if change_stream:
+                      loop.run_sync(change_stream.close)
+
 
           # asyncio
           try:
@@ -1226,14 +1230,14 @@ class AgnosticCollection(AgnosticBaseProperties):
         .. code-block:: python3
 
             try:
-                pipeline = [{'$match': {'operationType': 'insert'}}]
+                pipeline = [{"$match": {"operationType": "insert"}}]
                 async with db.collection.watch(pipeline) as stream:
                     async for change in stream:
                         print(change)
             except pymongo.errors.PyMongoError:
                 # The ChangeStream encountered an unrecoverable error or the
                 # resume attempt failed to recreate the cursor.
-                logging.error('...')
+                logging.error("...")
 
         For a precise description of the resume process see the
         `change streams specification`_.
@@ -1451,10 +1455,10 @@ class AgnosticBaseCursor(AgnosticBase):
 
               >>> async def f():
               ...     await collection.drop()
-              ...     await collection.insert_many([{'_id': i} for i in range(5)])
+              ...     await collection.insert_many([{"_id": i} for i in range(5)])
               ...     async for doc in collection.find():
-              ...         sys.stdout.write(str(doc['_id']) + ', ')
-              ...     print('done')
+              ...         sys.stdout.write(str(doc["_id"]) + ", ")
+              ...     print("done")
               ...
               >>> IOLoop.current().run_sync(f)
               0, 1, 2, 3, 4, done
@@ -1467,12 +1471,12 @@ class AgnosticBaseCursor(AgnosticBase):
 
            >>> async def f():
            ...     await collection.drop()
-           ...     await collection.insert_many([{'_id': i} for i in range(5)])
-           ...     cursor = collection.find().sort([('_id', 1)])
-           ...     while (await cursor.fetch_next):
+           ...     await collection.insert_many([{"_id": i} for i in range(5)])
+           ...     cursor = collection.find().sort([("_id", 1)])
+           ...     while await cursor.fetch_next:
            ...         doc = cursor.next_object()
-           ...         sys.stdout.write(str(doc['_id']) + ', ')
-           ...     print('done')
+           ...         sys.stdout.write(str(doc["_id"]) + ", ")
+           ...     print("done")
            ...
            >>> IOLoop.current().run_sync(f)
            0, 1, 2, 3, 4, done
@@ -1540,9 +1544,9 @@ class AgnosticBaseCursor(AgnosticBase):
         .. testsetup:: each
 
            from tornado.ioloop import IOLoop
+
            MongoClient().test.test_collection.delete_many({})
-           MongoClient().test.test_collection.insert_many(
-               [{'_id': i} for i in range(5)])
+           MongoClient().test.test_collection.insert_many([{"_id": i} for i in range(5)])
 
            collection = MotorClient().test.test_collection
 
@@ -1552,13 +1556,13 @@ class AgnosticBaseCursor(AgnosticBase):
            ...     if error:
            ...         raise error
            ...     elif result:
-           ...         sys.stdout.write(str(result['_id']) + ', ')
+           ...         sys.stdout.write(str(result["_id"]) + ", ")
            ...     else:
            ...         # Iteration complete
            ...         IOLoop.current().stop()
-           ...         print('done')
+           ...         print("done")
            ...
-           >>> cursor = collection.find().sort([('_id', 1)])
+           >>> cursor = collection.find().sort([("_id", 1)])
            >>> cursor.each(callback=each)
            >>> IOLoop.current().start()
            0, 1, 2, 3, 4, done
@@ -1610,7 +1614,7 @@ class AgnosticBaseCursor(AgnosticBase):
         .. testsetup:: to_list
 
           MongoClient().test.test_collection.delete_many({})
-          MongoClient().test.test_collection.insert_many([{'_id': i} for i in range(4)])
+          MongoClient().test.test_collection.insert_many([{"_id": i} for i in range(4)])
 
           from tornado import ioloop
 
@@ -1620,13 +1624,12 @@ class AgnosticBaseCursor(AgnosticBase):
           >>> collection = MotorClient().test.test_collection
           >>>
           >>> async def f():
-          ...     cursor = collection.find().sort([('_id', 1)])
+          ...     cursor = collection.find().sort([("_id", 1)])
           ...     docs = await cursor.to_list(length=2)
           ...     while docs:
           ...         print(docs)
           ...         docs = await cursor.to_list(length=2)
-          ...
-          ...     print('done')
+          ...     print("done")
           ...
           >>> ioloop.IOLoop.current().run_sync(f)
           [{'_id': 0}, {'_id': 1}]

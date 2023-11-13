@@ -47,7 +47,6 @@ def depart_mongoref_node(self, node):
 
 
 class MongodocDirective(rst.Directive):
-
     has_content = True
     required_arguments = 0
     optional_arguments = 0

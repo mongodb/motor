@@ -16,11 +16,12 @@ of a replica set member:
     from asyncio import sleep
     from pymongo.cursor import CursorType
 
+
     async def tail_oplog_example():
         oplog = client.local.oplog.rs
-        first = await oplog.find().sort('$natural', pymongo.ASCENDING).limit(-1).next()
+        first = await oplog.find().sort("$natural", pymongo.ASCENDING).limit(-1).next()
         print(first)
-        ts = first['ts']
+        ts = first["ts"]
 
         while True:
             # For a regular capped collection CursorType.TAILABLE_AWAIT is the
@@ -30,12 +31,14 @@ of a replica set member:
             # can only be used when querying the oplog. Starting in MongoDB 4.4
             # this option is ignored by the server as queries against the oplog
             # are optimized automatically by the MongoDB query engine.
-            cursor = oplog.find({'ts': {'$gt': ts}},
-                                cursor_type=CursorType.TAILABLE_AWAIT,
-                                oplog_replay=True)
+            cursor = oplog.find(
+                {"ts": {"$gt": ts}},
+                cursor_type=CursorType.TAILABLE_AWAIT,
+                oplog_replay=True,
+            )
             while cursor.alive:
                 async for doc in cursor:
-                    ts = doc['ts']
+                    ts = doc["ts"]
                     print(doc)
                 # We end up here if the find() returned no documents or if the
                 # tailable cursor timed out (no new documents were added to the

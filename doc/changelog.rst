@@ -67,11 +67,11 @@ New features:
 
 The new Queryable Encryption changes that are in beta are:
 
-- The `encrypted_fields` argument to the
+- The ``encrypted_fields`` argument to the
   :class:`~motor.motor_tornado.MotorCollection` constructor, and the
   :meth:`~motor.motor_tornado.MotorDatabase.create_collection`
   and :meth:`~motor.motor_tornado.MotorDatabase.drop_collection` methods.
-- The `query_type` and `contention_factor` arguments to
+- The ``query_type`` and ``contention_factor`` arguments to
   :meth:`motor.motor_asyncio.AsyncIOMotorClientEncryption.encrypt` and
   :meth:`motor.motor_tornado.MotorClientEncryption.encrypt`.
 
@@ -87,7 +87,7 @@ Motor 3.0
 ---------
 
 Motor 3.0 adds support for PyMongo 4.0+.  It inherits a number
-of improvemnts and breaking API changes from PyMongo 4.0+.
+of improvements and breaking API changes from PyMongo 4.0+.
 See :doc:`migrate-to-motor-3` for more information.
 
 Breaking Changes
@@ -167,7 +167,7 @@ Breaking Changes
 - Comparing two :class:`~motor.motor_tornado.MotorClient` instances now
   uses a set of immutable properties rather than
   :attr:`~motor.motor_tornado.MotorClient.address` which can change.
-- Removed the `disable_md5` parameter for :class:`~gridfs.GridFSBucket` and
+- Removed the ``disable_md5`` parameter for :class:`~gridfs.GridFSBucket` and
   :class:`~gridfs.GridFS`. See :ref:`removed-gridfs-checksum` for details.
 - PyMongoCrypt 1.2.0 or later is now required for client side field level
   encryption support.
@@ -180,10 +180,10 @@ Notable improvements
 - Added the ``maxConnecting`` URI and
   :class:`~motor.motor_tornado.MotorClient` keyword argument.
 - :class:`~motor.motor_tornado.MotorClient` now accepts a URI and keyword
-  argument `srvMaxHosts` that limits the number of mongos-like hosts a client
+  argument ``srvMaxHosts`` that limits the number of mongos-like hosts a client
   will connect to. More specifically, when a mongodb+srv:// connection string
-  resolves to more than `srvMaxHosts` number of hosts, the client will randomly
-  choose a `srvMaxHosts` sized subset of hosts.
+  resolves to more than ``srvMaxHosts`` number of hosts, the client will randomly
+  choose a ``srvMaxHosts`` sized subset of hosts.
 - Added :attr:`motor.motor_tornado.MotorClient.options` for read-only access
   to a client's configuration options.
 - Added support for the ``comment`` parameter to all helpers. For example see
@@ -666,7 +666,7 @@ Highlights include:
   verification.
 - TLS compression is now explicitly disabled when possible.
 - The Server Name Indication (SNI) TLS extension is used when possible.
-- PyMongo's `bson` module provides finer control over JSON encoding/decoding
+- PyMongo's ``bson`` module provides finer control over JSON encoding/decoding
   with :class:`~bson.json_util.JSONOptions`.
 - Allow :class:`~bson.code.Code` objects to have a scope of ``None``,
   signifying no scope. Also allow encoding Code objects with an empty scope
@@ -738,8 +738,8 @@ Unix domain socket paths must be quoted with :func:`urllib.parse.quote_plus` (or
 
 .. code-block:: python
 
-    path = '/tmp/mongodb-27017.sock'
-    MotorClient('mongodb://%s' % urllib.parse.quote_plus(path))
+    path = "/tmp/mongodb-27017.sock"
+    MotorClient("mongodb://%s" % urllib.parse.quote_plus(path))
 
 :class:`~motor.motor_tornado.MotorCollection` changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1015,20 +1015,20 @@ Motor 0.6
 This is a bugfix release. Fixing these bugs has introduced tiny API changes that
 may affect some programs.
 
-`motor_asyncio` and `motor_tornado` submodules
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``motor_asyncio`` and ``motor_tornado`` submodules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 These modules have been moved from:
 
-  - `motor_asyncio.py`
-  - `motor_tornado.py`
+  - ``motor_asyncio.py``
+  - ``motor_tornado.py``
 
 To:
 
-  - `motor_asyncio/__init__.py`
-  - `motor_tornado/__init__.py`
+  - ``motor_asyncio/__init__.py``
+  - ``motor_tornado/__init__.py``
 
-Motor had to make this change in order to omit the `motor_asyncio` submodule
+Motor had to make this change in order to omit the ``motor_asyncio`` submodule
 entirely and avoid a spurious :exc:`SyntaxError` being printed when installing in
 Python 2. The change should be invisible to application code.
 
@@ -1082,18 +1082,18 @@ explanation.)
 
 .. _commit message dc19418c: https://github.com/mongodb/motor/commit/dc19418c
 
-`async` and `await`
-~~~~~~~~~~~~~~~~~~~
+``async`` and ``await``
+~~~~~~~~~~~~~~~~~~~~~~~
 
-Motor now supports Python 3.5 native coroutines, written with the `async` and
-`await` syntax::
+Motor now supports Python 3.5 native coroutines, written with the ``async`` and
+``await`` syntax::
 
     async def f():
         await collection.insert({'_id': 1})
 
 Cursors from :meth:`~MotorCollection.find`, :meth:`~MotorCollection.aggregate`, or
 :meth:`~MotorGridFS.find` can be iterated elegantly and very efficiently in native
-coroutines with `async for`::
+coroutines with ``async for``::
 
     async def f():
         async for doc in collection.find():
@@ -1105,7 +1105,7 @@ coroutines with `async for`::
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :meth:`MotorCollection.aggregate` now returns a cursor by default, and the cursor
-is returned immediately without a `yield`. The old syntax is no longer
+is returned immediately without a ``yield``. The old syntax is no longer
 supported::
 
     # Motor 0.4 and older, no longer supported.
@@ -1143,7 +1143,7 @@ Deprecations
 
 Motor 0.5 deprecates a large number of APIs that will be removed in version 1.0:
 
-  `MotorClient`:
+  ``MotorClient``:
     - `~MotorClient.host`
     - `~MotorClient.port`
     - `~MotorClient.document_class`
@@ -1154,7 +1154,7 @@ Motor 0.5 deprecates a large number of APIs that will be removed in version 1.0:
     - `~MotorClient.disconnect`
     - `~MotorClient.alive`
 
-  `MotorReplicaSetClient`:
+  ``MotorReplicaSetClient``:
     - `~MotorReplicaSetClient.document_class`
     - `~MotorReplicaSetClient.tz_aware`
     - `~MotorReplicaSetClient.secondary_acceptable_latency_ms`
@@ -1162,12 +1162,12 @@ Motor 0.5 deprecates a large number of APIs that will be removed in version 1.0:
     - `~MotorReplicaSetClient.uuid_subtype`
     - `~MotorReplicaSetClient.alive`
 
-  `MotorDatabase`:
+  ``MotorDatabase``:
     - `~MotorDatabase.secondary_acceptable_latency_ms`
     - `~MotorDatabase.tag_sets`
     - `~MotorDatabase.uuid_subtype`
 
-  `MotorCollection`:
+  ``MotorCollection``:
     - `~MotorCollection.secondary_acceptable_latency_ms`
     - `~MotorCollection.tag_sets`
     - `~MotorCollection.uuid_subtype`
@@ -1197,7 +1197,7 @@ SSL hostname validation error
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When you use Motor with Tornado and SSL hostname validation fails, Motor used
-to raise a :exc:`~pymongo.errors.ConnectionFailure` with a useful messsage like "hostname 'X'
+to raise a :exc:`~pymongo.errors.ConnectionFailure` with a useful message like "hostname 'X'
 doesn't match 'Y'". The message is now empty and Tornado logs a warning
 instead.
 

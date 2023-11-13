@@ -179,7 +179,7 @@ class AgnosticGridOut:
                 @tornado.web.asynchronous
                 @gen.coroutine
                 def get(self, filename):
-                    db = self.settings['db']
+                    db = self.settings["db"]
                     fs = await motor.MotorGridFSBucket(db())
                     try:
                         gridout = await fs.open_download_stream_by_name(filename)

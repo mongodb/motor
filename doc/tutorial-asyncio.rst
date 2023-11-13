@@ -12,6 +12,7 @@ Tutorial: Using Motor With :mod:`asyncio`
   import pymongo
   import motor.motor_asyncio
   import asyncio
+
   client = motor.motor_asyncio.AsyncIOMotorClient()
   db = client.test_database
 
@@ -20,14 +21,17 @@ Tutorial: Using Motor With :mod:`asyncio`
   import pymongo
   import motor.motor_asyncio
   import asyncio
+
   client = motor.motor_asyncio.AsyncIOMotorClient()
   db = client.test_database
   pymongo.MongoClient().test_database.test_collection.insert_many(
-      [{'i': i} for i in range(2000)])
+      [{"i": i} for i in range(2000)]
+  )
 
 .. testcleanup:: *
 
   import pymongo
+
   pymongo.MongoClient().test_database.test_collection.delete_many({})
 
 A guide to using MongoDB and asyncio with Motor.
@@ -87,13 +91,13 @@ specify the host and port like:
 
 .. doctest:: before-inserting-2000-docs
 
-  >>> client = motor.motor_asyncio.AsyncIOMotorClient('localhost', 27017)
+  >>> client = motor.motor_asyncio.AsyncIOMotorClient("localhost", 27017)
 
 Motor also supports `connection URIs`_:
 
 .. doctest:: before-inserting-2000-docs
 
-  >>> client = motor.motor_asyncio.AsyncIOMotorClient('mongodb://localhost:27017')
+  >>> client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:27017")
 
 Connect to a replica set like:
 
@@ -111,7 +115,7 @@ dot-notation or bracket-notation:
 .. doctest:: before-inserting-2000-docs
 
   >>> db = client.test_database
-  >>> db = client['test_database']
+  >>> db = client["test_database"]
 
 Creating a reference to a database does no I/O and does not require an
 ``await`` expression.
@@ -126,7 +130,7 @@ collection in Motor works the same as getting a database:
 .. doctest:: before-inserting-2000-docs
 
   >>> collection = db.test_collection
-  >>> collection = db['test_collection']
+  >>> collection = db["test_collection"]
 
 Just like getting a reference to a database, getting a reference to a
 collection does no I/O and doesn't require an ``await`` expression.
@@ -140,9 +144,9 @@ store a document in MongoDB, call :meth:`~AsyncIOMotorCollection.insert_one` in 
 .. doctest:: before-inserting-2000-docs
 
   >>> async def do_insert():
-  ...     document = {'key': 'value'}
+  ...     document = {"key": "value"}
   ...     result = await db.test_collection.insert_one(document)
-  ...     print('result %s' % repr(result.inserted_id))
+  ...     print("result %s" % repr(result.inserted_id))
   ...
   >>>
   >>> import asyncio
@@ -157,23 +161,22 @@ store a document in MongoDB, call :meth:`~AsyncIOMotorCollection.insert_one` in 
 
   >>> # Clean up from previous insert
   >>> pymongo.MongoClient().test_database.test_collection.delete_many({})
-  <pymongo.results.DeleteResult ...>
+  DeleteResult({'n': 1, 'ok': 1.0}, acknowledged=True)
 
 Insert documents in large batches with :meth:`~AsyncIOMotorCollection.insert_many`:
 
 .. doctest:: before-inserting-2000-docs
 
   >>> async def do_insert():
-  ...     result = await db.test_collection.insert_many(
-  ...         [{'i': i} for i in range(2000)])
-  ...     print('inserted %d docs' % (len(result.inserted_ids),))
+  ...     result = await db.test_collection.insert_many([{"i": i} for i in range(2000)])
+  ...     print("inserted %d docs" % (len(result.inserted_ids),))
   ...
   >>> loop = client.get_io_loop()
   >>> loop.run_until_complete(do_insert())
   inserted 2000 docs
 
-Getting a Single Document With `find_one`
------------------------------------------
+Getting a Single Document With ``find_one``
+-------------------------------------------
 
 Use :meth:`~motor.motor_asyncio.AsyncIOMotorCollection.find_one` to get the first document that
 matches a query. For example, to get a document where the value for key "i" is
@@ -182,7 +185,7 @@ less than 1:
 .. doctest:: after-inserting-2000-docs
 
   >>> async def do_find_one():
-  ...     document = await db.test_collection.find_one({'i': {'$lt': 1}})
+  ...     document = await db.test_collection.find_one({"i": {"$lt": 1}})
   ...     pprint.pprint(document)
   ...
   >>> loop = client.get_io_loop()
@@ -209,7 +212,7 @@ To find all documents with "i" less than 5:
 .. doctest:: after-inserting-2000-docs
 
   >>> async def do_find():
-  ...     cursor = db.test_collection.find({'i': {'$lt': 5}}).sort('i')
+  ...     cursor = db.test_collection.find({"i": {"$lt": 5}}).sort("i")
   ...     for document in await cursor.to_list(length=100):
   ...         pprint.pprint(document)
   ...
@@ -233,7 +236,7 @@ You can handle one document at a time in an ``async for`` loop:
 
   >>> async def do_find():
   ...     c = db.test_collection
-  ...     async for document in c.find({'i': {'$lt': 2}}):
+  ...     async for document in c.find({"i": {"$lt": 2}}):
   ...         pprint.pprint(document)
   ...
   >>> loop = client.get_io_loop()
@@ -246,9 +249,9 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
 .. doctest:: after-inserting-2000-docs
 
   >>> async def do_find():
-  ...     cursor = db.test_collection.find({'i': {'$lt': 4}})
+  ...     cursor = db.test_collection.find({"i": {"$lt": 4}})
   ...     # Modify the query before iterating
-  ...     cursor.sort('i', -1).skip(1).limit(2)
+  ...     cursor.sort("i", -1).skip(1).limit(2)
   ...     async for document in cursor:
   ...         pprint.pprint(document)
   ...
@@ -272,9 +275,9 @@ that match a query:
 
   >>> async def do_count():
   ...     n = await db.test_collection.count_documents({})
-  ...     print('%s documents in collection' % n)
-  ...     n = await db.test_collection.count_documents({'i': {'$gt': 1000}})
-  ...     print('%s documents where i > 1000' % n)
+  ...     print("%s documents in collection" % n)
+  ...     n = await db.test_collection.count_documents({"i": {"$gt": 1000}})
+  ...     print("%s documents where i > 1000" % n)
   ...
   >>> loop = client.get_io_loop()
   >>> loop.run_until_complete(do_count())
@@ -293,13 +296,13 @@ replacement document. The query follows the same syntax as for :meth:`find` or
 
   >>> async def do_replace():
   ...     coll = db.test_collection
-  ...     old_document = await coll.find_one({'i': 50})
-  ...     print('found document: %s' % pprint.pformat(old_document))
-  ...     _id = old_document['_id']
-  ...     result = await coll.replace_one({'_id': _id}, {'key': 'value'})
-  ...     print('replaced %s document' % result.modified_count)
-  ...     new_document = await coll.find_one({'_id': _id})
-  ...     print('document is now %s' % pprint.pformat(new_document))
+  ...     old_document = await coll.find_one({"i": 50})
+  ...     print("found document: %s" % pprint.pformat(old_document))
+  ...     _id = old_document["_id"]
+  ...     result = await coll.replace_one({"_id": _id}, {"key": "value"})
+  ...     print("replaced %s document" % result.modified_count)
+  ...     new_document = await coll.find_one({"_id": _id})
+  ...     print("document is now %s" % pprint.pformat(new_document))
   ...
   >>> loop = client.get_io_loop()
   >>> loop.run_until_complete(do_replace())
@@ -319,10 +322,10 @@ operator to set "key" to "value":
 
   >>> async def do_update():
   ...     coll = db.test_collection
-  ...     result = await coll.update_one({'i': 51}, {'$set': {'key': 'value'}})
-  ...     print('updated %s document' % result.modified_count)
-  ...     new_document = await coll.find_one({'i': 51})
-  ...     print('document is now %s' % pprint.pformat(new_document))
+  ...     result = await coll.update_one({"i": 51}, {"$set": {"key": "value"}})
+  ...     print("updated %s document" % result.modified_count)
+  ...     new_document = await coll.find_one({"i": 51})
+  ...     print("document is now %s" % pprint.pformat(new_document))
   ...
   >>> loop = client.get_io_loop()
   >>> loop.run_until_complete(do_update())
@@ -351,9 +354,9 @@ Deleting Documents
   >>> async def do_delete_one():
   ...     coll = db.test_collection
   ...     n = await coll.count_documents({})
-  ...     print('%s documents before calling delete_one()' % n)
-  ...     result = await db.test_collection.delete_one({'i': {'$gte': 1000}})
-  ...     print('%s documents after' % (await coll.count_documents({})))
+  ...     print("%s documents before calling delete_one()" % n)
+  ...     result = await db.test_collection.delete_one({"i": {"$gte": 1000}})
+  ...     print("%s documents after" % (await coll.count_documents({})))
   ...
   >>> loop = client.get_io_loop()
   >>> loop.run_until_complete(do_delete_one())
@@ -369,9 +372,9 @@ Deleting Documents
   >>> async def do_delete_many():
   ...     coll = db.test_collection
   ...     n = await coll.count_documents({})
-  ...     print('%s documents before calling delete_many()' % n)
-  ...     result = await db.test_collection.delete_many({'i': {'$gte': 1000}})
-  ...     print('%s documents after' % (await coll.count_documents({})))
+  ...     print("%s documents before calling delete_many()" % n)
+  ...     result = await db.test_collection.delete_many({"i": {"$gte": 1000}})
+  ...     print("%s documents after" % (await coll.count_documents({})))
   ...
   >>> loop = client.get_io_loop()
   >>> loop.run_until_complete(do_delete_many())
@@ -390,8 +393,7 @@ the :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.command` method on
 
   >>> from bson import SON
   >>> async def use_distinct_command():
-  ...     response = await db.command(SON([("distinct", "test_collection"),
-  ...                                      ("key", "i")]))
+  ...     response = await db.command(SON([("distinct", "test_collection"), ("key", "i")]))
   ...
   >>> loop = client.get_io_loop()
   >>> loop.run_until_complete(use_distinct_command())

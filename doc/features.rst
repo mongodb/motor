@@ -20,8 +20,8 @@ Featureful
 Motor wraps almost all of PyMongo's API and makes it non-blocking. For the few
 PyMongo features not implemented in Motor, see :doc:`differences`.
 
-Convenient With `tornado.gen`
-=============================
+Convenient With ``tornado.gen``
+===============================
 The :mod:`tornado.gen` module lets you use coroutines to simplify asynchronous
 code. Motor methods return Futures that are convenient to use with coroutines.
 

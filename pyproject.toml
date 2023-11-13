@@ -81,10 +81,43 @@ version = {attr = "motor._version.version"}
 [tool.setuptools.packages.find]
 include = ["motor"]
 
+[tool.mypy]
+python_version = "3.7"
+strict = true
+pretty = true
+show_error_context = true
+show_error_codes = true
+warn_redundant_casts = true
+warn_unreachable = true
+disable_error_code = ["type-arg"]
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+
+[tool.pytest.ini_options]
+minversion = "7"
+testpaths = ["test"]
+xfail_strict = true
+log_cli_level = "INFO"
+addopts = ["-ra", "--strict-config", "--strict-markers",
+    "--maxfail=10", "--durations=5", "--junitxml=xunit-results/TEST-results.xml"]
+faulthandler_timeout = 1500
+filterwarnings = [
+    "error",
+    "ignore:Bare functions are deprecated, use async ones:DeprecationWarning",
+    "ignore:Application.make_handler:DeprecationWarning",
+    "ignore:unclosed <socket.socket:ResourceWarning",
+    "ignore:unclosed event loop:ResourceWarning",
+    "ignore: The fetch_next property is deprecated:DeprecationWarning",
+    "ignore:The next_object method is deprecated:DeprecationWarning",
+    "ignore:unclosed <ssl.SSLSocket:ResourceWarning",
+    "ignore:datetime.datetime.utcfromtimestamp:DeprecationWarning",
+    "ignore:datetime.datetime.utcnow:DeprecationWarning",
+]
 
 [tool.ruff]
 target-version = "py37"
 line-length = 100
+
+[tool.ruff.lint]
 select = [
   "E", "F", "W", # flake8
   "B",           # flake8-bugbear
@@ -93,7 +126,6 @@ select = [
   "C4",          # flake8-comprehensions
   "EM",          # flake8-errmsg
   "ICN",         # flake8-import-conventions
-  "ISC",         # flake8-implicit-str-concat
   "G",           # flake8-logging-format
   "PGH",         # pygrep-hooks
   "PIE",         # flake8-pie
@@ -108,7 +140,7 @@ select = [
   "YTT",         # flake8-2020
   "EXE",         # flake8-executable
 ]
-extend-ignore = [
+ignore = [
   "ARG001", # Unused function argument
   "UP007",  # Use `X | Y` for type annotation
   "EM101",  # Exception must not use a string literal, assign to variable first
@@ -131,7 +163,7 @@ exclude = []
 flake8-unused-arguments.ignore-variadic-names = true
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?)|dummy.*)$"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "test/*.py" = ["PT009", "ARG", "E402", "PT027", "UP031",
                "B904", "C405", "SIM", "PLR", "PTH", "B018", "C4",
                "S", "E501", "T201", "E731", "F841", "F811",

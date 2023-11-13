@@ -22,6 +22,7 @@ DO NOT USE THIS MODULE.
 import functools
 import inspect
 import unittest
+import warnings
 from typing import Generic, TypeVar
 
 # Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
@@ -337,7 +338,10 @@ class Synchro(metaclass=SynchroMeta):
             def partial():
                 return async_method(*args, **kwargs)
 
-            return IOLoop.current().run_sync(partial)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                loop = IOLoop.current()
+            return loop.run_sync(partial)
 
         return synchronized_method
 
@@ -460,9 +464,9 @@ class Database(Synchro):
         if self.delegate is None:
             self.delegate = motor.MotorDatabase(client.delegate, name, **kwargs)
 
-        assert isinstance(
-            self.delegate, motor.MotorDatabase
-        ), "synchro.Database delegate must be MotorDatabase, not %s" % repr(self.delegate)
+        assert isinstance(self.delegate, motor.MotorDatabase), (
+            "synchro.Database delegate must be MotorDatabase, not %s" % repr(self.delegate)
+        )
 
     @property
     def client(self):
