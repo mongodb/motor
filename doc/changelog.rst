@@ -3,6 +3,15 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.3.2
+-----------
+- Fix incorrect type hints for the following:
+  :meth:`MotorCursor.to_list`,
+  :meth:`MotorCollection.name`,
+  :meth:`MotorDatabase.get_collection`,
+  :meth:`MotorClientSession.with_transaction`
+- Fix a bug that caused application-supplied DriverInfo to be overwritten.
+
 Motor 3.3.1
 -----------
 - Fix a bug in the type hint for :meth:`MotorCursor.to_list`.
