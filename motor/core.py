@@ -140,9 +140,25 @@ class AgnosticClient(AgnosticBaseProperties):
         self._io_loop = io_loop
 
         kwargs.setdefault("connect", False)
-        kwargs.setdefault(
-            "driver", DriverInfo("Motor", motor_version, self._framework.platform_info())
-        )
+
+        driver_info = DriverInfo("Motor", motor_version, self._framework.platform_info())
+
+        if kwargs.get("driver"):
+            provided_info = kwargs.get("driver")
+            if not isinstance(provided_info, DriverInfo):
+                raise TypeError(
+                    f"Incorrect type for `driver` {type(provided_info)};"
+                    " expected value of type pymongo.driver_info.DriverInfo"
+                )
+            added_version = f"|{provided_info.version}" if provided_info.version else ""
+            added_platform = f"|{provided_info.platform}" if provided_info.platform else ""
+            driver_info = DriverInfo(
+                f"{driver_info.name}|{provided_info.name}",
+                f"{driver_info.version}{added_version}",
+                f"{driver_info.platform}{added_platform}",
+            )
+
+        kwargs["driver"] = driver_info
 
         delegate = self.__delegate_class__(*args, **kwargs)
         super().__init__(delegate)
@@ -1650,7 +1666,12 @@ class AgnosticBaseCursor(AgnosticBase):
         else:
             the_list = []
             self._framework.add_future(
-                self.get_io_loop(), self._get_more(), self._to_list, length, the_list, future
+                self.get_io_loop(),
+                self._get_more(),
+                self._to_list,
+                length,
+                the_list,
+                future,
             )
 
         return future

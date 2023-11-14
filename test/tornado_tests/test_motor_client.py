@@ -27,6 +27,7 @@ import pymongo.mongo_client
 from bson import CodecOptions
 from mockupdb import OpQuery
 from pymongo import CursorType, ReadPreference, WriteConcern
+from pymongo.driver_info import DriverInfo
 from pymongo.errors import ConnectionFailure, OperationFailure
 from tornado import gen
 from tornado.testing import gen_test
@@ -304,6 +305,40 @@ class MotorClientHandshakeTest(MotorMockServerTest):
             await future
         except Exception:
             pass
+
+    @gen_test
+    async def test_driver_info(self):
+        server = self.server()
+        driver_info = DriverInfo(name="Foo", version="1.1.1", platform="FooPlat")
+        client = motor.MotorClient(server.uri, driver=driver_info)
+
+        # Trigger connection.
+        future = client.db.command("ping")
+        handshake = await self.run_thread(server.receives, "ismaster")
+        meta = handshake.doc["client"]
+        self.assertEqual(f"PyMongo|Motor|{driver_info.name}", meta["driver"]["name"])
+        self.assertIn("Tornado", meta["platform"])
+        self.assertIn(f"|{driver_info.platform}", meta["platform"])
+        self.assertTrue(
+            meta["driver"]["version"].endswith(f"{motor.version}|{driver_info.version}"),
+            "Version in handshake [%s] doesn't end with MotorVersion|Test version [%s]"
+            % (meta["driver"]["version"], f"{motor.version}|{driver_info.version}"),
+        )
+
+        handshake.ok()
+        server.stop()
+        client.close()
+        try:
+            await future
+        except Exception:
+            pass
+
+    def test_incorrect_driver_info(self):
+        with self.assertRaises(
+            TypeError,
+            msg="Allowed invalid type parameter str, driver should only be of DriverInfo",
+        ):
+            motor.MotorClient(driver="string")
 
 
 if __name__ == "__main__":
