@@ -46,7 +46,7 @@ and a `source distribution <https://packaging.python.org/guides/distributing-pac
      $ git push --tags
 
 #. Bump the version number to ``<next version>.dev0`` in ``motor/_version.py``,
-   commit, push.
+   commit, then push.
 
 #. Authorize the deployment for the tagged version on the release GitHub Action and
    wait for it to successfully publish to PyPI.
@@ -55,7 +55,8 @@ and a `source distribution <https://packaging.python.org/guides/distributing-pac
    new version does not show up automatically, trigger a rebuild of "latest":
    https://readthedocs.org/projects/motor/builds/
 
-#. Publish the release version in Jira and add a description.
+#. Publish the release version in Jira and add a brief description about the reason
+   for the release or the main feature.
 
 #. Announce the release on:
    https://www.mongodb.com/community/forums/c/announcements/driver-releases
