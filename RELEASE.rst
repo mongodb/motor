@@ -33,7 +33,7 @@ and a `source distribution <https://packaging.python.org/guides/distributing-pac
    the git log, but you might add some more long form notes for big changes.
 
 #. Replace the ``devN`` version number w/ the new version number (see
-   note above in `Versioning`_). Make sure version number is updated in
+   note above in `Versioning`_) in
    ``motor/_version.py``. Commit the change and tag the release.
    Immediately bump the version number to ``dev0`` in a new commit::
 
@@ -45,32 +45,17 @@ and a `source distribution <https://packaging.python.org/guides/distributing-pac
      $ git push
      $ git push --tags
 
-#. Build the release packages by running the ``release.sh``
-   script on macOS::
+#. Bump the version number to ``<next version>.dev0`` in ``motor/_version.py``,
+   commit, push.
 
-     $ git clone git@github.com:mongodb/motor.git
-     $ cd motor
-     $ git checkout "<release version number>"
-     $ ./release.sh
-
-   This will create the following distributions::
-
-     $ ls dist
-     motor-<version>.tar.gz
-     motor-<version>-py3-none-any.whl
-
-#. Upload all the release packages to PyPI with twine::
-
-     $ python3 -m twine upload dist/*
+#. Authorize the deployment for the tagged version on the release GitHub Action and
+   wait for it to successfully publish to PyPI.
 
 #. Make sure the new version appears on https://motor.readthedocs.io/. If the
    new version does not show up automatically, trigger a rebuild of "latest":
    https://readthedocs.org/projects/motor/builds/
 
-#. Bump the version number to <next version>.dev0 in motor/_version.py,
-   commit, push.
-
-#. Publish the release version in Jira.
+#. Publish the release version in Jira and add a description.
 
 #. Announce the release on:
    https://www.mongodb.com/community/forums/c/announcements/driver-releases
