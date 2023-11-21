@@ -129,6 +129,7 @@ select = [
   "G",           # flake8-logging-format
   "PGH",         # pygrep-hooks
   "PIE",         # flake8-pie
+  "PYI",         # flake8-pyi
   "PL",          # pylint
   "PT",          # flake8-pytest-style
   "PTH",         # flake8-use-pathlib
@@ -152,6 +153,7 @@ ignore = [
   "ARG002", # Unused method argument:
   "S101",   # Use of `assert` detected
   "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
+  "PYI034", #  `__aenter__` methods in classes like `AgnosticGridIn` usually return `self` at runtime
 ]
 unfixable = [
   "RUF100", # Unused noqa
@@ -167,7 +169,7 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?)|dummy.*)$"
 "test/*.py" = ["PT009", "ARG", "E402", "PT027", "UP031",
                "B904", "C405", "SIM", "PLR", "PTH", "B018", "C4",
                "S", "E501", "T201", "E731", "F841", "F811",
-               "B011", "PT015", "E721"]
+               "B011", "PT015", "E721", "PYI"]
 "synchro/__init__.py" = ["F403", "B904", "F401"]
 "doc/*.py" = [ "T201", "PTH"]
 "motor/docstrings.py" = [ "E501", ]
