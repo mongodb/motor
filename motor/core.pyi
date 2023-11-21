@@ -69,7 +69,7 @@ from pymongo.typings import (
 try:
     from pymongo.operations import SearchIndexModel
 except ImportError:
-    SearchIndexModel: typing_extensions.TypeAlias = Any  # type:ignore[misc,assignment]
+    SearchIndexModel: typing_extensions.TypeAlias = Any  # type:ignore[no-redef]
 
 _WITH_TRANSACTION_RETRY_TIME_LIMIT: int
 

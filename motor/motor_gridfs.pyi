@@ -16,7 +16,6 @@ import datetime
 import os
 from typing import Any, Iterable, Mapping, NoReturn, Optional
 
-import typing_extensions
 from bson import ObjectId
 from gridfs import DEFAULT_CHUNK_SIZE, GridFSBucket, GridIn, GridOut, GridOutCursor  # noqa: F401
 from pymongo import WriteConcern
@@ -35,7 +34,7 @@ _SEEK_END = os.SEEK_END
 
 class AgnosticGridOutCursor(AgnosticCursor):
     __motor_class_name__: str
-    __delegate_class__: typing_extensions.TypeAlias = ...  # noqa: PYI047
+    __delegate_class__: type[GridOutCursor]
     async def _Cursor__die(self, synchronous: bool = False) -> None: ...
     def next_object(self) -> AgnosticGridOutCursor: ...
 
