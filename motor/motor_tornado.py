@@ -20,7 +20,7 @@ from .metaprogramming import T, create_class_with_framework
 
 __all__ = [
     "MotorClient",
-    "MotorClientEncryption",
+    "MotorClientSession",
     "MotorDatabase",
     "MotorCollection",
     "MotorCursor",
