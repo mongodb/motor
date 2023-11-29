@@ -19,7 +19,7 @@ from .metaprogramming import T, create_class_with_framework
 
 __all__ = [
     "AsyncIOMotorClient",
-    "AsyncIOMotorClientEncryption",
+    "AsyncIOMotorClientSession",
     "AsyncIOMotorDatabase",
     "AsyncIOMotorCollection",
     "AsyncIOMotorCursor",
