@@ -9,9 +9,10 @@
 
 ## About
 
-Motor presents a coroutine-based API for non-blocking access to MongoDB.
-The source is [on GitHub](https://github.com/mongodb/motor) and the docs
-are on [ReadTheDocs](https://motor.readthedocs.io/en/stable/).
+Motor is a full-featured, non-blocking [MongoDB](http://mongodb.org/)
+driver for Python [asyncio](https://docs.python.org/3/library/asyncio.html) and
+[Tornado](http://tornadoweb.org/) applications. Motor presents a coroutine-based API
+for non-blocking access to MongoDB.
 
 > "We use Motor in high throughput environments, processing tens of
 > thousands of requests per second. It allows us to take full advantage
