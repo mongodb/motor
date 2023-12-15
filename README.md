@@ -1,15 +1,9 @@
 # Motor
 
-![image](https://raw.github.com/mongodb/motor/master/doc/_static/motor.png)
-
-- Info: Motor is a full-featured, non-blocking [MongoDB](http://mongodb.org/)
-driver for Python [Tornado](http://tornadoweb.org/) and
-[asyncio](https://docs.python.org/3/library/asyncio.html) applications.
-
-- Documentation: Available at
-[motor.readthedocs.io](https://motor.readthedocs.io/en/stable/)
-
-- Author: A. Jesse Jiryu Davis
+[![PyPI Version](https://img.shields.io/pypi/v/motor)](https://pypi.org/project/motor)
+[![Python Versions](https://img.shields.io/pypi/pyversions/motor)](https://pypi.org/project/motor)
+[![Monthly Downloads](https://static.pepy.tech/badge/motor/month)](https://pepy.tech/project/motor)
+[![Documentation Status](https://readthedocs.org/projects/motor/badge/?version=stable)](http://motor.readthedocs.io/en/stable/?badge=stable)
 
 ## About
 

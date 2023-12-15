@@ -73,7 +73,10 @@ zstd = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/mongodb/motor/"
+Homepage = "https://www.mongodb.org"
+Documentation = "https://motor.readthedocs.io"
+Source = "https://github.com/mongodb/motor"
+Tracker = "https://jira.mongodb.org/projects/MOTOR/issues"
 
 [tool.setuptools.dynamic]
 version = {attr = "motor._version.version"}
