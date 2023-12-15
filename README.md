@@ -5,6 +5,8 @@
 [![Monthly Downloads](https://static.pepy.tech/badge/motor/month)](https://pepy.tech/project/motor)
 [![Documentation Status](https://readthedocs.org/projects/motor/badge/?version=stable)](http://motor.readthedocs.io/en/stable/?badge=stable)
 
+![image](https://raw.github.com/mongodb/motor/master/doc/_static/motor.png)
+
 ## About
 
 Motor presents a coroutine-based API for non-blocking access to MongoDB.
