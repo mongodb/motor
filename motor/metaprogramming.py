@@ -124,7 +124,7 @@ def coroutine_annotation(f):
 
 class MotorAttributeFactory:
     """Used by Motor classes to mark attributes that delegate in some way to
-    PyMongo. At module import time, create_class_with_framework calls
+    PyMongo. At module import time, wcreate_class_ith_framework calls
     create_attribute() for each attr to create the final class attribute.
     """
 
@@ -290,6 +290,7 @@ def create_class_with_framework(cls: T, framework: Any, module_name: str) -> T:
         # Turn attribute factories into real methods or descriptors.
         for name, attr in base.__dict__.items():
             if isinstance(attr, MotorAttributeFactory):
+                #print('Created attribute')
                 new_class_attr = attr.create_attribute(new_class, name)
                 setattr(new_class, name, new_class_attr)
 
