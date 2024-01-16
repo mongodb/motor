@@ -126,7 +126,7 @@ class GridFSHandler(tornado.web.RequestHandler):
         if cache_time > 0:
             self.set_header(
                 "Expires",
-                datetime.datetime.now(datetime.timezone.utc)
+                datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
                 + datetime.timedelta(seconds=cache_time),
             )
             self.set_header("Cache-Control", "max-age=" + str(cache_time))

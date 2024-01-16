@@ -248,7 +248,7 @@ class AIOHTTPGridFS:
 
         if cache_time > 0:
             resp.headers["Expires"] = (
-                datetime.datetime.now(datetime.timezone.utc)
+                datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
                 + datetime.timedelta(seconds=cache_time)
             ).strftime("%a, %d %b %Y %H:%M:%S GMT")
 

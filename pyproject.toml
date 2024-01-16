@@ -112,6 +112,8 @@ filterwarnings = [
     "ignore: The fetch_next property is deprecated:DeprecationWarning",
     "ignore:The next_object method is deprecated:DeprecationWarning",
     "ignore:unclosed <ssl.SSLSocket:ResourceWarning",
+    "ignore:datetime.datetime.utcfromtimestamp:DeprecationWarning",
+    "ignore:datetime.datetime.utcnow:DeprecationWarning",
 ]
 
 [tool.ruff]

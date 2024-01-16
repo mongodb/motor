@@ -62,14 +62,14 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
         cls.contents = b"Jesse" * 100 * 1024
 
         # Record when we created the file, to check the Last-Modified header
-        cls.put_start = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
+        cls.put_start = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0, tzinfo=None)
         file_id = "id"
         cls.file_id = file_id
         cls.fs.delete(cls.file_id)
         cls.fs.put(cls.contents, _id=file_id, filename="foo", content_type="my type")
         item = cls.fs.get(file_id)
         cls.contents_hash = _hash_gridout(item)
-        cls.put_end = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
+        cls.put_end = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0, tzinfo=None)
         cls.app = cls.srv = cls.app_handler = None
 
     @classmethod
@@ -232,7 +232,7 @@ class AIOHTTPTZAwareGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
     async def test_tz_aware(self):
         client = self.asyncio_client(tz_aware=True)
         await self.start_app(AIOHTTPGridFS(client.motor_test))
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         ago = now - datetime.timedelta(minutes=10)
         hence = now + datetime.timedelta(minutes=10)
 
@@ -276,7 +276,7 @@ class AIOHTTPCustomHTTPGridFSTest(AIOHTTPGridFSHandlerTestBase):
         self.assertRegex(cache_control, r"max-age=\d+")
         self.assertEqual(10, int(cache_control.split("=")[1]))
         expiration = parse_date(response.headers["Expires"])
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
 
         # It should expire about 10 seconds from now
         self.assertTrue(
