@@ -43,7 +43,9 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
         self.contents = b"Jesse" * 100 * 1024
 
         # Record when we created the file, to check the Last-Modified header
-        self.put_start = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0, tzinfo=None)
+        self.put_start = datetime.datetime.now(datetime.timezone.utc).replace(
+            microsecond=0, tzinfo=None
+        )
         file_id = "id"
         self.file_id = file_id
         self.fs.delete(self.file_id)
@@ -51,7 +53,9 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
 
         item = self.fs.get(file_id)
         self.contents_hash = _hash_gridout(item)
-        self.put_end = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0, tzinfo=None)
+        self.put_end = datetime.datetime.now(datetime.timezone.utc).replace(
+            microsecond=0, tzinfo=None
+        )
         self.assertTrue(self.fs.get_last_version("foo"))
 
     def motor_db(self, **kwargs):
