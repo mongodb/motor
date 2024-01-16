@@ -1,5 +1,5 @@
 tornado
 aiohttp
-sphinx>=7,<8
+sphinx>=5.3,<8
 sphinx_rtd_theme>=2,<3
 readthedocs-sphinx-search~=0.3
