@@ -248,7 +248,8 @@ class AIOHTTPGridFS:
 
         if cache_time > 0:
             resp.headers["Expires"] = (
-                datetime.datetime.utcnow() + datetime.timedelta(seconds=cache_time)
+                datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+                + datetime.timedelta(seconds=cache_time)
             ).strftime("%a, %d %b %Y %H:%M:%S GMT")
 
             resp.headers["Cache-Control"] = "max-age=" + str(cache_time)
