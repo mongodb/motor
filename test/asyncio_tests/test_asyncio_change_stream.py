@@ -18,7 +18,6 @@ import asyncio
 import copy
 import threading
 import time
-import unittest
 from test import SkipTest, env
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.utils import get_async_test_timeout, wait_until
