@@ -182,7 +182,6 @@ class TestAsyncIOChangeStream(AsyncIOTestCase):
             pass
 
     @asyncio_test
-    @unittest.skip("Failing due to: https://jira.mongodb.org/browse/PYTHON-3389.")
     async def test_missing_id(self):
         coll = self.collection
         change_stream = coll.watch([{"$project": {"_id": 0}}])
