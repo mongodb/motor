@@ -221,7 +221,7 @@ class AIOHTTPGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):
                 response = await method("/fs/" + filename)
                 self.assertEqual(200, response.status)
                 # mimetypes are platform-defined, be fuzzy
-                self.assertIn(expected_type, response.headers["Content-Type"].lower())
+                self.assertIn(expected_type, response.content_type)
 
     @asyncio_test
     async def test_post(self):

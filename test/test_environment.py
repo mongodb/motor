@@ -20,6 +20,7 @@ import sys
 from functools import wraps
 from test.utils import create_user
 from test.version import Version
+from typing import TYPE_CHECKING
 from unittest import SkipTest
 
 import pymongo.errors
@@ -50,7 +51,12 @@ except ImportError:
 
 HAVE_AIOHTTP = True
 try:
-    import aiohttp
+    # Remove when we drop support for 3.7
+    if TYPE_CHECKING:
+        HAVE_AIOHTTP = False
+        aiohttp = None
+    else:
+        import aiohttp
 except ImportError:
     HAVE_AIOHTTP = False
     aiohttp = None
