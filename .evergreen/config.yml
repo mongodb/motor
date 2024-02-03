@@ -343,13 +343,13 @@ functions:
         binary: bash
         include_expansions_in_env: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"]
         args:
-          - bash $DRIVERS_TOOLS/.evergreen/csfle/setup_secrets.sh
+          - bash ${DRIVERS_TOOLS}/.evergreen/csfle/setup_secrets.sh
     - command: subprocess.exec
       params:
         working_dir: "src"
         binary: bash
         args:
-          - bash $DRIVERS_TOOLS/.evergreen/csfle/start_servers.sh
+          - bash ${DRIVERS_TOOLS}/.evergreen/csfle/start_servers.sh
     - command: shell.exec
       type: test
       params:
