@@ -5,6 +5,7 @@ set -o errexit
 set +x
 
 echo "Running enterprise authentication tests"
+source ./secrets-export.sh
 
 export DB_USER="bob"
 export DB_PASSWORD="pwd123"
