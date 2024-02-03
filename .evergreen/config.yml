@@ -417,6 +417,7 @@ functions:
       type: test
       params:
         working_dir: "src"
+        silent: true
         script: |
           set +x  # disable xtrace
           CLIENT_PEM=${DRIVERS_TOOLS}/.evergreen/x509gen/client.pem \
