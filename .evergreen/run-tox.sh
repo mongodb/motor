@@ -31,6 +31,9 @@ if [ "$SSL" != "nossl" ]; then
     export CA_PEM="$DRIVERS_TOOLS/.evergreen/x509gen/ca.pem"
 fi
 
+if [ -f secrets-export.sh ]; then
+    source secrets-export.sh
+fi
 
 # Usage:
 # createvirtualenv /path/to/python /output/path/for/venv
