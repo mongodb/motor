@@ -375,6 +375,16 @@ functions:
             bash ${PROJECT_DIRECTORY}/.evergreen/run-tox.sh
 
   "run enterprise auth tests":
+    - command: ec2.assume_role
+      params:
+        role_arn: ${aws_test_secrets_role}
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "src"
+        include_expansions_in_env: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"]
+        script: |
+          bash ${DRIVERS_TOOLS}/.evergreen/auth_aws/setup_secrets.sh drivers/enterprise_auth
     - command: shell.exec
       type: test
       params:
@@ -385,14 +395,6 @@ functions:
             CA_PEM=${DRIVERS_TOOLS}/.evergreen/x509gen/ca.pem \
             PYTHON_BINARY=${PYTHON_BINARY} \
             TOX_ENV=${TOX_ENV} \
-            SASL_HOST=${sasl_host} \
-            SASL_PORT=${sasl_port} \
-            SASL_USER=${sasl_user} \
-            SASL_PASS=${sasl_pass} \
-            SASL_DB=${sasl_db} \
-            PRINCIPAL=${principal} \
-            GSSAPI_DB=${gssapi_db} \
-            KEYTAB_BASE64=${keytab_base64} \
             PROJECT_DIRECTORY=${PROJECT_DIRECTORY} \
             bash ${PROJECT_DIRECTORY}/.evergreen/run-enterprise-auth-tests.sh
 
