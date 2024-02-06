@@ -32,8 +32,6 @@ from pymongo.database import Database
 from pymongo.driver_info import DriverInfo
 from pymongo.encryption import ClientEncryption
 
-from typing import Union
-
 from . import docstrings
 from . import version as motor_version
 from .metaprogramming import (
@@ -1610,7 +1608,7 @@ class AgnosticBaseCursor(AgnosticBase):
             self._framework.call_soon(self.get_io_loop(), functools.partial(callback, None, None))
 
     @coroutine_annotation
-    def to_list(self, length: Union[int, None]):
+    def to_list(self, length):
         """Get a list of documents.
 
         .. testsetup:: to_list
