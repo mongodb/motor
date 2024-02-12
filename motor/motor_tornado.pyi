@@ -7,6 +7,21 @@ else:
 
 from motor import core, motor_gridfs
 
+__all__: list[str] = [
+    "MotorClient",
+    "MotorClientSession",
+    "MotorDatabase",
+    "MotorCollection",
+    "MotorCursor",
+    "MotorCommandCursor",
+    "MotorChangeStream",
+    "MotorGridFSBucket",
+    "MotorGridIn",
+    "MotorGridOut",
+    "MotorGridOutCursor",
+    "MotorClientEncryption",
+]
+
 MotorClient: TypeAlias = core.AgnosticClient
 
 MotorClientSession: TypeAlias = core.AgnosticClientSession
