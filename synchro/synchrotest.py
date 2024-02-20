@@ -131,6 +131,10 @@ excluded_tests = [
     "TestCursor.test_comment",
     "TestCursor.test_where",
     "TestGridfs.test_gridfs_find",
+    # Uses patching on grid_file._UPLOAD_BUFFER_SIZE which fails in synchro.
+    "TestGridfs.test_abort",
+    "TestGridfs.test_upload_batching",
+    "TestGridfs.test_upload_bulk_write_error",
     "TestKmsTLSOptions.test_05_tlsDisableOCSPEndpointCheck_is_permitted",
     # Tests that use "authenticate" or "logoout", removed in Motor 2.0.
     "TestSASLPlain.test_sasl_plain_bad_credentials",
