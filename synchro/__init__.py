@@ -33,6 +33,8 @@ from gridfs.errors import *
 from gridfs.grid_file import (
     _SEEK_CUR,
     _SEEK_END,
+    _UPLOAD_BUFFER_CHUNKS,
+    _UPLOAD_BUFFER_SIZE,
     DEFAULT_CHUNK_SIZE,
     _clear_entity_type_registry,
 )
