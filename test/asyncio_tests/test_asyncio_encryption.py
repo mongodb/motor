@@ -99,7 +99,7 @@ class TestExplicitSimple(AsyncIOTestCase):
         msg = "key_id must be a bson.binary.Binary with subtype 4"
         algo = Algorithm.AEAD_AES_256_CBC_HMAC_SHA_512_Deterministic
         with self.assertRaisesRegex(TypeError, msg):
-            await client_encryption.encrypt("str", algo, key_id=uuid.uuid4())
+            await client_encryption.encrypt("str", algo, key_id="str")
         with self.assertRaisesRegex(TypeError, msg):
             await client_encryption.encrypt("str", algo, key_id=Binary(b"123"))
 
