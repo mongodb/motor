@@ -746,6 +746,7 @@ tasks:
         - func: "run tox"
 
     - name: "test-enterprise-auth"
+      tags: ["pr"]
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
@@ -754,12 +755,14 @@ tasks:
         - func: "run enterprise auth tests"
 
     - name: "docs"
+      tags: ["pr"]
       commands:
         - func: "run tox"
           vars:
              TOX_ENV: docs
 
     - name: "doctest"
+      tags: ["pr"]
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
@@ -768,6 +771,22 @@ tasks:
         - func: "run tox"
           vars:
              TOX_ENV: doctest
+
+    - name: "assign-pr-reviewer"
+      tags: ["pr"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            shell: "bash"
+            working_dir: src
+            script: |
+              ${PREPARE_SHELL}
+              set -x
+              export CONFIG=$PROJECT_DIRECTORY/.github/reviewers.txt
+              export SCRIPT="$DRIVERS_TOOLS/.evergreen/github_app/assign-reviewer.sh"
+              bash $SCRIPT -p $CONFIG -h ${github_commit} -o "mongodb" -n "motor"
+              echo '{"results": [{ "status": "PASS", "test_file": "Build", "log_raw": "Test completed"  } ]}' > ${PROJECT_DIRECTORY}/test-results.json
 
 # }}}
 
@@ -991,3 +1010,9 @@ buildvariants:
      PYTHON_BINARY: "/opt/python/3.7/bin/python3"
   tasks:
      - name: "doctest"
+
+- name: rhel8-pr-assign-reviewer
+  display_name: Assign PR Reviewer
+  run_on: rhel87-small
+  tasks:
+    - name: "assign-pr-reviewer"
