@@ -746,6 +746,7 @@ tasks:
         - func: "run tox"
 
     - name: "test-enterprise-auth"
+      tags: ["pr"]
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
@@ -754,12 +755,14 @@ tasks:
         - func: "run enterprise auth tests"
 
     - name: "docs"
+      tags: ["pr"]
       commands:
         - func: "run tox"
           vars:
              TOX_ENV: docs
 
     - name: "doctest"
+      tags: ["pr"]
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
