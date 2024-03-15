@@ -333,9 +333,9 @@ collection_name}`` we can do::
     result = await db.command("count", collection_name)
 
 For commands that take additional arguments we can use
-kwargs. So ``{filemd5: object_id, root: file_root}`` becomes::
+kwargs. So ``{count: collection_name, query: query}`` becomes::
 
-    result = await db.command("filemd5", object_id, root=file_root)
+    result = await db.command("count", collection_name, query=query)
 
 :Parameters:
   - `command`: document representing the command to be issued,
