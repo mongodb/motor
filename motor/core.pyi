@@ -16,7 +16,6 @@ from asyncio import Future
 from typing import (
     Any,
     Callable,
-    Collection,
     Coroutine,
     Generic,
     Iterable,
@@ -41,7 +40,7 @@ from pymongo import IndexModel, ReadPreference, WriteConcern
 from pymongo.change_stream import ChangeStream
 from pymongo.client_options import ClientOptions
 from pymongo.client_session import _T, ClientSession, SessionOptions, TransactionOptions
-from pymongo.collection import ReturnDocument, _WriteOp  # noqa: F401
+from pymongo.collection import Collection, ReturnDocument, _WriteOp  # noqa: F401
 from pymongo.command_cursor import CommandCursor, RawBatchCommandCursor
 from pymongo.cursor import Cursor, RawBatchCursor, _Hint, _Sort
 from pymongo.database import Database
@@ -112,7 +111,7 @@ class AgnosticClient(AgnosticBaseProperties[_DocumentType]):
         read_preference: Optional[_ServerMode] = None,
         write_concern: Optional[WriteConcern] = None,
         read_concern: Optional[ReadConcern] = None,
-    ) -> Database[_DocumentType]: ...
+    ) -> AgnosticDatabase[_DocumentType]: ...
     def get_default_database(
         self,
         default: Optional[str] = None,
@@ -120,7 +119,7 @@ class AgnosticClient(AgnosticBaseProperties[_DocumentType]):
         read_preference: Optional[_ServerMode] = None,
         write_concern: Optional[WriteConcern] = None,
         read_concern: Optional[ReadConcern] = None,
-    ) -> Database[_DocumentType]: ...
+    ) -> AgnosticDatabase[_DocumentType]: ...
 
     HOST: str
 
@@ -578,7 +577,7 @@ class AgnosticCollection(AgnosticBaseProperties[_DocumentType]):
         read_preference: Optional[ReadPreference] = None,
         write_concern: Optional[WriteConcern] = None,
         read_concern: Optional[ReadConcern] = None,
-    ) -> Collection[Mapping[str, Any]]: ...
+    ) -> AgnosticCollection[Mapping[str, Any]]: ...
     def list_search_indexes(
         self,
         name: Optional[str] = None,
