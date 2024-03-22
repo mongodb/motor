@@ -46,3 +46,17 @@ system; to override the default set the environment variable ``MOTOR_MAX_WORKERS
 
 Some additional threads are used for monitoring servers and background tasks, so the total
 count of threads in your process will be greater.
+
+Network Compression
+'''''''''''''''''''
+
+Like PyMongo, Motor supports network compression where network traffic between
+the client and MongoDB server are compressed.
+Keyword arguments to the Motor clients match those in MongoClient, documented
+`here <https://pymongo.readthedocs.io/en/stable/examples/network_compression.html>`_.
+By default no compression is used. If you wish to use wire compression,
+you will have to install one of the optional dependencies.
+Snappy requires `python-snappy <https://pypi.org/project/python-snappy>`_
+and zstandard requires `zstandard <https://pypi.org/project/zstandard>`_::
+
+  $ python3 -m pip install "pymongo[snappy, zstd]"
