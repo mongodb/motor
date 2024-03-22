@@ -25,7 +25,7 @@ from bson.son import SON
 from pymongo.operations import DeleteOne, InsertOne, ReplaceOne
 from pymongo.read_preferences import ReadPreference
 
-from motor.core import AgnosticClient, AgnosticCollection
+from motor.motor_asyncio import AsyncIOMotorClient
 
 try:
     from bson import ObjectId
@@ -66,12 +66,12 @@ def only_type_check(func: FuncT) -> FuncT:
 
 
 class TestMotor(AsyncIOTestCase):
-    cx: AgnosticClient
+    cx: AsyncIOMotorClient
 
     @asyncio_test  # type:ignore[misc]
     async def test_insert_find(self) -> None:
         doc = {"my": "doc"}
-        coll: AgnosticCollection = self.collection
+        coll = self.collection
         coll2 = self.cx.test.test2
         result = await coll.insert_one(doc)
         self.assertEqual(result.inserted_id, doc["_id"])
@@ -95,8 +95,14 @@ class TestMotor(AsyncIOTestCase):
         self.assertEqual(coll.name, "test_collection")
 
     @asyncio_test  # type:ignore[misc]
+    async def test_get_database(self) -> None:
+        db1 = self.cx.get_database("test_database")
+        db2 = self.cx["test_database"]
+        self.assertEqual(db1.client, db2.client)
+
+    @asyncio_test  # type:ignore[misc]
     async def test_find_one(self) -> None:
-        c: AgnosticClient[Movie] = self.asyncio_client()
+        c: AsyncIOMotorClient[Movie] = self.asyncio_client()
         coll = c[self.db.name]["movies"]
         await coll.insert_one(Movie(name="American Graffiti", year=1973))
         result = await coll.find_one({})
@@ -107,7 +113,7 @@ class TestMotor(AsyncIOTestCase):
     @asyncio_test  # type:ignore[misc]
     async def test_bulk_write(self) -> None:
         await self.collection.insert_one({})
-        coll: AgnosticCollection = self.collection
+        coll = self.collection
         requests: List[InsertOne[Movie]] = [InsertOne(Movie(name="American Graffiti", year=1973))]
         result_one = await coll.bulk_write(requests)
         self.assertTrue(result_one.acknowledged)
@@ -125,7 +131,7 @@ class TestMotor(AsyncIOTestCase):
     @only_type_check
     @asyncio_test  # type:ignore[misc]
     async def test_bulk_write_heterogeneous(self) -> None:
-        coll: AgnosticCollection = self.collection
+        coll = self.collection
         requests: List[Union[InsertOne[Movie], ReplaceOne, DeleteOne]] = [
             InsertOne(Movie(name="American Graffiti", year=1973)),
             ReplaceOne({}, {"name": "American Graffiti", "year": "WRONG_TYPE"}),
@@ -240,20 +246,20 @@ class TestDocumentType(AsyncIOTestCase):
 class TestCommandDocumentType(AsyncIOTestCase):
     @only_type_check
     async def test_default(self) -> None:
-        client: AgnosticClient = AgnosticClient()
+        client: AsyncIOMotorClient = AsyncIOMotorClient()
         result: Dict = await client.admin.command("ping")
         result["a"] = 1
 
     @only_type_check
     async def test_explicit_document_type(self) -> None:
-        client: AgnosticClient = AgnosticClient()
+        client: AsyncIOMotorClient = AsyncIOMotorClient()
         codec_options: CodecOptions[Dict[str, Any]] = CodecOptions()
         result = await client.admin.command("ping", codec_options=codec_options)
         result["a"] = 1
 
     @only_type_check
     async def test_typeddict_document_type(self) -> None:
-        client: AgnosticClient = AgnosticClient()
+        client: AsyncIOMotorClient = AsyncIOMotorClient()
         codec_options: CodecOptions[Movie] = CodecOptions()
         result = await client.admin.command("ping", codec_options=codec_options)
         assert result["year"] == 1
@@ -261,7 +267,7 @@ class TestCommandDocumentType(AsyncIOTestCase):
 
     @only_type_check
     async def test_raw_bson_document_type(self) -> None:
-        client: AgnosticClient = AgnosticClient()
+        client: AsyncIOMotorClient = AsyncIOMotorClient()
         codec_options = CodecOptions(RawBSONDocument)
         result = await client.admin.command(
             "ping", codec_options=codec_options
@@ -270,7 +276,7 @@ class TestCommandDocumentType(AsyncIOTestCase):
 
     @only_type_check
     async def test_son_document_type(self) -> None:
-        client: AgnosticClient[SON[str, Any]] = AgnosticClient(document_class=SON[str, Any])
+        client: AsyncIOMotorClient[SON[str, Any]] = AsyncIOMotorClient(document_class=SON[str, Any])
         codec_options = CodecOptions(SON[str, Any])
         result = await client.admin.command("ping", codec_options=codec_options)
         result["a"] = 1
