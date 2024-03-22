@@ -113,8 +113,10 @@ filterwarnings = [
     "ignore: The fetch_next property is deprecated:DeprecationWarning",
     "ignore:The next_object method is deprecated:DeprecationWarning",
     "ignore:unclosed <ssl.SSLSocket:ResourceWarning",
-    "ignore:datetime.datetime.utcfromtimestamp:DeprecationWarning",
-    "ignore:datetime.datetime.utcnow:DeprecationWarning",
+    "ignore:datetime.datetime.utc:DeprecationWarning",
+    # From older versions aiohttp.
+    "ignore:\"@coroutine\" decorator is deprecated since Python 3.8:DeprecationWarning",
+    "ignore:The loop argument is deprecated since Python 3.8:DeprecationWarning"
 ]
 
 [tool.ruff]
