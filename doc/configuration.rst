@@ -59,4 +59,4 @@ you will have to install one of the optional dependencies.
 Snappy requires `python-snappy <https://pypi.org/project/python-snappy>`_
 and zstandard requires `zstandard <https://pypi.org/project/zstandard>`_::
 
-  $ python3 -m pip install "pymongo[snappy, zstd]"
+  $ python3 -m pip install "motor[snappy, zstd]"
