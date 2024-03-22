@@ -116,6 +116,7 @@ filterwarnings = [
     "ignore:datetime.datetime.utc:DeprecationWarning",
     # From older versions aiohttp.
     "ignore:\"@coroutine\" decorator is deprecated since Python 3.8:DeprecationWarning",
+    "ignore:The loop argument is deprecated since Python 3.8:DeprecationWarning"
 ]
 
 [tool.ruff]
