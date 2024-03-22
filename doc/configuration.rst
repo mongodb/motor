@@ -28,14 +28,14 @@ and executing the following command::
 
 You should see "TLS 1.X" where X is >= 1.
 
-You can read more about TLS versions and their security implications here:
+You can read more about TLS versions and their security implications in this `cheat sheet`_.
 
-`<https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html#only-support-strong-protocols>`_
 
 .. _python.org: https://www.python.org/downloads/
 .. _homebrew: https://brew.sh/
 .. _macports: https://www.macports.org/
 .. _requests: https://pypi.python.org/pypi/requests
+.. _cheat sheet: https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html#only-support-strong-protocols
 
 Thread Pool Size
 ''''''''''''''''
