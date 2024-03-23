@@ -657,7 +657,7 @@ class AgnosticCollection(AgnosticBaseProperties[_DocumentType]):
     def wrap(self, obj: Any) -> Any: ...
     def get_io_loop(self) -> Any: ...
 
-class AgnosticBaseCursor(AgnosticBase):
+class AgnosticBaseCursor(AgnosticBase, Generic[_DocumentType]):
     def __init__(
         self, cursor: Union[Cursor, CommandCursor, _LatentCursor], collection: AgnosticCollection
     ) -> None: ...
@@ -690,7 +690,7 @@ class AgnosticBaseCursor(AgnosticBase):
     def _killed(self) -> None: ...
     async def close(self) -> None: ...
 
-class AgnosticCursor(AgnosticBaseCursor):
+class AgnosticCursor(AgnosticBaseCursor[_DocumentType]):
     __motor_class_name__: str
     __delegate_class__: type[Cursor]
     def collation(self, collation: Optional[_CollationIn]) -> AgnosticCursor: ...
@@ -720,11 +720,11 @@ class AgnosticCursor(AgnosticBaseCursor):
     def _data(self) -> Any: ...
     def _killed(self) -> Any: ...
 
-class AgnosticRawBatchCursor(AgnosticCursor):
+class AgnosticRawBatchCursor(AgnosticCursor[_DocumentType]):
     __motor_class_name__: str
     __delegate_class__: type[RawBatchCursor]
 
-class AgnosticCommandCursor(AgnosticBaseCursor):
+class AgnosticCommandCursor(AgnosticBaseCursor[_DocumentType]):
     __motor_class_name__: str
     __delegate_class__: type[CommandCursor]
 
@@ -732,7 +732,7 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
     def _data(self) -> Any: ...
     def _killed(self) -> Any: ...
 
-class AgnosticRawBatchCommandCursor(AgnosticCommandCursor):
+class AgnosticRawBatchCommandCursor(AgnosticCommandCursor[_DocumentType]):
     __motor_class_name__: str
     __delegate_class__: type[RawBatchCommandCursor]
 
@@ -743,12 +743,12 @@ class _LatentCursor:
     def clone(self) -> _LatentCursor: ...
     def rewind(self) -> _LatentCursor: ...
 
-class AgnosticLatentCommandCursor(AgnosticCommandCursor):
+class AgnosticLatentCommandCursor(AgnosticCommandCursor[_DocumentType]):
     __motor_class_name__: str
     def __init__(self, collection: AgnosticCollection, start: Any, *args: Any, **kwargs: Any): ...
     def _on_started(self, original_future: Any, future: Any) -> None: ...
 
-class AgnosticChangeStream(AgnosticBase):
+class AgnosticChangeStream(AgnosticBase, Generic[_DocumentType]):
     __motor_class_name__: str
     __delegate_class__: type[ChangeStream]
 
@@ -786,7 +786,7 @@ class AgnosticChangeStream(AgnosticBase):
     def __enter__(self) -> None: ...
     def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None: ...
 
-class AgnosticClientEncryption(AgnosticBase):
+class AgnosticClientEncryption(AgnosticBase, Generic[_DocumentType]):
     __motor_class_name__: str
     __delegate_class__: type[ClientEncryption]
     def __init__(
