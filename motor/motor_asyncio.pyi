@@ -146,7 +146,7 @@ class AsyncIOMotorDatabase(core.AgnosticDatabase[_DocumentType]):
     def __getattr__(self, name: str) -> AsyncIOMotorCollection: ...
     def __getitem__(self, name: str) -> AsyncIOMotorCollection: ...
 
-class AsyncIOMotorCollection(core.AgnosticCollection):
+class AsyncIOMotorCollection(core.AgnosticCollection[_DocumentType]):
     def with_options(
         self,
         codec_options: Optional[CodecOptions] = None,

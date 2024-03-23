@@ -145,7 +145,7 @@ class MotorDatabase(core.AgnosticDatabase[_DocumentType]):
     def __getattr__(self, name: str) -> MotorCollection: ...
     def __getitem__(self, name: str) -> MotorCollection: ...
 
-class MotorCollection(core.AgnosticCollection):
+class MotorCollection(core.AgnosticCollection[_DocumentType]):
     def with_options(
         self,
         codec_options: Optional[CodecOptions] = None,
