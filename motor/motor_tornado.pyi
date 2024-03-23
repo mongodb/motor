@@ -77,7 +77,7 @@ class MotorClientSession(core.AgnosticClientSession):
     def client(self) -> MotorClient: ...
     async def __aenter__(self) -> MotorClientSession: ...
 
-class MotorDatabase(core.AgnosticDatabase):
+class MotorDatabase(core.AgnosticDatabase[_DocumentType]):
     async def cursor_command(
         self,
         command: Union[str, MutableMapping[str, Any]],
@@ -208,7 +208,7 @@ class MotorClientEncryption(core.AgnosticClientEncryption):
     async def get_keys(self) -> MotorCursor: ...
     async def create_encrypted_collection(
         self,
-        database: core.AgnosticDatabase,
+        database: core.AgnosticDatabase[_DocumentTypeArg],
         name: str,
         encrypted_fields: Mapping[str, Any],
         kms_provider: Optional[str] = None,
