@@ -26,7 +26,7 @@ __all__: list[str] = [
     "AsyncIOMotorLatentCommandCursor",
 ]
 
-class AsyncIOMotorClient(core.AgnosticClient):
+class AsyncIOMotorClient(core.AgnosticClient[_DocumentType]):
     def get_database(
         self,
         name: Optional[str] = None,

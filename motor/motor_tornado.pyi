@@ -25,7 +25,7 @@ __all__: list[str] = [
     "MotorClientEncryption",
 ]
 
-class MotorClient(core.AgnosticClient):
+class MotorClient(core.AgnosticClient[_DocumentType]):
     def get_database(
         self,
         name: Optional[str] = None,
