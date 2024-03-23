@@ -49,7 +49,7 @@ class AsyncIOMotorClient(core.AgnosticClient[_DocumentType]):
         session: Optional[core.AgnosticClientSession] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
-    ) -> AsyncIOMotorCommandCursor: ...
+    ) -> AsyncIOMotorCommandCursor[dict[str, Any]]: ...
     async def start_session(
         self,
         causal_consistency: Optional[bool] = None,
@@ -90,7 +90,7 @@ class AsyncIOMotorDatabase(core.AgnosticDatabase[_DocumentType]):
         comment: Optional[Any] = None,
         max_await_time_ms: Optional[int] = None,
         **kwargs: Any,
-    ) -> AsyncIOMotorCommandCursor: ...
+    ) -> AsyncIOMotorCommandCursor[_DocumentType]: ...
     async def create_collection(
         self,
         name: str,
@@ -116,7 +116,7 @@ class AsyncIOMotorDatabase(core.AgnosticDatabase[_DocumentType]):
         filter: Optional[Mapping[str, Any]] = None,
         comment: Optional[Any] = None,
         **kwargs: Any,
-    ) -> AsyncIOMotorCommandCursor: ...
+    ) -> AsyncIOMotorCommandCursor[MutableMapping[str, Any]]: ...
     def with_options(
         self,
         codec_options: Optional[CodecOptions[_DocumentTypeArg]] = None,
@@ -168,7 +168,7 @@ class AsyncIOMotorCollection(core.AgnosticCollection[_DocumentType]):
     def find_raw_batches(self, *args: Any, **kwargs: Any) -> AsyncIOMotorRawBatchCursor[_DocumentType]: ...
     def aggregate(
         self, pipeline: _Pipeline, *args: Any, **kwargs: Any
-    ) -> AsyncIOMotorCommandCursor: ...
+    ) -> AsyncIOMotorCommandCursor[_DocumentType]: ...
     def aggregate_raw_batches(
         self, pipeline: _Pipeline, **kwargs: Any
     ) -> AsyncIOMotorRawBatchCursor[_DocumentType]: ...
