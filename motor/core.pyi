@@ -662,9 +662,9 @@ class AgnosticCollection(AgnosticBaseProperties[_DocumentType]):
 class AgnosticBaseCursor(AgnosticBase, Generic[_DocumentType]):
     def __init__(
         self,
-        cursor: Union[Cursor[_DocumentType],
-        CommandCursor[_DocumentType],
-        _LatentCursor[_DocumentType]],
+        cursor: Union[
+            Cursor[_DocumentType], CommandCursor[_DocumentType], _LatentCursor[_DocumentType]
+        ],
         collection: AgnosticCollection[_DocumentType],
     ) -> None: ...
     def address(self) -> Optional[_Address]: ...
