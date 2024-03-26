@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """Version-related data for motor."""
-version_tuple = (3, 4, 0, ".dev1")
+version_tuple = (3, 4, 0)
 
 
 def get_version_string() -> str:
