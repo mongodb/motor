@@ -27,6 +27,7 @@ from typing import (
     TypeVar,
     Union,
     overload,
+    Type,
 )
 
 import pymongo.common
@@ -36,6 +37,7 @@ import pymongo.mongo_client
 import typing_extensions
 from bson import Binary, Code, CodecOptions, DBRef, Timestamp
 from bson.raw_bson import RawBSONDocument
+from bson.codec_options import TypeRegistry
 from pymongo import IndexModel, ReadPreference, WriteConcern
 from pymongo.change_stream import ChangeStream
 from pymongo.client_options import ClientOptions
@@ -155,7 +157,16 @@ class AgnosticClient(AgnosticBaseProperties[_DocumentType]):
     _io_loop: Optional[Any]
     _framework: Any
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None: ...
+    def __init__(
+        self,
+        host: Optional[Union[str, Sequence[str]]] = None,
+        port: Optional[int] = None,
+        document_class: Optional[Type[_DocumentType]] = None,
+        tz_aware: Optional[bool] = None,
+        connect: Optional[bool] = None,
+        type_registry: Optional[TypeRegistry] = None,
+        **kwargs: Any,
+    ) -> None: ...
     @property
     def io_loop(self) -> Any: ...
     def get_io_loop(self) -> Any: ...
