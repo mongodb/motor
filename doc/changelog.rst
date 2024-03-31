@@ -3,6 +3,12 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.4.0
+-----------
+
+- Type hint bug fixes and improvements.  Added typings to classes in ``motor_tornado`` and
+  ``motor_asyncio``.
+
 Motor 3.3.2
 -----------
 - Fix incorrect type hints for the following:
