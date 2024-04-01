@@ -160,7 +160,7 @@ class AgnosticClient(AgnosticBaseProperties[_DocumentType]):
         self,
         host: Optional[Union[str, Sequence[str]]] = None,
         port: Optional[int] = None,
-        document_class: Optional[Type[_DocumentType]] = None,
+        document_class: Optional[type[_DocumentType]] = None,
         tz_aware: Optional[bool] = None,
         connect: Optional[bool] = None,
         type_registry: Optional[TypeRegistry] = None,
