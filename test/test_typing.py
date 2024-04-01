@@ -15,6 +15,7 @@
 """Test that each file in mypy_fails/ actually fails mypy, and test some
 sample client code that uses Motor typings.
 """
+
 import unittest
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, TypeVar, Union, cast
@@ -22,6 +23,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, TypeVar, U
 from bson import CodecOptions
 from bson.raw_bson import RawBSONDocument
 from bson.son import SON
+from pymongo import ASCENDING
 from pymongo.operations import DeleteOne, InsertOne, ReplaceOne
 from pymongo.read_preferences import ReadPreference
 
@@ -214,6 +216,118 @@ class TestMotor(AsyncIOTestCase):
 
 
 class TestDocumentType(AsyncIOTestCase):
+    @only_type_check
+    async def test_default(self) -> None:
+        client: AsyncIOMotorClient = AsyncIOMotorClient()
+        coll = client.test.test
+        retrieved = await coll.find_one({"_id": "foo"})
+        assert retrieved is not None
+        retrieved["a"] = 1
+
+    @only_type_check
+    async def test_explicit_document_type(self) -> None:
+        client: AsyncIOMotorClient[Dict[str, Any]] = AsyncIOMotorClient()
+        coll = client.test.test
+        retrieved = await coll.find_one({"_id": "foo"})
+        assert retrieved is not None
+        retrieved["a"] = 1
+
+    @only_type_check
+    async def test_typeddict_document_type(self) -> None:
+        client: AsyncIOMotorClient[Movie] = AsyncIOMotorClient()
+        coll = client.test.test
+        retrieved = await coll.find_one({"_id": "foo"})
+        assert retrieved is not None
+        assert retrieved["year"] == 1
+        assert retrieved["name"] == "a"
+
+    @only_type_check
+    async def test_typeddict_document_type_insertion(self) -> None:
+        client: AsyncIOMotorClient[Movie] = AsyncIOMotorClient()
+        coll = client.test.test
+        mov = {"name": "THX-1138", "year": 1971}
+        movie = Movie(name="THX-1138", year=1971)
+        await coll.insert_one(mov)  # type: ignore[arg-type]
+        await coll.insert_one(
+            {"name": "THX-1138", "year": 1971}
+        )  # This will work because it is in-line.
+        await coll.insert_one(movie)
+        await coll.insert_many([mov])  # type: ignore[list-item]
+        await coll.insert_many([movie])
+        bad_mov = {"name": "THX-1138", "year": "WRONG TYPE"}
+        bad_movie = Movie(name="THX-1138", year="WRONG TYPE")  # type: ignore[typeddict-item]
+        await coll.insert_one(bad_mov)  # type:ignore[arg-type]
+        await coll.insert_one({"name": "THX-1138", "year": "WRONG TYPE"})  # type: ignore[typeddict-item]
+        await coll.insert_one(bad_movie)
+        await coll.insert_many([bad_mov])  # type: ignore[list-item]
+        await coll.insert_many(
+            [{"name": "THX-1138", "year": "WRONG TYPE"}]  # type: ignore[typeddict-item]
+        )
+        await coll.insert_many([bad_movie])
+
+    @only_type_check
+    async def test_bulk_write_document_type_insertion(self) -> None:
+        client: AsyncIOMotorClient[MovieWithId] = AsyncIOMotorClient()
+        coll = client.test.test
+        await coll.bulk_write(
+            [InsertOne(Movie({"name": "THX-1138", "year": 1971}))]  # type:ignore[arg-type]
+        )
+        mov_dict = {"_id": ObjectId(), "name": "THX-1138", "year": 1971}
+        await coll.bulk_write(
+            [InsertOne(mov_dict)]  # type:ignore[arg-type]
+        )
+        await coll.bulk_write(
+            [
+                InsertOne({"_id": ObjectId(), "name": "THX-1138", "year": 1971})
+            ]  # No error because it is in-line.
+        )
+
+    @only_type_check
+    async def test_bulk_write_document_type_replacement(self) -> None:
+        client: AsyncIOMotorClient[MovieWithId] = AsyncIOMotorClient()
+        coll = client.test.test
+        await coll.bulk_write(
+            [ReplaceOne({}, Movie({"name": "THX-1138", "year": 1971}))]  # type:ignore[arg-type]
+        )
+        mov_dict = {"_id": ObjectId(), "name": "THX-1138", "year": 1971}
+        await coll.bulk_write(
+            [ReplaceOne({}, mov_dict)]  # type:ignore[arg-type]
+        )
+        await coll.bulk_write(
+            [
+                ReplaceOne({}, {"_id": ObjectId(), "name": "THX-1138", "year": 1971})
+            ]  # No error because it is in-line.
+        )
+
+    @only_type_check
+    async def test_raw_bson_document_type(self) -> None:
+        client = AsyncIOMotorClient(document_class=RawBSONDocument)
+        coll = client.test.test
+        retrieved = await coll.find_one({"_id": "foo"})
+        assert retrieved is not None
+        assert len(retrieved.raw) > 0
+
+    @only_type_check
+    async def test_son_document_type(self) -> None:
+        client = AsyncIOMotorClient(document_class=SON[str, Any])
+        coll = client.test.test
+        retrieved = await coll.find_one({"_id": "foo"})
+        assert retrieved is not None
+        retrieved["a"] = 1
+
+    def test_son_document_type_runtime(self) -> None:
+        AsyncIOMotorClient(document_class=SON[str, Any], connect=False)
+
+    @only_type_check
+    async def test_create_index(self) -> None:
+        client: AsyncIOMotorClient[Dict[str, str]] = AsyncIOMotorClient("test")
+        db = client.test
+        async with await client.start_session() as session:
+            index = await db.test.create_index(
+                [("user_id", ASCENDING)], unique=True, session=session
+            )
+            assert isinstance(index, str)
+
     @only_type_check
     def test_typeddict_explicit_document_type(self) -> None:
         out = MovieWithId(_id=ObjectId(), name="THX-1138", year=1971)
