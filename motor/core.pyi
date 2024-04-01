@@ -26,8 +26,7 @@ from typing import (
     Sequence,
     TypeVar,
     Union,
-    overload,
-    Type,
+    overload
 )
 
 import pymongo.common
