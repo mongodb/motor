@@ -26,7 +26,7 @@ from typing import (
     Sequence,
     TypeVar,
     Union,
-    overload
+    overload,
 )
 
 import pymongo.common
@@ -35,8 +35,8 @@ import pymongo.errors
 import pymongo.mongo_client
 import typing_extensions
 from bson import Binary, Code, CodecOptions, DBRef, Timestamp
-from bson.raw_bson import RawBSONDocument
 from bson.codec_options import TypeRegistry
+from bson.raw_bson import RawBSONDocument
 from pymongo import IndexModel, ReadPreference, WriteConcern
 from pymongo.change_stream import ChangeStream
 from pymongo.client_options import ClientOptions
