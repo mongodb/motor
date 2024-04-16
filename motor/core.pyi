@@ -773,6 +773,7 @@ class AgnosticChangeStream(AgnosticBase, Generic[_DocumentType]):
     __delegate_class__: type[ChangeStream]
 
     async def _close(self) -> None: ...
+    @property
     def resume_token(self) -> Optional[Mapping[str, Any]]: ...
     def __init__(
         self,
