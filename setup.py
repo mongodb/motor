@@ -18,4 +18,4 @@ extras_require = dict(  # noqa:C408
     zstd=parse_reqs_file("requirements/zstd.txt"),
 )
 
-setup(install_requires=parse_reqs_file("requirements"), extras_require=extras_require)
+setup(install_requires=parse_reqs_file("requirements.txt"), extras_require=extras_require)
