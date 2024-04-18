@@ -1,0 +1,5 @@
+pytest>=7
+mockupdb
+tornado>=5
+aiohttp!=3.8.6
+motor[encryption]
