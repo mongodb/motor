@@ -1,0 +1,1 @@
+pymongo[gssapi]>=4.5,<5

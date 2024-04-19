@@ -1,0 +1,1 @@
+pymongo[encryption]>=4.5,<5

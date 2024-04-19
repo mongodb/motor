@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "motor"
-dynamic = ["version"]
+dynamic = ["version", "dependencies", "optional-dependencies"]
 description = "Non-blocking MongoDB driver for Tornado or asyncio"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -41,35 +41,6 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-]
-dependencies = [
-    "pymongo>=4.5,<5",
-]
-
-[project.optional-dependencies]
-aws = [
-    "pymongo[aws]>=4.5,<5",
-]
-encryption = [
-    "pymongo[encryption]>=4.5,<5",
-]
-gssapi = [
-    "pymongo[gssapi]>=4.5,<5",
-]
-ocsp = [
-    "pymongo[ocsp]>=4.5,<5",
-]
-snappy = [
-    "pymongo[snappy]>=4.5,<5",
-]
-srv = [
-    "pymongo[srv]>=4.5,<5",
-]
-test = [
-    "pytest>=7", "mockupdb", "tornado>=5", "aiohttp!=3.8.6", "motor[encryption]"
-]
-zstd = [
-    "pymongo[zstd]>=4.5,<5",
 ]
 
 [project.urls]

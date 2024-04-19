@@ -1,0 +1,1 @@
+pymongo[zstd]>=4.5,<5

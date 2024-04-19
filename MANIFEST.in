@@ -2,6 +2,7 @@ include README.md
 include LICENSE
 include tox.ini
 include pyproject.toml
+include requirements.txt
 include doc/Makefile
 include doc/examples/tornado_change_stream_templates/index.html
 recursive-include doc *.rst
@@ -18,6 +19,7 @@ recursive-include synchro *.py
 recursive-include motor *.pyi
 recursive-include motor *.typed
 recursive-include motor *.py
+recursive-include requirements *.txt
 
 exclude .readthedocs.yaml
 exclude .git-blame-ignore-revs
