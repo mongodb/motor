@@ -23,7 +23,7 @@ import unittest
 from test.test_environment import CA_PEM, CLIENT_PEM, env
 
 import gridfs
-from tornado.testing import AsyncHTTPTestCase
+from tornado import testing
 from tornado.web import Application
 
 import motor
@@ -33,7 +33,7 @@ from motor.motor_gridfs import _hash_gridout
 
 # We're using Tornado's AsyncHTTPTestCase instead of our own MotorTestCase for
 # the convenience of self.fetch().
-class GridFSHandlerTestBase(AsyncHTTPTestCase):
+class GridFSHandlerTestBase(testing.AsyncHTTPTestCase):
     def setUp(self):
         super().setUp()
 
@@ -73,6 +73,10 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
         self.fs.delete(self.file_id)
         super().tearDown()
 
+    # Workaround for https://github.com/pytest-dev/pytest/issues/12263.
+    def runTest(self):
+        pass
+
     def get_app(self):
         return Application([("/(.+)", motor.web.GridFSHandler, {"database": self.motor_db()})])
 
@@ -80,9 +84,9 @@ class GridFSHandlerTestBase(AsyncHTTPTestCase):
         # A stop() method more permissive about the number of its positional
         # arguments than AsyncHTTPTestCase.stop
         if len(args) == 1:
-            AsyncHTTPTestCase.stop(self, args[0], **kwargs)
+            testing.AsyncHTTPTestCase.stop(self, args[0], **kwargs)
         else:
-            AsyncHTTPTestCase.stop(self, args, **kwargs)
+            testing.AsyncHTTPTestCase.stop(self, args, **kwargs)
 
     def parse_date(self, d):
         date_tuple = email.utils.parsedate(d)
