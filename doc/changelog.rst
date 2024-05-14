@@ -1257,8 +1257,6 @@ another, if the remote host requires authentication.
 For this, use PyMongo's ``copy_database`` method, or, since PyMongo's
 ``copy_database`` will be removed in a future release too, use the mongo shell.
 
-.. seealso:: `The "copydb" command <https://mongodb.com/docs/manual/reference/command/copydb/>`_.
-
 Motor 0.3.3
 -----------
 
