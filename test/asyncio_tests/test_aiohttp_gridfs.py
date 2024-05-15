@@ -122,11 +122,13 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
 
     async def stop(self):
         # aiohttp.rtfd.io/en/stable/web.html#aiohttp-web-graceful-shutdown
-        self.srv.close()
-        await self.srv.wait_closed()
-        await self.app.shutdown()
-        await self.app_handler.shutdown(timeout=1)
-        await self.app.cleanup()
+        if self.srv is not None:
+            self.srv.close()
+            await self.srv.wait_closed()
+        if self.app is not None:
+            await self.app.shutdown()
+            await self.app_handler.shutdown(timeout=1)
+            await self.app.cleanup()
 
 
 class AIOHTTPGridFSHandlerTest(AIOHTTPGridFSHandlerTestBase):

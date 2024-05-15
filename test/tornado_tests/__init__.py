@@ -66,6 +66,10 @@ class MotorTest(testing.AsyncTestCase):
         await self.collection.delete_many({})
         await self.collection.insert_many([{"_id": i} for i in range(200)])
 
+    # Workaround for https://github.com/pytest-dev/pytest/issues/12263.
+    def runTest(self):
+        pass
+
     make_test_data.__test__ = False
 
     async def set_fail_point(self, client, command_args):

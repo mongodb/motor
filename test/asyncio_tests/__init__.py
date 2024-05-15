@@ -97,6 +97,10 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
         self.collection = self.db.test_collection
         self.loop.run_until_complete(self.collection.drop())
 
+    # Workaround for https://github.com/pytest-dev/pytest/issues/12263.
+    def runTest(self):
+        pass
+
     def get_client_kwargs(self, set_loop=True, **kwargs):
         if set_loop:
             kwargs.setdefault("io_loop", self.loop)
