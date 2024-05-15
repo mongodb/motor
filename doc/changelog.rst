@@ -3,6 +3,11 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.5.0
+-----------
+
+- Drop support for Python 3.7.
+
 Motor 3.4.0
 -----------
 

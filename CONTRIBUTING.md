@@ -35,7 +35,7 @@ Python version on your path, and run:
 tox -m test
 ```
 
-The doctests pass with Python 3.7+ and a MongoDB 5.0 instance running on
+The doctests pass with Python 3.8+ and a MongoDB 5.0 instance running on
 port 27017:
 
 ```bash

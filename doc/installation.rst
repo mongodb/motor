@@ -20,7 +20,7 @@ asyncio. It requires:
 
 * Unix (including macOS) or Windows.
 * PyMongo_ >=4.1,<5
-* Python 3.7+
+* Python 3.8+
 
 Optional dependencies:
 
