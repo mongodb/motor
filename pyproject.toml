@@ -8,7 +8,7 @@ dynamic = ["version", "dependencies", "optional-dependencies"]
 description = "Non-blocking MongoDB driver for Tornado or asyncio"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 authors = [
     { name = "A. Jesse Jiryu Davis", email = "jesse@mongodb.com" },
 ]
@@ -33,7 +33,6 @@ classifiers = [
     "Typing :: Typed",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -56,7 +55,7 @@ version = {attr = "motor._version.version"}
 include = ["motor"]
 
 [tool.mypy]
-python_version = "3.7"
+python_version = "3.8"
 strict = true
 pretty = true
 show_error_context = true
@@ -65,7 +64,6 @@ warn_redundant_casts = true
 warn_unreachable = true
 disable_error_code = ["type-arg"]
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-exclude = ["aiohttp"] # Remove when drop support for 3.7
 
 [tool.pytest.ini_options]
 minversion = "7"
@@ -91,7 +89,7 @@ filterwarnings = [
 ]
 
 [tool.ruff]
-target-version = "py37"
+target-version = "py38"
 line-length = 100
 
 [tool.ruff.lint]

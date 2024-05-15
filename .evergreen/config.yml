@@ -809,18 +809,10 @@ axes:
   - id: tox-env
     display_name: "Tox Env RHEL8"
     values:
-      - id: "test-pypy38"
+      - id: "test-pypy39"
         variables:
            TOX_ENV: "test"
-           PYTHON_BINARY: "/opt/python/pypy3.8/bin/python3"
-      - id: "test-py37"
-        variables:
-           TOX_ENV: "test"
-           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
-      - id: "test-py37"
-        variables:
-           TOX_ENV: "test"
-           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+           PYTHON_BINARY: "/opt/python/pypy3.9/bin/python3"
       - id: "test-py38"
         variables:
            TOX_ENV: "test"
@@ -844,11 +836,11 @@ axes:
       - id: "test-pymongo-latest"
         variables:
            TOX_ENV: "test-pymongo-latest"
-           PYTHON_BINARY: "/opt/python/3.7/bin/python3"
-      - id: "synchro-py37"
+           PYTHON_BINARY: "/opt/python/3.8/bin/python3"
+      - id: "synchro-py38"
         variables:
           TOX_ENV: "synchro"
-          PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+          PYTHON_BINARY: "/opt/python/3.8/bin/python3"
       - id: "synchro-py312"
         variables:
           TOX_ENV: "synchro"
@@ -874,10 +866,6 @@ axes:
   - id: tox-env-win
     display_name: "Tox Env Windows"
     values:
-      - id: "test-py37"
-        variables:
-          TOX_ENV: "test"
-          PYTHON_BINARY: "c:/python/Python37/python.exe"
       - id: "test-py38"
         variables:
            TOX_ENV: "test"
@@ -928,7 +916,7 @@ buildvariants:
     # TODO: synchro needs PyMongo's updated SSL test certs,
     # which may require Motor test suite changes.
     - os: "*"
-      tox-env: ["synchro-py37", "synchro-py312"]
+      tox-env: ["synchro-py38", "synchro-py312"]
       ssl: "ssl"
   tasks:
      - ".rapid"
@@ -986,7 +974,7 @@ buildvariants:
 
 - matrix_name: "enterprise-auth"
   display_name: "Enterprise Auth-${tox-env}"
-  matrix_spec: {"tox-env": ["synchro-py37", "synchro-py312"], ssl: "ssl"}
+  matrix_spec: {"tox-env": ["synchro-py38", "synchro-py312"], ssl: "ssl"}
   run_on:
      - "rhel84-small"
   tasks:
@@ -998,7 +986,7 @@ buildvariants:
      - "rhel84-small"
   expansions:
      TOX_ENV: "docs"
-     PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+     PYTHON_BINARY: "/opt/python/3.8/bin/python3"
   tasks:
      - name: "docs"
 
@@ -1008,7 +996,7 @@ buildvariants:
      - "rhel84-small"
   expansions:
      TOX_ENV: "doctest"
-     PYTHON_BINARY: "/opt/python/3.7/bin/python3"
+     PYTHON_BINARY: "/opt/python/3.8/bin/python3"
   tasks:
      - name: "doctest"
 

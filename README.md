@@ -109,7 +109,7 @@ by asyncio. It requires:
 
 - Unix (including macOS) or Windows.
 - [PyMongo](http://pypi.python.org/pypi/pymongo/) >=4.1,<5
-- Python 3.7+
+- Python 3.8+
 
 Optional dependencies:
 
@@ -185,7 +185,7 @@ ReadTheDocs](https://motor.readthedocs.io/en/stable/examples/index.html).
 Motor's documentation is on
 [ReadTheDocs](https://motor.readthedocs.io/en/stable/).
 
-Build the documentation with Python 3.7+. Install
+Build the documentation with Python 3.8+. Install
 [sphinx](http://sphinx.pocoo.org/), [Tornado](http://tornadoweb.org/),
 and [aiohttp](https://github.com/aio-libs/aiohttp), and do
 `cd doc; make html`.
