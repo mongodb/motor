@@ -890,12 +890,12 @@ axes:
   - id: os
     display_name: "Operating System"
     values:
-      - id: "rhel84"
-        display_name: "RHEL 8.4"
+      - id: "rhel8"
+        display_name: "RHEL 8.x"
         run_on: "rhel84-small"
-      - id: "rhel76"
-        display_name: "RHEL 7.6"
-        run_on: "rhel76-small"
+      - id: "rhel7"
+        display_name: "RHEL 7.x"
+        run_on: "rhel79-small"
       - id: "win"
         display_name: "Windows"
         run_on: "windows-64-vsMulti-small"
@@ -909,7 +909,7 @@ buildvariants:
 - matrix_name: "main"
   display_name: "${os}-${tox-env}-${ssl}"
   matrix_spec:
-    os: "rhel84"
+    os: "rhel8"
     tox-env: "*"
     ssl: "*"
   exclude_spec:
@@ -932,7 +932,7 @@ buildvariants:
 - matrix_name: "test-rhel7"
   display_name: "${os}-${tox-env-rhel7}-${ssl}"
   matrix_spec:
-    os: "rhel76"
+    os: "rhel7"
     tox-env-rhel7: "*"
     ssl: "*"
   tasks:
