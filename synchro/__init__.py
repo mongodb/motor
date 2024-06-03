@@ -114,7 +114,7 @@ from pymongo.ssl_support import *
 from pymongo.topology import *
 from pymongo.topology_description import *
 from pymongo.uri_parser import *
-from pymongo.uri_parser import _HAVE_DNSPYTHON
+from pymongo.uri_parser import _have_dnspython
 from pymongo.write_concern import *
 from tornado.ioloop import IOLoop
 
