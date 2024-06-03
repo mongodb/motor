@@ -74,7 +74,7 @@ from pymongo.client_session import TransactionOptions, _TxnState
 from pymongo.collation import *
 from pymongo.common import *
 from pymongo.common import _MAX_END_SESSIONS, _UUID_REPRESENTATIONS
-from pymongo.compression_support import _HAVE_SNAPPY, _HAVE_ZLIB, _HAVE_ZSTD
+from pymongo.compression_support import _have_snappy, _have_zlib, _have_zstd
 from pymongo.cursor import *
 from pymongo.cursor import _QUERY_OPTIONS
 from pymongo.encryption import *
