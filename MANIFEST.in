@@ -1,6 +1,7 @@
 include README.md
 include LICENSE
 include tox.ini
+include sbom.json
 include pyproject.toml
 include requirements.txt
 include doc/Makefile
