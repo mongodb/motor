@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>1.24","hatch-requirements-txt>=0.4.1"]
+build-backend = "hatchling.build"
 
 [project]
 name = "motor"
@@ -48,11 +48,21 @@ Documentation = "https://motor.readthedocs.io"
 Source = "https://github.com/mongodb/motor"
 Tracker = "https://jira.mongodb.org/projects/MOTOR/issues"
 
-[tool.setuptools.dynamic]
-version = {attr = "motor._version.version"}
+[tool.hatch.version]
+path = "motor/_version.py"
 
-[tool.setuptools.packages.find]
-include = ["motor"]
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
+
+[tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
+aws = ["requirements/aws.txt"]
+docs = ["requirements/docs.txt"]
+encryption = ["requirements/encryption.txt"]
+gssapi = ["requirements/gssapi.txt"]
+ocsp = ["requirements/ocsp.txt"]
+snappy = ["requirements/snappy.txt"]
+test = ["requirements/test.txt"]
+zstd = ["requirements/zstd.txt"]
 
 [tool.mypy]
 python_version = "3.8"

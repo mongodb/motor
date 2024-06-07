@@ -13,13 +13,29 @@
 # limitations under the License.
 
 """Version-related data for motor."""
-version_tuple = (3, 5, 0, ".dev0")
+import re
+from typing import List, Tuple, Union
+
+__version__ = "3.5.0.dev0"
+
+
+def get_version_tuple(version: str) -> Tuple[Union[int, str], ...]:
+    pattern = r"(?P<major>\d+).(?P<minor>\d+).(?P<patch>\d+)(?P<rest>.*)"
+    match = re.match(pattern, version)
+    if match:
+        parts: List[Union[int, str]] = [int(match[part]) for part in ["major", "minor", "patch"]]
+        if match["rest"]:
+            parts.append(match["rest"])
+    elif re.match(r"\d+.\d+", version):
+        parts = [int(part) for part in version.split(".")]
+    else:
+        raise ValueError("Could not parse version")
+    return tuple(parts)
+
+
+version_tuple = get_version_tuple(__version__)
+version = __version__
 
 
 def get_version_string() -> str:
-    if isinstance(version_tuple[-1], str):
-        return ".".join(map(str, version_tuple[:-1])) + version_tuple[-1]
-    return ".".join(map(str, version_tuple))  # type:ignore[unreachable]
-
-
-version = get_version_string()
+    return __version__
