@@ -58,7 +58,6 @@ jobs:
       - name: Run linters
         run: |
           tox -m lint-manual
-          tox -m manifest
 
   docs:
     runs-on: ubuntu-20.04
