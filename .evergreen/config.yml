@@ -966,7 +966,6 @@ buildvariants:
   tasks:
      - ".rapid"
      - ".latest"
-     - ".8.0"
      - ".7.0"
      - ".6.0"
      - ".5.0"
