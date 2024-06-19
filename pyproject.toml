@@ -50,6 +50,7 @@ Tracker = "https://jira.mongodb.org/projects/MOTOR/issues"
 
 [tool.hatch.version]
 path = "motor/_version.py"
+validate-bump = false
 
 [tool.hatch.metadata.hooks.requirements_txt]
 files = ["requirements.txt"]
