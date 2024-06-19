@@ -16,7 +16,7 @@
 import re
 from typing import List, Tuple, Union
 
-__version__ = "4.9.9"
+__version__ = "4.9.10"
 
 
 def get_version_tuple(version: str) -> Tuple[Union[int, str], ...]:
