@@ -16,7 +16,7 @@ on:
 
 env:
   # Changes per repo
-  PRODUCT_NAME: motor
+  PRODUCT_NAME: Motor
   # Changes per branch
   SILK_ASSET_GROUP: motor
 
