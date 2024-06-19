@@ -32,5 +32,5 @@ jobs:
     - name: Store package artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: dist
-        path: dist
+        name: all-dist-${{ github.run_id }}
+        path: "dist/*"
