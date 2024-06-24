@@ -691,6 +691,33 @@ tasks:
             TOPOLOGY: "sharded_cluster"
         - func: "run tox"
 
+    - name: "test-8.0-standalone"
+      tags: [ "8.0", "standalone" ]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "8.0"
+            TOPOLOGY: "server"
+        - func: "run tox"
+
+    - name: "test-8.0-replica_set"
+      tags: [ "8.0", "replica_set" ]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "8.0"
+            TOPOLOGY: "replica_set"
+        - func: "run tox"
+
+    - name: "test-8.0-sharded_cluster"
+      tags: [ "8.0", "sharded_cluster" ]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "8.0"
+            TOPOLOGY: "sharded_cluster"
+        - func: "run tox"
+
     - name: "test-latest-standalone"
       tags: ["latest", "standalone"]
       commands:
@@ -921,6 +948,7 @@ buildvariants:
   tasks:
      - ".rapid"
      - ".latest"
+     - ".8.0"
      - ".7.0"
      - ".6.0"
      - ".5.0"
@@ -952,6 +980,7 @@ buildvariants:
   tasks:
      - ".rapid"
      - ".latest"
+     - ".8.0"
      - ".7.0"
      - ".6.0"
      - ".5.0"
@@ -969,6 +998,7 @@ buildvariants:
   tasks:
      - ".rapid"
      - ".latest"
+     - ".8.0"
      - ".7.0"
      - ".6.0"
 
