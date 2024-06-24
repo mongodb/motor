@@ -18,6 +18,11 @@ on:
     branches: [ "master", "*" ]
   schedule:
     - cron: '35 23 * * 5'
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
 
 jobs:
   analyze:
@@ -35,6 +40,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref }}
     - name: Set up Python
       uses: actions/setup-python@v4
       with:

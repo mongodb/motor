@@ -1,49 +1,86 @@
-name: Build and Publish Dist Files to PyPI
-
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: true
+name: Release
 
 on:
   workflow_dispatch:
-  pull_request:
-  push:
-    tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+.post[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+[a-b][0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
+    inputs:
+      version:
+        description: "The new version to set"
+        required: true
+      following_version:
+        description: "The post (dev) version to set"
+        required: true
+      dry_run:
+        description: "Dry Run?"
+        default: false
+        type: boolean
+
+env:
+  # Changes per repo
+  PRODUCT_NAME: Motor
+  # Changes per branch
+  SILK_ASSET_GROUP: motor
+
+defaults:
+  run:
+    shell: bash -eux {0}
 
 jobs:
-  build:
-    name: "Build Dist"
+  pre-publish:
+    environment: release
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: 3.x
-    - name: Install dependencies
-      run: pip install build
-    - name: Create packages
-      run: python -m build .
-    - name: Store package artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: dist
-        path: dist
+      - uses: mongodb-labs/drivers-github-tools/secure-checkout@v2
+        with:
+          app_id: ${{ vars.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+      - uses: mongodb-labs/drivers-github-tools/setup@v2
+        with:
+          aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
+          aws_region_name: ${{ vars.AWS_REGION_NAME }}
+          aws_secret_id: ${{ secrets.AWS_SECRET_ID }}
+          artifactory_username: ${{ vars.ARTIFACTORY_USERNAME }}
+      - uses: mongodb-labs/drivers-github-tools/python/pre-publish@v2
+        with:
+          version: ${{ inputs.version }}
+          dry_run: ${{ inputs.dry_run }}
+
+  build-dist:
+    needs: [pre-publish]
+    uses: ./.github/workflows/dist.yml
+
+  static-scan:
+    needs: [pre-publish]
+    uses: ./.github/workflows/codeql.yml
+    with:
+      ref: ${{ inputs.version }}
 
   publish:
-    needs: build
-    name: "Publish Dist"
-    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build-dist, static-scan]
     runs-on: ubuntu-latest
     environment: release
     permissions:
       id-token: write
+      contents: write
+      security-events: write
     steps:
-    - name: Retrieve package artifacts
-      uses: actions/download-artifact@v4
-    - name: Upload packages
-      uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: mongodb-labs/drivers-github-tools/secure-checkout@v2
+        with:
+          app_id: ${{ vars.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+      - uses: mongodb-labs/drivers-github-tools/setup@v2
+        with:
+          aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
+          aws_region_name: ${{ vars.AWS_REGION_NAME }}
+          aws_secret_id: ${{ secrets.AWS_SECRET_ID }}
+          artifactory_username: ${{ vars.ARTIFACTORY_USERNAME }}
+      - uses: mongodb-labs/drivers-github-tools/python/publish@v2
+        with:
+          version: ${{ inputs.version }}
+          following_version: ${{ inputs.following_version }}
+          product_name: ${{ env.PRODUCT_NAME }}
+          silk_asset_group: ${{ env.SILK_ASSET_GROUP }}
+          token: ${{ github.token }}
+          dry_run: ${{ inputs.dry_run }}
