@@ -7,6 +7,10 @@ concurrency:
 on:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
   pull_request:
   push:
     tags:
@@ -21,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref }}
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
