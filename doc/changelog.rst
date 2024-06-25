@@ -6,7 +6,6 @@ Changelog
 Motor 3.5.0
 -----------
 
-- Add support for MongoDB 8.0.
 - Drop support for Python 3.7.
 - Switch to using Hatchling as a build backend and remove ``setup.py``.
 - Add Secure Software Development Life Cycle automation to release process.
