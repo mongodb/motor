@@ -6,7 +6,12 @@ Changelog
 Motor 3.5.0
 -----------
 
+- Add support for MongoDB 8.0.
 - Drop support for Python 3.7.
+- Switch to using Hatchling as a build backend and remove ``setup.py``.
+- Add Secure Software Development Life Cycle automation to release process.
+  GitHub Releases for pymongocrypt now include a Software Bill of Materials, and signature
+  files corresponding to the distribution files released on PyPI.
 
 Motor 3.4.0
 -----------
