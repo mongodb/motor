@@ -405,6 +405,7 @@ class MongoClient(Synchro, Generic[_T]):
     _kill_cursors_executor = SynchroProperty()
     _topology_settings = SynchroProperty()
     _process_periodic_tasks = SynchroProperty()
+    _event_listeners = SynchroProperty()
 
 
 class _SynchroTransactionContext(Synchro):
