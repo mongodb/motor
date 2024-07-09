@@ -27,7 +27,6 @@ import os
 import re
 import shutil
 import sys
-import warnings
 from pathlib import Path
 
 import pytest
@@ -342,9 +341,7 @@ if __name__ == "__main__":
 
     # Run the tests from the pymongo target dir with our custom plugin.
     os.chdir(sys.argv[1])
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        code = pytest.main(sys.argv[2:], plugins=[SynchroPytestPlugin()])
+    code = pytest.main(sys.argv[2:] + ["-p", "no:warnings"], plugins=[SynchroPytestPlugin()])
 
     if code != 0:
         sys.exit(code)
