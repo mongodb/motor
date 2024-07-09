@@ -97,7 +97,7 @@ filterwarnings = [
     "ignore:GridOut property 'contentType' is deprecated and will be removed in PyMongo 5.0:DeprecationWarning",
     "ignore:GridIn property 'contentType' is deprecated and will be removed in PyMongo 5.0:DeprecationWarning",
     "ignore:GridOut property 'aliases' is deprecated and will be removed in PyMongo 5.0:DeprecationWarning",
-    "ignore:Module already imported so cannot be rewritten:pytest.PytestAssertRewriteWarning",
+    "ignore:Module already imported so cannot be rewritten:PytestAssertRewriteWarning",
     # From older versions aiohttp.
     "ignore:\"@coroutine\" decorator is deprecated since Python 3.8:DeprecationWarning",
     "ignore:The loop argument is deprecated since Python 3.8:DeprecationWarning"
