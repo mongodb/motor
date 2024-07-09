@@ -3,6 +3,10 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.5.1
+-----------
+- Fix runtime behavior of Motor generic class typing, e.g. ``client: AsyncIOMotorClient[Dict[str, Any]]``.
+
 Motor 3.5.0
 -----------
 
