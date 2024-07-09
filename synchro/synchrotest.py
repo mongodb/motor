@@ -341,7 +341,7 @@ if __name__ == "__main__":
 
     # Run the tests from the pymongo target dir with our custom plugin.
     os.chdir(sys.argv[1])
-    code = pytest.main(sys.argv[2:], plugins=[SynchroPytestPlugin()])
+    code = pytest.main(sys.argv[2:] + ["-p", "no:warnings"], plugins=[SynchroPytestPlugin()])
 
     if code != 0:
         sys.exit(code)

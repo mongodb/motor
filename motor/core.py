@@ -90,6 +90,11 @@ class AgnosticBase:
 
 
 class AgnosticBaseProperties(AgnosticBase):
+    # Allow the use of generics at runtime.
+    @classmethod
+    def __class_getitem__(cls, key: str) -> object:
+        return cls
+
     codec_options = ReadOnlyProperty()
     read_preference = ReadOnlyProperty()
     read_concern = ReadOnlyProperty()
@@ -1376,6 +1381,11 @@ class AgnosticCollection(AgnosticBaseProperties):
 class AgnosticBaseCursor(AgnosticBase):
     """Base class for AgnosticCursor and AgnosticCommandCursor"""
 
+    # Allow the use of generics at runtime.
+    @classmethod
+    def __class_getitem__(cls, key: str) -> object:
+        return cls
+
     _async_close = AsyncRead(attr_name="close")
     _refresh = AsyncRead()
     address = ReadOnlyProperty()
@@ -1940,6 +1950,11 @@ class AgnosticChangeStream(AgnosticBase):
 
     resume_token = ReadOnlyProperty()
 
+    # Allow the use of generics at runtime.
+    @classmethod
+    def __class_getitem__(cls, key: str) -> object:
+        return cls
+
     def __init__(
         self,
         target,
@@ -2130,6 +2145,11 @@ class AgnosticClientEncryption(AgnosticBase):
     add_key_alt_name = AsyncCommand()
     get_key_by_alt_name = AsyncCommand()
     remove_key_alt_name = AsyncCommand()
+
+    # Allow the use of generics at runtime.
+    @classmethod
+    def __class_getitem__(cls, key: str) -> object:
+        return cls
 
     def __init__(
         self,
