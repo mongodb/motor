@@ -100,7 +100,7 @@ class MotorTestBasic(MotorTest):
         motor_cursor = collection.find()
         cursor = motor_cursor.delegate
 
-        self.assertEqual(Nearest(tag_sets=[{"yay": "jesse"}]), cursor._read_preference())
+        self.assertEqual(Nearest(tag_sets=[{"yay": "jesse"}]), cursor._get_read_preference())
 
         cx.close()
 

@@ -33,15 +33,15 @@ pymongo_only = set(["next"])
 
 motor_client_only = motor_only.union(["open"])
 
-pymongo_client_only = set([]).union(pymongo_only)
+pymongo_client_only = set(["bulk_write"]).union(pymongo_only)
 
 pymongo_database_only = set([]).union(pymongo_only)
 
 pymongo_collection_only = set([]).union(pymongo_only)
 
-motor_cursor_only = set(
-    ["fetch_next", "to_list", "each", "started", "next_object", "closed"]
-).union(motor_only)
+motor_cursor_only = set(["fetch_next", "each", "started", "next_object", "closed"]).union(
+    motor_only
+)
 
 pymongo_cursor_only = set(["retrieved"])
 
@@ -118,7 +118,7 @@ class MotorCoreTestGridFS(MotorTest):
         )
 
     def test_gridin_attrs(self):
-        motor_gridin_only = set(["set"]).union(motor_only)
+        motor_gridin_only = set([]).union(motor_only)
         gridin_only = set(["md5"])
 
         self.assertEqual(
@@ -137,6 +137,7 @@ class MotorCoreTestGridFS(MotorTest):
                 "truncate",
                 "flush",
                 "fileno",
+                "open",
                 "closed",
                 "writelines",
                 "isatty",

@@ -37,8 +37,8 @@ class AgnosticGridOutCursor(AgnosticCursor):
     __motor_class_name__ = "MotorGridOutCursor"
     __delegate_class__ = gridfs.GridOutCursor
 
-    # PyMongo's GridOutCursor inherits __die from Cursor.
-    _Cursor__die = AsyncCommand()
+    # PyMongo's GridOutCursor inherits _die_lock from Cursor.
+    _die_lock = AsyncRead()
 
     def next_object(self):
         """**DEPRECATED** - Get next GridOut object from cursor."""
@@ -88,7 +88,6 @@ class AgnosticGridOut:
     __motor_class_name__ = "MotorGridOut"
     __delegate_class__ = gridfs.GridOut
 
-    _ensure_file = AsyncCommand()
     _id = MotorGridOutProperty()
     aliases = MotorGridOutProperty()
     chunk_size = MotorGridOutProperty()
@@ -98,6 +97,7 @@ class AgnosticGridOut:
     length = MotorGridOutProperty()
     metadata = MotorGridOutProperty()
     name = MotorGridOutProperty()
+    _open = AsyncCommand(attr_name="open")
     read = AsyncRead()
     readable = DelegateMethod()
     readchunk = AsyncRead()
@@ -149,18 +149,7 @@ class AgnosticGridOut:
 
     @coroutine_annotation
     def open(self):
-        """Retrieve this file's attributes from the server.
-
-        Returns a Future.
-
-        .. versionchanged:: 2.0
-           No longer accepts a callback argument.
-
-        .. versionchanged:: 0.2
-           :class:`~motor.MotorGridOut` now opens itself on demand, calling
-           ``open`` explicitly is rarely needed.
-        """
-        return self._framework.chain_return_value(self._ensure_file(), self.get_io_loop(), self)
+        return self._framework.chain_return_value(self._open(), self.get_io_loop(), self)
 
     def get_io_loop(self):
         return self.io_loop

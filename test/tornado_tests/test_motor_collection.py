@@ -289,6 +289,7 @@ class MotorCollectionTest(MotorTest):
             self.assertEqual(exc.exception.code, 121)
             await self.db.drop_collection("testing1", encrypted_fields=ef)
 
+    @env.require_version_min(8, 0, -1, -1)
     @gen_test
     async def test_async_encrypt_expression(self):
         c = self.collection
@@ -301,12 +302,12 @@ class MotorCollectionTest(MotorTest):
                 "local", key_alt_names=["pymongo_encryption_example_1"]
             )
             name = "DoubleNoPrecision"
-            range_opts = RangeOpts(sparsity=1)
+            range_opts = RangeOpts(sparsity=1, trim_factor=1)
             for i in [6.0, 30.0, 200.0]:
                 insert_payload = await client_encryption.encrypt(
                     float(i),
                     key_id=data_key,
-                    algorithm=Algorithm.RANGEPREVIEW,
+                    algorithm=Algorithm.RANGE,
                     contention_factor=0,
                     range_opts=range_opts,
                 )
@@ -325,8 +326,8 @@ class MotorCollectionTest(MotorTest):
                     ]
                 },
                 key_id=data_key,
-                algorithm=Algorithm.RANGEPREVIEW,
-                query_type=QueryType.RANGEPREVIEW,
+                algorithm=Algorithm.RANGE,
+                query_type=QueryType.RANGE,
                 contention_factor=0,
                 range_opts=range_opts,
             )

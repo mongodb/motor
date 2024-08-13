@@ -138,7 +138,7 @@ class MotorCursorTest(MotorMockServerTest):
         self.assertTrue(cursor.next_object())
 
         # Not valid on server, causes CursorNotFound.
-        cursor.delegate._Cursor__id = bson.int64.Int64(1234)
+        cursor.delegate._id = bson.int64.Int64(1234)
 
         with self.assertRaises(OperationFailure):
             await cursor.fetch_next
@@ -309,7 +309,7 @@ class MotorCursorTest(MotorMockServerTest):
 
         def canceled():
             try:
-                self.assertFalse(cursor.delegate._Cursor__killed)
+                self.assertFalse(cursor.delegate._killed)
                 self.assertTrue(cursor.alive)
 
                 # Resume iteration

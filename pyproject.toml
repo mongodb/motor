@@ -52,6 +52,10 @@ Tracker = "https://jira.mongodb.org/projects/MOTOR/issues"
 path = "motor/_version.py"
 validate-bump = false
 
+[tool.hatch.metadata]
+# TODO: MOTOR-1351 Remove before releasing Motor 3.6.
+allow-direct-references = true
+
 [tool.hatch.metadata.hooks.requirements_txt]
 files = ["requirements.txt"]
 

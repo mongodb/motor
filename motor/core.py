@@ -27,7 +27,8 @@ from pymongo.change_stream import ChangeStream
 from pymongo.client_session import ClientSession
 from pymongo.collection import Collection
 from pymongo.command_cursor import CommandCursor, RawBatchCommandCursor
-from pymongo.cursor import _QUERY_OPTIONS, Cursor, RawBatchCursor
+from pymongo.cursor import Cursor, RawBatchCursor
+from pymongo.cursor_shared import _QUERY_OPTIONS
 from pymongo.database import Database
 from pymongo.driver_info import DriverInfo
 from pymongo.encryption import ClientEncryption
@@ -1769,7 +1770,7 @@ class AgnosticCursor(AgnosticBaseCursor):
     comment = MotorCursorChainingMethod()
     allow_disk_use = MotorCursorChainingMethod()
 
-    _Cursor__die = AsyncRead()
+    _die_lock = AsyncRead()
 
     def rewind(self):
         """Rewind this cursor to its unevaluated state."""
@@ -1788,13 +1789,13 @@ class AgnosticCursor(AgnosticBaseCursor):
         return self.__class__(self.delegate.__deepcopy__(memo), self.collection)
 
     def _query_flags(self):
-        return self.delegate._Cursor__query_flags
+        return self.delegate._query_flags
 
     def _data(self):
-        return self.delegate._Cursor__data
+        return self.delegate._data
 
     def _killed(self):
-        return self.delegate._Cursor__killed
+        return self.delegate._killed
 
 
 class AgnosticRawBatchCursor(AgnosticCursor):
@@ -1806,7 +1807,7 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
     __motor_class_name__ = "MotorCommandCursor"
     __delegate_class__ = CommandCursor
 
-    _CommandCursor__die = AsyncRead()
+    _die_lock = AsyncRead()
 
     async def try_next(self):
         """Advance the cursor without blocking indefinitely.
@@ -1834,6 +1835,8 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
         return 0
 
     def _data(self):
+        if hasattr(self.delegate, "_data"):
+            return self.delegate._data
         return self.delegate._CommandCursor__data
 
     def _killed(self):
@@ -1850,6 +1853,7 @@ class _LatentCursor:
 
     alive = True
     _CommandCursor__data = []
+    _data = []
     _CommandCursor__id = None
     _CommandCursor__killed = False
     _CommandCursor__sock_mgr = None
@@ -1864,6 +1868,9 @@ class _LatentCursor:
         pass
 
     def _CommandCursor__die(self, *args, **kwargs):
+        pass
+
+    def _die_lock(self, *args, **kwargs):
         pass
 
     def clone(self):
@@ -1924,9 +1931,13 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
             # Return early if the task was cancelled.
             if original_future.done():
                 return
-            if self.delegate._CommandCursor__data or not self.delegate.alive:
+            if hasattr(self.delegate, "_data"):
+                data = self.delegate._data
+            else:
+                data = self.delegate._CommandCursor__data
+            if data or not self.delegate.alive:
                 # _get_more is complete.
-                original_future.set_result(len(self.delegate._CommandCursor__data))
+                original_future.set_result(len(data))
             else:
                 # Send a getMore.
                 future = super()._get_more()

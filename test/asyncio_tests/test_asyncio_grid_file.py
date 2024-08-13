@@ -127,7 +127,7 @@ class MotorGridFileTest(AsyncIOTestCase):
 
             # The call tree should include PyMongo code we ran on a thread.
             formatted = "\n".join(traceback.format_tb(tb))
-            self.assertTrue("_ensure_file" in formatted)
+            self.assertTrue("open" in formatted)
 
     @asyncio_test
     async def test_alternate_collection(self):
