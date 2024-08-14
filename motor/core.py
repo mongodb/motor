@@ -1835,12 +1835,10 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
         return 0
 
     def _data(self):
-        if hasattr(self.delegate, "_data"):
-            return self.delegate._data
-        return self.delegate._CommandCursor__data
+        return self.delegate._data
 
     def _killed(self):
-        return self.delegate._CommandCursor__killed
+        return self.delegate._killed
 
 
 class AgnosticRawBatchCommandCursor(AgnosticCommandCursor):
@@ -1852,29 +1850,25 @@ class _LatentCursor:
     """Take the place of a PyMongo CommandCursor until aggregate() begins."""
 
     alive = True
-    _CommandCursor__data = []
     _data = []
-    _CommandCursor__id = None
-    _CommandCursor__killed = False
-    _CommandCursor__sock_mgr = None
-    _CommandCursor__session = None
-    _CommandCursor__explicit_session = None
+    _id = None
+    _killed = False
+    _sock_mgr = None
+    _session = None
+    _explicit_session = None
     cursor_id = None
 
     def __init__(self, collection):
-        self._CommandCursor__collection = collection.delegate
+        self._collection = collection.delegate
 
-    def _CommandCursor__end_session(self, *args, **kwargs):
-        pass
-
-    def _CommandCursor__die(self, *args, **kwargs):
+    def _end_session(self, *args, **kwargs):
         pass
 
     def _die_lock(self, *args, **kwargs):
         pass
 
     def clone(self):
-        return _LatentCursor(self._CommandCursor__collection)
+        return _LatentCursor(self._collection)
 
     def rewind(self):
         pass
@@ -1931,10 +1925,7 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
             # Return early if the task was cancelled.
             if original_future.done():
                 return
-            if hasattr(self.delegate, "_data"):
-                data = self.delegate._data
-            else:
-                data = self.delegate._CommandCursor__data
+            data = self.delegate._data
             if data or not self.delegate.alive:
                 # _get_more is complete.
                 original_future.set_result(len(data))
