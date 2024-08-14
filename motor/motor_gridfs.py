@@ -150,9 +150,12 @@ class AgnosticGridOut:
     @coroutine_annotation
     def open(self):
         """Retrieve this file's attributes from the server.
+
         Returns a Future.
+
         .. versionchanged:: 2.0
            No longer accepts a callback argument.
+
         .. versionchanged:: 0.2
            :class:`~motor.MotorGridOut` now opens itself on demand, calling
            ``open`` explicitly is rarely needed.
