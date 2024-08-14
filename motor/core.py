@@ -1925,10 +1925,9 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
             # Return early if the task was cancelled.
             if original_future.done():
                 return
-            data = self.delegate._data
-            if data or not self.delegate.alive:
+            if self.delegate._data or not self.delegate.alive:
                 # _get_more is complete.
-                original_future.set_result(len(data))
+                original_future.set_result(len(self.delegate._data))
             else:
                 # Send a getMore.
                 future = super()._get_more()
