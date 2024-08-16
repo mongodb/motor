@@ -1770,8 +1770,6 @@ class AgnosticCursor(AgnosticBaseCursor):
     comment = MotorCursorChainingMethod()
     allow_disk_use = MotorCursorChainingMethod()
 
-    _die_lock = AsyncRead()
-
     def rewind(self):
         """Rewind this cursor to its unevaluated state."""
         self.delegate.rewind()
@@ -1806,8 +1804,6 @@ class AgnosticRawBatchCursor(AgnosticCursor):
 class AgnosticCommandCursor(AgnosticBaseCursor):
     __motor_class_name__ = "MotorCommandCursor"
     __delegate_class__ = CommandCursor
-
-    _die_lock = AsyncRead()
 
     async def try_next(self):
         """Advance the cursor without blocking indefinitely.

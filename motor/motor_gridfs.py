@@ -37,9 +37,6 @@ class AgnosticGridOutCursor(AgnosticCursor):
     __motor_class_name__ = "MotorGridOutCursor"
     __delegate_class__ = gridfs.GridOutCursor
 
-    # PyMongo's GridOutCursor inherits _die_lock from Cursor.
-    _die_lock = AsyncRead()
-
     def next_object(self):
         """**DEPRECATED** - Get next GridOut object from cursor."""
         # Note: the super() call will raise a warning for the deprecation.

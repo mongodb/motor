@@ -35,7 +35,6 @@ _SEEK_END = os.SEEK_END
 class AgnosticGridOutCursor(AgnosticCursor):
     __motor_class_name__: str
     __delegate_class__: type[GridOutCursor]
-    async def _die_lock(self) -> None: ...
     def next_object(self) -> AgnosticGridOutCursor: ...
 
 class AgnosticGridOut:
