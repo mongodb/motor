@@ -40,10 +40,11 @@ from bson.raw_bson import RawBSONDocument
 from pymongo import IndexModel, ReadPreference, WriteConcern
 from pymongo.change_stream import ChangeStream
 from pymongo.client_options import ClientOptions
-from pymongo.client_session import _T, ClientSession, SessionOptions, TransactionOptions
-from pymongo.collection import Collection, ReturnDocument, _WriteOp  # noqa: F401
+from pymongo.client_session import ClientSession, SessionOptions, TransactionOptions
+from pymongo.collection import Collection, ReturnDocument  # noqa: F401
 from pymongo.command_cursor import CommandCursor, RawBatchCommandCursor
-from pymongo.cursor import Cursor, RawBatchCursor, _Hint, _Sort
+from pymongo.cursor import Cursor, RawBatchCursor
+from pymongo.cursor_shared import _Hint, _Sort
 from pymongo.database import Database
 from pymongo.encryption import ClientEncryption, RewrapManyDataKeyResult
 from pymongo.encryption_options import RangeOpts
@@ -57,6 +58,8 @@ from pymongo.results import (
     InsertOneResult,
     UpdateResult,
 )
+from pymongo.synchronous.client_session import _T
+from pymongo.synchronous.collection import _WriteOp
 from pymongo.topology_description import TopologyDescription
 from pymongo.typings import (
     _Address,
@@ -756,8 +759,7 @@ class AgnosticRawBatchCommandCursor(AgnosticCommandCursor[_DocumentType]):
 
 class _LatentCursor(Generic[_DocumentType]):
     def __init__(self, collection: AgnosticCollection[_DocumentType]): ...
-    def _CommandCursor__end_session(self, *args: Any, **kwargs: Any) -> None: ...
-    def _CommandCursor__die(self, *args: Any, **kwargs: Any) -> None: ...
+    def _end_session(self, *args: Any, **kwargs: Any) -> None: ...
     def clone(self) -> _LatentCursor[_DocumentType]: ...
     def rewind(self) -> _LatentCursor[_DocumentType]: ...
 

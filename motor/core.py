@@ -27,7 +27,8 @@ from pymongo.change_stream import ChangeStream
 from pymongo.client_session import ClientSession
 from pymongo.collection import Collection
 from pymongo.command_cursor import CommandCursor, RawBatchCommandCursor
-from pymongo.cursor import _QUERY_OPTIONS, Cursor, RawBatchCursor
+from pymongo.cursor import Cursor, RawBatchCursor
+from pymongo.cursor_shared import _QUERY_OPTIONS
 from pymongo.database import Database
 from pymongo.driver_info import DriverInfo
 from pymongo.encryption import ClientEncryption
@@ -1769,8 +1770,6 @@ class AgnosticCursor(AgnosticBaseCursor):
     comment = MotorCursorChainingMethod()
     allow_disk_use = MotorCursorChainingMethod()
 
-    _Cursor__die = AsyncRead()
-
     def rewind(self):
         """Rewind this cursor to its unevaluated state."""
         self.delegate.rewind()
@@ -1788,13 +1787,13 @@ class AgnosticCursor(AgnosticBaseCursor):
         return self.__class__(self.delegate.__deepcopy__(memo), self.collection)
 
     def _query_flags(self):
-        return self.delegate._Cursor__query_flags
+        return self.delegate._query_flags
 
     def _data(self):
-        return self.delegate._Cursor__data
+        return self.delegate._data
 
     def _killed(self):
-        return self.delegate._Cursor__killed
+        return self.delegate._killed
 
 
 class AgnosticRawBatchCursor(AgnosticCursor):
@@ -1805,8 +1804,6 @@ class AgnosticRawBatchCursor(AgnosticCursor):
 class AgnosticCommandCursor(AgnosticBaseCursor):
     __motor_class_name__ = "MotorCommandCursor"
     __delegate_class__ = CommandCursor
-
-    _CommandCursor__die = AsyncRead()
 
     async def try_next(self):
         """Advance the cursor without blocking indefinitely.
@@ -1834,10 +1831,10 @@ class AgnosticCommandCursor(AgnosticBaseCursor):
         return 0
 
     def _data(self):
-        return self.delegate._CommandCursor__data
+        return self.delegate._data
 
     def _killed(self):
-        return self.delegate._CommandCursor__killed
+        return self.delegate._killed
 
 
 class AgnosticRawBatchCommandCursor(AgnosticCommandCursor):
@@ -1849,25 +1846,25 @@ class _LatentCursor:
     """Take the place of a PyMongo CommandCursor until aggregate() begins."""
 
     alive = True
-    _CommandCursor__data = []
-    _CommandCursor__id = None
-    _CommandCursor__killed = False
-    _CommandCursor__sock_mgr = None
-    _CommandCursor__session = None
-    _CommandCursor__explicit_session = None
+    _data = []
+    _id = None
+    _killed = False
+    _sock_mgr = None
+    _session = None
+    _explicit_session = None
     cursor_id = None
 
     def __init__(self, collection):
-        self._CommandCursor__collection = collection.delegate
+        self._collection = collection.delegate
 
-    def _CommandCursor__end_session(self, *args, **kwargs):
+    def _end_session(self, *args, **kwargs):
         pass
 
-    def _CommandCursor__die(self, *args, **kwargs):
+    def _die_lock(self, *args, **kwargs):
         pass
 
     def clone(self):
-        return _LatentCursor(self._CommandCursor__collection)
+        return _LatentCursor(self._collection)
 
     def rewind(self):
         pass
@@ -1924,9 +1921,9 @@ class AgnosticLatentCommandCursor(AgnosticCommandCursor):
             # Return early if the task was cancelled.
             if original_future.done():
                 return
-            if self.delegate._CommandCursor__data or not self.delegate.alive:
+            if self.delegate._data or not self.delegate.alive:
                 # _get_more is complete.
-                original_future.set_result(len(self.delegate._CommandCursor__data))
+                original_future.set_result(len(self.delegate._data))
             else:
                 # Send a getMore.
                 future = super()._get_more()
