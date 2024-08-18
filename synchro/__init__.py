@@ -28,9 +28,8 @@ from typing import Generic, TypeVar
 # Make e.g. "from pymongo.errors import AutoReconnect" work. Note that
 # importing * won't pick up underscore-prefixed attrs.
 from gridfs import *
-from gridfs import _disallow_transactions
 from gridfs.errors import *
-from gridfs.grid_file import (
+from gridfs.synchronous.grid_file import (
     _SEEK_CUR,
     _SEEK_END,
     _UPLOAD_BUFFER_CHUNKS,
@@ -59,6 +58,7 @@ from pymongo import (
     server_type,
     srv_resolver,
     ssl_support,
+    uri_parser,
     write_concern,
 )
 
@@ -67,23 +67,21 @@ try:
     from pymongo import _csot
 except ImportError:
     pass
-from pymongo import client_session
+from pymongo import client_session, synchronous
 from pymongo.auth import *
-from pymongo.auth import _build_credentials_tuple, _password_digest
-from pymongo.client_session import TransactionOptions, _TxnState
+from pymongo.client_session import TransactionOptions
 from pymongo.collation import *
 from pymongo.common import *
 from pymongo.common import _MAX_END_SESSIONS, _UUID_REPRESENTATIONS
 from pymongo.compression_support import _have_snappy, _have_zlib, _have_zstd
 from pymongo.cursor import *
-from pymongo.cursor import _QUERY_OPTIONS
+from pymongo.cursor_shared import _QUERY_OPTIONS
 from pymongo.encryption import *
-from pymongo.encryption import _MONGOCRYPTD_TIMEOUT_MS, _Encrypter
 from pymongo.encryption_options import *
 from pymongo.encryption_options import _HAVE_PYMONGOCRYPT
 from pymongo.errors import *
 from pymongo.event_loggers import *
-from pymongo.helpers import _check_command_response
+from pymongo.helpers_shared import _SENSITIVE_COMMANDS, _check_command_response
 from pymongo.lock import _create_lock
 from pymongo.message import (
     _COMMAND_OVERHEAD,
@@ -91,27 +89,28 @@ from pymongo.message import (
     _gen_find_command,
     _maybe_add_read_preference,
 )
-from pymongo.monitor import *
 from pymongo.monitoring import *
-from pymongo.monitoring import _LISTENERS, _SENSITIVE_COMMANDS, _Listeners
+from pymongo.monitoring import _LISTENERS, _Listeners
 from pymongo.ocsp_cache import _OCSPCache
 from pymongo.operations import *
-from pymongo.periodic_executor import *
-from pymongo.periodic_executor import _EXECUTORS
-from pymongo.pool import *
-from pymongo.pool import _METADATA, Connection, Pool, _PoolClosedError
 from pymongo.read_concern import *
 from pymongo.read_preferences import *
 from pymongo.read_preferences import _ServerMode
 from pymongo.results import *
 from pymongo.results import _WriteResult
 from pymongo.saslprep import *
-from pymongo.server import *
 from pymongo.server_selectors import *
-from pymongo.settings import *
 from pymongo.srv_resolver import _resolve, _SrvResolver
 from pymongo.ssl_support import *
-from pymongo.topology import *
+from pymongo.synchronous.client_session import _TxnState
+from pymongo.synchronous.monitor import *
+from pymongo.synchronous.periodic_executor import *
+from pymongo.synchronous.periodic_executor import _EXECUTORS
+from pymongo.synchronous.pool import *
+from pymongo.synchronous.pool import Connection, Pool, _PoolClosedError
+from pymongo.synchronous.server import *
+from pymongo.synchronous.settings import *
+from pymongo.synchronous.topology import *
 from pymongo.topology_description import *
 from pymongo.uri_parser import *
 from pymongo.uri_parser import _have_dnspython
@@ -131,6 +130,7 @@ from motor.motor_tornado import create_motor_class
 
 _MotorRawBatchCursor = create_motor_class(_AgnosticRawBatchCursor)
 _MotorRawBatchCommandCursor = create_motor_class(_AgnosticRawBatchCommandCursor)
+get_hosts_and_min_ttl = _SrvResolver.get_hosts_and_min_ttl
 
 
 def wrap_synchro(fn):
@@ -262,9 +262,6 @@ class SynchroMeta(type):
 
     - Motor methods which return Motor class instances are wrapped to return
       Synchro class instances.
-
-    - Certain internals accessed by PyMongo's unittests, such as _Cursor__data,
-      are delegated from Synchro directly to PyMongo.
     """
 
     def __new__(cls, name, bases, attrs):
@@ -395,9 +392,10 @@ class MongoClient(Synchro, Generic[_T]):
         return Database(self, name, delegate=self.delegate[name])
 
     # For PyMongo tests that access client internals.
-    _MongoClient__all_credentials = SynchroProperty()
-    _MongoClient__kill_cursors_queue = SynchroProperty()
-    _MongoClient__options = SynchroProperty()
+    _connect = Sync()
+    _all_credentials = SynchroProperty()
+    _kill_cursors_queue = SynchroProperty()
+    _options = SynchroProperty()
     _cache_credentials = SynchroProperty()
     _close_cursor_now = SynchroProperty()
     _get_topology = SynchroProperty()
@@ -577,6 +575,16 @@ class Cursor(Synchro):
     rewind = WrapOutgoing()
     clone = WrapOutgoing()
     close = Sync("close")
+    to_list = Sync("to_list")
+
+    _query_flags = SynchroProperty()
+    _data = SynchroProperty()
+    _max_time_ms = SynchroProperty()
+    _max_await_time_ms = SynchroProperty()
+    _retrieved = SynchroProperty()
+    _spec = SynchroProperty()
+    _exhaust = SynchroProperty()
+    _query_spec = SynchroProperty()
 
     _next = Sync("next")
 
@@ -618,22 +626,12 @@ class Cursor(Synchro):
         # Don't suppress exceptions.
         return False
 
-    # For PyMongo tests that access cursor internals.
-    _Cursor__data = SynchroProperty()
-    _Cursor__exhaust = SynchroProperty()
-    _Cursor__max_await_time_ms = SynchroProperty()
-    _Cursor__max_time_ms = SynchroProperty()
-    _Cursor__query_flags = SynchroProperty()
-    _Cursor__query_spec = SynchroProperty()
-    _Cursor__retrieved = SynchroProperty()
-    _Cursor__spec = SynchroProperty()
-    _read_preference = SynchroProperty()
-
 
 class CommandCursor(Cursor):
     __delegate_class__ = motor.motor_tornado.MotorCommandCursor
 
     try_next = Sync("try_next")
+    to_list = Sync("to_list")
 
 
 class GridOutCursor(Cursor):

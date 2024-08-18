@@ -4,3 +4,4 @@ tornado>=5
 aiohttp>=3.8.7
 motor[encryption]
 cffi>=1.17.0rc1;python_version=="3.13"
+pytest_asyncio

@@ -1149,7 +1149,7 @@ Pass a field name and a direction, either
 
   >>> async def f():
   ...     cursor = collection.find().sort("_id", pymongo.DESCENDING)
-  ...     docs = await cursor.to_list(None)
+  ...     docs = await cursor.to_list()
   ...     print([d["_id"] for d in docs])
   ...
   >>> IOLoop.current().run_sync(f)
@@ -1163,7 +1163,7 @@ To sort by multiple fields, pass a list of (key, direction) pairs:
   ...     cursor = collection.find().sort(
   ...         [("field1", pymongo.ASCENDING), ("field2", pymongo.DESCENDING)]
   ...     )
-  ...     docs = await cursor.to_list(None)
+  ...     docs = await cursor.to_list()
   ...     print([(d["field1"], d["field2"]) for d in docs])
   ...
   >>> IOLoop.current().run_sync(f)
