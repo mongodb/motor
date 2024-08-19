@@ -204,7 +204,7 @@ excluded_tests = [
     "TestCursor.test_to_list_length",
     # These tests hang due to internal incompatibilities in to_list.
     "TestCursor.test_command_cursor_to_list*",
-    # FIXME: Can't call to_list on tailable cursor
+    # TODO: MOTOR-1351 Remove before releasing Motor 3.6.  Can't call to_list on tailable cursor.
     "TestCursor.test_max_await_time_ms",
     "TestCursor.test_to_list_tailable",
 ]
