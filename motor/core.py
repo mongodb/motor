@@ -127,6 +127,7 @@ class AgnosticClient(AgnosticBaseProperties):
     server_info = AsyncRead()
     topology_description = ReadOnlyProperty()
     start_session = AsyncCommand(doc=docstrings.start_session_doc).wrap(ClientSession)
+    _connect = AsyncRead()
 
     def __init__(self, *args, **kwargs):
         """Create a new connection to a single MongoDB instance at *host:port*.
@@ -1619,7 +1620,7 @@ class AgnosticBaseCursor(AgnosticBase):
             self._framework.call_soon(self.get_io_loop(), functools.partial(callback, None, None))
 
     @coroutine_annotation
-    def to_list(self, length):
+    def to_list(self, length=None):
         """Get a list of documents.
 
         .. testsetup:: to_list
