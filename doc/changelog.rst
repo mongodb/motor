@@ -3,6 +3,11 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.6.0
+-----------
+- Add support for MongoDB 8.0 and PyMongo 4.9.
+- The length parameter in :meth:`MotorCursor.to_list` is now optional.
+
 Motor 3.5.1
 -----------
 - Fix runtime behavior of Motor generic class typing, e.g. ``client: AsyncIOMotorClient[Dict[str, Any]]``.

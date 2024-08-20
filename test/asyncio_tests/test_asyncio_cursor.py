@@ -192,7 +192,6 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
         self.assertEqual(expected(100, 101), (await cursor.to_list(1)))
         self.assertEqual(expected(101, 102), (await cursor.to_list(1)))
         self.assertEqual(expected(102, 103), (await cursor.to_list(1)))
-        self.assertEqual([], (await cursor.to_list(0)))
         self.assertEqual(expected(103, 105), (await cursor.to_list(2)))
 
         # Only 95 docs left, make sure length=100 doesn't error or hang

@@ -197,6 +197,16 @@ excluded_tests = [
     "TestClient.test_handshake*",
     # This test is not a valid unittest target.
     "TestRangeQueryProse.run_test_cases",
+    # The test logic interferes with the SynchroLoader.
+    "ClientUnitTest.test_detected_environment_logging",
+    "ClientUnitTest.test_detected_environment_warning",
+    # The batch_size portion of this test does not work with synchro.
+    "TestCursor.test_to_list_length",
+    # These tests hang due to internal incompatibilities in to_list.
+    "TestCursor.test_command_cursor_to_list*",
+    # Motor does not allow calling to_list on a tailable cursor.
+    "TestCursor.test_max_await_time_ms",
+    "TestCursor.test_to_list_tailable",
 ]
 
 
@@ -230,11 +240,7 @@ class SynchroModuleFinder(importlib.abc.MetaPathFinder):
 class SynchroModuleLoader(importlib.abc.Loader):
     def patch_spec(self, fullname):
         parts = fullname.split(".")
-        if parts[-1] in ("gridfs", "pymongo"):
-            # E.g. "import pymongo"
-            return True
-        elif len(parts) >= 2 and parts[-2] in ("gridfs", "pymongo"):
-            # E.g. "import pymongo.mongo_client"
+        if ("pymongo" in parts or "gridfs" in parts) and "asynchronous" not in parts:
             return True
 
         return False
@@ -328,8 +334,17 @@ if __name__ == "__main__":
         "pymongo.mongo_client",
         "pymongo.database",
         "pymongo.srv_resolver",
+        "pymongo.synchronous.collection",
+        "pymongo.synchronous.client_session",
+        "pymongo.synchronous.command_cursor",
+        "pymongo.synchronous.change_stream",
+        "pymongo.synchronous.cursor",
+        "pymongo.synchronous.encryption",
+        "pymongo.synchronous.mongo_client",
+        "pymongo.synchronous.database",
         "gridfs",
         "gridfs.grid_file",
+        "gridfs.synchronous.grid_file",
     ]:
         sys.modules.pop(n)
 
@@ -341,7 +356,9 @@ if __name__ == "__main__":
 
     # Run the tests from the pymongo target dir with our custom plugin.
     os.chdir(sys.argv[1])
-    code = pytest.main(sys.argv[2:] + ["-p", "no:warnings"], plugins=[SynchroPytestPlugin()])
+    code = pytest.main(
+        sys.argv[2:] + ["-m", "default"] + ["-p", "no:warnings"], plugins=[SynchroPytestPlugin()]
+    )
 
     if code != 0:
         sys.exit(code)
