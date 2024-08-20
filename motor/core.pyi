@@ -53,6 +53,7 @@ from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import _ServerMode
 from pymongo.results import (
     BulkWriteResult,
+    ClientBulkWriteResult,
     DeleteResult,
     InsertManyResult,
     InsertOneResult,
@@ -124,6 +125,17 @@ class AgnosticClient(AgnosticBaseProperties[_DocumentType]):
         write_concern: Optional[WriteConcern] = None,
         read_concern: Optional[ReadConcern] = None,
     ) -> AgnosticDatabase[_DocumentType]: ...
+    async def bulk_write(
+        self,
+        models: Sequence[_WriteOp[_DocumentType]],
+        session: Optional[ClientSession] = None,
+        ordered: bool = True,
+        verbose_results: bool = False,
+        bypass_document_validation: Optional[bool] = None,
+        comment: Optional[Any] = None,
+        let: Optional[Mapping] = None,
+        write_concern: Optional[WriteConcern] = None,
+    ) -> ClientBulkWriteResult: ...
 
     HOST: str
 
