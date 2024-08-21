@@ -110,6 +110,7 @@ class AgnosticClient(AgnosticBaseProperties):
     arbiters = ReadOnlyProperty()
     close = DelegateMethod()
     __hash__ = DelegateMethod()
+    bulk_write = AsyncRead()
     drop_database = AsyncCommand().unwrap("MotorDatabase")
     options = ReadOnlyProperty()
     get_database = DelegateMethod(doc=docstrings.get_database_doc).wrap(Database)

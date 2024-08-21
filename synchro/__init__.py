@@ -103,6 +103,7 @@ from pymongo.server_selectors import *
 from pymongo.srv_resolver import _resolve, _SrvResolver
 from pymongo.ssl_support import *
 from pymongo.synchronous.client_session import _TxnState
+from pymongo.synchronous.encryption import _Encrypter
 from pymongo.synchronous.monitor import *
 from pymongo.synchronous.periodic_executor import *
 from pymongo.synchronous.periodic_executor import _EXECUTORS

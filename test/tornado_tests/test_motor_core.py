@@ -33,7 +33,7 @@ pymongo_only = set(["next"])
 
 motor_client_only = motor_only.union(["open"])
 
-pymongo_client_only = set(["bulk_write"]).union(pymongo_only)
+pymongo_client_only = set([]).union(pymongo_only)
 
 pymongo_database_only = set([]).union(pymongo_only)
 
