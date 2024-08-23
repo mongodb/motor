@@ -893,6 +893,38 @@ class TestExamples(AsyncIOTestCase):
             print(doc)
         # End Aggregation Example 4
 
+    @env.require_version_min(4, 4)
+    def test_aggregate_projection_example(self):
+        db = self.db
+
+        # Start Aggregation Projection Example 1
+        db.inventory.find(
+            {},
+            {
+                "_id": 0,
+                "item": 1,
+                "status": {
+                    "$switch": {
+                        "branches": [
+                            {"case": {"$eq": ["$status", "A"]}, "then": "Available"},
+                            {"case": {"$eq": ["$status", "D"]}, "then": "Discontinued"},
+                        ],
+                        "default": "No status found",
+                    }
+                },
+                "area": {
+                    "$concat": [
+                        {"$toString": {"$multiply": ["$size.h", "$size.w"]}},
+                        " ",
+                        "$size.uom",
+                    ]
+                },
+                "reportNumber": {"$literal": 1},
+            },
+        )
+
+        # End Aggregation Projection Example 1
+
     @asyncio_test
     async def test_commands(self):
         db = self.db
