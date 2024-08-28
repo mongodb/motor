@@ -12,5 +12,6 @@ Motor Examples
    authentication
    aiohttp_gridfs_example
    encryption
+   timeouts
 
 See also :ref:`example-web-application-aiohttp`.
