@@ -66,7 +66,7 @@ will raise a timeout exception. For example::
   try:
       with pymongo.timeout(10):
           await coll.insert_one({"name": "Nunu"})
-          time.sleep(10)
+          await asyncio.sleep(10)
           # The deadline has now expired, the next operation will raise
           # a timeout exception.
           await coll.find_one({"name": "Nunu"})
