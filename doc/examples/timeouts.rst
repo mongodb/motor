@@ -17,7 +17,7 @@ Task and multiple Tasks can configure different timeouts concurrently.
 :meth:`~pymongo.timeout` can be used identically in ``Motor``.
 
 For more information and troubleshooting, see the PyMongo docs on
-`Client Side Operation Timeout`_
+`Client Side Operation Timeout`_.
 
 .. _Client Side Operation Timeout: https://pymongo.readthedocs.io/en/stable/examples/timeouts.html
 
