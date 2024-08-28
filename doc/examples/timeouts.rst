@@ -14,7 +14,7 @@ server-side execution.
 
 :meth:`~pymongo.timeout` is asyncio safe; the timeout only applies to current
 Task and multiple Tasks can configure different timeouts concurrently.
-:meth:`~pymongo.timeout` can be used identically in ``Motor``.
+:meth:`~pymongo.timeout` can be used identically in Motor 3.1+.
 
 For more information and troubleshooting, see the PyMongo docs on
 `Client Side Operation Timeout`_.
