@@ -124,15 +124,20 @@ from motor import MotorClient
 
 html_copy_source = False
 
-# Theme gratefully vendored from CPython source.
-html_theme = "pydoctheme"
-html_theme_path = ["."]
-html_theme_options = {"collapsiblesidebar": True}
-html_static_path = ["static"]
+try:
+    import furo  # noqa: F401
 
-html_sidebars = {
-    "index": ["globaltoc.html", "searchbox.html"],
-}
+    html_theme = "furo"
+except ImportError:
+    # Theme gratefully vendored from CPython source.
+    html_theme = "pydoctheme"
+    html_theme_path = ["."]
+    html_theme_options = {"collapsiblesidebar": True}
+    html_static_path = ["static"]
+
+    html_sidebars = {
+        "index": ["globaltoc.html", "searchbox.html"],
+    }
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
