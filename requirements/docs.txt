@@ -3,3 +3,4 @@ aiohttp
 sphinx>=5.3,<8
 sphinx_rtd_theme>=2,<3
 readthedocs-sphinx-search~=0.3
+furo==2024.8.6
