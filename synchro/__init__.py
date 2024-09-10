@@ -77,7 +77,6 @@ from pymongo.compression_support import _have_snappy, _have_zlib, _have_zstd
 from pymongo.cursor import *
 from pymongo.cursor_shared import _QUERY_OPTIONS
 from pymongo.encryption import *
-from pymongo.encryption import _Encrypter
 from pymongo.encryption_options import *
 from pymongo.encryption_options import _HAVE_PYMONGOCRYPT
 from pymongo.errors import *
@@ -96,9 +95,8 @@ from pymongo.monitoring import _LISTENERS, _Listeners
 from pymongo.ocsp_cache import _OCSPCache
 from pymongo.operations import *
 from pymongo.periodic_executor import *
-from pymongo.periodic_executor import _EXECUTORS
 from pymongo.pool import *
-from pymongo.pool import Connection, Pool, _PoolClosedError
+from pymongo.pool import Connection, Pool
 from pymongo.read_concern import *
 from pymongo.read_preferences import *
 from pymongo.read_preferences import _ServerMode
@@ -111,6 +109,9 @@ from pymongo.settings import *
 from pymongo.srv_resolver import _resolve, _SrvResolver
 from pymongo.ssl_support import *
 from pymongo.synchronous.client_session import _TxnState
+from pymongo.synchronous.encryption import _Encrypter
+from pymongo.synchronous.periodic_executor import _EXECUTORS
+from pymongo.synchronous.pool import _PoolClosedError
 from pymongo.topology import *
 from pymongo.topology_description import *
 from pymongo.uri_parser import *
