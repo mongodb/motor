@@ -102,16 +102,16 @@ from pymongo.saslprep import *
 from pymongo.server_selectors import *
 from pymongo.srv_resolver import _resolve, _SrvResolver
 from pymongo.ssl_support import *
-from pymongo.synchronous.client_session import _TxnState
-from pymongo.synchronous.encryption import _Encrypter
-from pymongo.synchronous.monitor import *
-from pymongo.synchronous.periodic_executor import *
-from pymongo.synchronous.periodic_executor import _EXECUTORS
-from pymongo.synchronous.pool import *
-from pymongo.synchronous.pool import Connection, Pool, _PoolClosedError
-from pymongo.synchronous.server import *
-from pymongo.synchronous.settings import *
-from pymongo.synchronous.topology import *
+from pymongo.client_session import _TxnState
+from pymongo.encryption import _Encrypter
+from pymongo.monitor import *
+from pymongo.periodic_executor import *
+from pymongo.periodic_executor import _EXECUTORS
+from pymongo.pool import *
+from pymongo.pool import Connection, Pool, _PoolClosedError
+from pymongo.server import *
+from pymongo.settings import *
+from pymongo.topology import *
 from pymongo.topology_description import *
 from pymongo.uri_parser import *
 from pymongo.uri_parser import _have_dnspython
