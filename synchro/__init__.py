@@ -69,7 +69,7 @@ except ImportError:
     pass
 from pymongo import client_session, synchronous
 from pymongo.auth import *
-from pymongo.client_session import TransactionOptions
+from pymongo.client_session import TransactionOptions, _TxnState
 from pymongo.collation import *
 from pymongo.common import *
 from pymongo.common import _MAX_END_SESSIONS, _UUID_REPRESENTATIONS
@@ -77,6 +77,7 @@ from pymongo.compression_support import _have_snappy, _have_zlib, _have_zstd
 from pymongo.cursor import *
 from pymongo.cursor_shared import _QUERY_OPTIONS
 from pymongo.encryption import *
+from pymongo.encryption import _Encrypter
 from pymongo.encryption_options import *
 from pymongo.encryption_options import _HAVE_PYMONGOCRYPT
 from pymongo.errors import *
@@ -89,28 +90,26 @@ from pymongo.message import (
     _gen_find_command,
     _maybe_add_read_preference,
 )
+from pymongo.monitor import *
 from pymongo.monitoring import *
 from pymongo.monitoring import _LISTENERS, _Listeners
 from pymongo.ocsp_cache import _OCSPCache
 from pymongo.operations import *
+from pymongo.periodic_executor import *
+from pymongo.periodic_executor import _EXECUTORS
+from pymongo.pool import *
+from pymongo.pool import Connection, Pool, _PoolClosedError
 from pymongo.read_concern import *
 from pymongo.read_preferences import *
 from pymongo.read_preferences import _ServerMode
 from pymongo.results import *
 from pymongo.results import _WriteResult
 from pymongo.saslprep import *
+from pymongo.server import *
 from pymongo.server_selectors import *
+from pymongo.settings import *
 from pymongo.srv_resolver import _resolve, _SrvResolver
 from pymongo.ssl_support import *
-from pymongo.client_session import _TxnState
-from pymongo.encryption import _Encrypter
-from pymongo.monitor import *
-from pymongo.periodic_executor import *
-from pymongo.periodic_executor import _EXECUTORS
-from pymongo.pool import *
-from pymongo.pool import Connection, Pool, _PoolClosedError
-from pymongo.server import *
-from pymongo.settings import *
 from pymongo.topology import *
 from pymongo.topology_description import *
 from pymongo.uri_parser import *
