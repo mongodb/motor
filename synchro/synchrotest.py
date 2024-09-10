@@ -324,15 +324,7 @@ if __name__ == "__main__":
     # https://docs.python.org/3/reference/import.html#import-hooks
     for n in [
         "pymongo",
-        "pymongo.collection",
-        "pymongo.client_session",
-        "pymongo.command_cursor",
-        "pymongo.change_stream",
-        "pymongo.cursor",
-        "pymongo.encryption",
         "pymongo.encryption_options",
-        "pymongo.mongo_client",
-        "pymongo.database",
         "pymongo.srv_resolver",
         "pymongo.synchronous.collection",
         "pymongo.synchronous.client_session",
@@ -344,7 +336,6 @@ if __name__ == "__main__":
         "pymongo.synchronous.database",
         "gridfs",
         "gridfs.grid_file",
-        "gridfs.synchronous.grid_file",
     ]:
         sys.modules.pop(n)
 
