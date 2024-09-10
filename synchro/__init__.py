@@ -69,7 +69,7 @@ except ImportError:
     pass
 from pymongo import client_session, synchronous
 from pymongo.auth import *
-from pymongo.client_session import TransactionOptions, _TxnState
+from pymongo.client_session import TransactionOptions
 from pymongo.collation import *
 from pymongo.common import *
 from pymongo.common import _MAX_END_SESSIONS, _UUID_REPRESENTATIONS
@@ -110,6 +110,7 @@ from pymongo.server_selectors import *
 from pymongo.settings import *
 from pymongo.srv_resolver import _resolve, _SrvResolver
 from pymongo.ssl_support import *
+from pymongo.synchronous.client_session import _TxnState
 from pymongo.topology import *
 from pymongo.topology_description import *
 from pymongo.uri_parser import *
