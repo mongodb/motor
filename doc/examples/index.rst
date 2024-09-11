@@ -13,5 +13,6 @@ Motor Examples
    aiohttp_gridfs_example
    encryption
    timeouts
+   type_hints
 
 See also :ref:`example-web-application-aiohttp`.
