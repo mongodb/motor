@@ -518,7 +518,7 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     async def test_generate_keys(self):
-        c = self.collection
+        c = self.cx
         KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
 
         async with motor.MotorClientEncryption(

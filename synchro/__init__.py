@@ -93,6 +93,8 @@ from pymongo.monitoring import *
 from pymongo.monitoring import _LISTENERS, _Listeners
 from pymongo.ocsp_cache import _OCSPCache
 from pymongo.operations import *
+from pymongo.pool import *
+from pymongo.pool import Connection, Pool
 from pymongo.read_concern import *
 from pymongo.read_preferences import *
 from pymongo.read_preferences import _ServerMode
@@ -107,8 +109,7 @@ from pymongo.synchronous.encryption import _Encrypter
 from pymongo.synchronous.monitor import *
 from pymongo.synchronous.periodic_executor import *
 from pymongo.synchronous.periodic_executor import _EXECUTORS
-from pymongo.synchronous.pool import *
-from pymongo.synchronous.pool import Connection, Pool, _PoolClosedError
+from pymongo.synchronous.pool import _PoolClosedError
 from pymongo.synchronous.server import *
 from pymongo.synchronous.settings import *
 from pymongo.synchronous.topology import *
