@@ -704,6 +704,10 @@ axes:
         variables:
            TOX_ENV: "test"
            PYTHON_BINARY: "/opt/python/3.12/bin/python3"
+      - id: "test-py313"
+        variables:
+           TOX_ENV: "test"
+           PYTHON_BINARY: "/opt/python/3.13/bin/python3"
       - id: "test-pymongo-latest"
         variables:
            TOX_ENV: "test-pymongo-latest"
