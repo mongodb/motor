@@ -272,7 +272,7 @@ class MotorCollectionTest(MotorTest):
     @gen_test
     async def test_async_create_encrypted_collection(self):
         await self.db.drop_collection("test_collection")
-        c = self.collection
+        c = self.cx
         KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
         self.cx.drop_database("db")
         async with motor.MotorClientEncryption(
@@ -292,7 +292,7 @@ class MotorCollectionTest(MotorTest):
     @env.require_version_min(8, 0, -1, -1)
     @gen_test
     async def test_async_encrypt_expression(self):
-        c = self.collection
+        c = self.cx
         KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
         self.cx.drop_database("db")
         async with motor.MotorClientEncryption(

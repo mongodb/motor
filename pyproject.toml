@@ -103,7 +103,10 @@ filterwarnings = [
     "ignore:GridOut property 'aliases' is deprecated and will be removed in PyMongo 5.0:DeprecationWarning",
     # From older versions aiohttp.
     "ignore:\"@coroutine\" decorator is deprecated since Python 3.8:DeprecationWarning",
-    "ignore:The loop argument is deprecated since Python 3.8:DeprecationWarning"
+    "ignore:The loop argument is deprecated since Python 3.8:DeprecationWarning",
+    # TODO: Remove both of these in https://jira.mongodb.org/browse/PYTHON-4731
+    "ignore:Unclosed AsyncMongoClient*",
+    "ignore:Unclosed MongoClient*",
 ]
 
 [tool.ruff]
