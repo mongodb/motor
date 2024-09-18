@@ -25,7 +25,6 @@ import pymongo.errors
 from bson import CodecOptions
 from bson.binary import JAVA_LEGACY
 from pymongo import ReadPreference, WriteConcern
-from pymongo.encryption import Algorithm, QueryType
 from pymongo.errors import BulkWriteError, DuplicateKeyError, OperationFailure
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import Secondary
@@ -306,7 +305,7 @@ class MotorCollectionTest(MotorTest):
                 insert_payload = await client_encryption.encrypt(
                     float(i),
                     key_id=data_key,
-                    algorithm=Algorithm.RANGEPREVIEW,
+                    algorithm="range",
                     contention_factor=0,
                     range_opts=range_opts,
                 )
@@ -325,8 +324,8 @@ class MotorCollectionTest(MotorTest):
                     ]
                 },
                 key_id=data_key,
-                algorithm=Algorithm.RANGEPREVIEW,
-                query_type=QueryType.RANGEPREVIEW,
+                algorithm="range",
+                query_type="range",
                 contention_factor=0,
                 range_opts=range_opts,
             )
