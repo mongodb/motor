@@ -3,6 +3,10 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.5.2
+-----------
+- Update the PyMongo dependency requirement to >=4.5 and <4.9. Apps that require PyMongo >=4.9 must upgrade to Motor >=3.6.
+
 Motor 3.5.1
 -----------
 - Fix runtime behavior of Motor generic class typing, e.g. ``client: AsyncIOMotorClient[Dict[str, Any]]``.
