@@ -411,8 +411,9 @@ incoming documents after receiving them from PyMongo.
 Alternatively, if your application uses the ``SONManipulator`` API to convert
 custom types to BSON, the :class:`~bson.codec_options.TypeCodec` and
 :class:`~bson.codec_options.TypeRegistry` APIs may be a suitable alternative.
-For more information, see the
-:external:pymongo:doc:`custom type example <examples/custom_type>`.
+For more information, see the `Custom Types documentation`_.
+
+.. _Custom Types documentation: https://www.mongodb.com/docs/languages/python/pymongo-driver/current/data-formats/custom-types/#std-label-pymongo-custom-types
 
 GridFS changes
 --------------

@@ -8,6 +8,12 @@ Motor 3.6.0
 - Add support for MongoDB 8.0 and PyMongo 4.9.
 - The length parameter in :meth:`MotorCursor.to_list` is now optional.
 
+.. note::
+
+  This is the last planned minor version of Motor.  We are sunsetting Motor in favor of native
+  asyncio support in PyMongo 4.9+.  We will continue to provide security releases and bug fixes for
+  Motor, but it will not gain new features.
+
 Motor 3.5.1
 -----------
 - Fix runtime behavior of Motor generic class typing, e.g. ``client: AsyncIOMotorClient[Dict[str, Any]]``.
