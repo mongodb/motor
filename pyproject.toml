@@ -86,7 +86,6 @@ addopts = ["-ra", "--strict-config", "--strict-markers",
 faulthandler_timeout = 1500
 filterwarnings = [
     "error",
-    "ignore:Algorithm 'rangePreview' is deprecated",
     "ignore:Bare functions are deprecated, use async ones:DeprecationWarning",
     "ignore:Application.make_handler:DeprecationWarning",
     "ignore:unclosed <socket.socket:ResourceWarning",
