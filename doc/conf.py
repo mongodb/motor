@@ -4,10 +4,9 @@
 # This file is execfile()d with the current directory set to its containing dir.
 import os
 import sys
+from importlib.metadata import metadata
 
 sys.path[0:0] = [os.path.abspath("..")]
-
-from pymongo import version as pymongo_version  # noqa: E402
 
 import motor  # noqa: E402
 
@@ -218,6 +217,7 @@ autodoc_default_options = {
     "member-order": "groupwise",
 }
 
+pymongo_version = metadata("pymongo")["version"]
 pymongo_inventory = ("https://pymongo.readthedocs.io/en/%s/" % pymongo_version, None)
 
 intersphinx_mapping = {

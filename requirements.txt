@@ -1,1 +1,1 @@
-pymongo @ git+https://github.com/mongodb/mongo-python-driver.git
+pymongo>=4.9,<4.10
