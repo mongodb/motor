@@ -107,7 +107,7 @@ functions:
         aws_session_token: ${AWS_SESSION_TOKEN}
         local_file: ${project}.tar.gz
         remote_file: ${project}-${CURRENT_VERSION}.tar.gz
-        bucket: ${bucket_name}
+        bucket: ${aws_bucket}
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
 
@@ -132,9 +132,9 @@ functions:
         aws_secret: ${AWS_SECRET_ACCESS_KEY}
         aws_session_token: ${AWS_SESSION_TOKEN}
         local_file: ${build_id}.tar.gz
-        # Example: ${bucket_name}/gcc49/9dfb7d741efbca16faa7859b9349d7a942273e43/debug-compile-nosasl-nossl/mongo_c_driver_releng_9dfb7d741efbca16faa7859b9349d7a942273e43_16_11_08_19_29_52.tar.gz
+        # Example: ${aws_bucket}/gcc49/9dfb7d741efbca16faa7859b9349d7a942273e43/debug-compile-nosasl-nossl/mongo_c_driver_releng_9dfb7d741efbca16faa7859b9349d7a942273e43_16_11_08_19_29_52.tar.gz
         remote_file: ${build_variant}/${revision}/${task_name}/${build_id}.tar.gz
-        bucket: ${bucket_name}
+        bucket: ${aws_bucket}
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
 
@@ -152,7 +152,7 @@ functions:
         aws_secret: ${AWS_SECRET_ACCESS_KEY}
         aws_session_token: ${AWS_SESSION_TOKEN}
         remote_file: ${build_variant}/${revision}/${BUILD_NAME}/${build_id}.tar.gz
-        bucket: ${bucket_name}
+        bucket: ${aws_bucket}
         local_file: build.tar.gz
     - command: shell.exec
       params:
@@ -197,7 +197,7 @@ functions:
         silent: true
         include_expansions_in_env: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"]
         script: |
-           aws s3 cp ${PROJECT_DIRECTORY}/scan s3://${bucket_name}/${build_variant}/${revision}/${version_id}/${build_id}/scan/ --recursive --acl public-read --region us-east-1
+           aws s3 cp ${PROJECT_DIRECTORY}/scan s3://${aws_bucket}/${build_variant}/${revision}/${version_id}/${build_id}/scan/ --recursive --acl public-read --region us-east-1
     - command: s3.put
       params:
         aws_key: ${AWS_ACCESS_KEY_ID}
@@ -205,7 +205,7 @@ functions:
         aws_session_token: ${AWS_SESSION_TOKEN}
         local_file:  ${PROJECT_DIRECTORY}/scan.html
         remote_file: ${build_variant}/${revision}/${version_id}/${build_id}/scan/index.html
-        bucket: ${bucket_name}
+        bucket: ${aws_bucket}
         permissions: public-read
         content_type: text/html
         display_name: "Scan Build Report"
@@ -226,7 +226,7 @@ functions:
         aws_session_token: ${AWS_SESSION_TOKEN}
         local_file: mongodb-logs.tar.gz
         remote_file: ${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-mongodb-logs.tar.gz
-        bucket: ${bucket_name}
+        bucket: ${aws_bucket}
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
         display_name: "mongodb-logs.tar.gz"
@@ -237,7 +237,7 @@ functions:
         aws_session_token: ${AWS_SESSION_TOKEN}
         local_file: ${DRIVERS_TOOLS}/.evergreen/orchestration/server.log
         remote_file: ${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-orchestration.log
-        bucket: ${bucket_name}
+        bucket: ${aws_bucket}
         permissions: public-read
         content_type: ${content_type|text/plain}
         display_name: "orchestration.log"
@@ -259,7 +259,7 @@ functions:
         aws_session_token: ${AWS_SESSION_TOKEN}
         local_file: working-dir.tar.gz
         remote_file: ${build_variant}/${revision}/${version_id}/${build_id}/artifacts/${task_id}-${execution}-working-dir.tar.gz
-        bucket: ${bucket_name}
+        bucket: ${aws_bucket}
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
         display_name: "working-dir.tar.gz"
@@ -279,7 +279,7 @@ functions:
         aws_session_token: ${AWS_SESSION_TOKEN}
         local_file: drivers-dir.tar.gz
         remote_file: ${build_variant}/${revision}/${version_id}/${build_id}/artifacts/${task_id}-${execution}-drivers-dir.tar.gz
-        bucket: ${bucket_name}
+        bucket: ${aws_bucket}
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
         display_name: "drivers-dir.tar.gz"
