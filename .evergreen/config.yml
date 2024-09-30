@@ -178,50 +178,6 @@ functions:
           ${PREPARE_SHELL}
           [ -f ${PROJECT_DIRECTORY}/${file} ] && sh ${PROJECT_DIRECTORY}/${file} || echo "${PROJECT_DIRECTORY}/${file} not available, skipping"
 
-  "upload docs" :
-    - command: ec2.assume_role
-      params:
-        role_arn: ${assume_role_arn}
-    - command: shell.exec
-      params:
-        silent: true
-        include_expansions_in_env: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"]
-        script: |
-           aws s3 cp ${PROJECT_DIRECTORY}/doc/html s3://${bucket_name}/docs/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
-    - command: s3.put
-      params:
-        aws_key: ${AWS_ACCESS_KEY_ID}
-        aws_secret: ${AWS_SECRET_ACCESS_KEY}
-        aws_session_token: ${AWS_SESSION_TOKEN}
-        local_file:  ${PROJECT_DIRECTORY}/doc/html/index.html
-        remote_file: docs/${CURRENT_VERSION}/index.html
-        bucket: ${bucket_name}
-        permissions: public-read
-        content_type: text/html
-        display_name: "Rendered docs"
-
-  "upload coverage" :
-    - command: ec2.assume_role
-      params:
-        role_arn: ${assume_role_arn}
-    - command: shell.exec
-      params:
-        silent: true
-        include_expansions_in_env: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"]
-        script: |
-           aws s3 cp ${PROJECT_DIRECTORY}/coverage s3://${bucket_name}/${build_variant}/${revision}/${version_id}/${build_id}/coverage/ --recursive --acl public-read --region us-east-1
-    - command: s3.put
-      params:
-        aws_key: ${AWS_ACCESS_KEY_ID}
-        aws_secret: ${AWS_SECRET_ACCESS_KEY}
-        aws_session_token: ${AWS_SESSION_TOKEN}
-        local_file:  ${PROJECT_DIRECTORY}/coverage/index.html
-        remote_file: ${build_variant}/${revision}/${version_id}/${build_id}/coverage/index.html
-        bucket: ${bucket_name}
-        permissions: public-read
-        content_type: text/html
-        display_name: "Coverage Report"
-
   "upload scan artifacts" :
     - command: ec2.assume_role
       params:
