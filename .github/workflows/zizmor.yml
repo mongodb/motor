@@ -1,4 +1,4 @@
-name: GitHub Actions Security Analysis with zizmor 🌈
+name: GitHub Actions Security Analysis with zizmor
 
 on:
   push:
@@ -21,7 +21,7 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Get zizmor
         run: cargo install zizmor
-      - name: Run zizmor 🌈
+      - name: Run zizmor
         run: zizmor --format sarif . > results.sarif
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
