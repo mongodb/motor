@@ -3,6 +3,11 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.6.1
+-----------
+- Add return type to to_list method in stub file.
+- Fix ability to install pymongo from source while testing.
+
 Motor 3.6.0
 -----------
 - Add support for MongoDB 8.0 and PyMongo 4.9.
