@@ -19,8 +19,8 @@ Motor works in all the environments officially supported by Tornado or by
 asyncio. It requires:
 
 * Unix (including macOS) or Windows.
-* PyMongo_ >=4.1,<5
-* Python 3.8+
+* PyMongo_ >=4.9,<5
+* Python 3.9+
 
 Optional dependencies:
 

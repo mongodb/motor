@@ -3,6 +3,13 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.7.0
+-----------
+- Add support for PyMongo 4.10.
+- Drop support for Python 3.8.
+- Drop support for MongoDB 3.6.
+
+
 Motor 3.6.1
 -----------
 - Add return type to to_list method in stub file.

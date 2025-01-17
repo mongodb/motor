@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-20.04]
-        python-version: ["3.8", "3.12", "3.13"]
+        python-version: ["3.9", "3.12", "3.13"]
       fail-fast: false
     name: CPython ${{ matrix.python-version }}-${{ matrix.os }}
     steps:
@@ -53,7 +53,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.9
           cache: 'pip'
           cache-dependency-path: 'pyproject.toml'
       - name: Install Python dependencies
@@ -71,7 +71,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.9
           cache: 'pip'
           cache-dependency-path: 'pyproject.toml'
       - name: Install Python dependencies
@@ -96,7 +96,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.9
           cache: 'pip'
           cache-dependency-path: 'pyproject.toml'
       - name: Install Python dependencies
