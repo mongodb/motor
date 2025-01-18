@@ -151,6 +151,7 @@ class TestEnvironment:
         connectTimeoutMS = 100
         serverSelectionTimeoutMS = 100
         socketTimeoutMS = 10000
+        raise ValueError(port)
         try:
             client = connected(
                 pymongo.MongoClient(
