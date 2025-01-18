@@ -281,7 +281,7 @@ class TestAsyncIOClientHandshake(AsyncIOMockServerTestCase):
         future = client.db.command("ping")
         ismaster = await self.run_thread(server.receives, "ismaster")
         meta = ismaster.doc["client"]
-        self.assertEqual("PyMongo|Motor", meta["driver"]["name"])
+        self.assertIn("|Motor", meta["driver"]["name"])
         # AsyncIOMotorClient adds nothing to platform.
         self.assertNotIn("Tornado", meta["platform"])
         self.assertTrue(

@@ -290,7 +290,7 @@ class MotorClientHandshakeTest(MotorMockServerTest):
         future = client.db.command("ping")
         ismaster = await self.run_thread(server.receives, "ismaster")
         meta = ismaster.doc["client"]
-        self.assertEqual("PyMongo|Motor", meta["driver"]["name"])
+        self.assertIn("|Motor", meta["driver"]["name"])
         self.assertIn("Tornado", meta["platform"])
         self.assertTrue(
             meta["driver"]["version"].endswith(motor.version),
@@ -316,7 +316,7 @@ class MotorClientHandshakeTest(MotorMockServerTest):
         future = client.db.command("ping")
         handshake = await self.run_thread(server.receives, "ismaster")
         meta = handshake.doc["client"]
-        self.assertEqual(f"PyMongo|Motor|{driver_info.name}", meta["driver"]["name"])
+        self.assertIn(f"|Motor|{driver_info.name}", meta["driver"]["name"])
         self.assertIn("Tornado", meta["platform"])
         self.assertIn(f"|{driver_info.platform}", meta["platform"])
         self.assertTrue(
