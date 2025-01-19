@@ -27,6 +27,7 @@ import pymongo.mongo_client
 from bson import CodecOptions
 from mockupdb import OpQuery
 from pymongo import CursorType, ReadPreference, WriteConcern
+from pymongo.common import MIN_SUPPORTED_WIRE_VERSION
 from pymongo.driver_info import DriverInfo
 from pymongo.errors import ConnectionFailure, OperationFailure
 from tornado import gen
@@ -205,7 +206,13 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
     def primary_server(self):
         primary = self.server()
         hosts = [primary.address_string]
-        primary.autoresponds("ismaster", ismaster=True, setName="rs", hosts=hosts, maxWireVersion=6)
+        primary.autoresponds(
+            "ismaster",
+            ismaster=True,
+            setName="rs",
+            hosts=hosts,
+            maxWireVersion=MIN_SUPPORTED_WIRE_VERSION,
+        )
 
         return primary
 
