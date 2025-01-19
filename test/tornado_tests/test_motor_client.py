@@ -20,7 +20,7 @@ import unittest
 from test import SkipTest
 from test.test_environment import db_password, db_user, env
 from test.tornado_tests import MotorMockServerTest, MotorTest, remove_all_users
-from test.utils import get_primary_pool, one
+from test.utils import AUTO_ISMASTER, get_primary_pool, one
 
 import pymongo
 import pymongo.mongo_client
@@ -191,7 +191,7 @@ class MotorClientTest(MotorTest):
 class MotorClientTimeoutTest(MotorMockServerTest):
     @gen_test
     async def test_timeout(self):
-        server = self.server(auto_ismaster=True)
+        server = self.server(auto_ismaster=AUTO_ISMASTER)
         client = motor.MotorClient(server.uri, socketTimeoutMS=100)
 
         with self.assertRaises(pymongo.errors.AutoReconnect) as context:
@@ -213,7 +213,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         if rs:
             return self.primary_server()
         else:
-            return self.server(auto_ismaster=True)
+            return self.server(auto_ismaster=AUTO_ISMASTER)
 
     async def _test_exhaust_query_server_error(self, rs):
         # When doing an exhaust query, the socket stays checked out on success

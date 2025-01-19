@@ -29,6 +29,7 @@ from test.asyncio_tests import (
 )
 from test.test_environment import env
 from test.utils import (
+    AUTO_ISMASTER,
     FailPoint,
     TestListener,
     get_async_test_timeout,
@@ -86,7 +87,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     @unittest.skipIf("PyPy" in sys.version, "PyPy")
     @asyncio_test
     async def test_fetch_next_delete(self):
-        client, server = self.client_server(auto_ismaster=True)
+        client, server = self.client_server(auto_ismaster=AUTO_ISMASTER)
 
         cursor = client.test.coll.find()
         self.fetch_next(cursor)
@@ -308,7 +309,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
 
     @asyncio_test
     async def test_cursor_explicit_close(self):
-        client, server = self.client_server(auto_ismaster=True)
+        client, server = self.client_server(auto_ismaster=AUTO_ISMASTER)
         collection = client.test.coll
         cursor = collection.find()
 
@@ -411,7 +412,7 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     @unittest.skipIf("PyPy" in sys.version, "PyPy")
     @asyncio_test
     async def test_cursor_del(self):
-        client, server = self.client_server(auto_ismaster=True)
+        client, server = self.client_server(auto_ismaster=AUTO_ISMASTER)
         cursor = client.test.coll.find()
 
         future = self.fetch_next(cursor)

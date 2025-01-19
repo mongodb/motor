@@ -117,7 +117,6 @@ class AsyncIOTestCase(AssertLogsMixin, unittest.TestCase):
 
         Ignores self.ssl, you must pass 'ssl' argument.
         """
-        raise ValueError(kwargs.pop("host", None) or uri or env.uri)
         return motor_asyncio.AsyncIOMotorClient(
             kwargs.pop("host", None) or uri or env.uri,
             *args,
