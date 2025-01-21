@@ -13,9 +13,9 @@ async def _main():
     retrieved = await coll.find_one({"_id": doc["_id"]})
     assert retrieved is not None
     assert len(retrieved.raw) > 0
-    retrieved[
-        "foo"
-    ] = "bar"  # error: Unsupported target for indexed assignment ("RawBSONDocument")  [index]
+    retrieved["foo"] = (
+        "bar"  # error: Unsupported target for indexed assignment ("RawBSONDocument")  [index]
+    )
     client.test.test.insert_one(
         [{}]
     )  # error: Argument 1 to "insert_one" of "Collection" has incompatible type "List[Dict[<nothing>, <nothing>]]"; expected "Mapping[str, Any]"

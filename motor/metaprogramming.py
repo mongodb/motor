@@ -13,11 +13,12 @@
 # limitations under the License.
 
 """Dynamic class-creation for Motor."""
+
 import functools
 import inspect
-from typing import Any, Callable, Dict, TypeVar
+from typing import Any, Callable, TypeVar
 
-_class_cache: Dict[Any, Any] = {}
+_class_cache: dict[Any, Any] = {}
 
 # mypy: ignore-errors
 

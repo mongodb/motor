@@ -18,16 +18,16 @@ import asyncio
 import datetime
 import email
 import logging
-import test
 import time
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 import aiohttp
 import aiohttp.web
 import gridfs
 
+import test
 from motor.aiohttp import AIOHTTPGridFS
 from motor.motor_gridfs import _hash_gridout
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 
 def format_date(d):

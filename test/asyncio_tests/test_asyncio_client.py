@@ -25,7 +25,14 @@ except ImportError:
     contextvars = False
 
 
+import pymongo
+from bson import CodecOptions
+from pymongo import ReadPreference, WriteConcern, monitoring
+from pymongo.errors import ConnectionFailure, OperationFailure
+
+import motor
 import test
+from motor import motor_asyncio
 from test.asyncio_tests import (
     AsyncIOMockServerTestCase,
     AsyncIOTestCase,
@@ -34,14 +41,6 @@ from test.asyncio_tests import (
 )
 from test.test_environment import db_password, db_user, env
 from test.utils import AUTO_ISMASTER, get_primary_pool
-
-import pymongo
-from bson import CodecOptions
-from pymongo import ReadPreference, WriteConcern, monitoring
-from pymongo.errors import ConnectionFailure, OperationFailure
-
-import motor
-from motor import motor_asyncio
 
 
 class TestAsyncIOClient(AsyncIOTestCase):

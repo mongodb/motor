@@ -13,4 +13,5 @@
 # limitations under the License.
 
 """Common code to support all async frameworks."""
+
 callback_type_error = TypeError("callback must be a callable")

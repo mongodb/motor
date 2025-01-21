@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """GridFS implementation for Motor, an asynchronous driver for MongoDB."""
+
 import hashlib
 import warnings
 
@@ -59,8 +60,7 @@ class MotorGridOutProperty(ReadOnlyProperty):
         def fget(obj):
             if not obj.delegate._file:
                 raise pymongo.errors.InvalidOperation(
-                    "You must call MotorGridOut.open() before accessing "
-                    "the %s property" % attr_name
+                    "You must call MotorGridOut.open() before accessing the %s property" % attr_name
                 )
 
             return getattr(obj.delegate, attr_name)
@@ -114,8 +114,7 @@ class AgnosticGridOut:
 
         if not isinstance(root_collection, collection_class):
             raise TypeError(
-                "First argument to MotorGridOut must be "
-                "MotorCollection, not %r" % root_collection
+                "First argument to MotorGridOut must be MotorCollection, not %r" % root_collection
             )
 
         if delegate:

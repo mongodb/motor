@@ -15,8 +15,6 @@
 """Test AsyncIOMotorDatabase."""
 
 import unittest
-from test import env
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 import pymongo.database
 from bson import CodecOptions
@@ -26,6 +24,8 @@ from pymongo.errors import CollectionInvalid, OperationFailure
 from pymongo.read_preferences import Secondary
 
 from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
+from test import env
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 
 class TestAsyncIODatabase(AsyncIOTestCase):

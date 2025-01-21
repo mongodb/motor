@@ -14,13 +14,12 @@
 
 """Validate list of PyMongo attributes wrapped by Motor."""
 
-from test import env
-from test.tornado_tests import MotorTest
-
 from gridfs import GridFSBucket, GridIn
 from tornado.testing import gen_test
 
 from motor import MotorGridFSBucket, MotorGridIn
+from test import env
+from test.tornado_tests import MotorTest
 
 
 def attrs(klass):

@@ -18,13 +18,13 @@ import asyncio
 import copy
 import threading
 import time
-from test import SkipTest, env
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from test.utils import get_async_test_timeout, wait_until
 
 from pymongo.errors import InvalidOperation, OperationFailure
 
 from motor.frameworks.asyncio import max_workers
+from test import SkipTest, env
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.utils import get_async_test_timeout, wait_until
 
 
 class TestAsyncIOChangeStream(AsyncIOTestCase):

@@ -16,15 +16,15 @@
 
 import asyncio
 import gc
-import test
 import unittest
-from test.asyncio_tests import asyncio_test
-from test.test_environment import CA_PEM, CLIENT_PEM, env
 from unittest import SkipTest
 
 from pymongo.errors import ConfigurationError, ConnectionFailure
 
+import test
 from motor.motor_asyncio import AsyncIOMotorClient
+from test.asyncio_tests import asyncio_test
+from test.test_environment import CA_PEM, CLIENT_PEM, env
 
 # Start a mongod instance like:
 #

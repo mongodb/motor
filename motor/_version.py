@@ -13,17 +13,18 @@
 # limitations under the License.
 
 """Version-related data for motor."""
+
 import re
-from typing import List, Tuple, Union
+from typing import Union
 
 __version__ = "3.6.2.dev0"
 
 
-def get_version_tuple(version: str) -> Tuple[Union[int, str], ...]:
+def get_version_tuple(version: str) -> tuple[Union[int, str], ...]:
     pattern = r"(?P<major>\d+).(?P<minor>\d+).(?P<patch>\d+)(?P<rest>.*)"
     match = re.match(pattern, version)
     if match:
-        parts: List[Union[int, str]] = [int(match[part]) for part in ["major", "minor", "patch"]]
+        parts: list[Union[int, str]] = [int(match[part]) for part in ["major", "minor", "patch"]]
         if match["rest"]:
             parts.append(match["rest"])
     elif re.match(r"\d+.\d+", version):

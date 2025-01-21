@@ -14,14 +14,15 @@
 
 """Test AsyncIOMotorClient with IPv6."""
 
-import test
 import unittest
-from test import SkipTest
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from test.test_environment import connected, db_password, db_user, env
 
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
+
+import test
+from test import SkipTest
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.test_environment import connected, db_password, db_user, env
 
 
 class MotorIPv6Test(AsyncIOTestCase):

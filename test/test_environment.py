@@ -18,11 +18,12 @@ import os
 import socket
 import sys
 from functools import wraps
-from test.utils import create_user
-from test.version import Version
 from unittest import SkipTest
 
 import pymongo.errors
+
+from test.utils import create_user
+from test.version import Version
 
 # mypy: ignore-errors
 

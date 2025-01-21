@@ -17,12 +17,13 @@
 import copy
 import threading
 import time
-from test import SkipTest, env
-from test.tornado_tests import MotorTest
-from test.utils import get_async_test_timeout, wait_until
 
 from pymongo.errors import InvalidOperation, OperationFailure
 from tornado.testing import gen_test
+
+from test import SkipTest, env
+from test.tornado_tests import MotorTest
+from test.utils import get_async_test_timeout, wait_until
 
 
 class MotorChangeStreamTest(MotorTest):

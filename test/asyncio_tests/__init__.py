@@ -20,14 +20,14 @@ import gc
 import inspect
 import unittest
 from asyncio import ensure_future
-from test.assert_logs_backport import AssertLogsMixin
-from test.test_environment import CA_PEM, CLIENT_PEM, env
-from test.utils import get_async_test_timeout
 from unittest import SkipTest
 
 from mockupdb import MockupDB
 
 from motor import motor_asyncio
+from test.assert_logs_backport import AssertLogsMixin
+from test.test_environment import CA_PEM, CLIENT_PEM, env
+from test.utils import get_async_test_timeout
 
 # mypy: ignore-errors
 

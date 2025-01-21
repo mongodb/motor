@@ -15,14 +15,14 @@
 """Test AsyncIOMotorGridFSBucket."""
 
 from io import BytesIO
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from test.utils import ignore_deprecations
 
 from gridfs.errors import NoFile
 from pymongo.read_preferences import ReadPreference
 from pymongo.write_concern import WriteConcern
 
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.utils import ignore_deprecations
 
 
 class TestAsyncIOGridFSBucket(AsyncIOTestCase):

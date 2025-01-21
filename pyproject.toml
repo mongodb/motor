@@ -145,6 +145,7 @@ ignore = [
   "S101",   # Use of `assert` detected
   "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
   "PYI034", #  `__aenter__` methods in classes like `AgnosticGridIn` usually return `self` at runtime
+  "UP031",  # Use format specifiers instead of percent forma
 ]
 unfixable = [
   "RUF100", # Unused noqa
@@ -157,11 +158,12 @@ flake8-unused-arguments.ignore-variadic-names = true
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?)|dummy.*)$"
 
 [tool.ruff.lint.per-file-ignores]
-"test/*.py" = ["PT009", "ARG", "E402", "PT027", "UP031",
+"test/*.py" = ["PT009", "ARG", "E402", "PT027",
                "B904", "C405", "SIM", "PLR", "PTH", "B018", "C4",
                "S", "E501", "T201", "E731", "F841", "F811",
-               "B011", "PT015", "E721", "PYI"]
+               "B011", "PT015", "E721", "PYI", "B024"]
 "synchro/__init__.py" = ["F403", "B904", "F401"]
+"synchro/synchrotest.py" = ["SIM103"]
 "doc/*.py" = [ "T201", "PTH"]
 "motor/docstrings.py" = [ "E501", ]
 "doc/examples/*.py" = [ "E402", ]

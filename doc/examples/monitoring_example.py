@@ -128,9 +128,7 @@ class HeartbeatLogger(monitoring.ServerHeartbeatListener):
 
     def succeeded(self, event):
         logging.info(
-            f"Heartbeat to server {event.connection_id} "
-            "succeeded with reply "
-            f"{event.reply.document}"
+            f"Heartbeat to server {event.connection_id} succeeded with reply {event.reply.document}"
         )
 
     def failed(self, event):

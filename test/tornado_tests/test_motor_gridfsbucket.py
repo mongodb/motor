@@ -15,12 +15,12 @@
 """Test MotorGridFSBucket."""
 
 from io import BytesIO
-from test.tornado_tests import MotorTest
 
 from gridfs.errors import NoFile
 from tornado.testing import gen_test
 
 import motor
+from test.tornado_tests import MotorTest
 
 
 class MotorGridFSBucketTest(MotorTest):

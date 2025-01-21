@@ -13,14 +13,12 @@
 # limitations under the License.
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
+
 import asyncio
 import os
-import test
 import unittest
 from abc import ABC
 from multiprocessing import Pipe
-from test.tornado_tests import MotorTest
-from test.utils import ignore_deprecations
 
 import pymongo
 from pymongo import WriteConcern
@@ -29,6 +27,9 @@ from tornado.ioloop import IOLoop
 from tornado.testing import gen_test
 
 import motor
+import test
+from test.tornado_tests import MotorTest
+from test.utils import ignore_deprecations
 
 
 class MotorTestBasic(MotorTest):

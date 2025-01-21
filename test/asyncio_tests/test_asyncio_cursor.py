@@ -20,6 +20,13 @@ import traceback
 import unittest
 import warnings
 from functools import partial
+from unittest import SkipTest
+
+import bson
+from pymongo import CursorType
+from pymongo.errors import ExecutionTimeout, InvalidOperation, OperationFailure
+
+from motor import motor_asyncio
 from test.asyncio_tests import (
     AsyncIOMockServerTestCase,
     AsyncIOTestCase,
@@ -38,13 +45,6 @@ from test.utils import (
     safe_get,
     wait_until,
 )
-from unittest import SkipTest
-
-import bson
-from pymongo import CursorType
-from pymongo.errors import ExecutionTimeout, InvalidOperation, OperationFailure
-
-from motor import motor_asyncio
 
 
 class TestAsyncIOCursor(AsyncIOMockServerTestCase):

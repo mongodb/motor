@@ -14,17 +14,17 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
-import test
 import unittest
-from test import SkipTest
-from test.test_environment import connected, db_password, db_user, env
-from test.tornado_tests import MotorTest
 
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from tornado.testing import gen_test
 
 import motor
+import test
+from test import SkipTest
+from test.test_environment import connected, db_password, db_user, env
+from test.tornado_tests import MotorTest
 
 
 class MotorIPv6Test(MotorTest):

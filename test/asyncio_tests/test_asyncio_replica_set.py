@@ -14,16 +14,16 @@
 
 """Test replica set AsyncIOClient."""
 
-import test
 import unittest
-from test import SkipTest
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from test.test_environment import env
 
 import pymongo
 import pymongo.errors
 
+import test
 from motor import motor_asyncio
+from test import SkipTest
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.test_environment import env
 
 
 class TestAsyncIOReplicaSet(AsyncIOTestCase):

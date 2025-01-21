@@ -18,9 +18,6 @@ import asyncio
 import sys
 import traceback
 import unittest
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from test.test_environment import env
-from test.utils import ignore_deprecations
 
 import pymongo
 from bson import CodecOptions
@@ -32,6 +29,9 @@ from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import Secondary
 
 from motor.motor_asyncio import AsyncIOMotorClientEncryption, AsyncIOMotorCollection
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.test_environment import env
+from test.utils import ignore_deprecations
 
 if pymongo.version_tuple >= (4, 4, 0):
     from pymongo.encryption_options import RangeOpts

@@ -19,18 +19,18 @@ from .frameworks import tornado as tornado_framework
 from .metaprogramming import T, create_class_with_framework
 
 __all__ = [
-    "MotorClient",
-    "MotorClientSession",
-    "MotorDatabase",
-    "MotorCollection",
-    "MotorCursor",
-    "MotorCommandCursor",
     "MotorChangeStream",
+    "MotorClient",
+    "MotorClientEncryption",
+    "MotorClientSession",
+    "MotorCollection",
+    "MotorCommandCursor",
+    "MotorCursor",
+    "MotorDatabase",
     "MotorGridFSBucket",
     "MotorGridIn",
     "MotorGridOut",
     "MotorGridOutCursor",
-    "MotorClientEncryption",
 ]
 
 
