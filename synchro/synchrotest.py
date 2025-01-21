@@ -356,8 +356,12 @@ if __name__ == "__main__":
 
     # Run the tests from the pymongo target dir with our custom plugin.
     os.chdir(sys.argv[1])
+    if "-m" in sys.argv[2:]:
+        markers = []
+    else:
+        markers = ["-m", "default"]
     code = pytest.main(
-        sys.argv[2:] + ["-m", "default"] + ["-p", "no:warnings"], plugins=[SynchroPytestPlugin()]
+        sys.argv[2:] + markers + ["-p", "no:warnings"], plugins=[SynchroPytestPlugin()]
     )
 
     if code != 0:
