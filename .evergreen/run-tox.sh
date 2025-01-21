@@ -67,17 +67,12 @@ createvirtualenv () {
 }
 
 
-if $PYTHON_BINARY -m tox --version; then
-    run_tox() {
-      $PYTHON_BINARY -m tox -m $TOX_ENV "$@"
-    }
-else # No toolchain present, set up virtualenv before installing tox
-    createvirtualenv "$PYTHON_BINARY" toxenv
-    trap "deactivate; rm -rf toxenv" EXIT HUP
-    python -m pip install tox
-    run_tox() {
-      python -m tox -m $TOX_ENV "$@"
-    }
-fi
+# Set up a virtualenv and install tox.
+createvirtualenv "$PYTHON_BINARY" toxenv
+trap "deactivate; rm -rf toxenv" EXIT HUP
+python -m pip install tox
+run_tox() {
+    python -m tox -m $TOX_ENV "$@"
+}
 
 run_tox "${@:1}"
