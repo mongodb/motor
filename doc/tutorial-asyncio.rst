@@ -78,7 +78,7 @@ Motor, like PyMongo, represents data with a 4-level object hierarchy:
 
 Creating a Client
 -----------------
-Creating a client is what establishes a connection to MongoDB and tells your app what deployment (i.e. cluster) to connect to.  
+Creating a client is what establishes a connection to MongoDB and tells your app what deployment (i.e. cluster) to connect to.
 You typically create a single instance of :class:`~motor.motor_asyncio.AsyncIOMotorClient` at the time your application starts up.
 
 .. doctest:: before-inserting-2000-docs
