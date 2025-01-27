@@ -16,6 +16,8 @@
 
 import concurrent.futures
 import functools
+from test.test_environment import CA_PEM, CLIENT_PEM, env
+from test.version import Version
 from unittest import SkipTest
 
 from bson import SON
@@ -23,8 +25,6 @@ from mockupdb import MockupDB
 from tornado import testing
 
 import motor
-from test.test_environment import CA_PEM, CLIENT_PEM, env
-from test.version import Version
 
 
 async def get_command_line(client):

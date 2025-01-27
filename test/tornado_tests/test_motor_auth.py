@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pymongo.errors import OperationFailure
-from tornado.testing import gen_test
-
 from test.test_environment import env
 from test.tornado_tests import MotorTest
+
+from pymongo.errors import OperationFailure
+from tornado.testing import gen_test
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 

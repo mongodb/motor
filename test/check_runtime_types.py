@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict
 
 from motor.motor_asyncio import (
     AsyncIOMotorChangeStream,
@@ -9,9 +9,9 @@ from motor.motor_asyncio import (
     AsyncIOMotorDatabase,
 )
 
-client: AsyncIOMotorClient[dict[str, Any]]
-db: AsyncIOMotorDatabase[dict[str, Any]]
-cur: AsyncIOMotorCursor[dict[str, Any]]
-coll: AsyncIOMotorCollection[dict[str, Any]]
-cs: AsyncIOMotorChangeStream[dict[str, Any]]
-enc: AsyncIOMotorClientEncryption[dict[str, Any]]
+client: AsyncIOMotorClient[Dict[str, Any]]
+db: AsyncIOMotorDatabase[Dict[str, Any]]
+cur: AsyncIOMotorCursor[Dict[str, Any]]
+coll: AsyncIOMotorCollection[Dict[str, Any]]
+cs: AsyncIOMotorChangeStream[Dict[str, Any]]
+enc: AsyncIOMotorClientEncryption[Dict[str, Any]]

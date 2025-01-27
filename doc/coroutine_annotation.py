@@ -1,5 +1,4 @@
 """Gratefully adapted from aiohttp, provides coroutine support to autodoc."""
-
 from sphinx import addnodes
 from sphinx.domains.python import PyFunction, PyMethod
 

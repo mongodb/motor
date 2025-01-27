@@ -15,7 +15,12 @@
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import os
+import test
 import unittest
+from test import SkipTest
+from test.test_environment import db_password, db_user, env
+from test.tornado_tests import MotorMockServerTest, MotorTest, remove_all_users
+from test.utils import AUTO_ISMASTER, get_primary_pool, one
 
 import pymongo
 import pymongo.mongo_client
@@ -29,11 +34,6 @@ from tornado import gen
 from tornado.testing import gen_test
 
 import motor
-import test
-from test import SkipTest
-from test.test_environment import db_password, db_user, env
-from test.tornado_tests import MotorMockServerTest, MotorTest, remove_all_users
-from test.utils import AUTO_ISMASTER, get_primary_pool, one
 
 
 class MotorClientTest(MotorTest):

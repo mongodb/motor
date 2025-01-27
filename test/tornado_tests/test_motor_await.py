@@ -13,18 +13,18 @@
 # limitations under the License.
 
 import warnings
+from test import env
 
 import bson
 
-from test import env
-
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
+
+import test
+from test.tornado_tests import MotorTest
 
 from tornado.testing import gen_test
 
-import test
 from motor.motor_tornado import MotorClientSession, MotorGridFSBucket
-from test.tornado_tests import MotorTest
 
 
 class MotorTestAwait(MotorTest):

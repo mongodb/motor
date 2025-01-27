@@ -19,18 +19,6 @@ import traceback
 import unittest
 import warnings
 from functools import partial
-
-import bson
-import pymongo
-from pymongo import CursorType
-from pymongo.collation import Collation
-from pymongo.errors import ExecutionTimeout, InvalidOperation, OperationFailure
-from tornado import gen
-from tornado.concurrent import Future
-from tornado.testing import gen_test
-
-import motor
-import motor.motor_tornado
 from test import SkipTest, env
 from test.tornado_tests import (
     MotorMockServerTest,
@@ -47,6 +35,18 @@ from test.utils import (
     safe_get,
     wait_until,
 )
+
+import bson
+import pymongo
+from pymongo import CursorType
+from pymongo.collation import Collation
+from pymongo.errors import ExecutionTimeout, InvalidOperation, OperationFailure
+from tornado import gen
+from tornado.concurrent import Future
+from tornado.testing import gen_test
+
+import motor
+import motor.motor_tornado
 
 
 class MotorCursorTest(MotorMockServerTest):

@@ -20,6 +20,9 @@ import datetime
 import unittest
 from io import StringIO
 from os import environ
+from test import env
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.utils import wait_until
 from threading import Thread
 from unittest.mock import patch
 
@@ -34,9 +37,6 @@ from pymongo.read_preferences import ReadPreference
 from pymongo.server_api import ServerApi
 
 from motor.motor_asyncio import AsyncIOMotorClientEncryption
-from test import env
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from test.utils import wait_until
 
 
 async def count(cursor):

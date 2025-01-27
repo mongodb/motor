@@ -15,6 +15,8 @@
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import unittest
+from test import env
+from test.tornado_tests import MotorTest
 
 import pymongo.database
 from bson import CodecOptions
@@ -25,8 +27,6 @@ from pymongo.read_preferences import Secondary
 from tornado.testing import gen_test
 
 import motor
-from test import env
-from test.tornado_tests import MotorTest
 
 
 class MotorDatabaseTest(MotorTest):

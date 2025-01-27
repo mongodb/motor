@@ -13,24 +13,23 @@
 # limitations under the License.
 
 """Asyncio support for Motor, an asynchronous driver for MongoDB."""
-
 from . import core, motor_gridfs
 from .frameworks import asyncio as asyncio_framework
 from .metaprogramming import T, create_class_with_framework
 
 __all__ = [
-    "AsyncIOMotorChangeStream",
     "AsyncIOMotorClient",
-    "AsyncIOMotorClientEncryption",
     "AsyncIOMotorClientSession",
-    "AsyncIOMotorCollection",
-    "AsyncIOMotorCommandCursor",
-    "AsyncIOMotorCursor",
     "AsyncIOMotorDatabase",
+    "AsyncIOMotorCollection",
+    "AsyncIOMotorCursor",
+    "AsyncIOMotorCommandCursor",
+    "AsyncIOMotorChangeStream",
     "AsyncIOMotorGridFSBucket",
     "AsyncIOMotorGridIn",
     "AsyncIOMotorGridOut",
     "AsyncIOMotorGridOutCursor",
+    "AsyncIOMotorClientEncryption",
 ]
 
 

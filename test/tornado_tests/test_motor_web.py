@@ -17,8 +17,10 @@
 import datetime
 import email
 import re
+import test
 import time
 import unittest
+from test.test_environment import CA_PEM, CLIENT_PEM, env
 
 import gridfs
 from tornado import testing
@@ -26,9 +28,7 @@ from tornado.web import Application
 
 import motor
 import motor.web
-import test
 from motor.motor_gridfs import _hash_gridout
-from test.test_environment import CA_PEM, CLIENT_PEM, env
 
 
 # We're using Tornado's AsyncHTTPTestCase instead of our own MotorTestCase for

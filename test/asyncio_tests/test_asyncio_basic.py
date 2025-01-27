@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import test
 import unittest
 from abc import ABC
 from asyncio import new_event_loop, set_event_loop
 from multiprocessing import Pipe
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+from test.utils import ignore_deprecations
 
 import pymongo
 from pymongo import WriteConcern
 from pymongo.read_preferences import Nearest, ReadPreference, Secondary
 
-import test
 from motor import motor_asyncio
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from test.utils import ignore_deprecations
 
 
 class AIOMotorTestBasic(AsyncIOTestCase):

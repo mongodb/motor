@@ -18,14 +18,14 @@ import datetime
 import sys
 import traceback
 import unittest
+from test import MockRequestHandler
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 from bson.objectid import ObjectId
 from gridfs.errors import NoFile
 from pymongo.errors import InvalidOperation
 
 from motor import motor_asyncio
-from test import MockRequestHandler
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 
 class MotorGridFileTest(AsyncIOTestCase):

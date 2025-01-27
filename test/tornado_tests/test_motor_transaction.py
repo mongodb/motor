@@ -12,21 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pymongo.read_concern import ReadConcern
-
 from test.utils import TestListener
+
+from pymongo.read_concern import ReadConcern
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
 import unittest
+from test.test_environment import env
+from test.tornado_tests import MotorTest
 
 from pymongo import ReadPreference, WriteConcern
 from pymongo.errors import ConnectionFailure, OperationFailure
 from tornado.testing import gen_test
 
 from motor import core
-from test.test_environment import env
-from test.tornado_tests import MotorTest
 
 
 class PatchSessionTimeout:

@@ -19,14 +19,15 @@ try:
 except ImportError:
     ssl = None
 
-from pymongo.errors import ConfigurationError, ConnectionFailure
-from tornado.testing import gen_test
-
-import motor
 import test
 from test import SkipTest
 from test.test_environment import CA_PEM, CLIENT_PEM, env
 from test.tornado_tests import MotorTest
+
+from pymongo.errors import ConfigurationError, ConnectionFailure
+from tornado.testing import gen_test
+
+import motor
 
 # Start a mongod instance like:
 #

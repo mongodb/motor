@@ -17,6 +17,9 @@
 import sys
 import traceback
 import unittest
+from test.test_environment import env
+from test.tornado_tests import MotorTest
+from test.utils import ignore_deprecations
 
 import pymongo.errors
 from bson import CodecOptions
@@ -31,9 +34,6 @@ from tornado.testing import gen_test
 
 import motor
 import motor.motor_tornado
-from test.test_environment import env
-from test.tornado_tests import MotorTest
-from test.utils import ignore_deprecations
 
 if pymongo.version_tuple >= (4, 4, 0):
     from pymongo.encryption_options import RangeOpts

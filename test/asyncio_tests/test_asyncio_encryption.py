@@ -16,6 +16,8 @@
 
 import unittest
 import uuid
+from test import env
+from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 from bson.binary import JAVA_LEGACY, STANDARD, UUID_SUBTYPE, Binary
 from bson.codec_options import CodecOptions
@@ -24,8 +26,6 @@ from pymongo.encryption import Algorithm
 from pymongo.errors import InvalidOperation
 
 from motor.motor_asyncio import AsyncIOMotorClientEncryption
-from test import env
-from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
 KMS_PROVIDERS = {"local": {"key": b"\x00" * 96}}
 

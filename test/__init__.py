@@ -14,10 +14,9 @@
 
 """Test Motor, an asynchronous driver for MongoDB and Tornado."""
 
+from test.test_environment import CLIENT_PEM, db_user, env  # noqa: F401
 from typing import Any
 from unittest import SkipTest  # noqa: F401
-
-from test.test_environment import CLIENT_PEM, db_user, env  # noqa: F401
 
 try:
     # Enable the fault handler to dump the traceback of each running

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Motor, an asynchronous driver for MongoDB."""
-
 from ._version import get_version_string, version, version_tuple  # noqa: F401
 
 """Current version of Motor."""

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Utilities for using Motor with Tornado web applications."""
-
 import datetime
 import email.utils
 import mimetypes

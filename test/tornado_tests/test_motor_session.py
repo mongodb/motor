@@ -17,15 +17,14 @@
 import copy
 import sys
 import unittest
-
-from pymongo import IndexModel, InsertOne
-from pymongo.errors import InvalidOperation
-from tornado.testing import gen_test
-
 from test import SkipTest
 from test.test_environment import env
 from test.tornado_tests import MotorTest
 from test.utils import TestListener, session_ids
+
+from pymongo import IndexModel, InsertOne
+from pymongo.errors import InvalidOperation
+from tornado.testing import gen_test
 
 
 class MotorSessionTest(MotorTest):

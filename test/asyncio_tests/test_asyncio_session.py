@@ -17,14 +17,13 @@
 import copy
 import sys
 import unittest
-
-from pymongo import IndexModel, InsertOne
-from pymongo.errors import InvalidOperation
-
 from test import SkipTest
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 from test.test_environment import env
 from test.utils import TestListener, session_ids
+
+from pymongo import IndexModel, InsertOne
+from pymongo.errors import InvalidOperation
 
 
 class TestAsyncIOSession(AsyncIOTestCase):

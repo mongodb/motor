@@ -18,6 +18,8 @@ import datetime
 import sys
 import traceback
 import unittest
+from test import MockRequestHandler
+from test.tornado_tests import MotorTest
 
 from bson.objectid import ObjectId
 from gridfs.errors import NoFile
@@ -25,8 +27,6 @@ from pymongo.errors import InvalidOperation
 from tornado.testing import gen_test
 
 import motor
-from test import MockRequestHandler
-from test.tornado_tests import MotorTest
 
 
 class MotorGridFileTest(MotorTest):

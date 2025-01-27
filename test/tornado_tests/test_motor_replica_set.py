@@ -14,7 +14,11 @@
 
 """Test replica set MotorClient."""
 
+import test
 import unittest
+from test import SkipTest
+from test.test_environment import env
+from test.tornado_tests import MotorReplicaSetTestBase, MotorTest
 
 import pymongo
 import pymongo.auth
@@ -24,10 +28,6 @@ from tornado.testing import gen_test
 
 import motor
 import motor.core
-import test
-from test import SkipTest
-from test.test_environment import env
-from test.tornado_tests import MotorReplicaSetTestBase, MotorTest
 
 
 class MotorReplicaSetTest(MotorReplicaSetTestBase):
