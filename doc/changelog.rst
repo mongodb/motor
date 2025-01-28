@@ -742,7 +742,7 @@ Motor 1.0
 Motor now depends on PyMongo 3.3 and later. The move from PyMongo 2 to 3 brings
 a large number of API changes, read the `the PyMongo 3 changelog`_ carefully.
 
-.. _the PyMongo 3 changelog: https://pymongo.readthedocs.io/en/stable/changelog.html#changes-in-version-3-0
+.. _the PyMongo 3 changelog: https://pymongo.readthedocs.io/en/4.0/changelog.html#changes-in-version-3-0
 
 :class:`MotorReplicaSetClient` is removed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
