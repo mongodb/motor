@@ -1278,8 +1278,7 @@ therefore inheriting
 `PyMongo 2.7.2's bug fixes <https://jira.mongodb.org/browse/PYTHON/fixforversion/14005>`_
 and
 `PyMongo 2.8's bug fixes <https://jira.mongodb.org/browse/PYTHON/fixforversion/14223>`_
-and `features
-<https://pymongo.readthedocs.io/en/stable/changelog.html#changes-in-version-2-8>`_.
+and features.
 
 Fixes `a connection-pool timeout when waitQueueMultipleMS is set
 <https://jira.mongodb.org/browse/MOTOR-62>`_ and `two bugs in replica set
