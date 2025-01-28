@@ -677,9 +677,17 @@ axes:
         variables:
            TOX_ENV: "test"
            PYTHON_BINARY: "/opt/python/3.13/bin/python3"
-      - id: "test-pymongo-oldest"
+      - id: "test-pymongo-4.9"
         variables:
-           TOX_ENV: "test-pymongo-oldest"
+           TOX_ENV: "test-pymongo-4.9"
+           PYTHON_BINARY: "/opt/python/3.9/bin/python3"
+      - id: "test-pymongo-4.10"
+        variables:
+           TOX_ENV: "test-pymongo-4.10"
+           PYTHON_BINARY: "/opt/python/3.9/bin/python3"
+      - id: "test-pymongo-4.11"
+        variables:
+           TOX_ENV: "test-pymongo-4.11"
            PYTHON_BINARY: "/opt/python/3.9/bin/python3"
       - id: "test-pymongo-latest"
         variables:
