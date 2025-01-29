@@ -44,7 +44,7 @@ jobs:
     outputs:
       version: ${{ steps.pre-publish.outputs.version }}
     steps:
-      - run:
+      - run: |
           echo "VERSION=${VERSION}"
           echo "DRY_RUN=${DRY_RUN}"
           exit 1
