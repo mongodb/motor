@@ -14,8 +14,6 @@ on:
         type: boolean
   schedule:
     - cron:  '30 5 * * *'
-  # TODO: remove before merging
-  push:
 
 env:
   # Changes per repo
@@ -24,8 +22,8 @@ env:
   SILK_ASSET_GROUP: motor
   EVERGREEN_PROJECT: motor
   # Constant
-  # inputs will be empty on a scheduled run, so set the value based on whether the
-  # input is set and is set to 'true'
+  # inputs will be empty on a scheduled run.  so, we only set dry_run
+  # to 'false' when the input is set to 'false'.
   DRY_RUN: ${{ ! contains(inputs.dry_run, 'false') }}
   FOLLOWING_VERSION: ${{ inputs.following_version || '' }}
   VERSION: ${{ inputs.version || '10.10.10.10' }}
@@ -44,10 +42,6 @@ jobs:
     outputs:
       version: ${{ steps.pre-publish.outputs.version }}
     steps:
-      - run: |
-          echo "VERSION=${VERSION}"
-          echo "DRY_RUN=${DRY_RUN}"
-          exit 1
       - uses: mongodb-labs/drivers-github-tools/secure-checkout@v2
         with:
           app_id: ${{ vars.APP_ID }}
