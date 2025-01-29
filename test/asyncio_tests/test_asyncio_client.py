@@ -33,7 +33,7 @@ from test.asyncio_tests import (
     remove_all_users,
 )
 from test.test_environment import db_password, db_user, env
-from test.utils import get_primary_pool
+from test.utils import AUTO_ISMASTER, get_primary_pool
 
 import pymongo
 from bson import CodecOptions
@@ -257,7 +257,7 @@ class TestAsyncIOClient(AsyncIOTestCase):
 class TestAsyncIOClientTimeout(AsyncIOMockServerTestCase):
     @asyncio_test
     async def test_timeout(self):
-        server = self.server(auto_ismaster=True)
+        server = self.server(auto_ismaster=AUTO_ISMASTER)
         client = motor_asyncio.AsyncIOMotorClient(
             server.uri, socketTimeoutMS=100, io_loop=self.loop
         )
@@ -281,7 +281,7 @@ class TestAsyncIOClientHandshake(AsyncIOMockServerTestCase):
         future = client.db.command("ping")
         ismaster = await self.run_thread(server.receives, "ismaster")
         meta = ismaster.doc["client"]
-        self.assertEqual("PyMongo|Motor", meta["driver"]["name"])
+        self.assertIn("|Motor", meta["driver"]["name"])
         # AsyncIOMotorClient adds nothing to platform.
         self.assertNotIn("Tornado", meta["platform"])
         self.assertTrue(

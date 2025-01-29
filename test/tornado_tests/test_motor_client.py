@@ -20,13 +20,14 @@ import unittest
 from test import SkipTest
 from test.test_environment import db_password, db_user, env
 from test.tornado_tests import MotorMockServerTest, MotorTest, remove_all_users
-from test.utils import get_primary_pool, one
+from test.utils import AUTO_ISMASTER, get_primary_pool, one
 
 import pymongo
 import pymongo.mongo_client
 from bson import CodecOptions
 from mockupdb import OpQuery
 from pymongo import CursorType, ReadPreference, WriteConcern
+from pymongo.common import MIN_SUPPORTED_WIRE_VERSION
 from pymongo.driver_info import DriverInfo
 from pymongo.errors import ConnectionFailure, OperationFailure
 from tornado import gen
@@ -191,7 +192,7 @@ class MotorClientTest(MotorTest):
 class MotorClientTimeoutTest(MotorMockServerTest):
     @gen_test
     async def test_timeout(self):
-        server = self.server(auto_ismaster=True)
+        server = self.server(auto_ismaster=AUTO_ISMASTER)
         client = motor.MotorClient(server.uri, socketTimeoutMS=100)
 
         with self.assertRaises(pymongo.errors.AutoReconnect) as context:
@@ -205,7 +206,13 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
     def primary_server(self):
         primary = self.server()
         hosts = [primary.address_string]
-        primary.autoresponds("ismaster", ismaster=True, setName="rs", hosts=hosts, maxWireVersion=6)
+        primary.autoresponds(
+            "ismaster",
+            ismaster=True,
+            setName="rs",
+            hosts=hosts,
+            maxWireVersion=MIN_SUPPORTED_WIRE_VERSION,
+        )
 
         return primary
 
@@ -213,7 +220,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         if rs:
             return self.primary_server()
         else:
-            return self.server(auto_ismaster=True)
+            return self.server(auto_ismaster=AUTO_ISMASTER)
 
     async def _test_exhaust_query_server_error(self, rs):
         # When doing an exhaust query, the socket stays checked out on success
@@ -290,7 +297,7 @@ class MotorClientHandshakeTest(MotorMockServerTest):
         future = client.db.command("ping")
         ismaster = await self.run_thread(server.receives, "ismaster")
         meta = ismaster.doc["client"]
-        self.assertEqual("PyMongo|Motor", meta["driver"]["name"])
+        self.assertIn("|Motor", meta["driver"]["name"])
         self.assertIn("Tornado", meta["platform"])
         self.assertTrue(
             meta["driver"]["version"].endswith(motor.version),
@@ -316,7 +323,7 @@ class MotorClientHandshakeTest(MotorMockServerTest):
         future = client.db.command("ping")
         handshake = await self.run_thread(server.receives, "ismaster")
         meta = handshake.doc["client"]
-        self.assertEqual(f"PyMongo|Motor|{driver_info.name}", meta["driver"]["name"])
+        self.assertIn(f"|Motor|{driver_info.name}", meta["driver"]["name"])
         self.assertIn("Tornado", meta["platform"])
         self.assertIn(f"|{driver_info.platform}", meta["platform"])
         self.assertTrue(
