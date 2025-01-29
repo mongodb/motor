@@ -22,7 +22,9 @@ env:
   SILK_ASSET_GROUP: motor
   EVERGREEN_PROJECT: motor
   # Constant
-  DRY_RUN: ${{ ! contains(inputs.dry_run, 'false') }}
+  # inputs will be empty on a scheduled run, so set the value based on whether the
+  # input is set and is set to 'true'
+  DRY_RUN: ${{ contains(inputs.dry_run, 'true') }}
   FOLLOWING_VERSION: ${{ inputs.following_version || '' }}
   VERSION: ${{ inputs.version || '10.10.10.10' }}
 
