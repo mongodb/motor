@@ -26,7 +26,7 @@ env:
   # Constant
   # inputs will be empty on a scheduled run, so set the value based on whether the
   # input is set and is set to 'true'
-  DRY_RUN: ${{ contains(inputs.dry_run, 'true') }}
+  DRY_RUN: ${{ ! contains(inputs.dry_run, 'false') }}
   FOLLOWING_VERSION: ${{ inputs.following_version || '' }}
   VERSION: ${{ inputs.version || '10.10.10.10' }}
 
