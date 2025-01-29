@@ -15,6 +15,7 @@ on:
         type: boolean
   schedule:
     - cron:  '30 5 * * *'
+  push:
 
 env:
   # Changes per repo
