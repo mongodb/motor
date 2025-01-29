@@ -45,8 +45,8 @@ jobs:
       version: ${{ steps.pre-publish.outputs.version }}
     steps:
       - run:
-          env | grep VERSION
-          env | grep DRY_RUN
+          echo "VERSION=${VERSION}"
+          echo "DRY_RUN=${DRY_RUN}"
           exit 1
       - uses: mongodb-labs/drivers-github-tools/secure-checkout@v2
         with:
