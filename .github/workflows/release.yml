@@ -8,13 +8,14 @@ on:
         required: true
       following_version:
         description: "The post (dev) version to set"
-        required: true
+        required: false
       dry_run:
         description: "Dry Run?"
         default: false
         type: boolean
   schedule:
     - cron:  '30 5 * * *'
+  pull_request:
 
 env:
   # Changes per repo
@@ -22,10 +23,6 @@ env:
   # Changes per branch
   SILK_ASSET_GROUP: motor
   EVERGREEN_PROJECT: motor
-  # Constant
-  DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'true' }}
-  FOLLOWING_VERSION: ${{ inputs.following_version || '' }}
-  VERSION: ${{ inputs.version || '10.10.10.10' }}
 
 defaults:
   run:
@@ -54,8 +51,8 @@ jobs:
       - uses: mongodb-labs/drivers-github-tools/python/pre-publish@v2
         id: pre-publish
         with:
-          version: ${{ env.VERSION }}
-          dry_run: ${{ env.DRY_RUN }}
+          version: ${{ inputs.version || '10.10.10.10' }}
+          dry_run: ${{ inputs.dry_run || 'true' }}
 
   build-dist:
     needs: [pre-publish]
@@ -87,9 +84,9 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
-          attestations: ${{ env.DRY_RUN }}
+          attestations: ${{ inputs.dry_run || 'true' }}
       - name: Publish package distributions to PyPI
-        if: startsWith(env.DRY_RUN, 'false')
+        if: startsWith(inputs.dry_run, 'false')
         uses: pypa/gh-action-pypi-publish@release/v1
 
   post-publish:
@@ -114,10 +111,10 @@ jobs:
           artifactory_username: ${{ vars.ARTIFACTORY_USERNAME }}
       - uses: mongodb-labs/drivers-github-tools/python/post-publish@v2
         with:
-          version: ${{ env.VERSION }}
-          following_version: ${{ env.FOLLOWING_VERSION }}
+          version: ${{ inputs.version || '10.10.10.10' }}
+          following_version: ${{ inputs.version || '' }}
           product_name: ${{ env.PRODUCT_NAME }}
           silk_asset_group: ${{ env.SILK_ASSET_GROUP }}
           evergreen_project: ${{ env.EVERGREEN_PROJECT }}
           token: ${{ github.token }}
-          dry_run: ${{ env.DRY_RUN }}
+          dry_run: ${{ inputs.dry_run || 'true' }}
