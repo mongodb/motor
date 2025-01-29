@@ -38,6 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
+          echo "EVENT NAME: ${{ github.event_name }}"
           echo "DRY RUN: ${DRY_RUN}"
           echo "VERSION: ${VERSION}"
           echo "FOLLOWING_VERSION: ${FOLLOWING_VERSION}"
