@@ -14,6 +14,8 @@ on:
         type: boolean
   schedule:
     - cron:  '30 5 * * *'
+  # TODO: remove before merging
+  push:
 
 env:
   # Changes per repo
@@ -42,6 +44,10 @@ jobs:
     outputs:
       version: ${{ steps.pre-publish.outputs.version }}
     steps:
+      - run:
+          env | grep VERSION
+          env | grep DRY_RUN
+          exit 1
       - uses: mongodb-labs/drivers-github-tools/secure-checkout@v2
         with:
           app_id: ${{ vars.APP_ID }}
