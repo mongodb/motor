@@ -3,6 +3,13 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.7.0
+-----------
+- Add support for PyMongo 4.10.
+- Drop support for Python 3.8.
+- Drop support for MongoDB 3.6.
+
+
 Motor 3.6.1
 -----------
 - Add return type to to_list method in stub file.
@@ -735,7 +742,7 @@ Motor 1.0
 Motor now depends on PyMongo 3.3 and later. The move from PyMongo 2 to 3 brings
 a large number of API changes, read the `the PyMongo 3 changelog`_ carefully.
 
-.. _the PyMongo 3 changelog: https://pymongo.readthedocs.io/en/stable/changelog.html#changes-in-version-3-0
+.. _the PyMongo 3 changelog: https://pymongo.readthedocs.io/en/4.0/changelog.html#changes-in-version-3-0
 
 :class:`MotorReplicaSetClient` is removed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1271,8 +1278,7 @@ therefore inheriting
 `PyMongo 2.7.2's bug fixes <https://jira.mongodb.org/browse/PYTHON/fixforversion/14005>`_
 and
 `PyMongo 2.8's bug fixes <https://jira.mongodb.org/browse/PYTHON/fixforversion/14223>`_
-and `features
-<https://pymongo.readthedocs.io/en/stable/changelog.html#changes-in-version-2-8>`_.
+and features.
 
 Fixes `a connection-pool timeout when waitQueueMultipleMS is set
 <https://jira.mongodb.org/browse/MOTOR-62>`_ and `two bugs in replica set
