@@ -27,6 +27,7 @@ from test.tornado_tests import (
     server_is_mongos,
 )
 from test.utils import (
+    AUTO_ISMASTER,
     TestListener,
     get_async_test_timeout,
     get_primary_pool,
@@ -90,7 +91,7 @@ class MotorCursorTest(MotorMockServerTest):
         if "PyPy" in sys.version:
             raise SkipTest("PyPy")
 
-        client, server = self.client_server(auto_ismaster=True)
+        client, server = self.client_server(auto_ismaster=AUTO_ISMASTER)
         cursor = client.test.coll.find()
 
         # With Tornado, simply accessing fetch_next starts the fetch.
@@ -266,7 +267,7 @@ class MotorCursorTest(MotorMockServerTest):
 
     @gen_test
     async def test_cursor_explicit_close(self):
-        client, server = self.client_server(auto_ismaster=True)
+        client, server = self.client_server(auto_ismaster=AUTO_ISMASTER)
         collection = client.test.coll
         cursor = collection.find()
 
@@ -368,7 +369,7 @@ class MotorCursorTest(MotorMockServerTest):
         if "PyPy" in sys.version:
             raise SkipTest("PyPy")
 
-        client, server = self.client_server(auto_ismaster=True)
+        client, server = self.client_server(auto_ismaster=AUTO_ISMASTER)
         cursor = client.test.coll.find()
 
         future = cursor.fetch_next

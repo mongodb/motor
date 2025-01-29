@@ -15,7 +15,7 @@
 from collections import defaultdict
 
 from bson import SON
-from pymongo import monitoring
+from pymongo import common, monitoring
 
 """Utilities for testing Motor with any framework."""
 
@@ -26,6 +26,9 @@ import time
 import warnings
 
 # mypy: ignore-errors
+
+
+AUTO_ISMASTER = {"maxWireVersion": common.MIN_SUPPORTED_WIRE_VERSION}
 
 
 def one(s):
