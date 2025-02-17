@@ -152,7 +152,7 @@ makes it available to request handlers::
         def get(self):
             db = self.settings['db']
 
-.. WARNING::
+.. warning::
     It is a common mistake to create a new client object for every
     request; **this comes at a dire performance cost**. Create the client
     when your application starts and reuse that one client for the lifetime
