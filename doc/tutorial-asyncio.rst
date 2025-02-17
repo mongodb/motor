@@ -454,7 +454,7 @@ to an :class:`aiohttp.web.Application`:
   :start-after: main-start
   :end-before: main-end
 
-.. WARNING::
+.. warning::
    It is a common mistake to create a new client object for every request; this comes at a dire performance cost. 
    Create the client when your application starts and reuse that one client for the lifetime of the process.
    You can maintain the client by storing a database handle from the client on your application object, as shown in this example.
