@@ -19,7 +19,7 @@ env:
   # Changes per repo
   PRODUCT_NAME: Motor
   # Changes per branch
-  # SILK_ASSET_GROUP: motor
+  SILK_ASSET_GROUP: motor
   EVERGREEN_PROJECT: motor
   # Constant
   # inputs will be empty on a scheduled run.  so, we only set dry_run
