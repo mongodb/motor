@@ -18,8 +18,6 @@ on:
 env:
   # Changes per repo
   PRODUCT_NAME: Motor
-  # Changes per branch
-  SILK_ASSET_GROUP: motor
   EVERGREEN_PROJECT: motor
   # Constant
   # inputs will be empty on a scheduled run.  so, we only set dry_run
@@ -114,12 +112,12 @@ jobs:
           aws_region_name: ${{ vars.AWS_REGION_NAME }}
           aws_secret_id: ${{ secrets.AWS_SECRET_ID }}
           artifactory_username: ${{ vars.ARTIFACTORY_USERNAME }}
-      - uses: mongodb-labs/drivers-github-tools/python/post-publish@v2
+      - uses: mongodb-labs/drivers-github-tools/python/post-publish@DRIVERS-3110
         with:
           version: ${{ env.VERSION }}
           following_version: ${{ env.FOLLOWING_VERSION }}
           product_name: ${{ env.PRODUCT_NAME }}
-          silk_asset_group: ${{ env.SILK_ASSET_GROUP }}
+          sbom_in_path: sbom.json
           evergreen_project: ${{ env.EVERGREEN_PROJECT }}
           token: ${{ github.token }}
           dry_run: ${{ env.DRY_RUN }}
