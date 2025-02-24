@@ -19,7 +19,6 @@ env:
   # Changes per repo
   PRODUCT_NAME: Motor
   # Changes per branch
-  SILK_ASSET_GROUP: motor
   EVERGREEN_PROJECT: motor
   # Constant
   # inputs will be empty on a scheduled run.  so, we only set dry_run
@@ -119,7 +118,7 @@ jobs:
           version: ${{ env.VERSION }}
           following_version: ${{ env.FOLLOWING_VERSION }}
           product_name: ${{ env.PRODUCT_NAME }}
-          silk_asset_group: ${{ env.SILK_ASSET_GROUP }}
+          sbom_in_path: sbom.json
           evergreen_project: ${{ env.EVERGREEN_PROJECT }}
           token: ${{ github.token }}
           dry_run: ${{ env.DRY_RUN }}
