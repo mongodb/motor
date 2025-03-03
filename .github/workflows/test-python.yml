@@ -37,7 +37,7 @@ jobs:
       - id: setup-mongodb
         uses: mongodb-labs/drivers-evergreen-tools@master
         with:
-          version: "6.0"
+          version: "8.0"
           topology: replica_set
       - name: Install Python dependencies
         run: |
