@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-latest]
         python-version: ["3.9", "3.12", "3.13"]
       fail-fast: false
     name: CPython ${{ matrix.python-version }}-${{ matrix.os }}
@@ -46,7 +46,7 @@ jobs:
           tox -m test
 
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,7 +64,7 @@ jobs:
           tox -m lint-manual
 
   docs:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
