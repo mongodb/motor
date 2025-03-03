@@ -34,10 +34,11 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'pyproject.toml'
           allow-prereleases: true
-      - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.12.0
+      - id: setup-mongodb
+        uses: mongodb-labs/drivers-evergreen-tools@master
         with:
-          mongodb-version: 6.0
+          version: 6.0
+          topology: REPLICA_SET
       - name: Install Python dependencies
         run: |
           python -m pip install -U pip tox
@@ -84,7 +85,7 @@ jobs:
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.12.0
         with:
-          mongodb-version: 6.0
+          mongodb-version: 5.0
       - name: Run doctest
         run: tox -m doctest
 
