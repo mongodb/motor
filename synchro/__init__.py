@@ -56,11 +56,11 @@ from pymongo import (
     saslprep,
     server_selectors,
     server_type,
-    srv_resolver,
     ssl_support,
     uri_parser,
     write_concern,
 )
+from pymongo.synchronous import srv_resolver
 
 # Added for API compat with pymongo.
 try:
