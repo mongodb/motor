@@ -113,9 +113,9 @@ from pymongo.synchronous.server import *
 from pymongo.synchronous.settings import *
 from pymongo.synchronous.srv_resolver import _resolve, _SrvResolver
 from pymongo.synchronous.topology import *
+from pymongo.synchronous.uri_parser import _have_dnspython
 from pymongo.topology_description import *
 from pymongo.uri_parser import *
-from pymongo.uri_parser import _have_dnspython
 from pymongo.write_concern import *
 from tornado.ioloop import IOLoop
 
