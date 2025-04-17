@@ -56,11 +56,11 @@ from pymongo import (
     saslprep,
     server_selectors,
     server_type,
-    srv_resolver,
     ssl_support,
     uri_parser,
     write_concern,
 )
+from pymongo.synchronous import srv_resolver
 
 # Added for API compat with pymongo.
 try:
@@ -104,7 +104,6 @@ from pymongo.results import *
 from pymongo.results import _WriteResult
 from pymongo.saslprep import *
 from pymongo.server_selectors import *
-from pymongo.srv_resolver import _resolve, _SrvResolver
 from pymongo.ssl_support import *
 from pymongo.synchronous.client_session import _TxnState
 from pymongo.synchronous.encryption import _Encrypter
@@ -112,10 +111,10 @@ from pymongo.synchronous.monitor import *
 from pymongo.synchronous.pool import _PoolClosedError
 from pymongo.synchronous.server import *
 from pymongo.synchronous.settings import *
+from pymongo.synchronous.srv_resolver import _have_dnspython, _resolve, _SrvResolver
 from pymongo.synchronous.topology import *
 from pymongo.topology_description import *
 from pymongo.uri_parser import *
-from pymongo.uri_parser import _have_dnspython
 from pymongo.write_concern import *
 from tornado.ioloop import IOLoop
 

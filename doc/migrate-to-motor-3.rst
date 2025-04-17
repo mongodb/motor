@@ -413,7 +413,7 @@ custom types to BSON, the :class:`~bson.codec_options.TypeCodec` and
 :class:`~bson.codec_options.TypeRegistry` APIs may be a suitable alternative.
 For more information, see the `Custom Types documentation`_.
 
-.. _Custom Types documentation: https://www.mongodb.com/docs/languages/python/pymongo-driver/current/data-formats/custom-types/#std-label-pymongo-custom-types
+.. _Custom Types documentation: https://www.mongodb.com/docs/languages/python/pymongo-driver/current/data-formats/custom-types/type-codecs/
 
 GridFS changes
 --------------

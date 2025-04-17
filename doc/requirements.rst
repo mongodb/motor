@@ -79,7 +79,7 @@ Use `the PyMongo compatibility matrix`_ to determine what MongoDB version is
 supported by PyMongo. Use the compatibility matrix above to determine what
 MongoDB version Motor supports.
 
-.. _the PyMongo compatibility matrix: https://mongodb.com/docs/drivers/pymongo#compatibility
+.. _the PyMongo compatibility matrix: https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/compatibility/
 
 Motor and Tornado
 `````````````````
