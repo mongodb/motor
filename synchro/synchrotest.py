@@ -333,7 +333,7 @@ if __name__ == "__main__":
         "pymongo.encryption_options",
         "pymongo.mongo_client",
         "pymongo.database",
-        "pymongo.srv_resolver",
+        "pymongo.synchronous.srv_resolver",
         "pymongo.synchronous.collection",
         "pymongo.synchronous.client_session",
         "pymongo.synchronous.command_cursor",

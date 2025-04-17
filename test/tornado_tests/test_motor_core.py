@@ -29,13 +29,13 @@ def attrs(klass):
 
 motor_only = set(["delegate", "get_io_loop", "io_loop", "wrap"])
 
-pymongo_only = set(["next", "eg_props"])
+pymongo_only = set(["next"])
 
 pymongo_gridfs_only = set(["delete_by_name", "rename_by_name"])
 
 motor_client_only = motor_only.union(["open"])
 
-pymongo_client_only = set([]).union(pymongo_only)
+pymongo_client_only = set(["eq_props"]).union(pymongo_only)
 
 pymongo_database_only = set([]).union(pymongo_only)
 
