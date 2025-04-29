@@ -83,7 +83,7 @@ jobs:
       - name: Run linkcheck
         run: tox -m linkcheck
       - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.12.0
+        uses: supercharge/mongodb-github-action@90004df786821b6308fb02299e5835d0dae05d0d # 1.12.0
         with:
           mongodb-version: 5.0
       - name: Run doctest
