@@ -7,6 +7,11 @@
 
 ![image](https://raw.github.com/mongodb/motor/master/doc/_static/motor.png)
 
+> [!WARNING] 
+> Motor will be deprecated on May 14th, 2026, one year after the production release of the PyMongo Async driver.
+> We strongly recommend that Motor users migrate to the PyMongo Async driver while Motor is still supported.
+> To learn more, see `the migration guide <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/>`_.
+
 ## About
 
 Motor is a full-featured, non-blocking [MongoDB](http://mongodb.org/)
