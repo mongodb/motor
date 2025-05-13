@@ -3,6 +3,11 @@
 Tutorial: Using Motor With :mod:`asyncio`
 =========================================
 
+.. warning:: Motor will be deprecated on May 14th, 2026, one year after the production release of the PyMongo Async driver.
+  We strongly recommend that Motor users migrate to the PyMongo Async driver while Motor is still supported.
+  To learn more, see `the migration guide <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/>`_.
+
+
 .. These setups are redundant because I can't figure out how to make doctest
   run a common setup *before* the setup for the two groups. A "testsetup:: *"
   is the obvious answer, but it's run *after* group-specific setup.
@@ -454,8 +459,7 @@ to an :class:`aiohttp.web.Application`:
   :start-after: main-start
   :end-before: main-end
 
-.. warning::
-   It is a common mistake to create a new client object for every request; this comes at a dire performance cost.
+.. warning::   It is a common mistake to create a new client object for every request; this comes at a dire performance cost.
    Create the client when your application starts and reuse that one client for the lifetime of the process.
    You can maintain the client by storing a database handle from the client on your application object, as shown in this example.
 
