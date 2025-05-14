@@ -1,7 +1,6 @@
 Changelog
 =========
 
-
 .. currentmodule:: motor.motor_tornado
 
 Motor 3.8.0
