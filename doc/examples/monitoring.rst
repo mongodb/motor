@@ -3,6 +3,11 @@
 Application Performance Monitoring (APM)
 ========================================
 
+.. warning:: Motor will be deprecated on May 14th, 2026, one year after the production release of the PyMongo Async driver. Critical bug fixes will be made until May 14th, 2027.
+  We strongly recommend that Motor users migrate to the PyMongo Async driver while Motor is still supported.
+  To learn more, see `the migration guide <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/>`_.
+
+
 Motor implements the same `Command Monitoring`_ and `Topology Monitoring`_ specifications as other MongoDB drivers.
 Therefore, you can register callbacks to be notified of every MongoDB query or command your program sends, and the server's reply to each, as well as getting a notification whenever the driver checks a server's status or detects a change in your replica set.
 

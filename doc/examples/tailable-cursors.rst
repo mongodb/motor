@@ -3,6 +3,11 @@
 Motor Tailable Cursor Example
 =============================
 
+.. warning:: Motor will be deprecated on May 14th, 2026, one year after the production release of the PyMongo Async driver. Critical bug fixes will be made until May 14th, 2027.
+  We strongly recommend that Motor users migrate to the PyMongo Async driver while Motor is still supported.
+  To learn more, see `the migration guide <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/>`_.
+
+
 By default, MongoDB will automatically close a cursor when the client has
 exhausted all results in the cursor. However, for capped collections you may
 use a tailable cursor that remains open after the client exhausts the results
