@@ -1497,7 +1497,7 @@ class AgnosticBaseCursor(AgnosticBase):
         .. versionchanged:: 2.2
            Deprecated.
 
-        .. _`large batches`: https://www.mongodb.com/docs/manual/tutorial/iterate-a-cursor/#cursor-batches
+        .. _`large batches`: https://www.mongodb.com/docs/manual/core/cursors/#cursor-batches
         .. _`gen.coroutine`: http://tornadoweb.org/en/stable/gen.html
         """
         warnings.warn(

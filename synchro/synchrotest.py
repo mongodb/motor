@@ -207,6 +207,8 @@ excluded_tests = [
     # Motor does not allow calling to_list on a tailable cursor.
     "TestCursor.test_max_await_time_ms",
     "TestCursor.test_to_list_tailable",
+    # This test relies on a private api"
+    "TestTransactions.test_transaction_pool_cleared_error_labelled_transient",
     # Newer tests not implemented in Motor
     "TestClient.test_repr_srv_host",
     "TestGridfs.test_delete_by_name",

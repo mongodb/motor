@@ -616,23 +616,6 @@ tasks:
           vars:
              TOX_ENV: doctest
 
-    - name: "assign-pr-reviewer"
-      tags: ["pr"]
-      allowed_requesters: ["patch", "github_pr"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            shell: "bash"
-            working_dir: src
-            script: |
-              ${PREPARE_SHELL}
-              set -x
-              export CONFIG=$PROJECT_DIRECTORY/.github/reviewers.txt
-              export SCRIPT="$DRIVERS_TOOLS/.evergreen/github_app/assign-reviewer.sh"
-              bash $SCRIPT -p $CONFIG -h ${github_commit} -o "mongodb" -n "motor"
-              echo '{"results": [{ "status": "PASS", "test_file": "Build", "log_raw": "Test completed"  } ]}' > ${PROJECT_DIRECTORY}/test-results.json
-
 # }}}
 
 axes:
@@ -751,9 +734,9 @@ axes:
       - id: "win"
         display_name: "Windows"
         run_on: "windows-64-vsMulti-small"
-      - id: "macos-1100"
-        display_name: "macOS 11.00"
-        run_on: "macos-1100"
+      - id: "macos-1400"
+        display_name: "macOS 14.00"
+        run_on: "macos-1400"
 
 buildvariants:
 
@@ -816,7 +799,7 @@ buildvariants:
 - matrix_name: "test-macos"
   display_name: "${os}-${tox-env-osx}-${ssl}"
   matrix_spec:
-    os: "macos-1100"
+    os: "macos-1400"
     tox-env-osx: "*"
     ssl: "*"
   tasks:
@@ -853,9 +836,3 @@ buildvariants:
      PYTHON_BINARY: "/opt/python/3.9/bin/python3"
   tasks:
      - name: "doctest"
-
-- name: rhel8-pr-assign-reviewer
-  display_name: Assign PR Reviewer
-  run_on: rhel87-small
-  tasks:
-    - name: "assign-pr-reviewer"
