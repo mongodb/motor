@@ -751,9 +751,9 @@ axes:
       - id: "win"
         display_name: "Windows"
         run_on: "windows-64-vsMulti-small"
-      - id: "macos-1100"
-        display_name: "macOS 11.00"
-        run_on: "macos-1100"
+      - id: "macos-1400"
+        display_name: "macOS 14.00"
+        run_on: "macos-1400"
 
 buildvariants:
 
@@ -816,7 +816,7 @@ buildvariants:
 - matrix_name: "test-macos"
   display_name: "${os}-${tox-env-osx}-${ssl}"
   matrix_spec:
-    os: "macos-1100"
+    os: "macos-1400"
     tox-env-osx: "*"
     ssl: "*"
   tasks:
