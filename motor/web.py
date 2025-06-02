@@ -140,6 +140,7 @@ class GridFSHandler(tornado.web.RequestHandler):
         ims_value = self.request.headers.get("If-Modified-Since")
         if ims_value is not None:
             date_tuple = email.utils.parsedate(ims_value)
+            assert date_tuple is not None
 
             # If our MotorClient is tz-aware, assume the naive ims_value is in
             # its time zone.
