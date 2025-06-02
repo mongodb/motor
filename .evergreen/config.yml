@@ -836,9 +836,3 @@ buildvariants:
      PYTHON_BINARY: "/opt/python/3.9/bin/python3"
   tasks:
      - name: "doctest"
-
-- name: rhel8-pr-assign-reviewer
-  display_name: Assign PR Reviewer
-  run_on: rhel87-small
-  tasks:
-    - name: "assign-pr-reviewer"
