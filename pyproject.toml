@@ -103,6 +103,8 @@ filterwarnings = [
     # TODO: Remove both of these in https://jira.mongodb.org/browse/PYTHON-4731
     "ignore:Unclosed AsyncMongoClient*",
     "ignore:Unclosed MongoClient*",
+    # Deprecation warning now that Motor is officially deprecated
+    "ignore:As of May 14th, 2025*",
 ]
 
 [tool.ruff]
