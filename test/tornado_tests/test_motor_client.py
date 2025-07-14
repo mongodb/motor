@@ -25,7 +25,7 @@ from test.utils import AUTO_ISMASTER, get_primary_pool, one
 import pymongo
 import pymongo.mongo_client
 from bson import CodecOptions
-from mockupdb import OpQuery
+from mockupdb import OpMsg
 from pymongo import CursorType, ReadPreference, WriteConcern
 from pymongo.common import MIN_SUPPORTED_WIRE_VERSION
 from pymongo.driver_info import DriverInfo
@@ -234,7 +234,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
 
         # With Tornado, simply accessing fetch_next starts the fetch.
         fetch_next = cursor.fetch_next
-        request = await self.run_thread(server.receives, OpQuery)
+        request = await self.run_thread(server.receives, OpMsg)
         request.fail(code=1)
 
         with self.assertRaises(pymongo.errors.OperationFailure):
@@ -267,7 +267,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
 
         # With Tornado, simply accessing fetch_next starts the fetch.
         fetch_next = cursor.fetch_next
-        request = await self.run_thread(server.receives, OpQuery)
+        request = await self.run_thread(server.receives, OpMsg)
         request.hangs_up()
 
         with self.assertRaises(pymongo.errors.ConnectionFailure):

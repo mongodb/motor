@@ -346,33 +346,6 @@ tasks:
 
 # Test tasks {{{
 
-    - name: "test-4.0-standalone"
-      tags: ["4.0", "standalone"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-            TOPOLOGY: "server"
-        - func: "run tox"
-
-    - name: "test-4.0-replica_set"
-      tags: ["4.0", "replica_set"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-            TOPOLOGY: "replica_set"
-        - func: "run tox"
-
-    - name: "test-4.0-sharded_cluster"
-      tags: ["4.0", "sharded_cluster"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-            TOPOLOGY: "sharded_cluster"
-        - func: "run tox"
-
     - name: "test-4.2-standalone"
       tags: ["4.2", "standalone"]
       commands:
