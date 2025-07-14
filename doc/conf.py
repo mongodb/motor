@@ -75,6 +75,9 @@ pygments_style = "sphinx"
 
 linkcheck_ignore = [r"http://localhost:\d+"]
 
+# Allow for flaky links.
+linkcheck_retries = 3
+
 # -- Options for extensions ----------------------------------------------------
 autoclass_content = "init"
 
