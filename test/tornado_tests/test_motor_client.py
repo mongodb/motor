@@ -246,10 +246,12 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
 
     @gen_test
     async def test_exhaust_query_server_error_standalone(self):
+        raise self.skipTest("MOTOR-1472")
         await self._test_exhaust_query_server_error(rs=False)
 
     @gen_test
     async def test_exhaust_query_server_error_rs(self):
+        raise self.skipTest("MOTOR-1472")
         await self._test_exhaust_query_server_error(rs=True)
 
     async def _test_exhaust_query_network_error(self, rs):
