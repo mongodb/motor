@@ -17,7 +17,6 @@
 import os
 import test
 import unittest
-from importlib.metadata import version
 from test import SkipTest
 from test.test_environment import db_password, db_user, env
 from test.tornado_tests import MotorMockServerTest, MotorTest, remove_all_users
@@ -235,7 +234,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
 
         # With Tornado, simply accessing fetch_next starts the fetch.
         fetch_next = cursor.fetch_next
-        expected = OpQuery if version("pymongo") < "4.14" else OpMsg
+        expected = OpQuery if pymongo.version_tuple[0:2] < (4, 14) else OpMsg({})
         request = await self.run_thread(server.receives, expected)
         request.fail(code=1)
 
@@ -269,7 +268,7 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
 
         # With Tornado, simply accessing fetch_next starts the fetch.
         fetch_next = cursor.fetch_next
-        expected = OpQuery if version("pymongo") < "4.14" else OpMsg
+        expected = OpQuery if pymongo.version_tuple[0:2] < (4, 14) else OpMsg({})
         request = await self.run_thread(server.receives, expected)
         request.hangs_up()
 
