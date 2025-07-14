@@ -17,6 +17,7 @@
 import os
 import test
 import unittest
+from importlib.metadata import version
 from test import SkipTest
 from test.test_environment import db_password, db_user, env
 from test.tornado_tests import MotorMockServerTest, MotorTest, remove_all_users
@@ -25,7 +26,7 @@ from test.utils import AUTO_ISMASTER, get_primary_pool, one
 import pymongo
 import pymongo.mongo_client
 from bson import CodecOptions
-from mockupdb import OpMsg
+from mockupdb import OpMsg, OpQuery
 from pymongo import CursorType, ReadPreference, WriteConcern
 from pymongo.common import MIN_SUPPORTED_WIRE_VERSION
 from pymongo.driver_info import DriverInfo
@@ -234,7 +235,8 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
 
         # With Tornado, simply accessing fetch_next starts the fetch.
         fetch_next = cursor.fetch_next
-        request = await self.run_thread(server.receives, OpMsg)
+        expected = OpQuery if version("pymongo") < "4.14" else OpMsg
+        request = await self.run_thread(server.receives, expected)
         request.fail(code=1)
 
         with self.assertRaises(pymongo.errors.OperationFailure):
@@ -267,7 +269,8 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
 
         # With Tornado, simply accessing fetch_next starts the fetch.
         fetch_next = cursor.fetch_next
-        request = await self.run_thread(server.receives, OpMsg)
+        expected = OpQuery if version("pymongo") < "4.14" else OpMsg
+        request = await self.run_thread(server.receives, expected)
         request.hangs_up()
 
         with self.assertRaises(pymongo.errors.ConnectionFailure):
