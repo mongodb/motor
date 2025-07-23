@@ -8,7 +8,7 @@ dynamic = ["version", "dependencies", "optional-dependencies"]
 description = "Non-blocking MongoDB driver for Tornado or asyncio"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     { name = "A. Jesse Jiryu Davis", email = "jesse@mongodb.com" },
 ]
@@ -33,13 +33,13 @@ classifiers = [
     "Typing :: Typed",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 
 [project.urls]
@@ -66,7 +66,7 @@ test = ["requirements/test.txt"]
 zstd = ["requirements/zstd.txt"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 strict = true
 pretty = true
 show_error_context = true
@@ -106,7 +106,6 @@ filterwarnings = [
 ]
 
 [tool.ruff]
-target-version = "py38"
 line-length = 100
 
 [tool.ruff.lint]
