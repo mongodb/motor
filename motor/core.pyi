@@ -13,17 +13,12 @@
 # limitations under the License.
 
 from asyncio import Future
+from collections.abc import Callable, Coroutine, Iterable, Mapping, MutableMapping, Sequence
 from typing import (
     Any,
-    Callable,
-    Coroutine,
     Generic,
-    Iterable,
-    Mapping,
-    MutableMapping,
     NoReturn,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     overload,

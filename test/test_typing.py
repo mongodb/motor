@@ -17,8 +17,9 @@ sample client code that uses Motor typings.
 """
 
 import unittest
+from collections.abc import Callable, Mapping
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from bson import CodecOptions
 from bson.raw_bson import RawBSONDocument
@@ -116,11 +117,11 @@ class TestMotor(AsyncIOTestCase):
     async def test_bulk_write(self) -> None:
         await self.collection.insert_one({})
         coll = self.collection
-        requests: List[InsertOne[Movie]] = [InsertOne(Movie(name="American Graffiti", year=1973))]
+        requests: list[InsertOne[Movie]] = [InsertOne(Movie(name="American Graffiti", year=1973))]
         result_one = await coll.bulk_write(requests)
         self.assertTrue(result_one.acknowledged)
-        new_requests: List[Union[InsertOne[Movie], ReplaceOne[Movie]]] = []
-        input_list: List[Union[InsertOne[Movie], ReplaceOne[Movie]]] = [
+        new_requests: list[Union[InsertOne[Movie], ReplaceOne[Movie]]] = []
+        input_list: list[Union[InsertOne[Movie], ReplaceOne[Movie]]] = [
             InsertOne(Movie(name="American Graffiti", year=1973)),
             ReplaceOne({}, Movie(name="American Graffiti", year=1973)),
         ]
@@ -134,14 +135,14 @@ class TestMotor(AsyncIOTestCase):
     @asyncio_test  # type:ignore[misc]
     async def test_bulk_write_heterogeneous(self) -> None:
         coll = self.collection
-        requests: List[Union[InsertOne[Movie], ReplaceOne, DeleteOne]] = [
+        requests: list[Union[InsertOne[Movie], ReplaceOne, DeleteOne]] = [
             InsertOne(Movie(name="American Graffiti", year=1973)),
             ReplaceOne({}, {"name": "American Graffiti", "year": "WRONG_TYPE"}),
             DeleteOne({}),
         ]
         result_one = await coll.bulk_write(requests)
         self.assertTrue(result_one.acknowledged)
-        requests_two: List[Union[InsertOne[Movie], ReplaceOne[Movie], DeleteOne]] = [
+        requests_two: list[Union[InsertOne[Movie], ReplaceOne[Movie], DeleteOne]] = [
             InsertOne(Movie(name="American Graffiti", year=1973)),
             ReplaceOne(
                 {},
@@ -154,7 +155,7 @@ class TestMotor(AsyncIOTestCase):
 
     @asyncio_test  # type:ignore[misc]
     async def test_command(self) -> None:
-        result: Dict = await self.cx.admin.command("ping")
+        result: dict = await self.cx.admin.command("ping")
         result.items()
 
     @asyncio_test  # type:ignore[misc]
@@ -192,7 +193,7 @@ class TestMotor(AsyncIOTestCase):
             ]
         )
 
-        class mydict(Dict[str, Any]):
+        class mydict(dict[str, Any]):
             pass
 
         result = coll3.aggregate(
@@ -226,7 +227,7 @@ class TestDocumentType(AsyncIOTestCase):
 
     @only_type_check
     async def test_explicit_document_type(self) -> None:
-        client: AsyncIOMotorClient[Dict[str, Any]] = AsyncIOMotorClient()
+        client: AsyncIOMotorClient[dict[str, Any]] = AsyncIOMotorClient()
         coll = client.test.test
         retrieved = await coll.find_one({"_id": "foo"})
         assert retrieved is not None
@@ -320,7 +321,7 @@ class TestDocumentType(AsyncIOTestCase):
 
     @only_type_check
     async def test_create_index(self) -> None:
-        client: AsyncIOMotorClient[Dict[str, str]] = AsyncIOMotorClient("test")
+        client: AsyncIOMotorClient[dict[str, str]] = AsyncIOMotorClient("test")
         db = client.test
         async with await client.start_session() as session:
             index = await db.test.create_index(
@@ -361,13 +362,13 @@ class TestCommandDocumentType(AsyncIOTestCase):
     @only_type_check
     async def test_default(self) -> None:
         client: AsyncIOMotorClient = AsyncIOMotorClient()
-        result: Dict = await client.admin.command("ping")
+        result: dict = await client.admin.command("ping")
         result["a"] = 1
 
     @only_type_check
     async def test_explicit_document_type(self) -> None:
         client: AsyncIOMotorClient = AsyncIOMotorClient()
-        codec_options: CodecOptions[Dict[str, Any]] = CodecOptions()
+        codec_options: CodecOptions[dict[str, Any]] = CodecOptions()
         result = await client.admin.command("ping", codec_options=codec_options)
         result["a"] = 1
 

@@ -299,7 +299,7 @@ class SynchroMeta(type):
 
         # Set DelegateProperties' and SynchroProperties' names.
         for name, attr in attrs.items():
-            if isinstance(attr, (MotorAttributeFactory, SynchroAttr)):  # noqa: SIM102
+            if isinstance(attr, (MotorAttributeFactory, SynchroAttr)):  # noqa: SIM102,UP038
                 if attr.name is None:
                     attr.name = name
 
