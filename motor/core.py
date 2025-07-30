@@ -85,20 +85,6 @@ class AgnosticBase:
 
     def __init__(self, delegate):
         self.delegate = delegate
-        warnings.warn(
-            DeprecationWarning(
-                """As of May 14th, 2025,
-        Motor is deprecated in favor of the GA release of the PyMongo Async API.
-        No new features will be added to Motor,
-        and only bug fixes will be provided until it reaches end of life on May 14th, 2026.
-        After that, only critical bug fixes will be made until final support ends on May 14th, 2027.
-        We strongly recommend migrating to the PyMongo Async API while Motor is still supported.
-        For help transitioning, see the Migrate to PyMongo Async guide here:
-        https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/
-        """
-            ),
-            stacklevel=2,
-        )
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.delegate!r})"
@@ -184,6 +170,21 @@ class AgnosticClient(AgnosticBaseProperties):
 
         delegate = self.__delegate_class__(*args, **kwargs)
         super().__init__(delegate)
+
+        warnings.warn(
+            DeprecationWarning(
+                """As of May 14th, 2025,
+        Motor is deprecated in favor of the GA release of the PyMongo Async API.
+        No new features will be added to Motor,
+        and only bug fixes will be provided until it reaches end of life on May 14th, 2026.
+        After that, only critical bug fixes will be made until final support ends on May 14th, 2027.
+        We strongly recommend migrating to the PyMongo Async API while Motor is still supported.
+        For help transitioning, see the Migrate to PyMongo Async guide here:
+        https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/
+        """
+            ),
+            stacklevel=2,
+        )
 
     @property
     def io_loop(self):
