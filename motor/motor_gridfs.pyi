@@ -14,7 +14,8 @@
 
 import datetime
 import os
-from typing import Any, Iterable, Mapping, NoReturn, Optional
+from collections.abc import Iterable, Mapping
+from typing import Any, NoReturn, Optional
 
 from bson import ObjectId
 from gridfs import DEFAULT_CHUNK_SIZE, GridFSBucket, GridIn, GridOut, GridOutCursor  # noqa: F401

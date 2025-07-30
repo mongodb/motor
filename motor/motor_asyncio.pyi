@@ -1,4 +1,5 @@
-from typing import Any, Mapping, MutableMapping, Optional, Union
+from collections.abc import Mapping, MutableMapping
+from typing import Any, Optional, Union
 
 from bson import Code, CodecOptions, Timestamp
 from bson.raw_bson import RawBSONDocument
