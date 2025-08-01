@@ -173,8 +173,8 @@ class AgnosticClient(AgnosticBaseProperties):
 
         warnings.warn(
             DeprecationWarning(
-                """As of May 14th, 2025,
-        Motor is deprecated in favor of the GA release of the PyMongo Async API.
+                """Motor is deprecated as of May 14th, 2025,
+        in favor of the GA release of the PyMongo Async API.
         No new features will be added to Motor,
         and only bug fixes will be provided until it reaches end of life on May 14th, 2026.
         After that, only critical bug fixes will be made until final support ends on May 14th, 2027.

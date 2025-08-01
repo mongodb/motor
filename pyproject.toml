@@ -104,7 +104,7 @@ filterwarnings = [
     "ignore:Unclosed AsyncMongoClient*",
     "ignore:Unclosed MongoClient*",
     # Deprecation warning now that Motor is officially deprecated
-    "ignore:As of May 14th, 2025*",
+    "ignore:Motor is deprecated*",
 ]
 
 [tool.ruff]
