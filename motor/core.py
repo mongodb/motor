@@ -171,6 +171,21 @@ class AgnosticClient(AgnosticBaseProperties):
         delegate = self.__delegate_class__(*args, **kwargs)
         super().__init__(delegate)
 
+        warnings.warn(
+            DeprecationWarning(
+                """Motor is deprecated as of May 14th, 2025,
+        in favor of the GA release of the PyMongo Async API.
+        No new features will be added to Motor,
+        and only bug fixes will be provided until it reaches end of life on May 14th, 2026.
+        After that, only critical bug fixes will be made until final support ends on May 14th, 2027.
+        We strongly recommend migrating to the PyMongo Async API while Motor is still supported.
+        For help transitioning, see the Migrate to PyMongo Async guide here:
+        https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/
+        """
+            ),
+            stacklevel=2,
+        )
+
     @property
     def io_loop(self):
         if self._io_loop is None:
