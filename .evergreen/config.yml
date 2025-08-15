@@ -659,7 +659,7 @@ axes:
           PYTHON_BINARY: "/opt/python/3.13/bin/python3"
 
   - id: tox-env-rhel8
-    display_name: "Tox Env RHEL*"
+    display_name: "Tox Env RHEL8"
     values:
       - id: "test"
         variables:
