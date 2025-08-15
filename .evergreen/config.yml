@@ -658,8 +658,8 @@ axes:
           TOX_ENV: "synchro"
           PYTHON_BINARY: "/opt/python/3.13/bin/python3"
 
-  - id: tox-env-rhel7
-    display_name: "Tox Env RHEL7"
+  - id: tox-env-rhel8
+    display_name: "Tox Env RHEL8"
     values:
       - id: "test"
         variables:
@@ -705,9 +705,6 @@ axes:
       - id: "rhel8"
         display_name: "RHEL 8.x"
         run_on: "rhel84-small"
-      - id: "rhel7"
-        display_name: "RHEL 7.x"
-        run_on: "rhel79-small"
       - id: "win"
         display_name: "Windows"
         run_on: "windows-64-vsMulti-small"
@@ -741,11 +738,11 @@ buildvariants:
      - ".4.2"
      - ".4.0"
 
-- matrix_name: "test-rhel7"
-  display_name: "${os}-${tox-env-rhel7}-${ssl}"
+- matrix_name: "test-rhel8"
+  display_name: "${os}-${tox-env-rhel8}-${ssl}"
   matrix_spec:
-    os: "rhel7"
-    tox-env-rhel7: "*"
+    os: "rhel8"
+    tox-env-rhel8: "*"
     ssl: "*"
   tasks:
      - ".rapid"
