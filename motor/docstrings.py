@@ -187,7 +187,7 @@ This will print something like::
 :Returns:
   An instance of :class:`~pymongo.results.BulkWriteResult`.
 
-.. seealso:: :ref:`writes-and-ids`
+.. seealso:: `Writes and ids <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/crud/insert/#overview>`_
 
 .. note:: `bypass_document_validation` requires server version
   **>= 3.2**
@@ -829,7 +829,7 @@ This prints something like::
 :Returns:
   An instance of :class:`~pymongo.results.InsertManyResult`.
 
-.. seealso:: :ref:`writes-and-ids`
+.. seealso:: `Writes and ids <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/crud/insert/#overview>`_
 
 .. note:: `bypass_document_validation` requires server version
   **>= 3.2**
@@ -866,7 +866,7 @@ This code outputs the new document's ``_id``::
 :Returns:
   - An instance of :class:`~pymongo.results.InsertOneResult`.
 
-.. seealso:: :ref:`writes-and-ids`
+.. seealso:: `Writes and ids <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/crud/insert/#overview>`_
 
 .. note:: `bypass_document_validation` requires server version
   **>= 3.2**
