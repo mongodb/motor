@@ -460,7 +460,6 @@ The default uuid_representation for :class:`~bson.codec_options.CodecOptions`,
 :data:`bson.binary.UuidRepresentation.PYTHON_LEGACY` to
 :data:`bson.binary.UuidRepresentation.UNSPECIFIED`. Attempting to encode a
 :class:`uuid.UUID` instance to BSON or JSON now produces an error by default.
-See :ref:`handling-uuid-data-example` for details.
 
 
 Upgrade to Motor 3.0
