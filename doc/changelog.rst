@@ -709,7 +709,7 @@ Highlights include:
 
 - Complete support for MongoDB 3.4:
 
-  - Unicode aware string comparison using collations. See :ref:`PyMongo's examples for collation <collation-on-operation>`.
+  - Unicode aware string comparison using collations.
   - :class:`MotorCursor` and :class:`MotorGridOutCursor` have a new attribute :meth:`~MotorCursor.collation`.
   - Support for the new :class:`~bson.decimal128.Decimal128` BSON type.
   - A new maxStalenessSeconds read preference option.
