@@ -241,8 +241,8 @@ Breaking Changes
 - Comparing two :class:`~motor.motor_tornado.MotorClient` instances now
   uses a set of immutable properties rather than
   :attr:`~motor.motor_tornado.MotorClient.address` which can change.
-- Removed the ``disable_md5`` parameter for :class:`~gridfs.GridFSBucket` and
-  :class:`~gridfs.GridFS`. See :ref:`removed-gridfs-checksum` for details.
+- Removed the ``disable_md5`` parameter for :class:`~pymongo.GridFSBucket` and
+  :class:`~pymongo.GridFS`. See :ref:`removed-gridfs-checksum` for details.
 - PyMongoCrypt 1.2.0 or later is now required for client side field level
   encryption support.
 
@@ -711,7 +711,7 @@ Highlights include:
 
   - Unicode aware string comparison using collations.
   - :class:`MotorCursor` and :class:`MotorGridOutCursor` have a new attribute :meth:`~MotorCursor.collation`.
-  - Support for the new :class:`~bson.decimal128.Decimal128` BSON type.
+  - Support for the new :class:`~pymongo.decimal128.Decimal128` BSON type.
   - A new maxStalenessSeconds read preference option.
   - A username is no longer required for the MONGODB-X509 authentication
     mechanism when connected to MongoDB >= 3.4.
@@ -741,8 +741,8 @@ Highlights include:
 - TLS compression is now explicitly disabled when possible.
 - The Server Name Indication (SNI) TLS extension is used when possible.
 - PyMongo's ``bson`` module provides finer control over JSON encoding/decoding
-  with :class:`~bson.json_util.JSONOptions`.
-- Allow :class:`~bson.code.Code` objects to have a scope of ``None``,
+  with :class:`~pymongo.json_util.JSONOptions`.
+- Allow :class:`~pymongo.code.Code` objects to have a scope of ``None``,
   signifying no scope. Also allow encoding Code objects with an empty scope
   (i.e. ``{}``).
 
@@ -862,9 +862,9 @@ The following find/find_one options have been removed:
 - await_data (use the new ``cursor_type`` option instead)
 - exhaust (use the new ``cursor_type`` option instead)
 - as_class (use :meth:`~motor.motor_tornado.MotorCollection.with_options` with
-  :class:`~bson.codec_options.CodecOptions` instead)
+  :class:`~pymongo.codec_options.CodecOptions` instead)
 - compile_re (BSON regular expressions are always decoded to
-  :class:`~bson.regex.Regex`)
+  :class:`~pymongo.regex.Regex`)
 
 The following find/find_one options are deprecated:
 
