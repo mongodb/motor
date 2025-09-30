@@ -49,8 +49,8 @@ GridFS
 
 - File-like
 
-    PyMongo's :class:`~gridfs.grid_file.GridIn` and
-    :class:`~gridfs.grid_file.GridOut` strive to act like Python's built-in
+    PyMongo's :class:`~pymongo.grid_file.GridIn` and
+    :class:`~pymongo.grid_file.GridOut` strive to act like Python's built-in
     file objects, so they can be passed to many functions that expect files.
     But the I/O methods of :class:`MotorGridIn` and
     :class:`MotorGridOut` are asynchronous, so they cannot obey the
@@ -59,7 +59,7 @@ GridFS
 - Setting properties
 
     In PyMongo, you can set arbitrary attributes on
-    a :class:`~gridfs.grid_file.GridIn` and they're stored as metadata on
+    a :class:`~pymongo.grid_file.GridIn` and they're stored as metadata on
     the server, even after the ``GridIn`` is closed::
 
         fs = gridfs.GridFSBucket(db)

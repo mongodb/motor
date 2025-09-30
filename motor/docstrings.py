@@ -31,7 +31,7 @@ read preference, and/or write concern from this :class:`MotorClient`.
 :Parameters:
   - `name`: The name of the database - a string.
   - `codec_options` (optional): An instance of
-    :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+    :class:`~pymongo.codec_options.CodecOptions`. If ``None`` (the
     default) the :attr:`codec_options` of this :class:`MotorClient` is
     used.
   - `read_preference` (optional): The read preference to use. If
@@ -66,7 +66,7 @@ based only on the URI in a configuration file.
   - `default` (optional): the database name to use if no database name
     was provided in the URI.
   - `codec_options` (optional): An instance of
-    :class:`~bson.codec_options.CodecOptions`. If ``None`` (the
+    :class:`~pymongo.codec_options.CodecOptions`. If ``None`` (the
     default) the :attr:`codec_options` of this :class:`MotorClient` is
     used.
   - `read_preference` (optional): The read preference to use. If
@@ -344,7 +344,7 @@ kwargs. So ``{count: collection_name, query: query}`` becomes::
     .. note:: the order of keys in the `command` document is
        significant (the "verb" must come first), so commands
        which require multiple keys (e.g. `findandmodify`)
-       should use an instance of :class:`~bson.son.SON` or
+       should use an instance of :class:`~pymongo.son.SON` or
        a string and kwargs instead of a Python :class:`dict`.
 
   - `value` (optional): value to use for the command verb when
@@ -890,7 +890,7 @@ response from the server to the `map reduce command`_.
   - `reduce`: reduce function (as a JavaScript string)
   - `out`: output collection name or `out object` (dict). See
     the `map reduce command`_ documentation for available options.
-    Note: `out` options are order sensitive. :class:`~bson.son.SON`
+    Note: `out` options are order sensitive. :class:`~pymongo.son.SON`
     can be used to specify multiple options.
     e.g. SON([('replace', <collection name>), ('db', <database name>)])
   - `full_response` (optional): if ``True``, return full response to
@@ -1277,7 +1277,7 @@ started it.
 where_doc = """Adds a `$where`_ clause to this query.
 
 The `code` argument must be an instance of :class:`str`
-:class:`~bson.code.Code` containing a JavaScript expression.
+:class:`~pymongo.code.Code` containing a JavaScript expression.
 This expression will be evaluated for each document scanned.
 Only those documents for which the expression evaluates to *true*
 will be returned as results. The keyword *this* refers to the object
@@ -1293,7 +1293,7 @@ if this :class:`~motor.motor_tornado.MotorCursor` has already been used.
 Only the last call to :meth:`where` applied to a
 :class:`~motor.motor_tornado.MotorCursor` has any effect.
 
-.. note:: MongoDB 4.4 drops support for :class:`~bson.code.Code`
+.. note:: MongoDB 4.4 drops support for :class:`~pymongo.code.Code`
   with scope variables. Consider using `$expr`_ instead.
 
 :Parameters:
@@ -1337,7 +1337,7 @@ gridfs_delete_doc = """Delete a file's metadata and data chunks from a GridFS bu
                                                 b"data I want to store!")
           await fs.delete(file_id)
 
-  Raises :exc:`~gridfs.errors.NoFile` if no file with file_id exists.
+  Raises :exc:`~pymongo.errors.NoFile` if no file with file_id exists.
 
   :Parameters:
     - `file_id`: The _id of the file to be deleted.
@@ -1361,7 +1361,7 @@ gridfs_download_to_stream_doc = """Downloads the contents of the stored file spe
           file.seek(0)
           contents = file.read()
 
-  Raises :exc:`~gridfs.errors.NoFile` if no file with file_id exists.
+  Raises :exc:`~pymongo.errors.NoFile` if no file with file_id exists.
 
   :Parameters:
     - `file_id`: The _id of the file to be downloaded.
@@ -1383,7 +1383,7 @@ gridfs_download_to_stream_by_name_doc = """      Write the contents of `filename
           file = open('myfile','wb')
           await fs.download_to_stream_by_name("test_file", file)
 
-  Raises :exc:`~gridfs.errors.NoFile` if no such version of
+  Raises :exc:`~pymongo.errors.NoFile` if no such version of
   that file exists.
 
   Raises :exc:`~ValueError` if `filename` is not a string.
@@ -1419,7 +1419,7 @@ gridfs_open_download_stream_doc = """Opens a stream to read the contents of the 
           grid_out = await fs.open_download_stream(file_id)
           contents = await grid_out.read()
 
-  Raises :exc:`~gridfs.errors.NoFile` if no file with file_id exists.
+  Raises :exc:`~pymongo.errors.NoFile` if no file with file_id exists.
 
   :Parameters:
     - `file_id`: The _id of the file to be downloaded.
@@ -1441,7 +1441,7 @@ gridfs_open_download_stream_by_name_doc = """Opens a stream to read the contents
           grid_out = await fs.open_download_stream_by_name(file_id)
           contents = await grid_out.read()
 
-  Raises :exc:`~gridfs.errors.NoFile` if no such version of
+  Raises :exc:`~pymongo.errors.NoFile` if no such version of
   that file exists.
 
   Raises :exc:`~ValueError` filename is not a string.
@@ -1484,7 +1484,7 @@ gridfs_open_upload_stream_doc = """Opens a stream for writing.
 
   Returns an instance of :class:`AsyncIOMotorGridIn`.
 
-  Raises :exc:`~gridfs.errors.NoFile` if no such version of
+  Raises :exc:`~pymongo.errors.NoFile` if no such version of
   that file exists.
   Raises :exc:`~ValueError` if `filename` is not a string.
 
@@ -1528,7 +1528,7 @@ gridfs_open_upload_stream_with_id_doc = """Opens a stream for writing.
 
   Returns an instance of :class:`AsyncIOMotorGridIn`.
 
-  Raises :exc:`~gridfs.errors.NoFile` if no such version of
+  Raises :exc:`~pymongo.errors.NoFile` if no such version of
   that file exists.
   Raises :exc:`~ValueError` if `filename` is not a string.
 
@@ -1560,7 +1560,7 @@ gridfs_rename_doc = """Renames the stored file with the specified file_id.
 
           await fs.rename(file_id, "new_test_name")
 
-  Raises :exc:`~gridfs.errors.NoFile` if no file with file_id exists.
+  Raises :exc:`~pymongo.errors.NoFile` if no file with file_id exists.
 
   :Parameters:
     - `file_id`: The _id of the file to be renamed.
@@ -1581,7 +1581,7 @@ gridfs_upload_from_stream_doc = """Uploads a user file to a GridFS bucket.
               b"data I want to store!",
               metadata={"contentType": "text/plain"})
 
-  Raises :exc:`~gridfs.errors.NoFile` if no such version of
+  Raises :exc:`~pymongo.errors.NoFile` if no such version of
   that file exists.
   Raises :exc:`~ValueError` if `filename` is not a string.
 
@@ -1616,7 +1616,7 @@ gridfs_upload_from_stream_with_id_doc = """Uploads a user file to a GridFS bucke
               b"data I want to store!",
               metadata={"contentType": "text/plain"})
 
-  Raises :exc:`~gridfs.errors.NoFile` if no such version of
+  Raises :exc:`~pymongo.errors.NoFile` if no such version of
   that file exists.
   Raises :exc:`~ValueError` if `filename` is not a string.
 

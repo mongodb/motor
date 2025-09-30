@@ -224,8 +224,6 @@ pymongo_version = metadata("pymongo")["version"]
 pymongo_inventory = ("https://pymongo.readthedocs.io/en/%s/" % pymongo_version, None)
 
 intersphinx_mapping = {
-    "bson": pymongo_inventory,
-    "gridfs": pymongo_inventory,
     "pymongo": pymongo_inventory,
     "aiohttp": ("http://aiohttp.readthedocs.io/en/stable/", None),
     "tornado": ("http://www.tornadoweb.org/en/stable/", None),

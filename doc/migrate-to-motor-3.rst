@@ -186,7 +186,7 @@ can be changed to this::
 ``tz_aware`` defaults to ``False``
 ..................................
 
-``tz_aware``, an argument for :class:`~bson.json_util.JSONOptions`,
+``tz_aware``, an argument for :class:`~pymongo.json_util.JSONOptions`,
 now defaults to ``False`` instead of ``True``. ``json_util.loads`` now
 decodes datetime as naive by default.
 
@@ -416,8 +416,8 @@ documents in your own code before passing them to PyMongo, and transform
 incoming documents after receiving them from PyMongo.
 
 Alternatively, if your application uses the ``SONManipulator`` API to convert
-custom types to BSON, the :class:`~bson.codec_options.TypeCodec` and
-:class:`~bson.codec_options.TypeRegistry` APIs may be a suitable alternative.
+custom types to BSON, the :class:`~pymongo.codec_options.TypeCodec` and
+:class:`~pymongo.codec_options.TypeRegistry` APIs may be a suitable alternative.
 For more information, see the `Custom Types documentation`_.
 
 .. _Custom Types documentation: https://www.mongodb.com/docs/languages/python/pymongo-driver/current/data-formats/custom-types/type-codecs/
@@ -454,8 +454,8 @@ Removed features with no migration path
 Encoding a UUID raises an error by default
 ..........................................
 
-The default uuid_representation for :class:`~bson.codec_options.CodecOptions`,
-:class:`~bson.json_util.JSONOptions`, and
+The default uuid_representation for :class:`~pymongo.codec_options.CodecOptions`,
+:class:`~pymongo.json_util.JSONOptions`, and
 :class:`~motor.motor_tornado.MotorClient` has been changed from
 :data:`bson.binary.UuidRepresentation.PYTHON_LEGACY` to
 :data:`bson.binary.UuidRepresentation.UNSPECIFIED`. Attempting to encode a

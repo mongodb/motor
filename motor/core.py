@@ -242,7 +242,7 @@ class AgnosticClient(AgnosticBaseProperties):
             to use for the aggregation.
           - `start_at_operation_time` (optional): If provided, the resulting
             change stream will only return changes that occurred at or after
-            the specified :class:`~bson.timestamp.Timestamp`. Requires
+            the specified :class:`~pymongo.timestamp.Timestamp`. Requires
             MongoDB >= 4.0.
           - `session` (optional): a
             :class:`~pymongo.client_session.ClientSession`.
@@ -708,7 +708,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             to use for the aggregation.
           - `start_at_operation_time` (optional): If provided, the resulting
             change stream will only return changes that occurred at or after
-            the specified :class:`~bson.timestamp.Timestamp`. Requires
+            the specified :class:`~pymongo.timestamp.Timestamp`. Requires
             MongoDB >= 4.0.
           - `session` (optional): a
             :class:`~pymongo.client_session.ClientSession`.
@@ -786,7 +786,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             .. note:: the order of keys in the `command` document is
                significant (the "verb" must come first), so commands
                which require multiple keys (e.g. `findandmodify`)
-               should use an instance of :class:`~bson.son.SON` or
+               should use an instance of :class:`~pymongo.son.SON` or
                a string and kwargs instead of a Python `dict`.
 
           - `value` (optional): value to use for the command verb when
@@ -797,7 +797,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             read preference configured for the transaction.
             Otherwise, defaults to
             :attr:`~pymongo.read_preferences.ReadPreference.PRIMARY`.
-          - `codec_options`: A :class:`~bson.codec_options.CodecOptions`
+          - `codec_options`: A :class:`~pymongo.codec_options.CodecOptions`
             instance.
           - `session` (optional): A
             :class:`MotorClientSession`.
