@@ -18,9 +18,21 @@ import asyncio
 import datetime
 import email
 import logging
+import sys
 import test
 import time
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
+
+import pytest
+
+# MOTOR-1477 - after libzstd is supported on build hosts
+# we can remove this guard.
+if sys.version_info >= (3, 14):
+    try:
+        import compression.zstd  # noqa: F401
+    except ModuleNotFoundError:
+        pytest.skip(allow_module_level=True)
+
 
 import aiohttp
 import aiohttp.web
