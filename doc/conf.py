@@ -73,7 +73,11 @@ pygments_style = "sphinx"
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []
 
-linkcheck_ignore = [r"http://localhost:\d+"]
+# Links to release notes in jira give 401 error: unauthorized. MOTOR-1476
+linkcheck_ignore = [
+    r"http://localhost:\d+",
+    r"https://jira\.mongodb\.org/secure/ReleaseNote\.jspa.*",
+]
 
 # Allow for flaky links.
 linkcheck_retries = 3
