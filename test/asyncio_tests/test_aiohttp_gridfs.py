@@ -18,11 +18,12 @@ import asyncio
 import datetime
 import email
 import logging
-import sys
 import test
 import time
 from test.asyncio_tests import AsyncIOTestCase, asyncio_test
 
+import aiohttp
+import aiohttp.web
 import gridfs
 
 from motor.aiohttp import AIOHTTPGridFS
@@ -53,17 +54,6 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # MOTOR-1477 - after libzstd is supported on build hosts
-        # we can move the aiohttp imports back
-        # to the top of the file.
-        if sys.version_info >= (3, 14):
-            try:
-                import compression.zstd  # noqa: F401
-            except ModuleNotFoundError:
-                cls.skipTest("MOTOR-1477")
-
-        import aiohttp.web  # noqa: F401
-
         logging.getLogger("aiohttp.web").setLevel(logging.CRITICAL)
 
         cls.fs = gridfs.GridFS(test.env.sync_cx.motor_test)
@@ -92,8 +82,6 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
         super().tearDownClass()
 
     async def start_app(self, http_gridfs=None, extra_routes=None):
-        import aiohttp.web
-
         self.app = aiohttp.web.Application()
         resource = self.app.router.add_resource("/fs/{filename}")
         handler = http_gridfs or AIOHTTPGridFS(self.db)
@@ -111,8 +99,6 @@ class AIOHTTPGridFSHandlerTestBase(AsyncIOTestCase):
         self.srv, _ = await asyncio.gather(server, self.app.startup())
 
     async def request(self, method, path, if_modified_since=None, headers=None):
-        import aiohttp
-
         headers = headers or {}
         if if_modified_since:
             headers["If-Modified-Since"] = format_date(if_modified_since)
