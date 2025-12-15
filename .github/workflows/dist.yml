@@ -37,7 +37,7 @@ jobs:
     - name: Create packages
       run: python -m build .
     - name: Store package artifacts
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: all-dist-${{ github.run_id }}
         path: "dist/*"
