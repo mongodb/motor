@@ -1,1 +1,1 @@
-pymongo[snappy]>=4.5,<5
+pymongo[snappy]>=4.17.0,<5

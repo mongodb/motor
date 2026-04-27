@@ -1,1 +1,1 @@
-pymongo[aws]>=4.5,<5
+pymongo[aws]>=4.17.0,<5
