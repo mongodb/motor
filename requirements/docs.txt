@@ -1,6 +1,6 @@
 tornado
 aiohttp
-sphinx>=5.3,<9
+sphinx>=8.1.3,<9
 sphinx_rtd_theme>=2,<4
 readthedocs-sphinx-search~=0.3
 furo==2025.12.19
