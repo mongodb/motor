@@ -55,7 +55,7 @@ jobs:
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@c793b717bc78562f491db7b0e93a3a178b099162 # v4
+      uses: github/codeql-action/init@e46ed2cbd01164d986452f91f178727624ae40d7 # v4
       with:
         languages: ${{ matrix.language }}
         build-mode: none
@@ -71,6 +71,6 @@ jobs:
         pip install -e .
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@c793b717bc78562f491db7b0e93a3a178b099162 # v4
+      uses: github/codeql-action/analyze@e46ed2cbd01164d986452f91f178727624ae40d7 # v4
       with:
         category: "/language:${{matrix.language}}"
