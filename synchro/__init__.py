@@ -47,6 +47,7 @@ from pymongo import (
     change_stream,
     collation,
     compression_support,
+    daemon,
     encryption_options,
     errors,
     event_loggers,

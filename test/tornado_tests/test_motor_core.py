@@ -41,6 +41,9 @@ pymongo_database_only = set([]).union(pymongo_only)
 
 pymongo_collection_only = set([]).union(pymongo_only)
 
+# bind returns a sync context manager; Motor uses async session management instead.
+pymongo_session_only = set(["bind"])
+
 motor_cursor_only = set(["fetch_next", "each", "started", "next_object", "closed"]).union(
     motor_only
 )
@@ -59,7 +62,8 @@ class MotorCoreTest(MotorTest):
     @gen_test
     async def test_client_session_attrs(self):
         self.assertEqual(
-            attrs(env.sync_cx.start_session()), attrs(await self.cx.start_session()) - motor_only
+            attrs(env.sync_cx.start_session()) - pymongo_session_only,
+            attrs(await self.cx.start_session()) - motor_only,
         )
 
     def test_database_attrs(self):

@@ -41,7 +41,7 @@ dependency can be installed automatically along with Motor::
 
 similarly,
 
-`MONGODB-AWS <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/security/authentication/aws-iam/#std-label-pymongo-mongodb-aws>`_
+`MONGODB-AWS <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/security/authentication/aws-iam/>`_
 authentication requires ``aws`` extra dependency::
 
   $ pip install "motor[aws]"
