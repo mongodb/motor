@@ -47,6 +47,7 @@ from pymongo import (
     change_stream,
     collation,
     compression_support,
+    daemon,
     encryption_options,
     errors,
     event_loggers,
@@ -58,6 +59,7 @@ from pymongo import (
     server_type,
     ssl_support,
     uri_parser,
+    uri_parser_shared,
     write_concern,
 )
 from pymongo.synchronous import srv_resolver
