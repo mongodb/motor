@@ -359,7 +359,7 @@ You can apply a sort, limit, or skip to a query before you begin iterating:
 The cursor does not actually retrieve each document from the server
 individually; it gets documents efficiently in `large batches`_.
 
-.. _`large batches`: https://www.mongodb.com/docs/manual/core/cursors/#cursor-batches
+.. _`large batches`: https://www.mongodb.com/docs/manual/tutorial/iterate-a-cursor/
 
 Counting Documents
 ------------------

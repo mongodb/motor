@@ -202,6 +202,7 @@ class MotorClientTimeoutTest(MotorMockServerTest):
         client.close()
 
 
+@unittest.skip("PyMongo no longer uses OP_QUERY; exhaust cursor mockupdb tests need OP_MSG support")
 class MotorClientExhaustCursorTest(MotorMockServerTest):
     def primary_server(self):
         primary = self.server()
