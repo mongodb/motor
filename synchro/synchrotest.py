@@ -53,6 +53,8 @@ excluded_modules = [
     "test.test_default_exports",
     # Motor does not support CSOT.
     "test.test_csot",
+    # Tests PyMongo daemon internals; spawns real subprocesses not applicable to Motor.
+    "test.test_daemon",
 ]
 
 
@@ -61,6 +63,8 @@ excluded_modules = [
 excluded_tests = [
     # Motor's reprs aren't the same as PyMongo's.
     "*.test_repr",
+    # PyMongo 4.17 no longer sets HAVE_PYSSL=True even when PyOpenSSL is installed.
+    "TestClientSSL.test_use_pyopenssl_when_available",
     "TestClient.test_unix_socket",
     # Motor extends the handshake metadata.
     "ClientUnitTest.test_metadata",
@@ -73,6 +77,16 @@ excluded_tests = [
     "TestGSSAPI.test_gssapi_threaded",
     "*.test_concurrent_close",
     "TestUnifiedInterruptInUsePoolClear.*",
+    # These classes use ConcurrentRunner (threads) in test_discovery_and_monitoring.py
+    # which hangs under Motor's thread-pool synchro model.
+    "TestIgnoreStaleErrors.*",
+    "TestPoolManagement.*",
+    "TestPoolBackpressure.*",
+    "TestHeartbeatStartOrdering.*",
+    # These tests call configure_fail_point_sync() inside a CommandFailedEvent
+    # callback that fires on a monitoring thread, deadlocking Motor's event loop.
+    "TestRetryableReads.test_overload_then_nonoverload_retries_increased_reads",
+    "TestRetryableReads.test_backoff_is_not_applied_for_non_overload_errors",
     # These are in test_gridfs_bucket.
     "TestGridfs.test_threaded_reads",
     "TestGridfs.test_threaded_writes",
@@ -272,14 +286,14 @@ class SynchroPytestPlugin:
     def pytest_collection_modifyitems(self, session, config, items):
         for item in items[:]:
             if not want_module(item.module):
-                item.addSkip("", reason="Synchro excluded module")
+                item.add_marker(pytest.mark.skip(reason="Synchro excluded module"))
                 continue
             fn = item.function
             if item.parent == item.module:
                 if not want_function(fn):
-                    item.addSkip("", reason="Synchro excluded function")
+                    item.add_marker(pytest.mark.skip(reason="Synchro excluded function"))
             elif not want_method(fn, item.parent.name):
-                item.addSkip("", reason="Synchro excluded method")
+                item.add_marker(pytest.mark.skip(reason="Synchro excluded method"))
 
 
 def want_module(module):
@@ -373,7 +387,8 @@ if __name__ == "__main__":
     else:
         markers = ["-m", "default"]
     code = pytest.main(
-        sys.argv[2:] + markers + ["-p", "no:warnings"], plugins=[SynchroPytestPlugin()]
+        sys.argv[2:] + markers + ["--ignore=test/asynchronous", "-p", "no:warnings"],
+        plugins=[SynchroPytestPlugin()],
     )
 
     if code != 0:
