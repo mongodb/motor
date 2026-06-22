@@ -82,6 +82,10 @@ linkcheck_ignore = [
 # Allow for flaky links.
 linkcheck_retries = 3
 
+# Serialize requests to avoid dropping connections from the dochub redirect service (PYTHON-5847).
+linkcheck_workers = 1
+linkcheck_timeout = 60
+
 # -- Options for extensions ----------------------------------------------------
 autoclass_content = "init"
 
