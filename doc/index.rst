@@ -38,7 +38,7 @@ Install with::
 
     $ python -m pip install motor
 
-.. _Tornado: http://tornadoweb.org/
+.. _Tornado: https://www.tornadoweb.org/
 
 .. _asyncio: https://docs.python.org/3/library/asyncio.html
 

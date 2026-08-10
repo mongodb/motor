@@ -188,7 +188,7 @@ class AgnosticGridOut:
                     await gridout.stream_to_handler(self)
                     self.finish()
 
-        .. seealso:: Tornado `RequestHandler <http://tornadoweb.org/en/stable/web.html#request-handlers>`_
+        .. seealso:: Tornado `RequestHandler <https://www.tornadoweb.org/en/stable/web.html#request-handlers>`_
         """
         written = 0
         while written < self.length:

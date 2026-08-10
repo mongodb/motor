@@ -1513,7 +1513,7 @@ class AgnosticBaseCursor(AgnosticBase):
            Deprecated.
 
         .. _`large batches`: https://www.mongodb.com/docs/manual/core/cursors/#cursor-batches
-        .. _`gen.coroutine`: http://tornadoweb.org/en/stable/gen.html
+        .. _`gen.coroutine`: https://www.tornadoweb.org/en/stable/gen.html
         """
         warnings.warn(
             "The fetch_next property is deprecated and may be "
