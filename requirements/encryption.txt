@@ -1,1 +1,1 @@
-pymongo[encryption]>=4.5,<5
+pymongo[encryption]>=4.18.0,<5
