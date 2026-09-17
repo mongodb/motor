@@ -35,13 +35,13 @@ from bson.raw_bson import RawBSONDocument
 from pymongo import IndexModel, ReadPreference, WriteConcern
 from pymongo.change_stream import ChangeStream
 from pymongo.client_options import ClientOptions
-from pymongo.client_session import ClientSession, SessionOptions, TransactionOptions
+from pymongo.client_session import ClientSession, SessionOptions, TransactionOptions  # type: ignore[attr-defined,unused-ignore]
 from pymongo.collection import Collection, ReturnDocument  # noqa: F401
 from pymongo.command_cursor import CommandCursor, RawBatchCommandCursor
 from pymongo.cursor import Cursor, RawBatchCursor
 from pymongo.cursor_shared import _Hint, _Sort
 from pymongo.database import Database
-from pymongo.encryption import ClientEncryption, RewrapManyDataKeyResult
+from pymongo.encryption import ClientEncryption, RewrapManyDataKeyResult  # type: ignore[attr-defined,unused-ignore]
 from pymongo.encryption_options import RangeOpts
 from pymongo.operations import _IndexKeyHint, _IndexList
 from pymongo.read_concern import ReadConcern
