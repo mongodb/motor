@@ -3,5 +3,4 @@ rules:
     config:
       policies:
         actions/*: ref-pin
-        mongodb-labs/drivers-github-tools/*: ref-pin
         mongodb-labs/drivers-evergreen-tools: ref-pin

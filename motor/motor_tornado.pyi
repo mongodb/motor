@@ -3,7 +3,7 @@ from typing import Any, Optional, Union
 
 from bson import Code, CodecOptions, Timestamp
 from bson.raw_bson import RawBSONDocument
-from pymongo.client_session import TransactionOptions
+from pymongo.client_session import TransactionOptions  # type: ignore[attr-defined,unused-ignore]
 from pymongo.cursor_shared import _Hint, _Sort
 from pymongo.read_concern import ReadConcern
 from pymongo.read_preferences import ReadPreference, _ServerMode
