@@ -346,33 +346,6 @@ tasks:
 
 # Test tasks {{{
 
-    - name: "test-4.2-standalone"
-      tags: ["4.2", "standalone"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.2"
-            TOPOLOGY: "server"
-        - func: "run tox"
-
-    - name: "test-4.2-replica_set"
-      tags: ["4.2", "replica_set"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.2"
-            TOPOLOGY: "replica_set"
-        - func: "run tox"
-
-    - name: "test-4.2-sharded_cluster"
-      tags: ["4.2", "sharded_cluster"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.2"
-            TOPOLOGY: "sharded_cluster"
-        - func: "run tox"
-
     - name: "test-4.4-standalone"
       tags: ["4.4", "standalone"]
       commands:
@@ -508,30 +481,30 @@ tasks:
             TOPOLOGY: "sharded_cluster"
         - func: "run tox"
 
-    - name: "test-latest-standalone"
-      tags: ["latest", "standalone"]
+    - name: "test-latest-stable-standalone"
+      tags: ["latest-stable", "standalone"]
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "latest"
+            VERSION: "latest-stable"
             TOPOLOGY: "server"
         - func: "run tox"
 
-    - name: "test-latest-replica_set"
-      tags: ["latest", "replica_set"]
+    - name: "test-latest-stable-replica_set"
+      tags: ["latest-stable", "replica_set"]
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "latest"
+            VERSION: "latest-stable"
             TOPOLOGY: "replica_set"
         - func: "run tox"
 
-    - name: "test-latest-sharded_cluster"
-      tags: ["latest", "sharded_cluster"]
+    - name: "test-latest-stable-sharded_cluster"
+      tags: ["latest-stable", "sharded_cluster"]
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "latest"
+            VERSION: "latest-stable"
             TOPOLOGY: "sharded_cluster"
         - func: "run tox"
 
@@ -562,12 +535,22 @@ tasks:
             TOPOLOGY: "sharded_cluster"
         - func: "run tox"
 
+    # Run the Motor test suite once on PyPy.
+    - name: "test-pypy-standalone"
+      tags: ["pypy", "standalone"]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest-stable"
+            TOPOLOGY: "server"
+        - func: "run tox"
+
     - name: "test-enterprise-auth"
       tags: ["pr"]
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "latest"
+            VERSION: "latest-stable"
             TOPOLOGY: "server"
         - func: "run enterprise auth tests"
 
@@ -609,10 +592,6 @@ axes:
   - id: tox-env
     display_name: "Tox Env RHEL8"
     values:
-      - id: "test-pypy310"
-        variables:
-           TOX_ENV: "test"
-           PYTHON_BINARY: "/opt/python/pypy3.10/bin/python3"
       - id: "test-py310"
         variables:
            TOX_ENV: "test"
@@ -729,14 +708,12 @@ buildvariants:
       ssl: "ssl"
   tasks:
      - ".rapid"
-     - ".latest"
+     - ".latest-stable"
      - ".8.0"
      - ".7.0"
      - ".6.0"
      - ".5.0"
      - ".4.4"
-     - ".4.2"
-     - ".4.0"
 
 - matrix_name: "test-rhel8"
   display_name: "${os}-${tox-env-rhel8}-${ssl}"
@@ -746,7 +723,7 @@ buildvariants:
     ssl: "*"
   tasks:
      - ".rapid"
-     - ".latest"
+     - ".latest-stable"
      - ".7.0"
      - ".6.0"
      - ".5.0"
@@ -760,15 +737,12 @@ buildvariants:
     ssl: "*"
   tasks:
      - ".rapid"
-     - ".latest"
+     - ".latest-stable"
      - ".8.0"
      - ".7.0"
      - ".6.0"
      - ".5.0"
      - ".4.4"
-     - ".4.2"
-     - ".4.0"
-     - ".3.6"
 
 - matrix_name: "test-macos"
   display_name: "${os}-${tox-env-osx}-${ssl}"
@@ -778,7 +752,7 @@ buildvariants:
     ssl: "*"
   tasks:
      - ".rapid"
-     - ".latest"
+     - ".latest-stable"
      - ".8.0"
      - ".7.0"
      - ".6.0"
@@ -790,6 +764,16 @@ buildvariants:
      - "rhel84-small"
   tasks:
      - name: "test-enterprise-auth"
+
+- name: "pypy"
+  display_name: "PyPy"
+  run_on:
+     - "rhel84-small"
+  expansions:
+     TOX_ENV: "test"
+     PYTHON_BINARY: "/opt/python/pypy3.11/bin/python3"
+  tasks:
+     - name: "test-pypy-standalone"
 
 - name: "docs"
   display_name: "Docs - Build"
