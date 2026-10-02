@@ -80,6 +80,10 @@ Motor and MongoDB
 |               | 3.7 |  N  |  Y  |  Y  |  Y  |  Y  |  Y  |  Y  |
 +---------------+-----+-----+-----+-----+-----+-----+-----+-----+
 
+Columns for MongoDB versions that are past their end-of-life date record
+historical compatibility with older Motor releases; they are no longer tested
+in CI.
+
 There is no relationship between PyMongo and MongoDB version numbers, although
 the numbers happen to be close or equal in recent releases of PyMongo and MongoDB.
 Use `the PyMongo compatibility matrix`_ to determine what MongoDB version is
