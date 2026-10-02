@@ -155,7 +155,7 @@ class AgnosticClient(AgnosticBaseProperties):
             io_loop = None
         self._io_loop = io_loop
 
-        kwargs.setdefault("connect", False)
+        connect = kwargs.setdefault("connect", False)
 
         driver_info = DriverInfo("Motor", motor_version, self._framework.platform_info())
 
@@ -181,11 +181,19 @@ class AgnosticClient(AgnosticBaseProperties):
 
         kwargs["driver"] = driver_info
 
+        # With connect=True the delegate would open the topology and send its
+        # first handshakes during construction, before the caller's metadata
+        # could be appended below; defer connecting until after append_metadata.
+        if _DRIVER_INFO_VALIDATES and provided_info is not None and connect:
+            kwargs["connect"] = False
+
         delegate = self.__delegate_class__(*args, **kwargs)
         super().__init__(delegate)
 
         if _DRIVER_INFO_VALIDATES and provided_info is not None:
             delegate.append_metadata(provided_info)
+            if connect:
+                delegate._connect()
 
         warnings.warn(
             DeprecationWarning(
