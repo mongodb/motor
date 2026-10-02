@@ -328,6 +328,14 @@ class MotorClientHandshakeTest(MotorMockServerTest):
         future = client.db.command("ping")
         handshake = await self.run_thread(server.receives, "ismaster")
         meta = handshake.doc["client"]
+        # On pymongo 4.19+ the user's metadata is appended after construction,
+        # so monitors may handshake first; wait for the operation connection.
+        for _ in range(3):
+            if driver_info.name in meta["driver"]["name"].split("|"):
+                break
+            handshake.replies(dict(AUTO_ISMASTER))
+            handshake = await self.run_thread(server.receives, "ismaster")
+            meta = handshake.doc["client"]
         self.assertIn(f"|Motor|{driver_info.name}", meta["driver"]["name"])
         self.assertIn("Tornado", meta["platform"])
         self.assertIn(f"|{driver_info.platform}", meta["platform"])

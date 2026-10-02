@@ -49,6 +49,14 @@ from .metaprogramming import (
 )
 from .motor_common import callback_type_error
 
+# pymongo 4.19+ reserves "|" as the driver metadata delimiter and raises
+# ValueError if it appears in any DriverInfo field.  Older pymongo allows it.
+try:
+    DriverInfo("|", "|", "|")
+    _DRIVER_INFO_VALIDATES = False
+except (ValueError, TypeError):
+    _DRIVER_INFO_VALIDATES = True
+
 HAS_SSL = True
 try:
     import ssl
@@ -147,29 +155,45 @@ class AgnosticClient(AgnosticBaseProperties):
             io_loop = None
         self._io_loop = io_loop
 
-        kwargs.setdefault("connect", False)
+        connect = kwargs.setdefault("connect", False)
 
         driver_info = DriverInfo("Motor", motor_version, self._framework.platform_info())
 
+        # pymongo 4.19+ rejects "|" in DriverInfo, so pass only Motor's info
+        # and append the user's after construction; older pymongo joins the
+        # strings itself.
+        provided_info = None
         if kwargs.get("driver"):
-            provided_info = kwargs.get("driver")
+            provided_info = kwargs["driver"]
             if not isinstance(provided_info, DriverInfo):
                 raise TypeError(
                     f"Incorrect type for `driver` {type(provided_info)};"
                     " expected value of type pymongo.driver_info.DriverInfo"
                 )
-            added_version = f"|{provided_info.version}" if provided_info.version else ""
-            added_platform = f"|{provided_info.platform}" if provided_info.platform else ""
-            driver_info = DriverInfo(
-                f"{driver_info.name}|{provided_info.name}",
-                f"{driver_info.version}{added_version}",
-                f"{driver_info.platform}{added_platform}",
-            )
+            if not _DRIVER_INFO_VALIDATES:
+                added_version = f"|{provided_info.version}" if provided_info.version else ""
+                added_platform = f"|{provided_info.platform}" if provided_info.platform else ""
+                driver_info = DriverInfo(
+                    f"{driver_info.name}|{provided_info.name}",
+                    f"{driver_info.version}{added_version}",
+                    f"{driver_info.platform}{added_platform}",
+                )
 
         kwargs["driver"] = driver_info
 
+        # With connect=True the delegate would open the topology and send its
+        # first handshakes during construction, before the caller's metadata
+        # could be appended below; defer connecting until after append_metadata.
+        if _DRIVER_INFO_VALIDATES and provided_info is not None and connect:
+            kwargs["connect"] = False
+
         delegate = self.__delegate_class__(*args, **kwargs)
         super().__init__(delegate)
+
+        if _DRIVER_INFO_VALIDATES and provided_info is not None:
+            delegate.append_metadata(provided_info)
+            if connect:
+                delegate._connect()
 
         warnings.warn(
             DeprecationWarning(

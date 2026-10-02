@@ -207,6 +207,10 @@ excluded_tests = [
     "TestUnifiedFindShutdownError.test_Concurrent_shutdown_error_on_find",
     "TestUnifiedInsertShutdownError.test_Concurrent_shutdown_error_on_insert",
     "TestUnifiedPoolClearedError.test_PoolClearedError_does_not_mark_server_unknown",
+    # Motor's SDAM model doesn't surface the serverDescriptionChangedEvents this
+    # unified test requires (test needs server >= 4.4, so it runs on every version
+    # we test); it is also flaky in PyMongo itself (PYTHON-5174).
+    "TestUnifiedHelloTimeout.test_Driver_extends_timeout_while_streaming*",
     # These tests have hard-coded values that differ from motor.
     "TestClient.test_handshake*",
     # This test is not a valid unittest target.
