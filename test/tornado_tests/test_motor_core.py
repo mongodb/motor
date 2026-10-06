@@ -14,13 +14,17 @@
 
 """Validate list of PyMongo attributes wrapped by Motor."""
 
+import warnings
 from test import env
 from test.tornado_tests import MotorTest
+from unittest import mock
 
 from gridfs import GridFSBucket, GridIn
+from pymongo.driver_info import DriverInfo
 from tornado.testing import gen_test
 
-from motor import MotorGridFSBucket, MotorGridIn
+from motor import MotorGridFSBucket, MotorGridIn, core
+from motor.motor_tornado import MotorClient
 
 
 def attrs(klass):
@@ -55,6 +59,48 @@ class MotorCoreTest(MotorTest):
     def test_client_attrs(self):
         self.assertEqual(
             attrs(env.sync_cx) - pymongo_client_only, attrs(self.cx) - motor_client_only
+        )
+
+    def test_driver_metadata_order(self):
+        """Caller metadata must be appended before the topology opens.
+
+        With connect=True, pymongo 4.19+ sends the first handshakes during
+        MongoClient construction; appending the caller's DriverInfo afterwards
+        would omit it from those handshakes.
+        """
+        calls = []
+        provided = DriverInfo("Caller", "1.0", "platform")
+
+        class StubDelegate:
+            def __init__(self, *args, **kwargs):
+                calls.append(("__init__", kwargs.get("connect")))
+
+            def append_metadata(self, info):
+                calls.append(("append_metadata", info.name))
+
+            def _connect(self):
+                calls.append(("_connect", None))
+
+        def scenario(**kwargs):
+            calls.clear()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                with mock.patch("motor.core._DRIVER_INFO_VALIDATES", True):
+                    with mock.patch.object(core.AgnosticClient, "__delegate_class__", StubDelegate):
+                        MotorClient("localhost:27017", io_loop=self.io_loop, **kwargs)
+            return calls.copy()
+
+        # connect=True with caller metadata: defer opening the topology until
+        # after append_metadata.
+        self.assertEqual(
+            scenario(driver=provided, connect=True),
+            [("__init__", False), ("append_metadata", "Caller"), ("_connect", None)],
+        )
+        # connect=True without caller metadata: constructor handles connecting.
+        self.assertEqual(scenario(connect=True), [("__init__", True)])
+        # Default connect=False with caller metadata: no explicit connect.
+        self.assertEqual(
+            scenario(driver=provided), [("__init__", False), ("append_metadata", "Caller")]
         )
 
     @env.require_version_min(3, 6)
