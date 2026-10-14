@@ -32,14 +32,13 @@ try:
 except ImportError:
     contextvars = None
 
-try:
-    from asyncio import coroutine
-except ImportError:
 
-    def coroutine():
-        raise RuntimeError(
-            "The coroutine decorator was removed in Python 3.11.  Use 'async def' instead"
-        )
+def coroutine():
+    # Kept for the deprecated framework interface. asyncio.coroutine was
+    # removed in Python 3.11, which is now Motor's minimum supported version.
+    raise RuntimeError(
+        "The coroutine decorator was removed in Python 3.11.  Use 'async def' instead"
+    )
 
 
 CLASS_PREFIX = "AsyncIO"

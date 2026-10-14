@@ -43,9 +43,7 @@ class GridFSHandlerTestBase(testing.AsyncHTTPTestCase):
         self.contents = b"Jesse" * 100 * 1024
 
         # Record when we created the file, to check the Last-Modified header
-        self.put_start = datetime.datetime.now(datetime.timezone.utc).replace(
-            microsecond=0, tzinfo=None
-        )
+        self.put_start = datetime.datetime.now(datetime.UTC).replace(microsecond=0, tzinfo=None)
         file_id = "id"
         self.file_id = file_id
         self.fs.delete(self.file_id)
@@ -53,9 +51,7 @@ class GridFSHandlerTestBase(testing.AsyncHTTPTestCase):
 
         item = self.fs.get(file_id)
         self.contents_hash = _hash_gridout(item)
-        self.put_end = datetime.datetime.now(datetime.timezone.utc).replace(
-            microsecond=0, tzinfo=None
-        )
+        self.put_end = datetime.datetime.now(datetime.UTC).replace(microsecond=0, tzinfo=None)
         self.assertTrue(self.fs.get_last_version("foo"))
 
     def motor_db(self, **kwargs):
@@ -182,7 +178,7 @@ class TZAwareGridFSHandlerTest(GridFSHandlerTestBase):
         return super().motor_db(tz_aware=True)
 
     def test_tz_aware(self):
-        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        now = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
         ago = now - datetime.timedelta(minutes=10)
         hence = now + datetime.timedelta(minutes=10)
 
@@ -227,7 +223,7 @@ class CustomGridFSHandlerTest(GridFSHandlerTestBase):
         # It should expire about 10 seconds from now
         self.assertTrue(
             datetime.timedelta(seconds=8)
-            < expires - datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+            < expires - datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
             < datetime.timedelta(seconds=12)
         )
 
