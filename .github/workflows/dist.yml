@@ -34,8 +34,16 @@ jobs:
         python-version: 3.x
     - name: Install dependencies
       run: pip install build
+    - name: Validate pyproject.toml
+      run: |
+        pip install 'validate-pyproject[all]'
+        validate-pyproject pyproject.toml
     - name: Create packages
       run: python -m build .
+    - name: Check dist metadata
+      run: |
+        pip install twine
+        twine check --strict dist/*
     - name: Store package artifacts
       uses: actions/upload-artifact@v7
       with:
