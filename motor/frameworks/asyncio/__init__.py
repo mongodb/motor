@@ -18,6 +18,7 @@ See "Frameworks" in the Developer Guide.
 """
 import asyncio
 import asyncio.tasks
+import contextvars
 import functools
 import multiprocessing
 import os
@@ -26,11 +27,6 @@ from asyncio import get_event_loop  # noqa: F401 - For framework interface.
 from concurrent.futures import ThreadPoolExecutor
 
 # mypy: ignore-errors
-
-try:
-    import contextvars
-except ImportError:
-    contextvars = None
 
 
 def coroutine():
@@ -77,9 +73,8 @@ if hasattr(os, "register_at_fork"):
 
 
 def run_on_executor(loop, fn, *args, **kwargs):
-    if contextvars:
-        context = contextvars.copy_context()
-        fn = functools.partial(context.run, fn)
+    context = contextvars.copy_context()
+    fn = functools.partial(context.run, fn)
 
     return loop.run_in_executor(_EXECUTOR, functools.partial(fn, *args, **kwargs))
 
