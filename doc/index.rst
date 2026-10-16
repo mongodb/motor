@@ -45,7 +45,7 @@ Getting Help
 If you're having trouble or have questions about Motor, ask your question on
 our `MongoDB Community Forum <https://developer.mongodb.com/community/forums/tags/c/drivers-odms-connectors/7/motor-driver>`_.
 You may also want to consider a
-`commercial support subscription <https://support.mongodb.com/welcome>`_.
+`commercial support subscription <https://support.mongodb.com/>`_.
 Once you get an answer, it'd be great if you could work it back into this
 documentation and contribute!
 
