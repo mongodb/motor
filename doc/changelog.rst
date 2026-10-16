@@ -13,7 +13,7 @@ Motor 3.8.0
   For help transitioning, see the `Migrate to PyMongo Async guide <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/>`_.
 
 - Add support for Python 3.14.
-- Drop support for Python 3.9.
+- Drop support for Python 3.9 and 3.10.
 
 Motor 3.7.1
 -----------
