@@ -31,8 +31,10 @@ from pymongo.read_preferences import ReadPreference
 from motor.motor_asyncio import AsyncIOMotorClient
 
 try:
+    from typing import NotRequired
+
     from bson import ObjectId
-    from typing_extensions import NotRequired, TypedDict
+    from typing_extensions import TypedDict
 
     class Movie(TypedDict):
         name: str
