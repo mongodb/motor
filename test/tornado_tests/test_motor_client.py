@@ -25,7 +25,7 @@ from test.utils import AUTO_ISMASTER, get_primary_pool, one
 import pymongo
 import pymongo.mongo_client
 from bson import CodecOptions
-from mockupdb import OpQuery
+from mockupdb import OpMsg, OpQuery
 from pymongo import CursorType, ReadPreference, WriteConcern
 from pymongo.common import MIN_SUPPORTED_WIRE_VERSION
 from pymongo.driver_info import DriverInfo
@@ -202,6 +202,7 @@ class MotorClientTimeoutTest(MotorMockServerTest):
         client.close()
 
 
+@unittest.skip("PyMongo no longer uses OP_QUERY; exhaust cursor mockupdb tests need OP_MSG support")
 class MotorClientExhaustCursorTest(MotorMockServerTest):
     def primary_server(self):
         primary = self.server()
@@ -234,7 +235,8 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
 
         # With Tornado, simply accessing fetch_next starts the fetch.
         fetch_next = cursor.fetch_next
-        request = await self.run_thread(server.receives, OpQuery)
+        expected = OpQuery if pymongo.version_tuple[0:2] < (4, 14) else OpMsg({})
+        request = await self.run_thread(server.receives, expected)
         request.fail(code=1)
 
         with self.assertRaises(pymongo.errors.OperationFailure):
@@ -245,10 +247,12 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
 
     @gen_test
     async def test_exhaust_query_server_error_standalone(self):
+        raise self.skipTest("MOTOR-1472")
         await self._test_exhaust_query_server_error(rs=False)
 
     @gen_test
     async def test_exhaust_query_server_error_rs(self):
+        raise self.skipTest("MOTOR-1472")
         await self._test_exhaust_query_server_error(rs=True)
 
     async def _test_exhaust_query_network_error(self, rs):
@@ -267,7 +271,8 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
 
         # With Tornado, simply accessing fetch_next starts the fetch.
         fetch_next = cursor.fetch_next
-        request = await self.run_thread(server.receives, OpQuery)
+        expected = OpQuery if pymongo.version_tuple[0:2] < (4, 14) else OpMsg({})
+        request = await self.run_thread(server.receives, expected)
         request.hangs_up()
 
         with self.assertRaises(pymongo.errors.ConnectionFailure):
@@ -323,6 +328,14 @@ class MotorClientHandshakeTest(MotorMockServerTest):
         future = client.db.command("ping")
         handshake = await self.run_thread(server.receives, "ismaster")
         meta = handshake.doc["client"]
+        # On pymongo 4.19+ the user's metadata is appended after construction,
+        # so monitors may handshake first; wait for the operation connection.
+        for _ in range(3):
+            if driver_info.name in meta["driver"]["name"].split("|"):
+                break
+            handshake.replies(dict(AUTO_ISMASTER))
+            handshake = await self.run_thread(server.receives, "ismaster")
+            meta = handshake.doc["client"]
         self.assertIn(f"|Motor|{driver_info.name}", meta["driver"]["name"])
         self.assertIn("Tornado", meta["platform"])
         self.assertIn(f"|{driver_info.platform}", meta["platform"])

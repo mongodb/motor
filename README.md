@@ -8,10 +8,11 @@
 ![image](https://raw.github.com/mongodb/motor/master/doc/_static/motor.png)
 
 > [!WARNING]
-> Motor will be deprecated on May 14th, 2026, one year after the production release of the PyMongo Async driver.
-> Critical bug fixes will be made until May 14th, 2027.
-> We strongly recommend that Motor users migrate to the PyMongo Async driver while Motor is still supported.
-> To learn more, see the migration guide: https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/.
+> As of May 14th, 2025, Motor is deprecated in favor of the GA release of the PyMongo Async API.
+> No new features will be added to Motor, and only bug fixes will be provided until it reaches end of life on May 14th, 2026.
+> After that, only critical bug fixes will be made until final support ends on May 14th, 2027.
+> We strongly recommend migrating to the PyMongo Async API while Motor is still supported.
+> For help transitioning, see the Migrate to PyMongo Async guide: https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/.
 
 ## About
 
@@ -115,7 +116,7 @@ by asyncio. It requires:
 
 - Unix (including macOS) or Windows.
 - [PyMongo](http://pypi.python.org/pypi/pymongo/) >=4.9,<5
-- Python 3.9+
+- Python 3.11+
 
 Optional dependencies:
 
@@ -191,7 +192,7 @@ ReadTheDocs](https://motor.readthedocs.io/en/stable/examples/index.html).
 Motor's documentation is on
 [ReadTheDocs](https://motor.readthedocs.io/en/stable/).
 
-Build the documentation with Python 3.9+. Install
+Build the documentation with Python 3.11+. Install
 [sphinx](http://sphinx.pocoo.org/), [Tornado](http://tornadoweb.org/),
 and [aiohttp](https://github.com/aio-libs/aiohttp), and do
 `cd doc; make html`.

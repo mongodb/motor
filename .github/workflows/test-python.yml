@@ -20,15 +20,15 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.9", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.14"]
       fail-fast: false
     name: CPython ${{ matrix.python-version }}-${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
@@ -49,12 +49,12 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
-          python-version: 3.9
+          python-version: '3.11'
           cache: 'pip'
           cache-dependency-path: 'pyproject.toml'
       - name: Install Python dependencies
@@ -67,12 +67,12 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
-          python-version: 3.9
+          python-version: '3.11'
           cache: 'pip'
           cache-dependency-path: 'pyproject.toml'
       - name: Install Python dependencies
@@ -83,7 +83,7 @@ jobs:
       - name: Run linkcheck
         run: tox -m linkcheck
       - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@90004df786821b6308fb02299e5835d0dae05d0d # 1.12.0
+        uses: supercharge/mongodb-github-action@315db7fe45ac2880b7758f1933e6e5d59afd5e94 # 1.12.1
         with:
           mongodb-version: 5.0
       - name: Run doctest
@@ -92,12 +92,12 @@ jobs:
   release:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
-          python-version: 3.9
+          python-version: '3.11'
           cache: 'pip'
           cache-dependency-path: 'pyproject.toml'
       - name: Install Python dependencies
@@ -111,13 +111,13 @@ jobs:
     name: Typing Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version: "3.10"
+          python-version: "3.11"
           cache: 'pip'
           cache-dependency-path: 'pyproject.toml'
           allow-prereleases: true

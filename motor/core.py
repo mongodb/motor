@@ -49,6 +49,14 @@ from .metaprogramming import (
 )
 from .motor_common import callback_type_error
 
+# pymongo 4.19+ reserves "|" as the driver metadata delimiter and raises
+# ValueError if it appears in any DriverInfo field.  Older pymongo allows it.
+try:
+    DriverInfo("|", "|", "|")
+    _DRIVER_INFO_VALIDATES = False
+except (ValueError, TypeError):
+    _DRIVER_INFO_VALIDATES = True
+
 HAS_SSL = True
 try:
     import ssl
@@ -147,29 +155,60 @@ class AgnosticClient(AgnosticBaseProperties):
             io_loop = None
         self._io_loop = io_loop
 
-        kwargs.setdefault("connect", False)
+        connect = kwargs.setdefault("connect", False)
 
         driver_info = DriverInfo("Motor", motor_version, self._framework.platform_info())
 
+        # pymongo 4.19+ rejects "|" in DriverInfo, so pass only Motor's info
+        # and append the user's after construction; older pymongo joins the
+        # strings itself.
+        provided_info = None
         if kwargs.get("driver"):
-            provided_info = kwargs.get("driver")
+            provided_info = kwargs["driver"]
             if not isinstance(provided_info, DriverInfo):
                 raise TypeError(
                     f"Incorrect type for `driver` {type(provided_info)};"
                     " expected value of type pymongo.driver_info.DriverInfo"
                 )
-            added_version = f"|{provided_info.version}" if provided_info.version else ""
-            added_platform = f"|{provided_info.platform}" if provided_info.platform else ""
-            driver_info = DriverInfo(
-                f"{driver_info.name}|{provided_info.name}",
-                f"{driver_info.version}{added_version}",
-                f"{driver_info.platform}{added_platform}",
-            )
+            if not _DRIVER_INFO_VALIDATES:
+                added_version = f"|{provided_info.version}" if provided_info.version else ""
+                added_platform = f"|{provided_info.platform}" if provided_info.platform else ""
+                driver_info = DriverInfo(
+                    f"{driver_info.name}|{provided_info.name}",
+                    f"{driver_info.version}{added_version}",
+                    f"{driver_info.platform}{added_platform}",
+                )
 
         kwargs["driver"] = driver_info
 
+        # With connect=True the delegate would open the topology and send its
+        # first handshakes during construction, before the caller's metadata
+        # could be appended below; defer connecting until after append_metadata.
+        if _DRIVER_INFO_VALIDATES and provided_info is not None and connect:
+            kwargs["connect"] = False
+
         delegate = self.__delegate_class__(*args, **kwargs)
         super().__init__(delegate)
+
+        if _DRIVER_INFO_VALIDATES and provided_info is not None:
+            delegate.append_metadata(provided_info)
+            if connect:
+                delegate._connect()
+
+        warnings.warn(
+            DeprecationWarning(
+                """Motor is deprecated as of May 14th, 2025,
+        in favor of the GA release of the PyMongo Async API.
+        No new features will be added to Motor,
+        and only bug fixes will be provided until it reaches end of life on May 14th, 2026.
+        After that, only critical bug fixes will be made until final support ends on May 14th, 2027.
+        We strongly recommend migrating to the PyMongo Async API while Motor is still supported.
+        For help transitioning, see the Migrate to PyMongo Async guide here:
+        https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/
+        """
+            ),
+            stacklevel=2,
+        )
 
     @property
     def io_loop(self):
@@ -227,7 +266,7 @@ class AgnosticClient(AgnosticBaseProperties):
             to use for the aggregation.
           - `start_at_operation_time` (optional): If provided, the resulting
             change stream will only return changes that occurred at or after
-            the specified :class:`~bson.timestamp.Timestamp`. Requires
+            the specified :class:`~pymongo.timestamp.Timestamp`. Requires
             MongoDB >= 4.0.
           - `session` (optional): a
             :class:`~pymongo.client_session.ClientSession`.
@@ -693,7 +732,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             to use for the aggregation.
           - `start_at_operation_time` (optional): If provided, the resulting
             change stream will only return changes that occurred at or after
-            the specified :class:`~bson.timestamp.Timestamp`. Requires
+            the specified :class:`~pymongo.timestamp.Timestamp`. Requires
             MongoDB >= 4.0.
           - `session` (optional): a
             :class:`~pymongo.client_session.ClientSession`.
@@ -771,7 +810,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             .. note:: the order of keys in the `command` document is
                significant (the "verb" must come first), so commands
                which require multiple keys (e.g. `findandmodify`)
-               should use an instance of :class:`~bson.son.SON` or
+               should use an instance of :class:`~pymongo.son.SON` or
                a string and kwargs instead of a Python `dict`.
 
           - `value` (optional): value to use for the command verb when
@@ -782,7 +821,7 @@ class AgnosticDatabase(AgnosticBaseProperties):
             read preference configured for the transaction.
             Otherwise, defaults to
             :attr:`~pymongo.read_preferences.ReadPreference.PRIMARY`.
-          - `codec_options`: A :class:`~bson.codec_options.CodecOptions`
+          - `codec_options`: A :class:`~pymongo.codec_options.CodecOptions`
             instance.
           - `session` (optional): A
             :class:`MotorClientSession`.
@@ -1497,8 +1536,8 @@ class AgnosticBaseCursor(AgnosticBase):
         .. versionchanged:: 2.2
            Deprecated.
 
-        .. _`large batches`: https://www.mongodb.com/docs/manual/tutorial/iterate-a-cursor/#cursor-batches
-        .. _`gen.coroutine`: http://tornadoweb.org/en/stable/gen.html
+        .. _`large batches`: https://www.mongodb.com/docs/manual/core/cursors/#cursor-batches
+        .. _`gen.coroutine`: https://www.tornadoweb.org/en/stable/gen.html
         """
         warnings.warn(
             "The fetch_next property is deprecated and may be "

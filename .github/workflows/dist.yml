@@ -24,20 +24,28 @@ jobs:
     name: "Build Dist"
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         ref: ${{ inputs.ref }}
         persist-credentials: false
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: 3.x
     - name: Install dependencies
       run: pip install build
+    - name: Validate pyproject.toml
+      run: |
+        pip install 'validate-pyproject[all]'
+        validate-pyproject pyproject.toml
     - name: Create packages
       run: python -m build .
+    - name: Check dist metadata
+      run: |
+        pip install twine
+        twine check --strict dist/*
     - name: Store package artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: all-dist-${{ github.run_id }}
         path: "dist/*"

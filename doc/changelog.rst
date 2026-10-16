@@ -3,14 +3,28 @@ Changelog
 
 .. currentmodule:: motor.motor_tornado
 
+Motor 3.8.0
+-----------
+
+.. warning:: As of May 14th, 2025, Motor is deprecated in favor of the GA release of the PyMongo Async API.
+  No new features will be added to Motor, and only bug fixes will be provided until it reaches end of life on May 14th, 2026.
+  After that, only critical bug fixes will be made until final support ends on May 14th, 2027.
+  We strongly recommend migrating to the PyMongo Async API while Motor is still supported.
+  For help transitioning, see the `Migrate to PyMongo Async guide <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/>`_.
+
+- Add support for Python 3.14.
+- Drop support for Python 3.9 and 3.10.
+
 Motor 3.7.1
 -----------
 
 The 3.7.1 release contains only documentation changes.
 
-.. warning:: Motor will be deprecated on May 14th, 2026, one year after the production release of the PyMongo Async driver. Critical bug fixes will be made until May 14th, 2027.
-  We strongly recommend that Motor users migrate to the PyMongo Async driver while Motor is still supported.
-  To learn more, see `the migration guide <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/>`_.
+.. warning:: As of May 14th, 2025, Motor is deprecated in favor of the GA release of the PyMongo Async API.
+  No new features will be added to Motor, and only bug fixes will be provided until it reaches end of life on May 14th, 2026.
+  After that, only critical bug fixes will be made until final support ends on May 14th, 2027.
+  We strongly recommend migrating to the PyMongo Async API while Motor is still supported.
+  For help transitioning, see the `Migrate to PyMongo Async guide <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/>`_.
 
 Motor 3.7.0
 -----------
@@ -227,8 +241,8 @@ Breaking Changes
 - Comparing two :class:`~motor.motor_tornado.MotorClient` instances now
   uses a set of immutable properties rather than
   :attr:`~motor.motor_tornado.MotorClient.address` which can change.
-- Removed the ``disable_md5`` parameter for :class:`~gridfs.GridFSBucket` and
-  :class:`~gridfs.GridFS`. See :ref:`removed-gridfs-checksum` for details.
+- Removed the ``disable_md5`` parameter for :class:`~pymongo.GridFSBucket` and
+  :class:`~pymongo.GridFS`. See :ref:`removed-gridfs-checksum` for details.
 - PyMongoCrypt 1.2.0 or later is now required for client side field level
   encryption support.
 
@@ -695,9 +709,9 @@ Highlights include:
 
 - Complete support for MongoDB 3.4:
 
-  - Unicode aware string comparison using collations. See :ref:`PyMongo's examples for collation <collation-on-operation>`.
+  - Unicode aware string comparison using collations.
   - :class:`MotorCursor` and :class:`MotorGridOutCursor` have a new attribute :meth:`~MotorCursor.collation`.
-  - Support for the new :class:`~bson.decimal128.Decimal128` BSON type.
+  - Support for the new :class:`~pymongo.decimal128.Decimal128` BSON type.
   - A new maxStalenessSeconds read preference option.
   - A username is no longer required for the MONGODB-X509 authentication
     mechanism when connected to MongoDB >= 3.4.
@@ -727,8 +741,8 @@ Highlights include:
 - TLS compression is now explicitly disabled when possible.
 - The Server Name Indication (SNI) TLS extension is used when possible.
 - PyMongo's ``bson`` module provides finer control over JSON encoding/decoding
-  with :class:`~bson.json_util.JSONOptions`.
-- Allow :class:`~bson.code.Code` objects to have a scope of ``None``,
+  with :class:`~pymongo.json_util.JSONOptions`.
+- Allow :class:`~pymongo.code.Code` objects to have a scope of ``None``,
   signifying no scope. Also allow encoding Code objects with an empty scope
   (i.e. ``{}``).
 
@@ -848,9 +862,9 @@ The following find/find_one options have been removed:
 - await_data (use the new ``cursor_type`` option instead)
 - exhaust (use the new ``cursor_type`` option instead)
 - as_class (use :meth:`~motor.motor_tornado.MotorCollection.with_options` with
-  :class:`~bson.codec_options.CodecOptions` instead)
+  :class:`~pymongo.codec_options.CodecOptions` instead)
 - compile_re (BSON regular expressions are always decoded to
-  :class:`~bson.regex.Regex`)
+  :class:`~pymongo.regex.Regex`)
 
 The following find/find_one options are deprecated:
 

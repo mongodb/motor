@@ -346,60 +346,6 @@ tasks:
 
 # Test tasks {{{
 
-    - name: "test-4.0-standalone"
-      tags: ["4.0", "standalone"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-            TOPOLOGY: "server"
-        - func: "run tox"
-
-    - name: "test-4.0-replica_set"
-      tags: ["4.0", "replica_set"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-            TOPOLOGY: "replica_set"
-        - func: "run tox"
-
-    - name: "test-4.0-sharded_cluster"
-      tags: ["4.0", "sharded_cluster"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-            TOPOLOGY: "sharded_cluster"
-        - func: "run tox"
-
-    - name: "test-4.2-standalone"
-      tags: ["4.2", "standalone"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.2"
-            TOPOLOGY: "server"
-        - func: "run tox"
-
-    - name: "test-4.2-replica_set"
-      tags: ["4.2", "replica_set"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.2"
-            TOPOLOGY: "replica_set"
-        - func: "run tox"
-
-    - name: "test-4.2-sharded_cluster"
-      tags: ["4.2", "sharded_cluster"]
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.2"
-            TOPOLOGY: "sharded_cluster"
-        - func: "run tox"
-
     - name: "test-4.4-standalone"
       tags: ["4.4", "standalone"]
       commands:
@@ -535,30 +481,30 @@ tasks:
             TOPOLOGY: "sharded_cluster"
         - func: "run tox"
 
-    - name: "test-latest-standalone"
-      tags: ["latest", "standalone"]
+    - name: "test-latest-stable-standalone"
+      tags: ["latest-stable", "standalone"]
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "latest"
+            VERSION: "latest-stable"
             TOPOLOGY: "server"
         - func: "run tox"
 
-    - name: "test-latest-replica_set"
-      tags: ["latest", "replica_set"]
+    - name: "test-latest-stable-replica_set"
+      tags: ["latest-stable", "replica_set"]
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "latest"
+            VERSION: "latest-stable"
             TOPOLOGY: "replica_set"
         - func: "run tox"
 
-    - name: "test-latest-sharded_cluster"
-      tags: ["latest", "sharded_cluster"]
+    - name: "test-latest-stable-sharded_cluster"
+      tags: ["latest-stable", "sharded_cluster"]
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "latest"
+            VERSION: "latest-stable"
             TOPOLOGY: "sharded_cluster"
         - func: "run tox"
 
@@ -589,12 +535,22 @@ tasks:
             TOPOLOGY: "sharded_cluster"
         - func: "run tox"
 
+    # Run the Motor test suite once on PyPy.
+    - name: "test-pypy-standalone"
+      tags: ["pypy", "standalone"]
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest-stable"
+            TOPOLOGY: "server"
+        - func: "run tox"
+
     - name: "test-enterprise-auth"
       tags: ["pr"]
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "latest"
+            VERSION: "latest-stable"
             TOPOLOGY: "server"
         - func: "run enterprise auth tests"
 
@@ -616,23 +572,6 @@ tasks:
           vars:
              TOX_ENV: doctest
 
-    - name: "assign-pr-reviewer"
-      tags: ["pr"]
-      allowed_requesters: ["patch", "github_pr"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            shell: "bash"
-            working_dir: src
-            script: |
-              ${PREPARE_SHELL}
-              set -x
-              export CONFIG=$PROJECT_DIRECTORY/.github/reviewers.txt
-              export SCRIPT="$DRIVERS_TOOLS/.evergreen/github_app/assign-reviewer.sh"
-              bash $SCRIPT -p $CONFIG -h ${github_commit} -o "mongodb" -n "motor"
-              echo '{"results": [{ "status": "PASS", "test_file": "Build", "log_raw": "Test completed"  } ]}' > ${PROJECT_DIRECTORY}/test-results.json
-
 # }}}
 
 axes:
@@ -653,18 +592,6 @@ axes:
   - id: tox-env
     display_name: "Tox Env RHEL8"
     values:
-      - id: "test-pypy39"
-        variables:
-           TOX_ENV: "test"
-           PYTHON_BINARY: "/opt/python/pypy3.9/bin/python3"
-      - id: "test-py39"
-        variables:
-           TOX_ENV: "test"
-           PYTHON_BINARY: "/opt/python/3.9/bin/python3"
-      - id: "test-py310"
-        variables:
-           TOX_ENV: "test"
-           PYTHON_BINARY: "/opt/python/3.10/bin/python3"
       - id: "test-py311"
         variables:
            TOX_ENV: "test"
@@ -677,59 +604,55 @@ axes:
         variables:
            TOX_ENV: "test"
            PYTHON_BINARY: "/opt/python/3.13/bin/python3"
+      - id: "test-py314"
+        variables:
+           TOX_ENV: "test"
+           PYTHON_BINARY: "/opt/python/3.14/bin/python3"
       - id: "test-pymongo-4.9"
         variables:
            TOX_ENV: "test-pymongo-4.9"
-           PYTHON_BINARY: "/opt/python/3.9/bin/python3"
+           PYTHON_BINARY: "/opt/python/3.11/bin/python3"
       - id: "test-pymongo-4.10"
         variables:
            TOX_ENV: "test-pymongo-4.10"
-           PYTHON_BINARY: "/opt/python/3.9/bin/python3"
+           PYTHON_BINARY: "/opt/python/3.11/bin/python3"
       - id: "test-pymongo-4.11"
         variables:
            TOX_ENV: "test-pymongo-4.11"
-           PYTHON_BINARY: "/opt/python/3.9/bin/python3"
+           PYTHON_BINARY: "/opt/python/3.11/bin/python3"
       - id: "test-pymongo-latest"
         variables:
            TOX_ENV: "test-pymongo-latest"
-           PYTHON_BINARY: "/opt/python/3.9/bin/python3"
-      - id: "synchro-py39"
+           PYTHON_BINARY: "/opt/python/3.11/bin/python3"
+      - id: "synchro-py311"
         variables:
           TOX_ENV: "synchro"
-          PYTHON_BINARY: "/opt/python/3.9/bin/python3"
-      - id: "synchro-py312"
+          PYTHON_BINARY: "/opt/python/3.11/bin/python3"
+      - id: "synchro-py313"
         variables:
           TOX_ENV: "synchro"
-          PYTHON_BINARY: "/opt/python/3.12/bin/python3"
+          PYTHON_BINARY: "/opt/python/3.13/bin/python3"
 
-  - id: tox-env-rhel7
-    display_name: "Tox Env RHEL7"
+  - id: tox-env-rhel8
+    display_name: "Tox Env RHEL8"
     values:
       - id: "test"
         variables:
            TOX_ENV: "test"
-           PYTHON_BINARY: "/opt/python/3.9/bin/python3"
+           PYTHON_BINARY: "/opt/python/3.11/bin/python3"
 
-  # Test Python 3.9 only on Mac.
+  # Test Python 3.11 only on Mac.
   - id: tox-env-osx
     display_name: "Tox Env OSX"
     values:
       - id: "test"
         variables:
            TOX_ENV: "test"
-           PYTHON_BINARY: "/Library/Frameworks/Python.framework/Versions/3.9/bin/python3"
+           PYTHON_BINARY: "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3"
 
   - id: tox-env-win
     display_name: "Tox Env Windows"
     values:
-      - id: "test-py39"
-        variables:
-           TOX_ENV: "test"
-           PYTHON_BINARY: "c:/python/Python39/python.exe"
-      - id: "test-py310"
-        variables:
-           TOX_ENV: "test"
-           PYTHON_BINARY: "c:/python/Python310/python.exe"
       - id: "test-py311"
         variables:
            TOX_ENV: "test"
@@ -738,6 +661,14 @@ axes:
         variables:
            TOX_ENV: "test"
            PYTHON_BINARY: "c:/python/Python312/python.exe"
+      - id: "test-py313"
+        variables:
+           TOX_ENV: "test"
+           PYTHON_BINARY: "c:/python/Python313/python.exe"
+      - id: "test-py314"
+        variables:
+           TOX_ENV: "test"
+           PYTHON_BINARY: "c:/python/Python314/python.exe"
 
   - id: os
     display_name: "Operating System"
@@ -745,15 +676,12 @@ axes:
       - id: "rhel8"
         display_name: "RHEL 8.x"
         run_on: "rhel84-small"
-      - id: "rhel7"
-        display_name: "RHEL 7.x"
-        run_on: "rhel79-small"
       - id: "win"
         display_name: "Windows"
         run_on: "windows-64-vsMulti-small"
-      - id: "macos-1100"
-        display_name: "macOS 11.00"
-        run_on: "macos-1100"
+      - id: "macos-14"
+        display_name: "macOS 14"
+        run_on: "macos-14"
 
 buildvariants:
 
@@ -768,28 +696,26 @@ buildvariants:
     # TODO: synchro needs PyMongo's updated SSL test certs,
     # which may require Motor test suite changes.
     - os: "*"
-      tox-env: ["synchro-py39", "synchro-py312"]
+      tox-env: ["synchro-py311", "synchro-py313"]
       ssl: "ssl"
   tasks:
      - ".rapid"
-     - ".latest"
+     - ".latest-stable"
      - ".8.0"
      - ".7.0"
      - ".6.0"
      - ".5.0"
      - ".4.4"
-     - ".4.2"
-     - ".4.0"
 
-- matrix_name: "test-rhel7"
-  display_name: "${os}-${tox-env-rhel7}-${ssl}"
+- matrix_name: "test-rhel8"
+  display_name: "${os}-${tox-env-rhel8}-${ssl}"
   matrix_spec:
-    os: "rhel7"
-    tox-env-rhel7: "*"
+    os: "rhel8"
+    tox-env-rhel8: "*"
     ssl: "*"
   tasks:
      - ".rapid"
-     - ".latest"
+     - ".latest-stable"
      - ".7.0"
      - ".6.0"
      - ".5.0"
@@ -803,36 +729,43 @@ buildvariants:
     ssl: "*"
   tasks:
      - ".rapid"
-     - ".latest"
+     - ".latest-stable"
      - ".8.0"
      - ".7.0"
      - ".6.0"
      - ".5.0"
      - ".4.4"
-     - ".4.2"
-     - ".4.0"
-     - ".3.6"
 
 - matrix_name: "test-macos"
   display_name: "${os}-${tox-env-osx}-${ssl}"
   matrix_spec:
-    os: "macos-1100"
+    os: "macos-14"
     tox-env-osx: "*"
     ssl: "*"
   tasks:
      - ".rapid"
-     - ".latest"
+     - ".latest-stable"
      - ".8.0"
      - ".7.0"
      - ".6.0"
 
 - matrix_name: "enterprise-auth"
   display_name: "Enterprise Auth-${tox-env}"
-  matrix_spec: {"tox-env": ["synchro-py39", "synchro-py312"], ssl: "ssl"}
+  matrix_spec: {"tox-env": ["synchro-py311", "synchro-py313"], ssl: "ssl"}
   run_on:
      - "rhel84-small"
   tasks:
      - name: "test-enterprise-auth"
+
+- name: "pypy"
+  display_name: "PyPy"
+  run_on:
+     - "rhel84-small"
+  expansions:
+     TOX_ENV: "test"
+     PYTHON_BINARY: "/opt/python/pypy3.11/bin/python3"
+  tasks:
+     - name: "test-pypy-standalone"
 
 - name: "docs"
   display_name: "Docs - Build"
@@ -840,7 +773,7 @@ buildvariants:
      - "rhel84-small"
   expansions:
      TOX_ENV: "docs"
-     PYTHON_BINARY: "/opt/python/3.9/bin/python3"
+     PYTHON_BINARY: "/opt/python/3.11/bin/python3"
   tasks:
      - name: "docs"
 
@@ -850,12 +783,6 @@ buildvariants:
      - "rhel84-small"
   expansions:
      TOX_ENV: "doctest"
-     PYTHON_BINARY: "/opt/python/3.9/bin/python3"
+     PYTHON_BINARY: "/opt/python/3.11/bin/python3"
   tasks:
      - name: "doctest"
-
-- name: rhel8-pr-assign-reviewer
-  display_name: Assign PR Reviewer
-  run_on: rhel87-small
-  tasks:
-    - name: "assign-pr-reviewer"

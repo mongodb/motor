@@ -334,7 +334,7 @@ class TestAsyncIOCollection(AsyncIOTestCase):
                 await self.collection.explicit_encryption.find(find_payload).to_list(3),
                 key=lambda x: x["_id"],
             )
-            for elem, expected in zip(sorted_find, [6.0, 30.0, 200.0]):
+            for elem, expected in zip(sorted_find, [6.0, 30.0, 200.0], strict=False):
                 self.assertEqual(elem[f"encrypted{name}"], expected)
 
 

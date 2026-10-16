@@ -73,7 +73,7 @@ class AgnosticGridOut:
     """Class to read data out of GridFS.
 
     MotorGridOut supports the same attributes as PyMongo's
-    :class:`~gridfs.grid_file.GridOut`, such as ``_id``, ``content_type``,
+    :class:`~pymongo.grid_file.GridOut`, such as ``_id``, ``content_type``,
     etc.
 
     You don't need to instantiate this class directly - use the
@@ -188,7 +188,7 @@ class AgnosticGridOut:
                     await gridout.stream_to_handler(self)
                     self.finish()
 
-        .. seealso:: Tornado `RequestHandler <http://tornadoweb.org/en/stable/web.html#request-handlers>`_
+        .. seealso:: Tornado `RequestHandler <https://www.tornadoweb.org/en/stable/web.html#request-handlers>`_
         """
         written = 0
         while written < self.length:
@@ -255,7 +255,7 @@ Metadata set on the file appears as attributes on a
         arguments include:
 
           - ``"_id"``: unique ID for this file (default:
-            :class:`~bson.objectid.ObjectId`) - this ``"_id"`` must
+            :class:`~pymongo.objectid.ObjectId`) - this ``"_id"`` must
             not have already been used for another file
 
           - ``"filename"``: human name for the file

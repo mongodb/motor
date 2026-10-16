@@ -73,7 +73,18 @@ pygments_style = "sphinx"
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []
 
-linkcheck_ignore = [r"http://localhost:\d+"]
+# Links to release notes in jira give 401 error: unauthorized. MOTOR-1476
+linkcheck_ignore = [
+    r"http://localhost:\d+",
+    r"https://jira\.mongodb\.org/secure/ReleaseNote\.jspa.*",
+]
+
+# Allow for flaky links.
+linkcheck_retries = 3
+
+# Serialize requests to avoid dropping connections from the dochub redirect service (PYTHON-5847).
+linkcheck_workers = 1
+linkcheck_timeout = 60
 
 # -- Options for extensions ----------------------------------------------------
 autoclass_content = "init"
@@ -221,8 +232,6 @@ pymongo_version = metadata("pymongo")["version"]
 pymongo_inventory = ("https://pymongo.readthedocs.io/en/%s/" % pymongo_version, None)
 
 intersphinx_mapping = {
-    "bson": pymongo_inventory,
-    "gridfs": pymongo_inventory,
     "pymongo": pymongo_inventory,
     "aiohttp": ("http://aiohttp.readthedocs.io/en/stable/", None),
     "tornado": ("http://www.tornadoweb.org/en/stable/", None),

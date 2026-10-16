@@ -14,13 +14,17 @@
 
 """Validate list of PyMongo attributes wrapped by Motor."""
 
+import warnings
 from test import env
 from test.tornado_tests import MotorTest
+from unittest import mock
 
 from gridfs import GridFSBucket, GridIn
+from pymongo.driver_info import DriverInfo
 from tornado.testing import gen_test
 
-from motor import MotorGridFSBucket, MotorGridIn
+from motor import MotorGridFSBucket, MotorGridIn, core
+from motor.motor_tornado import MotorClient
 
 
 def attrs(klass):
@@ -35,11 +39,14 @@ pymongo_gridfs_only = set(["delete_by_name", "rename_by_name"])
 
 motor_client_only = motor_only.union(["open"])
 
-pymongo_client_only = set(["eq_props"]).union(pymongo_only)
+pymongo_client_only = set(["eq_props", "append_metadata"]).union(pymongo_only)
 
 pymongo_database_only = set([]).union(pymongo_only)
 
 pymongo_collection_only = set([]).union(pymongo_only)
+
+# bind returns a sync context manager; Motor uses async session management instead.
+pymongo_session_only = set(["bind"])
 
 motor_cursor_only = set(["fetch_next", "each", "started", "next_object", "closed"]).union(
     motor_only
@@ -54,12 +61,55 @@ class MotorCoreTest(MotorTest):
             attrs(env.sync_cx) - pymongo_client_only, attrs(self.cx) - motor_client_only
         )
 
+    def test_driver_metadata_order(self):
+        """Caller metadata must be appended before the topology opens.
+
+        With connect=True, pymongo 4.19+ sends the first handshakes during
+        MongoClient construction; appending the caller's DriverInfo afterwards
+        would omit it from those handshakes.
+        """
+        calls = []
+        provided = DriverInfo("Caller", "1.0", "platform")
+
+        class StubDelegate:
+            def __init__(self, *args, **kwargs):
+                calls.append(("__init__", kwargs.get("connect")))
+
+            def append_metadata(self, info):
+                calls.append(("append_metadata", info.name))
+
+            def _connect(self):
+                calls.append(("_connect", None))
+
+        def scenario(**kwargs):
+            calls.clear()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                with mock.patch("motor.core._DRIVER_INFO_VALIDATES", True):
+                    with mock.patch.object(core.AgnosticClient, "__delegate_class__", StubDelegate):
+                        MotorClient("localhost:27017", io_loop=self.io_loop, **kwargs)
+            return calls.copy()
+
+        # connect=True with caller metadata: defer opening the topology until
+        # after append_metadata.
+        self.assertEqual(
+            scenario(driver=provided, connect=True),
+            [("__init__", False), ("append_metadata", "Caller"), ("_connect", None)],
+        )
+        # connect=True without caller metadata: constructor handles connecting.
+        self.assertEqual(scenario(connect=True), [("__init__", True)])
+        # Default connect=False with caller metadata: no explicit connect.
+        self.assertEqual(
+            scenario(driver=provided), [("__init__", False), ("append_metadata", "Caller")]
+        )
+
     @env.require_version_min(3, 6)
     @env.require_replica_set
     @gen_test
     async def test_client_session_attrs(self):
         self.assertEqual(
-            attrs(env.sync_cx.start_session()), attrs(await self.cx.start_session()) - motor_only
+            attrs(env.sync_cx.start_session()) - pymongo_session_only,
+            attrs(await self.cx.start_session()) - motor_only,
         )
 
     def test_database_attrs(self):

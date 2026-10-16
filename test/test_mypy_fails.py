@@ -1,7 +1,7 @@
 import os
 import sys
 import unittest
-from typing import Iterable
+from collections.abc import Iterable
 
 try:
     from mypy import api

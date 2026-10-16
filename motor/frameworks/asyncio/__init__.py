@@ -18,6 +18,7 @@ See "Frameworks" in the Developer Guide.
 """
 import asyncio
 import asyncio.tasks
+import contextvars
 import functools
 import multiprocessing
 import os
@@ -27,19 +28,13 @@ from concurrent.futures import ThreadPoolExecutor
 
 # mypy: ignore-errors
 
-try:
-    import contextvars
-except ImportError:
-    contextvars = None
 
-try:
-    from asyncio import coroutine
-except ImportError:
-
-    def coroutine():
-        raise RuntimeError(
-            "The coroutine decorator was removed in Python 3.11.  Use 'async def' instead"
-        )
+def coroutine():
+    # Kept for the deprecated framework interface. asyncio.coroutine was
+    # removed in Python 3.11, which is now Motor's minimum supported version.
+    raise RuntimeError(
+        "The coroutine decorator was removed in Python 3.11.  Use 'async def' instead"
+    )
 
 
 CLASS_PREFIX = "AsyncIO"
@@ -78,9 +73,8 @@ if hasattr(os, "register_at_fork"):
 
 
 def run_on_executor(loop, fn, *args, **kwargs):
-    if contextvars:
-        context = contextvars.copy_context()
-        fn = functools.partial(context.run, fn)
+    context = contextvars.copy_context()
+    fn = functools.partial(context.run, fn)
 
     return loop.run_in_executor(_EXECUTOR, functools.partial(fn, *args, **kwargs))
 

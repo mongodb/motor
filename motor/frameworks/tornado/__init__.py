@@ -17,6 +17,7 @@
 See "Frameworks" in the Developer Guide.
 """
 
+import contextvars
 import functools
 import os
 import warnings
@@ -26,11 +27,6 @@ import tornado.process
 from tornado import concurrent, ioloop
 from tornado import version as tornado_version
 from tornado.gen import chain_future, coroutine  # noqa: F401 - For framework interface.
-
-try:
-    import contextvars
-except ImportError:
-    contextvars = None
 
 # mypy: ignore-errors
 
@@ -74,9 +70,8 @@ if hasattr(os, "register_at_fork"):
 
 
 def run_on_executor(loop, fn, *args, **kwargs):
-    if contextvars:
-        context = contextvars.copy_context()
-        fn = functools.partial(context.run, fn)
+    context = contextvars.copy_context()
+    fn = functools.partial(context.run, fn)
 
     return loop.run_in_executor(_EXECUTOR, functools.partial(fn, *args, **kwargs))
 

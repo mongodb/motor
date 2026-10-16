@@ -233,7 +233,10 @@ class AIOHTTPGridFS:
         return resp
 
     def _set_standard_headers(self, path, resp, gridout, checksum):
-        resp.last_modified = gridout.upload_date
+        # Truncate to whole seconds, matching the If-Modified-Since
+        # comparison above. aiohttp 3.14.2+ would otherwise round a
+        # fractional upload_date up to the next second.
+        resp.last_modified = gridout.upload_date.replace(microsecond=0)
         content_type = gridout.content_type
         if content_type is None:
             content_type, encoding = mimetypes.guess_type(path)
@@ -248,7 +251,7 @@ class AIOHTTPGridFS:
 
         if cache_time > 0:
             resp.headers["Expires"] = (
-                datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+                datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
                 + datetime.timedelta(seconds=cache_time)
             ).strftime("%a, %d %b %Y %H:%M:%S GMT")
 

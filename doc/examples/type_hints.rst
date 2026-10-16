@@ -4,9 +4,11 @@
 Type Hints
 ==========
 
-.. warning:: Motor will be deprecated on May 14th, 2026, one year after the production release of the PyMongo Async driver. Critical bug fixes will be made until May 14th, 2027.
-  We strongly recommend that Motor users migrate to the PyMongo Async driver while Motor is still supported.
-  To learn more, see `the migration guide <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/>`_.
+.. warning:: As of May 14th, 2025, Motor is deprecated in favor of the GA release of the PyMongo Async API.
+  No new features will be added to Motor, and only bug fixes will be provided until it reaches end of life on May 14th, 2026.
+  After that, only critical bug fixes will be made until final support ends on May 14th, 2027.
+  We strongly recommend migrating to the PyMongo Async API while Motor is still supported.
+  For help transitioning, see the `Migrate to PyMongo Async guide <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/>`_.
 
 
 As of version 3.3.0, Motor ships with `type hints`_. With type hints, Python
@@ -72,7 +74,7 @@ Typed Client
 
 :class:`~motor.motor_asyncio.AsyncIOMotorClient` is generic on the document type used to decode BSON documents.
 
-You can specify a :class:`~bson.raw_bson.RawBSONDocument` document type:
+You can specify a :class:`~pymongo.raw_bson.RawBSONDocument` document type:
 
 .. code-block:: python
 
@@ -87,7 +89,7 @@ You can specify a :class:`~bson.raw_bson.RawBSONDocument` document type:
        result = await collection.find_one({"x": 1})
        assert isinstance(result, RawBSONDocument)
 
-Subclasses of :py:class:`collections.abc.Mapping` can also be used, such as :class:`~bson.son.SON`:
+Subclasses of :py:class:`collections.abc.Mapping` can also be used, such as :class:`~pymongo.son.SON`:
 
 .. code-block:: python
 
@@ -103,7 +105,7 @@ Subclasses of :py:class:`collections.abc.Mapping` can also be used, such as :cla
        assert result is not None
        assert result["x"] == 1
 
-Note that when using :class:`~bson.son.SON`, the key and value types must be given, e.g. ``SON[str, Any]``.
+Note that when using :class:`~pymongo.son.SON`, the key and value types must be given, e.g. ``SON[str, Any]``.
 
 
 Typed Collection
@@ -258,7 +260,7 @@ match a well-defined schema using :py:class:`~typing.TypedDict`.
 
 Typed Command
 -------------
-When using the :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.command`, you can specify the document type by providing a custom :class:`~bson.codec_options.CodecOptions`:
+When using the :meth:`~motor.motor_asyncio.AsyncIOMotorDatabase.command`, you can specify the document type by providing a custom :class:`~pymongo.codec_options.CodecOptions`:
 
 .. code-block:: python
 
@@ -278,7 +280,7 @@ For :py:class:`~typing.TypedDict`, use the form: ``options: CodecOptions[MyTyped
 
 Typed BSON Decoding
 -------------------
-You can specify the document type returned by :mod:`bson` decoding functions by providing :class:`~bson.codec_options.CodecOptions`:
+You can specify the document type returned by :mod:`bson` decoding functions by providing :class:`~pymongo.codec_options.CodecOptions`:
 
 .. code-block:: python
 
@@ -300,7 +302,7 @@ You can specify the document type returned by :mod:`bson` decoding functions by 
       rt_document = decode(bsonbytes, codec_options=options)
       assert rt_document.foo() == "bar"
 
-:class:`~bson.raw_bson.RawBSONDocument` and :py:class:`~typing.TypedDict` are also supported.
+:class:`~pymongo.raw_bson.RawBSONDocument` and :py:class:`~typing.TypedDict` are also supported.
 For :py:class:`~typing.TypedDict`, use  the form: ``options: CodecOptions[MyTypedDict] = CodecOptions(...)``.
 
 
@@ -361,7 +363,7 @@ Other times ``mypy`` will catch an actual error, like the following code:
 
 In this case the solution is to use ``insert_one({})``, passing a document instead of a list.
 
-Another example is trying to set a value on a :class:`~bson.raw_bson.RawBSONDocument`, which is read-only.:
+Another example is trying to set a value on a :class:`~pymongo.raw_bson.RawBSONDocument`, which is read-only.:
 
 .. code-block:: python
 

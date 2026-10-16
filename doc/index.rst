@@ -4,9 +4,11 @@ Motor: Asynchronous Python driver for MongoDB
 .. image:: _static/motor.png
     :align: center
 
-.. warning:: Motor will be deprecated on May 14th, 2026, one year after the production release of the PyMongo Async driver. Critical bug fixes will be made until May 14th, 2027.
-  We strongly recommend that Motor users migrate to the PyMongo Async driver while Motor is still supported.
-  To learn more, see `the migration guide <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/>`_.
+.. warning:: As of May 14th, 2025, Motor is deprecated in favor of the GA release of the PyMongo Async API.
+  No new features will be added to Motor, and only bug fixes will be provided until it reaches end of life on May 14th, 2026.
+  After that, only critical bug fixes will be made until final support ends on May 14th, 2027.
+  We strongly recommend migrating to the PyMongo Async API while Motor is still supported.
+  For help transitioning, see the `Migrate to PyMongo Async guide <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/>`_.
 
 About
 -----
@@ -36,7 +38,7 @@ Install with::
 
     $ python -m pip install motor
 
-.. _Tornado: http://tornadoweb.org/
+.. _Tornado: https://www.tornadoweb.org/
 
 .. _asyncio: https://docs.python.org/3/library/asyncio.html
 
@@ -58,7 +60,7 @@ project.
 
 Feature Requests / Feedback
 ---------------------------
-Use our `feedback engine <https://feedback.mongodb.com/forums/924286-drivers>`_
+Use our `feedback engine <https://feedback.mongodb.com/?category=7548141816650747033>`_
 to send us feature requests and general feedback about PyMongo.
 
 Contributing

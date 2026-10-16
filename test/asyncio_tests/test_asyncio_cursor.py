@@ -433,7 +433,18 @@ class TestAsyncIOCursor(AsyncIOMockServerTestCase):
     @asyncio_test
     async def test_exhaust(self):
         if await server_is_mongos(self.cx):
-            self.assertRaises(InvalidOperation, self.db.test.find, cursor_type=CursorType.EXHAUST)
+            try:
+                cur = self.db.test.find(cursor_type=CursorType.EXHAUST)
+            except InvalidOperation:
+                # pymongo < 4.18 rejects exhaust cursors on mongos at find() time.
+                return
+            # pymongo >= 4.18 removed the find()-time guard: mongos >= 7.1
+            # supports exhaust, but older mongos raises InvalidOperation on
+            # the first iteration.
+            try:
+                await cur.to_list(length=1)
+            except InvalidOperation:
+                pass
             return
 
         self.assertRaises(ValueError, self.db.test.find, cursor_type=5)

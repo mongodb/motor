@@ -15,9 +15,10 @@
 """Dynamic class-creation for Motor."""
 import functools
 import inspect
-from typing import Any, Callable, Dict, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
-_class_cache: Dict[Any, Any] = {}
+_class_cache: dict[Any, Any] = {}
 
 # mypy: ignore-errors
 

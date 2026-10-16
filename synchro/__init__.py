@@ -47,6 +47,7 @@ from pymongo import (
     change_stream,
     collation,
     compression_support,
+    daemon,
     encryption_options,
     errors,
     event_loggers,
@@ -58,6 +59,7 @@ from pymongo import (
     server_type,
     ssl_support,
     uri_parser,
+    uri_parser_shared,
     write_concern,
 )
 from pymongo.synchronous import srv_resolver
@@ -299,7 +301,7 @@ class SynchroMeta(type):
 
         # Set DelegateProperties' and SynchroProperties' names.
         for name, attr in attrs.items():
-            if isinstance(attr, (MotorAttributeFactory, SynchroAttr)):  # noqa: SIM102
+            if isinstance(attr, (MotorAttributeFactory, SynchroAttr)):  # noqa: SIM102,UP038
                 if attr.name is None:
                     attr.name = name
 

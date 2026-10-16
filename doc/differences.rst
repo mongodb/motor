@@ -4,9 +4,11 @@
 Differences between Motor and PyMongo
 =====================================
 
-.. warning:: Motor will be deprecated on May 14th, 2026, one year after the production release of the PyMongo Async driver. Critical bug fixes will be made until May 14th, 2027.
-  We strongly recommend that Motor users migrate to the PyMongo Async driver while Motor is still supported.
-  To learn more, see `the migration guide <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/>`_.
+.. warning:: As of May 14th, 2025, Motor is deprecated in favor of the GA release of the PyMongo Async API.
+  No new features will be added to Motor, and only bug fixes will be provided until it reaches end of life on May 14th, 2026.
+  After that, only critical bug fixes will be made until final support ends on May 14th, 2027.
+  We strongly recommend migrating to the PyMongo Async API while Motor is still supported.
+  For help transitioning, see the `Migrate to PyMongo Async guide <https://www.mongodb.com/docs/languages/python/pymongo-driver/current/reference/migration/>`_.
 
 .. important:: This page describes using Motor with Tornado. Beginning in
   version 0.5 Motor can also integrate with asyncio instead of Tornado.
@@ -47,8 +49,8 @@ GridFS
 
 - File-like
 
-    PyMongo's :class:`~gridfs.grid_file.GridIn` and
-    :class:`~gridfs.grid_file.GridOut` strive to act like Python's built-in
+    PyMongo's :class:`~pymongo.grid_file.GridIn` and
+    :class:`~pymongo.grid_file.GridOut` strive to act like Python's built-in
     file objects, so they can be passed to many functions that expect files.
     But the I/O methods of :class:`MotorGridIn` and
     :class:`MotorGridOut` are asynchronous, so they cannot obey the
@@ -57,7 +59,7 @@ GridFS
 - Setting properties
 
     In PyMongo, you can set arbitrary attributes on
-    a :class:`~gridfs.grid_file.GridIn` and they're stored as metadata on
+    a :class:`~pymongo.grid_file.GridIn` and they're stored as metadata on
     the server, even after the ``GridIn`` is closed::
 
         fs = gridfs.GridFSBucket(db)

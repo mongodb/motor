@@ -126,7 +126,7 @@ class GridFSHandler(tornado.web.RequestHandler):
         if cache_time > 0:
             self.set_header(
                 "Expires",
-                datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+                datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
                 + datetime.timedelta(seconds=cache_time),
             )
             self.set_header("Cache-Control", "max-age=" + str(cache_time))
@@ -141,15 +141,16 @@ class GridFSHandler(tornado.web.RequestHandler):
         if ims_value is not None:
             date_tuple = email.utils.parsedate(ims_value)
 
-            # If our MotorClient is tz-aware, assume the naive ims_value is in
-            # its time zone.
-            if_since = datetime.datetime.fromtimestamp(time.mktime(date_tuple)).replace(
-                tzinfo=modified.tzinfo
-            )
+            if date_tuple is not None:
+                # If our MotorClient is tz-aware, assume the naive ims_value is in
+                # its time zone.
+                if_since = datetime.datetime.fromtimestamp(time.mktime(date_tuple)).replace(
+                    tzinfo=modified.tzinfo
+                )
 
-            if if_since >= modified:
-                self.set_status(304)
-                return
+                if if_since >= modified:
+                    self.set_status(304)
+                    return
 
         # Same for Etag
         etag = self.request.headers.get("If-None-Match")
