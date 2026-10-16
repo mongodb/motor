@@ -41,7 +41,7 @@ for non-blocking access to MongoDB.
 ## Support / Feedback
 
 For issues with, questions about, or feedback for PyMongo, please look
-into our [support channels](https://support.mongodb.com/welcome). Please
+into our [support channels](https://support.mongodb.com/). Please
 do not email any of the Motor developers directly with issues or
 questions - you're more likely to get an answer on the
 [StackOverflow](https://stackoverflow.com/questions/tagged/mongodb)
