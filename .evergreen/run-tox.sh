@@ -63,8 +63,8 @@ createvirtualenv () {
     fi
 
     python -m pip install -q --upgrade pip
-    # Pinned: bump deliberately — tox 4.67.5 broke periodic builds the day it
-    # shipped (staging-permission check, fixed in 4.67.6).
+    # Pinned on purpose. tox 4.67.5 broke periodic builds the day it shipped
+    # with a package staging permission check fixed in 4.67.6.
     python -m pip install -q --upgrade tox==4.67.6
 }
 
@@ -72,8 +72,8 @@ createvirtualenv () {
 # Set up a virtualenv and install tox.
 createvirtualenv "$PYTHON_BINARY" toxenv
 trap "deactivate; rm -rf toxenv" EXIT HUP
-# Pinned: bump deliberately — tox 4.67.5 broke periodic builds the day it
-# shipped (staging-permission check, fixed in 4.67.6).
+# Pinned on purpose. tox 4.67.5 broke periodic builds the day it shipped
+# with a package staging permission check fixed in 4.67.6.
 python -m pip install tox==4.67.6
 run_tox() {
     python -m tox -m $TOX_ENV "$@"
