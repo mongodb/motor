@@ -83,6 +83,7 @@ log_cli_level = "INFO"
 addopts = ["-ra", "--strict-config", "--strict-markers",
     "--maxfail=10", "--durations=5", "--junitxml=xunit-results/TEST-results.xml"]
 faulthandler_timeout = 1500
+asyncio_default_fixture_loop_scope = "session"
 filterwarnings = [
     "error",
     "ignore:Bare functions are deprecated, use async ones:DeprecationWarning",
