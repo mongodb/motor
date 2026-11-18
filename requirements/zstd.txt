@@ -1,1 +1,1 @@
-pymongo[zstd]>=4.19.0,<5
+pymongo[zstd]>=4.20.0,<5
