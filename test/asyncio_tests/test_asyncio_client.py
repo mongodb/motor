@@ -36,6 +36,7 @@ from test.test_environment import db_password, db_user, env
 from test.utils import AUTO_ISMASTER, get_primary_pool
 
 import pymongo
+import pytest
 from bson import CodecOptions
 from pymongo import ReadPreference, WriteConcern, monitoring
 from pymongo.errors import ConnectionFailure, OperationFailure
@@ -269,6 +270,8 @@ class TestAsyncIOClientTimeout(AsyncIOMockServerTestCase):
         client.close()
 
 
+# MOTOR-1486: same mockupdb teardown aborts as the tornado handshake test.
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnhandledThreadExceptionWarning")
 class TestAsyncIOClientHandshake(AsyncIOMockServerTestCase):
     @asyncio_test
     async def test_handshake(self):
