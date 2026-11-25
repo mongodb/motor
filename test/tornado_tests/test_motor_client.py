@@ -24,6 +24,7 @@ from test.utils import AUTO_ISMASTER, get_primary_pool, one
 
 import pymongo
 import pymongo.mongo_client
+import pytest
 from bson import CodecOptions
 from mockupdb import OpMsg, OpQuery
 from pymongo import CursorType, ReadPreference, WriteConcern
@@ -292,6 +293,8 @@ class MotorClientExhaustCursorTest(MotorMockServerTest):
         await self._test_exhaust_query_network_error(rs=True)
 
 
+# MOTOR-1486: mockupdb server threads abort at stop() on Windows.
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnhandledThreadExceptionWarning")
 class MotorClientHandshakeTest(MotorMockServerTest):
     @gen_test
     async def test_handshake(self):
